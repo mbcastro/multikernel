@@ -1,6 +1,5 @@
 /*
  * Copyright(C) 2011-2017 Pedro H. Penna <pedrohenriquepenna@gmail.com>
- *              2017-2017 Clement Rouquier <clementrouquier@gmail.com>
  * 
  * This file is part of Nanvix.
  * 
@@ -18,28 +17,21 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <nanvix/klib.h>
-#include <sys/types.h>
-#include <stdarg.h>
+#ifndef DEV_H_
+#define DEV_H_
 
-/**
- * @brief Writes on the screen a formated string.
- * 
- * @param fmt Formated string.
- */
-void kprintf(const char *fmt, ...)
-{
-	int i;                         /* Loop index.              */
-	va_list args;                  /* Variable arguments list. */
-	char buffer[KBUFFER_SIZE + 1]; /* Temporary buffer.        */
-	
-	kstrncpy(buffer, "[info] ", 7);
-	
-	/* Convert to raw string. */
-	va_start(args, fmt);
-	i = kvsprintf(buffer + 7, fmt, args) + 7;
-	buffer[i++] = '\0';
-	va_end(args);
+	#define RAMDISK_MAJOR 0x0 /**< RAM Disk device. */
 
-	kputs(buffer);
-}
+	/**
+	 * @brief Returns the major number of a device.
+	 */
+	#define MAJOR(dev) \
+		(((dev) >> 8) & 0xf)
+	
+	/**
+	 * @brief Returns the minor number of a device.
+	 */
+	#define MINOR(dev) \
+		(((dev) >> 4) & 0xf)
+
+#endif /* DEV_H_ */

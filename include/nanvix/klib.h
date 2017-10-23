@@ -42,8 +42,9 @@
 	/**
 	 * @brief Pints a debug message.
 	 */ 
-	#define kdebug(str) kprintf("[debug] %s", str)
+	#define kdebug(str) kprintf("[debug]%s",str)
 
+	/* Forward definitions. */
 	extern void *kmemcpy (void* , const void *, size_t);
 	extern void *kmemset(void *, int, size_t);
 	extern int kstrcmp(const char *, const char *);

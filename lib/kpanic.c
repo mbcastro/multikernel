@@ -33,11 +33,11 @@ void kpanic(const char *fmt, ...)
 	va_list args;                  /* Variable arguments list. */
 	char buffer[KBUFFER_SIZE + 1]; /* Temporary buffer.        */
 	
-	kstrncpy(buffer, "PANIC: ", 7);
+	kstrncpy(buffer, "[PANIC] ", 8);
 	
 	/* Convert to raw string. */
 	va_start(args, fmt);
-	i = kvsprintf(buffer + 7, fmt, args) + 7;
+	i = kvsprintf(buffer + 8, fmt, args) + 8;
 	buffer[i++] = '\0';
 	va_end(args);
 

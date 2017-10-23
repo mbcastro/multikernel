@@ -28,11 +28,6 @@
 #define NR_RAMDISKS 4
 
 /**
- * @brief RAM Disk size (in bytes).
- */
-#define RAMDISK_SIZE 4096
-
-/**
  * @brief RAM Disks.
  */
 static struct
@@ -50,7 +45,7 @@ static struct
  * @return Upon successful completion zero is returned, upon failure
  * non-zero is returned instead.
  */
-static int ramdisk_readblk(unsigned minor, char *buf, unsigned blknum)
+static ssize_t ramdisk_readblk(unsigned minor, char *buf, unsigned blknum)
 {	
 	char *ptr;
 	
@@ -58,7 +53,8 @@ static int ramdisk_readblk(unsigned minor, char *buf, unsigned blknum)
 	
 	memcpy(buf, ptr, BLOCK_SIZE);
 	
-	return (0);
+	
+	return (BLOCK_SIZE);
 }
 
 /**
@@ -71,7 +67,7 @@ static int ramdisk_readblk(unsigned minor, char *buf, unsigned blknum)
  * @return Upon successful completion zero is returned, upon failure
  * non-zero is returned instead.
  */
-static int ramdisk_writeblk(unsigned minor, const char *buf, unsigned blknum)
+static ssize_t ramdisk_writeblk(unsigned minor, const char *buf, unsigned blknum)
 {	
 	char *ptr;
 	
@@ -79,16 +75,71 @@ static int ramdisk_writeblk(unsigned minor, const char *buf, unsigned blknum)
 	
 	memcpy(ptr, buf, BLOCK_SIZE);
 	
-	return (0);
+	return (BLOCK_SIZE);
 }
 
 /**
- * RAM Disk device driver.
+ * @brief handles a request.
+ *
+ * @param request Request.
+ * @param reply   Reply.
+ */
+static void ramdisk(struct ramdisk_message *request, struct ramdisk_message *reply)
+{
+	switch (request->type)
+	{
+		/* Write request. */
+		case RAMDISK_MSG_WRITE_REQUEST:
+		{
+			ssize_t n;
+			char *buf;
+			unsigned minor;
+			unsigned blknum;
+
+			/* Extract request parameters. */
+			minor = request->content.write_req.minor;
+			buf = request->content.write_req.data;
+			blknum = request->content.write_req.blknum;
+			
+			n = ramdisk_writeblk(minor, buf, blknum);
+
+			/* Build reply. */
+			reply->type = RAMDISK_MSG_WRITE_REPLY;
+			reply->content.write_rep.n = n;
+		} break;
+
+		/* Read request. */
+		case RAMDISK_MSG_READ_REQUEST:
+		{
+			ssize_t n;
+			char *buf;
+			unsigned minor;
+			unsigned blknum;
+
+			/* Extract request parameters. */
+			minor = request->content.read_req.minor;
+			buf = reply->content.read_rep.data;
+			blknum = request->content.read_req.blknum;
+			
+			n = ramdisk_readblk(minor, buf, blknum);
+
+			/* Build reply. */
+			reply->type = RAMDISK_MSG_READ_REPLY;
+			reply->content.read_rep.n = n;
+		} break;
+
+		default:
+			reply->type = RAMDISK_MSG_ERROR;
+			break;
+	}
+}
+
+/**
+ * @brief RAM Disk device driver.
  */
 int main(int argc, char **argv)
 {
 	int channel;
-	char buf[128];
 
 	((void) argc);
 	((void) argv);
@@ -97,11 +148,16 @@ int main(int argc, char **argv)
 
 	while (1)
 	{
+		struct ramdisk_message reply;
+		struct ramdisk_message request;
+
 		nanvix_ipc_open(channel);
 
-		nanvix_ipc_receive(channel, buf, sizeof(buf));
+		nanvix_ipc_receive(channel, &request, sizeof(struct ramdisk_message));
 
-		fprintf(stderr, "%s\n", buf);
+		ramdisk(&request, &reply);
+
+		nanvix_ipc_send(channel, &reply, sizeof(struct ramdisk_message));
 
 		nanvix_ipc_close(channel);
 	}

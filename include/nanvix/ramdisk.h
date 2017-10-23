@@ -20,9 +20,85 @@
 #ifndef RAMDISK_H_
 #define RAMDISK_H_
 
+	#include <sys/types.h>
+
+	/**
+	 * @brief RAM Disk size (in bytes).
+	 */
+	#define RAMDISK_SIZE 4096
+
 	/**
 	 * @brief RAM Disk device driver service name.
 	 */
 	#define RAMDISK_NAME "/tmp/ramdisk"
+
+	/**
+	 * @brief RAM Disk message buffer size (in bytes).
+	 */
+	#define RAMDISK_MSG_BUF_SIZE 512
+
+	/**
+	 * @brief RAM Disk message types.
+	 */
+	/**@{*/
+	#define RAMDISK_MSG_ERROR         1 /**< Error.         */
+	#define RAMDISK_MSG_WRITE_REQUEST 2 /**< Write request. */
+	#define RAMDISK_MSG_WRITE_REPLY   3 /**< Write reply.   */
+	#define RAMDISK_MSG_READ_REQUEST  4 /**< Read request.  */
+	#define RAMDISK_MSG_READ_REPLY    5 /**< Read reply.    */
+	/**@}*/
+
+	/**
+	 * @brief RAM Disk message.
+	 */
+	struct ramdisk_message
+	{
+		/**
+		 * @brief Message type.
+		 */
+		int type;
+
+		/**
+		 * @brief Message content.
+		 */
+		union
+		{
+			/**
+			 * @brief Write request.
+			 */
+			struct
+			{
+				unsigned minor;                  /**< Minor device number. */
+				unsigned blknum;                 /**< Block number.        */
+				char data[RAMDISK_MSG_BUF_SIZE]; /**< Data.                */
+			} write_req;
+
+			/**
+			 * @brief Write reply.
+			 */
+			struct
+			{
+				ssize_t n; /* Number of bytes written. */
+			} write_rep;
+
+			/**
+			 * @brief Read request.
+			 */
+			struct
+			{
+				unsigned minor;  /**< Minor device number. */
+				unsigned blknum; /**< Block number.        */
+			} read_req;
+
+			/**
+			 * @brief Read reply.
+			 */
+			struct
+			{
+				char data[RAMDISK_MSG_BUF_SIZE]; /**< Data.               */
+				ssize_t n;                       /* Number of bytes read. */
+			} read_rep;
+		} content;
+	};
 
 #endif /* RAMDISK_H_ */

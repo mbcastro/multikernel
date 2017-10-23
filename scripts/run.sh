@@ -18,5 +18,8 @@
 
 export BINDIR=$PWD/bin
 
-$BINDIR/ipc.test --server | grep -v "debug" &
-$BINDIR/ipc.test --client | grep -v "debug" 
+$BINDIR/ipc.test --server | grep "info" &
+$BINDIR/ipc.test --client | grep "info" 
+
+$BINDIR/ramdisk      | grep "info" &
+$BINDIR/ramdisk.test | grep "info" 
