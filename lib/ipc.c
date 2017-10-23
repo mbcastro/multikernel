@@ -152,7 +152,7 @@ error1:
 	close(channels[id].local_sfd);
 	channels[id].local_sfd = -1;
 error0:
-	perror("cannot nanvix_ipc_create()");
+	kpanic("cannot nanvix_ipc_create()");
 	return (-1);
 }
 
@@ -195,7 +195,7 @@ error1:
 	close(channels[id].remote_sfd);
 	channels[id].remote_sfd = -1;
 error0:
-	perror("cannot nanvix_ipc_connect()");
+	kpanic("cannot nanvix_ipc_connect()");
 	return (-1);
 }
 
@@ -292,7 +292,7 @@ int nanvix_ipc_open(int id)
  * @return Upon successful completion zero is returned. Upon failure, non-zero
  * is returned instead.
  */
-int nanvix_ipc_send(int id, const char *buf, size_t n)
+int nanvix_ipc_send(int id, const void *buf, size_t n)
 {
 	size_t ret;
 
@@ -318,7 +318,7 @@ int nanvix_ipc_send(int id, const char *buf, size_t n)
  * @return Upon successful completion zero is returned. Upon failure, non-zero
  * is returned instead.
  */
-int nanvix_ipc_receive(int id, char *buf, size_t n)
+int nanvix_ipc_receive(int id, void *buf, size_t n)
 {
 	size_t ret;
 

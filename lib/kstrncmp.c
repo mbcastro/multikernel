@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 2011-2017 Pedro H. Penna <pedrohenriquepenna@gmail.com>
+ * Copyright(C) 2011-2016 Pedro H. Penna <pedrohenriquepenna@gmail.com>
  * 
  * This file is part of Nanvix.
  * 
@@ -17,23 +17,33 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HAL_H_
-#define HAL_H_
+#include <sys/types.h>
 
-#ifdef TARGET_UNIX
-
-	#include <string.h>
-	#include <stdio.h>
-
-	/**
-	 * @brief Kernel puts().
-	 *
-	 * @param str Message.
-	 *
-	 * @return see puts().
-	 */
-	#define kputs(str) puts(str)
-
-#endif
-
-#endif /* */
+/**
+ * @brief Compares part of two strings.
+ * 
+ * @param str1 String one.
+ * @param str2 String two.
+ * @param n    Number of characters to be compared.
+ * 
+ * @returns Zero if the strings are equal, and non-zero otherwise.
+ */
+int kstrncmp(const char *str1, const char *str2, size_t n)
+{
+	/* Compare strings. */
+	while (n-- > 0)
+	{
+		/* Strings differ. */
+		if (*str1 != *str2)
+			break;
+			
+		/* End of string. */
+		if (*str1 == '\0')
+			return (0);
+		
+		str1++;
+		str2++;
+	}
+	
+	return (*str1 - *str2);
+}

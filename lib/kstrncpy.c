@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 2011-2017 Pedro H. Penna <pedrohenriquepenna@gmail.com>
+ * Copyright(C) 2011-2016 Pedro H. Penna <pedrohenriquepenna@gmail.com>
  * 
  * This file is part of Nanvix.
  * 
@@ -17,23 +17,41 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HAL_H_
-#define HAL_H_
+#include <sys/types.h>
 
-#ifdef TARGET_UNIX
-
-	#include <string.h>
-	#include <stdio.h>
-
-	/**
-	 * @brief Kernel puts().
-	 *
-	 * @param str Message.
-	 *
-	 * @return see puts().
-	 */
-	#define kputs(str) puts(str)
-
-#endif
-
-#endif /* */
+/**
+ * @brief Copies part of a string.
+ * 
+ * @param str1 Target string.
+ * @param str2 Source string.
+ * @param n    Number of characters to be copied.
+ * 
+ * @returns A pointer to the target string.
+ */
+char *kstrncpy(char *str1, const char *str2, size_t n)
+{
+	char *p1;       /* Indexes str1. */
+	const char *p2; /* Indexes str2. */
+	
+	p1 = str1;
+	p2 = str2;
+	
+	/* Copy string. */
+	while (n > 0)
+	{
+		if (*p2 == '\0')
+			break;
+			
+		*p1++ = *p2++;
+		n--;
+	}
+	
+	/* Fill with null bytes. */
+	while (n > 0)
+	{
+		 *p1++ = '\0';
+		 n--;
+	}
+	
+	return (str1);
+}

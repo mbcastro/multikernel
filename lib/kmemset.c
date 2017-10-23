@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 2011-2017 Pedro H. Penna <pedrohenriquepenna@gmail.com>
+ * Copyright(C) 2011-2016 Pedro H. Penna <pedrohenriquepenna@gmail.com>
  * 
  * This file is part of Nanvix.
  * 
@@ -17,23 +17,26 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HAL_H_
-#define HAL_H_
+#include <sys/types.h>
 
-#ifdef TARGET_UNIX
+/**
+ * @brief Sets bytes in memory.
+ * 
+ * @param ptr Pointer to target memory area.
+ * @param c   Character to use.
+ * @param n   Number of bytes to be set.
+ * 
+ * @returns A pointer to the target memory area. 
+ */
+void *kmemset(void *ptr, int c, size_t n)
+{
+    unsigned char *p;
+    
+    p = ptr;
+    
+    /* Set bytes. */
+    while (n-- > 0)
+		*p++ = (unsigned char) c;
 
-	#include <string.h>
-	#include <stdio.h>
-
-	/**
-	 * @brief Kernel puts().
-	 *
-	 * @param str Message.
-	 *
-	 * @return see puts().
-	 */
-	#define kputs(str) puts(str)
-
-#endif
-
-#endif /* */
+    return (ptr);	
+}

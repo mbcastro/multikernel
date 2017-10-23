@@ -20,6 +20,8 @@
 #ifndef KLIB_H_
 #define KLIB_H_
 
+	#include <stdarg.h>
+
 	#include <nanvix/hal.h>
 
 	/**
@@ -33,10 +35,24 @@
 	#define NANVIX_FAILURE 1
 
 	/**
-	 * @brief Prints debug messages.
-	 *
-	 * @param str Debugging message.
+	 * @brief Kernel buffer size.
 	 */
-	#define kdebug(str) kputs(str)
+	#define KBUFFER_SIZE 4096
+
+	/**
+	 * @brief Pints a debug message.
+	 */ 
+	#define kdebug(str) kprintf("[debug] %s", str)
+
+	extern void *kmemcpy (void* , const void *, size_t);
+	extern void *kmemset(void *, int, size_t);
+	extern int kstrcmp(const char *, const char *);
+	extern char *kstrcpy(char *, const char *);
+	extern size_t kstrlen(const char *);
+	extern int kstrncmp(const char *, const char *, size_t);
+	extern char *kstrncpy(char *, const char *, size_t);
+	extern int kvsprintf(char *, const char *, va_list);
+	extern void kprintf(const char *, ...);
+	extern void kpanic(const char *, ...);
 
 #endif /* KLIB_H_ */

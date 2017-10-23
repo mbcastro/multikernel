@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 2011-2017 Pedro H. Penna <pedrohenriquepenna@gmail.com>
+ * Copyright(C) 2011-2016 Pedro H. Penna <pedrohenriquepenna@gmail.com>
  * 
  * This file is part of Nanvix.
  * 
@@ -17,23 +17,27 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HAL_H_
-#define HAL_H_
+#include <sys/types.h>
 
-#ifdef TARGET_UNIX
-
-	#include <string.h>
-	#include <stdio.h>
-
-	/**
-	 * @brief Kernel puts().
-	 *
-	 * @param str Message.
-	 *
-	 * @return see puts().
-	 */
-	#define kputs(str) puts(str)
-
-#endif
-
-#endif /* */
+/**
+ * @brief Copy bytes in memory.
+ * 
+ * @param dest Target memory area.
+ * @param src  Source memory area.
+ * @param n    Number of bytes to be copied.
+ * 
+ * @returns A pointer to the target memory area.
+ */
+void *kmemcpy (void* dest, const void *src, size_t n)
+{
+    char *d;       /* Write pointer. */
+    const char* s; /* Read pointer.  */
+    
+    s = src;
+    d = dest;
+    
+    while (n-- > 0)
+    	*d++ = *s++;
+ 
+    return (d);
+}

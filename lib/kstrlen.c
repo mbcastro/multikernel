@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 2011-2017 Pedro H. Penna <pedrohenriquepenna@gmail.com>
+ * Copyright(C) 2011-2016 Pedro H. Penna <pedrohenriquepenna@gmail.com>
  * 
  * This file is part of Nanvix.
  * 
@@ -16,24 +16,23 @@
  * You should have received a copy of the GNU General Public License
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
+ 
+#include <sys/types.h>
 
-#ifndef HAL_H_
-#define HAL_H_
-
-#ifdef TARGET_UNIX
-
-	#include <string.h>
-	#include <stdio.h>
-
-	/**
-	 * @brief Kernel puts().
-	 *
-	 * @param str Message.
-	 *
-	 * @return see puts().
-	 */
-	#define kputs(str) puts(str)
-
-#endif
-
-#endif /* */
+/**
+ * @brief Returns the length of a string.
+ * 
+ * @param str String to be evaluated.
+ * 
+ * @returns The length of the string. 
+ */
+size_t kstrlen(const char *str)
+{
+	const char *p;
+	
+	/* Count the number of characters. */
+	for (p = str; *p != '\0'; p++)
+		/* noop */;
+	
+	return (p - str);
+}

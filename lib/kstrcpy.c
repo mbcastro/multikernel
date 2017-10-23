@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 2011-2017 Pedro H. Penna <pedrohenriquepenna@gmail.com>
+ * Copyright(C) 2011-2016 Pedro H. Penna <pedrohenriquepenna@gmail.com>
  * 
  * This file is part of Nanvix.
  * 
@@ -17,23 +17,24 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HAL_H_
-#define HAL_H_
-
-#ifdef TARGET_UNIX
-
-	#include <string.h>
-	#include <stdio.h>
-
-	/**
-	 * @brief Kernel puts().
-	 *
-	 * @param str Message.
-	 *
-	 * @return see puts().
-	 */
-	#define kputs(str) puts(str)
-
-#endif
-
-#endif /* */
+/**
+ * @brief Copies a string.
+ * 
+ * @param dest Target string.
+ * @param src Source string.
+ * 
+ * @returns A pointer to the target string.
+ */
+char *kstrcpy(char *dest, const char *src)
+{
+	char *p;
+	
+	p = dest;
+	
+	/* Copy strings. */
+	while (*src != '\0')
+		*p++ = *src++;
+	*p = '\0';
+	
+	return (dest);
+}

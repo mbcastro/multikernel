@@ -1,5 +1,6 @@
 /*
  * Copyright(C) 2011-2017 Pedro H. Penna <pedrohenriquepenna@gmail.com>
+ *              2017-2017 Clement Rouquier <clementrouquier@gmail.com>
  * 
  * This file is part of Nanvix.
  * 
@@ -17,23 +18,26 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HAL_H_
-#define HAL_H_
+#include <nanvix/klib.h>
+#include <sys/types.h>
+#include <stdarg.h>
 
-#ifdef TARGET_UNIX
+/**
+ * @brief Writes on the screen a formated string.
+ * 
+ * @param fmt Formated string.
+ */
+void kprintf(const char *fmt, ...)
+{
+	int i;                         /* Loop index.              */
+	va_list args;                  /* Variable arguments list. */
+	char buffer[KBUFFER_SIZE + 1]; /* Temporary buffer.        */
+	
+	/* Convert to raw string. */
+	va_start(args, fmt);
+	i = kvsprintf(buffer, fmt, args);
+	buffer[i++] = '\0';
+	va_end(args);
 
-	#include <string.h>
-	#include <stdio.h>
-
-	/**
-	 * @brief Kernel puts().
-	 *
-	 * @param str Message.
-	 *
-	 * @return see puts().
-	 */
-	#define kputs(str) puts(str)
-
-#endif
-
-#endif /* */
+	kputs(buffer);
+}

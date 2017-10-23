@@ -33,7 +33,7 @@
 	extern int nanvix_ipc_unlink(int);
 	extern int nanvix_ipc_open(int);
 	extern int nanvix_ipc_connect(const char *);
-	extern int nanvix_ipc_send(int, const char *, size_t);
-	extern int nanvix_ipc_receive(int, char *, size_t);
+	extern int nanvix_ipc_send(int, const void *, size_t);
+	extern int nanvix_ipc_receive(int, void *, size_t);
 
 #endif /* IPC_H_ */
