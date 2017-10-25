@@ -121,13 +121,13 @@ int nanvix_ipc_create(const char *name)
 	if ((id = nanvix_get_channel()) == -1)
 		return (-1);
 
-	/* Create local. */
+	/* Create local socket. */
 	kdebug("creating socket... ");
 	channels[id].local_sfd = socket(AF_UNIX, SOCK_STREAM, 0);
 	if (channels[id].local_sfd == -1)
 		goto error0;
 
-	/* Bind local. */
+	/* Bind local socket. */
 	kdebug("bind socket... ");
 	memset(&channels[id].local, 0, sizeof(struct sockaddr_un));
 	channels[id].local.sun_family = AF_UNIX;
@@ -137,7 +137,7 @@ int nanvix_ipc_create(const char *name)
 	if (bind(channels[id].local_sfd, (struct sockaddr *)&channels[id].local, sizeof(struct sockaddr_un)) == -1)
 		goto error1;
 
-	/* Listen connections on local, */
+	/* Listen connections on local socket. */
 	kdebug("listening socket... ");
 	if (listen(channels[id].local_sfd, NANVIX_IPC_MAX) == -1)
 		goto error2;
@@ -174,13 +174,13 @@ int nanvix_ipc_connect(const char *name)
 	if ((id = nanvix_get_channel()) == -1)
 		return (-1);
 
-	/* Create local. */
+	/* Create remote socket. */
 	kdebug("creating socket... ");
 	channels[id].remote_sfd = socket(AF_UNIX, SOCK_STREAM, 0);
 	if (channels[id].remote_sfd == -1)
 		goto error0;
 
-	/* Connecto to socket. */
+	/* Connec to to socket. */
 	kdebug("connecting to socket... ");
 	memset(&channels[id].remote, 0, sizeof(struct sockaddr_un));
 	channels[id].remote.sun_family = AF_UNIX;
