@@ -39,11 +39,6 @@
 	 */
 	#define KBUFFER_SIZE 4096
 
-	/**
-	 * @brief Pints a debug message.
-	 */ 
-	#define kdebug(str) kprintf("[debug]%s",str)
-
 	/* Forward definitions. */
 	extern void *kmemcpy (void* , const void *, size_t);
 	extern void *kmemset(void *, int, size_t);
@@ -55,5 +50,6 @@
 	extern int kvsprintf(char *, const char *, va_list);
 	extern void kprintf(const char *, ...);
 	extern void kpanic(const char *, ...);
+	extern void kdebug(const char *, ...);
 
 #endif /* KLIB_H_ */
