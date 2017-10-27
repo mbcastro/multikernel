@@ -47,7 +47,6 @@
 	#define RAMDISK_MSG_READ_REQUEST  4 /**< Read request.  */
 	#define RAMDISK_MSG_READ_REPLY    5 /**< Read reply.    */
 	/**@}*/
-
 	/**
 	 * @brief RAM Disk message.
 	 */
@@ -95,8 +94,8 @@
 			 */
 			struct
 			{
-				char data[RAMDISK_MSG_BUF_SIZE]; /**< Data.               */
-				ssize_t n;                       /* Number of bytes read. */
+				char data[RAMDISK_MSG_BUF_SIZE]; /**< Data.                 */
+				ssize_t n;                       /**< Number of bytes read. */
 			} read_rep;
 		} content;
 	};
