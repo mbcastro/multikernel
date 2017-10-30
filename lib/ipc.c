@@ -21,181 +21,229 @@
 #include <nanvix/hal.h>
 #include <nanvix/klib.h>
 
+#include <assert.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/un.h>
 #include <unistd.h>
 #include <limits.h>
 
-/**
- * @brief Number of channels.
- */
-#define NR_CHANNELS 4
 
 /**
- * @brief IPC channel table.
+ * @brief Number of communication channels.
  */
-static struct
+#define NR_CHANNELS 128
+
+/**
+ * @brief Flags for a channel.
+ */
+/**@{*/
+#define CHANNEL_VALID 1
+/**@}*/
+
+/**
+ * @brief IPC channel.
+ */
+struct channel
 {
-	int local_sfd;             /* Local local descriptor.  */
-	int remote_sfd;            /* Remote local descriptor. */
-	struct sockaddr_un local;  /* Local socket.            */
-	struct sockaddr_un remote; /* Local socket.            */
-	char name[PATH_MAX];       /* Socket name,             */
-} channels[NR_CHANNELS];
+	int flags;           /**< Status            */
+	int local;           /**< Local socket ID.  */  
+	int remote;          /**< Remote socket id. */
+	char name[PATH_MAX]; /**< Channel name.     */
+};
+
+/**
+ * @brief Table of channels.
+ */
+static struct channel channels[NR_CHANNELS];
 
 /**
  * @brief Asserts if an IPC channel is valid.
  *
  * @param id ID of the target IPC channel.
  *
- * @return Upon successful completion zero is returned. Upon failure, non-zero
- * is returned instead.
+ * @returns If the target channel is valid, one is
+ * returned. Otherwise, zero is returned instead.
  */
-static int nanvix_ipc_is_valid(int id)
+static int nanvix_ipc_channel_is_valid(int id)
 {
-	/* Invalid communication channel. */
-	if ((id < 0) || (id >= NR_CHANNELS))
-		return (0);
-	
-	/* Communication channel not opened. */
-	if ((channels[id].local_sfd < 0) && (channels[id].remote_sfd < 0))
-		return (0);
+	/* Sanity check */
+	assert(id >= 0);
+	assert(id < NR_CHANNELS);
 
-	return (1);
+	return (channels[id].flags & CHANNEL_VALID);
 }
 
 /**
- * @brief Initializes the IPC library.
+ * @brief Allocates an IPC channel.
+ *
+ * @returns Upon successful completion, the ID of the
+ * target channel is returned. Otherwise -1 is returned
+ * instead.
  */
-static void nanvix_ipc_init(void)
+static int nanvix_ipc_channel_get(void)
 {
-	static int initialized = 0;
-
-	/* Nothing to do. */
-	if (initialized)
-		return;
-
 	for (int i = 0; i < NR_CHANNELS; i++)
 	{
-		channels[i].local_sfd = -1;
-		channels[i].remote_sfd = -1;
-	}
-
-	initialized = 1;
-}
-
-/**
- * @brief Gets a free channel.
- *
- * @returns The ID of a free channel.
- */
-static int nanvix_get_channel(void)
-{
-	/* Find an empty slot in the channel table. */
-	for (int i = 0; i < NANVIX_IPC_MAX; i++)
-	{
-		/* Found. */
-		if (channels[i].local_sfd < 0)
+		/* Free channel found. */
+		if (!(channels[i].flags & CHANNEL_VALID))
+		{
+			channels[i].flags |= CHANNEL_VALID;
 			return (i);
+		}
 	}
 
 	return (-1);
+}
+
+/**
+ * @brief Releases an IPC channel.
+ * 
+ * @param id ID of the target IPC channel.
+ */
+static void nanvix_ipc_channel_put(int id)
+{
+	/* Sanity check */
+	assert(id >= 0);
+	assert(id < NR_CHANNELS);
+
+	channels[id].flags = 0;
 }
 
 /**
  * @brief Creates an IPC channel.
  *
  * @param name IPC channel name.
+ * @param max  Maximum number of simultaneous connections.
+ * @param fags IPC channel flags.
  * 
- * @returns Upon successful completion, the ID of the IPC channel is returned.
- * Upon failure -1 is returned instead.
+ * @returns Upon successful completion, the ID of the
+ * target channel is returned. Otherwise -1 is returned
+ * instead.
  */
-int nanvix_ipc_create(const char *name)
+int nanvix_ipc_create(const char *name, int max, int flags)
 {
 	int id;
+	struct sockaddr_un local;
 
-	nanvix_ipc_init();
+	assert(name != NULL);
+	assert(max > 0);
+
+	kdebug("[ipc] creating channel");
 
 	/* Gets a free channel. */
-	if ((id = nanvix_get_channel()) == -1)
+	if ((id = nanvix_ipc_channel_get()) == -1)
 		return (-1);
 
 	/* Create local socket. */
-	kdebug("creating socket... ");
-	channels[id].local_sfd = socket(AF_UNIX, SOCK_STREAM, 0);
-	if (channels[id].local_sfd == -1)
+	channels[id].local = socket(AF_UNIX, SOCK_STREAM | (flags & SOCK_NONBLOCK), 0);
+	if (channels[id].local == -1)
 		goto error0;
 
+	/* Build socket. */
+	kmemset(&local, 0, sizeof(struct sockaddr_un));
+	local.sun_family = AF_UNIX;
+	kstrncpy(channels[id].name, name, sizeof(local.sun_path) - 1);
+	kstrncpy(local.sun_path, name, sizeof(local.sun_path) - 1);
+
 	/* Bind local socket. */
-	kdebug("bind socket... ");
-	memset(&channels[id].local, 0, sizeof(struct sockaddr_un));
-	channels[id].local.sun_family = AF_UNIX;
-	strncpy(channels[id].local.sun_path, name, sizeof(channels[id].local.sun_path) - 1);
-	strncpy(channels[id].name, name, sizeof(channels[id].name));
 	unlink(name);
-	if (bind(channels[id].local_sfd, (struct sockaddr *)&channels[id].local, sizeof(struct sockaddr_un)) == -1)
+	if (bind(channels[id].local, (struct sockaddr *)&local, sizeof(struct sockaddr_un)) == -1)
 		goto error1;
 
 	/* Listen connections on local socket. */
-	kdebug("listening socket... ");
-	if (listen(channels[id].local_sfd, NANVIX_IPC_MAX) == -1)
+	if (listen(channels[id].local, NANVIX_IPC_MAX) == -1)
 		goto error2;
-
-	channels[id].remote_sfd = -1;
 
 	return (id);
 
 error2:
 	unlink(name);
 error1:
-	close(channels[id].local_sfd);
-	channels[id].local_sfd = -1;
+	close(channels[id].local);
 error0:
+	nanvix_ipc_channel_put(id);
 	kpanic("cannot nanvix_ipc_create()");
 	return (-1);
 }
+/**
+ * @brief Opens an IPC channel.
+ *
+ * @param id ID of the target IPC channel.
+ *
+ * @returns Upon successful completion, the ID of the
+ * target channel is returned. Otherwise -1 is returned
+ * instead.
+ */
+int nanvix_ipc_open(int id)
+{
+	int id2;
+
+	kdebug("[ipc] openning channel");
+
+	/* Sanity check. */
+	if (!nanvix_ipc_channel_is_valid(id))
+		return (-1);
+
+	/* Gets a free channel. */
+	if ((id2 = nanvix_ipc_channel_get()) == -1)
+		return (-1);
+
+	if ((channels[id2].remote = accept(channels[id].local, NULL, NULL)) == -1)
+		goto error0;
+
+	channels[id2].local = channels[id].local;
+
+	return (id2);
+
+error0:
+	nanvix_ipc_channel_put(id2);
+	return (-1);
+}
+
 
 /**
  * Conects to an IPC channel.
  *
  * @param name IPC channel name.
  * 
- * @returns Upon successful completion, the ID of the IPC channel is returned.
- * Upon failure -1 is returned instead.
+ * @returns Upon successful completion, the ID of the
+ * target channel is returned. Otherwise -1 is returned
+ * instead.
  */
 int nanvix_ipc_connect(const char *name)
 {
 	int id;
+	struct sockaddr_un remote;
 
-	nanvix_ipc_init();
+	kdebug("[ipc] connecting to channel");
 
 	/* Gets a free channel. */
-	if ((id = nanvix_get_channel()) == -1)
+	if ((id = nanvix_ipc_channel_get()) == -1)
 		return (-1);
 
 	/* Create remote socket. */
-	kdebug("creating socket... ");
-	channels[id].remote_sfd = socket(AF_UNIX, SOCK_STREAM, 0);
-	if (channels[id].remote_sfd == -1)
+	channels[id].remote = socket(AF_UNIX, SOCK_STREAM, 0);
+	if (channels[id].remote == -1)
 		goto error0;
 
-	/* Connec to to socket. */
-	kdebug("connecting to socket... ");
-	memset(&channels[id].remote, 0, sizeof(struct sockaddr_un));
-	channels[id].remote.sun_family = AF_UNIX;
-	strncpy(channels[id].remote.sun_path, name, sizeof(channels[id].remote.sun_path) - 1);
-	strncpy(channels[id].name, name, sizeof(channels[id].name));
-	if (connect(channels[id].remote_sfd, (struct sockaddr *)&channels[id].remote, sizeof(struct sockaddr_un)) == -1)
+	/* Initialize socket. */
+	kmemset(&remote, 0, sizeof(struct sockaddr_un));
+	remote.sun_family = AF_UNIX;
+	kstrncpy(remote.sun_path, name, sizeof(remote.sun_path) - 1);
+	kstrncpy(channels[id].name, name, sizeof(remote.sun_path) - 1);
+
+	/* Connect to socket. */
+	if (connect(channels[id].remote, (struct sockaddr *)&remote, sizeof(struct sockaddr_un)) == -1)
 		goto error1;
 
 	return (id);
 
 error1:
-	close(channels[id].remote_sfd);
-	channels[id].remote_sfd = -1;
+	close(channels[id].remote);
 error0:
-	kpanic("cannot nanvix_ipc_connect()");
+	nanvix_ipc_channel_put(id);
+	perror("cannot nanvix_ipc_connect()");
 	return (-1);
 }
 
@@ -209,17 +257,17 @@ error0:
  */
 int nanvix_ipc_close(int id)
 {
-	nanvix_ipc_init();
+	kdebug("[ipc] closing channel");
 
 	/* Sanity check. */
-	if (!nanvix_ipc_is_valid(id))
+	if (!nanvix_ipc_channel_is_valid(id))
 		return (-1);
 
-	/* Close underlying local. */
-	if (close(channels[id].remote_sfd) == -1)
+	/* Close underlying remote socket. */
+	if (close(channels[id].remote) == -1)
 		return (-1);
 
-	channels[id].remote_sfd = -1;
+	nanvix_ipc_channel_put(id);
 
 	return (0);
 }
@@ -234,50 +282,20 @@ int nanvix_ipc_close(int id)
  */
 int nanvix_ipc_unlink(int id)
 {
-	nanvix_ipc_init();
-
 	/* Sanity check. */
-	if (!nanvix_ipc_is_valid(id))
-		return (-1);
-
-	/* Close IPC channel. */
-	if (nanvix_ipc_close(id) == -1)
+	if (!nanvix_ipc_channel_is_valid(id))
 		return (-1);
 
 	/* Unlink underlying local. */
 	if (unlink(channels[id].name) == -1)
 		return (-1);
 
-	channels[id].local_sfd = -1;
-
-	return (0);
-}
-
-/**
- * @brief Opens an IPC channel.
- *
- * @param id ID of the target IPC channel.
- *
- * @return Upon successful completion zero is returned. Upon failure, non-zero
- * is returned instead.
- */
-int nanvix_ipc_open(int id)
-{
-	int remote_sfd;
-	socklen_t remote_size;
-
-	nanvix_ipc_init();
-
-	/* Sanity check. */
-	if (!nanvix_ipc_is_valid(id))
+	/* Close IPC channel. */
+	if (close(channels[id].local) == -1)
 		return (-1);
+	kdebug("unlinking channel...");
 
-	kdebug("accepting connection to socket... ");
-	remote_size = sizeof(struct sockaddr_un);
-	if ((remote_sfd = accept(channels[id].local_sfd, (struct sockaddr *)&channels[id].remote, &remote_size)) == -1)
-		return (-1);
-
-	channels[id].remote_sfd = remote_sfd;
+	nanvix_ipc_channel_put(id);
 
 	return (0);
 }
@@ -296,14 +314,14 @@ int nanvix_ipc_send(int id, const void *buf, size_t n)
 {
 	size_t ret;
 
-	nanvix_ipc_init();
-
 	/* Sanity check. */
-	if (!nanvix_ipc_is_valid(id))
+	if (!nanvix_ipc_channel_is_valid(id))
 		return (-1);
 
-	if ((ret = send(channels[id].remote_sfd, buf, n, 0)) != n)
+	if ((ret = send(channels[id].remote, buf, n, 0)) != n)
 		return (-1);
+
+	kdebug("[ipc] sending data", channels[id].name);
 
 	return (0);
 }
@@ -322,14 +340,14 @@ int nanvix_ipc_receive(int id, void *buf, size_t n)
 {
 	size_t ret;
 
-	nanvix_ipc_init();
-
 	/* Sanity check. */
-	if (!nanvix_ipc_is_valid(id))
+	if (!nanvix_ipc_channel_is_valid(id))
 		return (-1);
 
-	if ((ret = recv(channels[id].remote_sfd, buf, n, 0)) != n)
+	if ((ret = recv(channels[id].remote, buf, n, 0)) != n)
 		return (-1);
+
+	kdebug("[ipc] receiving data", channels[id].name);
 
 	return (0);
 }

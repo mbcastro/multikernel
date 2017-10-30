@@ -34,15 +34,19 @@ CLFAGS += -ansi -std=c99
 CFLAGS += -Wall -Wextra
 CFLAGS += -I $(INCDIR) -D$(TARGET)
 
-all: ramdisk ramdisk.test ipc.test
+all: bdev ramdisk ipc.test bdev.test
+
+bdev: $(wildcard $(LIBDIR)/*.c) $(SRCDIR)/dev/bdev.c
+	mkdir -p $(BINDIR)
+	$(LD) $(CFLAGS) $^ -o $(BINDIR)/bdev
 
 ramdisk: $(wildcard $(LIBDIR)/*.c) $(SRCDIR)/ramdisk/main.c
 	mkdir -p $(BINDIR)
 	$(LD) $(CFLAGS) $^ -o $(BINDIR)/ramdisk
 
-ramdisk.test: $(wildcard $(LIBDIR)/*.c) $(TESTDIR)/ramdisk.c
+bdev.test: $(wildcard $(LIBDIR)/*.c) $(TESTDIR)/bdev.c
 	mkdir -p $(BINDIR)
-	$(LD) $(CFLAGS) $^ -o $(BINDIR)/ramdisk.test
+	$(LD) $(CFLAGS) $^ -o $(BINDIR)/bdev.test
 
 ipc.test: $(wildcard $(LIBDIR)/*.c) $(TESTDIR)/ipc.c
 	mkdir -p $(BINDIR)

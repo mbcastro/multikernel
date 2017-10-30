@@ -24,6 +24,7 @@
 
 	#include <string.h>
 	#include <stdio.h>
+	#include <sys/socket.h>
 
 	/**
 	 * @brief Kernel puts().
@@ -32,7 +33,12 @@
 	 *
 	 * @return see puts().
 	 */
-	#define kputs(str) puts(str)
+	#define kputs(str) { puts(str) ; fflush(stdout); }
+
+	/**
+	 * @brief Non blocking IPC channel.
+	 */
+	#define _CHANNEL_NONBLOCK SOCK_NONBLOCK
 
 #endif
 

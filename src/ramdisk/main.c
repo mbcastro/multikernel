@@ -25,7 +25,7 @@
 /**
  * @brief Number of RAM Disks.
  */
-#define NR_RAMDISKS 4
+#define NR_RAMDISKS 1
 
 /**
  * @brief RAM Disks.
@@ -52,7 +52,6 @@ static ssize_t ramdisk_readblk(unsigned minor, char *buf, unsigned blknum)
 	ptr = &ramdisks[minor].data[blknum << BLOCK_SIZE_LOG2];
 	
 	memcpy(buf, ptr, BLOCK_SIZE);
-	
 	
 	return (BLOCK_SIZE);
 }
@@ -96,6 +95,8 @@ static void ramdisk(struct ramdisk_message *request, struct ramdisk_message *rep
 			unsigned minor;
 			unsigned blknum;
 
+			kdebug("[ramdisk] write request");
+
 			/* Extract request parameters. */
 			minor = request->content.write_req.minor;
 			buf = request->content.write_req.data;
@@ -116,6 +117,8 @@ static void ramdisk(struct ramdisk_message *request, struct ramdisk_message *rep
 			unsigned minor;
 			unsigned blknum;
 
+			kdebug("[ramdisk] read request");
+
 			/* Extract request parameters. */
 			minor = request->content.read_req.minor;
 			buf = reply->content.read_rep.data;
@@ -129,6 +132,7 @@ static void ramdisk(struct ramdisk_message *request, struct ramdisk_message *rep
 		} break;
 
 		default:
+			kdebug("[ramdisk] bad request");
 			reply->type = RAMDISK_MSG_ERROR;
 			break;
 	}
@@ -142,24 +146,30 @@ int main(int argc, char **argv)
 	int channel;
 
 	((void) argc);
-	((void) argv);
 
-	channel = nanvix_ipc_create(RAMDISK_NAME);
+	channel = nanvix_ipc_create(argv[1], 1, 0);
+
+	kdebug("[ramdisk] server running");
 
 	while (1)
 	{
+		int client;
 		struct ramdisk_message reply;
 		struct ramdisk_message request;
 
-		nanvix_ipc_open(channel);
+		client = nanvix_ipc_open(channel);
+		kdebug("[ramdisk] client connected");
 
-		nanvix_ipc_receive(channel, &request, sizeof(struct ramdisk_message));
+		nanvix_ipc_receive(client, &request, sizeof(struct ramdisk_message));
+		kdebug("[ramdisk] serving client");
 
 		ramdisk(&request, &reply);
 
-		nanvix_ipc_send(channel, &reply, sizeof(struct ramdisk_message));
+		nanvix_ipc_send(client, &reply, sizeof(struct ramdisk_message));
+		kdebug("[ramdisk] replying client");
 
-		nanvix_ipc_close(channel);
+		nanvix_ipc_close(client);
+		kdebug("[ramdisk] client disconnected");
 	}
 
 	nanvix_ipc_unlink(channel);

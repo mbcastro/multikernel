@@ -21,18 +21,26 @@
 #define IPC_H_
 
 	#include <sys/types.h>
+	#include <nanvix/hal.h>
 
 	/**
 	 * @brief Maximum number of IPC channels.
 	 */
 	#define NANVIX_IPC_MAX 128
 
+	/**
+	 * @brief IPC channel flags.
+	 */
+	/**@{*/
+	#define CHANNEL_NONBLOCK _CHANNEL_NONBLOCK
+	/**@}*/
+
 	/* Forward definitions. */
-	extern int nanvix_ipc_create(const char *);
-	extern int nanvix_ipc_close(int);
-	extern int nanvix_ipc_unlink(int);
+	extern int nanvix_ipc_create(const char *, int, int);
 	extern int nanvix_ipc_open(int);
 	extern int nanvix_ipc_connect(const char *);
+	extern int nanvix_ipc_close(int);
+	extern int nanvix_ipc_unlink(int);
 	extern int nanvix_ipc_send(int, const void *, size_t);
 	extern int nanvix_ipc_receive(int, void *, size_t);
 

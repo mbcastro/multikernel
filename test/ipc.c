@@ -48,16 +48,17 @@ static int server(void)
 	int channel;            /* Communication channel. */
 	char buf[MESSAGE_SIZE]; /* Buffer.                */
 
-	channel = nanvix_ipc_create(IPC_TEST_NAME);
+	channel = nanvix_ipc_create(IPC_TEST_NAME, 1, 0);
 
 	/* Receive messages. */
 	for (int i = 0; i < NR_MESSAGES; i++)
 	{
 		int ack;
+		int client;
 
-		nanvix_ipc_open(channel);
+		client = nanvix_ipc_open(channel);
 
-		nanvix_ipc_receive(channel, buf, sizeof(buf));
+		nanvix_ipc_receive(client, buf, sizeof(buf));
 
 		/* Check message integrity. */
 		for (int i = 0; i < MESSAGE_SIZE; i++)
@@ -68,10 +69,11 @@ static int server(void)
 
 		/* Send ackowledge message. */
 		ack = NANVIX_SUCCESS;
-		nanvix_ipc_send(channel, &ack, sizeof(ack));
+		nanvix_ipc_send(client, &ack, sizeof(ack));
 
-		nanvix_ipc_close(channel);
+		nanvix_ipc_close(client);
 	}
+	nanvix_ipc_unlink(channel);
 
 
 	return (NANVIX_SUCCESS);
@@ -121,10 +123,10 @@ int main(int argc, char **argv)
 	/* Missing parameters. */
 	if (argc < 2)
 	{
-		kputs("missing parameters");
-		kputs("usage: ipc.test <mode>");
-		kputs("  --client Client mode.");
-		kputs("  --server Server mode.");
+		kprintf("missing parameters");
+		kprintf("usage: ipc.test <mode>");
+		kprintf("  --client Client mode.");
+		kprintf("  --server Server mode.");
 
 		return (NANVIX_SUCCESS);
 	}
@@ -134,9 +136,9 @@ int main(int argc, char **argv)
 		server() : client();
 
 	if (ret == NANVIX_SUCCESS)
-		kputs("ipc test passed");
+		kprintf("ipc test passed");
 	else
-		kputs("ipc test FAILED");
+		kprintf("ipc test FAILED");
 
 	return (NANVIX_SUCCESS);
 }

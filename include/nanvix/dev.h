@@ -24,6 +24,11 @@
 	#include <nanvix/vfs.h>	
 
 	/**
+	 * @brief Block device server name.
+	 */
+	#define BDEV_NAME "/tmp/bdev"
+
+	/**
 	 * @brief Block devices.
 	 */
 	/**@{*/

@@ -25,12 +25,7 @@
 	/**
 	 * @brief RAM Disk size (in bytes).
 	 */
-	#define RAMDISK_SIZE 4096
-
-	/**
-	 * @brief RAM Disk device driver service name.
-	 */
-	#define RAMDISK_NAME "/tmp/ramdisk"
+	#define RAMDISK_SIZE 4194304
 
 	/**
 	 * @brief RAM Disk message buffer size (in bytes).

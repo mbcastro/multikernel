@@ -18,8 +18,15 @@
 
 export BINDIR=$PWD/bin
 
-$BINDIR/ipc.test --server | grep "info" &
-$BINDIR/ipc.test --client | grep "info" 
+trap 'kill $(jobs -p)' EXIT
 
-$BINDIR/ramdisk      | grep "info" &
-$BINDIR/ramdisk.test | grep "info" 
+#$BINDIR/ipc.test --server &
+#sleep 1
+#$BINDIR/ipc.test --client 
+
+taskset -c 1 $BINDIR/ramdisk /tmp/ramdisk0 & sleep 1
+taskset -c 2 $BINDIR/ramdisk /tmp/ramdisk1 & sleep 1
+taskset -c 3 $BINDIR/ramdisk /tmp/ramdisk2 & sleep 1
+taskset -c 4 $BINDIR/ramdisk /tmp/ramdisk3 & sleep 1
+taskset -c 5 $BINDIR/bdev                  & sleep 1
+taskset -c 6 $BINDIR/bdev.test 

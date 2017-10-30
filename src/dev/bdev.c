@@ -32,17 +32,17 @@
  * @brief States for a client.
  */
 /**@{*/
-#define BDEV_OPEN             1
-#define BDEV_RECEIVE          2
-#define BDEV_READBLK_CONNECT  3
-#define BDEV_READBLK_SEND     4
-#define BDEV_READBLK_RECEIVE  5
-#define BDEV_WRITEBLK_CONNECT 6
-#define BDEV_WRITEBLK_SEND    7
-#define BDEV_WRITEBLK_RECEIVE 8
-#define BDEV_REPLY            9
-#define BDEV_CLOSE            10
-#define BDEV_ERROR            11
+#define BDEV_OPEN             0
+#define BDEV_RECEIVE          1
+#define BDEV_READBLK_CONNECT  2
+#define BDEV_READBLK_SEND     3
+#define BDEV_READBLK_RECEIVE  4
+#define BDEV_WRITEBLK_CONNECT 5
+#define BDEV_WRITEBLK_SEND    6
+#define BDEV_WRITEBLK_RECEIVE 7
+#define BDEV_REPLY            8
+#define BDEV_CLOSE            9
+#define BDEV_ERROR            10
 /**@}*/
 
 /**
@@ -59,14 +59,16 @@ struct operation
 } operations[CLIENT_MAX];
 
 /* Number of block devices. */
-#define NR_BLKDEV 2
+#define NR_BLKDEV 4
 
 /*
  * Block devices table.
  */
 static const char *bdevsw[NR_BLKDEV] = {
-	RAMDISK_NAME, /* /dev/ramdisk */
-	NULL          /* /dev/hdd     */
+	"/tmp/ramdisk0", /* /dev/ramdisk0 */
+	"/tmp/ramdisk1", /* /dev/ramdisk1 */
+	"/tmp/ramdisk2", /* /dev/ramdisk2 */
+	"/tmp/ramdisk3", /* /dev/ramdisk3 */
 };
 
 /**
@@ -84,6 +86,9 @@ static void bdev_open(int channel, struct operation *op)
 	/* Try again. */
 	if (ret < 0)
 		return;
+
+	kdebug("[bdev] client connected");
+	kdebug("[bdev] serving client");
 
 	/* Update operation. */
 	op->status = BDEV_RECEIVE;
@@ -110,6 +115,8 @@ void bdev_receive(struct operation *op)
 	/* Try again. */
 	if (ret < 0)
 		return;
+
+	kdebug("[bdev] connecting to device server");
 
 	/* Handle client request. */
 	switch (request->type)
@@ -156,6 +163,8 @@ static void bdev_readblk_connect(struct operation *op)
 	if (ret < 0)
 		return;
 
+	kdebug("[bdev] forwarding read request to device server");
+
 	/* Update current operation. */
 	op->server = ret;
 	op->ramdisk_msg.type = RAMDISK_MSG_READ_REQUEST;
@@ -191,6 +200,8 @@ static void bdev_writeblk_connect(struct operation *op)
 	if (ret < 0)
 		return;
 
+	kdebug("[bdev] forwarding write request to device server");
+
 	/* Update current operation. */
 	op->server = ret;
 	op->ramdisk_msg.type = RAMDISK_MSG_WRITE_REQUEST;
@@ -215,11 +226,13 @@ static void bdev_readblk_send(struct operation *op)
 	channel = op->server;
 	request = &op->ramdisk_msg;
 
-	ret = nanvix_ipc_send(channel, &request, sizeof(struct ramdisk_message));
+	ret = nanvix_ipc_send(channel, request, sizeof(struct ramdisk_message));
 	
 	/* Try again. */
 	if (ret < 0)
 		return;
+
+	kdebug("[bdev] waiting for device response");
 
 	/* Update current operation. */
 	op->status = BDEV_READBLK_RECEIVE;
@@ -240,11 +253,13 @@ static void bdev_writeblk_send(struct operation *op)
 	channel = op->server;
 	request = &op->ramdisk_msg;
 
-	ret = nanvix_ipc_send(channel, &request, sizeof(struct ramdisk_message));
+	ret = nanvix_ipc_send(channel, request, sizeof(struct ramdisk_message));
 	
 	/* Try again. */
 	if (ret < 0)
 		return;
+
+	kdebug("[bdev] waiting for device response");
 
 	/* Update current operation. */
 	op->status = BDEV_WRITEBLK_RECEIVE;
@@ -265,13 +280,11 @@ static void bdev_readblk_receive(struct operation *op)
 	channel = op->server;
 	reply = &op->ramdisk_msg;
 
-	ret = nanvix_ipc_receive(channel, &reply, sizeof(struct ramdisk_message));
+	ret = nanvix_ipc_receive(channel, reply, sizeof(struct ramdisk_message));
 	
 	/* Try again. */
 	if (ret < 0)
 		return;
-
-	nanvix_ipc_close(channel);
 
 	/* Parse reply. */
 	if (reply->type != RAMDISK_MSG_READ_REPLY)
@@ -279,6 +292,10 @@ static void bdev_readblk_receive(struct operation *op)
 		op->status = BDEV_ERROR;
 		return;
 	}
+
+	nanvix_ipc_close(channel);
+
+	kdebug("[bdev] replying client");
 
 	/* Update current operation. */
 	op->reply.type = BDEV_MSG_READBLK_REPLY;
@@ -302,13 +319,11 @@ static void bdev_writeblk_receive(struct operation *op)
 	channel = op->server;
 	reply = &op->ramdisk_msg;
 
-	ret = nanvix_ipc_receive(channel, &reply, sizeof(struct ramdisk_message));
+	ret = nanvix_ipc_receive(channel, reply, sizeof(struct ramdisk_message));
 	
 	/* Try again. */
 	if (ret < 0)
 		return;
-
-	nanvix_ipc_close(channel);
 
 	/* Parse reply. */
 	if (reply->type != RAMDISK_MSG_WRITE_REPLY)
@@ -316,6 +331,10 @@ static void bdev_writeblk_receive(struct operation *op)
 		op->status = BDEV_ERROR;
 		return;
 	}
+
+	nanvix_ipc_close(channel);
+
+	kdebug("[bdev] replying client");
 
 	/* Update current operation. */
 	op->reply.type = BDEV_MSG_WRITEBLK_REPLY;
@@ -338,11 +357,13 @@ static void bdev_reply(struct operation *op)
 	channel = op->client;
 	reply = &op->reply;
 
-	ret = nanvix_ipc_send(channel, &reply, sizeof(struct bdev_message));
+	ret = nanvix_ipc_send(channel, reply, sizeof(struct bdev_message));
 	
 	/* Try again. */
 	if (ret < 0)
 		return;
+
+	kdebug("[bdev] disconnecting client");
 
 	/* Update current operation. */
 	op->status = BDEV_CLOSE;
@@ -361,6 +382,8 @@ static void bdev_close(struct operation *op)
 	
 	nanvix_ipc_close(channel);
 
+	kdebug("[bdev] client disconnected");
+
 	/* Update current operation. */
 	op->status = BDEV_OPEN;
 }
@@ -372,6 +395,7 @@ static void bdev_close(struct operation *op)
  */
 static void bdev_error(struct operation *op)
 {
+	kpanic("block device error");
 	op->status = BDEV_CLOSE;
 }
 
@@ -385,7 +409,9 @@ int main(int argc, char **argv)
 	((void) argc);
 	((void) argv);
 
-	channel = nanvix_ipc_create(RAMDISK_NAME);
+	channel = nanvix_ipc_create(BDEV_NAME, CLIENT_MAX, CHANNEL_NONBLOCK);
+
+	kdebug("[bdev] server running");
 
 	while (1)
 	{
