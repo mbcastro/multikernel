@@ -18,6 +18,8 @@
  */
 
 #include <assert.h>
+#include <stdlib.h>
+#include <sys/time.h>
 
 #include <nanvix/klib.h>
 #include <nanvix/ipc.h>
@@ -28,6 +30,17 @@
  */
 #define NR_MESSAGES 128
 
+double mysecond()
+{
+        struct timeval tp;
+        struct timezone tzp;
+
+        gettimeofday(&tp,&tzp);
+        return ( (double) tp.tv_sec + (double) tp.tv_usec * 1.e-6 );
+}
+
+dev_t dev;
+
 /**
  * @brief Unit test client.
  *
@@ -37,56 +50,69 @@
 static int client(void)
 {
 	int channel;
+	double max = 0.0;
 
-	/* Send messages, */
-	for (int i = 0; i < NR_MESSAGES; i++)
+	for (int k = 0; k < 30; k++)
 	{
-		struct bdev_message request;
-		struct bdev_message reply;
-
-		kdebug("message %d", i);
-
-		channel = nanvix_ipc_connect(BDEV_NAME);
-
-		/* Build write request. */
-		request.type = BDEV_MSG_WRITEBLK_REQUEST;
-		request.content.writeblk_req.dev = 0;
-		request.content.writeblk_req.blknum = i;
-		for (int j = 0; j < BLOCK_SIZE; j++)
-			request.content.writeblk_req.data[j] = i%256;
-
-		nanvix_ipc_send(channel, &request, sizeof(struct bdev_message));
-
-		/* Parse ackowledge message. */
-		nanvix_ipc_receive(channel, &reply, sizeof(struct bdev_message));
-		if (reply.type == BDEV_MSG_ERROR)
-			return (NANVIX_FAILURE);
-
-		nanvix_ipc_close(channel);
-
-		channel = nanvix_ipc_connect(BDEV_NAME);
-
-		/* Build read request. */
-		request.type = BDEV_MSG_READBLK_REQUEST;
-		request.content.readblk_req.dev = 0;
-		request.content.readblk_req.blknum = i;
-
-		nanvix_ipc_send(channel, &request, sizeof(struct bdev_message));
-
-		/* Parse ackowledge message. */
-		nanvix_ipc_receive(channel, &reply, sizeof(struct bdev_message));
-		if (reply.type == BDEV_MSG_ERROR)
-			return (NANVIX_FAILURE);
-		for (int j = 0; j < BLOCK_SIZE; j++)
+		/* Send messages, */
+		for (int i = 0; i < NR_MESSAGES; i++)
 		{
-			if (reply.content.readblk_rep.data[j] != i%256)
-			{
-					kdebug("[bdev.test] checksum failed %c", reply.content.readblk_rep.data[j]);
+			double t1, t2, bandwidth;
+			struct bdev_message request;
+			struct bdev_message reply;
+
+			t1 = mysecond();
+
+			channel = nanvix_ipc_connect(BDEV_NAME);
+
+			/* Build write request. */
+			request.type = BDEV_MSG_WRITEBLK_REQUEST;
+			request.content.writeblk_req.dev = dev;
+			request.content.writeblk_req.blknum = i;
+			for (int j = 0; j < BLOCK_SIZE; j++)
+				request.content.writeblk_req.data[j] = i%256;
+
+			nanvix_ipc_send(channel, &request, sizeof(struct bdev_message));
+
+			/* Parse ackowledge message. */
+			nanvix_ipc_receive(channel, &reply, sizeof(struct bdev_message));
+			if (reply.type == BDEV_MSG_ERROR)
 				return (NANVIX_FAILURE);
+
+			t2 = mysecond();
+
+			bandwidth = BLOCK_SIZE/(1024*(t2-t1));
+			if (bandwidth > max)
+				max = bandwidth;
+
+			nanvix_ipc_close(channel);
+
+			channel = nanvix_ipc_connect(BDEV_NAME);
+
+			/* Build read request. */
+			request.type = BDEV_MSG_READBLK_REQUEST;
+			request.content.readblk_req.dev = dev;
+			request.content.readblk_req.blknum = i;
+
+			nanvix_ipc_send(channel, &request, sizeof(struct bdev_message));
+
+			/* Parse acknowledge message. */
+			nanvix_ipc_receive(channel, &reply, sizeof(struct bdev_message));
+			if (reply.type == BDEV_MSG_ERROR)
+				return (NANVIX_FAILURE);
+			for (int j = 0; j < BLOCK_SIZE; j++)
+			{
+				if (reply.content.readblk_rep.data[j] != i%256)
+				{
+						kdebug("[bdev.test] checksum failed %c", reply.content.readblk_rep.data[j]);
+					return (NANVIX_FAILURE);
+				}
 			}
+			nanvix_ipc_close(channel);
 		}
-		nanvix_ipc_close(channel);
 	}
+
+	fprintf(stderr, "max bandwidth: %2.lf MB/s\n", max);
 
 	return (NANVIX_SUCCESS);
 }
@@ -97,6 +123,8 @@ static int client(void)
 int main(int argc, char **argv)
 {
 	int ret;
+
+	dev = (unsigned) atoi(argv[1]);
 
 	((void) argc);
 	((void) argv);
