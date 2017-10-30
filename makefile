@@ -30,7 +30,7 @@ LD = gcc
 CC = gcc
 
 # Toolchain configuration.
-CLFAGS += -ansi -std=c99
+CFLAGS += -ansi -std=c99
 CFLAGS += -Wall -Wextra
 CFLAGS += -I $(INCDIR) -D$(TARGET)
 
