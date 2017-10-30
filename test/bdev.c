@@ -33,9 +33,8 @@
 double mysecond()
 {
         struct timeval tp;
-        struct timezone tzp;
 
-        gettimeofday(&tp,&tzp);
+        gettimeofday(&tp, NULL);
         return ( (double) tp.tv_sec + (double) tp.tv_usec * 1.e-6 );
 }
 
