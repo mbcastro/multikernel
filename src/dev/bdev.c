@@ -157,7 +157,7 @@ static void bdev_readblk_connect(struct operation *op)
 	if (bdevsw[MAJOR(dev)] == NULL)
 		kpanic("reading block from invalid device");
 
-	ret = nanvix_ipc_connect(bdevsw[MAJOR(dev)]);
+	ret = nanvix_ipc_connect(bdevsw[MAJOR(dev)], SOCK_NONBLOCK);
 	
 	/* Try again. */
 	if (ret < 0)
@@ -194,7 +194,7 @@ static void bdev_writeblk_connect(struct operation *op)
 	if (bdevsw[MAJOR(dev)] == NULL)
 		kpanic("write block from invalid device");
 
-	ret = nanvix_ipc_connect(bdevsw[MAJOR(dev)]);
+	ret = nanvix_ipc_connect(bdevsw[MAJOR(dev)], SOCK_NONBLOCK);
 	
 	/* Try again. */
 	if (ret < 0)

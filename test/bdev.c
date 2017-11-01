@@ -62,7 +62,7 @@ static int client(void)
 
 			t1 = mysecond();
 
-			channel = nanvix_ipc_connect(BDEV_NAME);
+			channel = nanvix_ipc_connect(BDEV_NAME, 0);
 
 			/* Build write request. */
 			request.type = BDEV_MSG_WRITEBLK_REQUEST;
@@ -86,7 +86,7 @@ static int client(void)
 
 			nanvix_ipc_close(channel);
 
-			channel = nanvix_ipc_connect(BDEV_NAME);
+			channel = nanvix_ipc_connect(BDEV_NAME, 0);
 
 			/* Build read request. */
 			request.type = BDEV_MSG_READBLK_REQUEST;

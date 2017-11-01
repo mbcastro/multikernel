@@ -116,9 +116,9 @@ static void nanvix_ipc_channel_put(int id)
 /**
  * @brief Creates an IPC channel.
  *
- * @param name IPC channel name.
- * @param max  Maximum number of simultaneous connections.
- * @param fags IPC channel flags.
+ * @param name  IPC channel name.
+ * @param max   Maximum number of simultaneous connections.
+ * @param flags IPC channel flags.
  * 
  * @returns Upon successful completion, the ID of the
  * target channel is returned. Otherwise -1 is returned
@@ -208,13 +208,14 @@ error0:
 /**
  * Conects to an IPC channel.
  *
- * @param name IPC channel name.
+ * @param name  IPC channel name.
+ * @param flags IPC channel flags.
  * 
  * @returns Upon successful completion, the ID of the
  * target channel is returned. Otherwise -1 is returned
  * instead.
  */
-int nanvix_ipc_connect(const char *name)
+int nanvix_ipc_connect(const char *name, int flags)
 {
 	int id;
 	struct sockaddr_un remote;
@@ -226,7 +227,7 @@ int nanvix_ipc_connect(const char *name)
 		return (-1);
 
 	/* Create remote socket. */
-	channels[id].remote = socket(AF_UNIX, SOCK_STREAM, 0);
+	channels[id].remote = socket(AF_UNIX, SOCK_STREAM | (flags & SOCK_NONBLOCK), 0);
 	if (channels[id].remote == -1)
 		goto error0;
 

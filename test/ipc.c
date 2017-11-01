@@ -98,7 +98,7 @@ static int client(void)
 	{
 		int ack;
 
-		channel = nanvix_ipc_connect(IPC_TEST_NAME);
+		channel = nanvix_ipc_connect(IPC_TEST_NAME, 0);
 
 		nanvix_ipc_send(channel, buf, sizeof(buf));
 
