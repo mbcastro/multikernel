@@ -26,7 +26,7 @@
 /**
  * @brief Maximum number of operations to enqueue.
  */
-#define CLIENT_MAX 16
+#define CLIENT_MAX 2
 
 /**
  * @brief States for a client.
@@ -116,24 +116,29 @@ void bdev_receive(struct operation *op)
 	if (ret < 0)
 		return;
 
-	kdebug("[bdev] connecting to device server");
-
 	/* Handle client request. */
 	switch (request->type)
 	{
 		/* Read a block. */
 		case BDEV_MSG_READBLK_REQUEST:
 			op->status = BDEV_READBLK_CONNECT;
+			printf("[bdev] connecting to device server (%lu %lu)\n",
+				MAJOR(op->request.content.readblk_req.dev),
+				MINOR(op->request.content.readblk_req.dev));
 			break;
 
 		/* Write a block. */
 		case BDEV_MSG_WRITEBLK_REQUEST:
 			op->status = BDEV_WRITEBLK_CONNECT;
+			printf("[bdev] connecting to device server (%lu %lu)\n",
+				MAJOR(op->request.content.writeblk_req.dev),
+				MINOR(op->request.content.writeblk_req.dev));
 			break;
 
 		/* Error. */
 		default:
 			op->status = BDEV_ERROR;
+			printf("[bdev] unknown request type");
 			break;
 	}
 }
@@ -157,7 +162,7 @@ static void bdev_readblk_connect(struct operation *op)
 	if (bdevsw[MAJOR(dev)] == NULL)
 		kpanic("reading block from invalid device");
 
-	ret = nanvix_ipc_connect(bdevsw[MAJOR(dev)], SOCK_NONBLOCK);
+	ret = nanvix_ipc_connect(bdevsw[MAJOR(dev)], 0);
 	
 	/* Try again. */
 	if (ret < 0)
@@ -172,6 +177,8 @@ static void bdev_readblk_connect(struct operation *op)
 	op->ramdisk_msg.content.read_req.blknum = blknum;
 	op->status = BDEV_READBLK_SEND;
 }
+
+#include <errno.h>
 
 /**
  * @brief Connects to a remote server to forward write block request.
@@ -194,11 +201,14 @@ static void bdev_writeblk_connect(struct operation *op)
 	if (bdevsw[MAJOR(dev)] == NULL)
 		kpanic("write block from invalid device");
 
-	ret = nanvix_ipc_connect(bdevsw[MAJOR(dev)], SOCK_NONBLOCK);
+	ret = nanvix_ipc_connect(bdevsw[MAJOR(dev)], 0);
 	
 	/* Try again. */
 	if (ret < 0)
+	{
+		kdebug("[bdev] %s", strerror(errno));
 		return;
+	}
 
 	kdebug("[bdev] forwarding write request to device server");
 

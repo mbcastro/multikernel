@@ -22,11 +22,13 @@
 #include <nanvix/klib.h>
 
 #include <assert.h>
+#include <arpa/inet.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/un.h>
 #include <unistd.h>
 #include <limits.h>
+#include <fcntl.h>
 
 #ifndef PATH_MAX
 #define PATH_MAX 4096
@@ -52,8 +54,35 @@ struct channel
 	int flags;           /**< Status            */
 	int local;           /**< Local socket ID.  */  
 	int remote;          /**< Remote socket id. */
-	char name[PATH_MAX]; /**< Channel name.     */
 };
+
+static struct
+{
+	const char *name;
+	const char *address;
+	unsigned short port;
+} domains[] = {
+	{ "/tmp/ipc.test", "127.0.0.1", 0x8000 },
+	{ "/tmp/bdev",     "127.0.0.1", 0x8000 },
+	{ "/tmp/ramdisk0", "127.0.0.1", 0x8001 },
+	{ "/tmp/ramdisk1", "127.0.0.1", 0x8002 },
+	{ "/tmp/ramdisk2", "127.0.0.1", 0x8003 },
+	{ "/tmp/ramdisk3", "127.0.0.1", 0x8004 },
+	{ NULL, NULL, 0 }
+};
+
+static void domain_lookup(const char *name, in_addr_t *addr, in_port_t *port)
+{
+	for (int i = 0; domains[i].name != NULL; i++)
+	{
+		if (!strcmp(domains[i].name, name))
+		{
+			*port = htons(domains[i].port);
+			inet_pton(AF_INET, domains[i].name, &addr);
+			return;
+		}
+	}
+}
 
 /**
  * @brief Table of channels.
@@ -127,7 +156,7 @@ static void nanvix_ipc_channel_put(int id)
 int nanvix_ipc_create(const char *name, int max, int flags)
 {
 	int id;
-	struct sockaddr_un local;
+	struct sockaddr_in local;
 
 	assert(name != NULL);
 	assert(max > 0);
@@ -139,34 +168,31 @@ int nanvix_ipc_create(const char *name, int max, int flags)
 		return (-1);
 
 	/* Create local socket. */
-	channels[id].local = socket(AF_UNIX, SOCK_STREAM | (flags & SOCK_NONBLOCK), 0);
+	channels[id].local = socket(AF_INET, SOCK_STREAM | (flags & SOCK_NONBLOCK), 0);
 	if (channels[id].local == -1)
 		goto error0;
 
 	/* Build socket. */
-	kmemset(&local, 0, sizeof(struct sockaddr_un));
-	local.sun_family = AF_UNIX;
-	kstrncpy(channels[id].name, name, sizeof(local.sun_path) - 1);
-	kstrncpy(local.sun_path, name, sizeof(local.sun_path) - 1);
+	kmemset(&local, 0, sizeof(struct sockaddr_in));
+	local.sin_family = AF_INET;
+	domain_lookup(name, &local.sin_addr.s_addr, &local.sin_port);
+	local.sin_addr.s_addr = htonl(INADDR_ANY);
 
 	/* Bind local socket. */
-	unlink(name);
-	if (bind(channels[id].local, (struct sockaddr *)&local, sizeof(struct sockaddr_un)) == -1)
+	if (bind(channels[id].local, (struct sockaddr *)&local, sizeof(struct sockaddr_in)) == -1)
 		goto error1;
 
 	/* Listen connections on local socket. */
 	if (listen(channels[id].local, NANVIX_IPC_MAX) == -1)
-		goto error2;
+		goto error1;
 
 	return (id);
 
-error2:
-	unlink(name);
 error1:
 	close(channels[id].local);
 error0:
 	nanvix_ipc_channel_put(id);
-	kpanic("cannot nanvix_ipc_create()");
+	perror("cannot nanvix_ipc_create()");
 	return (-1);
 }
 /**
@@ -182,7 +208,6 @@ int nanvix_ipc_open(int id)
 {
 	int id2;
 
-	kdebug("[ipc] openning channel");
 
 	/* Sanity check. */
 	if (!nanvix_ipc_channel_is_valid(id))
@@ -197,9 +222,12 @@ int nanvix_ipc_open(int id)
 
 	channels[id2].local = channels[id].local;
 
+	kdebug("[ipc] openning channel %d", channels[id2].remote);
+
 	return (id2);
 
 error0:
+	kdebug("[ipc] cannot open channel");
 	nanvix_ipc_channel_put(id2);
 	return (-1);
 }
@@ -218,28 +246,29 @@ error0:
 int nanvix_ipc_connect(const char *name, int flags)
 {
 	int id;
-	struct sockaddr_un remote;
-
-	kdebug("[ipc] connecting to channel");
+	struct sockaddr_in remote;
 
 	/* Gets a free channel. */
 	if ((id = nanvix_ipc_channel_get()) == -1)
 		return (-1);
 
+	kdebug("[ipc] connecting to channel %s using %d", name, id);
+
 	/* Create remote socket. */
-	channels[id].remote = socket(AF_UNIX, SOCK_STREAM | (flags & SOCK_NONBLOCK), 0);
+	channels[id].remote = socket(AF_INET, SOCK_STREAM, 0);
 	if (channels[id].remote == -1)
 		goto error0;
 
 	/* Initialize socket. */
-	kmemset(&remote, 0, sizeof(struct sockaddr_un));
-	remote.sun_family = AF_UNIX;
-	kstrncpy(remote.sun_path, name, sizeof(remote.sun_path) - 1);
-	kstrncpy(channels[id].name, name, sizeof(remote.sun_path) - 1);
+	kmemset(&remote, 0, sizeof(struct sockaddr_in));
+	remote.sin_family = AF_INET;
+	domain_lookup(name, &remote.sin_addr.s_addr, &remote.sin_port);
 
 	/* Connect to socket. */
-	if (connect(channels[id].remote, (struct sockaddr *)&remote, sizeof(struct sockaddr_un)) == -1)
+	if (connect(channels[id].remote, (struct sockaddr *)&remote, sizeof(struct sockaddr_in)) == -1)
 		goto error1;
+
+	channels[id].flags |= (flags & CHANNEL_NONBLOCK) ? 2 : 0;
 
 	return (id);
 
@@ -247,7 +276,6 @@ error1:
 	close(channels[id].remote);
 error0:
 	nanvix_ipc_channel_put(id);
-	perror("cannot nanvix_ipc_connect()");
 	return (-1);
 }
 
@@ -290,10 +318,6 @@ int nanvix_ipc_unlink(int id)
 	if (!nanvix_ipc_channel_is_valid(id))
 		return (-1);
 
-	/* Unlink underlying local. */
-	if (unlink(channels[id].name) == -1)
-		return (-1);
-
 	/* Close IPC channel. */
 	if (close(channels[id].local) == -1)
 		return (-1);
@@ -316,19 +340,28 @@ int nanvix_ipc_unlink(int id)
  */
 int nanvix_ipc_send(int id, const void *buf, size_t n)
 {
-	size_t ret;
+	ssize_t ret;
 
 	/* Sanity check. */
 	if (!nanvix_ipc_channel_is_valid(id))
 		return (-1);
 
-	if ((ret = send(channels[id].remote, buf, n, 0)) != n)
+	if (channels[id].flags & 2)
+	{
+		fcntl(channels[id].remote, F_SETFL, O_NONBLOCK); /* Change the socket into non-blocking state	*/
+        fcntl(channels[id].remote, F_SETFL, O_NONBLOCK); /* Change the socket into non-blocking state	*/
+		channels[id].flags &= ~2;
+	}
+
+	if ((ret = send(channels[id].remote, buf, n, 0)) == -1)
 		return (-1);
 
-	kdebug("[ipc] sending data", channels[id].name);
+	kdebug("[ipc] sending %d bytes", ret);
 
 	return (0);
 }
+
+#include <errno.h>
 
 /**
  * @brief receives data from an IPC channel.
@@ -342,16 +375,27 @@ int nanvix_ipc_send(int id, const void *buf, size_t n)
  */
 int nanvix_ipc_receive(int id, void *buf, size_t n)
 {
-	size_t ret;
+	ssize_t ret;
 
 	/* Sanity check. */
 	if (!nanvix_ipc_channel_is_valid(id))
 		return (-1);
 
-	if ((ret = recv(channels[id].remote, buf, n, 0)) != n)
-		return (-1);
+	if (channels[id].flags & 2)
+	{
+		fcntl(channels[id].remote, F_SETFL, O_NONBLOCK); /* Change the socket into non-blocking state	*/
+        fcntl(channels[id].remote, F_SETFL, O_NONBLOCK); /* Change the socket into non-blocking state	*/
+		channels[id].flags &= ~2;
+	}
 
-	kdebug("[ipc] receiving data", channels[id].name);
+	if ((ret = recv(channels[id].remote, buf, n, 0)) == -1)
+	{
+		kdebug("[ipc] %s", strerror(errno));
+		return (-1);
+	}
+
+
+	kdebug("[ipc] receiving data %d bytes", ret);
 
 	return (0);
 }

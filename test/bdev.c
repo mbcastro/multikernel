@@ -51,7 +51,7 @@ static int client(void)
 	int channel;
 	double max = 0.0;
 
-	for (int k = 0; k < 30; k++)
+	for (int k = 0; k < 1024; k++)
 	{
 		/* Send messages, */
 		for (int i = 0; i < NR_MESSAGES; i++)
@@ -111,7 +111,7 @@ static int client(void)
 		}
 	}
 
-	fprintf(stderr, "max bandwidth: %2.lf MB/s\n", max);
+	fprintf(stdout, "[info] [bdev.test] max bandwidth: %lf MB/s\n", max);
 
 	return (NANVIX_SUCCESS);
 }

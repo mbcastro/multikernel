@@ -33,7 +33,7 @@
 	 *
 	 * @return see puts().
 	 */
-	#define kputs(str) { puts(str) ; fflush(stdout); }
+	#define kputs(str) { fprintf(stderr, "%s\n", str); }
 
 	/**
 	 * @brief Non blocking IPC channel.
