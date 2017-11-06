@@ -33,10 +33,10 @@
 
 double mysecond()
 {
-        struct timeval tp;
+	struct timeval tp;
 
-        gettimeofday(&tp, NULL);
-        return ( (double) tp.tv_sec + (double) tp.tv_usec * 1.e-6 );
+	gettimeofday(&tp, NULL);
+	return ( (double) tp.tv_sec + (double) tp.tv_usec * 1.e-6 );
 }
 
 /**
@@ -54,9 +54,7 @@ static int client(void)
 	for (int i = 0; i < BLOCK_SIZE; i++)
 		buffer[i] = 1;
 
-	memopen();
-
-	for (int k = 0; k < 1024; k++)
+	for (int k = 0; k < 1024*12; k++)
 	{
 		double t1, t2, bandwidth;
 
@@ -70,8 +68,6 @@ static int client(void)
 		if (bandwidth > max)
 			max = bandwidth;
 	}
-
-	memclose();
 
 	fprintf(stdout, "[info] [bdev.test] max bandwidth: %lf MB/s\n", max);
 

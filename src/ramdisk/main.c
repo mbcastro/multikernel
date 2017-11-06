@@ -30,10 +30,7 @@
 /**
  * @brief RAM Disks.
  */
-static struct
-{
-	char data[RAMDISK_SIZE]; /**< Data. */
-} ramdisks[NR_RAMDISKS];
+static char ramdisk[RAMDISK_SIZE];
 
 /**
  * @brief Reads a block from a RAM Disk device.
@@ -48,8 +45,10 @@ static struct
 static ssize_t ramdisk_readblk(unsigned minor, char *buf, unsigned blknum)
 {	
 	char *ptr;
+
+	((void) minor);
 	
-	ptr = &ramdisks[minor].data[blknum << BLOCK_SIZE_LOG2];
+	ptr = &ramdisk[blknum << BLOCK_SIZE_LOG2];
 	
 	memcpy(buf, ptr, BLOCK_SIZE);
 	
@@ -69,8 +68,10 @@ static ssize_t ramdisk_readblk(unsigned minor, char *buf, unsigned blknum)
 static ssize_t ramdisk_writeblk(unsigned minor, const char *buf, unsigned blknum)
 {	
 	char *ptr;
-	
-	ptr = &ramdisks[minor].data[blknum << BLOCK_SIZE_LOG2];
+
+	((void) minor);	
+
+	ptr = &ramdisk[blknum << BLOCK_SIZE_LOG2];
 	
 	memcpy(ptr, buf, BLOCK_SIZE);
 	
@@ -83,7 +84,7 @@ static ssize_t ramdisk_writeblk(unsigned minor, const char *buf, unsigned blknum
  * @param request Request.
  * @param reply   Reply.
  */
-static void ramdisk(struct ramdisk_message *request, struct ramdisk_message *reply)
+static void ramdisk_handle(struct ramdisk_message *request, struct ramdisk_message *reply)
 {
 	switch (request->type)
 	{
@@ -95,12 +96,12 @@ static void ramdisk(struct ramdisk_message *request, struct ramdisk_message *rep
 			unsigned minor;
 			unsigned blknum;
 
-			kdebug("[ramdisk] write request");
-
 			/* Extract request parameters. */
 			minor = request->content.write_req.minor;
 			buf = request->content.write_req.data;
 			blknum = request->content.write_req.blknum;
+
+			kdebug("[ramdisk] write request %d %d", minor, blknum);
 			
 			n = ramdisk_writeblk(minor, buf, blknum);
 
@@ -163,7 +164,7 @@ int main(int argc, char **argv)
 		nanvix_ipc_receive(client, &request, sizeof(struct ramdisk_message));
 		kdebug("[ramdisk] serving client");
 
-		ramdisk(&request, &reply);
+		ramdisk_handle(&request, &reply);
 
 		nanvix_ipc_send(client, &reply, sizeof(struct ramdisk_message));
 		kdebug("[ramdisk] replying client");

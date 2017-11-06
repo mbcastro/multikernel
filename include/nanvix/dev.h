@@ -29,25 +29,6 @@
 	#define BDEV_NAME "/tmp/bdev"
 
 	/**
-	 * @brief Block devices.
-	 */
-	/**@{*/
-	#define RAMDISK_MAJOR 0x0 /**< RAM Disk device. */
-	/**@}*/
-
-	/**
-	 * @brief Returns the major number of a device.
-	 */
-	#define MAJOR(dev) \
-		(((dev) >> 8) & 0xf)
-	
-	/**
-	 * @brief Returns the minor number of a device.
-	 */
-	#define MINOR(dev) \
-		(((dev) >> 4) & 0xf)
-
-	/**
 	 * @brief Block device message types.
 	 */
 	/**@{*/

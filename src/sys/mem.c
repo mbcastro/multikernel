@@ -19,26 +19,22 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <errno.h>
 
 #include <nanvix/dev.h>
 #include <nanvix/ramdisk.h>
 #include <nanvix/klib.h>
 #include <nanvix/ipc.h>
 
-int channel;
-
-int memopen(void)
-{
-	channel = nanvix_ipc_connect(BDEV_NAME, 0);
-
-	return (0);
-}
 
 int memwrite(const void *src, uint64_t dest, size_t size)
 {
 	const char *p;
 	struct bdev_message request;
 	struct bdev_message reply;
+
+	if (dest & (BLOCK_SIZE - 1))
+		return (-EINVAL);
 
 	p = src;
 	
@@ -47,9 +43,12 @@ int memwrite(const void *src, uint64_t dest, size_t size)
 		size_t n;
 		dev_t dev;
 		unsigned blknum;
+		int channel;
 
-		dev = (dest + i)/RAMDISK_SIZE;
-		blknum = (dest + i)%RAMDISK_SIZE;
+		channel = nanvix_ipc_connect(BDEV_NAME, 0);
+
+		dev = ((dest + i)/BLOCK_SIZE)/(RAMDISK_SIZE/BLOCK_SIZE);
+		blknum = ((dest + i)/BLOCK_SIZE)%(RAMDISK_SIZE/BLOCK_SIZE);
 
 		n = ((size - i) < BLOCK_SIZE) ? size - i : BLOCK_SIZE;
 
@@ -64,9 +63,15 @@ int memwrite(const void *src, uint64_t dest, size_t size)
 		/* Parse ackowledge message. */
 		nanvix_ipc_receive(channel, &reply, sizeof(struct bdev_message));
 		if (reply.type == BDEV_MSG_ERROR)
+		{
+			kpanic("memwrite error");
+
 			return (NANVIX_FAILURE);
+		}
 
 		p += n;
+
+		nanvix_ipc_close(channel);
 	}
 
 	return (0);
@@ -78,6 +83,9 @@ int memread(void *dest, uint64_t src, size_t size)
 	struct bdev_message request;
 	struct bdev_message reply;
 
+	if (src & (BLOCK_SIZE - 1))
+		return (-EINVAL);
+
 	p = dest;
 	
 	for (size_t i = 0; i < size; i += BLOCK_SIZE)
@@ -85,9 +93,12 @@ int memread(void *dest, uint64_t src, size_t size)
 		size_t n;
 		dev_t dev;
 		unsigned blknum;
+		int channel;
 
-		dev = (src + i)/RAMDISK_SIZE;
-		blknum = (src + i)%RAMDISK_SIZE;
+		channel = nanvix_ipc_connect(BDEV_NAME, 0);
+
+		dev = ((src + i)/BLOCK_SIZE)/(RAMDISK_SIZE/BLOCK_SIZE);
+		blknum = ((src + i)/BLOCK_SIZE)%(RAMDISK_SIZE/BLOCK_SIZE);
 
 		n = ((size - i) < BLOCK_SIZE) ? size - i : BLOCK_SIZE;
 
@@ -106,6 +117,8 @@ int memread(void *dest, uint64_t src, size_t size)
 		kmemcpy(p, &request.content.readblk_rep.data, n);
 		
 		p += n;
+
+		nanvix_ipc_close(channel);
 	}
 
 	return (0);
@@ -113,5 +126,4 @@ int memread(void *dest, uint64_t src, size_t size)
 
 extern void memclose(void)
 {
-	nanvix_ipc_close(channel);
 }

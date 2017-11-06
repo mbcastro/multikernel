@@ -24,10 +24,8 @@
 	#include <stdint.h>
 
 	/* Forward definitions. */
-	extern int memopen(void);
 	extern int memwrite(const void *, uint64_t, size_t);
 	extern int memread(void  *, uint64_t, size_t);
-	extern void memclose(void);
 
 #endif /* NANVIX_SYSCALLS_H_ */
 

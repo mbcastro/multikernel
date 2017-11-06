@@ -122,23 +122,23 @@ void bdev_receive(struct operation *op)
 		/* Read a block. */
 		case BDEV_MSG_READBLK_REQUEST:
 			op->status = BDEV_READBLK_CONNECT;
-			printf("[bdev] connecting to device server (%lu %lu)\n",
-				MAJOR(op->request.content.readblk_req.dev),
-				MINOR(op->request.content.readblk_req.dev));
+			kdebug("[bdev] connecting to device server (%d %d)\n",
+				op->request.content.readblk_req.dev,
+				op->request.content.readblk_req.blknum);
 			break;
 
 		/* Write a block. */
 		case BDEV_MSG_WRITEBLK_REQUEST:
 			op->status = BDEV_WRITEBLK_CONNECT;
-			printf("[bdev] connecting to device server (%lu %lu)\n",
-				MAJOR(op->request.content.writeblk_req.dev),
-				MINOR(op->request.content.writeblk_req.dev));
+			kdebug("[bdev] connecting to device server (%d %d)\n",
+				op->request.content.writeblk_req.dev,
+				op->request.content.writeblk_req.blknum);
 			break;
 
 		/* Error. */
 		default:
 			op->status = BDEV_ERROR;
-			printf("[bdev] unknown request type");
+			kdebug("[bdev] unknown request type");
 			break;
 	}
 }
@@ -159,10 +159,10 @@ static void bdev_readblk_connect(struct operation *op)
 	blknum = op->request.content.readblk_req.blknum;
 	
 	/* Invalid device. */
-	if (bdevsw[MAJOR(dev)] == NULL)
-		kpanic("reading block from invalid device");
+	if ((dev >= NR_BLKDEV) || (bdevsw[dev] == NULL))
+		kpanic("[bdev] reading block from invalid device");
 
-	ret = nanvix_ipc_connect(bdevsw[MAJOR(dev)], 0);
+	ret = nanvix_ipc_connect(bdevsw[dev], 0);
 	
 	/* Try again. */
 	if (ret < 0)
@@ -173,7 +173,7 @@ static void bdev_readblk_connect(struct operation *op)
 	/* Update current operation. */
 	op->server = ret;
 	op->ramdisk_msg.type = RAMDISK_MSG_READ_REQUEST;
-	op->ramdisk_msg.content.read_req.minor = MINOR(dev);
+	op->ramdisk_msg.content.read_req.minor = dev;
 	op->ramdisk_msg.content.read_req.blknum = blknum;
 	op->status = BDEV_READBLK_SEND;
 }
@@ -196,10 +196,10 @@ static void bdev_writeblk_connect(struct operation *op)
 	buf = op->request.content.writeblk_req.data;
 	
 	/* Invalid device. */
-	if (bdevsw[MAJOR(dev)] == NULL)
-		kpanic("write block from invalid device");
+	if ((dev >= NR_BLKDEV) || (bdevsw[dev] == NULL))
+		kpanic("[bdev] write block from invalid device");
 
-	ret = nanvix_ipc_connect(bdevsw[MAJOR(dev)], 0);
+	ret = nanvix_ipc_connect(bdevsw[dev], 0);
 	
 	/* Try again. */
 	if (ret < 0)
@@ -210,7 +210,7 @@ static void bdev_writeblk_connect(struct operation *op)
 	/* Update current operation. */
 	op->server = ret;
 	op->ramdisk_msg.type = RAMDISK_MSG_WRITE_REQUEST;
-	op->ramdisk_msg.content.write_req.minor = MINOR(dev);
+	op->ramdisk_msg.content.write_req.minor = dev;
 	op->ramdisk_msg.content.write_req.blknum = blknum;
 	kmemcpy(op->ramdisk_msg.content.write_req.data, buf, BLOCK_SIZE);
 	op->status = BDEV_WRITEBLK_SEND;
