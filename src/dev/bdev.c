@@ -65,10 +65,10 @@ struct operation
  * Block devices table.
  */
 static const char *bdevsw[NR_BLKDEV] = {
-	"/tmp/ramdisk0", /* /dev/ramdisk0 */
-	"/tmp/ramdisk1", /* /dev/ramdisk1 */
-	"/tmp/ramdisk2", /* /dev/ramdisk2 */
-	"/tmp/ramdisk3", /* /dev/ramdisk3 */
+	"ramdisk0", /* /dev/ramdisk0 */
+	"ramdisk1", /* /dev/ramdisk1 */
+	"ramdisk2", /* /dev/ramdisk2 */
+	"ramdisk3", /* /dev/ramdisk3 */
 };
 
 /**

@@ -26,7 +26,7 @@
 	/**
 	 * @brief Block device server name.
 	 */
-	#define BDEV_NAME "/tmp/bdev"
+	#define BDEV_NAME "bdev"
 
 	/**
 	 * @brief Block device message types.
