@@ -34,21 +34,25 @@ CFLAGS += -ansi -std=c99
 CFLAGS += -Wall -Wextra
 CFLAGS += -I $(INCDIR) -D$(TARGET)
 
+SRC = $(wildcard $(LIBDIR)/*.c) \
+	  $(SRCDIR)/pm/name.c       \
+	  $(SRCDIR)/sys/mem.c
+
 all: bdev ramdisk ipc.test bdev.test
 
-bdev: $(wildcard $(LIBDIR)/*.c) $(SRCDIR)/pm/name.c $(SRCDIR)/dev/bdev.c
+bdev: $(SRC) $(SRCDIR)/dev/bdev.c
 	mkdir -p $(BINDIR)
 	$(LD) $(CFLAGS) $^ -o $(BINDIR)/bdev
 
-ramdisk: $(wildcard $(LIBDIR)/*.c) $(SRCDIR)/pm/name.c $(SRCDIR)/ramdisk/main.c
+ramdisk: $(SRC) $(SRCDIR)/ramdisk/main.c
 	mkdir -p $(BINDIR)
 	$(LD) $(CFLAGS) $^ -o $(BINDIR)/ramdisk
 
-bdev.test: $(wildcard $(LIBDIR)/*.c) $(SRCDIR)/pm/name.c $(TESTDIR)/bdev.c
+bdev.test: $(SRC) $(TESTDIR)/bdev.c
 	mkdir -p $(BINDIR)
 	$(LD) $(CFLAGS) $^ -o $(BINDIR)/bdev.test
 
-ipc.test: $(wildcard $(LIBDIR)/*.c) $(SRCDIR)/pm/name.c $(TESTDIR)/ipc.c
+ipc.test: $(SRC) $(TESTDIR)/ipc.c
 	mkdir -p $(BINDIR)
 	$(LD) $(CFLAGS) $^ -o $(BINDIR)/ipc.test
 	

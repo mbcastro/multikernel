@@ -23,7 +23,8 @@
 
 #include <nanvix/klib.h>
 #include <nanvix/ipc.h>
-#include <nanvix/dev.h>
+#include <nanvix/vfs.h>
+#include <nanvix/syscalls.h>
 
 /**
  * @brief Number of messages to exchange.
@@ -38,8 +39,6 @@ double mysecond()
         return ( (double) tp.tv_sec + (double) tp.tv_usec * 1.e-6 );
 }
 
-dev_t dev;
-
 /**
  * @brief Unit test client.
  *
@@ -48,68 +47,31 @@ dev_t dev;
  */
 static int client(void)
 {
-	int channel;
-	double max = 0.0;
+	double max;
+	char buffer[BLOCK_SIZE];
+
+	/* Write checksum. */
+	for (int i = 0; i < BLOCK_SIZE; i++)
+		buffer[i] = 1;
+
+	memopen();
 
 	for (int k = 0; k < 1024; k++)
 	{
-		/* Send messages, */
-		for (int i = 0; i < NR_MESSAGES; i++)
-		{
-			double t1, t2, bandwidth;
-			struct bdev_message request;
-			struct bdev_message reply;
+		double t1, t2, bandwidth;
 
-			t1 = mysecond();
+		t1 = mysecond();
+		
+		memwrite(buffer, k*BLOCK_SIZE, BLOCK_SIZE);
+		
+		t2 = mysecond();
 
-			channel = nanvix_ipc_connect(BDEV_NAME, 0);
-
-			/* Build write request. */
-			request.type = BDEV_MSG_WRITEBLK_REQUEST;
-			request.content.writeblk_req.dev = dev;
-			request.content.writeblk_req.blknum = i;
-			for (int j = 0; j < BLOCK_SIZE; j++)
-				request.content.writeblk_req.data[j] = i%256;
-
-			nanvix_ipc_send(channel, &request, sizeof(struct bdev_message));
-
-			/* Parse ackowledge message. */
-			nanvix_ipc_receive(channel, &reply, sizeof(struct bdev_message));
-			if (reply.type == BDEV_MSG_ERROR)
-				return (NANVIX_FAILURE);
-
-			t2 = mysecond();
-
-			bandwidth = BLOCK_SIZE/(1024*(t2-t1));
-			if (bandwidth > max)
-				max = bandwidth;
-
-			nanvix_ipc_close(channel);
-
-			channel = nanvix_ipc_connect(BDEV_NAME, 0);
-
-			/* Build read request. */
-			request.type = BDEV_MSG_READBLK_REQUEST;
-			request.content.readblk_req.dev = dev;
-			request.content.readblk_req.blknum = i;
-
-			nanvix_ipc_send(channel, &request, sizeof(struct bdev_message));
-
-			/* Parse acknowledge message. */
-			nanvix_ipc_receive(channel, &reply, sizeof(struct bdev_message));
-			if (reply.type == BDEV_MSG_ERROR)
-				return (NANVIX_FAILURE);
-			for (int j = 0; j < BLOCK_SIZE; j++)
-			{
-				if (reply.content.readblk_rep.data[j] != i%256)
-				{
-						kdebug("[bdev.test] checksum failed %c", reply.content.readblk_rep.data[j]);
-					return (NANVIX_FAILURE);
-				}
-			}
-			nanvix_ipc_close(channel);
-		}
+		bandwidth = BLOCK_SIZE/(1024*(t2-t1));
+		if (bandwidth > max)
+			max = bandwidth;
 	}
+
+	memclose();
 
 	fprintf(stdout, "[info] [bdev.test] max bandwidth: %lf MB/s\n", max);
 
@@ -122,8 +84,6 @@ static int client(void)
 int main(int argc, char **argv)
 {
 	int ret;
-
-	dev = (unsigned) atoi(argv[1]);
 
 	((void) argc);
 	((void) argv);

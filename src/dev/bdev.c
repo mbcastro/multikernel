@@ -178,8 +178,6 @@ static void bdev_readblk_connect(struct operation *op)
 	op->status = BDEV_READBLK_SEND;
 }
 
-#include <errno.h>
-
 /**
  * @brief Connects to a remote server to forward write block request.
  *
@@ -205,10 +203,7 @@ static void bdev_writeblk_connect(struct operation *op)
 	
 	/* Try again. */
 	if (ret < 0)
-	{
-		kdebug("[bdev] %s", strerror(errno));
 		return;
-	}
 
 	kdebug("[bdev] forwarding write request to device server");
 
