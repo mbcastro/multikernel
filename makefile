@@ -36,19 +36,19 @@ CFLAGS += -I $(INCDIR) -D$(TARGET)
 
 all: bdev ramdisk ipc.test bdev.test
 
-bdev: $(wildcard $(LIBDIR)/*.c) $(SRCDIR)/dev/bdev.c
+bdev: $(wildcard $(LIBDIR)/*.c) $(SRCDIR)/pm/name.c $(SRCDIR)/dev/bdev.c
 	mkdir -p $(BINDIR)
 	$(LD) $(CFLAGS) $^ -o $(BINDIR)/bdev
 
-ramdisk: $(wildcard $(LIBDIR)/*.c) $(SRCDIR)/ramdisk/main.c
+ramdisk: $(wildcard $(LIBDIR)/*.c) $(SRCDIR)/pm/name.c $(SRCDIR)/ramdisk/main.c
 	mkdir -p $(BINDIR)
 	$(LD) $(CFLAGS) $^ -o $(BINDIR)/ramdisk
 
-bdev.test: $(wildcard $(LIBDIR)/*.c) $(TESTDIR)/bdev.c
+bdev.test: $(wildcard $(LIBDIR)/*.c) $(SRCDIR)/pm/name.c $(TESTDIR)/bdev.c
 	mkdir -p $(BINDIR)
 	$(LD) $(CFLAGS) $^ -o $(BINDIR)/bdev.test
 
-ipc.test: $(wildcard $(LIBDIR)/*.c) $(TESTDIR)/ipc.c
+ipc.test: $(wildcard $(LIBDIR)/*.c) $(SRCDIR)/pm/name.c $(TESTDIR)/ipc.c
 	mkdir -p $(BINDIR)
 	$(LD) $(CFLAGS) $^ -o $(BINDIR)/ipc.test
 	

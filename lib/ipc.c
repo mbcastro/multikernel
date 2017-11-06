@@ -20,19 +20,15 @@
 #include <nanvix/ipc.h>
 #include <nanvix/hal.h>
 #include <nanvix/klib.h>
+#include <nanvix/name.h>
 
 #include <assert.h>
-#include <arpa/inet.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/un.h>
 #include <unistd.h>
 #include <limits.h>
 #include <fcntl.h>
-
-#ifndef PATH_MAX
-#define PATH_MAX 4096
-#endif
 
 /**
  * @brief Number of communication channels.
@@ -51,38 +47,10 @@
  */
 struct channel
 {
-	int flags;           /**< Status            */
-	int local;           /**< Local socket ID.  */  
-	int remote;          /**< Remote socket id. */
+	int flags;  /**< Status            */
+	int local;  /**< Local socket ID.  */  
+	int remote; /**< Remote socket id. */
 };
-
-static struct
-{
-	const char *name;
-	const char *address;
-	unsigned short port;
-} domains[] = {
-	{ "/tmp/ipc.test", "127.0.0.1", 0x8000 },
-	{ "/tmp/bdev",     "127.0.0.1", 0x8000 },
-	{ "/tmp/ramdisk0", "127.0.0.1", 0x8001 },
-	{ "/tmp/ramdisk1", "127.0.0.1", 0x8002 },
-	{ "/tmp/ramdisk2", "127.0.0.1", 0x8003 },
-	{ "/tmp/ramdisk3", "127.0.0.1", 0x8004 },
-	{ NULL, NULL, 0 }
-};
-
-static void domain_lookup(const char *name, in_addr_t *addr, in_port_t *port)
-{
-	for (int i = 0; domains[i].name != NULL; i++)
-	{
-		if (!strcmp(domains[i].name, name))
-		{
-			*port = htons(domains[i].port);
-			inet_pton(AF_INET, domains[i].name, &addr);
-			return;
-		}
-	}
-}
 
 /**
  * @brief Table of channels.
@@ -157,6 +125,7 @@ int nanvix_ipc_create(const char *name, int max, int flags)
 {
 	int id;
 	struct sockaddr_in local;
+	struct nanvix_process_addr addr;
 
 	assert(name != NULL);
 	assert(max > 0);
@@ -173,10 +142,11 @@ int nanvix_ipc_create(const char *name, int max, int flags)
 		goto error0;
 
 	/* Build socket. */
+	nanvix_lookup(name, &addr);
 	kmemset(&local, 0, sizeof(struct sockaddr_in));
 	local.sin_family = AF_INET;
-	domain_lookup(name, &local.sin_addr.s_addr, &local.sin_port);
-	local.sin_addr.s_addr = htonl(INADDR_ANY);
+	local.sin_port = addr.port;
+	local.sin_addr.s_addr = INADDR_ANY;
 
 	/* Bind local socket. */
 	if (bind(channels[id].local, (struct sockaddr *)&local, sizeof(struct sockaddr_in)) == -1)
@@ -227,8 +197,9 @@ int nanvix_ipc_open(int id)
 	return (id2);
 
 error0:
-	kdebug("[ipc] cannot open channel");
 	nanvix_ipc_channel_put(id2);
+
+	kdebug("[ipc] cannot open channel");
 	return (-1);
 }
 
@@ -247,6 +218,7 @@ int nanvix_ipc_connect(const char *name, int flags)
 {
 	int id;
 	struct sockaddr_in remote;
+	struct nanvix_process_addr addr;
 
 	/* Gets a free channel. */
 	if ((id = nanvix_ipc_channel_get()) == -1)
@@ -262,7 +234,9 @@ int nanvix_ipc_connect(const char *name, int flags)
 	/* Initialize socket. */
 	kmemset(&remote, 0, sizeof(struct sockaddr_in));
 	remote.sin_family = AF_INET;
-	domain_lookup(name, &remote.sin_addr.s_addr, &remote.sin_port);
+	nanvix_lookup(name, &addr);
+	kmemcpy(&remote.sin_addr.s_addr, &addr.addr, sizeof(in_addr_t));
+	remote.sin_port = addr.port;
 
 	/* Connect to socket. */
 	if (connect(channels[id].remote, (struct sockaddr *)&remote, sizeof(struct sockaddr_in)) == -1)
@@ -276,6 +250,7 @@ error1:
 	close(channels[id].remote);
 error0:
 	nanvix_ipc_channel_put(id);
+	kdebug("cannot connect to channel");
 	return (-1);
 }
 
@@ -361,8 +336,6 @@ int nanvix_ipc_send(int id, const void *buf, size_t n)
 	return (0);
 }
 
-#include <errno.h>
-
 /**
  * @brief receives data from an IPC channel.
  *
@@ -389,10 +362,7 @@ int nanvix_ipc_receive(int id, void *buf, size_t n)
 	}
 
 	if ((ret = recv(channels[id].remote, buf, n, 0)) == -1)
-	{
-		kdebug("[ipc] %s", strerror(errno));
 		return (-1);
-	}
 
 
 	kdebug("[ipc] receiving data %d bytes", ret);
