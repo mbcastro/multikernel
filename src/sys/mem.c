@@ -26,7 +26,16 @@
 #include <nanvix/klib.h>
 #include <nanvix/ipc.h>
 
-
+/**
+ * @brief Writes to remote memory.
+ *
+ * @param src  Pointer to source memory area.
+ * @param dest Target memory area.
+ * @param size Write size.
+ *
+ * @returns Upon successful completion, zero is returned;
+ * otherwise a negative error code is returned instead.
+ */
 int memwrite(const void *src, uint64_t dest, size_t size)
 {
 	const char *p;
@@ -77,6 +86,16 @@ int memwrite(const void *src, uint64_t dest, size_t size)
 	return (0);
 }
 
+/**
+ * @brief Reads from remote memory.
+ *
+ * @param src  Source memory area.
+ * @param dest Pointer to target memory area.
+ * @param size Read size.
+ *
+ * @returns Upon successful completion, zero is returned;
+ * otherwise a negative error code is returned instead.
+ */
 int memread(void *dest, uint64_t src, size_t size)
 {
 	char *p;
@@ -112,7 +131,9 @@ int memread(void *dest, uint64_t src, size_t size)
 		/* Parse ackowledge message. */
 		nanvix_ipc_receive(channel, &reply, sizeof(struct bdev_message));
 		if (reply.type == BDEV_MSG_ERROR)
+		{
 			return (NANVIX_FAILURE);
+}
 
 		kmemcpy(p, &request.content.readblk_rep.data, n);
 		

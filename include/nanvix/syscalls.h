@@ -25,7 +25,7 @@
 
 	/* Forward definitions. */
 	extern int memwrite(const void *, uint64_t, size_t);
-	extern int memread(void  *, uint64_t, size_t);
+	extern int memread(uint64_t, void  *, size_t);
 
 #endif /* NANVIX_SYSCALLS_H_ */
 
