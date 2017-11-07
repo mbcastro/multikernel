@@ -27,6 +27,32 @@
 #include <nanvix/ipc.h>
 
 /**
+ * @brief Remote memory address.
+ */
+struct memaddr
+{
+	dev_t dev;       /**< Device ID.    */
+	unsigned blknum; /**< Block number. */
+};
+
+/**
+ * @brief Maps a linear address into a remote memory address.
+ *
+ * @param addr Linear address.
+ *
+ * @returns Remote memory address.
+ */
+static struct memaddr memmap(uint64_t addr)
+{
+	struct memaddr memaddr;
+
+	memaddr.dev = (addr/BLOCK_SIZE)/(RAMDISK_SIZE/BLOCK_SIZE);
+	memaddr.blknum = (addr/BLOCK_SIZE)%(RAMDISK_SIZE/BLOCK_SIZE);
+
+	return (memaddr);
+}
+
+/**
  * @brief Writes to remote memory.
  *
  * @param src  Pointer to source memory area.
@@ -39,8 +65,6 @@
 int memwrite(const void *src, uint64_t dest, size_t size)
 {
 	const char *p;
-	struct bdev_message request;
-	struct bdev_message reply;
 
 	if (dest & (BLOCK_SIZE - 1))
 		return (-EINVAL);
@@ -50,31 +74,31 @@ int memwrite(const void *src, uint64_t dest, size_t size)
 	for (size_t i = 0; i < size; i += BLOCK_SIZE)
 	{
 		size_t n;
-		dev_t dev;
-		unsigned blknum;
 		int channel;
+		struct memaddr memaddr;
+		struct bdev_message msg;
 
 		channel = nanvix_ipc_connect(BDEV_NAME, 0);
 
-		dev = ((dest + i)/BLOCK_SIZE)/(RAMDISK_SIZE/BLOCK_SIZE);
-		blknum = ((dest + i)/BLOCK_SIZE)%(RAMDISK_SIZE/BLOCK_SIZE);
+		memaddr = memmap(dest + i);
 
 		n = ((size - i) < BLOCK_SIZE) ? size - i : BLOCK_SIZE;
 
-		/* Build request. */
-		request.type = BDEV_MSG_WRITEBLK_REQUEST;
-		request.content.writeblk_req.dev = dev;
-		request.content.writeblk_req.blknum = blknum;
-		kmemcpy(request.content.writeblk_req.data, p, n);
+		/* Build msg. */
+		msg.type = BDEV_MSG_WRITEBLK_REQUEST;
+		msg.content.writeblk_req.dev = memaddr.dev;
+		msg.content.writeblk_req.blknum = memaddr.blknum;
+		kmemcpy(msg.content.writeblk_req.data, p, n);
 
-		nanvix_ipc_send(channel, &request, sizeof(struct bdev_message));
+		nanvix_ipc_send(channel, &msg, sizeof(struct bdev_message));
 
 		/* Parse ackowledge message. */
-		nanvix_ipc_receive(channel, &reply, sizeof(struct bdev_message));
-		if (reply.type == BDEV_MSG_ERROR)
+		nanvix_ipc_receive(channel, &msg, sizeof(struct bdev_message));
+		if (msg.type == BDEV_MSG_ERROR)
 		{
 			kpanic("memwrite error");
 
+			nanvix_ipc_close(channel);
 			return (NANVIX_FAILURE);
 		}
 
@@ -99,8 +123,6 @@ int memwrite(const void *src, uint64_t dest, size_t size)
 int memread(void *dest, uint64_t src, size_t size)
 {
 	char *p;
-	struct bdev_message request;
-	struct bdev_message reply;
 
 	if (src & (BLOCK_SIZE - 1))
 		return (-EINVAL);
@@ -110,32 +132,34 @@ int memread(void *dest, uint64_t src, size_t size)
 	for (size_t i = 0; i < size; i += BLOCK_SIZE)
 	{
 		size_t n;
-		dev_t dev;
-		unsigned blknum;
 		int channel;
+		struct memaddr memaddr;
+		struct bdev_message msg;
 
 		channel = nanvix_ipc_connect(BDEV_NAME, 0);
 
-		dev = ((src + i)/BLOCK_SIZE)/(RAMDISK_SIZE/BLOCK_SIZE);
-		blknum = ((src + i)/BLOCK_SIZE)%(RAMDISK_SIZE/BLOCK_SIZE);
+		memaddr = memmap(src + i);
 
 		n = ((size - i) < BLOCK_SIZE) ? size - i : BLOCK_SIZE;
 
-		/* Build request. */
-		request.type = BDEV_MSG_READBLK_REQUEST;
-		request.content.readblk_req.dev = dev;
-		request.content.readblk_req.blknum = blknum;
+		/* Build msg. */
+		msg.type = BDEV_MSG_READBLK_REQUEST;
+		msg.content.readblk_req.dev = memaddr.dev;
+		msg.content.readblk_req.blknum = memaddr.blknum;
 
-		nanvix_ipc_send(channel, &request, sizeof(struct bdev_message));
+		nanvix_ipc_send(channel, &msg, sizeof(struct bdev_message));
 
 		/* Parse ackowledge message. */
-		nanvix_ipc_receive(channel, &reply, sizeof(struct bdev_message));
-		if (reply.type == BDEV_MSG_ERROR)
+		nanvix_ipc_receive(channel, &msg, sizeof(struct bdev_message));
+		if (msg.type == BDEV_MSG_ERROR)
 		{
-			return (NANVIX_FAILURE);
-}
+			kpanic("memread error");
 
-		kmemcpy(p, &request.content.readblk_rep.data, n);
+			nanvix_ipc_close(channel);
+			return (NANVIX_FAILURE);
+		}
+
+		kmemcpy(p, &msg.content.readblk_rep.data, n);
 		
 		p += n;
 
@@ -143,8 +167,4 @@ int memread(void *dest, uint64_t src, size_t size)
 	}
 
 	return (0);
-}
-
-extern void memclose(void)
-{
 }

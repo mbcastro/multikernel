@@ -173,7 +173,7 @@ static void bdev_readblk_connect(struct operation *op)
 	/* Update current operation. */
 	op->server = ret;
 	op->ramdisk_msg.type = RAMDISK_MSG_READ_REQUEST;
-	op->ramdisk_msg.content.read_req.minor = dev;
+	op->ramdisk_msg.content.read_req.dev = dev;
 	op->ramdisk_msg.content.read_req.blknum = blknum;
 	op->status = BDEV_READBLK_SEND;
 }
@@ -210,7 +210,7 @@ static void bdev_writeblk_connect(struct operation *op)
 	/* Update current operation. */
 	op->server = ret;
 	op->ramdisk_msg.type = RAMDISK_MSG_WRITE_REQUEST;
-	op->ramdisk_msg.content.write_req.minor = dev;
+	op->ramdisk_msg.content.write_req.dev = dev;
 	op->ramdisk_msg.content.write_req.blknum = blknum;
 	kmemcpy(op->ramdisk_msg.content.write_req.data, buf, BLOCK_SIZE);
 	op->status = BDEV_WRITEBLK_SEND;

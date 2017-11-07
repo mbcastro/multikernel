@@ -62,9 +62,9 @@
 			 */
 			struct
 			{
-				unsigned minor;                  /**< Minor device number. */
-				unsigned blknum;                 /**< Block number.        */
-				char data[RAMDISK_MSG_BUF_SIZE]; /**< Data.                */
+				dev_t dev;                       /**< Device number. */
+				unsigned blknum;                 /**< Block number.  */
+				char data[RAMDISK_MSG_BUF_SIZE]; /**< Data.          */
 			} write_req;
 
 			/**
@@ -80,8 +80,8 @@
 			 */
 			struct
 			{
-				unsigned minor;  /**< Minor device number. */
-				unsigned blknum; /**< Block number.        */
+				dev_t dev;       /**< Device number. */
+				unsigned blknum; /**< Block number.  */
 			} read_req;
 
 			/**

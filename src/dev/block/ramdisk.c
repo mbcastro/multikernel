@@ -97,7 +97,7 @@ static void ramdisk_handle(struct ramdisk_message *request, struct ramdisk_messa
 			unsigned blknum;
 
 			/* Extract request parameters. */
-			minor = request->content.write_req.minor;
+			minor = request->content.write_req.dev;
 			buf = request->content.write_req.data;
 			blknum = request->content.write_req.blknum;
 
@@ -121,7 +121,7 @@ static void ramdisk_handle(struct ramdisk_message *request, struct ramdisk_messa
 			kdebug("[ramdisk] read request");
 
 			/* Extract request parameters. */
-			minor = request->content.read_req.minor;
+			minor = request->content.read_req.dev;
 			buf = reply->content.read_rep.data;
 			blknum = request->content.read_req.blknum;
 			

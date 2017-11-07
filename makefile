@@ -44,7 +44,7 @@ bdev: $(SRC) $(SRCDIR)/dev/bdev.c
 	mkdir -p $(BINDIR)
 	$(LD) $(CFLAGS) $^ -o $(BINDIR)/bdev
 
-ramdisk: $(SRC) $(SRCDIR)/ramdisk/main.c
+ramdisk: $(SRC) $(SRCDIR)/dev/block/ramdisk.c
 	mkdir -p $(BINDIR)
 	$(LD) $(CFLAGS) $^ -o $(BINDIR)/ramdisk
 
