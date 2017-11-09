@@ -76,7 +76,7 @@ int memwrite(const void *src, uint64_t dest, size_t size)
 		size_t n;
 		int channel;
 		struct memaddr memaddr;
-		struct bdev_message msg;
+		struct bdev_msg msg;
 
 		channel = nanvix_ipc_connect(BDEV_NAME, 0);
 
@@ -90,10 +90,10 @@ int memwrite(const void *src, uint64_t dest, size_t size)
 		msg.content.writeblk_req.blknum = memaddr.blknum;
 		kmemcpy(msg.content.writeblk_req.data, p, n);
 
-		nanvix_ipc_send(channel, &msg, sizeof(struct bdev_message));
+		nanvix_ipc_send(channel, &msg, sizeof(struct bdev_msg));
 
 		/* Parse ackowledge message. */
-		nanvix_ipc_receive(channel, &msg, sizeof(struct bdev_message));
+		nanvix_ipc_receive(channel, &msg, sizeof(struct bdev_msg));
 		if (msg.type == BDEV_MSG_ERROR)
 		{
 			kpanic("memwrite error");
@@ -134,7 +134,7 @@ int memread(void *dest, uint64_t src, size_t size)
 		size_t n;
 		int channel;
 		struct memaddr memaddr;
-		struct bdev_message msg;
+		struct bdev_msg msg;
 
 		channel = nanvix_ipc_connect(BDEV_NAME, 0);
 
@@ -147,10 +147,10 @@ int memread(void *dest, uint64_t src, size_t size)
 		msg.content.readblk_req.dev = memaddr.dev;
 		msg.content.readblk_req.blknum = memaddr.blknum;
 
-		nanvix_ipc_send(channel, &msg, sizeof(struct bdev_message));
+		nanvix_ipc_send(channel, &msg, sizeof(struct bdev_msg));
 
 		/* Parse ackowledge message. */
-		nanvix_ipc_receive(channel, &msg, sizeof(struct bdev_message));
+		nanvix_ipc_receive(channel, &msg, sizeof(struct bdev_msg));
 		if (msg.type == BDEV_MSG_ERROR)
 		{
 			kpanic("memread error");

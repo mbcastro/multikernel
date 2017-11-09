@@ -34,9 +34,10 @@ CFLAGS += -ansi -std=c99
 CFLAGS += -Wall -Wextra
 CFLAGS += -I $(INCDIR) -D$(TARGET)
 
-SRC = $(wildcard $(LIBDIR)/*.c) \
-	  $(SRCDIR)/pm/name.c       \
-	  $(SRCDIR)/sys/mem.c
+SRC = $(wildcard $(LIBDIR)/*.c)         \
+	  $(wildcard $(LIBDIR)/kernel/*.c)  \
+	  $(wildcard $(LIBDIR)/syscall/*.c) \
+	  $(SRCDIR)/pm/name.c               \
 
 all: bdev ramdisk ipc.test bdev.test
 

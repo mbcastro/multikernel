@@ -20,17 +20,18 @@
 #include <nanvix/klib.h>
 #include <nanvix/ipc.h>
 #include <nanvix/vfs.h>
+#include <nanvix/dev.h>
 #include <nanvix/ramdisk.h>
 
 /**
  * @brief Number of RAM Disks.
  */
-#define NR_RAMDISKS 1
+#define NR_BDEVS 1
 
 /**
  * @brief RAM Disks.
  */
-static char ramdisk[RAMDISK_SIZE];
+static char ramdisk[BLOCK_SIZE];
 
 /**
  * @brief Reads a block from a RAM Disk device.
@@ -84,12 +85,12 @@ static ssize_t ramdisk_writeblk(unsigned minor, const char *buf, unsigned blknum
  * @param request Request.
  * @param reply   Reply.
  */
-static void ramdisk_handle(struct ramdisk_message *request, struct ramdisk_message *reply)
+static void ramdisk_handle(struct bdev_msg *request, struct bdev_msg *reply)
 {
 	switch (request->type)
 	{
 		/* Write request. */
-		case RAMDISK_MSG_WRITE_REQUEST:
+		case BDEV_MSG_WRITEBLK_REQUEST:
 		{
 			ssize_t n;
 			char *buf;
@@ -97,21 +98,21 @@ static void ramdisk_handle(struct ramdisk_message *request, struct ramdisk_messa
 			unsigned blknum;
 
 			/* Extract request parameters. */
-			minor = request->content.write_req.dev;
-			buf = request->content.write_req.data;
-			blknum = request->content.write_req.blknum;
+			minor = request->content.writeblk_req.dev;
+			buf = request->content.writeblk_req.data;
+			blknum = request->content.writeblk_req.blknum;
 
 			kdebug("[ramdisk] write request %d %d", minor, blknum);
 			
 			n = ramdisk_writeblk(minor, buf, blknum);
 
 			/* Build reply. */
-			reply->type = RAMDISK_MSG_WRITE_REPLY;
-			reply->content.write_rep.n = n;
+			reply->type = BDEV_MSG_WRITEBLK_REPLY;
+			reply->content.writeblk_rep.n = n;
 		} break;
 
 		/* Read request. */
-		case RAMDISK_MSG_READ_REQUEST:
+		case BDEV_MSG_READBLK_REQUEST:
 		{
 			ssize_t n;
 			char *buf;
@@ -121,20 +122,20 @@ static void ramdisk_handle(struct ramdisk_message *request, struct ramdisk_messa
 			kdebug("[ramdisk] read request");
 
 			/* Extract request parameters. */
-			minor = request->content.read_req.dev;
-			buf = reply->content.read_rep.data;
-			blknum = request->content.read_req.blknum;
+			minor = request->content.readblk_req.dev;
+			buf = reply->content.readblk_rep.data;
+			blknum = request->content.readblk_req.blknum;
 			
 			n = ramdisk_readblk(minor, buf, blknum);
 
 			/* Build reply. */
-			reply->type = RAMDISK_MSG_READ_REPLY;
-			reply->content.read_rep.n = n;
+			reply->type = BDEV_MSG_READBLK_REPLY;
+			reply->content.readblk_rep.n = n;
 		} break;
 
 		default:
 			kdebug("[ramdisk] bad request");
-			reply->type = RAMDISK_MSG_ERROR;
+			reply->type = BDEV_MSG_ERROR;
 			break;
 	}
 }
@@ -155,18 +156,18 @@ int main(int argc, char **argv)
 	while (1)
 	{
 		int client;
-		struct ramdisk_message reply;
-		struct ramdisk_message request;
+		struct bdev_msg reply;
+		struct bdev_msg request;
 
 		client = nanvix_ipc_open(channel);
 		kdebug("[ramdisk] client connected");
 
-		nanvix_ipc_receive(client, &request, sizeof(struct ramdisk_message));
+		nanvix_ipc_receive(client, &request, sizeof(struct bdev_msg));
 		kdebug("[ramdisk] serving client");
 
 		ramdisk_handle(&request, &reply);
 
-		nanvix_ipc_send(client, &reply, sizeof(struct ramdisk_message));
+		nanvix_ipc_send(client, &reply, sizeof(struct bdev_msg));
 		kdebug("[ramdisk] replying client");
 
 		nanvix_ipc_close(client);

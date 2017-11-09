@@ -53,9 +53,9 @@ struct operation
 	int status;                         /**< Status.           */
 	int client;                         /**< Client channel.   */
 	int server;                         /**< Server client.    */
-	struct bdev_message request;        /**< Client request.   */
-	struct bdev_message reply;          /**< Client reply.     */
-	struct ramdisk_message ramdisk_msg; /**< RAM disk message. */
+	struct bdev_msg request;        /**< Client request.   */
+	struct bdev_msg reply;          /**< Client reply.     */
+	struct bdev_msg ramdisk_msg; /**< RAM disk message. */
 } operations[CLIENT_MAX];
 
 /* Number of block devices. */
@@ -102,15 +102,15 @@ static void bdev_open(int channel, struct operation *op)
  */
 void bdev_receive(struct operation *op)
 {
-	int ret;                      /* IPC operation return value. */
-	int channel;                  /* IPC channel.                */
-	struct bdev_message *request; /* Client request.             */
+	int ret;                  /* IPC operation return value. */
+	int channel;              /* IPC channel.                */
+	struct bdev_msg *request; /* Client request.             */
 
 	/* Extract parameters of current operation. */
 	channel = op->client;
 	request = &op->request;
 
-	ret = nanvix_ipc_receive(channel, request, sizeof(struct bdev_message));
+	ret = nanvix_ipc_receive(channel, request, sizeof(struct bdev_msg));
 
 	/* Try again. */
 	if (ret < 0)
@@ -172,9 +172,9 @@ static void bdev_readblk_connect(struct operation *op)
 
 	/* Update current operation. */
 	op->server = ret;
-	op->ramdisk_msg.type = RAMDISK_MSG_READ_REQUEST;
-	op->ramdisk_msg.content.read_req.dev = dev;
-	op->ramdisk_msg.content.read_req.blknum = blknum;
+	op->ramdisk_msg.type = BDEV_MSG_READBLK_REQUEST;
+	op->ramdisk_msg.content.readblk_req.dev = dev;
+	op->ramdisk_msg.content.readblk_req.blknum = blknum;
 	op->status = BDEV_READBLK_SEND;
 }
 
@@ -209,10 +209,10 @@ static void bdev_writeblk_connect(struct operation *op)
 
 	/* Update current operation. */
 	op->server = ret;
-	op->ramdisk_msg.type = RAMDISK_MSG_WRITE_REQUEST;
-	op->ramdisk_msg.content.write_req.dev = dev;
-	op->ramdisk_msg.content.write_req.blknum = blknum;
-	kmemcpy(op->ramdisk_msg.content.write_req.data, buf, BLOCK_SIZE);
+	op->ramdisk_msg.type = BDEV_MSG_WRITEBLK_REQUEST;
+	op->ramdisk_msg.content.writeblk_req.dev = dev;
+	op->ramdisk_msg.content.writeblk_req.blknum = blknum;
+	kmemcpy(op->ramdisk_msg.content.writeblk_req.data, buf, BLOCK_SIZE);
 	op->status = BDEV_WRITEBLK_SEND;
 }
 
@@ -225,13 +225,13 @@ static void bdev_readblk_send(struct operation *op)
 {
 	int ret;                         /* IPC operation return value. */
 	int channel;                     /* IPC channel.                */
-	struct ramdisk_message *request; /* Request to remote server.   */
+	struct bdev_msg *request; /* Request to remote server.   */
 
 	/* Extract parameters of current operation. */
 	channel = op->server;
 	request = &op->ramdisk_msg;
 
-	ret = nanvix_ipc_send(channel, request, sizeof(struct ramdisk_message));
+	ret = nanvix_ipc_send(channel, request, sizeof(struct bdev_msg));
 	
 	/* Try again. */
 	if (ret < 0)
@@ -252,13 +252,13 @@ static void bdev_writeblk_send(struct operation *op)
 {
 	int ret;                         /* IPC operation return value. */
 	int channel;                     /* IPC channel.                */
-	struct ramdisk_message *request; /* Request to remote server.   */
+	struct bdev_msg *request; /* Request to remote server.   */
 
 	/* Extract parameters of current operation. */
 	channel = op->server;
 	request = &op->ramdisk_msg;
 
-	ret = nanvix_ipc_send(channel, request, sizeof(struct ramdisk_message));
+	ret = nanvix_ipc_send(channel, request, sizeof(struct bdev_msg));
 	
 	/* Try again. */
 	if (ret < 0)
@@ -279,20 +279,20 @@ static void bdev_readblk_receive(struct operation *op)
 {
 	int ret;                       /* IPC operation return value. */
 	int channel;                   /* IPC channel.                */
-	struct ramdisk_message *reply; /* Reply from remote server.   */
+	struct bdev_msg *reply; /* Reply from remote server.   */
 
 	/* Extract parameters of current operation. */
 	channel = op->server;
 	reply = &op->ramdisk_msg;
 
-	ret = nanvix_ipc_receive(channel, reply, sizeof(struct ramdisk_message));
+	ret = nanvix_ipc_receive(channel, reply, sizeof(struct bdev_msg));
 	
 	/* Try again. */
 	if (ret < 0)
 		return;
 
 	/* Parse reply. */
-	if (reply->type != RAMDISK_MSG_READ_REPLY)
+	if (reply->type != BDEV_MSG_READBLK_REPLY)
 	{
 		op->status = BDEV_ERROR;
 		return;
@@ -305,7 +305,7 @@ static void bdev_readblk_receive(struct operation *op)
 	/* Update current operation. */
 	op->reply.type = BDEV_MSG_READBLK_REPLY;
 	op->reply.content.readblk_rep.n = ret;
-	kmemcpy(op->reply.content.readblk_rep.data, reply->content.read_rep.data, BLOCK_SIZE);
+	kmemcpy(op->reply.content.readblk_rep.data, reply->content.readblk_rep.data, BLOCK_SIZE);
 	op->status = BDEV_REPLY;
 }
 
@@ -318,20 +318,20 @@ static void bdev_writeblk_receive(struct operation *op)
 {
 	int ret;                       /* IPC operation return value. */
 	int channel;                   /* IPC channel.                */
-	struct ramdisk_message *reply; /* Reply from remote server.   */
+	struct bdev_msg *reply; /* Reply from remote server.   */
 
 	/* Extract parameters of current operation. */
 	channel = op->server;
 	reply = &op->ramdisk_msg;
 
-	ret = nanvix_ipc_receive(channel, reply, sizeof(struct ramdisk_message));
+	ret = nanvix_ipc_receive(channel, reply, sizeof(struct bdev_msg));
 	
 	/* Try again. */
 	if (ret < 0)
 		return;
 
 	/* Parse reply. */
-	if (reply->type != RAMDISK_MSG_WRITE_REPLY)
+	if (reply->type != BDEV_MSG_WRITEBLK_REPLY)
 	{
 		op->status = BDEV_ERROR;
 		return;
@@ -354,15 +354,15 @@ static void bdev_writeblk_receive(struct operation *op)
  */
 static void bdev_reply(struct operation *op)
 {
-	int ret;                    /* IPC operation return value. */
-	int channel;                /* IPC channel.                */
-	struct bdev_message *reply; /* Reply from remote server.   */
+	int ret;                /* IPC operation return value. */
+	int channel;            /* IPC channel.                */
+	struct bdev_msg *reply; /* Reply from remote server.   */
 
 	/* Extract parameters of current operation. */
 	channel = op->client;
 	reply = &op->reply;
 
-	ret = nanvix_ipc_send(channel, reply, sizeof(struct bdev_message));
+	ret = nanvix_ipc_send(channel, reply, sizeof(struct bdev_msg));
 	
 	/* Try again. */
 	if (ret < 0)

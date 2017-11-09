@@ -42,7 +42,7 @@
 	/**
 	 * @brief Block device message
 	 */
-	struct bdev_message
+	struct bdev_msg
 	{
 		/**
 		 * @brief Message type.
@@ -89,7 +89,78 @@
 				char data[BLOCK_SIZE]; /**< Data.                 */
 				ssize_t n;             /**< Number of bytes read. */
 			} readblk_rep;
+			
+			/**
+			 * @brief Error reply.
+			 */
+			struct
+			{
+				int code; /* Error code. */
+			} error_rep;
+
 		} content;
 	};
+
+	#define bdev_msg_build_writeblk_request(msg,dev,blknum,data)  \
+	{                                                             \
+		msg.type = BDEV_MSG_WRITEBLK_REQUEST;                     \
+		msg.content.writeblk_req.dev = dev;                       \
+		msg.content.writeblk_req.blknum = blknum;                 \
+		kmemcpy(msg.content.writeblk_req.data, data, BLOCK_SIZE); \
+	}
+
+	#define bdev_msg_extract_writeblk_request(msg,dev,blknum,data) \
+	{                                                              \
+		dev = msg.content.writeblk_req.dev;                        \
+		blknum = msg.content.writeblk_req.blknum;                  \
+		kmemcpy(data, msg.content.writeblk_req.data, BLOCK_SIZE);  \
+	}
+	
+	#define bdev_msg_build_writeblk_reply(msg,n) \
+	{                                            \
+		msg.type = BDEV_MSG_WRITEBLK_REPLY;      \
+		msg.content.writeblk_rep.n = n;          \
+	}
+
+	#define bdev_msg_extract_writeblk_reply(msg,n) \
+	{                                              \
+		n = msg.content.writeblk_rep.n;            \
+	}
+
+	#define bdev_msg_build_readblk_request(msg,dev,blknum) \
+	{                                                      \
+		msg.type = BDEV_MSG_READBLK_REQUEST;               \
+		msg.content.readblk_req.dev = dev;                 \
+		msg.content.readblk_req.blknum = blknum;           \
+	}
+
+	#define bdev_msg_extract_readblk_request(msg,dev,blknum) \
+	{                                                        \
+		dev = msg.content.readblk_req.dev;                   \
+		blknum = msg.content.readblk_req.blknum;             \
+	}
+
+	#define bdev_msg_build_readblk_reply(msg,data,n)             \
+	{                                                            \
+		msg.type = BDEV_MSG_READBLK_REPLY;                       \
+		msg.content.readblk_rep.n = n;                           \
+		kmemcpy(msg.content.readblk_rep.data, data, BLOCK_SIZE); \
+	}
+
+	#define bdev_msg_extract_readblk_reply(msg,data,n)           \
+	{                                                            \
+		n = msg.content.readblk_rep.n;                           \
+		kmemcpy(data, msg.content.readblk_rep.data, BLOCK_SIZE); \
+	}
+	
+	#define bdev_msg_build_error_rep(msg,code) \
+	{                                          \
+		msg.content.error_rep = code;          \
+	}
+
+	#define bdev_msg_extract_error_rep(msg,code) \
+	{                                            \
+		code = msg.content.error_rep;            \
+	}
 
 #endif /* DEV_H_ */
