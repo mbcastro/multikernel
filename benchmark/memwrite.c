@@ -49,7 +49,7 @@ static double tick(void)
  */
 static void benchmark_memwrite(int nwrites)
 {
-	double total;              /* Maximum bandwidth. */
+	double maxbandwidth;     /* Maximum bandwidth. */
 	char buffer[BLOCK_SIZE]; /* Buffer.            */
 
 	srand(time(NULL));
@@ -58,26 +58,29 @@ static void benchmark_memwrite(int nwrites)
 	for (int i = 0; i < BLOCK_SIZE; i++)
 		buffer[i] = 1;
 
-	total = 0;
+	maxbandwidth = 0;
 
 	/* Write blocks to remote memory. */
 	for (int k = 0; k < nwrites; k++)
 	{
 		int j;
+		double bandwidth;
 		double t1, t2;
 
 		j = rand()%nwrites;
 
 		t1 = tick();
 		
-		memwrite(buffer, j*BLOCK_SIZE, BLOCK_SIZE);
+		memwrite(buffer, j, BLOCK_SIZE);
 		
 		t2 = tick();
 
-		total += t2 - t1;
+		bandwidth = (BLOCK_SIZE)/(1024*1024*(t2 - t1));
+		if (bandwidth > maxbandwidth)
+			maxbandwidth = bandwidth;
 	}
 
-	printf("[memwrite] write bandwidth: %d bytes %lf seconds\n", (nwrites*BLOCK_SIZE), total);
+	printf("[memwrite] write bandwidth: %lf MB/s\n", maxbandwidth);
 }
 
 /**

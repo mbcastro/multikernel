@@ -18,5 +18,14 @@
 
 export BINDIR=$PWD/bin
 
-bin/memwrite.benchmark 16384 2>&1 | grep memwrite & 
-bin/memwrite.benchmark 16384 2>&1 | grep memwrite  
+trap 'kill $(jobs -p)' EXIT
+
+bin/ramdisk /dev/ramdisk0 2> /dev/null & sleep 1
+bin/ramdisk /dev/ramdisk1 2> /dev/null & sleep 1
+bin/ramdisk /dev/ramdisk2 2> /dev/null & sleep 1
+bin/ramdisk /dev/ramdisk3 2> /dev/null & sleep 1
+bin/bdev    /sys/bdev     2> /dev/null & sleep 1
+
+for i in {1..30}; do
+	bin/memwrite.benchmark 2 2>&1 | grep memwrite
+done

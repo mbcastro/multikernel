@@ -21,10 +21,11 @@
 #define RAMDISK_H_
 
 	#include <sys/types.h>
+	#include <nanvix/vfs.h>
 
 	/**
 	 * @brief RAM Disk size (in bytes).
 	 */
-	#define RAMDISK_SIZE 4194304
+	#define RAMDISK_SIZE (1024*BLOCK_SIZE)
 
 #endif /* RAMDISK_H_ */

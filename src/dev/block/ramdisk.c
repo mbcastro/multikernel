@@ -33,7 +33,7 @@
 /**
  * @brief RAM Disk.
  */
-static char ramdisk[RAMDISK_SIZE];
+static char *ramdisk;
 
 /**
  * @brief Reads a block from a RAM Disk device.
@@ -173,6 +173,8 @@ int main(int argc, char **argv)
 		return (NANVIX_FAILURE);
 	}
 
+	ramdisk = kmalloc(RAMDISK_SIZE);
+
 	channel = nanvix_ipc_create(argv[1], NR_CONNECTIONS, 0);
 
 	kdebug("[ramdisk] server running");
@@ -199,6 +201,8 @@ int main(int argc, char **argv)
 	}
 
 	nanvix_ipc_unlink(channel);
+
+	kfree(ramdisk);
 
 	return (NANVIX_SUCCESS);
 }

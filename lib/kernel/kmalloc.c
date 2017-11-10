@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 2011-2017 Pedro H. Penna <pedrohenriquepenna@gmail.com>
+ * Copyright(C) 2011-2016 Pedro H. Penna <pedrohenriquepenna@gmail.com>
  * 
  * This file is part of Nanvix.
  * 
@@ -17,14 +17,33 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NANVIX_SYSCALLS_H
-#define NANVIX_SYSCALLS_H_
+#include <stdlib.h>
 
-	#include <stdlib.h>
+#include <nanvix/klib.h>
 
-	/* Forward definitions. */
-	extern int memwrite(const void *, unsigned, size_t);
-	extern int memread(unsigned, void  *, size_t);
+/**
+ * @brief Kernel malloc().
+ *
+ * @param n Number of bytes to allocate.
+ */
+void *kmalloc(size_t n)
+{
+	void *ptr;
 
-#endif /* NANVIX_SYSCALLS_H_ */
+	ptr = malloc(n);
 
+	if (ptr == NULL)
+		kpanic("cannot kmalloc()");
+
+	return (ptr);
+}
+
+/**
+ * @brief Kernel free().
+ *
+ * @param ptr Pointer to memory area.
+ */
+void kfree(void *ptr)
+{
+	free(ptr);
+}

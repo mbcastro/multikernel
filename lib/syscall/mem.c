@@ -42,12 +42,14 @@ struct memaddr
  *
  * @returns Remote memory address.
  */
-static struct memaddr memmap(uint64_t addr)
+static struct memaddr memmap(unsigned addr)
 {
 	struct memaddr memaddr;
 
-	memaddr.dev = (addr/BLOCK_SIZE)/(RAMDISK_SIZE/BLOCK_SIZE);
-	memaddr.blknum = (addr/BLOCK_SIZE)%(RAMDISK_SIZE/BLOCK_SIZE);
+	memaddr.dev = (addr)/(RAMDISK_SIZE/BLOCK_SIZE);
+	memaddr.blknum = (addr)%(RAMDISK_SIZE/BLOCK_SIZE);
+
+	kprintf("dev = %d", memaddr.dev);
 
 	return (memaddr);
 }
@@ -62,12 +64,9 @@ static struct memaddr memmap(uint64_t addr)
  * @returns Upon successful completion, zero is returned;
  * otherwise a negative error code is returned instead.
  */
-int memwrite(const void *src, uint64_t dest, size_t size)
+int memwrite(const void *src, unsigned dest, size_t size)
 {
 	const char *p;
-
-	if (dest & (BLOCK_SIZE - 1))
-		return (-EINVAL);
 
 	p = src;
 	
@@ -120,12 +119,9 @@ int memwrite(const void *src, uint64_t dest, size_t size)
  * @returns Upon successful completion, zero is returned;
  * otherwise a negative error code is returned instead.
  */
-int memread(void *dest, uint64_t src, size_t size)
+int memread(void *dest, unsigned src, size_t size)
 {
 	char *p;
-
-	if (src & (BLOCK_SIZE - 1))
-		return (-EINVAL);
 
 	p = dest;
 	

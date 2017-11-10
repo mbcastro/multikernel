@@ -51,5 +51,7 @@
 	extern void kprintf(const char *, ...);
 	extern void kpanic(const char *, ...);
 	extern void kdebug(const char *, ...);
+	extern void *kmalloc(size_t);
+	extern void kfree(void *);
 
 #endif /* KLIB_H_ */
