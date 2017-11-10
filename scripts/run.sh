@@ -18,21 +18,5 @@
 
 export BINDIR=$PWD/bin
 
-
-trap 'kill $(jobs -p)' EXIT
-
-#$BINDIR/ipc.test --server &
-#sleep 1
-#$BINDIR/ipc.test --client 
-
-taskset -c 0 $BINDIR/ramdisk /tmp/ramdisk0 & sleep 1 &
-taskset -c 1 $BINDIR/ramdisk /tmp/ramdisk1 & sleep 1 &
-taskset -c 2 $BINDIR/ramdisk /tmp/ramdisk2 & sleep 1 &
-taskset -c 3 $BINDIR/ramdisk /tmp/ramdisk3 & sleep 1 &
-taskset -c 5 $BINDIR/bdev                  & sleep 1 &
-taskset -c 5 $BINDIR/bdev.test 1 &
-taskset -c 6 $BINDIR/bdev.test 2 &
-taskset -c 5 $BINDIR/bdev.test 3 &
-taskset -c 6 $BINDIR/bdev.test 4 
-#taskset -c 5 $BINDIR/bdev.test 2 &
-#taskset -c 6 $BINDIR/bdev.test 3 &
+bin/memwrite.benchmark 16384 2>&1 | grep memwrite & 
+bin/memwrite.benchmark 16384 2>&1 | grep memwrite  

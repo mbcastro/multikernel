@@ -17,16 +17,17 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <errno.h>
+
 #include <nanvix/klib.h>
 #include <nanvix/ipc.h>
 #include <nanvix/dev.h>
 #include <nanvix/vfs.h>
-#include <nanvix/ramdisk.h>
 
 /**
  * @brief Maximum number of operations to enqueue.
  */
-#define CLIENT_MAX 2
+#define NR_CONNECTIONS 16
 
 /**
  * @brief States for a client.
@@ -50,25 +51,28 @@
  */
 struct operation
 {
-	int status;                         /**< Status.           */
-	int client;                         /**< Client channel.   */
-	int server;                         /**< Server client.    */
-	struct bdev_msg request;        /**< Client request.   */
-	struct bdev_msg reply;          /**< Client reply.     */
-	struct bdev_msg ramdisk_msg; /**< RAM disk message. */
-} operations[CLIENT_MAX];
+	int status;              /**< Status.           */
+	int client;              /**< Client channel.   */
+	int server;              /**< Server client.    */
+	struct bdev_msg request; /**< Client request.   */
+	struct bdev_msg reply;   /**< Client reply.     */
+} operations[NR_CONNECTIONS];
 
 /* Number of block devices. */
-#define NR_BLKDEV 4
+#define NR_BLKDEV 8
 
 /*
  * Block devices table.
  */
 static const char *bdevsw[NR_BLKDEV] = {
-	"ramdisk0", /* /dev/ramdisk0 */
-	"ramdisk1", /* /dev/ramdisk1 */
-	"ramdisk2", /* /dev/ramdisk2 */
-	"ramdisk3", /* /dev/ramdisk3 */
+	"/dev/ramdisk0", /* /dev/ramdisk0 */
+	"/dev/ramdisk1", /* /dev/ramdisk1 */
+	"/dev/ramdisk2", /* /dev/ramdisk2 */
+	"/dev/ramdisk3", /* /dev/ramdisk3 */
+	"/dev/ramdisk4", /* /dev/ramdisk4 */
+	"/dev/ramdisk5", /* /dev/ramdisk5 */
+	"/dev/ramdisk6", /* /dev/ramdisk6 */
+	"/dev/ramdisk7", /* /dev/ramdisk7 */
 };
 
 /**
@@ -122,22 +126,22 @@ void bdev_receive(struct operation *op)
 		/* Read a block. */
 		case BDEV_MSG_READBLK_REQUEST:
 			op->status = BDEV_READBLK_CONNECT;
-			kdebug("[bdev] connecting to device server (%d %d)\n",
-				op->request.content.readblk_req.dev,
-				op->request.content.readblk_req.blknum);
+			kdebug("[bdev] connecting to device server (%d)\n",
+				op->request.content.readblk_req.dev);
 			break;
 
 		/* Write a block. */
 		case BDEV_MSG_WRITEBLK_REQUEST:
 			op->status = BDEV_WRITEBLK_CONNECT;
-			kdebug("[bdev] connecting to device server (%d %d)\n",
-				op->request.content.writeblk_req.dev,
-				op->request.content.writeblk_req.blknum);
+			kdebug("[bdev] connecting to device server (%d)\n",
+				op->request.content.writeblk_req.dev);
 			break;
 
 		/* Error. */
 		default:
 			op->status = BDEV_ERROR;
+			op->reply.type = BDEV_MSG_ERROR;
+			op->reply.content.error_rep.code = EINVAL;
 			kdebug("[bdev] unknown request type");
 			break;
 	}
@@ -150,19 +154,17 @@ void bdev_receive(struct operation *op)
  */
 static void bdev_readblk_connect(struct operation *op)
 {
-	int ret;         /* IPC operation return value. */
-	dev_t dev;       /* Device.                     */
-	unsigned blknum; /* Block number.               */
+	int ret;   /* IPC operation return value. */
+	dev_t dev; /* Device.                     */
 
 	/* Extract parameters of current operation. */
 	dev = op->request.content.readblk_req.dev;
-	blknum = op->request.content.readblk_req.blknum;
 	
 	/* Invalid device. */
 	if ((dev >= NR_BLKDEV) || (bdevsw[dev] == NULL))
 		kpanic("[bdev] reading block from invalid device");
 
-	ret = nanvix_ipc_connect(bdevsw[dev], 0);
+	ret = nanvix_ipc_connect(bdevsw[dev], CHANNEL_NONBLOCK);
 	
 	/* Try again. */
 	if (ret < 0)
@@ -172,9 +174,6 @@ static void bdev_readblk_connect(struct operation *op)
 
 	/* Update current operation. */
 	op->server = ret;
-	op->ramdisk_msg.type = BDEV_MSG_READBLK_REQUEST;
-	op->ramdisk_msg.content.readblk_req.dev = dev;
-	op->ramdisk_msg.content.readblk_req.blknum = blknum;
 	op->status = BDEV_READBLK_SEND;
 }
 
@@ -185,21 +184,17 @@ static void bdev_readblk_connect(struct operation *op)
  */
 static void bdev_writeblk_connect(struct operation *op)
 {
-	int ret;         /* IPC operation return value. */
-	dev_t dev;       /* Device.                     */
-	unsigned blknum; /* Block number.               */
-	char *buf;       /* Buffer.                     */
+	int ret;   /* IPC operation return value. */
+	dev_t dev; /* Device.                     */
 
 	/* Extract parameters of current operation. */
 	dev = op->request.content.writeblk_req.dev;
-	blknum = op->request.content.writeblk_req.blknum;
-	buf = op->request.content.writeblk_req.data;
 	
 	/* Invalid device. */
 	if ((dev >= NR_BLKDEV) || (bdevsw[dev] == NULL))
 		kpanic("[bdev] write block from invalid device");
 
-	ret = nanvix_ipc_connect(bdevsw[dev], 0);
+	ret = nanvix_ipc_connect(bdevsw[dev], CHANNEL_NONBLOCK);
 	
 	/* Try again. */
 	if (ret < 0)
@@ -209,10 +204,6 @@ static void bdev_writeblk_connect(struct operation *op)
 
 	/* Update current operation. */
 	op->server = ret;
-	op->ramdisk_msg.type = BDEV_MSG_WRITEBLK_REQUEST;
-	op->ramdisk_msg.content.writeblk_req.dev = dev;
-	op->ramdisk_msg.content.writeblk_req.blknum = blknum;
-	kmemcpy(op->ramdisk_msg.content.writeblk_req.data, buf, BLOCK_SIZE);
 	op->status = BDEV_WRITEBLK_SEND;
 }
 
@@ -229,7 +220,7 @@ static void bdev_readblk_send(struct operation *op)
 
 	/* Extract parameters of current operation. */
 	channel = op->server;
-	request = &op->ramdisk_msg;
+	request = &op->request;
 
 	ret = nanvix_ipc_send(channel, request, sizeof(struct bdev_msg));
 	
@@ -256,7 +247,7 @@ static void bdev_writeblk_send(struct operation *op)
 
 	/* Extract parameters of current operation. */
 	channel = op->server;
-	request = &op->ramdisk_msg;
+	request = &op->request;
 
 	ret = nanvix_ipc_send(channel, request, sizeof(struct bdev_msg));
 	
@@ -283,7 +274,7 @@ static void bdev_readblk_receive(struct operation *op)
 
 	/* Extract parameters of current operation. */
 	channel = op->server;
-	reply = &op->ramdisk_msg;
+	reply = &op->reply;
 
 	ret = nanvix_ipc_receive(channel, reply, sizeof(struct bdev_msg));
 	
@@ -303,9 +294,6 @@ static void bdev_readblk_receive(struct operation *op)
 	kdebug("[bdev] replying client");
 
 	/* Update current operation. */
-	op->reply.type = BDEV_MSG_READBLK_REPLY;
-	op->reply.content.readblk_rep.n = ret;
-	kmemcpy(op->reply.content.readblk_rep.data, reply->content.readblk_rep.data, BLOCK_SIZE);
 	op->status = BDEV_REPLY;
 }
 
@@ -316,13 +304,13 @@ static void bdev_readblk_receive(struct operation *op)
  */
 static void bdev_writeblk_receive(struct operation *op)
 {
-	int ret;                       /* IPC operation return value. */
-	int channel;                   /* IPC channel.                */
+	int ret;                /* IPC operation return value. */
+	int channel;            /* IPC channel.                */
 	struct bdev_msg *reply; /* Reply from remote server.   */
 
 	/* Extract parameters of current operation. */
 	channel = op->server;
-	reply = &op->ramdisk_msg;
+	reply = &op->reply;
 
 	ret = nanvix_ipc_receive(channel, reply, sizeof(struct bdev_msg));
 	
@@ -334,6 +322,7 @@ static void bdev_writeblk_receive(struct operation *op)
 	if (reply->type != BDEV_MSG_WRITEBLK_REPLY)
 	{
 		op->status = BDEV_ERROR;
+		kpanic("%d %d", reply->type, op->request.type);
 		return;
 	}
 
@@ -342,8 +331,6 @@ static void bdev_writeblk_receive(struct operation *op)
 	kdebug("[bdev] replying client");
 
 	/* Update current operation. */
-	op->reply.type = BDEV_MSG_WRITEBLK_REPLY;
-	op->reply.content.readblk_rep.n = ret;
 	op->status = BDEV_REPLY;
 }
 
@@ -400,7 +387,6 @@ static void bdev_close(struct operation *op)
  */
 static void bdev_error(struct operation *op)
 {
-	kpanic("block device error");
 	op->status = BDEV_CLOSE;
 }
 
@@ -411,16 +397,21 @@ int main(int argc, char **argv)
 {
 	int channel;
 
-	((void) argc);
-	((void) argv);
+	/* Invalid number of arguments. */
+	if (argc != 2)
+	{
+		kprintf("invalid number of arguments");
+		kprintf("Usage: bdev <pathname>");
+		return (NANVIX_FAILURE);
+	}
 
-	channel = nanvix_ipc_create(BDEV_NAME, CLIENT_MAX, CHANNEL_NONBLOCK);
+	channel = nanvix_ipc_create(argv[1], NR_CONNECTIONS, CHANNEL_NONBLOCK);
 
 	kdebug("[bdev] server running");
 
 	while (1)
 	{
-		for (int i = 0; i < CLIENT_MAX; i++)
+		for (int i = 0; i < NR_CONNECTIONS; i++)
 		{
 			struct operation *current;
 
@@ -475,6 +466,7 @@ int main(int argc, char **argv)
 			}
 		}
 	}
+
 	return (NANVIX_SUCCESS);
 }
 

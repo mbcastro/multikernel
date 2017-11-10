@@ -17,12 +17,11 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <assert.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <sys/time.h>
+#include <time.h>
 
-#include <nanvix/klib.h>
-#include <nanvix/ipc.h>
 #include <nanvix/vfs.h>
 #include <nanvix/syscalls.h>
 
@@ -31,47 +30,54 @@
  */
 #define NR_MESSAGES 128
 
-double mysecond()
+/**
+ * @brief Gets wall clock (in seconds).
+ *
+ * @returns Wall clock value.
+ */
+static double tick(void)
 {
 	struct timeval tp;
 
 	gettimeofday(&tp, NULL);
-	return ( (double) tp.tv_sec + (double) tp.tv_usec * 1.e-6 );
+
+	return ((double) tp.tv_sec + (double)tp.tv_usec*1.e-6 );
 }
 
 /**
- * @brief Unit test client.
- *
- * @returns Upon successful NANVIX_SUCCESS is returned. Upon failure
- * NANVIX_FAILURE is returned instead.
+ * @brief Memwrite benchmark.
  */
-static int client(void)
+static void benchmark_memwrite(int nwrites)
 {
-	double max;
-	char buffer[BLOCK_SIZE];
+	double total;              /* Maximum bandwidth. */
+	char buffer[BLOCK_SIZE]; /* Buffer.            */
+
+	srand(time(NULL));
 
 	/* Write checksum. */
 	for (int i = 0; i < BLOCK_SIZE; i++)
 		buffer[i] = 1;
 
-	for (int k = 0; k < 1024*12; k++)
+	total = 0;
+
+	/* Write blocks to remote memory. */
+	for (int k = 0; k < nwrites; k++)
 	{
-		double t1, t2, bandwidth;
+		int j;
+		double t1, t2;
 
-		t1 = mysecond();
-		
-		memwrite(buffer, k*BLOCK_SIZE, BLOCK_SIZE);
-		
-		t2 = mysecond();
+		j = rand()%nwrites;
 
-		bandwidth = BLOCK_SIZE/(1024*(t2-t1));
-		if (bandwidth > max)
-			max = bandwidth;
+		t1 = tick();
+		
+		memwrite(buffer, j*BLOCK_SIZE, BLOCK_SIZE);
+		
+		t2 = tick();
+
+		total += t2 - t1;
 	}
 
-	fprintf(stdout, "[info] [bdev.test] max bandwidth: %lf MB/s\n", max);
-
-	return (NANVIX_SUCCESS);
+	printf("[memwrite] write bandwidth: %d bytes %lf seconds\n", (nwrites*BLOCK_SIZE), total);
 }
 
 /**
@@ -79,18 +85,16 @@ static int client(void)
  */
 int main(int argc, char **argv)
 {
-	int ret;
-
-	((void) argc);
-	((void) argv);
+	/* Invalid number of arguments. */
+	if (argc != 2)
+	{
+		printf("missing number of writes\n");
+		printf("Usage: memwrite <nwrites>\n");
+		return (0);
+	}
 
 	/* Server */
-	ret = client();
+	benchmark_memwrite(atoi(argv[1]));
 
-	if (ret == NANVIX_SUCCESS)
-		kprintf("bdev test passed");
-	else
-		kprintf("bdev test FAILED");
-
-	return (NANVIX_SUCCESS);
+	return (0);
 }

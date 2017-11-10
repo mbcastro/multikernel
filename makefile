@@ -24,6 +24,7 @@ LIBDIR  = $(CURDIR)/lib
 INCDIR  = $(CURDIR)/include
 SRCDIR  = $(CURDIR)/src
 TESTDIR = $(CURDIR)/test
+BENCHDIR = $(CURDIR)/benchmark
 
 # Toolchain.
 LD = gcc
@@ -32,6 +33,7 @@ CC = gcc
 # Toolchain configuration.
 CFLAGS += -ansi -std=c99
 CFLAGS += -Wall -Wextra
+CFLAGS += -O3
 CFLAGS += -I $(INCDIR) -D$(TARGET)
 
 SRC = $(wildcard $(LIBDIR)/*.c)         \
@@ -39,7 +41,7 @@ SRC = $(wildcard $(LIBDIR)/*.c)         \
 	  $(wildcard $(LIBDIR)/syscall/*.c) \
 	  $(SRCDIR)/pm/name.c               \
 
-all: bdev ramdisk ipc.test bdev.test
+all: bdev ramdisk ipc.test memwrite.benchmark
 
 bdev: $(SRC) $(SRCDIR)/dev/bdev.c
 	mkdir -p $(BINDIR)
@@ -49,9 +51,9 @@ ramdisk: $(SRC) $(SRCDIR)/dev/block/ramdisk.c
 	mkdir -p $(BINDIR)
 	$(LD) $(CFLAGS) $^ -o $(BINDIR)/ramdisk
 
-bdev.test: $(SRC) $(TESTDIR)/bdev.c
+memwrite.benchmark: $(SRC) $(BENCHDIR)/memwrite.c
 	mkdir -p $(BINDIR)
-	$(LD) $(CFLAGS) $^ -o $(BINDIR)/bdev.test
+	$(LD) $(CFLAGS) $^ -o $(BINDIR)/memwrite.benchmark
 
 ipc.test: $(SRC) $(TESTDIR)/ipc.c
 	mkdir -p $(BINDIR)

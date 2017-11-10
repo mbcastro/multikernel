@@ -264,7 +264,6 @@ error0:
  */
 int nanvix_ipc_close(int id)
 {
-	kdebug("[ipc] closing channel");
 
 	/* Sanity check. */
 	if (!nanvix_ipc_channel_is_valid(id))
@@ -273,6 +272,7 @@ int nanvix_ipc_close(int id)
 	/* Close underlying remote socket. */
 	if (close(channels[id].remote) == -1)
 		return (-1);
+	kdebug("[ipc] closing channel");
 
 	nanvix_ipc_channel_put(id);
 

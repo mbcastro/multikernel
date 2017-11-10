@@ -17,6 +17,8 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <errno.h>
+
 #include <nanvix/klib.h>
 #include <nanvix/ipc.h>
 #include <nanvix/vfs.h>
@@ -24,59 +26,66 @@
 #include <nanvix/ramdisk.h>
 
 /**
- * @brief Number of RAM Disks.
+ * @brief Maximum number of simultaneous connections.
  */
-#define NR_BDEVS 1
+#define NR_CONNECTIONS 16
 
 /**
- * @brief RAM Disks.
+ * @brief RAM Disk.
  */
-static char ramdisk[BLOCK_SIZE];
+static char ramdisk[RAMDISK_SIZE];
 
 /**
  * @brief Reads a block from a RAM Disk device.
  *
- * @param minor  Minor device number.
  * @param buf    Buffer.
  * @param blknum Block number.
  *
- * @return Upon successful completion zero is returned, upon failure
- * non-zero is returned instead.
+ * @return Upon successful completion zero is returned. Upon failure
+ * a negative error code is returned instead.
  */
-static ssize_t ramdisk_readblk(unsigned minor, char *buf, unsigned blknum)
+static ssize_t ramdisk_readblk(char *buf, unsigned blknum)
 {	
-	char *ptr;
+	unsigned off;    /* Offset.    */
+	const char *ptr; /* Readpoint. */
 
-	((void) minor);
+	/* Invalid offset. */
+	if ((off = (blknum << BLOCK_SIZE_LOG2)) > RAMDISK_SIZE)
+		return (-EFBIG);
 	
-	ptr = &ramdisk[blknum << BLOCK_SIZE_LOG2];
+	ptr = &ramdisk[off];
 	
-	memcpy(buf, ptr, BLOCK_SIZE);
+	kmemcpy(buf, ptr, BLOCK_SIZE);
 	
-	return (BLOCK_SIZE);
+	return (0);
 }
 
 /**
  * @brief Writes a block to a RAM disk device.
  *
- * @param minor  Minor device number.
  * @param buf    Buffer.
  * @param blknum Block number.
  *
  * @return Upon successful completion zero is returned, upon failure
  * non-zero is returned instead.
  */
-static ssize_t ramdisk_writeblk(unsigned minor, const char *buf, unsigned blknum)
+static ssize_t ramdisk_writeblk(const char *buf, unsigned blknum)
 {	
-	char *ptr;
+	char *ptr;    /* Readpoint. */
+	unsigned off; /* Offset.    */
 
-	((void) minor);	
+	/* Invalid offset. */
+	if ((off = (blknum << BLOCK_SIZE_LOG2)) > RAMDISK_SIZE)
+	{
+		kpanic("%d", off);
+		return (-EFBIG);
+	}
 
-	ptr = &ramdisk[blknum << BLOCK_SIZE_LOG2];
+	ptr = &ramdisk[off];
 	
-	memcpy(ptr, buf, BLOCK_SIZE);
+	kmemcpy(ptr, buf, BLOCK_SIZE);
 	
-	return (BLOCK_SIZE);
+	return (0);
 }
 
 /**
@@ -87,56 +96,65 @@ static ssize_t ramdisk_writeblk(unsigned minor, const char *buf, unsigned blknum
  */
 static void ramdisk_handle(struct bdev_msg *request, struct bdev_msg *reply)
 {
+	int ret;
+
 	switch (request->type)
 	{
 		/* Write request. */
 		case BDEV_MSG_WRITEBLK_REQUEST:
 		{
-			ssize_t n;
 			char *buf;
-			unsigned minor;
 			unsigned blknum;
 
 			/* Extract request parameters. */
-			minor = request->content.writeblk_req.dev;
 			buf = request->content.writeblk_req.data;
 			blknum = request->content.writeblk_req.blknum;
 
-			kdebug("[ramdisk] write request %d %d", minor, blknum);
+			kdebug("[ramdisk] write request (%d)", blknum);
 			
-			n = ramdisk_writeblk(minor, buf, blknum);
+			ret = ramdisk_writeblk(buf, blknum);
 
 			/* Build reply. */
-			reply->type = BDEV_MSG_WRITEBLK_REPLY;
-			reply->content.writeblk_rep.n = n;
+			reply->type = (ret) ? 
+				BDEV_MSG_ERROR : BDEV_MSG_WRITEBLK_REPLY;
 		} break;
 
 		/* Read request. */
 		case BDEV_MSG_READBLK_REQUEST:
 		{
-			ssize_t n;
 			char *buf;
-			unsigned minor;
 			unsigned blknum;
 
-			kdebug("[ramdisk] read request");
-
 			/* Extract request parameters. */
-			minor = request->content.readblk_req.dev;
 			buf = reply->content.readblk_rep.data;
 			blknum = request->content.readblk_req.blknum;
+
+			kdebug("[ramdisk] read request (%d)", blknum);
 			
-			n = ramdisk_readblk(minor, buf, blknum);
+			ret = ramdisk_readblk(buf, blknum);
 
 			/* Build reply. */
-			reply->type = BDEV_MSG_READBLK_REPLY;
-			reply->content.readblk_rep.n = n;
+			reply->type = (ret) ? 
+				BDEV_MSG_ERROR : BDEV_MSG_READBLK_REPLY;
 		} break;
 
 		default:
 			kdebug("[ramdisk] bad request");
 			reply->type = BDEV_MSG_ERROR;
+			ret = -EINVAL;
 			break;
+	}
+
+	/* Build reply. */
+	switch (reply->type)
+	{
+		case BDEV_MSG_WRITEBLK_REQUEST:
+		case BDEV_MSG_READBLK_REQUEST:
+			reply->content.writeblk_rep.n = BLOCK_SIZE;
+		break;
+
+		default:
+			reply->content.error_rep.code = -ret;
 	}
 }
 
@@ -147,9 +165,15 @@ int main(int argc, char **argv)
 {
 	int channel;
 
-	((void) argc);
+	/* Invalid number of arguments. */
+	if (argc != 2)
+	{
+		kprintf("invalid number of arguments");
+		kprintf("Usage: ramdisk <pathname>");
+		return (NANVIX_FAILURE);
+	}
 
-	channel = nanvix_ipc_create(argv[1], 1, 0);
+	channel = nanvix_ipc_create(argv[1], NR_CONNECTIONS, 0);
 
 	kdebug("[ramdisk] server running");
 
