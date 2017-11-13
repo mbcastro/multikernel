@@ -42,7 +42,7 @@ static double tick(void)
 /**
  * @brief Scalar vector multiplication.
  */
-static void benchmark_vector(int nchunks)
+static void benchmark_vector(int nchunks, int k)
 {
 	double t1, t2;
 	int chunksize = (BLOCK_SIZE/sizeof(float));
@@ -51,23 +51,23 @@ static void benchmark_vector(int nchunks)
 	t1 = tick();
 
 	/* Initialize vector. */
-	for (int i = 0; i < nchunks; i++)
+	for (int i = 0; i < 1024; i++)
 	{
 		for (int j = 0; j < chunksize; j++)
 			chunk[j] = 1;
 		
-		memwrite(chunk, i, BLOCK_SIZE);
+		memwrite(chunk, k*1024 + i, BLOCK_SIZE);
 	}
 
 	/* Multiply. */
-	for (int i = 0; i < nchunks; i++)
+	for (int i = 0; i < 1024; i++)
 	{
-		memread(chunk, i, BLOCK_SIZE);
+		memread(chunk, k*1024 + i, BLOCK_SIZE);
 
 		for (int j = 0; j < chunksize; j++)
 			chunk[j] *= 2.31;
 		
-		memwrite(chunk, i, BLOCK_SIZE);
+		memwrite(chunk, k*1024 + i, BLOCK_SIZE);
 	}
 		
 	t2 = tick();
@@ -81,15 +81,15 @@ static void benchmark_vector(int nchunks)
 int main(int argc, char **argv)
 {
 	/* Invalid number of arguments. */
-	if (argc != 2)
+	if (argc != 3)
 	{
 		printf("missing number of chunks\n");
-		printf("Usage: vector <nchunks>\n");
+		printf("Usage: vector <nchunks> <offset>\n");
 		return (0);
 	}
 
 	/* Server */
-	benchmark_vector(atoi(argv[1]));
+	benchmark_vector(atoi(argv[1]), atoi(argv[2]));
 
 	return (0);
 }
