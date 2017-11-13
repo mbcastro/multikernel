@@ -62,7 +62,7 @@ static void benchmark_vector(int nchunks)
 	/* Multiply. */
 	for (int i = 0; i < nchunks; i++)
 	{
-		memread(i, chunk, BLOCK_SIZE);
+		memread(chunk, i, BLOCK_SIZE);
 
 		for (int j = 0; j < chunksize; j++)
 			chunk[j] *= 2.31;
