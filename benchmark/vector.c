@@ -42,7 +42,7 @@ static double tick(void)
 /**
  * @brief Scalar vector multiplication.
  */
-static void benchmark_vector(int nchunks, int k)
+static void benchmark_vector(int k1, int k2)
 {
 	double t1, t2;
 	int chunksize = (BLOCK_SIZE/sizeof(float));
@@ -51,23 +51,23 @@ static void benchmark_vector(int nchunks, int k)
 	t1 = tick();
 
 	/* Initialize vector. */
-	for (int i = 0; i < 1024; i++)
+	for (int i = k1; i < k2; i++)
 	{
 		for (int j = 0; j < chunksize; j++)
 			chunk[j] = 1;
 		
-		memwrite(chunk, k*1024 + i, BLOCK_SIZE);
+		memwrite(chunk, i, BLOCK_SIZE);
 	}
 
 	/* Multiply. */
-	for (int i = 0; i < 1024; i++)
+	for (int i = k1; i < k2; i++)
 	{
-		memread(chunk, k*1024 + i, BLOCK_SIZE);
+		memread(chunk, i, BLOCK_SIZE);
 
 		for (int j = 0; j < chunksize; j++)
 			chunk[j] *= 2.31;
 		
-		memwrite(chunk, k*1024 + i, BLOCK_SIZE);
+		memwrite(chunk, i, BLOCK_SIZE);
 	}
 		
 	t2 = tick();
