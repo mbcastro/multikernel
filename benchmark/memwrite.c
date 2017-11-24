@@ -24,6 +24,7 @@
 
 #include <nanvix/vfs.h>
 #include <nanvix/syscalls.h>
+#include <nanvix/ramdisk.h>
 
 /**
  * @brief Number of messages to exchange.
@@ -71,7 +72,7 @@ static void benchmark_memwrite(int nwrites)
 
 		t1 = tick();
 		
-		memwrite(buffer, j, BLOCK_SIZE);
+		memwrite(buffer, j*(RAMDISK_SIZE/BLOCK_SIZE), BLOCK_SIZE);
 		
 		t2 = tick();
 

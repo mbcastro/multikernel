@@ -95,7 +95,7 @@ int memwrite(const void *src, unsigned dest, size_t size)
 		nanvix_ipc_receive(channel, &msg, sizeof(struct bdev_msg));
 		if (msg.type == BDEV_MSG_ERROR)
 		{
-			kpanic("memwrite error");
+			kdebug("memwrite error %d", msg.content.error_rep.code);
 
 			nanvix_ipc_close(channel);
 			return (NANVIX_FAILURE);
@@ -149,7 +149,7 @@ int memread(void *dest, unsigned src, size_t size)
 		nanvix_ipc_receive(channel, &msg, sizeof(struct bdev_msg));
 		if (msg.type == BDEV_MSG_ERROR)
 		{
-			kpanic("memread error");
+			kdebug("memread error %d", msg.content.error_rep.code);
 
 			nanvix_ipc_close(channel);
 			return (NANVIX_FAILURE);
