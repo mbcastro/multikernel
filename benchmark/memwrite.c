@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <sys/time.h>
 #include <time.h>
+#include <omp.h>
 
 #include <nanvix/vfs.h>
 #include <nanvix/syscalls.h>
@@ -50,8 +51,8 @@ static double tick(void)
  */
 static void benchmark_memwrite(int nwrites)
 {
-	double maxbandwidth;     /* Maximum bandwidth. */
 	char buffer[BLOCK_SIZE]; /* Buffer.            */
+	double t1, t2;
 
 	srand(time(NULL));
 
@@ -59,29 +60,20 @@ static void benchmark_memwrite(int nwrites)
 	for (int i = 0; i < BLOCK_SIZE; i++)
 		buffer[i] = 1;
 
-	maxbandwidth = 0;
-
 	/* Write blocks to remote memory. */
-	for (int k = 0; k < nwrites; k++)
+	t1 = tick();
+	#pragma omp parallel for
+	for (int k = 0; k < 1024; k++)
 	{
 		int j;
-		double bandwidth;
-		double t1, t2;
 
 		j = rand()%nwrites;
 
-		t1 = tick();
-		
 		memwrite(buffer, j*(RAMDISK_SIZE/BLOCK_SIZE), BLOCK_SIZE);
-		
-		t2 = tick();
-
-		bandwidth = (BLOCK_SIZE)/(1024*1024*(t2 - t1));
-		if (bandwidth > maxbandwidth)
-			maxbandwidth = bandwidth;
 	}
+	t2 = tick();
 
-	printf("[memwrite] write bandwidth: %lf MB/s\n", maxbandwidth);
+	printf("[memwrite] write bandwidth: %lf MB/s\n", (BLOCK_SIZE*1024)/(1024*1024*(t2 - t1)));
 }
 
 /**

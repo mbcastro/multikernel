@@ -137,7 +137,7 @@ int nanvix_ipc_create(const char *name, int max, int flags)
 		return (-1);
 
 	/* Create local socket. */
-	channels[id].local = socket(AF_INET, SOCK_STREAM | (flags & SOCK_NONBLOCK), 0);
+	channels[id].local = socket(AF_INET, SOCK_STREAM, 0);
 	if (channels[id].local == -1)
 		goto error0;
 
@@ -242,8 +242,6 @@ int nanvix_ipc_connect(const char *name, int flags)
 	if (connect(channels[id].remote, (struct sockaddr *)&remote, sizeof(struct sockaddr_in)) == -1)
 		goto error1;
 
-	channels[id].flags |= (flags & CHANNEL_NONBLOCK) ? 2 : 0;
-
 	return (id);
 
 error1:
@@ -321,13 +319,6 @@ int nanvix_ipc_send(int id, const void *buf, size_t n)
 	if (!nanvix_ipc_channel_is_valid(id))
 		return (-1);
 
-	if (channels[id].flags & 2)
-	{
-		fcntl(channels[id].remote, F_SETFL, O_NONBLOCK); /* Change the socket into non-blocking state	*/
-        fcntl(channels[id].remote, F_SETFL, O_NONBLOCK); /* Change the socket into non-blocking state	*/
-		channels[id].flags &= ~2;
-	}
-
 	if ((ret = send(channels[id].remote, buf, n, 0)) == -1)
 		return (-1);
 
@@ -354,16 +345,8 @@ int nanvix_ipc_receive(int id, void *buf, size_t n)
 	if (!nanvix_ipc_channel_is_valid(id))
 		return (-1);
 
-	if (channels[id].flags & 2)
-	{
-		fcntl(channels[id].remote, F_SETFL, O_NONBLOCK); /* Change the socket into non-blocking state	*/
-        fcntl(channels[id].remote, F_SETFL, O_NONBLOCK); /* Change the socket into non-blocking state	*/
-		channels[id].flags &= ~2;
-	}
-
 	if ((ret = recv(channels[id].remote, buf, n, 0)) == -1)
 		return (-1);
-
 
 	kdebug("[ipc] receiving data %d bytes", ret);
 

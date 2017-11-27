@@ -24,6 +24,7 @@
 #include <nanvix/ipc.h>
 #include <nanvix/dev.h>
 #include <nanvix/vfs.h>
+#include <sys/wait.h>
 
 /**
  * @brief Maximum number of operations to enqueue.
@@ -49,6 +50,7 @@ static const char *bdevsw[NR_BLKDEV] = {
 
 static void bdev(int channel)
 {
+	int server;
 	int ret;                 /* IPC operation return value. */
 	dev_t dev;               /* Device.                     */
 	struct bdev_msg request; /**< Client request.   */
@@ -66,10 +68,16 @@ static void bdev(int channel)
 
 	/* Read a block. */
 	if (request.type == BDEV_MSG_READBLK_REQUEST)
-		dev = request.content.writeblk_req.dev;
+	{
+		dev = request.content.readblk_req.dev;
+		kdebug("[bdev] read request");
+	}
 	
 	else if (request.type == BDEV_MSG_WRITEBLK_REQUEST)
+	{
 		dev = request.content.writeblk_req.dev;
+		kdebug("[bdev] write request");
+	}
 
 	else
 	{
@@ -87,7 +95,7 @@ static void bdev(int channel)
 	}
 	
 	kdebug("[bdev] connecting to device server (%d)", dev);
-	if (nanvix_ipc_connect(bdevsw[dev], 0) < 0)
+	if ((server = nanvix_ipc_connect(bdevsw[dev], 0)) < 0)
 	{
 		kdebug("[bdev] failed to connect to device server");
 		reply.type = BDEV_MSG_ERROR;
@@ -96,12 +104,14 @@ static void bdev(int channel)
 	}
 
 	kdebug("[bdev] forwarding request to device server");
-	if (nanvix_ipc_send(channel, &request, sizeof(struct bdev_msg)) < 0)
-		goto out;
+	if (nanvix_ipc_send(server, &request, sizeof(struct bdev_msg)) < 0)
+		goto out1;
 
 	kdebug("[bdev] waiting for device response");
-	nanvix_ipc_receive(channel, &reply, sizeof(struct bdev_msg));
+	nanvix_ipc_receive(server, &reply, sizeof(struct bdev_msg));
 
+out1:
+	nanvix_ipc_close(server);
 out:
 	kdebug("[bdev] replying client");
 	ret = nanvix_ipc_send(channel, &reply, sizeof(struct bdev_msg));
@@ -130,14 +140,23 @@ int main(int argc, char **argv)
 
 	kdebug("[bdev] server running");
 
-	do
+	while (1)
 	{
+		waitpid(-1, NULL, WNOHANG);
 		client = nanvix_ipc_open(channel);
-	} while (fork() > 0);
 
-	bdev(client);
+		if (fork() > 0)
+		{
+			nanvix_ipc_close(client);
+			continue;
+		}
+
+		bdev(client);
+		break;
+	}
+
+	nanvix_ipc_close(channel);
 
 	return (NANVIX_SUCCESS);
 }
-
 

@@ -31,15 +31,15 @@ static struct {
 	const char *address; /**< Physical address.   */
 	unsigned short port; /**< Communication port. */
 } addresses[] = {
-	{ "/dev/ramdisk0", "127.0.0.1", 0x8000 },
-	{ "/dev/ramdisk1", "127.0.0.1", 0x8001 },
-	{ "/dev/ramdisk2", "127.0.0.1", 0x8002 },
-	{ "/dev/ramdisk3", "127.0.0.1", 0x8003 },
-	{ "/dev/ramdisk4", "127.0.0.1", 0x8004 },
-	{ "/dev/ramdisk5", "127.0.0.1", 0x8005 },
-	{ "/dev/ramdisk6", "127.0.0.1", 0x8006 },
-	{ "/dev/ramdisk7", "127.0.0.1", 0x8007 },
-	{ "/sys/bdev",     "127.0.0.1", 0x8008 },
+	{ "/sys/bdev",     "10.111.0.1",  0x8001 },
+	{ "/dev/ramdisk0", "10.111.0.5",  0x8002 },
+	{ "/dev/ramdisk1", "10.111.0.6",  0x8003 },
+	{ "/dev/ramdisk2", "10.111.0.7",  0x8004 },
+	{ "/dev/ramdisk3", "10.111.0.8",  0x8005 },
+	{ "/dev/ramdisk4", "10.111.0.9",  0x8006 },
+	{ "/dev/ramdisk5", "10.111.0.10", 0x8007 },
+	{ "/dev/ramdisk6", "10.111.0.11", 0x8008 },
+	{ "/dev/ramdisk7", "10.111.0.12", 0x8009 },
 	{ NULL, NULL, 0 }
 };
 
