@@ -25,6 +25,7 @@
 #include <nanvix/ramdisk.h>
 #include <nanvix/klib.h>
 #include <nanvix/ipc.h>
+#include <omp.h>
 
 /**
  * @brief Remote memory address.
@@ -77,6 +78,7 @@ int memwrite(const void *src, unsigned dest, size_t size)
 		struct memaddr memaddr;
 		struct bdev_msg msg;
 
+		#pragma omp critical
 		channel = nanvix_ipc_connect(BDEV_NAME, 0);
 
 		memaddr = memmap(dest + i);
@@ -97,12 +99,14 @@ int memwrite(const void *src, unsigned dest, size_t size)
 		{
 			kdebug("memwrite error %d", msg.content.error_rep.code);
 
+			#pragma omp critical
 			nanvix_ipc_close(channel);
 			return (NANVIX_FAILURE);
 		}
 
 		p += n;
 
+		#pragma omp critical
 		nanvix_ipc_close(channel);
 	}
 
