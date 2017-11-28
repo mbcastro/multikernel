@@ -24,7 +24,7 @@
 #include <nanvix/ipc.h>
 #include <nanvix/dev.h>
 #include <nanvix/vfs.h>
-#include <sys/wait.h>
+#include <omp.h>
 
 /**
  * @brief Maximum number of operations to enqueue.
@@ -47,6 +47,16 @@ static const char *bdevsw[NR_BLKDEV] = {
 	"/dev/ramdisk6", /* /dev/ramdisk6 */
 	"/dev/ramdisk7", /* /dev/ramdisk7 */
 };
+
+#define CACHE_SIZE 64
+
+struct
+{
+	int valid;
+	char block[BLOCK_SIZE];
+	dev_t dev;
+	unsigned blknum;
+} cache[CACHE_SIZE];
 
 static void bdev(int channel)
 {
@@ -140,19 +150,14 @@ int main(int argc, char **argv)
 
 	kdebug("[bdev] server running");
 
-	while (1)
+	#pragma omp parallel private (client)
 	{
-		waitpid(-1, NULL, WNOHANG);
-		client = nanvix_ipc_open(channel);
-
-		if (fork() > 0)
+		while (1)
 		{
-			nanvix_ipc_close(client);
-			continue;
-		}
+			client = nanvix_ipc_open(channel);
 
-		bdev(client);
-		break;
+			bdev(client);
+		}
 	}
 
 	nanvix_ipc_close(channel);
