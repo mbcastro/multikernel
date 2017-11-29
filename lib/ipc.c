@@ -30,6 +30,8 @@
 #include <limits.h>
 #include <fcntl.h>
 
+#include <omp.h>
+
 /**
  * @brief Number of communication channels.
  */
@@ -83,14 +85,16 @@ static int nanvix_ipc_channel_is_valid(int id)
  */
 static int nanvix_ipc_channel_get(void)
 {
-	for (int i = 0; i < NR_CHANNELS; i++)
+	#pragma omp critical
 	{
-kdebug("get_ipc: %d", i);
-		/* Free channel found. */
-		if (!(channels[i].flags & CHANNEL_VALID))
+		for (int i = 0; i < NR_CHANNELS; i++)
 		{
-			channels[i].flags |= CHANNEL_VALID;
-			return (i);
+			/* Free channel found. */
+			if (!(channels[i].flags & CHANNEL_VALID))
+			{
+				channels[i].flags |= CHANNEL_VALID;
+				return (i);
+			}
 		}
 	}
 
@@ -271,6 +275,7 @@ int nanvix_ipc_close(int id)
 	/* Close underlying remote socket. */
 	if (close(channels[id].remote) == -1)
 		return (-1);
+
 	kdebug("[ipc] closing channel %d", id);
 
 	nanvix_ipc_channel_put(id);
@@ -295,6 +300,7 @@ int nanvix_ipc_unlink(int id)
 	/* Close IPC channel. */
 	if (close(channels[id].local) == -1)
 		return (-1);
+
 	kdebug("unlinking channel...");
 
 	nanvix_ipc_channel_put(id);
