@@ -26,11 +26,6 @@
 #include <nanvix/vfs.h>
 #include <omp.h>
 
-/**
- * @brief Maximum number of operations to enqueue.
- */
-#define NR_CONNECTIONS 16
-
 /* Number of block devices. */
 #define NR_BLKDEV 8
 
@@ -48,81 +43,222 @@ static const char *bdevsw[NR_BLKDEV] = {
 	"/dev/ramdisk7", /* /dev/ramdisk7 */
 };
 
+/*============================================================================*
+ * Memory Block Cache
+ *============================================================================*/
+
+/**
+ * Memory block cache size (in blocks).
+ */
 #define CACHE_SIZE 64
 
+/**
+ * Memory block cache.
+ */
 struct
 {
-	int valid;
-	char block[BLOCK_SIZE];
-	dev_t dev;
-	unsigned blknum;
+	/* Flags. */
+	int valid;  /** Is valid?      */
+	int dirty;  /**< Dirty block?  */
+	int locked; /**< Locked block. */
+
+	/* Index. */
+	struct
+	{
+		dev_t dev;       /**< Device number. */
+		unsigned blknum; /**< Block number.  */
+	} index;
+
+	char data[BLOCK_SIZE]; /**< Data. */
 } cache[CACHE_SIZE];
 
+
+/**
+ * Searches for a memory block in the cache.
+ *
+ * @param dev    Device number of the target ylock.
+ * @param blknum Number of the target memory block..
+ *
+ * @returns If the target memory block is found, the memory block is locked and
+ * its cache index number is returned.  Otherwise, -1 is returned instead.
+ */
 static int getblk(dev_t dev, int blknum)
 {
-	for (int i = 0; i < CACHE_SIZE: i++)
+	/* Search memory block. */
+	for (int i = 0; i < CACHE_SIZE; i++)
 	{
-		if (!cache[i].valid)
+		/* Skip invalid or locked memory blocks. */
+		if ((!cache[i].valid) || (cache[i].locked))
+			continue;
+
+		/* Found. */
+		if ((cache[i].index.dev == dev) && (cache[i].index.blknum == blknum))
 		{
-			if ((cache[i].dev == dev) && (cache[i].blknum == blknum))
-			{
-				cache[i].valid = 1;
-				return (i);
-			}
+			cache[i].locked = 1;
+			return (i);
 		}
 	}
 
 	return (-1);
 }
 
-static int evictblk(void)
+/**
+ * Chooses a memory block to be evicted from the cache.
+ *
+ * @returns The cache index number of the chosen memory block. The memory block
+ * is locked. If no memory block can be evicted from the cache, -1 is returned
+ * instead.
+ */
+static int evict(void)
 {
 	int j;
 
 	j = -1;
 
-	for (int i = 0; i < CACHE_SIZE: i++)
+	/* Search for a victim. */
+	for (int i = 0; i < CACHE_SIZE; i++)
 	{
-		if (!cache[i].valid)
-		{
-			if (!cache[i].dirty)
-			{
-				j = i;
-				break;
-			}
+		/* Skip locked memory blocks. */
+		if (cache[i].locked)
+			continue;
 
+
+		/* Free or clean memory block. */
+		if ((!cache[i].valid) || (!cache[i].dirty))
+		{
 			j = i;
+			break;
 		}
+
+		/* Dirty memory block. */
+		j = i;
 	}
 
+	/* Lock memory block. */
 	if (j >= 0)
-		cache[j].valid = 1;
+		cache[j].locked = 1;
 
 	return (j);
 }
 
-static void writeback(int blk)
+/**
+ * Writes a memory block back to the memory bank.
+ *
+ * @param i Cache index of the target memory block.
+ *
+ * @returns Upon successful completion zero is returned. Otherwise, a negative
+ * error code is returned instead.
+ */
+static int writeback(int i)
 {
-	dev_t dev;
+	dev_t dev;           /**< Memory bank number.  */
+	int server;          /**< Memory bank server.  */
+	int blknum;          /**< Memory block number. */
+	char *data;          /** Memory block data.    */
+	struct bdev_msg msg; /**< Message.             */
 
-	dev = cache[blk].dev;
+	dev = cache[i].index.dev;
+	blknum = cache[i].index.blknum;
+	data = cache[i].data;
 
 	kdebug("[bdev] connecting to device server (%d)", dev);
 	if ((server = nanvix_ipc_connect(bdevsw[dev], 0)) < 0)
 	{
 		kdebug("[bdev] failed to connect to device server");
-		reply.type = BDEV_MSG_ERROR;
-		reply.content.error_rep.code = EAGAIN;
-		goto out;
+		goto error0;
 	}
 
+	/* Build message. */
+	msg.type = BDEV_MSG_WRITEBLK_REQUEST;
+	msg.content.writeblk_req.dev = dev;
+	msg.content.writeblk_req.blknum = blknum;
+	kmemcpy(msg.content.writeblk_req.data, data, BLOCK_SIZE);;
+
 	kdebug("[bdev] forwarding request to device server");
-	if (nanvix_ipc_send(server, &request, sizeof(struct bdev_msg)) < 0)
-		goto out1;
+	if (nanvix_ipc_send(server, &msg, sizeof(struct bdev_msg)) < 0)
+		goto error1;
 
 	kdebug("[bdev] waiting for device response");
-	nanvix_ipc_receive(server, &reply, sizeof(struct bdev_msg));
+	if (nanvix_ipc_receive(server, &msg, sizeof(struct bdev_msg)) < 0)
+		goto error1;
+
+	if (msg.type == BDEV_MSG_ERROR)
+		goto error1;
+
+	nanvix_ipc_close(server);
+
+	cache[i].dirty = 0;
+
+	return (0);
+
+error1:
+		kdebug("[bdev] communication failed with device server");
+		nanvix_ipc_close(server);
+error0:
+	return (-EAGAIN);
 }
+
+/**
+ * Loads a memory block from a memory bank.
+ *
+ * @param i   Cache index number.
+ * @param dev Target memory bank number.
+ * @param dev Number of target memory block.
+ *
+ * @returns Upon successful completion zero is returned. Otherwise, a negative
+ * error code is returned instead.
+ */
+static int loadblk(int i, dev_t dev, int blknum)
+{
+	int server;          /**< Memory bank server.  */
+	char *data;          /** Memory block data.    */
+	struct bdev_msg msg; /**< Message.             */
+
+	kdebug("[bdev] connecting to device server (%d)", dev);
+	if ((server = nanvix_ipc_connect(bdevsw[dev], 0)) < 0)
+	{
+		kdebug("[bdev] failed to connect to device server");
+		goto error0;
+	}
+
+	/* Build message. */
+	msg.type = BDEV_MSG_READBLK_REQUEST;
+	msg.content.readblk_req.dev = dev;
+	msg.content.readblk_req.blknum = blknum;
+
+	kdebug("[bdev] forwarding request to device server");
+	if (nanvix_ipc_send(server, &msg, sizeof(struct bdev_msg)) < 0)
+		goto error1;
+
+	kdebug("[bdev] waiting for device response");
+	if (nanvix_ipc_receive(server, &msg, sizeof(struct bdev_msg)) < 0)
+		goto error1;
+
+	if (msg.type == BDEV_MSG_ERROR)
+		goto error1;
+
+	nanvix_ipc_close(server);
+
+	cache[i].valid = 1;
+	cache[i].dirty = 0;
+	cache[i].index.dev = dev;
+	cache[i].index.blknum = blknum;
+	kmemcpy(cache[i].data, msg.content.readblk_rep.data, BLOCK_SIZE);
+
+	return (0);
+
+error1:
+		nanvix_ipc_close(server);
+error0:
+	return (-EAGAIN);
+}
+
+/**
+ * @brief Maximum number of operations to enqueue.
+ */
+#define NR_CONNECTIONS 16
+
+omp_lock_t lock;
 
 static void bdev(int channel)
 {
@@ -140,7 +276,7 @@ static void bdev(int channel)
 	{
 		kpanic("[bdev] bad request type");
 		reply.type = BDEV_MSG_ERROR;
-		reply.content.error_rep.code = EINVAL;
+		reply.content.error_rep.code = -EINVAL;
 		goto out;
 	}
 
@@ -163,51 +299,62 @@ static void bdev(int channel)
 	{
 		kdebug("[bdev] bad request type");
 		reply.type = BDEV_MSG_ERROR;
-		reply.content.error_rep.code = EINVAL;
+		reply.content.error_rep.code = -EINVAL;
 		goto out;
 	}
 
-	/* Invalid device. */
+	/* Inlocked device. */
 	if ((dev >= NR_BLKDEV) || (bdevsw[dev] == NULL))
 	{
-		kpanic("[bdev] reading block from invalid device (%d)", dev);
+		kpanic("[bdev] reading block from inlocked device (%d)", dev);
 		goto out;
 	}
 	
 	do
 	{
-		/* Check for a cached block. */
-		#pragma omp critical
-		{
+		omp_set_lock(&lock);
 			block = getblk(dev, blknum);
 
-			if (i < 0)
-				block = evictblk();
+			if (block < 0)
+				block = evict();
+		omp_unset_lock(&lock);
+	} while (block < 0);
+
+	/* Load memory block. */
+	if ((cache[block].index.dev != dev) || (cache[block].index.blknum != blknum))
+	{
+		/* Write memory block back to remote memory. */
+		if (cache[block].dirty)
+		{
+			if (writeback(block) < 0)
+			{
+				reply.type = BDEV_MSG_ERROR;
+				reply.content.error_rep.code = -EAGAIN;
+				goto out;
+			}
 		}
-	}
-	while (block < 0);
 
-	if (cache[block].dirty)
+		loadblk(block, dev, blknum);
+	}
+
+	if (request.type == BDEV_MSG_READBLK_REQUEST)
 	{
-		writeback(block);
-		goto out;
+		reply.type = BDEV_MSG_READBLK_REPLY;
+		kmemcpy(reply.content.readblk_rep.data, cache[block].data, BLOCK_SIZE);
+		reply.content.readblk_rep.n = BLOCK_SIZE;
 	}
-
-	kdebug("[bdev] connecting to device server (%d)", dev);
-	if ((server = nanvix_ipc_connect(bdevsw[dev], 0)) < 0)
+	
+	else if (request.type == BDEV_MSG_WRITEBLK_REQUEST)
 	{
-		kdebug("[bdev] failed to connect to device server");
-		reply.type = BDEV_MSG_ERROR;
-		reply.content.error_rep.code = EAGAIN;
-		goto out;
+		reply.type = BDEV_MSG_WRITEBLK_REPLY;
+		cache[block].dirty = 1;
+		kmemcpy(cache[block].data,reply.content.writeblk_req.data, BLOCK_SIZE);
+		reply.content.writeblk_rep.n = BLOCK_SIZE;
 	}
 
-	kdebug("[bdev] forwarding request to device server");
-	if (nanvix_ipc_send(server, &request, sizeof(struct bdev_msg)) < 0)
-		goto out1;
-
-	kdebug("[bdev] waiting for device response");
-	nanvix_ipc_receive(server, &reply, sizeof(struct bdev_msg));
+	omp_set_lock(&lock);
+	cache[block].locked = 0;
+	omp_unset_lock(&lock);
 
 out1:
 	nanvix_ipc_close(server);
@@ -227,7 +374,7 @@ int main(int argc, char **argv)
 	int client;
 	int channel;
 
-	/* Invalid number of arguments. */
+	/* Inlocked number of arguments. */
 	if (argc != 2)
 	{
 		kprintf("invalid number of arguments");
@@ -235,8 +382,13 @@ int main(int argc, char **argv)
 		return (NANVIX_FAILURE);
 	}
 
+	omp_init_lock(&lock);
+
 	for (int i = 0; i < CACHE_SIZE; i++)
+	{
+		cache[i].locked = 0;
 		cache[i].valid = 0;
+	}
 
 	channel = nanvix_ipc_create(argv[1], NR_CONNECTIONS, 0);
 
