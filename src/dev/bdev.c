@@ -371,7 +371,6 @@ out:
  */
 int main(int argc, char **argv)
 {
-	int client;
 	int channel;
 
 	/* Inlocked number of arguments. */
@@ -398,7 +397,7 @@ int main(int argc, char **argv)
 	{
 		while (1)
 		{
-			client = nanvix_ipc_open(channel);
+			int client = nanvix_ipc_open(channel);
 
 			bdev(client);
 		}
