@@ -94,11 +94,13 @@ static int getblk(dev_t dev, int blknum)
 		/* Found. */
 		if ((cache[i].index.dev == dev) && (cache[i].index.blknum == blknum))
 		{
+			kdebug("[bdev] cache hit %d %d", dev, blknum);
 			cache[i].locked = 1;
 			return (i);
 		}
 	}
 
+	kdebug("[bdev] cache miss %d %d", dev, blknum);
 	return (-1);
 }
 
@@ -322,10 +324,10 @@ static void bdev(int channel)
 	} while (block < 0);
 
 	/* Load memory block. */
-	if ((cache[block].index.dev != dev) || (cache[block].index.blknum != blknum))
+	if ((!cache[block].valid) || (cache[block].index.dev != dev) || (cache[block].index.blknum != blknum))
 	{
 		/* Write memory block back to remote memory. */
-		if (cache[block].dirty)
+		if ((cache[block].valid) && (cache[block].dirty))
 		{
 			if (writeback(block) < 0)
 			{
@@ -346,15 +348,16 @@ static void bdev(int channel)
 	if (request.type == BDEV_MSG_READBLK_REQUEST)
 	{
 		reply.type = BDEV_MSG_READBLK_REPLY;
-		kmemcpy(reply.content.readblk_rep.data, cache[block].data, BLOCK_SIZE);
 		reply.content.readblk_rep.n = BLOCK_SIZE;
+		kmemcpy(reply.content.readblk_rep.data, cache[block].data, BLOCK_SIZE);
 	}
 	
 	else if (request.type == BDEV_MSG_WRITEBLK_REQUEST)
 	{
-		reply.type = BDEV_MSG_WRITEBLK_REPLY;
 		cache[block].dirty = 1;
-		kmemcpy(cache[block].data,reply.content.writeblk_req.data, BLOCK_SIZE);
+		kmemcpy(cache[block].data, reply.content.writeblk_req.data, BLOCK_SIZE);
+
+		reply.type = BDEV_MSG_WRITEBLK_REPLY;
 		reply.content.writeblk_rep.n = BLOCK_SIZE;
 	}
 

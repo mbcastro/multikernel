@@ -30,7 +30,7 @@
 /**
  * @brief Number of messages to exchange.
  */
-#define NR_MESSAGES 128
+#define NR_WRITES 2
 
 /**
  * @brief Gets wall clock (in seconds).
@@ -61,19 +61,14 @@ static void benchmark_memwrite(int nwrites)
 		buffer[i] = 1;
 
 	/* Write blocks to remote memory. */
-	t1 = tick();
+	t1 = omp_get_wtime();
 	#pragma omp parallel for
-	for (int k = 0; k < 1024; k++)
-	{
-		int j;
+	for (int k = 0; k < NR_WRITES; k++)
+		memwrite(buffer, (k%nwrites)*(RAMDISK_SIZE/BLOCK_SIZE), BLOCK_SIZE);
+	t2 = omp_get_wtime();
 
-		j = rand()%nwrites;
-
-		memwrite(buffer, j*(RAMDISK_SIZE/BLOCK_SIZE), BLOCK_SIZE);
-	}
-	t2 = tick();
-
-	printf("[memwrite] write bandwidth: %lf MB/s\n", (BLOCK_SIZE*1024)/(1024*1024*(t2 - t1)));
+	printf("[memwrite] write latency:   %lf s\n", (t2 - t1));
+	printf("[memwrite] write bandwidth: %lf MB/s\n", (BLOCK_SIZE*NR_WRITES)/(1024*1024*(t2 - t1)));
 }
 
 /**

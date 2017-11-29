@@ -85,6 +85,8 @@ static int nanvix_ipc_channel_is_valid(int id)
  */
 static int nanvix_ipc_channel_get(void)
 {
+	int ret = -1;
+
 	#pragma omp critical
 	{
 		for (int i = 0; i < NR_CHANNELS; i++)
@@ -92,13 +94,14 @@ static int nanvix_ipc_channel_get(void)
 			/* Free channel found. */
 			if (!(channels[i].flags & CHANNEL_VALID))
 			{
+				ret = i;
 				channels[i].flags |= CHANNEL_VALID;
-				return (i);
+				i = NR_CHANNELS;
 			}
 		}
 	}
 
-	return (-1);
+	return (ret);
 }
 
 /**
@@ -229,8 +232,6 @@ int nanvix_ipc_connect(const char *name, int flags)
 	if ((id = nanvix_ipc_channel_get()) == -1)
 		return (-1);
 
-	kdebug("[ipc] connecting to channel %s using %d", name, id);
-
 	/* Create remote socket. */
 	channels[id].remote = socket(AF_INET, SOCK_STREAM, 0);
 	if (channels[id].remote == -1)
@@ -243,9 +244,13 @@ int nanvix_ipc_connect(const char *name, int flags)
 	kmemcpy(&remote.sin_addr.s_addr, &addr.addr, sizeof(in_addr_t));
 	remote.sin_port = addr.port;
 
+	double t1 = omp_get_wtime();
 	/* Connect to socket. */
 	if (connect(channels[id].remote, (struct sockaddr *)&remote, sizeof(struct sockaddr_in)) == -1)
 		goto error1;
+	double t2 = omp_get_wtime();
+
+	fprintf(stderr, "[ipc] connecting to channel %s using %d in %lf s\n", name, id, t2 - t1);
 
 	return (id);
 
@@ -347,15 +352,26 @@ int nanvix_ipc_send(int id, const void *buf, size_t n)
 int nanvix_ipc_receive(int id, void *buf, size_t n)
 {
 	ssize_t ret;
+	char *p;
 
 	/* Sanity check. */
 	if (!nanvix_ipc_channel_is_valid(id))
 		return (-1);
 
-	if ((ret = recv(channels[id].remote, buf, n, 0)) == -1)
-		return (-1);
+	p = buf;
 
-	kdebug("[ipc] receiving data %d bytes", ret);
+	ssize_t i;
+	i = n;
+	ret = 0;
+	double t1 = omp_get_wtime();
+	while ((i > 0) && ((ret = recv(channels[id].remote, p, i, 0)) > 0))
+	{
+		p += ret;
+		i -= ret;
+	}
+	double t2 = omp_get_wtime();
 
-	return (0);
+	fprintf(stderr, "[ipc] receiving data %d bytes in %lf s\n", ret, t2 - t1);
+
+	return (((p - ((char *)buf)) == n) ? 0 : -1);
 }

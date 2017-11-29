@@ -50,7 +50,7 @@ static struct memaddr memmap(unsigned addr)
 	memaddr.dev = (addr)/(RAMDISK_SIZE/BLOCK_SIZE);
 	memaddr.blknum = (addr)%(RAMDISK_SIZE/BLOCK_SIZE);
 
-	kprintf("dev = %d", memaddr.dev);
+	kprintf("dev = %d %d", addr, memaddr.dev);
 
 	return (memaddr);
 }
@@ -78,7 +78,6 @@ int memwrite(const void *src, unsigned dest, size_t size)
 		struct memaddr memaddr;
 		struct bdev_msg msg;
 
-		#pragma omp critical
 		channel = nanvix_ipc_connect(BDEV_NAME, 0);
 
 		memaddr = memmap(dest + i);
@@ -99,14 +98,12 @@ int memwrite(const void *src, unsigned dest, size_t size)
 		{
 			kdebug("memwrite error %d", msg.content.error_rep.code);
 
-			#pragma omp critical
 			nanvix_ipc_close(channel);
 			return (NANVIX_FAILURE);
 		}
 
 		p += n;
 
-		#pragma omp critical
 		nanvix_ipc_close(channel);
 	}
 
