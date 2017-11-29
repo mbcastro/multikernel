@@ -55,7 +55,7 @@ struct channel
 /**
  * @brief Table of channels.
  */
-static struct channel channels[NR_CHANNELS];
+static struct channel channels[NR_CHANNELS] = {{0, 0, 0}, };
 
 /**
  * @brief Asserts if an IPC channel is valid.
@@ -85,6 +85,7 @@ static int nanvix_ipc_channel_get(void)
 {
 	for (int i = 0; i < NR_CHANNELS; i++)
 	{
+kdebug("get_ipc: %d", i);
 		/* Free channel found. */
 		if (!(channels[i].flags & CHANNEL_VALID))
 		{
@@ -130,8 +131,6 @@ int nanvix_ipc_create(const char *name, int max, int flags)
 	assert(name != NULL);
 	assert(max > 0);
 
-	kdebug("[ipc] creating channel");
-
 	/* Gets a free channel. */
 	if ((id = nanvix_ipc_channel_get()) == -1)
 		return (-1);
@@ -155,6 +154,8 @@ int nanvix_ipc_create(const char *name, int max, int flags)
 	/* Listen connections on local socket. */
 	if (listen(channels[id].local, NANVIX_IPC_MAX) == -1)
 		goto error1;
+
+	kdebug("[ipc] creating channel %d", id);
 
 	return (id);
 
@@ -192,7 +193,7 @@ int nanvix_ipc_open(int id)
 
 	channels[id2].local = channels[id].local;
 
-	kdebug("[ipc] openning channel %d", channels[id2].remote);
+	kdebug("[ipc] openning channel %d", id2);
 
 	return (id2);
 
@@ -270,7 +271,7 @@ int nanvix_ipc_close(int id)
 	/* Close underlying remote socket. */
 	if (close(channels[id].remote) == -1)
 		return (-1);
-	kdebug("[ipc] closing channel");
+	kdebug("[ipc] closing channel %d", id);
 
 	nanvix_ipc_channel_put(id);
 

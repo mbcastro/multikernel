@@ -262,7 +262,6 @@ omp_lock_t lock;
 
 static void bdev(int channel)
 {
-	int server;
 	int ret;                 /* IPC operation return value. */
 	int blknum;
 	dev_t dev;               /* Device.                     */
@@ -306,7 +305,9 @@ static void bdev(int channel)
 	/* Inlocked device. */
 	if ((dev >= NR_BLKDEV) || (bdevsw[dev] == NULL))
 	{
-		kpanic("[bdev] reading block from inlocked device (%d)", dev);
+		kdebug("[bdev] bad request type");
+		reply.type = BDEV_MSG_ERROR;
+		reply.content.error_rep.code = -EINVAL;
 		goto out;
 	}
 	
@@ -330,11 +331,16 @@ static void bdev(int channel)
 			{
 				reply.type = BDEV_MSG_ERROR;
 				reply.content.error_rep.code = -EAGAIN;
-				goto out;
+				goto out1;
 			}
 		}
 
-		loadblk(block, dev, blknum);
+		if (loadblk(block, dev, blknum) < 0)
+		{
+			reply.type = BDEV_MSG_ERROR;
+			reply.content.error_rep.code = -EAGAIN;
+			goto out1;
+		}
 	}
 
 	if (request.type == BDEV_MSG_READBLK_REQUEST)
@@ -352,12 +358,11 @@ static void bdev(int channel)
 		reply.content.writeblk_rep.n = BLOCK_SIZE;
 	}
 
+out1:
 	omp_set_lock(&lock);
 	cache[block].locked = 0;
 	omp_unset_lock(&lock);
 
-out1:
-	nanvix_ipc_close(server);
 out:
 	kdebug("[bdev] replying client");
 	ret = nanvix_ipc_send(channel, &reply, sizeof(struct bdev_msg));
@@ -393,7 +398,7 @@ int main(int argc, char **argv)
 
 	kdebug("[bdev] server running");
 
-	#pragma omp parallel private (client)
+	#pragma omp parallel
 	{
 		while (1)
 		{
