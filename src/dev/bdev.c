@@ -58,13 +58,81 @@ struct
 	unsigned blknum;
 } cache[CACHE_SIZE];
 
+static int getblk(dev_t dev, int blknum)
+{
+	for (int i = 0; i < CACHE_SIZE: i++)
+	{
+		if (!cache[i].valid)
+		{
+			if ((cache[i].dev == dev) && (cache[i].blknum == blknum))
+			{
+				cache[i].valid = 1;
+				return (i);
+			}
+		}
+	}
+
+	return (-1);
+}
+
+static int evictblk(void)
+{
+	int j;
+
+	j = -1;
+
+	for (int i = 0; i < CACHE_SIZE: i++)
+	{
+		if (!cache[i].valid)
+		{
+			if (!cache[i].dirty)
+			{
+				j = i;
+				break;
+			}
+
+			j = i;
+		}
+	}
+
+	if (j >= 0)
+		cache[j].valid = 1;
+
+	return (j);
+}
+
+static void writeback(int blk)
+{
+	dev_t dev;
+
+	dev = cache[blk].dev;
+
+	kdebug("[bdev] connecting to device server (%d)", dev);
+	if ((server = nanvix_ipc_connect(bdevsw[dev], 0)) < 0)
+	{
+		kdebug("[bdev] failed to connect to device server");
+		reply.type = BDEV_MSG_ERROR;
+		reply.content.error_rep.code = EAGAIN;
+		goto out;
+	}
+
+	kdebug("[bdev] forwarding request to device server");
+	if (nanvix_ipc_send(server, &request, sizeof(struct bdev_msg)) < 0)
+		goto out1;
+
+	kdebug("[bdev] waiting for device response");
+	nanvix_ipc_receive(server, &reply, sizeof(struct bdev_msg));
+}
+
 static void bdev(int channel)
 {
 	int server;
 	int ret;                 /* IPC operation return value. */
+	int blknum;
 	dev_t dev;               /* Device.                     */
 	struct bdev_msg request; /**< Client request.   */
 	struct bdev_msg reply;   /**< Client reply.     */
+	int block;
 
 	ret = nanvix_ipc_receive(channel, &request, sizeof(struct bdev_msg));
 
@@ -80,12 +148,14 @@ static void bdev(int channel)
 	if (request.type == BDEV_MSG_READBLK_REQUEST)
 	{
 		dev = request.content.readblk_req.dev;
+		blknum = request.content.readblk_req.blknum;
 		kdebug("[bdev] read request");
 	}
 	
 	else if (request.type == BDEV_MSG_WRITEBLK_REQUEST)
 	{
 		dev = request.content.writeblk_req.dev;
+		blknum = request.content.writeblk_req.blknum;
 		kdebug("[bdev] write request");
 	}
 
@@ -104,6 +174,25 @@ static void bdev(int channel)
 		goto out;
 	}
 	
+	do
+	{
+		/* Check for a cached block. */
+		#pragma omp critical
+		{
+			block = getblk(dev, blknum);
+
+			if (i < 0)
+				block = evictblk();
+		}
+	}
+	while (block < 0);
+
+	if (cache[block].dirty)
+	{
+		writeback(block);
+		goto out;
+	}
+
 	kdebug("[bdev] connecting to device server (%d)", dev);
 	if ((server = nanvix_ipc_connect(bdevsw[dev], 0)) < 0)
 	{
@@ -145,6 +234,9 @@ int main(int argc, char **argv)
 		kprintf("Usage: bdev <pathname>");
 		return (NANVIX_FAILURE);
 	}
+
+	for (int i = 0; i < CACHE_SIZE; i++)
+		cache[i].valid = 0;
 
 	channel = nanvix_ipc_create(argv[1], NR_CONNECTIONS, 0);
 
