@@ -23,6 +23,8 @@
 #include <nanvix/name.h>
 #include <nanvix/klib.h>
 
+#ifdef RASPBERRY_CLUSTER
+
 /**
  * @brief Lookup table of addresses.
  */
@@ -42,6 +44,30 @@ static struct {
 	{ "/dev/ramdisk7", "10.111.0.12", 0x8009 },
 	{ NULL, NULL, 0 }
 };
+
+#else
+
+/**
+ * @brief Lookup table of addresses.
+ */
+static struct {
+	const char *name;    /**< Process name.       */
+	const char *address; /**< Physical address.   */
+	unsigned short port; /**< Communication port. */
+} addresses[] = {
+	{ "/sys/bdev",     "127.0.0.1",  0x8001 },
+	{ "/dev/ramdisk0", "127.0.0.1",  0x8002 },
+	{ "/dev/ramdisk1", "127.0.0.1",  0x8003 },
+	{ "/dev/ramdisk2", "127.0.0.1",  0x8004 },
+	{ "/dev/ramdisk3", "127.0.0.1",  0x8005 },
+	{ "/dev/ramdisk4", "127.0.0.1",  0x8006 },
+	{ "/dev/ramdisk5", "127.0.0.1",  0x8007 },
+	{ "/dev/ramdisk6", "127.0.0.1",  0x8008 },
+	{ "/dev/ramdisk7", "127.0.0.1",  0x8009 },
+	{ NULL, NULL, 0 }
+};
+
+#endif
 
 /**
  * @brief Resolves a process name into an address.

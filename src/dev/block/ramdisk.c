@@ -175,7 +175,7 @@ int main(int argc, char **argv)
 
 	ramdisk = kmalloc(RAMDISK_SIZE);
 
-	channel = nanvix_ipc_create(argv[1], NR_CONNECTIONS, 0);
+	channel = nanvix_ipc_create(argv[1], NR_CONNECTIONS);
 
 	kdebug("[ramdisk] server running");
 

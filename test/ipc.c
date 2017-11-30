@@ -48,7 +48,7 @@ static int server(void)
 	int channel;            /* Communication channel. */
 	char buf[MESSAGE_SIZE]; /* Buffer.                */
 
-	channel = nanvix_ipc_create(IPC_TEST_NAME, 1, 0);
+	channel = nanvix_ipc_create(IPC_TEST_NAME, 1);
 
 	/* Receive messages. */
 	for (int i = 0; i < NR_MESSAGES; i++)
@@ -98,7 +98,7 @@ static int client(void)
 	{
 		int ack;
 
-		channel = nanvix_ipc_connect(IPC_TEST_NAME, 0);
+		channel = nanvix_ipc_connect(IPC_TEST_NAME);
 
 		nanvix_ipc_send(channel, buf, sizeof(buf));
 

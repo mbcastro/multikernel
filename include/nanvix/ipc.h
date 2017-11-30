@@ -36,9 +36,9 @@
 	/**@}*/
 
 	/* Forward definitions. */
-	extern int nanvix_ipc_create(const char *, int, int);
+	extern int nanvix_ipc_create(const char *, int);
 	extern int nanvix_ipc_open(int);
-	extern int nanvix_ipc_connect(const char *, int);
+	extern int nanvix_ipc_connect(const char *);
 	extern int nanvix_ipc_close(int);
 	extern int nanvix_ipc_unlink(int);
 	extern int nanvix_ipc_send(int, const void *, size_t);

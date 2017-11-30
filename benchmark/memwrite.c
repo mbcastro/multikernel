@@ -21,7 +21,6 @@
 #include <stdio.h>
 #include <sys/time.h>
 #include <time.h>
-#include <omp.h>
 
 #include <nanvix/vfs.h>
 #include <nanvix/syscalls.h>
@@ -30,7 +29,7 @@
 /**
  * @brief Number of messages to exchange.
  */
-#define NR_WRITES 2
+#define NR_WRITES 1024
 
 /**
  * @brief Gets wall clock (in seconds).
@@ -61,13 +60,11 @@ static void benchmark_memwrite(int nwrites)
 		buffer[i] = 1;
 
 	/* Write blocks to remote memory. */
-	t1 = omp_get_wtime();
-	#pragma omp parallel for
+	t1 = tick();
 	for (int k = 0; k < NR_WRITES; k++)
 		memwrite(buffer, (k%nwrites)*(RAMDISK_SIZE/BLOCK_SIZE), BLOCK_SIZE);
-	t2 = omp_get_wtime();
+	t2 = tick();
 
-	printf("[memwrite] write latency:   %lf s\n", (t2 - t1));
 	printf("[memwrite] write bandwidth: %lf MB/s\n", (BLOCK_SIZE*NR_WRITES)/(1024*1024*(t2 - t1)));
 }
 

@@ -33,7 +33,7 @@ CC = gcc
 # Toolchain configuration.
 CFLAGS += -ansi -std=c99
 CFLAGS += -Wall -Wextra
-CFLAGS += -O3 -fopenmp
+CFLAGS += -O3
 CFLAGS += -I $(INCDIR) -D$(TARGET)
 
 SRC = $(wildcard $(LIBDIR)/*.c)         \

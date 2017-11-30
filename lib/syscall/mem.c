@@ -25,7 +25,6 @@
 #include <nanvix/ramdisk.h>
 #include <nanvix/klib.h>
 #include <nanvix/ipc.h>
-#include <omp.h>
 
 /**
  * @brief Remote memory address.
@@ -78,7 +77,7 @@ int memwrite(const void *src, unsigned dest, size_t size)
 		struct memaddr memaddr;
 		struct bdev_msg msg;
 
-		channel = nanvix_ipc_connect(BDEV_NAME, 0);
+		channel = nanvix_ipc_connect(BDEV_NAME);
 
 		memaddr = memmap(dest + i);
 
@@ -133,7 +132,7 @@ int memread(void *dest, unsigned src, size_t size)
 		struct memaddr memaddr;
 		struct bdev_msg msg;
 
-		channel = nanvix_ipc_connect(BDEV_NAME, 0);
+		channel = nanvix_ipc_connect(BDEV_NAME);
 
 		memaddr = memmap(src + i);
 
