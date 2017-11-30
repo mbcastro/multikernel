@@ -32,73 +32,53 @@
 	 * @brief Block device message types.
 	 */
 	/**@{*/
-	#define BDEV_MSG_ERROR            1 /**< Error.               */
-	#define BDEV_MSG_WRITEBLK_REQUEST 2 /**< Write block request. */
-	#define BDEV_MSG_WRITEBLK_REPLY   3 /**< Write block reply.   */
-	#define BDEV_MSG_READBLK_REQUEST  4 /**< Read block request.  */
-	#define BDEV_MSG_READBLK_REPLY    5 /**< Read block reply.    */
+	#define RMEM_MSG_ERROR            1 /**< Error.               */
+	#define RMEM_MSG_WRITEBLK_REQUEST 2 /**< Write block request. */
+	#define RMEM_MSG_WRITEBLK_REPLY   3 /**< Write block reply.   */
+	#define RMEM_MSG_READBLK_REQUEST  4 /**< Read block request.  */
+	#define RMEM_MSG_READBLK_REPLY    5 /**< Read block reply.    */
 	/**@}*/
 
 	/**
-	 * @brief Block device message
+	 * @brief Remote memory message header.
 	 */
-	struct bdev_msg
+	struct rmem_msg_header
 	{
 		/**
-		 * @brief Message type.
+		 * @brief Operation code.
 		 */
-		int type;
+		int opcode;
 
 		/**
-		 * @brief Message content.
+		 * @brief Operation parameters.
 		 */
 		union
 		{
 			/**
-			 * @brief Write block request.
-			 */
-			struct
-			{
-				dev_t dev;             /**< Device number. */
-				unsigned blknum;       /**< Block number. */
-				char data[BLOCK_SIZE]; /**< Data.         */
-			} writeblk_req;
-
-			/**
-			 * @brief Write block reply.
-			 */
-			struct
-			{
-				ssize_t n; /* Number of bytes written. */
-			} writeblk_rep;
-
-			/**
-			 * @brief Read block request.
+			 * @brief Read/write.
 			 */
 			struct
 			{
 				dev_t dev;       /**< Device number. */
 				unsigned blknum; /**< Block number.  */
-			} readblk_req;
+			} rw;
 
 			/**
-			 * @brief Read block reply.
+			 * @brief Error
 			 */
 			struct
 			{
-				char data[BLOCK_SIZE]; /**< Data.                 */
-				ssize_t n;             /**< Number of bytes read. */
-			} readblk_rep;
-			
-			/**
-			 * @brief Error reply.
-			 */
-			struct
-			{
-				int code; /* Error code. */
-			} error_rep;
+				int num; /**< Error number. */
+			} err;
+		} param;
+	};
 
-		} content;
+	/**
+	 * Remote memory message payload.
+	 */
+	struct rmem_msg_payload
+	{
+		char data[BLOCK_SIZE]; /**< Data. */
 	};
 
 #endif /* DEV_H_ */

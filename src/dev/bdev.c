@@ -89,7 +89,8 @@ static int writeback(int i)
 	int server;          /**< Memory bank server.  */
 	unsigned blknum;     /**< Memory block number. */
 	char *data;          /** Memory block data.    */
-	struct bdev_msg msg; /**< Message.             */
+	struct rmem_msg_header header;
+	struct rmem_msg_payload payload;
 
 	dev = cache[i].index.dev;
 	blknum = cache[i].index.blknum;
@@ -102,21 +103,23 @@ static int writeback(int i)
 		goto error0;
 	}
 
-	/* Build message. */
-	msg.type = BDEV_MSG_WRITEBLK_REQUEST;
-	msg.content.writeblk_req.dev = dev;
-	msg.content.writeblk_req.blknum = blknum;
-	kmemcpy(msg.content.writeblk_req.data, data, BLOCK_SIZE);;
-
 	kdebug("[bdev] writing back block to memory bank");
-	if (nanvix_ipc_send(server, &msg, sizeof(struct bdev_msg)) < 0)
-		goto error1;
+
+	/* Send header. */
+	header.opcode = RMEM_MSG_WRITEBLK_REQUEST;
+	header.param.rw.dev = dev;
+	header.param.rw.blknum = blknum;
+	nanvix_ipc_send(server, &header, sizeof(struct rmem_msg_header));
+
+	/* Send payload. */
+	kmemcpy(&payload.data, data, BLOCK_SIZE);
+	nanvix_ipc_send(server, &payload, sizeof(struct rmem_msg_payload));
 
 	kdebug("[bdev] waiting for device response");
-	if (nanvix_ipc_receive(server, &msg, sizeof(struct bdev_msg)) < 0)
-		goto error1;
 
-	if (msg.type == BDEV_MSG_ERROR)
+	/* Parse reply. */
+	nanvix_ipc_receive(server, &header, sizeof(struct rmem_msg_header));
+	if (header.opcode == RMEM_MSG_ERROR)
 		goto error1;
 
 	nanvix_ipc_close(server);
@@ -145,7 +148,8 @@ error0:
 static int loadblk(int i, dev_t dev, unsigned blknum)
 {
 	int server;          /**< Memory bank server.  */
-	struct bdev_msg msg; /**< Message.             */
+	struct rmem_msg_header header;
+	struct rmem_msg_payload payload;
 
 	kdebug("[bdev] connecting to device server (%d)", dev);
 	if ((server = nanvix_ipc_connect(bdevsw[dev])) < 0)
@@ -154,29 +158,32 @@ static int loadblk(int i, dev_t dev, unsigned blknum)
 		goto error0;
 	}
 
-	/* Build message. */
-	msg.type = BDEV_MSG_READBLK_REQUEST;
-	msg.content.readblk_req.dev = dev;
-	msg.content.readblk_req.blknum = blknum;
-
 	kdebug("[bdev] loading block from memory bank");
-	if (nanvix_ipc_send(server, &msg, sizeof(struct bdev_msg)) < 0)
-		goto error1;
+
+	/* Send header. */
+	header.opcode = RMEM_MSG_READBLK_REQUEST;
+	header.param.rw.dev = dev;
+	header.param.rw.blknum = blknum;
+	nanvix_ipc_send(server, &header, sizeof(struct rmem_msg_header));
 
 	kdebug("[bdev] waiting for device response");
-	if (nanvix_ipc_receive(server, &msg, sizeof(struct bdev_msg)) < 0)
+
+	/* Parse reply. */
+	nanvix_ipc_receive(server, &header, sizeof(struct rmem_msg_header));
+	if (header.opcode == RMEM_MSG_ERROR)
 		goto error1;
 
-	if (msg.type == BDEV_MSG_ERROR)
-		goto error1;
-
-	nanvix_ipc_close(server);
+	/* Receive payload. */
+	nanvix_ipc_receive(server, &payload, sizeof(struct rmem_msg_payload));
+	kmemcpy(cache[i].data, payload.data, BLOCK_SIZE);
 
 	cache[i].valid = 1;
 	cache[i].dirty = 0;
 	cache[i].index.dev = dev;
 	cache[i].index.blknum = blknum;
-	kmemcpy(cache[i].data, msg.content.readblk_rep.data, BLOCK_SIZE);
+	kmemcpy(cache[i].data, payload.data, BLOCK_SIZE);
+
+	nanvix_ipc_close(server);
 
 	return (0);
 
@@ -265,81 +272,85 @@ static int getblk(dev_t dev, unsigned blknum)
 
 static void bdev(int channel)
 {
-	int ret;                 /* IPC operation return value. */
 	unsigned blknum;
 	dev_t dev;               /* Device.             */
-	struct bdev_msg request; /**< Client request.   */
-	struct bdev_msg reply;   /**< Client reply.     */
 	int block;
+	struct rmem_msg_header header;
+	struct rmem_msg_payload payload;
 
-	ret = nanvix_ipc_receive(channel, &request, sizeof(struct bdev_msg));
-
-	if (ret < 0)
-	{
-		kpanic("[bdev] bad request type");
-		reply.type = BDEV_MSG_ERROR;
-		reply.content.error_rep.code = -EINVAL;
-		goto out;
-	}
+	nanvix_ipc_receive(channel, &header, sizeof(struct rmem_msg_header));
 
 	/* Read a block. */
-	if (request.type == BDEV_MSG_READBLK_REQUEST)
+	if ((header.opcode == RMEM_MSG_READBLK_REQUEST) || (header.opcode == RMEM_MSG_WRITEBLK_REQUEST))
 	{
-		dev = request.content.readblk_req.dev;
-		blknum = request.content.readblk_req.blknum;
-	}
-	
-	else if (request.type == BDEV_MSG_WRITEBLK_REQUEST)
-	{
-		dev = request.content.writeblk_req.dev;
-		blknum = request.content.writeblk_req.blknum;
+		dev = header.param.rw.dev;
+		blknum = header.param.rw.blknum;
 	}
 
 	else
 	{
 		kdebug("[bdev] bad request");
-		reply.type = BDEV_MSG_ERROR;
-		reply.content.error_rep.code = -EINVAL;
-		goto out;
+		header.opcode = RMEM_MSG_ERROR;
+		header.param.err.num = -EINVAL;
+		goto error;
 	}
 
 	/* Inlocked device. */
 	if ((dev >= NR_BLKDEV) || (bdevsw[dev] == NULL))
 	{
 		kdebug("[bdev] bad request");
-		reply.type = BDEV_MSG_ERROR;
-		reply.content.error_rep.code = -EINVAL;
-		goto out;
+		header.opcode = RMEM_MSG_ERROR;
+		header.param.err.num = -EINVAL;
+		goto error;
 	}
 
 	if ((block = getblk(dev, blknum)) < 0)
 	{
-		reply.type = BDEV_MSG_ERROR;
-		reply.content.error_rep.code = -EAGAIN;
-		goto out;
+		kdebug("[bdev] failed to replace blocks");
+		header.opcode = RMEM_MSG_ERROR;
+		header.param.err.num = -EAGAIN;
+		goto error;
 	}
 
-	if (request.type == BDEV_MSG_READBLK_REQUEST)
+	if (header.opcode == RMEM_MSG_READBLK_REQUEST)
 	{
 		kdebug("[bdev] serving read request");
-		reply.type = BDEV_MSG_READBLK_REPLY;
-		reply.content.readblk_rep.n = BLOCK_SIZE;
-		kmemcpy(reply.content.readblk_rep.data, cache[block].data, BLOCK_SIZE);
+
+		/* Serve request. */
+		kmemcpy(payload.data, cache[block].data, BLOCK_SIZE);
+
+		kdebug("[bdev] replying client");
+
+		/* Send header. */
+		header.opcode = RMEM_MSG_READBLK_REPLY;
+		nanvix_ipc_send(channel, &header, sizeof(struct rmem_msg_header));
+
+		/* Send payload*/
+		nanvix_ipc_send(channel, &payload, sizeof(struct rmem_msg_payload));
 	}
 	
-	else if (request.type == BDEV_MSG_WRITEBLK_REQUEST)
+	else
 	{
-		kdebug("[bdev] serving write request");
-		cache[block].dirty = 1;
-		kmemcpy(cache[block].data, reply.content.writeblk_req.data, BLOCK_SIZE);
+		nanvix_ipc_receive(channel, &payload, sizeof(struct rmem_msg_payload));
 
-		reply.type = BDEV_MSG_WRITEBLK_REPLY;
-		reply.content.writeblk_rep.n = BLOCK_SIZE;
+		kdebug("[bdev] serving write request");
+
+		/* Serve request. */
+		cache[block].dirty = 1;
+		kmemcpy(cache[block].data, payload.data, BLOCK_SIZE);
+
+		kdebug("[bdev] replying client");
+
+		/* Send header. */
+		header.opcode = RMEM_MSG_WRITEBLK_REPLY;
+		nanvix_ipc_send(channel, &header, sizeof(struct rmem_msg_header));
 	}
 
-out:
+	return;
+
+error:
 	kdebug("[bdev] replying client");
-	ret = nanvix_ipc_send(channel, &reply, sizeof(struct bdev_msg));
+	nanvix_ipc_send(channel, &header, sizeof(struct rmem_msg_header));
 }
 
 /**

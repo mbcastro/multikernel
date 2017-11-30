@@ -94,68 +94,69 @@ static ssize_t ramdisk_writeblk(const char *buf, unsigned blknum)
  * @param request Request.
  * @param reply   Reply.
  */
-static void ramdisk_handle(struct bdev_msg *request, struct bdev_msg *reply)
+static void ramdisk_handle(int client)
 {
-	int ret;
+	char *buf;
+	unsigned blknum;
+	struct rmem_msg_header header;
+	struct rmem_msg_payload payload;
 
-	switch (request->type)
+	nanvix_ipc_receive(client, &header, sizeof(struct rmem_msg_header));
+
+	switch (header.opcode)
 	{
 		/* Write request. */
-		case BDEV_MSG_WRITEBLK_REQUEST:
+		case RMEM_MSG_WRITEBLK_REQUEST:
 		{
-			char *buf;
-			unsigned blknum;
+			int ret;
+
+			nanvix_ipc_receive(client, &payload, sizeof(struct rmem_msg_payload));
 
 			/* Extract request parameters. */
-			buf = request->content.writeblk_req.data;
-			blknum = request->content.writeblk_req.blknum;
+			blknum = header.param.rw.blknum;
+			buf = payload.data;
 
 			kdebug("[ramdisk] write request (%d)", blknum);
 			
 			ret = ramdisk_writeblk(buf, blknum);
 
 			/* Build reply. */
-			reply->type = (ret) ? 
-				BDEV_MSG_ERROR : BDEV_MSG_WRITEBLK_REPLY;
+			header.opcode = (ret) ? 
+				RMEM_MSG_ERROR : RMEM_MSG_WRITEBLK_REPLY;
 		} break;
 
 		/* Read request. */
-		case BDEV_MSG_READBLK_REQUEST:
+		case RMEM_MSG_READBLK_REQUEST:
 		{
-			char *buf;
-			unsigned blknum;
+			int ret;
 
 			/* Extract request parameters. */
-			buf = reply->content.readblk_rep.data;
-			blknum = request->content.readblk_req.blknum;
+			blknum = header.param.rw.blknum;
+			buf = payload.data;
 
 			kdebug("[ramdisk] read request (%d)", blknum);
 			
 			ret = ramdisk_readblk(buf, blknum);
 
 			/* Build reply. */
-			reply->type = (ret) ? 
-				BDEV_MSG_ERROR : BDEV_MSG_READBLK_REPLY;
+			header.opcode = (ret) ? 
+				RMEM_MSG_ERROR : RMEM_MSG_READBLK_REPLY;
 		} break;
 
 		default:
 			kdebug("[ramdisk] bad request");
-			reply->type = BDEV_MSG_ERROR;
-			ret = -EINVAL;
+			header.opcode = RMEM_MSG_ERROR;
+			header.param.err.num = -EINVAL;
 			break;
 	}
 
-	/* Build reply. */
-	switch (reply->type)
-	{
-		case BDEV_MSG_WRITEBLK_REQUEST:
-		case BDEV_MSG_READBLK_REQUEST:
-			reply->content.writeblk_rep.n = BLOCK_SIZE;
-		break;
+	kdebug("[ramdisk] replying client");
 
-		default:
-			reply->content.error_rep.code = -ret;
-	}
+	/* Send reply. */
+	nanvix_ipc_send(client, &header, sizeof(struct rmem_msg_header));
+	if (header.opcode == RMEM_MSG_READBLK_REPLY)
+		nanvix_ipc_send(client, &payload, sizeof(struct rmem_msg_payload));
+
 }
 
 /**
@@ -182,19 +183,12 @@ int main(int argc, char **argv)
 	while (1)
 	{
 		int client;
-		struct bdev_msg reply;
-		struct bdev_msg request;
 
 		client = nanvix_ipc_open(channel);
 		kdebug("[ramdisk] client connected");
 
-		nanvix_ipc_receive(client, &request, sizeof(struct bdev_msg));
 		kdebug("[ramdisk] serving client");
-
-		ramdisk_handle(&request, &reply);
-
-		nanvix_ipc_send(client, &reply, sizeof(struct bdev_msg));
-		kdebug("[ramdisk] replying client");
+		ramdisk_handle(client);
 
 		nanvix_ipc_close(client);
 		kdebug("[ramdisk] client disconnected");

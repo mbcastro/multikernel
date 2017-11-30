@@ -75,7 +75,8 @@ int memwrite(const void *src, unsigned dest, size_t size)
 		size_t n;
 		int channel;
 		struct memaddr memaddr;
-		struct bdev_msg msg;
+		struct rmem_msg_header header;
+		struct rmem_msg_payload payload;
 
 		channel = nanvix_ipc_connect(BDEV_NAME);
 
@@ -83,19 +84,21 @@ int memwrite(const void *src, unsigned dest, size_t size)
 
 		n = ((size - i) < BLOCK_SIZE) ? size - i : BLOCK_SIZE;
 
-		/* Build msg. */
-		msg.type = BDEV_MSG_WRITEBLK_REQUEST;
-		msg.content.writeblk_req.dev = memaddr.dev;
-		msg.content.writeblk_req.blknum = memaddr.blknum;
-		kmemcpy(msg.content.writeblk_req.data, p, n);
+		/* Send header. */
+		header.opcode = RMEM_MSG_WRITEBLK_REQUEST;
+		header.param.rw.dev = memaddr.dev;
+		header.param.rw.blknum = memaddr.blknum;
+		nanvix_ipc_send(channel, &header, sizeof(struct rmem_msg_header));
 
-		nanvix_ipc_send(channel, &msg, sizeof(struct bdev_msg));
+		/* Send payload. */
+		kmemcpy(&payload.data, p, n);
+		nanvix_ipc_send(channel, &payload, sizeof(struct rmem_msg_payload));
 
-		/* Parse ackowledge message. */
-		nanvix_ipc_receive(channel, &msg, sizeof(struct bdev_msg));
-		if (msg.type == BDEV_MSG_ERROR)
+		/* Parse reply. */
+		nanvix_ipc_receive(channel, &header, sizeof(struct rmem_msg_header));
+		if (header.opcode == RMEM_MSG_ERROR)
 		{
-			kdebug("memwrite error %d", msg.content.error_rep.code);
+			kdebug("memwrite error %d", header.param.err.num);
 
 			nanvix_ipc_close(channel);
 			return (NANVIX_FAILURE);
@@ -130,7 +133,8 @@ int memread(void *dest, unsigned src, size_t size)
 		size_t n;
 		int channel;
 		struct memaddr memaddr;
-		struct bdev_msg msg;
+		struct rmem_msg_header header;
+		struct rmem_msg_payload payload;
 
 		channel = nanvix_ipc_connect(BDEV_NAME);
 
@@ -138,24 +142,25 @@ int memread(void *dest, unsigned src, size_t size)
 
 		n = ((size - i) < BLOCK_SIZE) ? size - i : BLOCK_SIZE;
 
-		/* Build msg. */
-		msg.type = BDEV_MSG_READBLK_REQUEST;
-		msg.content.readblk_req.dev = memaddr.dev;
-		msg.content.readblk_req.blknum = memaddr.blknum;
+		/* Send header. */
+		header.opcode = RMEM_MSG_READBLK_REQUEST;
+		header.param.rw.dev = memaddr.dev;
+		header.param.rw.blknum = memaddr.blknum;
+		nanvix_ipc_send(channel, &header, sizeof(struct rmem_msg_header));
 
-		nanvix_ipc_send(channel, &msg, sizeof(struct bdev_msg));
-
-		/* Parse ackowledge message. */
-		nanvix_ipc_receive(channel, &msg, sizeof(struct bdev_msg));
-		if (msg.type == BDEV_MSG_ERROR)
+		/* Parse reply. */
+		nanvix_ipc_receive(channel, &header, sizeof(struct rmem_msg_header));
+		if (header.opcode == RMEM_MSG_ERROR)
 		{
-			kdebug("memread error %d", msg.content.error_rep.code);
+			kdebug("memread error %d", header.param.err.num);
 
 			nanvix_ipc_close(channel);
 			return (NANVIX_FAILURE);
 		}
 
-		kmemcpy(p, &msg.content.readblk_rep.data, n);
+		/* Receive payload. */
+		nanvix_ipc_receive(channel, &payload, sizeof(struct rmem_msg_payload));
+		kmemcpy(p, payload.data, n);
 		
 		p += n;
 
