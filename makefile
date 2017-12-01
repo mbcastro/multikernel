@@ -29,6 +29,7 @@ BENCHDIR = $(CURDIR)/benchmark
 # Toolchain.
 LD = gcc
 CC = gcc
+MPICC = mpicc
 
 # Toolchain configuration.
 CFLAGS += -ansi -std=c99
@@ -57,7 +58,7 @@ memwrite.benchmark: $(SRC) $(BENCHDIR)/memwrite.c
 
 vector.benchmark: $(SRC) $(BENCHDIR)/vector.c
 	mkdir -p $(BINDIR)
-	$(LD) $(CFLAGS) $^ -o $(BINDIR)/vector.benchmark
+	$(MPICC) $(CFLAGS) $^ -o $(BINDIR)/vector.benchmark
 
 ipc.test: $(SRC) $(TESTDIR)/ipc.c
 	mkdir -p $(BINDIR)

@@ -21,9 +21,13 @@
 #include <stdio.h>
 #include <sys/time.h>
 #include <time.h>
+#include <mpi.h>
 
 #include <nanvix/vfs.h>
 #include <nanvix/syscalls.h>
+#include <nanvix/ramdisk.h>
+
+#define NR_RAMDISKS 4
 
 /**
  * @brief Gets wall clock (in seconds).
@@ -42,26 +46,40 @@ static double tick(void)
 /**
  * @brief Scalar vector multiplication.
  */
-static void benchmark_vector(int k1, int k2)
+static void benchmark_vector(int nprocs, int myrank)
 {
+	int i0, in;
+	int nchunks;
 	double t1, t2;
-	int chunksize = (BLOCK_SIZE/sizeof(float));
-	float chunk[chunksize];
+	int chunksize;
+
+	chunksize = BLOCK_SIZE/sizeof(float);
 
 	t1 = tick();
 
+	nchunks = (NR_RAMDISKS*RAMDISK_SIZE)/BLOCK_SIZE;
+
+	i0 = myrank*(nchunks/nprocs);
+	in = (myrank + 1)*(nchunks/nprocs);
+
 	/* Initialize vector. */
-	for (int i = k1; i < k2; i++)
+	for (int i = i0; i < in; i++)
 	{
+		double chunk[chunksize];
+
 		for (int j = 0; j < chunksize; j++)
 			chunk[j] = 1;
 		
 		memwrite(chunk, i, BLOCK_SIZE);
 	}
 
+	MPI_Barrier(MPI_COMM_WORLD);
+
 	/* Multiply. */
-	for (int i = k1; i < k2; i++)
+	for (int i = i0; i < in; i++)
 	{
+		double chunk[chunksize];
+
 		memread(chunk, i, BLOCK_SIZE);
 
 		for (int j = 0; j < chunksize; j++)
@@ -72,24 +90,30 @@ static void benchmark_vector(int k1, int k2)
 		
 	t2 = tick();
 
-	printf("[vector] time: %lfs\n", t2 - t1);
+	fprintf(stderr, "[vector] time: %lfs\n", t2 - t1);
 }
 
 /**
  * @brief Scalar vector multiplication benchmark.
  */
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
-	/* Invalid number of arguments. */
-	if (argc != 3)
-	{
-		printf("missing number of chunks\n");
-		printf("Usage: vector <nchunks> <offset>\n");
-		return (0);
-	}
+	int nprocs;
+	int myrank;
 
-	/* Server */
-	benchmark_vector(atoi(argv[1]), atoi(argv[2]));
+    MPI_Init(&argc, &argv);
 
-	return (0);
+    // Get the number of processes
+    MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
+
+    // Get the rank of the process
+    MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+
+
+	fprintf(stderr, "hello from %d\n", myrank);
+
+	benchmark_vector(nprocs, myrank);
+
+    // Finalize the MPI environment.
+    MPI_Finalize();
 }
