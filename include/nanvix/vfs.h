@@ -23,7 +23,7 @@
 	/**
 	 * @brief Block size log 2.
 	 */
-	#define BLOCK_SIZE_LOG2 14
+	#define BLOCK_SIZE_LOG2 13
 
 	/**
 	 * @brief Block size (in bytes).

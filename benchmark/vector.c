@@ -48,6 +48,7 @@ static double tick(void)
  */
 static void benchmark_vector(int nprocs, int myrank)
 {
+	double sum;
 	int i0, in;
 	int nchunks;
 	double t1, t2;
@@ -55,12 +56,12 @@ static void benchmark_vector(int nprocs, int myrank)
 
 	chunksize = BLOCK_SIZE/sizeof(float);
 
-	t1 = tick();
-
-	nchunks = (NR_RAMDISKS*RAMDISK_SIZE)/BLOCK_SIZE;
+	nchunks = NR_RAMDISKS*(RAMDISK_SIZE/BLOCK_SIZE);
 
 	i0 = myrank*(nchunks/nprocs);
 	in = (myrank + 1)*(nchunks/nprocs);
+
+	sum = 0;
 
 	/* Initialize vector. */
 	for (int i = i0; i < in; i++)
@@ -69,28 +70,42 @@ static void benchmark_vector(int nprocs, int myrank)
 
 		for (int j = 0; j < chunksize; j++)
 			chunk[j] = 1;
-		
-		memwrite(chunk, i, BLOCK_SIZE);
+
+		t1 = tick();
+			memwrite(chunk, i, BLOCK_SIZE);
+		t2 = tick();
+
+		sum += t2 - t1;
 	}
 
+	fprintf(stderr, "[vector] process %d: time %lf s %d bytes\n", myrank, sum, (in - i0)*BLOCK_SIZE);
+
 	MPI_Barrier(MPI_COMM_WORLD);
+
+	sum = 0;
 
 	/* Multiply. */
 	for (int i = i0; i < in; i++)
 	{
 		double chunk[chunksize];
 
-		memread(chunk, i, BLOCK_SIZE);
+		t1 = tick();
+			memread(chunk, i, BLOCK_SIZE);
+		t2 = tick();
+
+		sum += t2 -t1;
 
 		for (int j = 0; j < chunksize; j++)
 			chunk[j] *= 2.31;
 		
-		memwrite(chunk, i, BLOCK_SIZE);
-	}
-		
-	t2 = tick();
+		t1 = tick();
+			memwrite(chunk, i, BLOCK_SIZE);
+		t2 = tick();
 
-	fprintf(stderr, "[vector] time: %lfs\n", t2 - t1);
+		sum += t2 -t1;
+	}
+
+	fprintf(stderr, "[vector] process %d: time %lf s %d bytes\n", myrank, sum, 2*(in - i0)*BLOCK_SIZE);
 }
 
 /**

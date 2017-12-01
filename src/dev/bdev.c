@@ -54,7 +54,7 @@ static const char *bdevsw[NR_BLKDEV] = {
 /**
  * Memory block cache size (in blocks).
  */
-#define CACHE_SIZE 64
+#define CACHE_SIZE 256
 
 /**
  * Memory block cache.
