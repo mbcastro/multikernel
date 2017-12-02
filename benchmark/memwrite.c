@@ -28,6 +28,8 @@
 #include <nanvix/syscalls.h>
 #include <nanvix/ramdisk.h>
 
+#define NR_RAMDISKS 4
+
 /**
  * @brief Gets wall clock (in seconds).
  *
@@ -45,10 +47,19 @@ static double tick(void)
 /**
  * @brief Memwrite benchmark.
  */
-static void benchmark_memwrite(int nwrites)
+static void benchmark_memwrite(int nwrites, int wset)
 {
+	int myid;
+	int nprocs;
 	double t1, t2;
 	char block[BLOCK_SIZE];
+
+	MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
+	MPI_Comm_rank(MPI_COMM_WORLD, &myid);
+
+	/* Invalid arguments. */
+	if ((nprocs*wset) > (NR_RAMDISKS*(RAMDISK_SIZE/BLOCK_SIZE)))
+		exit(-1);
 
 	srand(time(NULL));
 
@@ -60,7 +71,7 @@ static void benchmark_memwrite(int nwrites)
 	/* Write blocks to remote memory. */
 	t1 = tick();
 	for (int i = 0; i < nwrites; i++)
-		memwrite(block, rand()%(RAMDISK_SIZE/BLOCK_SIZE), BLOCK_SIZE);
+		memread(block, myid*wset + (rand()%wset), BLOCK_SIZE);
 	t2 = tick();
 
 	printf("[memwrite] write bandwidth: %lf MB/s\n", (nwrites*BLOCK_SIZE)/(1024*1024*(t2 - t1)));
@@ -75,13 +86,13 @@ int main(int argc, char **argv)
 	if (argc != 2)
 	{
 		printf("missing number of writes\n");
-		printf("Usage: memwrite <nwrites>\n");
+		printf("Usage: memwrite <nwrites> <wset>\n");
 		return (0);
 	}
 
     MPI_Init(&argc, &argv);
 
-	benchmark_memwrite(atoi(argv[1]));
+	benchmark_memwrite(atoi(argv[1]), atoi(argv[2]));
 
     MPI_Finalize();
 

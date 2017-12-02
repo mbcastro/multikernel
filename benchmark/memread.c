@@ -28,6 +28,8 @@
 #include <nanvix/syscalls.h>
 #include <nanvix/ramdisk.h>
 
+#define NR_RAMDISKS 4
+
 /**
  * @brief Gets wall clock (in seconds).
  *
@@ -45,10 +47,19 @@ static double tick(void)
 /**
  * @brief Memread benchmark.
  */
-static void benchmark_memread(int nreads)
+static void benchmark_memread(int nreads, int wset)
 {
+	int myid;
+	int nprocs;
 	double t1, t2;
 	char block[BLOCK_SIZE];
+
+	MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
+	MPI_Comm_rank(MPI_COMM_WORLD, &myid);
+
+	/* Invalid arguments. */
+	if ((nprocs*wset) > (NR_RAMDISKS*(RAMDISK_SIZE/BLOCK_SIZE)))
+		exit(-1);
 
 	srand(time(NULL));
 
@@ -57,7 +68,7 @@ static void benchmark_memread(int nreads)
 	/* Write blocks to remote memory. */
 	t1 = tick();
 	for (int i = 0; i < nreads; i++)
-		memread(block, rand()%(RAMDISK_SIZE/BLOCK_SIZE), BLOCK_SIZE);
+		memread(block, myid*wset + (rand()%wset), BLOCK_SIZE);
 	t2 = tick();
 
 	printf("[memread] read bandwidth: %lf MB/s\n", (nreads*BLOCK_SIZE)/(1024*1024*(t2 - t1)));
@@ -69,16 +80,16 @@ static void benchmark_memread(int nreads)
 int main(int argc, char **argv)
 {
 	/* Invalid number of arguments. */
-	if (argc != 2)
+	if (argc != 3)
 	{
 		printf("missing number of reads\n");
-		printf("Usage: memread <nreads>\n");
+		printf("Usage: memread <nreads> <wset>\n");
 		return (0);
 	}
 
     MPI_Init(&argc, &argv);
 
-	benchmark_memread(atoi(argv[1]));
+	benchmark_memread(atoi(argv[1]), atoi(argv[2]));
 
     MPI_Finalize();
 
