@@ -42,7 +42,7 @@ SRC = $(wildcard $(LIBDIR)/*.c)         \
 	  $(wildcard $(LIBDIR)/syscall/*.c) \
 	  $(SRCDIR)/pm/name.c               \
 
-all: bdev ramdisk ipc.test memwrite.benchmark vector.benchmark
+all: bdev ramdisk ipc.test memwrite.benchmark memread.benchmark
 
 bdev: $(SRC) $(SRCDIR)/dev/bdev.c
 	mkdir -p $(BINDIR)
@@ -51,6 +51,10 @@ bdev: $(SRC) $(SRCDIR)/dev/bdev.c
 ramdisk: $(SRC) $(SRCDIR)/dev/block/ramdisk.c
 	mkdir -p $(BINDIR)
 	$(LD) $(CFLAGS) $^ -o $(BINDIR)/ramdisk
+
+memread.benchmark: $(SRC) $(BENCHDIR)/memread.c
+	mkdir -p $(BINDIR)
+	$(MPICC) $(CFLAGS) $^ -o $(BINDIR)/memread.benchmark
 
 memwrite.benchmark: $(SRC) $(BENCHDIR)/memwrite.c
 	mkdir -p $(BINDIR)
