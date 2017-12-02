@@ -27,6 +27,8 @@
 #include <nanvix/syscalls.h>
 #include <nanvix/ramdisk.h>
 
+#define K 2.13
+
 #define NR_RAMDISKS 4
 
 /**
@@ -48,11 +50,13 @@ static double tick(void)
  */
 static void benchmark_vector(int nprocs, int myrank)
 {
-	double sum;
 	int i0, in;
 	int nchunks;
-	double t1, t2;
 	int chunksize;
+	double t1, t2, t3, t4;
+	double cputime, netwtime;
+
+	srand(time(NULL));
 
 	chunksize = BLOCK_SIZE/sizeof(float);
 
@@ -61,51 +65,61 @@ static void benchmark_vector(int nprocs, int myrank)
 	i0 = myrank*(nchunks/nprocs);
 	in = (myrank + 1)*(nchunks/nprocs);
 
-	sum = 0;
+	cputime = netwtime = 0;
 
-	/* Initialize vector. */
-	for (int i = i0; i < in; i++)
-	{
-		double chunk[chunksize];
+	t1 = tick();
 
-		for (int j = 0; j < chunksize; j++)
-			chunk[j] = 1;
+		/* Initialize vector. */
+		for (int i = i0; i < in; i++)
+		{
+			double chunk[chunksize];
 
-		t1 = tick();
-			memwrite(chunk, i, BLOCK_SIZE);
-		t2 = tick();
+			for (int j = 0; j < chunksize; j++)
+				chunk[j] = rand()/((double) RAND_MAX);
 
-		sum += t2 - t1;
-	}
+			t3 = tick();
+				memwrite(chunk, i, BLOCK_SIZE);
+			t4 = tick();
 
-	fprintf(stderr, "[vector] process %d: time %lf s %d bytes\n", myrank, sum, (in - i0)*BLOCK_SIZE);
+			netwtime += t4 - t3;
+		}
+	
+	t2 = tick();
+
+	cputime += (t2 - t1) - netwtime;
+
+	fprintf(stderr, "[vector] process %d: network %lf s cpu %lf\n", myrank, netwtime, cputime);
 
 	MPI_Barrier(MPI_COMM_WORLD);
 
-	sum = 0;
+	t1 = tick();
 
 	/* Multiply. */
 	for (int i = i0; i < in; i++)
 	{
 		double chunk[chunksize];
 
-		t1 = tick();
+		t3 = tick();
 			memread(chunk, i, BLOCK_SIZE);
-		t2 = tick();
+		t4 = tick();
 
-		sum += t2 -t1;
+		netwtime += t4 - t3;
 
 		for (int j = 0; j < chunksize; j++)
-			chunk[j] *= 2.31;
+			chunk[j] *= K;
 		
-		t1 = tick();
+		t3 = tick();
 			memwrite(chunk, i, BLOCK_SIZE);
-		t2 = tick();
+		t4 = tick();
 
-		sum += t2 -t1;
+		netwtime += t4 - t3;
 	}
 
-	fprintf(stderr, "[vector] process %d: time %lf s %d bytes\n", myrank, sum, 2*(in - i0)*BLOCK_SIZE);
+	t2 = tick();
+
+	cputime += (t2 - t1) - netwtime;
+
+	fprintf(stderr, "[vector] process %d: network %lf s cpu %lf\n", myrank, netwtime, cputime);
 }
 
 /**
