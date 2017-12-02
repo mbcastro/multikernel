@@ -43,9 +43,9 @@ static double tick(void)
 }
 
 /**
- * @brief Memwrite benchmark.
+ * @brief Memread benchmark.
  */
-static void benchmark_memwrite(int nwrites)
+static void benchmark_memread(int nreads)
 {
 	double t1, t2;
 	char block[BLOCK_SIZE];
@@ -56,11 +56,11 @@ static void benchmark_memwrite(int nwrites)
 
 	/* Write blocks to remote memory. */
 	t1 = tick();
-	for (int i = 0; i < nwrites; i++)
+	for (int i = 0; i < nreads; i++)
 		memread(block, rand()%(RAMDISK_SIZE/BLOCK_SIZE), BLOCK_SIZE);
 	t2 = tick();
 
-	printf("[memwrite] write bandwidth: %lf MB/s\n", (nwrites*BLOCK_SIZE)/(1024*1024*(t2 - t1)));
+	printf("[memread] read bandwidth: %lf MB/s\n", (nreads*BLOCK_SIZE)/(1024*1024*(t2 - t1)));
 }
 
 /**
@@ -71,14 +71,14 @@ int main(int argc, char **argv)
 	/* Invalid number of arguments. */
 	if (argc != 2)
 	{
-		printf("missing number of writes\n");
-		printf("Usage: memwrite <nwrites>\n");
+		printf("missing number of reads\n");
+		printf("Usage: memread <nreads>\n");
 		return (0);
 	}
 
     MPI_Init(&argc, &argv);
 
-	benchmark_memwrite(atoi(argv[1]));
+	benchmark_memread(atoi(argv[1]));
 
     MPI_Finalize();
 
