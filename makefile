@@ -54,11 +54,7 @@ ramdisk: $(SRC) $(SRCDIR)/dev/block/ramdisk.c
 
 memwrite.benchmark: $(SRC) $(BENCHDIR)/memwrite.c
 	mkdir -p $(BINDIR)
-	$(LD) $(CFLAGS) $^ -o $(BINDIR)/memwrite.benchmark
-
-vector.benchmark: $(SRC) $(BENCHDIR)/vector.c
-	mkdir -p $(BINDIR)
-	$(MPICC) $(CFLAGS) $^ -o $(BINDIR)/vector.benchmark
+	$(MPICC) $(CFLAGS) $^ -o $(BINDIR)/memwrite.benchmark
 
 ipc.test: $(SRC) $(TESTDIR)/ipc.c
 	mkdir -p $(BINDIR)

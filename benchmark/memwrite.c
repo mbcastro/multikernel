@@ -19,17 +19,14 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <sys/time.h>
 #include <time.h>
+#include <mpi.h>
 
 #include <nanvix/vfs.h>
 #include <nanvix/syscalls.h>
 #include <nanvix/ramdisk.h>
-
-/**
- * @brief Number of messages to exchange.
- */
-#define NR_WRITES 1024
 
 /**
  * @brief Gets wall clock (in seconds).
@@ -50,22 +47,23 @@ static double tick(void)
  */
 static void benchmark_memwrite(int nwrites)
 {
-	char buffer[BLOCK_SIZE]; /* Buffer.            */
 	double t1, t2;
+	char block[BLOCK_SIZE];
 
 	srand(time(NULL));
 
 	/* Write checksum. */
-	for (int i = 0; i < BLOCK_SIZE; i++)
-		buffer[i] = 1;
+	memset(block, 1, BLOCK_SIZE);
+
+	MPI_Barrier(MPI_COMM_WORLD);
 
 	/* Write blocks to remote memory. */
 	t1 = tick();
-	for (int k = 0; k < NR_WRITES; k++)
-		memwrite(buffer, (k%nwrites)*(RAMDISK_SIZE/BLOCK_SIZE), BLOCK_SIZE);
+	for (int i = 0; i < nwrites; i++)
+		memwrite(block, rand()%(RAMDISK_SIZE/BLOCK_SIZE), BLOCK_SIZE);
 	t2 = tick();
 
-	printf("[memwrite] write bandwidth: %lf MB/s\n", (BLOCK_SIZE*NR_WRITES)/(1024*1024*(t2 - t1)));
+	printf("[memwrite] write bandwidth: %lf MB/s\n", (nwrites*BLOCK_SIZE)/(1024*1024*(t2 - t1)));
 }
 
 /**
@@ -81,8 +79,11 @@ int main(int argc, char **argv)
 		return (0);
 	}
 
-	/* Server */
+    MPI_Init(&argc, &argv);
+
 	benchmark_memwrite(atoi(argv[1]));
+
+    MPI_Finalize();
 
 	return (0);
 }

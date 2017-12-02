@@ -26,6 +26,6 @@
 	/**
 	 * @brief RAM Disk size (in bytes).
 	 */
-	#define RAMDISK_SIZE (8*1024*1024)
+	#define RAMDISK_SIZE (512*1024*1024)
 
 #endif /* RAMDISK_H_ */
