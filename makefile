@@ -16,7 +16,7 @@
 # along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
 #
 
-TARGET = TARGET_UNIX
+MACHINE = UNIX
 
 # Directories.
 BINDIR  = $(CURDIR)/bin
@@ -35,20 +35,20 @@ MPICC = mpicc
 CFLAGS += -ansi -std=c99
 CFLAGS += -Wall -Wextra
 CFLAGS += -O3 -D $(MACHINE)
-CFLAGS += -I $(INCDIR) -D$(TARGET)
+CFLAGS += -I $(INCDIR)
 
-SRC = $(wildcard $(LIBDIR)/*.c)         \
-	  $(wildcard $(LIBDIR)/kernel/*.c)  \
-	  $(wildcard $(LIBDIR)/syscall/*.c) \
-	  $(SRCDIR)/pm/name.c               \
+SRC = $(wildcard $(SRCDIR)/kernel/arch/unix/*.c)         \
+	  $(wildcard $(SRCDIR)/kernel/klib/*.c)  \
+	  $(wildcard $(SRCDIR)/kernel/pm/*.c) \
+	  $(wildcard $(SRCDIR)/lib/syscall/*.c) \
 
 all: bdev ramdisk ipc.test memwrite.benchmark memread.benchmark
 
-bdev: $(SRC) $(SRCDIR)/dev/bdev.c
+bdev: $(SRC) $(SRCDIR)/kernel/dev/bdev.c
 	mkdir -p $(BINDIR)
 	$(LD) $(CFLAGS) $^ -o $(BINDIR)/bdev
 
-ramdisk: $(SRC) $(SRCDIR)/dev/block/ramdisk.c
+ramdisk: $(SRC) $(SRCDIR)/kernel/dev/block/ramdisk.c
 	mkdir -p $(BINDIR)
 	$(LD) $(CFLAGS) $^ -o $(BINDIR)/ramdisk
 

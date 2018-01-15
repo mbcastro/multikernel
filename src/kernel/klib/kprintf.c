@@ -18,6 +18,7 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <nanvix/hal.h>
 #include <nanvix/klib.h>
 #include <sys/types.h>
 #include <stdarg.h>

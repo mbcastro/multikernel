@@ -21,6 +21,7 @@
 #define KLIB_H_
 
 	#include <stdarg.h>
+	#include <sys/types.h>
 
 	#include <nanvix/hal.h>
 

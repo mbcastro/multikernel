@@ -20,7 +20,7 @@
 #ifndef HAL_H_
 #define HAL_H_
 
-#ifdef TARGET_UNIX
+#ifdef UNIX
 
 	#include <string.h>
 	#include <stdio.h>
