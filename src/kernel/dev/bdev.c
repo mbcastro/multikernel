@@ -34,12 +34,6 @@
 static const char *bdevsw[NR_BLKDEV] = {
 	"/dev/ramdisk0", /* /dev/ramdisk0 */
 	"/dev/ramdisk1", /* /dev/ramdisk1 */
-	"/dev/ramdisk2", /* /dev/ramdisk2 */
-	"/dev/ramdisk3", /* /dev/ramdisk3 */
-	"/dev/ramdisk4", /* /dev/ramdisk4 */
-	"/dev/ramdisk5", /* /dev/ramdisk5 */
-	"/dev/ramdisk6", /* /dev/ramdisk6 */
-	"/dev/ramdisk7", /* /dev/ramdisk7 */
 };
 
 /*============================================================================*

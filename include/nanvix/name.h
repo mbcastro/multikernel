@@ -20,16 +20,7 @@
 #ifndef NANVIX_NAME_H_
 #define NANVIX_NAME_H_
 
-	#include <arpa/inet.h>
-
-	/**
-	 * @brief Process address.
-	 */
-	struct nanvix_process_addr
-	{
-		in_addr_t addr;
-		in_port_t port;
-	};
+	#include <nanvix/hal.h>
 
 	/* Forward definitions. */
 	extern int nanvix_lookup(const char *, struct nanvix_process_addr *);

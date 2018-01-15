@@ -17,31 +17,16 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HAL_H_
-#define HAL_H_
-
-	#include <nanvix/arch/unix.h>
-
-#ifdef UNIX
-
-	#include <string.h>
-	#include <stdio.h>
-	#include <sys/socket.h>
+#ifndef MPPA_H_
+#define MPPA_H_
 
 	/**
-	 * @brief Kernel puts().
-	 *
-	 * @param str Message.
-	 *
-	 * @return see puts().
+	 * @brief Process address.
 	 */
-	#define kputs(str) { fprintf(stderr, "%s\n", str); }
+	struct nanvix_process_addr
+	{
+		int rank;
+	};
 
-	/**
-	 * @brief Non blocking IPC channel.
-	 */
-	#define _CHANNEL_NONBLOCK SOCK_NONBLOCK
+#endif /* MPPA_H_ */
 
-#endif
-
-#endif /* */
