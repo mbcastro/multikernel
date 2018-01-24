@@ -17,16 +17,21 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef MPPA_H_
-#define MPPA_H_
+#ifndef NANVIX_ARCH_MPPA256_
+#define NANVIX_ARCH_MPPA256_
+
+	#ifndef _KALRAY_MPPA256_
+		#error "bad target"
+	#endif
 
 	/**
-	 * @brief Process address.
+	 * @brief NoC Address.
 	 */
-	struct nanvix_process_addr
+	struct noc_addr
 	{
-		int rank;
+		int clusterid; /**< Cluster ID.      */
+		int cnoc_tag;  /**< Control NoC tag. */
+		int dnoc_tag;  /**< Data NoC tag.    */
 	};
 
-#endif /* MPPA_H_ */
-
+#endif /* NANVIX_ARCH_MPPA256_ */

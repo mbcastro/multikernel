@@ -18,49 +18,49 @@
  */
 
 #include <errno.h>
-#include <stdlib.h>
 
-#include <nanvix/name.h>
+#include <nanvix/hal.h>
 #include <nanvix/klib.h>
 
 /**
- * @brief Lookup table of addresses.
+ * @brief Lookup table of NoC addresses.
  */
-static struct {
-	const char *name; /**< Process name. */
-	unsigned rank;    /**< Cluster rank. */
+static 
+{
+	const char *name;        /**< Process name. */
+	struct nanvix_addr addr; /**< NoC address.  */
 } addresses[] = {
-	{ "/proc/0",         0 },
-	{ "/proc/1",         1 },
-	{ "/proc/2",         2 },
-	{ "/proc/3",         3 },
-	{ "/proc/4",         4 },
-	{ "/proc/5",         7 },
-	{ "/proc/6",         8 },
-	{ "/proc/7",        11 },
-	{ "/proc/8",        12 },
-	{ "/proc/9",        13 },
-	{ "/proc/10",       14 },
-	{ "/proc/11",       15 },
-	{ "/sys/rmem0",      5 },
-	{ "/sys/rmem1",      6 },
-	{ "/sys/rmem2",      9 },
-	{ "/sys/rmem3",     10 },
-	{ "/dev/mem0",     128 },
-	{ "/dev/mem1",     192 },
-	{ NULL, 0 }
-};
+	{ "/cluster/io/0",       { 128, 8, 9 } },
+	{ "/cluster/io/1",       { 192, 8, 9 } },
+	{ "/cluster/compute/0",  {   0, 8, 9 } },
+	{ "/cluster/compute/1",  {   1, 8, 9 } },
+	{ "/cluster/compute/2",  {   2, 8, 9 } },
+	{ "/cluster/compute/3",  {   3, 8, 9 } },
+	{ "/cluster/compute/4",  {   4, 8, 9 } },
+	{ "/cluster/compute/5",  {   5, 8, 9 } },
+	{ "/cluster/compute/6",  {   6, 8, 9 } },
+	{ "/cluster/compute/7",  {   7, 8, 9 } },
+	{ "/cluster/compute/8",  {   8, 8, 9 } },
+	{ "/cluster/compute/9",  {   9, 8, 9 } },
+	{ "/cluster/compute/10", {  10, 8, 9 } },
+	{ "/cluster/compute/11", {  11, 8, 9 } },
+	{ "/cluster/compute/12", {  12, 8, 9 } },
+	{ "/cluster/compute/13", {  13, 8, 9 } },
+	{ "/cluster/compute/14", {  14, 8, 9 } },
+	{ "/cluster/compute/15", {  15, 8, 9 } },
+	{ NULL,                  {   0, 0, 0 } }
+}
 
 /**
- * @brief Resolves a process name into an address.
+ * @brief Resolves a process name into a NoC address.
  *
  * @param name Process name.
- * @param addr Address stor elocation.
+ * @param addr Location to store NoC address.
  *
  * @returns Upon successful completion zero is returned;
  * otherwise a negative error code number is returned instead.
  */
-int nanvix_lookup(const char *name, struct nanvix_process_addr *addr)
+int nanvix_lookup(const char *name, struct noc_addr *addr)
 {
 	/* Sanity check. */
 	if ((name == NULL) || (addr == NULL))
@@ -72,10 +72,14 @@ int nanvix_lookup(const char *name, struct nanvix_process_addr *addr)
 		/* Found. */
 		if (!kstrcmp(addresses[i].name, name))
 		{
-			addr->tx = addresses[i].rank;
+			addr->clusterid = addresses[i].clusterid;
+			addr->cnoc_tag = addresses[i].cnoc_tag;
+			addr->dnoc_tag = addresses[i].dnoc_tag;
+
 			return (0);
 		}
 	}
 
 	return (-EINVAL);
 }
+

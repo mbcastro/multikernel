@@ -31,4 +31,22 @@
 		in_port_t port;
 	};
 
+	#include <string.h>
+	#include <stdio.h>
+	#include <sys/socket.h>
+
+	/**
+	 * @brief Kernel puts().
+	 *
+	 * @param str Message.
+	 *
+	 * @return see puts().
+	 */
+	#define kputs(str) { fprintf(stderr, "%s\n", str); }
+
+	/**
+	 * @brief Non blocking IPC channel.
+	 */
+	#define _CHANNEL_NONBLOCK SOCK_NONBLOCK
+
 #endif /* UNIX_H_ */

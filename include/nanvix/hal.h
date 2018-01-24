@@ -20,28 +20,37 @@
 #ifndef HAL_H_
 #define HAL_H_
 
-	#include <nanvix/arch/unix.h>
-
-#ifdef UNIX
-
-	#include <string.h>
-	#include <stdio.h>
-	#include <sys/socket.h>
-
-	/**
-	 * @brief Kernel puts().
-	 *
-	 * @param str Message.
-	 *
-	 * @return see puts().
-	 */
-	#define kputs(str) { fprintf(stderr, "%s\n", str); }
-
-	/**
-	 * @brief Non blocking IPC channel.
-	 */
-	#define _CHANNEL_NONBLOCK SOCK_NONBLOCK
-
+#ifdef _KALRAY_MPPA256__
+	#include <nanvix/arch/nodeos.h>
 #endif
 
-#endif /* */
+#ifdef UNIX
+	#include <nanvix/arch/unix.h>
+#endif
+
+
+/*===========================================================================*
+ * NoC                                                                       *
+ *===========================================================================*/
+
+	/**
+	 * @brief Connector flags.
+	 */
+	/**@{*/
+	#define CONNECTOR_FREE   (1 << 0)
+	#define CONNECTOR_OUTPUT (1 << 1)
+	#define CONNECTOR_DATA   (1 << 2)
+	/**@}*/
+
+	/* Forward definitions. */
+	extern int nanvix_connector_open(struct noc_addr addr, int flags)
+	extern int nanvix_connector_close(int id)
+	extern int nanvix_connector_read(int id, void *ptr, size_t size)
+	extern int nanvix_connector_write(int id, const void *buf, size_t size)
+
+/*===========================================================================*
+ * NoC                                                                       *
+ *===========================================================================*/
+
+	/* Forward definitions. */
+	int nanvix_lookup(const char *, struct noc_addr *);
