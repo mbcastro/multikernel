@@ -85,7 +85,7 @@ int main(int argc, char **argv)
 	ret = (!strcmp(argv[1], "--server")) ? 
 		server() : client();
 
-	printf("noc test [%s]", (ret) ? "passed" : "FAILED");
+	printf("noc test [%s]\n", (ret) ? "passed" : "FAILED");
 
 	return (EXIT_SUCCESS);
 }

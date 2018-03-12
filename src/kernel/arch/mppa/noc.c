@@ -47,7 +47,7 @@ void nanvix_connector_init(void)
 	{
 		char pathname[128];
 
-		sprintf(pathname, "/mppa/mppa/%d:%d", i, 16 + i);
+		sprintf(pathname, "/mppa/portal/%d:%d", i, 16 + i);
 
 		portals[i] = mppa_open(pathname, (i == myrank) ? O_RDONLY : O_WRONLY);
 		assert(portals[i] != -1);
