@@ -1,4 +1,4 @@
-# Copyright(C) 2011-2017 Pedro H. Penna <pedrohenriquepenna@gmail.com>
+# Copyright(C) 2011-2018 Pedro H. Penna <pedrohenriquepenna@gmail.com>
 # 
 # This file is part of Nanvix.
 # 
@@ -16,58 +16,29 @@
 # along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
 #
 
-MACHINE = UNIX
-
 # Directories.
 BINDIR  = $(CURDIR)/bin
-LIBDIR  = $(CURDIR)/lib
 INCDIR  = $(CURDIR)/include
 SRCDIR  = $(CURDIR)/src
 TESTDIR = $(CURDIR)/test
-BENCHDIR = $(CURDIR)/benchmark
-
-# Toolchain.
-LD = gcc
-CC = gcc
-MPICC = mpicc
 
 # Toolchain configuration.
-CFLAGS += -ansi -std=c99
-CFLAGS += -Wall -Wextra
-CFLAGS += -O3 -D $(MACHINE)
-CFLAGS += -I $(INCDIR)
+cflags := -ansi -std=c99
+cflags += -Wall -Wextra
+cflags += -O3
+cflags += -I $(INCDIR)
+k1-lflags := -lmppaipc
 
-SRC = $(wildcard $(SRCDIR)/kernel/arch/unix/*.c)         \
-	  $(wildcard $(SRCDIR)/kernel/klib/*.c)  \
-	  $(wildcard $(SRCDIR)/kernel/pm/*.c) \
-	  $(wildcard $(SRCDIR)/lib/syscall/*.c) \
+cluster-bin := noc.test
+noc.test-srcs := $(SRCDIR)/arch/mppa/noc.c \
+	             $(TESTDIR)/noc.c
 
-all: bdev ramdisk ipc.test memwrite.benchmark memread.benchmark
+io-bin := master
+master-srcs := $(TESTDIR)/master.c
 
-bdev: $(SRC) $(SRCDIR)/kernel/dev/bdev.c
-	mkdir -p $(BINDIR)
-	$(LD) $(CFLAGS) $^ -o $(BINDIR)/bdev
+multibin1-objs := master noc.test
+multibin1-name := test.img
 
-ramdisk: $(SRC) $(SRCDIR)/kernel/dev/block/ramdisk.c
-	mkdir -p $(BINDIR)
-	$(LD) $(CFLAGS) $^ -o $(BINDIR)/ramdisk
+mppa-bin := test
 
-memread.benchmark: $(SRC) $(BENCHDIR)/memread.c
-	mkdir -p $(BINDIR)
-	$(MPICC) $(CFLAGS) $^ -o $(BINDIR)/memread.benchmark
-
-memwrite.benchmark: $(SRC) $(BENCHDIR)/memwrite.c
-	mkdir -p $(BINDIR)
-	$(MPICC) $(CFLAGS) $^ -o $(BINDIR)/memwrite.benchmark
-
-ipc.test: $(SRC) $(TESTDIR)/ipc.c
-	mkdir -p $(BINDIR)
-	$(LD) $(CFLAGS) $^ -o $(BINDIR)/ipc.test
-	
-# Builds object file from C source file.
-%.o: %.c
-	$(CC) $< $(CFLAGS) -c -o $@
-
-# Cleans compilation files.
-clean:
-	rm -rf $(BINDIR)/*
+include $(K1_TOOLCHAIN_DIR)/share/make/Makefile.kalray

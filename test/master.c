@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 2011-2017 Pedro H. Penna <pedrohenriquepenna@gmail.com>
+ * Copyright(C) 2011-2018 Pedro H. Penna <pedrohenriquepenna@gmail.com>
  * 
  * This file is part of Nanvix.
  * 
@@ -17,17 +17,41 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef VFS_H_
-#define VFS_H_
+#include <mppa/osconfig.h>
+#include <nanvix/arch/mppa.h>
 
-	/**
-	 * @brief Block size log 2.
-	 */
-	#define BLOCK_SIZE_LOG2 13
+/**
+ * @brief NoC connectors testing unit.
+ */
+static void test_noc(void)
+{
+	mppa_pid_t server;
+	mppa_pid_t client;
 
-	/**
-	 * @brief Block size (in bytes).
-	 */
-	#define BLOCK_SIZE (1 << BLOCK_SIZE_LOG2)
+	const char *argv0[] = {
+		"noc.test",
+		"--server"
+		NULL
+	}
+	const char *argv1[] = {
+		"noc.test",
+		"--client"
+		NULL
+	}
 
-#endif /* VFS_H_ */
+	server = mppa_spawn(0, NULL, argv0[0], argv, NULL);
+	client = mppa_spawn(1, NULL, argv1[0], argv, NULL);
+
+	mppa_waitpid(server, NULL, 0);
+	mppa_waitpid(client, NULL, 0);
+}
+
+/**
+ * @brief IPC library unit test
+ */
+int main(int argc, char **argv)
+{
+	test_noc();
+
+	return (NANVIX_SUCCESS);
+}

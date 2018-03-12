@@ -24,14 +24,6 @@
 		#error "bad target"
 	#endif
 
-	/**
-	 * @brief NoC Address.
-	 */
-	struct noc_addr
-	{
-		int clusterid; /**< Cluster ID.      */
-		int cnoc_tag;  /**< Control NoC tag. */
-		int dnoc_tag;  /**< Data NoC tag.    */
-	};
+	#include <mppaipc.h>
 
 #endif /* NANVIX_ARCH_MPPA256_ */
