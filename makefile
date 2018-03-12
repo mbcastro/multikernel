@@ -38,8 +38,8 @@ master-srcs := $(TESTDIR)/master.c
 cluster-bin := noc.test
 noc.test-srcs := $(SRCDIR)/kernel/arch/mppa/noc.c $(TESTDIR)/noc.c
 
-multibin1-objs := master noc.test
-multibin1-name := test.img
+test-objs := master noc.test
+test-name := test.img
 
 mppa-bin := test
 
