@@ -21,6 +21,7 @@
 #include <string.h>
 #include <mppa/osconfig.h>
 #include <nanvix/arch/mppa.h>
+#include <nanvix/ipc.h>
 
 /**
  * @brief Magic number used for checksum.

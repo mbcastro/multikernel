@@ -35,10 +35,8 @@ k1-lflags := -lmppaipc
 io-bin := master
 master-srcs := $(TESTDIR)/master.c
 
-cluster-bin := noc.test
+cluster-bin := noc.test mailbox.test
 noc.test-srcs := $(SRCDIR)/kernel/arch/mppa/noc.c $(TESTDIR)/noc.c
-
-cluster-bin := mailbox.test
 mailbox.test-srcs := $(SRCDIR)/kernel/arch/mppa/noc.c $(SRCDIR)/kernel/pm/mailbox.c $(TESTDIR)/mailbox.c
 
 test-objs := master noc.test mailbox.test

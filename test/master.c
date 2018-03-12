@@ -40,8 +40,8 @@ static void test_noc(void)
 		NULL
 	};
 
-	server = mppa_spawn(cCLUSTER0, NULL, argv0[0], argv0, NULL);
-	client = mppa_spawn(cCLUSTER1, NULL, argv1[0], argv1, NULL);
+	server = mppa_spawn(CCLUSTER0, NULL, argv0[0], argv0, NULL);
+	client = mppa_spawn(CCLUSTER1, NULL, argv1[0], argv1, NULL);
 
 	mppa_waitpid(server, NULL, 0);
 	mppa_waitpid(client, NULL, 0);
@@ -67,8 +67,8 @@ static void test_mailbox(void)
 		NULL
 	};
 
-	server = mppa_spawn(cCLUSTER0, NULL, argv0[0], argv0, NULL);
-	client = mppa_spawn(cCLUSTER1, NULL, argv1[0], argv1, NULL);
+	server = mppa_spawn(CCLUSTER0, NULL, argv0[0], argv0, NULL);
+	client = mppa_spawn(CCLUSTER1, NULL, argv1[0], argv1, NULL);
 
 	mppa_waitpid(server, NULL, 0);
 	mppa_waitpid(client, NULL, 0);

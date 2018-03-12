@@ -17,14 +17,17 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <nanvix/arch/mppa.h>
+#include <sys/types.h>
 #include <assert.h>
 #include <errno.h>
+#include <string.h>
 
 /**
  * Mailbox flags.
  */
 /**@{*/
-#define MAILBOX_FREE (1 << 0)
+#define MAILBOX_USED (1 << 0)
 /**@}*/
 
 /**
@@ -89,10 +92,8 @@ static int nanvix_name_lookup(const char *name)
 	for (int i = 0; i < NR_CCLUSTER; i++)
 	{
 		/* Found. */
-		if (!strcmp(names[i].names))
-		{
-			return (i);
-		}
+		if (!strcmp(names[i].name, name))
+			return (names[i].id);
 	}
 
 	return (-1);
@@ -119,7 +120,7 @@ int nanvix_mailbox_open(const char *name)
 	for (int i = 0; i < NR_MAILBOX; i++)
 	{
 		/* Found. */
-		if (kstrcmp(mailboxes[i].name, name))
+		if (!strcmp(mailboxes[i].name, name))
 			return (i);
 	}
 
@@ -127,10 +128,10 @@ int nanvix_mailbox_open(const char *name)
 	for (int i = 0; i < NR_MAILBOX; i++)
 	{
 		/* Found. */
-		if (mailboxes[i].flags & MAILBOX_FREE)
+		if (!(mailboxes[i].flags & MAILBOX_USED))
 		{
-			kstrncpy(mailboxes[i].name, name, MAILBOX_NAME);
-			mailboxes[i].flags &= ~MAILBOX_FREE;
+			strncpy(mailboxes[i].name, name, MAILBOX_NAMELEN);
+			mailboxes[i].flags |= MAILBOX_USED;
 			return (i);
 		}
 	}
@@ -167,7 +168,7 @@ int nanvix_mailbox_send(int mbxid, const void *buf, size_t n)
 	if (n <= 0)
 		return (-EINVAL);
 
-	pid = nanvix_name_lookup(mailbox[mbxid].name);
+	pid = nanvix_name_lookup(mailboxes[mbxid].name);
 
 	nanvix_connector_send(pid, buf, n);
 
@@ -189,8 +190,6 @@ int nanvix_mailbox_send(int mbxid, const void *buf, size_t n)
  */
 int nanvix_mailbox_receive(void *buf, size_t n)
 {
-	int pid;
-
 	/* Invalid buffer. */
 	if (buf == NULL)
 		return (-EINVAL);
@@ -220,7 +219,7 @@ int nanvix_mailbox_unlink(int mbxid)
 	if ((mbxid < 0) || (mbxid > NR_MAILBOX))
 		return (mbxid);
 
-	mailbox[outboxid].flags = MAILBOX_FREE;
+	mailboxes[mbxid].flags = 0;
 
 	return (0);
 }

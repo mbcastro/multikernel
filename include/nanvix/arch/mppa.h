@@ -38,21 +38,21 @@
 
 	/* Cluster IDs. */
 	#define CCLUSTER0    0 /**< Compute cluster  0. */
-	#define CCLUSTER0    1 /**< Compute cluster  1. */
-	#define CCLUSTER0    2 /**< Compute cluster  2. */
-	#define CCLUSTER0    3 /**< Compute cluster  3. */
-	#define CCLUSTER0    4 /**< Compute cluster  4. */
-	#define CCLUSTER0    5 /**< Compute cluster  5. */
-	#define CCLUSTER0    6 /**< Compute cluster  6. */
-	#define CCLUSTER0    7 /**< Compute cluster  7. */
-	#define CCLUSTER0    8 /**< Compute cluster  8. */
-	#define CCLUSTER0    9 /**< Compute cluster  9. */
-	#define CCLUSTER0   10 /**< Compute cluster 10. */
-	#define CCLUSTER0   11 /**< Compute cluster 11. */
-	#define CCLUSTER0   12 /**< Compute cluster 12. */
-	#define CCLUSTER0   13 /**< Compute cluster 13. */
-	#define CCLUSTER0   14 /**< Compute cluster 14. */
-	#define CCLUSTER0   15 /**< Compute cluster 15. */
+	#define CCLUSTER1    1 /**< Compute cluster  1. */
+	#define CCLUSTER2    2 /**< Compute cluster  2. */
+	#define CCLUSTER3    3 /**< Compute cluster  3. */
+	#define CCLUSTER4    4 /**< Compute cluster  4. */
+	#define CCLUSTER5    5 /**< Compute cluster  5. */
+	#define CCLUSTER6    6 /**< Compute cluster  6. */
+	#define CCLUSTER7    7 /**< Compute cluster  7. */
+	#define CCLUSTER8    8 /**< Compute cluster  8. */
+	#define CCLUSTER9    9 /**< Compute cluster  9. */
+	#define CCLUSTER10  10 /**< Compute cluster 10. */
+	#define CCLUSTER11  11 /**< Compute cluster 11. */
+	#define CCLUSTER12  12 /**< Compute cluster 12. */
+	#define CCLUSTER13  13 /**< Compute cluster 13. */
+	#define CCLUSTER14  14 /**< Compute cluster 14. */
+	#define CCLUSTER15  15 /**< Compute cluster 15. */
 	#define IOCLUSTER0 128 /**< IO cluster 0.       */
 	#define IOCLUSTER1 192 /**< IO cluster 1.       */
 
