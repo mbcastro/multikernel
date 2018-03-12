@@ -52,6 +52,53 @@ struct mailbox
 static struct mailbox mailboxes[NR_MAILBOX];
 
 /**
+ * @brief Mailbox names.
+ */
+const struct {
+	int id;     /**< Cluster ID. */
+	char *name; /**< Mailbox name. */
+} names[NR_CCLUSTER] = {
+	{ CCLUSTER0,  "/cpu0" },
+	{ CCLUSTER1,  "/cpu1" },
+	{ CCLUSTER2,  "/cpu2" },
+	{ CCLUSTER3,  "/cpu3" },
+	{ CCLUSTER4,  "/cpu4" },
+	{ CCLUSTER5,  "/cpu5" },
+	{ CCLUSTER6,  "/cpu6" },
+	{ CCLUSTER7,  "/cpu7" },
+	{ CCLUSTER8,  "/cpu8" },
+	{ CCLUSTER9,  "/cpu9" },
+	{ CCLUSTER10, "/cpu10" },
+	{ CCLUSTER11, "/cpu11" },
+	{ CCLUSTER12, "/cpu12" },
+	{ CCLUSTER13, "/cpu13" },
+	{ CCLUSTER14, "/cpu14" },
+	{ CCLUSTER15, "/cpu15" }
+};
+
+
+/**
+ * @brief Translates a mailbox name to a cluster ID.
+ *
+ * @returns Upon successful completion, the cluster ID of the target mailbox is
+ * returned. Upon failure, a negative error code is returned instead.
+ */
+static int nanvix_name_lookup(const char *name)
+{
+	/* Search for mailbox name. */
+	for (int i = 0; i < NR_CCLUSTER; i++)
+	{
+		/* Found. */
+		if (!strcmp(names[i].names))
+		{
+			return (i);
+		}
+	}
+
+	return (-1);
+}
+
+/**
  * @brief Opens a mailbox.
  *
  * Opens a mailbox named @p name. If the target mailbox does not exist a new
@@ -122,7 +169,7 @@ int nanvix_mailbox_send(int mbxid, const void *buf, size_t n)
 
 	pid = nanvix_name_lookup(mailbox[mbxid].name);
 
-	nanvix_connector_write(pid, buf, n);
+	nanvix_connector_send(pid, buf, n);
 
 	return (0);
 }
@@ -130,8 +177,8 @@ int nanvix_mailbox_send(int mbxid, const void *buf, size_t n)
 /**
  * @brief Receives data from a mailbox.
  *
- * Reads @p n bytes from the mailbox whose ID is @p mbxid into the memory area
- * pointed to by @p buf.
+ * Reads @p n bytes from the mailbox of the calling process into the memory
+ * area pointed to by @p buf.
  *
  * @param mbxid ID of the target mailbox.
  * @param buf   Pointer to target memory area.
@@ -140,13 +187,9 @@ int nanvix_mailbox_send(int mbxid, const void *buf, size_t n)
  * @returns Upon successful completion, zero is returned. Upon failure, a
  * negative error code is returned instead.
  */
-int nanvix_mailbox_receive(int mbxid, void *buf, size_t n)
+int nanvix_mailbox_receive(void *buf, size_t n)
 {
 	int pid;
-
-	/* Invalid mailbox. */
-	if ((mbxid < 0) || (mbxid >= NR_MAILBOX))
-		return (-EINVAL);
 
 	/* Invalid buffer. */
 	if (buf == NULL)
@@ -156,9 +199,7 @@ int nanvix_mailbox_receive(int mbxid, void *buf, size_t n)
 	if (n <= 0)
 		return (-EINVAL);
 
-	pid = nanvix_name_lookup(mailbox[mbxid].name);
-
-	nanvix_connector_read(pid, buf, n);
+	nanvix_connector_receive(buf, n);
 
 	return (0);
 }

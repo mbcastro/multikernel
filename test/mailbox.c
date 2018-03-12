@@ -35,11 +35,14 @@
  */
 static int server(void)
 {
+	int output;
 	unsigned msg1 = MAGIC;
 	unsigned msg2 = ~MAGIC;
 
-	nanvix_connector_receive(&msg2, sizeof(unsigned));
-	nanvix_connector_send(CLUSTER1, &msg2, sizeof(unsigned));
+	output = nanvix_mailbox_open("/cpu1");
+
+	nanvix_mailbox_receive(&msg2, sizeof(unsigned));
+	nanvix_mailbox_send(output, &msg2, sizeof(unsigned));
 
 	return (msg1 == msg2);
 }
@@ -52,17 +55,20 @@ static int server(void)
  */
 static int client(void)
 {
+	int output;
 	unsigned msg1 = MAGIC;
 	unsigned msg2 = ~MAGIC;
 
-	nanvix_connector_send(CLUSTER0, &msg1, sizeof(unsigned));
-	nanvix_connector_receive(&msg2, sizeof(unsigned));
+	output = nanvix_mailbox_open("/cpu0");
+
+	nanvix_mailbox_send(output, &msg1, sizeof(unsigned));
+	nanvix_mailbox_receive(&msg2, sizeof(unsigned));
 
 	return (msg1 == msg2);
 }
 
 /**
- * @brief NoC library unit test.
+ * @brief Mailbox unit test.
  */
 int main(int argc, char **argv)
 {
@@ -85,7 +91,7 @@ int main(int argc, char **argv)
 	ret = (!strcmp(argv[1], "--server")) ? 
 		server() : client();
 
-	printf("noc test [%s]\n", (ret) ? "passed" : "FAILED");
+	printf("mailbox test [%s]\n", (ret) ? "passed" : "FAILED");
 
 	return (EXIT_SUCCESS);
 }

@@ -40,8 +40,35 @@ static void test_noc(void)
 		NULL
 	};
 
-	server = mppa_spawn(0, NULL, argv0[0], argv0, NULL);
-	client = mppa_spawn(1, NULL, argv1[0], argv1, NULL);
+	server = mppa_spawn(cCLUSTER0, NULL, argv0[0], argv0, NULL);
+	client = mppa_spawn(cCLUSTER1, NULL, argv1[0], argv1, NULL);
+
+	mppa_waitpid(server, NULL, 0);
+	mppa_waitpid(client, NULL, 0);
+}
+
+/**
+ * @brief Mailboxes testing unit.
+ */
+static void test_mailbox(void)
+{
+	mppa_pid_t server;
+	mppa_pid_t client;
+
+	const char *argv0[] = {
+		"mailbox.test",
+		"--server",
+		NULL
+	};
+
+	const char *argv1[] = {
+		"mailbox.test",
+		"--client",
+		NULL
+	};
+
+	server = mppa_spawn(cCLUSTER0, NULL, argv0[0], argv0, NULL);
+	client = mppa_spawn(cCLUSTER1, NULL, argv1[0], argv1, NULL);
 
 	mppa_waitpid(server, NULL, 0);
 	mppa_waitpid(client, NULL, 0);
@@ -52,7 +79,20 @@ static void test_noc(void)
  */
 int main(int argc, char **argv)
 {
-	test_noc();
+	if (argc < 2)
+	{
+		printf("missing parameters");
+		printf("usage: test <testing unit>");
+		printf("  noc     NoC connectors.");
+		printf("  mailbox Mailboxes.");
+
+		return (0);
+	}
+
+	if (!strcmp(argv[1], "noc"))
+		test_noc();
+	if (!strcmp(argv[1], "mailbox"))
+		test_mailbox();
 
 	return (0);
 }

@@ -19,31 +19,28 @@
 
 #include <nanvix/arch/mppa.h>
 #include <assert.h>
+#include <errno.h>
 #include <stdio.h>
 
 /**
- * @brief Number of Connectors.
+ * @brief Portal NoC connectors.
  */
-#define NR_CONNECTOR 16
+static int portals[NR_CCLUSTER];
 
-static int portals[NR_CLUSTER];
-
+/**
+ * @brief Cluster ID of current process.
+ */
 static int myrank;
 
 /**
- * @brief Opens a NoC connector.
- *
- * @param addr  NoC address.
- * @param flags Flags.
- *
- * @returns Upon successful completion, the ID of a free NoC connector is
- * returned. Upon failure, a negative error code is returned instead.
+ * @brief Initializes NoC connectors.
  */
 void nanvix_connector_init(void)
 {
 	myrank = mppa_getpid();
 
-	for (int i = 0; i < NR_CLUSTER; i++)
+	/* Open NoC Connectors. */
+	for (int i = 0; i < NR_CCLUSTER; i++)
 	{
 		char pathname[128];
 
@@ -59,7 +56,7 @@ void nanvix_connector_init(void)
  *===========================================================================*/
 
 /**
- * @brief Reads data from a NoC connector.
+ * @brief Reads data from a cluster.
  *
  * @param ptr  Location where to place the data.
  * @param size Number of bytes to read.
@@ -69,6 +66,14 @@ void nanvix_connector_init(void)
  */
 int nanvix_connector_receive(void *buf, size_t size)
 {
+	/* Invalid buffer. */
+	if (buf == NULL)
+		return (-EINVAL);
+
+	/* Invalid size. */
+	if (size < 1)
+		return (-EINVAL);
+
 	mppa_aiocb_t aiocb = MPPA_AIOCB_INITIALIZER(portals[myrank], buf, size);
 	mppa_aio_read(&aiocb);
 	mppa_aio_wait(&aiocb);
@@ -81,7 +86,7 @@ int nanvix_connector_receive(void *buf, size_t size)
  *===========================================================================*/
 
 /**
- * @brief Writes data to a process.
+ * @brief Writes data to a cluster.
  *
  * @param id   ID of the target NoC connector.
  * @param ptr  Location where to read data from.
@@ -92,6 +97,18 @@ int nanvix_connector_receive(void *buf, size_t size)
  */
 int nanvix_connector_send(int id, const void *buf, size_t size)
 {
+	/* Invalid cluster ID. */
+	if (id == myrank)
+		return (-EINVAL);
+
+	/* Invalid buffer. */
+	if (buf == NULL)
+		return (-EINVAL);
+
+	/* Invalid size. */
+	if (size < 1)
+		return (-EINVAL);
+
 	mppa_pwrite(portals[id], buf, size, 0);
 
 	return (0);

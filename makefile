@@ -38,7 +38,10 @@ master-srcs := $(TESTDIR)/master.c
 cluster-bin := noc.test
 noc.test-srcs := $(SRCDIR)/kernel/arch/mppa/noc.c $(TESTDIR)/noc.c
 
-test-objs := master noc.test
+cluster-bin := mailbox.test
+mailbox.test-srcs := $(SRCDIR)/kernel/arch/mppa/noc.c $(SRCDIR)/kernel/pm/mailbox.c $(TESTDIR)/mailbox.c
+
+test-objs := master noc.test mailbox.test
 test-name := test.img
 
 mppa-bin := test
