@@ -23,6 +23,7 @@ BINDIR  = $(CURDIR)/bin
 INCDIR  = $(CURDIR)/include
 SRCDIR  = $(CURDIR)/src
 TESTDIR = $(CURDIR)/test
+BENCHDIR = $(CURDIR)/benchmark
 
 # Toolchain configuration.
 cflags := -ansi -std=c99
@@ -32,16 +33,58 @@ cflags += -I $(INCDIR)
 cflags += -D_KALRAY_MPPA256_
 k1-lflags := -lmppaipc
 
-io-bin := master
-master-srcs := $(TESTDIR)/master.c
+#=============================================================================
+# IO Cluster Binaries
+#=============================================================================
 
-cluster-bin := noc.test mailbox.test
-noc.test-srcs := $(SRCDIR)/kernel/arch/mppa/noc.c $(TESTDIR)/noc.c
-mailbox.test-srcs := $(SRCDIR)/kernel/arch/mppa/noc.c $(SRCDIR)/kernel/pm/mailbox.c $(TESTDIR)/mailbox.c
+io-bin := master.test master.benchmark
 
-test-objs := master noc.test mailbox.test
+master.test-srcs := $(TESTDIR)/master.c
+
+master.benchmark-srcs := $(BENCHDIR)/master.c
+
+#=============================================================================
+# Compute Cluster Binaries
+#=============================================================================
+
+cluster-bin := noc.test                 \
+			   mailbox.test             \
+			   mailbox-unicast.benchmark
+
+noc.test-srcs := $(SRCDIR)/kernel/arch/mppa/noc.c \
+				 $(TESTDIR)/noc.c
+
+mailbox.test-srcs := $(SRCDIR)/kernel/arch/mppa/noc.c \
+					 $(SRCDIR)/kernel/pm/mailbox.c    \
+					 $(TESTDIR)/mailbox.c
+
+mailbox-unicast.benchmark-srcs: $(SRCDIR)/kernel/arch/mppa/noc.c \
+								$(SRCDIR)/kernel/pm/mailbox.c    \
+								$(BENCHDIR)/mailbox/unicast.c
+
+#=============================================================================
+# Testing Binary
+#=============================================================================
+
+test-objs := master.test \
+			 noc.test    \
+			 mailbox.test
+
 test-name := test.img
 
-mppa-bin := test
+#=============================================================================
+# Benchmark Binary
+#=============================================================================
+
+benchmark-objs := master.benchmark \
+				  mailbox-unicast.benchmark
+
+benchmark-name := benchmark.img
+
+#=============================================================================
+# MPPA Binary
+#=============================================================================
+
+mppa-bin := test benchmark
 
 include $(K1_TOOLCHAIN_DIR)/share/make/Makefile.kalray
