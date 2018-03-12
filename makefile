@@ -16,6 +16,8 @@
 # along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
 #
 
+K1_TOOLCHAIN_DIR=/usr/local/k1tools/
+
 # Directories.
 BINDIR  = $(CURDIR)/bin
 INCDIR  = $(CURDIR)/include
@@ -27,14 +29,14 @@ cflags := -ansi -std=c99
 cflags += -Wall -Wextra
 cflags += -O3
 cflags += -I $(INCDIR)
+cflags += -D_KALRAY_MPPA256_
 k1-lflags := -lmppaipc
-
-cluster-bin := noc.test
-noc.test-srcs := $(SRCDIR)/arch/mppa/noc.c \
-	             $(TESTDIR)/noc.c
 
 io-bin := master
 master-srcs := $(TESTDIR)/master.c
+
+cluster-bin := noc.test
+noc.test-srcs := $(SRCDIR)/kernel/arch/mppa/noc.c $(TESTDIR)/noc.c
 
 multibin1-objs := master noc.test
 multibin1-name := test.img

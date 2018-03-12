@@ -18,11 +18,17 @@
  */
 
 #include <nanvix/arch/mppa.h>
+#include <assert.h>
+#include <stdio.h>
 
 /**
  * @brief Number of Connectors.
  */
 #define NR_CONNECTOR 16
+
+static int portals[NR_CLUSTER];
+
+static int myrank;
 
 /**
  * @brief Opens a NoC connector.
@@ -35,9 +41,7 @@
  */
 void nanvix_connector_init(void)
 {
-	int myrank;
-
-	myrank = mppa_get_pid();
+	myrank = mppa_getpid();
 
 	for (int i = 0; i < NR_CLUSTER; i++)
 	{
@@ -57,18 +61,15 @@ void nanvix_connector_init(void)
 /**
  * @brief Reads data from a NoC connector.
  *
- * @param id   ID of the target NoC connector.
  * @param ptr  Location where to place the data.
  * @param size Number of bytes to read.
  *
  * @returns Upon successful completion, zero is returned. Upon failure, a
  * negative error code is returned instead.
  */
-int nanvix_connector_receive(int id, void *buf, size_t size)
+int nanvix_connector_receive(void *buf, size_t size)
 {
-	mppa_aiocb_t aiocb;
-
-	aiocb = MPPA_AIOCB_INITIALIZER(portals[id], buf, size);
+	mppa_aiocb_t aiocb = MPPA_AIOCB_INITIALIZER(portals[myrank], buf, size);
 	mppa_aio_read(&aiocb);
 	mppa_aio_wait(&aiocb);
 

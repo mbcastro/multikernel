@@ -18,6 +18,7 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 #include <mppa/osconfig.h>
 #include <nanvix/arch/mppa.h>
 
@@ -37,7 +38,7 @@ static int server(void)
 	unsigned msg1 = MAGIC;
 	unsigned msg2 = ~MAGIC;
 
-	nanvix_connector_receive(msg2, sizeof(unsigned));
+	nanvix_connector_receive(&msg2, sizeof(unsigned));
 	nanvix_connector_send(CLUSTER1, &msg2, sizeof(unsigned));
 
 	return (msg1 == msg2);
@@ -75,7 +76,7 @@ int main(int argc, char **argv)
 		printf("  --client Client mode.");
 		printf("  --server Server mode.");
 
-		return (NANVIX_SUCCESS);
+		return (0);
 	}
 
 	nanvix_connector_init();

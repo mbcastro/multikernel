@@ -30,17 +30,18 @@ static void test_noc(void)
 
 	const char *argv0[] = {
 		"noc.test",
-		"--server"
+		"--server",
 		NULL
-	}
+	};
+
 	const char *argv1[] = {
 		"noc.test",
-		"--client"
+		"--client",
 		NULL
-	}
+	};
 
-	server = mppa_spawn(0, NULL, argv0[0], argv, NULL);
-	client = mppa_spawn(1, NULL, argv1[0], argv, NULL);
+	server = mppa_spawn(0, NULL, argv0[0], argv0, NULL);
+	client = mppa_spawn(1, NULL, argv1[0], argv1, NULL);
 
 	mppa_waitpid(server, NULL, 0);
 	mppa_waitpid(client, NULL, 0);
@@ -53,5 +54,5 @@ int main(int argc, char **argv)
 {
 	test_noc();
 
-	return (NANVIX_SUCCESS);
+	return (0);
 }

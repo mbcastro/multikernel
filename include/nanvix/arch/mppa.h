@@ -26,4 +26,13 @@
 
 	#include <mppaipc.h>
 
+	#define NR_CLUSTER 16
+
+	#define CLUSTER0 0
+	#define CLUSTER1 1
+
+	extern void nanvix_connector_init(void);
+	extern int nanvix_connector_receive(void *, size_t);
+	extern int nanvix_connector_send(int, const void *, size_t);
+
 #endif /* NANVIX_ARCH_MPPA256_ */
