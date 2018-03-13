@@ -67,6 +67,7 @@ static void test_mailbox(void)
 		NULL
 	};
 
+	/* Spawn slaves. */
 	server = mppa_spawn(CCLUSTER0, NULL, argv0[0], argv0, NULL);
 	client = mppa_spawn(CCLUSTER1, NULL, argv1[0], argv1, NULL);
 

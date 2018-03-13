@@ -34,13 +34,15 @@ static int myrank;
 
 /**
  * @brief Initializes NoC connectors.
+ *
+ * @parm ncclusters Number of compute clusters to initialize.
  */
-void nanvix_noc_init(void)
+void nanvix_noc_init(int ncclusters)
 {
 	myrank = mppa_getpid();
 
 	/* Open NoC Connectors. */
-	for (int i = 0; i < NR_CCLUSTER; i++)
+	for (int i = 0; i < ncclusters; i++)
 	{
 		char pathname[128];
 

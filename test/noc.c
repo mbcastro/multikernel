@@ -38,8 +38,8 @@ static int server(void)
 	unsigned msg1 = MAGIC;
 	unsigned msg2 = ~MAGIC;
 
-	nanvix_connector_receive(&msg2, sizeof(unsigned));
-	nanvix_connector_send(CCLUSTER1, &msg2, sizeof(unsigned));
+	nanvix_noc_receive(&msg2, sizeof(unsigned));
+	nanvix_noc_send(CCLUSTER1, &msg2, sizeof(unsigned));
 
 	return (msg1 == msg2);
 }
@@ -55,8 +55,8 @@ static int client(void)
 	unsigned msg1 = MAGIC;
 	unsigned msg2 = ~MAGIC;
 
-	nanvix_connector_send(CCLUSTER0, &msg1, sizeof(unsigned));
-	nanvix_connector_receive(&msg2, sizeof(unsigned));
+	nanvix_noc_send(CCLUSTER0, &msg1, sizeof(unsigned));
+	nanvix_noc_receive(&msg2, sizeof(unsigned));
 
 	return (msg1 == msg2);
 }
@@ -79,7 +79,7 @@ int main(int argc, char **argv)
 		return (0);
 	}
 
-	nanvix_connector_init();
+	nanvix_noc_init(2);
 
 	/* Server */
 	ret = (!strcmp(argv[1], "--server")) ? 

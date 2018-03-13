@@ -57,7 +57,7 @@
 	#define IOCLUSTER1 192 /**< IO cluster 1.       */
 
 	/* Forward definitions. */
-	extern void nanvix_noc_init(void);
+	extern void nanvix_noc_init(int);
 	extern int nanvix_noc_receive(void *, size_t);
 	extern int nanvix_noc_send(int, const void *, size_t);
 

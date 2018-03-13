@@ -86,7 +86,7 @@ int main(int argc, char **argv)
 		return (0);
 	}
 
-	nanvix_connector_init();
+	nanvix_noc_init(2);
 
 	/* Server */
 	ret = (!strcmp(argv[1], "--server")) ? 
