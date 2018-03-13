@@ -58,10 +58,11 @@ mailbox.test-srcs := $(SRCDIR)/kernel/arch/mppa/noc.c \
 					 $(SRCDIR)/kernel/pm/mailbox.c    \
 					 $(TESTDIR)/mailbox.c
 
-#mailbox-unicast.benchmark-srcs := $(SRCDIR)/kernel/arch/mppa/noc.c \
-#								$(SRCDIR)/kernel/pm/mailbox.c    \
-#								$(BENCHDIR)/mailbox/unicast.c
-#mailbox-unicast.benchmark-lflags := -fopenmp
+mailbox-unicast.benchmark-srcs := $(SRCDIR)/kernel/arch/mppa/noc.c \
+								  $(SRCDIR)/kernel/sys/timer.c     \
+								  $(SRCDIR)/kernel/pm/mailbox.c    \
+								  $(BENCHDIR)/mailbox/unicast.c
+mailbox-unicast.benchmark-lflags := -fopenmp
 
 #=============================================================================
 # Testing Binary
@@ -77,10 +78,10 @@ test-name := test.img
 # Benchmark Binary
 #=============================================================================
 
-#benchmark-objs := master.benchmark \
-#		  mailbox-unicast.benchmark 
+benchmark-objs := master.benchmark \
+		  mailbox-unicast.benchmark 
 
-#benchmark-name := benchmark.img
+benchmark-name := benchmark.img
 
 #=============================================================================
 # MPPA Binary

@@ -22,7 +22,7 @@
 #include <mppa/osconfig.h>
 #include <nanvix/arch/mppa.h>
 #include <nanvix/ipc.h>
-#include <omp.h>
+#include <nanvix/perf.h>
 
 /**
  * @brief Magic number used for checksum.
@@ -32,7 +32,7 @@
 /**
  * @brief Number of benchmark iterations.
  */
-#define NITERATIONS 1
+#define NITERATIONS 10
 
 /**
  * Minimum block size (in bytes).
@@ -49,42 +49,6 @@
  */
 #define BLKSIZE_STEP 1
 
-/*
- *  * Timer residual error.
-    */
-double timer_error = 0;
-
-/*
- *  * Gets the current timer value.
- *   */
-double timer_get(void)
-{
-		return (omp_get_wtime());
-}
-
-/*
- *  * Computers the difference between two timers.
- *   */
-double timer_diff(double t1, double t2)
-{
-		return (t2 - t1 - timer_error);
-}
-
-/*
- *  * Initializes the timer.
- *   */
-void timer_init(void)
-{
-	  double start, end;
-	    
-	    start = timer_get();
-		  end = timer_get();
-		    
-		    timer_error = (end - start);
-}
-
-
-
 /**
  * @brief Unit test server.
  *
@@ -93,6 +57,7 @@ void timer_init(void)
  */
 static void server(void)
 {
+	int ack = MAGIC;
 	char data[BLKSIZE_MAX];
 
 	memset(data, 0, BLKSIZE_MAX);
@@ -112,6 +77,7 @@ static void server(void)
 			nanvix_mailbox_receive(data, i);
 			end = timer_get();
 			total += timer_diff(start, end);
+			nanvix_mailbox_send(&ack, sizeof(int));
 		}
 
 		printf("unicast benchmark %d %lf\n", i, total);
@@ -126,6 +92,7 @@ static void server(void)
  */
 static void client(void)
 {
+	int ack;
 	int output;
 	char data[BLKSIZE_MAX];
 
@@ -138,10 +105,14 @@ static void client(void)
 	{
 		/* Run several experiments. */
 		for (int j = 0; j < NITERATIONS; j++)
+		{
 			nanvix_mailbox_send(output, data, i);
-	}
+			nanvix_mailbox_receive(output, &ack, sizeof(int));
 
-printf("CLIENT DONE\n");
+			if (ack != MAGIC)
+				printf("unicast benchmark error\n");
+		}
+	}
 }
 
 /**
