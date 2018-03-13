@@ -35,11 +35,9 @@ static int myrank;
 /**
  * @brief Initializes NoC connectors.
  */
-void nanvix_connector_init(void)
+void nanvix_noc_init(void)
 {
 	myrank = mppa_getpid();
-
-	printf("Hello from %d\n", myrank);
 
 	/* Open NoC Connectors. */
 	for (int i = 0; i < NR_CCLUSTER; i++)
@@ -51,23 +49,18 @@ void nanvix_connector_init(void)
 		portals[i] = mppa_open(pathname, (i == myrank) ? O_RDONLY : O_WRONLY);
 		assert(portals[i] != -1);
 	}
-	printf("Hello from %d: portals are opened\n", myrank);
 }
 
-/*===========================================================================*
- * nanvix_connector_receive()
- *===========================================================================*/
-
 /**
- * @brief Reads data from a cluster.
+ * @brief Reads data from the local NoC connector.
  *
- * @param ptr  Location where to place the data.
+ * @param buf  Location where data should be written to.
  * @param size Number of bytes to read.
  *
  * @returns Upon successful completion, zero is returned. Upon failure, a
  * negative error code is returned instead.
  */
-int nanvix_connector_receive(void *buf, size_t size)
+int nanvix_noc_receive(void *buf, size_t size)
 {
 	/* Invalid buffer. */
 	if (buf == NULL)
@@ -78,29 +71,24 @@ int nanvix_connector_receive(void *buf, size_t size)
 		return (-EINVAL);
 
 	mppa_aiocb_t aiocb = MPPA_AIOCB_INITIALIZER(portals[myrank], buf, size);
-	int ret2 = mppa_aio_read(&aiocb);
-	printf("mpaa_aio_read() %d/%d\n", ret2, size);
-	int ret = mppa_aio_wait(&aiocb);
-	printf("mppa_aio_wait() %d/%d\n", ret,size);
+
+	mppa_aio_read(&aiocb);
+	mppa_aio_wait(&aiocb);
 
 	return (0);
 }
 
-/*===========================================================================*
- * nanvix_connector_send()
- *===========================================================================*/
-
 /**
- * @brief Writes data to a cluster.
+ * @brief Writes data to a remote NoC connector.
  *
  * @param id   ID of the target NoC connector.
- * @param ptr  Location where to read data from.
+ * @param buf  Location where data should be read from.
  * @param size Number of bytes to write.
  *
  * @returns Upon successful completion, zero is returned. Upon failure, a
  * negative error code is returned instead.
  */
-int nanvix_connector_send(int id, const void *buf, size_t size)
+int nanvix_noc_send(int id, const void *buf, size_t size)
 {
 	/* Invalid cluster ID. */
 	if (id == myrank)
@@ -114,9 +102,7 @@ int nanvix_connector_send(int id, const void *buf, size_t size)
 	if (size < 1)
 		return (-EINVAL);
 
-	int ret = mppa_pwrite(portals[id], buf, size, 0);
-
-	printf("mppa_pwrite() %d\n", ret);
+	mppa_pwrite(portals[id], buf, size, 0);
 
 	return (0);
 }

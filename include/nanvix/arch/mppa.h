@@ -29,7 +29,7 @@
 	/**
 	 * @brief Number of compute clusters.
 	 */
-	#define NR_CCLUSTER 8
+	#define NR_CCLUSTER 16
 
 	/**
 	 * @brief Number of IO clusters.
@@ -57,8 +57,8 @@
 	#define IOCLUSTER1 192 /**< IO cluster 1.       */
 
 	/* Forward definitions. */
-	extern void nanvix_connector_init(void);
-	extern int nanvix_connector_receive(void *, size_t);
-	extern int nanvix_connector_send(int, const void *, size_t);
+	extern void nanvix_noc_init(void);
+	extern int nanvix_noc_receive(void *, size_t);
+	extern int nanvix_noc_send(int, const void *, size_t);
 
 #endif /* NANVIX_ARCH_MPPA256_ */

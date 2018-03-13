@@ -24,7 +24,7 @@
 #include <string.h>
 
 /**
- * Mailbox flags.
+ * @brief Mailbox flags.
  */
 /**@{*/
 #define MAILBOX_USED (1 << 0)
@@ -52,7 +52,7 @@ struct mailbox
 /**
  * @brief Mailbox table.
  */
-static struct mailbox mailboxes[NR_MAILBOX];
+static struct mailbox mailboxes[NR_MAILBOX] = { {'\0', 0}, };
 
 /**
  * @brief Mailbox names.
@@ -81,10 +81,11 @@ const struct {
 
 
 /**
- * @brief Translates a mailbox name to a cluster ID.
+ * @brief Translates a mailbox name to a NoC connector ID.
  *
- * @returns Upon successful completion, the cluster ID of the target mailbox is
- * returned. Upon failure, a negative error code is returned instead.
+ * @returns Upon successful completion, the NoC connector ID associated to the
+ * target mailbox is returned returned. Upon failure, a negative error code is
+ * returned instead.
  */
 static int nanvix_name_lookup(const char *name)
 {
@@ -96,7 +97,7 @@ static int nanvix_name_lookup(const char *name)
 			return (names[i].id);
 	}
 
-	return (-1);
+	return (-ENOENT);
 }
 
 /**
@@ -154,7 +155,7 @@ int nanvix_mailbox_open(const char *name)
  */
 int nanvix_mailbox_send(int mbxid, const void *buf, size_t n)
 {
-	int pid;
+	int connector;
 
 	/* Invalid mailbox. */
 	if ((mbxid < 0) || (mbxid >= NR_MAILBOX))
@@ -165,25 +166,25 @@ int nanvix_mailbox_send(int mbxid, const void *buf, size_t n)
 		return (-EINVAL);
 
 	/* Invalid buffer size. */
-	if (n <= 0)
+	if (n < 1)
 		return (-EINVAL);
 
-	pid = nanvix_name_lookup(mailboxes[mbxid].name);
+	connector = nanvix_name_lookup(mailboxes[mbxid].name);
 
-	nanvix_connector_send(pid, buf, n);
+	nanvix_noc_send(connector, buf, n);
 
 	return (0);
 }
 
 /**
- * @brief Receives data from a mailbox.
+ * @brief Receives data through a mailbox.
  *
  * Reads @p n bytes from the mailbox of the calling process into the memory
  * area pointed to by @p buf.
  *
  * @param mbxid ID of the target mailbox.
  * @param buf   Pointer to target memory area.
- * @param n     Number of bytes to write.
+ * @param n     Number of bytes to read.
  *
  * @returns Upon successful completion, zero is returned. Upon failure, a
  * negative error code is returned instead.
@@ -195,10 +196,10 @@ int nanvix_mailbox_receive(void *buf, size_t n)
 		return (-EINVAL);
 
 	/* Invalid buffer size. */
-	if (n <= 0)
+	if (n < 1)
 		return (-EINVAL);
 
-	nanvix_connector_receive(buf, n);
+	nanvix_noc_receive(buf, n);
 
 	return (0);
 }
@@ -215,9 +216,9 @@ int nanvix_mailbox_receive(void *buf, size_t n)
  */
 int nanvix_mailbox_unlink(int mbxid)
 {
-	/* Invalid argument. */
-	if ((mbxid < 0) || (mbxid > NR_MAILBOX))
-		return (mbxid);
+	/* Invalid mailbox ID. */
+	if ((mbxid < 0) || (mbxid > i= NR_MAILBOX))
+		return (-EINVAL);
 
 	mailboxes[mbxid].flags = 0;
 
