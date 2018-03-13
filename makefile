@@ -49,7 +49,7 @@ master.benchmark-srcs := $(BENCHDIR)/master.c
 
 cluster-bin := noc.test                 \
 			   mailbox.test             \
-			   mailbox-unicast.benchmark
+#			   mailbox-unicast.benchmark
 
 noc.test-srcs := $(SRCDIR)/kernel/arch/mppa/noc.c \
 				 $(TESTDIR)/noc.c
@@ -58,10 +58,10 @@ mailbox.test-srcs := $(SRCDIR)/kernel/arch/mppa/noc.c \
 					 $(SRCDIR)/kernel/pm/mailbox.c    \
 					 $(TESTDIR)/mailbox.c
 
-mailbox-unicast.benchmark-srcs := $(SRCDIR)/kernel/arch/mppa/noc.c \
-								$(SRCDIR)/kernel/pm/mailbox.c    \
-								$(BENCHDIR)/mailbox/unicast.c
-mailbox-unicast.benchmark-lflags := -fopenmp
+#mailbox-unicast.benchmark-srcs := $(SRCDIR)/kernel/arch/mppa/noc.c \
+#								$(SRCDIR)/kernel/pm/mailbox.c    \
+#								$(BENCHDIR)/mailbox/unicast.c
+#mailbox-unicast.benchmark-lflags := -fopenmp
 
 #=============================================================================
 # Testing Binary
@@ -77,15 +77,15 @@ test-name := test.img
 # Benchmark Binary
 #=============================================================================
 
-benchmark-objs := master.benchmark \
-		  mailbox-unicast.benchmark 
+#benchmark-objs := master.benchmark \
+#		  mailbox-unicast.benchmark 
 
-benchmark-name := benchmark.img
+#benchmark-name := benchmark.img
 
 #=============================================================================
 # MPPA Binary
 #=============================================================================
 
-mppa-bin := test benchmark
+mppa-bin := test
 
 include $(K1_TOOLCHAIN_DIR)/share/make/Makefile.kalray
