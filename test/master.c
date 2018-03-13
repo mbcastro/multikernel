@@ -57,13 +57,15 @@ static void test_mailbox(void)
 
 	const char *argv0[] = {
 		"mailbox.test",
-		"--server",
+		"ping-pong",
+		"server",
 		NULL
 	};
 
 	const char *argv1[] = {
 		"mailbox.test",
-		"--client",
+		"ping-pong",
+		"client",
 		NULL
 	};
 

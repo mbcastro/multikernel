@@ -33,12 +33,12 @@
 #define MAGIC 0xdeadbeef
 
 /**
- * @brief Unit test server.
+ * @brief Ping Pong unit test server.
  *
  * @returns Upon successful NANVIX_SUCCESS is returned. Upon failure
  * NANVIX_FAILURE is returned instead.
  */
-static int server(void)
+static int pingpong_server(void)
 {
 	int score = 0;
 	unsigned msg1 = MAGIC;
@@ -58,12 +58,12 @@ static int server(void)
 }
 
 /**
- * @brief Unit test client.
+ * @brief Ping Pong unit test client.
  *
  * @returns Upon successful NANVIX_SUCCESS is returned. Upon failure
  * NANVIX_FAILURE is returned instead.
  */
-static int client(void)
+static int pingpong_client(void)
 {
 	int score = 0;
 	unsigned msg1 = MAGIC;
@@ -90,12 +90,10 @@ int main(int argc, char **argv)
 	int ret;
 
 	/* Missing parameters. */
-	if (argc < 2)
+	if (argc < 3)
 	{
 		printf("missing parameters");
-		printf("usage: noc.test <mode>");
-		printf("  --client Client mode.");
-		printf("  --server Server mode.");
+		printf("usage: noc.test <unicast | ping-pong> <client | server>");
 
 		return (0);
 	}
@@ -103,10 +101,13 @@ int main(int argc, char **argv)
 	nanvix_noc_init(2);
 
 	/* Server */
-	ret = (!strcmp(argv[1], "--server")) ? 
-		server() : client();
+	if (!strcmp(argv[2], "ping-ping"))
+	{
+		ret = (!strcmp(argv[3], "client")) ? 
+			pingpong_server() : pingpong_client();
 
-	printf("noc test [%s]\n", (ret) ? "passed" : "FAILED");
+		printf("noc ping pong test [%s]\n", (ret) ? "passed" : "FAILED");
+	}
 
 	return (EXIT_SUCCESS);
 }
