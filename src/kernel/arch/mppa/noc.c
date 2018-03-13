@@ -53,6 +53,12 @@ void nanvix_noc_init(int ncclusters)
 	}
 }
 
+#define N 1024
+
+int first = 0;
+int last = 0;
+int buffer[N];
+
 /**
  * @brief Reads data from the local NoC connector.
  *
@@ -74,13 +80,23 @@ int nanvix_noc_receive(void *buf, size_t size)
 	if (size < 1)
 		return (-EINVAL);
 
-	mppa_aiocb_t aiocb = MPPA_AIOCB_INITIALIZER(portals[myrank], buf, size);
-	mppa_ioctl(portals[myrank], MPPA_RX_GET_COUNTER, &counter);
 
-	mppa_aio_read(&aiocb);
-	mppa_aio_wait(&aiocb);
 
-	printf("%d\n", counter);
+	if (first == last)
+	{
+		do
+		{
+			mppa_aiocb_t aiocb = MPPA_AIOCB_INITIALIZER(portals[myrank], &buferf[last], sizeof(int));
+			mppa_aio_read(&aiocb);
+			mppa_aio_wait(&aiocb);
+			mppa_ioctl(portals[myrank], MPPA_RX_GET_COUNTER, &counter);
+			last = (last+1)%N;
+			printf("%d\n", counter);
+		} while (counter > 0);
+	}
+
+	memcpy(buf, &buffer[last], sizeof(int));
+	last = (last+1)%N;
 
 	return (0);
 }

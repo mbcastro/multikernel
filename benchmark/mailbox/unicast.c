@@ -37,12 +37,12 @@
 /**
  * Minimum block size (in bytes).
  */
-#define BLKSIZE_MIN 1
+#define BLKSIZE_MIN 4
 
 /**
  * Maximum block size (in bytes).
  */
-#define BLKSIZE_MAX 512
+#define BLKSIZE_MAX 4
 
 /**
  * Block size increment (in bytes).
