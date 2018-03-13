@@ -49,7 +49,7 @@ master.benchmark-srcs := $(BENCHDIR)/master.c
 
 cluster-bin := noc.test                 \
 			   mailbox.test             \
-#			   mailbox-unicast.benchmark
+			   mailbox-unicast.benchmark
 
 noc.test-srcs := $(SRCDIR)/kernel/arch/mppa/noc.c \
 				 $(TESTDIR)/noc.c
@@ -87,6 +87,6 @@ benchmark-name := benchmark.img
 # MPPA Binary
 #=============================================================================
 
-mppa-bin := test
+mppa-bin := test benchmark
 
 include $(K1_TOOLCHAIN_DIR)/share/make/Makefile.kalray

@@ -57,10 +57,13 @@
  */
 static void server(void)
 {
-	int ack = MAGIC;
+	int output;
+	unsigned ack = MAGIC;
 	char data[BLKSIZE_MAX];
 
 	memset(data, 0, BLKSIZE_MAX);
+
+	output = nanvix_mailbox_open("/cpu1");
 
 	timer_init();
 
@@ -77,7 +80,7 @@ static void server(void)
 			nanvix_mailbox_receive(data, i);
 			end = timer_get();
 			total += timer_diff(start, end);
-			nanvix_mailbox_send(&ack, sizeof(int));
+			nanvix_mailbox_send(output, &ack, sizeof(unsigned));
 		}
 
 		printf("unicast benchmark %d %lf\n", i, total);
@@ -92,7 +95,7 @@ static void server(void)
  */
 static void client(void)
 {
-	int ack;
+	unsigned ack;
 	int output;
 	char data[BLKSIZE_MAX];
 
@@ -107,10 +110,9 @@ static void client(void)
 		for (int j = 0; j < NITERATIONS; j++)
 		{
 			nanvix_mailbox_send(output, data, i);
-			nanvix_mailbox_receive(output, &ack, sizeof(int));
+			nanvix_mailbox_receive(&ack, sizeof(unsigned));
 
-			if (ack != MAGIC)
-				printf("unicast benchmark error\n");
+			printf("unicast benchmark error\n");
 		}
 	}
 }
@@ -131,7 +133,7 @@ int main(int argc, char **argv)
 		return (0);
 	}
 
-	nanvix_connector_init();
+	nanvix_noc_init(2);
 
 	/* Server */
 	(!strcmp(argv[1], "--server")) ? 

@@ -64,6 +64,8 @@ void nanvix_noc_init(int ncclusters)
  */
 int nanvix_noc_receive(void *buf, size_t size)
 {
+	int counter;
+
 	/* Invalid buffer. */
 	if (buf == NULL)
 		return (-EINVAL);
@@ -73,9 +75,12 @@ int nanvix_noc_receive(void *buf, size_t size)
 		return (-EINVAL);
 
 	mppa_aiocb_t aiocb = MPPA_AIOCB_INITIALIZER(portals[myrank], buf, size);
+	mppa_ioctl(portals[myrank], MPPA_RX_GET_COUNTER, &counter);
 
 	mppa_aio_read(&aiocb);
 	mppa_aio_wait(&aiocb);
+
+	printf("%d\n", counter);
 
 	return (0);
 }
