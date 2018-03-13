@@ -28,7 +28,7 @@ BENCHDIR = $(CURDIR)/benchmark
 # Toolchain configuration.
 cflags := -ansi -std=c99
 cflags += -Wall -Wextra
-cflags += -O3
+cflags += -O3 
 cflags += -I $(INCDIR)
 cflags += -D_KALRAY_MPPA256_
 k1-lflags := -lmppaipc
@@ -58,9 +58,10 @@ mailbox.test-srcs := $(SRCDIR)/kernel/arch/mppa/noc.c \
 					 $(SRCDIR)/kernel/pm/mailbox.c    \
 					 $(TESTDIR)/mailbox.c
 
-mailbox-unicast.benchmark-srcs: $(SRCDIR)/kernel/arch/mppa/noc.c \
+mailbox-unicast.benchmark-srcs := $(SRCDIR)/kernel/arch/mppa/noc.c \
 								$(SRCDIR)/kernel/pm/mailbox.c    \
 								$(BENCHDIR)/mailbox/unicast.c
+mailbox-unicast.benchmark-lflags := -fopenmp
 
 #=============================================================================
 # Testing Binary
@@ -77,7 +78,7 @@ test-name := test.img
 #=============================================================================
 
 benchmark-objs := master.benchmark \
-				  mailbox-unicast.benchmark
+		  mailbox-unicast.benchmark 
 
 benchmark-name := benchmark.img
 

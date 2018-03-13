@@ -29,7 +29,7 @@
 	/**
 	 * @brief Number of compute clusters.
 	 */
-	#define NR_CCLUSTER 16
+	#define NR_CCLUSTER 8
 
 	/**
 	 * @brief Number of IO clusters.

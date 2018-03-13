@@ -39,6 +39,8 @@ void nanvix_connector_init(void)
 {
 	myrank = mppa_getpid();
 
+	printf("Hello from %d\n", myrank);
+
 	/* Open NoC Connectors. */
 	for (int i = 0; i < NR_CCLUSTER; i++)
 	{
@@ -49,6 +51,7 @@ void nanvix_connector_init(void)
 		portals[i] = mppa_open(pathname, (i == myrank) ? O_RDONLY : O_WRONLY);
 		assert(portals[i] != -1);
 	}
+	printf("Hello from %d: portals are opened\n", myrank);
 }
 
 /*===========================================================================*
@@ -75,8 +78,10 @@ int nanvix_connector_receive(void *buf, size_t size)
 		return (-EINVAL);
 
 	mppa_aiocb_t aiocb = MPPA_AIOCB_INITIALIZER(portals[myrank], buf, size);
-	mppa_aio_read(&aiocb);
-	mppa_aio_wait(&aiocb);
+	int ret2 = mppa_aio_read(&aiocb);
+	printf("mpaa_aio_read() %d/%d\n", ret2, size);
+	int ret = mppa_aio_wait(&aiocb);
+	printf("mppa_aio_wait() %d/%d\n", ret,size);
 
 	return (0);
 }
@@ -109,7 +114,9 @@ int nanvix_connector_send(int id, const void *buf, size_t size)
 	if (size < 1)
 		return (-EINVAL);
 
-	mppa_pwrite(portals[id], buf, size, 0);
+	int ret = mppa_pwrite(portals[id], buf, size, 0);
+
+	printf("mppa_pwrite() %d\n", ret);
 
 	return (0);
 }

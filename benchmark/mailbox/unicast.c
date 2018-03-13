@@ -18,16 +18,21 @@
  */
 
 #include <stdio.h>
-#include <stdint.h>
 #include <string.h>
 #include <mppa/osconfig.h>
 #include <nanvix/arch/mppa.h>
 #include <nanvix/ipc.h>
+#include <omp.h>
 
 /**
  * @brief Magic number used for checksum.
  */
 #define MAGIC 0xdeadbeef
+
+/**
+ * @brief Number of benchmark iterations.
+ */
+#define NITERATIONS 1
 
 /**
  * Minimum block size (in bytes).
@@ -44,27 +49,23 @@
  */
 #define BLKSIZE_STEP 1
 
-#define MPPA_FREQUENCY 400
-
 /*
  *  * Timer residual error.
- *   */
-uint64_t timer_error = 0;
-
-extern uint64_t k1_io_read64(unsigned addr);
+    */
+double timer_error = 0;
 
 /*
  *  * Gets the current timer value.
  *   */
-uint64_t timer_get(void)
+double timer_get(void)
 {
-		return (k1_io_read64(0x70084040)/MPPA_FREQUENCY);
+		return (omp_get_wtime());
 }
 
 /*
  *  * Computers the difference between two timers.
  *   */
-uint64_t timer_diff(uint64_t t1, uint64_t t2)
+double timer_diff(double t1, double t2)
 {
 		return (t2 - t1 - timer_error);
 }
@@ -74,7 +75,7 @@ uint64_t timer_diff(uint64_t t1, uint64_t t2)
  *   */
 void timer_init(void)
 {
-	  uint64_t start, end;
+	  double start, end;
 	    
 	    start = timer_get();
 		  end = timer_get();
@@ -90,35 +91,30 @@ void timer_init(void)
  * @returns Upon successful NANVIX_SUCCESS is returned. Upon failure
  * NANVIX_FAILURE is returned instead.
  */
-static int server(void)
+static void server(void)
 {
 	char data[BLKSIZE_MAX];
 
-	memset(data, 0, BLKSIZE_MAX)
+	memset(data, 0, BLKSIZE_MAX);
 
 	timer_init();
 
 	/* Benchmark. */
-	for (int i = BLKSIZE_MIN; i <= BLKSIZE_MAX; BLKSIZE_STEP)
+	for (int i = BLKSIZE_MIN; i <= BLKSIZE_MAX; i += BLKSIZE_STEP)
 	{
-		uint64_t start;
-		uint64_t end;
-		uint64_t total;
-		
-		total = 0;
+		double start, end, total;
 
+		total = 0;
 		/* Run several experiments. */
 		for (int j = 0; j < NITERATIONS; j++)
 		{
-
 			start = timer_get();
-			nanvix_mailbox_send(output, data, i);
-			end = timer_get;
-
+			nanvix_mailbox_receive(data, i);
+			end = timer_get();
 			total += timer_diff(start, end);
 		}
 
-		printf("unicast %d bytes %" PRIu64 " s\n", i, total);
+		printf("unicast benchmark %d %lf\n", i, total);
 	}
 }
 
@@ -133,17 +129,19 @@ static void client(void)
 	int output;
 	char data[BLKSIZE_MAX];
 
-	memset(data, 1, BLKSIZE_MAX)
+	memset(data, 1, BLKSIZE_MAX);
 
 	output = nanvix_mailbox_open("/cpu0");
 
 	/* Benchmark. */
-	for (int i = BLKSIZE_MIN; i <= BLKSIZE_MAX; BLKSIZE_STEP)
+	for (int i = BLKSIZE_MIN; i <= BLKSIZE_MAX; i += BLKSIZE_STEP)
 	{
 		/* Run several experiments. */
 		for (int j = 0; j < NITERATIONS; j++)
 			nanvix_mailbox_send(output, data, i);
 	}
+
+printf("CLIENT DONE\n");
 }
 
 /**
@@ -151,8 +149,6 @@ static void client(void)
  */
 int main(int argc, char **argv)
 {
-	int ret;
-
 	/* Missing parameters. */
 	if (argc < 2)
 	{
@@ -167,7 +163,7 @@ int main(int argc, char **argv)
 	nanvix_connector_init();
 
 	/* Server */
-	ret = (!strcmp(argv[1], "--server")) ? 
+	(!strcmp(argv[1], "--server")) ? 
 		server() : client();
 
 	return (EXIT_SUCCESS);
