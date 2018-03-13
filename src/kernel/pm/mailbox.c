@@ -52,7 +52,7 @@ struct mailbox
 /**
  * @brief Mailbox table.
  */
-static struct mailbox mailboxes[NR_MAILBOX] = { {'\0', 0}, };
+static struct mailbox mailboxes[NR_MAILBOX];
 
 /**
  * @brief Mailbox names.
@@ -217,7 +217,7 @@ int nanvix_mailbox_receive(void *buf, size_t n)
 int nanvix_mailbox_unlink(int mbxid)
 {
 	/* Invalid mailbox ID. */
-	if ((mbxid < 0) || (mbxid > i= NR_MAILBOX))
+	if ((mbxid < 0) || (mbxid >= NR_MAILBOX))
 		return (-EINVAL);
 
 	mailboxes[mbxid].flags = 0;

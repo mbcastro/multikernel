@@ -23,6 +23,11 @@
 #include <nanvix/arch/mppa.h>
 
 /**
+ * @brief Number of iterations.
+ */
+#define NITERATIONS 10
+
+/**
  * @brief Magic number used for checksum.
  */
 #define MAGIC 0xdeadbeef
@@ -35,13 +40,21 @@
  */
 static int server(void)
 {
+	int score = 0;
 	unsigned msg1 = MAGIC;
 	unsigned msg2 = ~MAGIC;
 
-	nanvix_noc_receive(&msg2, sizeof(unsigned));
-	nanvix_noc_send(CCLUSTER1, &msg2, sizeof(unsigned));
+	/* Test. */
+	for (int i = 0; i < NITERATIONS; i++)
+	{
+		nanvix_noc_receive(&msg2, sizeof(unsigned));
+		nanvix_noc_send(CCLUSTER1, &msg2, sizeof(unsigned));
 
-	return (msg1 == msg2);
+		if (msg1 == msg2)
+			score++;
+	}
+
+	return (score == NITERATIONS);
 }
 
 /**
@@ -52,13 +65,21 @@ static int server(void)
  */
 static int client(void)
 {
+	int score = 0;
 	unsigned msg1 = MAGIC;
 	unsigned msg2 = ~MAGIC;
 
-	nanvix_noc_send(CCLUSTER0, &msg1, sizeof(unsigned));
-	nanvix_noc_receive(&msg2, sizeof(unsigned));
+	/* Test. */
+	for (int i = 0; i < NITERATIONS; i++)
+	{
+		nanvix_noc_send(CCLUSTER0, &msg1, sizeof(unsigned));
+		nanvix_noc_receive(&msg2, sizeof(unsigned));
 
-	return (msg1 == msg2);
+		if (msg1 == msg2)
+			score++;
+	}
+
+	return (score == NITERATIONS);
 }
 
 /**

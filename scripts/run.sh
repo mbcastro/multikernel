@@ -45,7 +45,7 @@ function run_test
 		-- $1
 }
 
-if [ $1 == 'tests'];
+if [ $1 == 'tests' ];
 then
 	echo "=== TESTING"
 	run_test noc
