@@ -21,22 +21,53 @@
 #include <nanvix/arch/mppa.h>
 
 /**
- * @brief NoC connectors testing unit.
+ * @brief NoC connectors ping pong testing unit.
  */
-static void test_noc(void)
+static void test_noc_pingpong(void)
 {
 	mppa_pid_t server;
 	mppa_pid_t client;
 
 	const char *argv0[] = {
 		"noc.test",
-		"--server",
+		"ping-pong",
+		"server",
 		NULL
 	};
 
 	const char *argv1[] = {
 		"noc.test",
-		"--client",
+		"ping-pong",
+		"client",
+		NULL
+	};
+
+	server = mppa_spawn(CCLUSTER0, NULL, argv0[0], argv0, NULL);
+	client = mppa_spawn(CCLUSTER1, NULL, argv1[0], argv1, NULL);
+
+	mppa_waitpid(server, NULL, 0);
+	mppa_waitpid(client, NULL, 0);
+}
+
+/**
+ * @brief NoC connectors unicast testing unit.
+ */
+static void test_noc_unicast(void)
+{
+	mppa_pid_t server;
+	mppa_pid_t client;
+
+	const char *argv0[] = {
+		"noc.test",
+		"unicast",
+		"server",
+		NULL
+	};
+
+	const char *argv1[] = {
+		"noc.test",
+		"unicast",
+		"client",
 		NULL
 	};
 
@@ -57,15 +88,13 @@ static void test_mailbox(void)
 
 	const char *argv0[] = {
 		"mailbox.test",
-		"ping-pong",
-		"server",
+		"--server",
 		NULL
 	};
 
 	const char *argv1[] = {
 		"mailbox.test",
-		"ping-pong",
-		"client",
+		"--client",
 		NULL
 	};
 
@@ -93,7 +122,10 @@ int main(int argc, char **argv)
 	}
 
 	if (!strcmp(argv[1], "noc"))
-		test_noc();
+	{
+		test_noc_pingpong();
+		test_noc_unicast();
+	}
 	if (!strcmp(argv[1], "mailbox"))
 		test_mailbox();
 

@@ -83,6 +83,52 @@ static int pingpong_client(void)
 }
 
 /**
+ * @brief Unicast unit test server.
+ *
+ * @returns Upon successful NANVIX_SUCCESS is returned. Upon failure
+ * NANVIX_FAILURE is returned instead.
+ */
+static int unicast_server(void)
+{
+	int score = 0;
+	unsigned msg1 = ~MAGIC;
+
+	/* Test. */
+	for (int i = 0; i < NITERATIONS; i++)
+	{
+		nanvix_noc_receive(&msg1, sizeof(unsigned));
+
+		if (msg1 == MAGIC)
+			score++;
+	}
+
+	return (score == NITERATIONS);
+}
+
+/**
+ * @brief Ping Pong unit test client.
+ *
+ * @returns Upon successful NANVIX_SUCCESS is returned. Upon failure
+ * NANVIX_FAILURE is returned instead.
+ */
+static int unicast_client(void)
+{
+	int score = 0;
+	unsigned msg1 = MAGIC;
+
+	/* Test. */
+	for (int i = 0; i < NITERATIONS; i++)
+	{
+		nanvix_noc_send(CCLUSTER0, &msg1, sizeof(unsigned));
+
+		score++;
+	}
+
+	return (0);
+}
+
+
+/**
  * @brief NoC library unit test.
  */
 int main(int argc, char **argv)
@@ -101,12 +147,19 @@ int main(int argc, char **argv)
 	nanvix_noc_init(2);
 
 	/* Server */
-	if (!strcmp(argv[2], "ping-ping"))
+	if (!strcmp(argv[1], "ping-pong"))
 	{
-		ret = (!strcmp(argv[3], "client")) ? 
+		ret = (strcmp(argv[2], "client")) ? 
 			pingpong_server() : pingpong_client();
 
 		printf("noc ping pong test [%s]\n", (ret) ? "passed" : "FAILED");
+	}
+	else if (!strcmp(argv[1], "unicast"))
+	{
+		ret = (strcmp(argv[2], "client")) ? 
+			unicast_server() : unicast_client();
+
+		printf("noc unicast test [%s]\n", (ret) ? "passed" : "FAILED");
 	}
 
 	return (EXIT_SUCCESS);
