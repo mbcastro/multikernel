@@ -49,7 +49,6 @@ if [ $1 == 'tests' ];
 then
 	echo "=== TESTING"
 	run_test noc
-	run_test mailbox
 elif [ $1 == 'benchmarks' ];
 then
 	echo "=== BENCHMARKING"

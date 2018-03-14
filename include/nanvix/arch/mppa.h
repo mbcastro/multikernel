@@ -56,9 +56,29 @@
 	#define IOCLUSTER0 128 /**< IO cluster 0.       */
 	#define IOCLUSTER1 192 /**< IO cluster 1.       */
 
+	/**
+	 * @brief Magic number for NoC packets.
+	 */
+	#define NOC_PACKET_MAGIC 0xc001f00l
+
+	/**
+	 * @brief Size (in bytes) of NoC packet's payload.
+	 */
+	#define NOC_PACKET_SIZE 4
+
+	/**
+	 * @brief NoC packet.
+	 */
+	struct noc_packet
+	{
+		unsigned magic;                /**< Magic header.         */
+		unsigned source;               /**< Cluster ID of source. */
+		char payload[NOC_PACKET_SIZE]; /**< Payload.              */
+	};
+
 	/* Forward definitions. */
 	extern void nanvix_noc_init(int);
-	extern int nanvix_noc_receive(void *, size_t);
-	extern int nanvix_noc_send(int, const void *, size_t);
+	extern int nanvix_noc_receive(void *);
+	extern int nanvix_noc_send(int, const void *);
 
 #endif /* NANVIX_ARCH_MPPA256_ */

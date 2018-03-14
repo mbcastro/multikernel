@@ -20,10 +20,11 @@
 #ifndef NANVIX_PERF_H_
 #define NANVIX_PERF_H_
 
+	#include <inttypes.h>
+
 	/* Forward defnitions. */
-	extern double timer_get(void);
-	extern double timer_diff(double, double);
+	extern long timer_get(void);
+	extern long timer_diff(long, long);
 	extern void timer_init(void);
-	
 
 #endif /* NANVIX_PERF_H_ */

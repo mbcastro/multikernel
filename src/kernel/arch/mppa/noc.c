@@ -21,28 +21,9 @@
 #include <nanvix/hal.h>
 #include <assert.h>
 #include <errno.h>
+#include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
-
-/**
- * @brief Magic number for NoC packets.
- */
-#define NOC_PACKET_MAGIC 0xc001f00l
-
-/**
- * @brief Size (in bytes) of NoC packet's payload.
- */
-#define NOC_PACKET_PAYLOAD_SIZE 128
-
-/**
- * @brief NoC packet.
- */
-struct noc_packet
-{
-	unsigned magic;                        /**< Magic header.         */
-	unsigned source;                       /**< Cluster ID of source. */
-	char payload[NOC_PACKET_PAYLOAD_SIZE]; /**< Payload.              */
-};
 
 /**
  * @brief Portal NoC connectors.
@@ -70,6 +51,11 @@ void nanvix_noc_init(int ncclusters)
 		portals[i] = mppa_open(pathname, (i == myrank) ? O_RDONLY : O_WRONLY);
 		assert(portals[i] != -1);
 	}
+
+	int sync_fd = mppa_open("/mppa/sync/128:8", O_WRONLY);
+	uint64_t mask = (1 << myrank);
+	mppa_write(sync_fd, &mask, sizeof(uint64_t));
+	mppa_close(sync_fd);
 }
 
 /**
@@ -89,13 +75,10 @@ int nanvix_noc_receive(void *buf)
 	if (buf == NULL)
 		return (-EINVAL);
 
-	/* Invalid size. */
-	if (size < 1)
-		return (-EINVAL);
-
 	mppa_aiocb_t aiocb = MPPA_AIOCB_INITIALIZER(
 			portals[arch_get_cluster_id()],
-			buffers, sizeof(struct noc_packet)
+			buffers,
+			NR_CCLUSTER*sizeof(struct noc_packet)
 	);
 
 	/* Try some times. */
@@ -108,14 +91,14 @@ int nanvix_noc_receive(void *buf)
 			if (buffers[i].magic == NOC_PACKET_MAGIC)
 			{
 				buffers[i].magic = 0;
-				memcpy(buf, &buf, NOC_PACKET_PAYLOAD_SIZE);
+				memcpy(buf, &buffers[i].payload, NOC_PACKET_SIZE);
+
 
 				return (buffers[i].source);
 			}
 		}
-
 		assert(mppa_aio_read(&aiocb) == 0);
-		assert(mppa_aio_wait(&aiocb) == sizeof(struct noc_packet));
+		assert(mppa_aio_wait(&aiocb) != -1);
 	}
 
 	return (-EAGAIN);
@@ -143,15 +126,11 @@ int nanvix_noc_send(int id, const void *buf)
 	if (buf == NULL)
 		return (-EINVAL);
 
-	/* Invalid size. */
-	if (size < 1)
-		return (-EINVAL);
-
 	/* Build NoC packet. */
 	packet.magic = NOC_PACKET_MAGIC;
 	packet.source = myrank;
-	memcpy(packet.buffer, &buf, NOC_PACKET_PAYLOAD_SIZE);
-	mppa_pwrite(portals[id], &packet, sizeof(struct noc_packet), myrank*sizeof(struct noc_packet));
+	memcpy(&packet.payload, buf, NOC_PACKET_SIZE);
+	assert(mppa_pwrite(portals[id], &packet, sizeof(struct noc_packet), myrank*sizeof(struct noc_packet)) == sizeof(struct noc_packet));
 
 	return (0);
 }

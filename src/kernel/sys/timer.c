@@ -17,21 +17,25 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <omp.h>
+#include <sys/time.h>
 
 /**
  * @brief Timer error.
  */
-static double timer_error = 0;
+static long timer_error = 0;
 
 /**
  * @brief Gets the current timer value.
  *
  * @returns The current timer value;
  */
-double timer_get(void)
+long timer_get(void)
 {
-	return (omp_get_wtime());
+	struct timeval t;
+
+	gettimeofday(&t, 0);
+
+	return (t.tv_sec*1000000+t.tv_usec);
 }
 
 /**
@@ -42,9 +46,9 @@ double timer_get(void)
  *
  * @returns The difference between the two timers (t2 - t1).
  */
-double timer_diff(double t1, double t2)
+long timer_diff(long t1, long t2)
 {
-	return (t2 - t1 - timer_error);
+	return (((t2 - t1) < timer_error) ? timer_error : t2 - t1 - timer_error);
 }
 
 /**
@@ -52,12 +56,11 @@ double timer_diff(double t1, double t2)
  */
 void timer_init(void)
 {
-	double start, end;
+	long start, end;
 
 	start = timer_get();
 	end = timer_get();
 
 	timer_error = (end - start);
 }
-
 

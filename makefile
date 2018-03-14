@@ -37,32 +37,22 @@ k1-lflags := -lmppaipc
 # IO Cluster Binaries
 #=============================================================================
 
-io-bin := master.test master.benchmark
+io-bin := master.test
 
 master.test-srcs := $(TESTDIR)/master.c
-
-master.benchmark-srcs := $(BENCHDIR)/master.c
 
 #=============================================================================
 # Compute Cluster Binaries
 #=============================================================================
 
-cluster-bin := noc.test                 \
-			   mailbox.test             \
-			   mailbox-unicast.benchmark
+cluster-system := nodeos
+
+
+cluster-bin := noc.test
 
 noc.test-srcs := $(SRCDIR)/kernel/arch/mppa/noc.c \
+				 $(SRCDIR)/kernel/sys/timer.c     \
 				 $(TESTDIR)/noc.c
-
-mailbox.test-srcs := $(SRCDIR)/kernel/arch/mppa/noc.c \
-					 $(SRCDIR)/kernel/pm/mailbox.c    \
-					 $(TESTDIR)/mailbox.c
-
-mailbox-unicast.benchmark-srcs := $(SRCDIR)/kernel/arch/mppa/noc.c \
-								  $(SRCDIR)/kernel/sys/timer.c     \
-								  $(SRCDIR)/kernel/pm/mailbox.c    \
-								  $(BENCHDIR)/mailbox/unicast.c
-mailbox-unicast.benchmark-lflags := -fopenmp
 
 #=============================================================================
 # Testing Binary
@@ -70,23 +60,13 @@ mailbox-unicast.benchmark-lflags := -fopenmp
 
 test-objs := master.test \
 			 noc.test    \
-			 mailbox.test
 
 test-name := test.img
-
-#=============================================================================
-# Benchmark Binary
-#=============================================================================
-
-benchmark-objs := master.benchmark \
-		  mailbox-unicast.benchmark 
-
-benchmark-name := benchmark.img
 
 #=============================================================================
 # MPPA Binary
 #=============================================================================
 
-mppa-bin := test benchmark
+mppa-bin := test
 
 include $(K1_TOOLCHAIN_DIR)/share/make/Makefile.kalray

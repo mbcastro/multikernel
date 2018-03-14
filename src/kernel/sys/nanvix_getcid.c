@@ -19,12 +19,14 @@
 
 #include <nanvix/hal.h>
 
+extern k1_get_cluster_id();
+
 /**
  * @brief Returns the cluster ID of the calling process.
  *
  * @returns The cluster ID of the calling process.
  */
-int nanvix_getcid(void)
+int arch_get_cluster_id(void)
 {
-	return (arch_get_cluster_id());
+	return (k1_get_cluster_id());
 }
