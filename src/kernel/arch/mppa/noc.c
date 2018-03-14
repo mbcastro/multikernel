@@ -21,6 +21,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <stdio.h>
+#include <string.h>
 
 /**
  * @brief Portal NoC connectors.
@@ -80,23 +81,38 @@ int nanvix_noc_receive(void *buf, size_t size)
 	if (size < 1)
 		return (-EINVAL);
 
+	mppa_ioctl(portals[myrank], MPPA_RX_GET_COUNTER, &counter);
 
 
-	if (first == last)
+	printf("counter=%d first=%d last=%d\n", counter, first, last);
+	if ((counter == 0) && (first==last))
+	{
+			mppa_aiocb_t aiocb = MPPA_AIOCB_INITIALIZER(portals[myrank], &buffer[last], sizeof(int));
+			mppa_aiocb_set_trigger(&aiocb, 1);
+			printf("+ before %d: %d %d %d\n", myrank, counter, first, last);
+			mppa_aio_read(&aiocb);
+			mppa_aio_wait(&aiocb);
+			last = (last+1)%N;
+			mppa_ioctl(portals[myrank], MPPA_RX_GET_COUNTER, &counter);
+			printf("+ after %d: %d %d %d\n", myrank, counter, first, last);
+	}
+	else
 	{
 		do
 		{
-			mppa_aiocb_t aiocb = MPPA_AIOCB_INITIALIZER(portals[myrank], &buferf[last], sizeof(int));
+			mppa_aiocb_t aiocb = MPPA_AIOCB_INITIALIZER(portals[myrank], &buffer[last], sizeof(int));
+			mppa_aiocb_set_trigger(&aiocb, 0);
+			printf("before %d: %d %d %d\n", myrank, counter, first, last);
 			mppa_aio_read(&aiocb);
-			mppa_aio_wait(&aiocb);
+			int n = mppa_aio_wait(&aiocb);
+			last = (last+counter)%N;
 			mppa_ioctl(portals[myrank], MPPA_RX_GET_COUNTER, &counter);
-			last = (last+1)%N;
-			printf("%d\n", counter);
+			printf("after %d: %d %d %d %d\n", myrank, counter, first, last, n);
 		} while (counter > 0);
 	}
 
-	memcpy(buf, &buffer[last], sizeof(int));
-	last = (last+1)%N;
+	memcpy(buf, &buffer[first], sizeof(int));
+	first = (first+1)%N;
 
 	return (0);
 }
