@@ -18,19 +18,35 @@
  */
 
 #include <nanvix/arch/mppa.h>
+#include <nanvix/hal.h>
 #include <assert.h>
 #include <errno.h>
 #include <stdio.h>
 
 /**
+ * @brief Magic number for NoC packets.
+ */
+#define NOC_PACKET_MAGIC 0xc001f00l
+
+/**
+ * @brief Size (in bytes) of NoC packet's payload.
+ */
+#define NOC_PACKET_PAYLOAD_SIZE 128
+
+/**
+ * @brief NoC packet.
+ */
+struct noc_packet
+{
+	unsigned magic;                        /**< Magic header.         */
+	unsigned source;                       /**< Cluster ID of source. */
+	char payload[NOC_PACKET_PAYLOAD_SIZE]; /**< Payload.              */
+};
+
+/**
  * @brief Portal NoC connectors.
  */
 static int portals[NR_CCLUSTER];
-
-/**
- * @brief Cluster ID of current process.
- */
-static int myrank;
 
 /**
  * @brief Initializes NoC connectors.
@@ -39,7 +55,9 @@ static int myrank;
  */
 void nanvix_noc_init(int ncclusters)
 {
-	myrank = mppa_getpid();
+	int myrank;
+
+	myrank = arch_get_cluster_id();
 
 	/* Open NoC Connectors. */
 	for (int i = 0; i < ncclusters; i++)
@@ -53,24 +71,18 @@ void nanvix_noc_init(int ncclusters)
 	}
 }
 
-#define N 1024
-
-int first = 0;
-int last = 0;
-int buffer[N];
-
 /**
- * @brief Reads data from the local NoC connector.
+ * @brief Reads data from the local NoC buffer.
  *
  * @param buf  Location where data should be written to.
- * @param size Number of bytes to read.
  *
- * @returns Upon successful completion, zero is returned. Upon failure, a
- * negative error code is returned instead.
+ * @returns Upon successful completion the cluster ID of the remote source is
+ * returned. Upon failure, a negative error code is returned instead.
  */
-int nanvix_noc_receive(void *buf, size_t size)
+int nanvix_noc_receive(void *buf)
 {
-	int counter;
+	static const int ntries = 3;                   /**< Number of tries.   */
+	static struct noc_packet buffers[NR_CCLUSTER]; /**< Local NoC buffers. */
 
 	/* Invalid buffer. */
 	if (buf == NULL)
@@ -80,41 +92,50 @@ int nanvix_noc_receive(void *buf, size_t size)
 	if (size < 1)
 		return (-EINVAL);
 
+	mppa_aiocb_t aiocb = MPPA_AIOCB_INITIALIZER(
+			portals[arch_get_cluster_id()],
+			buffers, sizeof(struct noc_packet)
+	);
 
-
-	if (first == last)
+	/* Try some times. */
+	for (int j = 0; j < ntries; j++)
 	{
-		do
+		/* Check for any message, */
+		for (int i = 0; i < NR_CCLUSTER; i++)
 		{
-			mppa_aiocb_t aiocb = MPPA_AIOCB_INITIALIZER(portals[myrank], &buferf[last], sizeof(int));
-			mppa_aio_read(&aiocb);
-			mppa_aio_wait(&aiocb);
-			mppa_ioctl(portals[myrank], MPPA_RX_GET_COUNTER, &counter);
-			last = (last+1)%N;
-			printf("%d\n", counter);
-		} while (counter > 0);
+			/* Found. */
+			if (buffers[i].magic == NOC_PACKET_MAGIC)
+			{
+				buffers[i].magic = 0;
+				memcpy(buf, &buf, NOC_PACKET_PAYLOAD_SIZE);
+
+				return (buffers[i].source);
+			}
+		}
+
+		assert(mppa_aio_read(&aiocb) == 0);
+		assert(mppa_aio_wait(&aiocb) == sizeof(struct noc_packet));
 	}
 
-	memcpy(buf, &buffer[last], sizeof(int));
-	last = (last+1)%N;
-
-	return (0);
+	return (-EAGAIN);
 }
 
 /**
  * @brief Writes data to a remote NoC connector.
  *
- * @param id   ID of the target NoC connector.
- * @param buf  Location where data should be read from.
- * @param size Number of bytes to write.
+ * @param id  ID of the destination cluster.
+ * @param buf Location where data should be read from.
  *
  * @returns Upon successful completion, zero is returned. Upon failure, a
  * negative error code is returned instead.
  */
-int nanvix_noc_send(int id, const void *buf, size_t size)
+int nanvix_noc_send(int id, const void *buf)
 {
+	int myrank;               /* Cluster ID of the current process. */
+	struct noc_packet packet; /* Packet to send.                    */
+
 	/* Invalid cluster ID. */
-	if (id == myrank)
+	if ((myrank = arch_get_cluster_id()) == id)
 		return (-EINVAL);
 
 	/* Invalid buffer. */
@@ -125,7 +146,11 @@ int nanvix_noc_send(int id, const void *buf, size_t size)
 	if (size < 1)
 		return (-EINVAL);
 
-	mppa_pwrite(portals[id], buf, size, 0);
+	/* Build NoC packet. */
+	packet.magic = NOC_PACKET_MAGIC;
+	packet.source = myrank;
+	memcpy(packet.buffer, &buf, NOC_PACKET_PAYLOAD_SIZE);
+	mppa_pwrite(portals[id], &packet, sizeof(struct noc_packet), myrank*sizeof(struct noc_packet));
 
 	return (0);
 }
