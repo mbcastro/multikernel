@@ -17,11 +17,10 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <mppa/osconfig.h>
+#include <nanvix/pm.h>
 #include <stdio.h>
 #include <string.h>
-#include <mppa/osconfig.h>
-#include <nanvix/arch/mppa.h>
-#include <nanvix/ipc.h>
 
 /**
  * @brief Number of iterations.
@@ -36,24 +35,26 @@
 /**
  * @brief Unit test server.
  *
- * @returns Upon successful NANVIX_SUCCESS is returned. Upon failure
- * NANVIX_FAILURE is returned instead.
+ * @returns Upon successful non-zero is returned. Upon failure zero is
+ * returned instead.
  */
 static int server(void)
 {
-	int output;
+	int inbox;
 	int score = 0;
-	unsigned msg1 = MAGIC;
-	unsigned msg2 = ~MAGIC;
+	char msg[MAILBOX_MSG_SIZE];
+	char checksum[MAILBOX_MSG_SIZE];
 
-	output = nanvix_mailbox_open("/cpu1");
+	for (int i = 0; i < MAILBOX_MSG_SIZE; i++)
+		checksum[i] = 5;
+
+	inbox = nanvix_mailbox_create("/cpu1");
 
 	for (int i = 0; i < NITERATIONS; i++)
 	{
-		nanvix_mailbox_receive(&msg2, sizeof(unsigned));
-		nanvix_mailbox_send(output, &msg2, sizeof(unsigned));
+		mailbox_read(inbox, &msg);
 
-		if (msg1 == msg2)
+		if (!memcmp(msg, checksum, MAILBOX_MSG_SIZE))
 			score++;
 	}
 
@@ -63,28 +64,21 @@ static int server(void)
 /**
  * @brief Unit test client.
  *
- * @returns Upon successful NANVIX_SUCCESS is returned. Upon failure
- * NANVIX_FAILURE is returned instead.
+ * @returns Upon successful non-zero is returned. Upon failure zero is
+ * returned instead.
  */
 static int client(void)
 {
-	int output;
-	int score = 0;
-	unsigned msg1 = MAGIC;
-	unsigned msg2 = ~MAGIC;
+	int outbox;
 
 	output = nanvix_mailbox_open("/cpu0");
 
 	for (int i = 0; i < NITERATIONS; i++)
 	{
-		nanvix_mailbox_send(output, &msg1, sizeof(unsigned));
-		nanvix_mailbox_receive(&msg2, sizeof(unsigned));
-
-		if (msg1 == msg2)
-			score++;
+		mailbox_read(inbox, &msg);
 	}
 
-	return (score == NITERATIONS);
+	return (1);
 }
 
 /**
@@ -97,18 +91,14 @@ int main(int argc, char **argv)
 	/* Missing parameters. */
 	if (argc < 2)
 	{
-		printf("missing parameters");
-		printf("usage: noc.test <mode>");
-		printf("  --client Client mode.");
-		printf("  --server Server mode.");
+		printf("missing parameters\n");
+		printf("usage: noc.test <client | server>\n";
 
 		return (0);
 	}
 
-	nanvix_noc_init(2);
-
 	/* Server */
-	ret = (!strcmp(argv[1], "--server")) ? 
+	ret = (!strcmp(argv[1], "server")) ? 
 		server() : client();
 
 	printf("mailbox test [%s]\n", (ret) ? "passed" : "FAILED");

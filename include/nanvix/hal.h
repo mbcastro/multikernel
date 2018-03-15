@@ -19,8 +19,9 @@
 
 #ifndef NANVIX_HAL_H_
 #define NANVIX_HAL_H_
-	
-	/* Foard denitions. */
-	#define arch_get_cluster_id() mppa_getpid()
+
+	#ifndef _KALRAY_MPPA256_
+		#include <nanvix/arch/mppa.h>
+	#endif
 
 #endif /* NANVIX_HAL_H_ */

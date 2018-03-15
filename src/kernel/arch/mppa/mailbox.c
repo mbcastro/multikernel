@@ -1,0 +1,425 @@
+/*
+ * Copyright(C) 2011-2018 Pedro H. Penna <pedrohenriquepenna@gmail.com>
+ * 
+ * This file is part of Nanvix.
+ * 
+ * Nanvix is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * Nanvix is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include <nanvix/arch/mppa.h>
+#include <assert.h>
+#include <errno.h>
+#include <string.h>
+
+/**
+ * @brief Number of mailboxes.
+ */
+#define NR_MAILBOX 256
+
+/**
+ * @brief Mailbox flags.
+ */
+/**@{*/
+#define MAILBOX_USED   (1 << 0)
+#define MAILBOX_WRONLY (1 << 1)
+/**@}*/
+
+/**
+ * @brief Mailbox.
+ */
+struct mailbox
+{
+	int fd;    /**< File descriptor of noC connector. */
+	int flags; /**< Flags.                            */
+};
+
+/**
+ * @brief table of mailboxes.
+ */
+static struct mailbox mailboxes[NR_MAILBOX];
+
+/*=======================================================================*
+ * mailbox_alloc()
+ *=======================================================================*/
+
+/**
+ * @brief Allocates a mailbox.
+ *
+ * @return Upon successful completion the ID of the newly allocated
+ * mailbox is returned. Upon failure, a negative error code is returned
+ * instead.
+ */
+static int mailbox_alloc(void)
+{
+	/* Search for a free mailbox. */
+	for (int i = 0; i < NR_MAILBOX; i++)
+	{
+		/* Found. */
+		if (!(mailboxes[i].flags & MAILBOX_USED))
+		{
+			mailboxes[i].flags |= MAILBOX_USED;
+			return (i);
+		}
+	}
+
+	return (-ENOENT);
+}
+
+/*=======================================================================*
+ * mailbox_free()
+ *=======================================================================*/
+
+/**
+ * @brief Frees a mailbox.
+ *
+ * @param mbxid ID of the target mailbox.
+ */
+static void mailbox_free(int mbxid)
+{
+	/* Sanity check. */
+	assert((mbxid >= 0) && (mbxid < NR_MAILBOX));
+	assert(mailboxes[i].flags & MAILBOX_USED);
+
+	mailboxes[i].flags = 0;
+
+	return (-ENOENT);
+}
+
+/*=======================================================================*
+ * mailbox_name()
+ *=======================================================================*/
+
+/**
+ * @brief Converts a mailbox name into a cluster ID.
+ *
+ * @param name Target mailbox name.
+ *
+ * @returns Upon successful completion the cluster ID whose name is @p
+ * name is returned. Upon failure, a negative error code is returned
+ * instead.
+ */
+static int mailbox_name(const char *name)
+{
+	static const struct {
+		int id;     /**< Cluster ID. */
+		char *name; /**< Mailbox name. */
+	} names[NR_CCLUSTER] = {
+		{ CCLUSTER0,  "/cpu0" },
+		{ CCLUSTER1,  "/cpu1" },
+		{ CCLUSTER2,  "/cpu2" },
+		{ CCLUSTER3,  "/cpu3" },
+		{ CCLUSTER4,  "/cpu4" },
+		{ CCLUSTER5,  "/cpu5" },
+		{ CCLUSTER6,  "/cpu6" },
+		{ CCLUSTER7,  "/cpu7" },
+		{ CCLUSTER8,  "/cpu8" },
+		{ CCLUSTER9,  "/cpu9" },
+		{ CCLUSTER10, "/cpu10" },
+		{ CCLUSTER11, "/cpu11" },
+		{ CCLUSTER12, "/cpu12" },
+		{ CCLUSTER13, "/cpu13" },
+		{ CCLUSTER14, "/cpu14" },
+		{ CCLUSTER15, "/cpu15" }
+	
+	/* Search for mailbox name. */
+	for (int i = 0; i < NR_CCLUSTER; i++)
+	{
+		/* Found. */
+		if (!strcmp(name, names[i].name))
+			return (names[i].id);
+	}
+
+	return (-ENOENT);
+}
+
+/*=======================================================================*
+ * mailbox_remotes()
+ *=======================================================================*/
+
+/**
+ * @brief Builds a list of remotes.
+ *
+ * @param remotes List of IDs of remote clusters.
+ * @param local   ID of local cluster.
+ */
+static void mailbox_remotes(char *remotes, int local)
+{
+	if (local == IOCLUSTER0)
+	{
+		sprintf(remotes,
+				"%d..%d,%d",
+				CCLUSTER0, CCLUSTER15, IOCLUSTER1
+		);
+	}
+	else if (local == IOCLUSTER1)
+	{
+		sprintf(remotes,
+				"%d..%d,%d",
+				CCLUSTER0, CCLUSTER15, IOCLUSTER0
+		);
+	}
+	else if (local == CCLUSTER0)
+	{
+		sprintf(remotes,
+				"%d..%d,%d,%d",
+				CCLUSTER1, CCLUSTER15, IOCLUSTER0, IOCLUSTER1
+		);
+	}
+	else if (rx_node == CCLUSTER15)
+	{
+		sprintf(remotes,
+				"%d..%d,%d,%d",
+				CCLUSTER0, CCLUSTER14, IOCLUSTER0, IOCLUSTER1
+		);
+	}
+	else
+	{
+		sprintf(remotes,
+				"%d..%d,%d..%d,%d,%d",
+				CCLUSTER0, local - 1, local + 1, CCLUSTER15, IOCLUSTER0, IOCLUSTER1
+		);
+	}
+}
+
+/*=======================================================================*
+ * mailbox_create()
+ *=======================================================================*/
+
+/**
+ * @brief Creates a mailbox.
+ *
+ * @param name Mailbox name.
+ *
+ * @returns Upon successful completion, the ID of the new mailbox is
+ * returned. Upon failure, a negative error code is returned instead.
+ */
+int mailbox_create(const char *name)
+{
+	int local;          /* ID of local cluster.               */
+	int fd;             /* File descriptor for NoC connector. */
+	int mbxid;          /* ID of mailbix.                     */
+	char remotes[128]   /* IDs of remote clusters.            */
+	char pathname[128]; /* NoC connector name.                */
+
+	/* Invalid mailbox name. */
+	if (name == NULL)
+		return (-EINVAL);
+
+	local = mailbox_name(name);
+	assert(local == arch_get_cluster_id);
+
+	/* Allocate a mailbox. */
+	mbxid = mailbox_alloc();
+	if (mbxid < 0)
+		return (mbxid);
+
+	mailbox_remotes(remotes, local);
+
+	sprintf(pathname,
+			"/mppa/rqueue/%d:%d/%s:%d/1:%d",
+			local,
+			local + 16,
+			remotes,
+			local + 16,
+			MAILBOX_MSG_SIZE
+	);
+
+	fd = mppa_open(pathname, O_RDONLY);
+	assert(rqueue_fd != -1);
+
+	/* Initialize mailbox. */
+	mailboxes[mbxid].fd = fd;
+	mailboxes[mbxid].flags &= ~(MAILBOX_WRONLY);
+
+	return (mbxid);
+}
+
+/*=======================================================================*
+ * mailbox_open()
+ *=======================================================================*/
+
+/**
+ * @brief Opens a mailbox.
+ *
+ * @param name Mailbox name.
+ *
+ * @returns Upon successful completion, the ID of the target mailbox is
+ * returned. Upon failure, a negative error code is returned instead.
+ */
+int mailbox_open(const char *name)
+{
+	int local;          /* ID of local cluster.               */
+	int fd;             /* File descriptor for NoC connector. */
+	int mbxid;          /* ID of mailbix.                     */
+	char remotes[128]   /* IDs of remote clusters.            */
+	char pathname[128]; /* NoC connector name.                */
+
+	/* Invalid mailbox name. */
+	if (name == NULL)
+		return (-EINVAL);
+
+	local = mailbox_name(name);
+	assert(local != arch_get_cluster_id());
+
+	/* Allocate a mailbox. */
+	mbxid = mailbox_alloc();
+	if (mbxid < 0)
+		return (mbxid);
+
+	mailbox_remotes(remotes, local);
+
+	sprintf(pathname,
+			"/mppa/rqueue/%d:%d/%s:%d/1:%d",
+			local,
+			local + 16,
+			remotes,
+			local + 16,
+			MAILBOX_MSG_SIZE
+	);
+
+	fd = mppa_open(pathname, O_WRONLY);
+	assert(rqueue_fd != -1);
+
+	/* Initialize mailbox. */
+	mailboxes[mbxid].fd = fd;
+	mailboxes[mbxid].flags |= MAILBOX_WRONLY;
+
+	return (mbxid);
+}
+
+/*=======================================================================*
+ * mailbox_read()
+ *=======================================================================*/
+
+/**
+ * @brief Reads data from a mailbox.
+ *
+ * @param mbxid ID of the target mailbox.
+ * @param buf   Location from where data should be written.
+ *
+ * @returns Upon successful completion zero is returned. Upon failure, a
+ * negative error code is returned instead.
+ */
+int mailbox_read(int mbxid, void *buf)
+{
+	/* Invalid mailbox ID.*/
+	if ((mbxid < 0) || (mbxid >= NR_MAILBOX))
+		return (-EINVAL);
+
+	/*  Invalid mailbox. */
+	if (!(mailboxes[i].flags & MAILBOX_USED))
+		return (-EINVAL);
+
+	/* Operation no supported. */
+	if (mailboxes[i] & MAILBOX_WRONLY)
+		return (-ENOTSUP);
+
+	/* Invalid buffer. */
+	if (buf == NULL)
+		return (-EINVAL);
+
+	assert(mppa_read(mailboxes[mbxid].fd, buf, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
+
+	return (0);
+}
+
+/*=======================================================================*
+ * mailbox_write()
+ *=======================================================================*/
+
+/**
+ * @brief Writes data to a mailbox.
+ *
+ * @param mbxid ID of the target mailbox.
+ * @param buf   Location from where data should be read.
+ *
+ * @returns Upon successful completion zero is returned. Upon failure, a
+ * negative error code is returned instead.
+ */
+int mailbox_write(int mbxid, const void *buf)
+{
+	/* Invalid mailbox ID.*/
+	if ((mbxid < 0) || (mbxid >= NR_MAILBOX))
+		return (-EINVAL);
+
+	/*  Invalid mailbox. */
+	if (!(mailboxes[i].flags & MAILBOX_USED))
+		return (-EINVAL);
+
+	/* Operation no supported. */
+	if (!(mailboxes[i] & MAILBOX_WRONLY))
+		return (-ENOTSUP);
+
+	/* Invalid buffer. */
+	if (buf == NULL)
+		return (-EINVAL);
+
+	assert(mppa_write(mailboxes[mbxid].fd, buf, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
+
+	return (0);
+}
+
+/*=======================================================================*
+ * mailbox_close()
+ *=======================================================================*/
+
+/**
+ * @brief Closes a mailbox.
+ *
+ * @param mbxid ID of the target mailbox.
+ *
+ * @returns Upon successful completion zero is returned. Upon failure, a
+ * negative error code is returned instead.
+ */
+int mailbox_close(int mbxid)
+{
+	/* Invalid mailbox ID.*/
+	if ((mbxid < 0) || (mbxid >= NR_MAILBOX))
+		return (-EINVAL);
+
+	/*  Invalid mailbox. */
+	if (!(mailboxes[i].flags & MAILBOX_USED))
+		return (-EINVAL);
+
+	mailbox_free(mbxid);
+
+	return (0);
+}
+
+/*=======================================================================*
+ * mailbox_unlink()
+ *=======================================================================*/
+
+/**
+ * @brief Destroys a mailbox.
+ *
+ * @param mbxid ID of the target mailbox.
+ *
+ * @returns Upon successful completion zero is returned. Upon failure, a
+ * negative error code is returned instead.
+ */
+int mailbox_unlink(int mbxid)
+{
+	/* Invalid mailbox ID.*/
+	if ((mbxid < 0) || (mbxid >= NR_MAILBOX))
+		return (-EINVAL);
+
+	/*  Invalid mailbox. */
+	if (!(mailboxes[i].flags & MAILBOX_USED))
+		return (-EINVAL);
+
+	mailbox_free(mbxid);
+
+	return (0);
+}

@@ -17,14 +17,13 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <inttypes.h>
 #include <mppa/osconfig.h>
 #include <nanvix/arch/mppa.h>
 
 /**
- * @brief NoC connectors unicast testing unit.
+ * @brief Mailboxes testing unit.
  */
-static void test_noc_unicast(void)
+static void test_mailbox(void)
 {
 	int sync_fd;
 	uint64_t mask;
@@ -35,14 +34,12 @@ static void test_noc_unicast(void)
 
 	const char *argv0[] = {
 		"noc.test",
-		"unicast",
 		"server",
 		NULL
 	};
 
 	const char *argv1[] = {
 		"noc.test",
-		"unicast",
 		"client",
 		NULL
 	};
@@ -66,34 +63,6 @@ static void test_noc_unicast(void)
 }
 
 /**
- * @brief Mailboxes testing unit.
- */
-static void test_mailbox(void)
-{
-	mppa_pid_t server;
-	mppa_pid_t client;
-
-	const char *argv0[] = {
-		"mailbox.test",
-		"--server",
-		NULL
-	};
-
-	const char *argv1[] = {
-		"mailbox.test",
-		"--client",
-		NULL
-	};
-
-	/* Spawn slaves. */
-	server = mppa_spawn(CCLUSTER0, NULL, argv0[0], argv0, NULL);
-	client = mppa_spawn(CCLUSTER1, NULL, argv1[0], argv1, NULL);
-
-	mppa_waitpid(server, NULL, 0);
-	mppa_waitpid(client, NULL, 0);
-}
-
-/**
  * @brief IPC library unit test
  */
 int main(int argc, char **argv)
@@ -102,16 +71,11 @@ int main(int argc, char **argv)
 	{
 		printf("missing parameters");
 		printf("usage: test <testing unit>");
-		printf("  noc     NoC connectors.");
 		printf("  mailbox Mailboxes.");
 
 		return (0);
 	}
 
-	if (!strcmp(argv[1], "noc"))
-	{
-		test_noc_unicast();
-	}
 	if (!strcmp(argv[1], "mailbox"))
 		test_mailbox();
 

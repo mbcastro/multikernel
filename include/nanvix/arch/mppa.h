@@ -62,9 +62,9 @@
 	#define NOC_PACKET_MAGIC 0xc001f00l
 
 	/**
-	 * @brief Size (in bytes) of NoC packet's payload.
+	 * @brief Size (in bytes) of a mailbox message.
 	 */
-	#define NOC_PACKET_SIZE 4
+	#define MAILBOX_MSG_SIZE 64
 
 	/**
 	 * @brief NoC packet.
@@ -75,10 +75,8 @@
 		unsigned source;               /**< Cluster ID of source. */
 		char payload[NOC_PACKET_SIZE]; /**< Payload.              */
 	};
-
-	/* Forward definitions. */
-	extern void nanvix_noc_init(int);
-	extern int nanvix_noc_receive(void *);
-	extern int nanvix_noc_send(int, const void *);
+	
+	/* Foard denitions. */
+	#define arch_get_cluster_id() mppa_getpid()
 
 #endif /* NANVIX_ARCH_MPPA256_ */
