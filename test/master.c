@@ -32,7 +32,7 @@ static void test_mailbox(void)
 	sync_fd = mppa_open("/mppa/sync/128:8", O_RDONLY);
 
 	const char *argv1[] = {
-		"mailbox-client.test",
+		"rmem-client.test",
 		"client",
 		NULL
 	};

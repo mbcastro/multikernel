@@ -29,22 +29,32 @@
  */
 #define NWRITES 1024
 
+char data[RMEM_BLOCK_SIZE];
+
 /**
  * @brief Remote memory unit test.
  */
 int main(int argc, char **argv)
 {
-	char data[RMEM_BLOCK_SIZE];
+	long start, end, total;
 
 	((void) argc);
 	((void) argv);
 	
-	for (int i = 0; i < NWRITES; i++)
-		memwrite(0, data, RMEM_BLOCKSIZE);
+	timer_init();
 
-	printf("cluster %3d: %d KB written\n", 
+	start = timer_get();
+	for (int i = 0; i < NWRITES; i++)
+		memwrite(0, data, RMEM_BLOCK_SIZE);
+	end = timer_get();
+
+	total = timer_diff(start, end);
+
+	printf("cluster %3d: %.2lf MB/s (%d KB %.2lf s)\n", 
 			arch_get_cluster_id(),
-			NWRITES*RMEM_BLOCK_SIZE/1024
+			(NWRITES*RMEM_BLOCK_SIZE/(1024*1024))/(total/1000000.0),
+			NWRITES*RMEM_BLOCK_SIZE/1024,
+			total/1000000.0
 	);
 
 	return (EXIT_SUCCESS);

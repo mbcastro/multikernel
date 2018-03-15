@@ -17,7 +17,6 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <mppa/osconfig.h>
 #include <nanvix/hal.h>
 #include <nanvix/mm.h>
 #include <nanvix/pm.h>
@@ -43,7 +42,8 @@ void memwrite(uint64_t addr, const void *buf, size_t n)
 	/* Build operation header. */
 	msg.source = arch_get_cluster_id();
 	msg.op = RMEM_WRITE;
-	msg.arg0 = n;
+	msg.blknum = addr;
+	msg.size = n;
 
 	/* Send operation header. */
 	mailbox_write(outbox, &msg);

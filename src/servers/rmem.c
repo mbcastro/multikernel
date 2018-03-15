@@ -23,7 +23,6 @@
 #include <nanvix/pm.h>
 #include <stdio.h>
 #include <string.h>
-#include "mailbox.h"
 
 /**
  * @brief Remote memory.
@@ -37,12 +36,9 @@ int main(int argc, char **argv)
 {
 	int inbox;
 	int inportal;
-	int clusterid;
 
 	((void) argc);
 	((void) argv);
-
-	clusterid = arch_get_cluster_id();
 
 	printf("[RMEM] booting up server\n");
 	inbox = mailbox_create("/io1");
@@ -61,14 +57,19 @@ int main(int argc, char **argv)
 		struct rmem_message msg;
 
 		mailbox_read(inbox, &msg);
+#ifdef DEBUG
 		printf("[RMEM] client connected\n");
-	
+#endif
 		portal_allow(inportal, msg.source);
 
+#ifdef DEBUG
 		printf("[RMEM] serving client\n");
-		portal_read(inportal, &data[msg.blknum], msg.size);
+#endif
+		portal_read(inportal, &rmem[msg.blknum], msg.size);
 
+#ifdef DEBUG
 		printf("[RMEM] client disconnected\n");
+#endif
 	}
 
 	portal_unlink(inportal);

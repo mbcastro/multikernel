@@ -20,6 +20,16 @@
 #ifndef NANVIX_IPC_H_
 #define NANVIX_IPC_H_
 
+	#include <inttypes.h>
+
+/*=======================================================================*
+ * Naming                                                                *
+ *=======================================================================*/
+
+	/* Forward definitions. */
+	extern int name_lookup(const char *);
+	extern void name_remotes(char *, int);
+
 /*=======================================================================*
  * Mailbox                                                               *
  *=======================================================================*/
@@ -31,6 +41,19 @@
 	extern int mailbox_write(int, const void *);
 	extern int mailbox_close(int);
 	extern int mailbox_unlink(int);
+
+/*=======================================================================*
+ * Portal                                                                *
+ *=======================================================================*/
+
+	/* Forward definitions .*/
+	extern int portal_allow(int, int);
+	extern int portal_create(const char *);
+	extern int portal_open(const char *);
+	extern int portal_read(int, void *, size_t);
+	extern int portal_write(int, const void *, size_t);
+	extern int portal_close(int);
+	extern int portal_unlink(int);
 
 /*======================================================================*
  * Timer                                                                *

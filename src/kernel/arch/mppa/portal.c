@@ -420,6 +420,7 @@ int portal_close(int prtid)
 		return (-EINVAL);
 
 	portal_free(prtid);
+	mppa_close(portals[prtid].sync_fd);
 
 	return (0);
 }

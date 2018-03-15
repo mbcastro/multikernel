@@ -25,7 +25,7 @@
 	/**
 	 * @brief Remote memory block size (in bytes).
 	 */
-	#define RMEM_BLOCK_SIZE 1024
+	#define RMEM_BLOCK_SIZE (16*1024)
 	
 	/**
 	 * @brief Remote memory size (in bytes).
@@ -33,15 +33,23 @@
 	#define RMEM_SIZE (1024*RMEM_BLOCK_SIZE)
 
 	/**
+	 * @brief Operations on remote memory.
+	 */
+	/**@{*/
+	#define RMEM_READ  0 /**< Read.  */
+	#define RMEM_WRITE 1 /**< Write. */
+	/**@}*/
+
+	/**
 	 * @brief remote memory message.
 	 */
 	struct rmem_message
 	{
-		uint16_t source; /**< Source cluster. */
-		uint16_t op;     /**< Operation.      */
-		uint32_t blknum; /**< Block number.   */
-		uint32_t size;   /**< Size.           */
-		uint32_t unused; /**< Not used.       */
+		uint16_t source;     /**< Source cluster. */
+		uint16_t op;         /**< Operation.      */
+		uint64_t blknum;     /**< Block number.   */
+		uint32_t size;       /**< Size.           */
+		uint32_t unused[12]; /**< Not used.       */
 	};
 
 	/* Forward definitions. */
