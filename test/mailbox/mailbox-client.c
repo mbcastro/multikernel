@@ -25,6 +25,11 @@
 #include "mailbox.h"
 
 /**
+ * @brief Cluster ID of the process.
+ */
+static int myclusterid;
+
+/**
  * @brief Unit test client.
  *
  * @returns Upon successful non-zero is returned. Upon failure zero is
@@ -33,15 +38,25 @@
 static int client(void)
 {
 	int outbox;
-	char msg[MAILBOX_MSG_SIZE];
-
-	for (int i = 0; i < MAILBOX_MSG_SIZE; i++)
-		msg[i] = CHECKSUM;
+	int outportal;
+	struct message msg;
+	char data[BLOCKSIZE];
 
 	outbox = mailbox_open("/io1");
+	outportal = portal_open("/io1");
 
 	for (int i = 0; i < NMESSAGES; i++)
-		mailbox_write(outbox, msg);
+	{
+		msg.source = myclusterid;
+		msg.arg0 = BLOCKSIZE;
+
+		mailbox_write(outbox, &msg);
+
+		portal_write(outportal, data, BLOCKSIZE);
+	}
+
+	portal_close(outportal);
+	mailbox_close(outbox);
 
 	return (1);
 }
@@ -52,16 +67,15 @@ static int client(void)
 int main(int argc, char **argv)
 {
 	int ret;
-	int clusterid;
 
 	((void) argc);
 	((void) argv);
 	
-	clusterid = arch_get_cluster_id();
+	myclusterid = arch_get_cluster_id();
 	ret = client();
 
 	printf("cluster %3d: mailbox test [%s]\n", 
-			clusterid,
+			myclusterid,
 			(ret) ? "passed" : "FAILED"
 	);
 

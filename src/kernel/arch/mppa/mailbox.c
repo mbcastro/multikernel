@@ -18,6 +18,7 @@
  */
 
 #include <nanvix/arch/mppa.h>
+#include <nanvix/pm.h>
 #include <assert.h>
 #include <errno.h>
 #include <string.h>
@@ -51,7 +52,7 @@ struct mailbox
 static struct mailbox mailboxes[NR_MAILBOX];
 
 /*=======================================================================*
- * mailbox_alloc()
+ * mailbox_alloc()                                                       *
  *=======================================================================*/
 
 /**
@@ -78,7 +79,7 @@ static int mailbox_alloc(void)
 }
 
 /*=======================================================================*
- * mailbox_free()
+ * mailbox_free()                                                        *
  *=======================================================================*/
 
 /**
@@ -93,60 +94,10 @@ static void mailbox_free(int mbxid)
 	assert(mailboxes[mbxid].flags & MAILBOX_USED);
 
 	mailboxes[mbxid].flags = 0;
+	mppa_close(mailboxes[mbxid].fd);
 }
-
 /*=======================================================================*
- * mailbox_name()
- *=======================================================================*/
-
-/**
- * @brief Converts a mailbox name into a cluster ID.
- *
- * @param name Target mailbox name.
- *
- * @returns Upon successful completion the cluster ID whose name is @p
- * name is returned. Upon failure, a negative error code is returned
- * instead.
- */
-static int mailbox_name(const char *name)
-{
-	static const struct {
-		int id;     /**< Cluster ID. */
-		char *name; /**< Mailbox name. */
-	} names[NR_CCLUSTER + NR_IOCLUSTER] = {
-		{ CCLUSTER0,  "/cpu0" },
-		{ CCLUSTER1,  "/cpu1" },
-		{ CCLUSTER2,  "/cpu2" },
-		{ CCLUSTER3,  "/cpu3" },
-		{ CCLUSTER4,  "/cpu4" },
-		{ CCLUSTER5,  "/cpu5" },
-		{ CCLUSTER6,  "/cpu6" },
-		{ CCLUSTER7,  "/cpu7" },
-		{ CCLUSTER8,  "/cpu8" },
-		{ CCLUSTER9,  "/cpu9" },
-		{ CCLUSTER10, "/cpu10" },
-		{ CCLUSTER11, "/cpu11" },
-		{ CCLUSTER12, "/cpu12" },
-		{ CCLUSTER13, "/cpu13" },
-		{ CCLUSTER14, "/cpu14" },
-		{ CCLUSTER15, "/cpu15" },
-		{ IOCLUSTER0, "/io0" },
-		{ IOCLUSTER1, "/io1" }
-	};
-	
-	/* Search for mailbox name. */
-	for (int i = 0; i < NR_CCLUSTER + NR_IOCLUSTER; i++)
-	{
-		/* Found. */
-		if (!strcmp(name, names[i].name))
-			return (names[i].id);
-	}
-
-	return (-ENOENT);
-}
-
-/*=======================================================================*
- * mailbox_noctag()
+ * mailbox_noctag()                                                      *
  *=======================================================================*/
 
 /**
@@ -157,66 +108,18 @@ static int mailbox_name(const char *name)
 static int mailbox_noctag(int local)
 {
 	if ((local >= CCLUSTER0) && (local <= CCLUSTER15))
-		return (local + 16);
+		return (16 + local);
 	else if (local == IOCLUSTER0)
-		return (32);
+		return (16 + 16 + 0);
 	else if (local == IOCLUSTER1)
-		return (64);
+		return (16 + 16 + 1);
 
 	return (0);
 }
 
-/*=======================================================================*
- * mailbox_remotes()
- *=======================================================================*/
-
-/**
- * @brief Builds a list of remotes.
- *
- * @param remotes List of IDs of remote clusters.
- * @param local   ID of local cluster.
- */
-static void mailbox_remotes(char *remotes, int local)
-{
-	if (local == IOCLUSTER0)
-	{
-		sprintf(remotes,
-				"%d..%d,%d",
-				CCLUSTER0, CCLUSTER15, IOCLUSTER1
-		);
-	}
-	else if (local == IOCLUSTER1)
-	{
-		sprintf(remotes,
-				"%d..%d,%d",
-				CCLUSTER0, CCLUSTER15, IOCLUSTER0
-		);
-	}
-	else if (local == CCLUSTER0)
-	{
-		sprintf(remotes,
-				"%d..%d,%d,%d",
-				CCLUSTER1, CCLUSTER15, IOCLUSTER0, IOCLUSTER1
-		);
-	}
-	else if (local  == CCLUSTER15)
-	{
-		sprintf(remotes,
-				"%d..%d,%d,%d",
-				CCLUSTER0, CCLUSTER14, IOCLUSTER0, IOCLUSTER1
-		);
-	}
-	else
-	{
-		sprintf(remotes,
-				"%d..%d,%d..%d,%d,%d",
-				CCLUSTER0, local - 1, local + 1, CCLUSTER15, IOCLUSTER0, IOCLUSTER1
-		);
-	}
-}
 
 /*=======================================================================*
- * mailbox_create()
+ * mailbox_create()                                                      *
  *=======================================================================*/
 
 /**
@@ -240,7 +143,7 @@ int mailbox_create(const char *name)
 	if (name == NULL)
 		return (-EINVAL);
 
-	local = mailbox_name(name);
+	local = name_lookup(name);
 	assert(local == arch_get_cluster_id());
 
 	/* Allocate a mailbox. */
@@ -248,7 +151,7 @@ int mailbox_create(const char *name)
 	if (mbxid < 0)
 		return (mbxid);
 
-	mailbox_remotes(remotes, local);
+	name_remotes(remotes, local);
 
 	noctag = mailbox_noctag(local);
 	sprintf(pathname,
@@ -271,7 +174,7 @@ int mailbox_create(const char *name)
 }
 
 /*=======================================================================*
- * mailbox_open()
+ * mailbox_open()                                                        *
  *=======================================================================*/
 
 /**
@@ -295,7 +198,7 @@ int mailbox_open(const char *name)
 	if (name == NULL)
 		return (-EINVAL);
 
-	local = mailbox_name(name);
+	local = name_lookup(name);
 	assert(local != arch_get_cluster_id());
 
 	/* Allocate a mailbox. */
@@ -303,7 +206,7 @@ int mailbox_open(const char *name)
 	if (mbxid < 0)
 		return (mbxid);
 
-	mailbox_remotes(remotes, local);
+	name_remotes(remotes, local);
 
 	noctag = mailbox_noctag(local);
 	sprintf(pathname,
@@ -326,7 +229,7 @@ int mailbox_open(const char *name)
 }
 
 /*=======================================================================*
- * mailbox_read()
+ * mailbox_read()                                                        *
  *=======================================================================*/
 
 /**
@@ -362,7 +265,7 @@ int mailbox_read(int mbxid, void *buf)
 }
 
 /*=======================================================================*
- * mailbox_write()
+ * mailbox_write()                                                       *
  *=======================================================================*/
 
 /**
@@ -398,7 +301,7 @@ int mailbox_write(int mbxid, const void *buf)
 }
 
 /*=======================================================================*
- * mailbox_close()
+ * mailbox_close()                                                       *
  *=======================================================================*/
 
 /**
@@ -425,7 +328,7 @@ int mailbox_close(int mbxid)
 }
 
 /*=======================================================================*
- * mailbox_unlink()
+ * mailbox_unlink()                                                      *
  *=======================================================================*/
 
 /**

@@ -42,6 +42,8 @@ io-bin := master.test  mailbox-server.test
 master.test-srcs := $(TESTDIR)/master.c
 
 mailbox-server.test-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
+							$(SRCDIR)/kernel/arch/mppa/portal.c  \
+							$(SRCDIR)/kernel/arch/mppa/name.c    \
 							$(SRCDIR)/kernel/sys/timer.c         \
 							$(TESTDIR)/mailbox/mailbox-server.c
 
@@ -54,6 +56,8 @@ cluster-system := nodeos
 cluster-bin := mailbox-client.test
 
 mailbox-client.test-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
+							$(SRCDIR)/kernel/arch/mppa/portal.c  \
+							$(SRCDIR)/kernel/arch/mppa/name.c    \
 							$(SRCDIR)/kernel/sys/timer.c         \
 							$(TESTDIR)/mailbox/mailbox-client.c
 

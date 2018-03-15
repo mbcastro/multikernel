@@ -33,12 +33,12 @@
 static long server(void)
 {
 	int inbox;
-	int score = 0;
+	int inportal;
 	long start, end, total;
-	char msg[MAILBOX_MSG_SIZE];
-	char checksum[MAILBOX_MSG_SIZE];
+	struct message msg;
 
 	inbox = mailbox_create("/io1");
+	inportal = portal_create("/io1");
 
 	int sync_fd = mppa_open("/mppa/sync/128:8", O_WRONLY);
 	uint64_t mask = (1 << 0);
@@ -47,20 +47,23 @@ static long server(void)
 
 	timer_init();
 
-	for (int i = 0; i < MAILBOX_MSG_SIZE; i++)
-		checksum[i] = CHECKSUM;
-
 	total = 0;
 	for (int i = 0; i < NR_CCLUSTER*NMESSAGES; i++)
 	{
+		char data[BLOCKSIZE];
+
+		mailbox_read(inbox, &msg);
+	
+		portal_allow(inportal, msg.source);
+
 		start = timer_get();
-			mailbox_read(inbox, msg);
+			portal_read(inportal, data, msg.arg0);
 		end = timer_get();
 		total += timer_diff(start, end);
-
-		if (!memcmp(msg, checksum, MAILBOX_MSG_SIZE))
-			score++;
 	}
+
+	portal_unlink(inportal);
+	mailbox_unlink(inbox);
 
 	return (total);
 }
@@ -79,9 +82,9 @@ int main(int argc, char **argv)
 	clusterid = arch_get_cluster_id();
 	total = server();
 
-	printf("cluster %3d: server received %d KB in %lf s\n",
+	printf("cluster %3d: server received %d MB in %lf s\n",
 			clusterid,
-			(NR_CCLUSTER*NMESSAGES*MAILBOX_MSG_SIZE)/1024,
+			(NR_CCLUSTER*NMESSAGES*BLOCKSIZE)/(1024*1204),
 			total/1000000.0
 	);
 	printf("cluster %3d: mailbox test [passed]\n",clusterid);

@@ -26,8 +26,24 @@
 	#define NMESSAGES (1024)
 
 	/**
+	 * @brief Block size (in bytes).
+	 */
+	#define BLOCKSIZE (4096)
+
+	/**
 	 * @brief Message checksum.
 	 */
 	#define CHECKSUM 5
+
+	/**
+	 * @brief Message.
+	 */
+	struct message
+	{
+		uint16_t source; /**< Source cluster. */
+		uint16_t op;     /**< Operation.      */
+		uint32_t arg0;   /**< Argument 0.     */
+		uint32_t unused; /**< Not used.       */
+	};
 
 #endif /* _MAILBOX_H_ */
