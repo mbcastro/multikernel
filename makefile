@@ -37,15 +37,16 @@ k1-lflags := -lmppaipc
 # IO Cluster Binaries
 #=============================================================================
 
-io-bin := master.test  mailbox-server.test
+io-bin := master.test rmem-server.test
 
 master.test-srcs := $(TESTDIR)/master.c
 
-mailbox-server.test-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
-							$(SRCDIR)/kernel/arch/mppa/portal.c  \
-							$(SRCDIR)/kernel/arch/mppa/name.c    \
-							$(SRCDIR)/kernel/sys/timer.c         \
-							$(TESTDIR)/mailbox/mailbox-server.c
+rmem-server.test-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
+						 $(SRCDIR)/kernel/arch/mppa/portal.c  \
+						 $(SRCDIR)/kernel/arch/mppa/name.c    \
+						 $(SRCDIR)/kernel/sys/timer.c         \
+						 $(SRCDIR)/kernel/sys/memwrite.c      \
+						 $(SRCDIR)/servers/rmem.c
 
 #=============================================================================
 # Compute Cluster Binaries
@@ -53,21 +54,22 @@ mailbox-server.test-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
 
 cluster-system := nodeos
 
-cluster-bin := mailbox-client.test
+cluster-bin := rmem-client.test
 
-mailbox-client.test-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
-							$(SRCDIR)/kernel/arch/mppa/portal.c  \
-							$(SRCDIR)/kernel/arch/mppa/name.c    \
-							$(SRCDIR)/kernel/sys/timer.c         \
-							$(TESTDIR)/mailbox/mailbox-client.c
+rmem-client.test-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
+						 $(SRCDIR)/kernel/arch/mppa/portal.c  \
+						 $(SRCDIR)/kernel/arch/mppa/name.c    \
+						 $(SRCDIR)/kernel/sys/timer.c         \
+						 $(SRCDIR)/kernel/sys/memwrite.c      \
+						 $(TESTDIR)/rmem/rmem-client.c
 
 #=============================================================================
 # Testing Binary
 #=============================================================================
 
-test-objs := master.test         \
-			 mailbox-server.test \
-			 mailbox-client.test
+test-objs := master.test      \
+			 rmem-server.test \
+			 rmem-client.test
 
 test-name := test.img
 

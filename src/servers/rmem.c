@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 2011-2018 Pedro H. Penna <pedrohenriquepenna@gmail.com>
+ * Copyright(C) 2011-2017 Pedro H. Penna <pedrohenriquepenna@gmail.com>
  * 
  * This file is part of Nanvix.
  * 
@@ -19,27 +19,36 @@
 
 #include <mppa/osconfig.h>
 #include <nanvix/hal.h>
+#include <nanvix/mm.h>
 #include <nanvix/pm.h>
 #include <stdio.h>
 #include <string.h>
 #include "mailbox.h"
 
 /**
- * @brief Unit test server.
- *
- * @returns Upon successful non-zero is returned. Upon failure zero is
- * returned instead.
+ * @brief Remote memory.
  */
-static long server(void)
+static char rmem[RMEM_SIZE];
+
+/**
+ * @brief Remote memory server.
+ */
+int main(int argc, char **argv)
 {
 	int inbox;
 	int inportal;
-	long start, end, total;
-	struct message msg;
+	int clusterid;
 
+	((void) argc);
+	((void) argv);
+
+	clusterid = arch_get_cluster_id();
+
+	printf("[RMEM] booting up server\n");
 	inbox = mailbox_create("/io1");
 	inportal = portal_create("/io1");
 
+	printf("[RMEM] server alive\n");
 	int sync_fd = mppa_open("/mppa/sync/128:8", O_WRONLY);
 	uint64_t mask = (1 << 0);
 	mppa_write(sync_fd, &mask, sizeof(uint64_t));
@@ -47,47 +56,23 @@ static long server(void)
 
 	timer_init();
 
-	total = 0;
-	for (int i = 0; i < NR_CCLUSTER*NMESSAGES; i++)
+	while(1)
 	{
-		char data[BLOCKSIZE];
+		struct rmem_message msg;
 
 		mailbox_read(inbox, &msg);
+		printf("[RMEM] client connected\n");
 	
 		portal_allow(inportal, msg.source);
 
-		start = timer_get();
-			portal_read(inportal, data, msg.arg0);
-		end = timer_get();
-		total += timer_diff(start, end);
+		printf("[RMEM] serving client\n");
+		portal_read(inportal, &data[msg.blknum], msg.size);
+
+		printf("[RMEM] client disconnected\n");
 	}
 
 	portal_unlink(inportal);
 	mailbox_unlink(inbox);
-
-	return (total);
-}
-
-/**
- * @brief Mailbox unit test.
- */
-int main(int argc, char **argv)
-{
-	long total;
-	int clusterid;
-
-	((void) argc);
-	((void) argv);
-
-	clusterid = arch_get_cluster_id();
-	total = server();
-
-	printf("cluster %3d: server received %d MB in %lf s\n",
-			clusterid,
-			(NR_CCLUSTER*NMESSAGES*BLOCKSIZE)/(1024*1204),
-			total/1000000.0
-	);
-	printf("cluster %3d: mailbox test [passed]\n",clusterid);
 
 	return (EXIT_SUCCESS);
 }

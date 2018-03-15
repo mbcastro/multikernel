@@ -19,64 +19,32 @@
 
 #include <mppa/osconfig.h>
 #include <nanvix/hal.h>
+#include <nanvix/mm.h>
 #include <nanvix/pm.h>
 #include <stdio.h>
 #include <string.h>
-#include "mailbox.h"
 
 /**
- * @brief Cluster ID of the process.
+ * @brief Number of writes to perform.
  */
-static int myclusterid;
+#define NWRITES 1024
 
 /**
- * @brief Unit test client.
- *
- * @returns Upon successful non-zero is returned. Upon failure zero is
- * returned instead.
- */
-static int client(void)
-{
-	int outbox;
-	int outportal;
-	struct message msg;
-	char data[BLOCKSIZE];
-
-	outbox = mailbox_open("/io1");
-	outportal = portal_open("/io1");
-
-	for (int i = 0; i < NMESSAGES; i++)
-	{
-		msg.source = myclusterid;
-		msg.arg0 = BLOCKSIZE;
-
-		mailbox_write(outbox, &msg);
-
-		portal_write(outportal, data, BLOCKSIZE);
-	}
-
-	portal_close(outportal);
-	mailbox_close(outbox);
-
-	return (1);
-}
-
-/**
- * @brief Mailbox unit test.
+ * @brief Remote memory unit test.
  */
 int main(int argc, char **argv)
 {
-	int ret;
+	char data[RMEM_BLOCK_SIZE];
 
 	((void) argc);
 	((void) argv);
 	
-	myclusterid = arch_get_cluster_id();
-	ret = client();
+	for (int i = 0; i < NWRITES; i++)
+		memwrite(0, data, RMEM_BLOCKSIZE);
 
-	printf("cluster %3d: mailbox test [%s]\n", 
-			myclusterid,
-			(ret) ? "passed" : "FAILED"
+	printf("cluster %3d: %d KB written\n", 
+			arch_get_cluster_id(),
+			NWRITES*RMEM_BLOCK_SIZE/1024
 	);
 
 	return (EXIT_SUCCESS);

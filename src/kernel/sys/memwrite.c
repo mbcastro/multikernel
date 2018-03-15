@@ -19,51 +19,39 @@
 
 #include <mppa/osconfig.h>
 #include <nanvix/hal.h>
+#include <nanvix/mm.h>
 #include <nanvix/pm.h>
 #include <stdio.h>
 #include <string.h>
-#include "mailbox.h"
 
 /**
- * @brief Unit test client.
+ * @brief Writes data to a remote memory.
  *
- * @returns Upon successful non-zero is returned. Upon failure zero is
- * returned instead.
+ * @param addr Remote address.
+ * @param bug  Location where the data should be read from.
+ * @param n    Number of bytes to write.
  */
-static int client(void)
+void memwrite(uint64_t addr, const void *buf, size_t n)
 {
 	int outbox;
-	char msg[MAILBOX_MSG_SIZE];
-
-	for (int i = 0; i < MAILBOX_MSG_SIZE; i++)
-		msg[i] = CHECKSUM;
+	int outportal;
+	struct rmem_message msg;
 
 	outbox = mailbox_open("/io1");
+	outportal = portal_open("/io1");
 
-	for (int i = 0; i < NMESSAGES; i++)
-		mailbox_write(outbox, msg);
+	/* Build operation header. */
+	msg.source = arch_get_cluster_id();
+	msg.op = RMEM_WRITE;
+	msg.arg0 = n;
 
-	return (1);
+	/* Send operation header. */
+	mailbox_write(outbox, &msg);
+
+	/* Send data. */
+	portal_write(outportal, buf, n);
+
+	portal_close(outportal);
+	mailbox_close(outbox);
 }
 
-/**
- * @brief Mailbox unit test.
- */
-int main(int argc, char **argv)
-{
-	int ret;
-	int clusterid;
-
-	((void) argc);
-	((void) argv);
-	
-	clusterid = arch_get_cluster_id();
-	ret = client();
-
-	printf("cluster %2d: mailbox test [%s]\n", 
-			clusterid,
-			(ret) ? "passed" : "FAILED"
-	);
-
-	return (EXIT_SUCCESS);
-}

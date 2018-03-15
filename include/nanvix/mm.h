@@ -17,33 +17,34 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _MAILBOX_H_
-#define _MAILBOX_H_
+#ifndef NANVIX_MM_H_
+#define NANVIX_MM_H_
+	
+	#include <inttypes.h>
+	
+	/**
+	 * @brief Remote memory block size (in bytes).
+	 */
+	#define RMEM_BLOCK_SIZE 1024
+	
+	/**
+	 * @brief Remote memory size (in bytes).
+	 */
+	#define RMEM_SIZE (1024*RMEM_BLOCK_SIZE)
 
 	/**
-	 * @brief Number of messages to exchange.
+	 * @brief remote memory message.
 	 */
-	#define NMESSAGES (1024)
-
-	/**
-	 * @brief Block size (in bytes).
-	 */
-	#define BLOCKSIZE (4096)
-
-	/**
-	 * @brief Message checksum.
-	 */
-	#define CHECKSUM 5
-
-	/**
-	 * @brief Message.
-	 */
-	struct message
+	struct rmem_message
 	{
 		uint16_t source; /**< Source cluster. */
 		uint16_t op;     /**< Operation.      */
-		uint32_t arg0;   /**< Argument 0.     */
+		uint32_t blknum; /**< Block number.   */
+		uint32_t size;   /**< Size.           */
 		uint32_t unused; /**< Not used.       */
 	};
+
+	/* Forward definitions. */
+	extern void memwrite(uint64_t, const void *, size_t);
 
 #endif /* _MAILBOX_H_ */
