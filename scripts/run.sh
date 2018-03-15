@@ -20,19 +20,6 @@ export K1TOOLS_DIR="/usr/local/k1tools"
 export OUTDIR=output/bin/
 
 #
-# Runs a benchmark.
-#
-# $1 Benchmark name,
-#
-function run_benchmark
-{
-	$K1TOOLS_DIR/bin/k1-jtag-runner         \
-		--multibinary=$OUTDIR/benchmark.img \
-		--exec-multibin=IODDR0              \
-		-- $1
-}
-
-#
 # Runs a unit test.
 
 # $1 Test unit name.
@@ -48,11 +35,7 @@ function run_test
 if [ $1 == 'tests' ];
 then
 	echo "=== TESTING"
-	run_test noc
-elif [ $1 == 'benchmarks' ];
-then
-	echo "=== BENCHMARKING"
-	run_benchmark mailbox
+	run_test mailbox
 else
 	echo "Missing parameters"
 	echo "Usage: run.sh <benchmarks | tests>"

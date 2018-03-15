@@ -18,6 +18,7 @@
  */
 
 #include <mppa/osconfig.h>
+#include <nanvix/hal.h>
 #include <nanvix/pm.h>
 #include <stdio.h>
 #include <string.h>
@@ -25,7 +26,7 @@
 /**
  * @brief Number of iterations.
  */
-#define NITERATIONS 10
+#define NITERATIONS (8*1024)
 
 /**
  * @brief Magic number used for checksum.
@@ -38,27 +39,39 @@
  * @returns Upon successful non-zero is returned. Upon failure zero is
  * returned instead.
  */
-static int server(void)
+static long server(void)
 {
 	int inbox;
 	int score = 0;
+	long start, end, total;
 	char msg[MAILBOX_MSG_SIZE];
 	char checksum[MAILBOX_MSG_SIZE];
 
 	for (int i = 0; i < MAILBOX_MSG_SIZE; i++)
 		checksum[i] = 5;
 
-	inbox = nanvix_mailbox_create("/cpu1");
+	timer_init();
 
-	for (int i = 0; i < NITERATIONS; i++)
+	inbox = mailbox_create("/cpu0");
+
+	int sync_fd = mppa_open("/mppa/sync/128:8", O_WRONLY);
+	uint64_t mask = (1 << 0);
+	mppa_write(sync_fd, &mask, sizeof(uint64_t));
+	mppa_close(sync_fd);
+
+	total = 0;
+	for (int i = 0; i < (NR_CCLUSTER - 1)*NITERATIONS; i++)
 	{
-		mailbox_read(inbox, &msg);
+		start = timer_get();
+			mailbox_read(inbox, msg);
+		end = timer_get();
+		total += timer_diff(start, end);
 
 		if (!memcmp(msg, checksum, MAILBOX_MSG_SIZE))
 			score++;
 	}
 
-	return (score == NITERATIONS);
+	return (total);
 }
 
 /**
@@ -70,13 +83,15 @@ static int server(void)
 static int client(void)
 {
 	int outbox;
+	char msg[MAILBOX_MSG_SIZE];
 
-	output = nanvix_mailbox_open("/cpu0");
+	for (int i = 0; i < MAILBOX_MSG_SIZE; i++)
+		msg[i] = 5;
+
+	outbox = mailbox_open("/cpu0");
 
 	for (int i = 0; i < NITERATIONS; i++)
-	{
-		mailbox_read(inbox, &msg);
-	}
+		mailbox_write(outbox, msg);
 
 	return (1);
 }
@@ -86,22 +101,31 @@ static int client(void)
  */
 int main(int argc, char **argv)
 {
-	int ret;
-
 	/* Missing parameters. */
 	if (argc < 2)
 	{
 		printf("missing parameters\n");
-		printf("usage: noc.test <client | server>\n";
+		printf("usage: mailbox.test <client | server>\n");
 
 		return (0);
 	}
 
 	/* Server */
-	ret = (!strcmp(argv[1], "server")) ? 
-		server() : client();
-
-	printf("mailbox test [%s]\n", (ret) ? "passed" : "FAILED");
+	if (!strcmp(argv[1], "client"))
+	{
+		int ret = client();
+		printf("cluster %2d: mailbox test [%s]\n", arch_get_cluster_id(), (ret) ? "passed" : "FAILED");
+	}
+	else
+	{
+		long total = server();
+		printf("cluster %2d: mailbox test [passed]\n", arch_get_cluster_id() );
+		printf("cluster %2d: server received %d KB in %lf s\n",
+				arch_get_cluster_id(),
+				((NR_CCLUSTER - 1)*NITERATIONS*MAILBOX_MSG_SIZE)/1024,
+				total/1000000.0
+		);
+	}
 
 	return (EXIT_SUCCESS);
 }

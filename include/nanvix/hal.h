@@ -20,7 +20,7 @@
 #ifndef NANVIX_HAL_H_
 #define NANVIX_HAL_H_
 
-	#ifndef _KALRAY_MPPA256_
+	#ifdef _KALRAY_MPPA256_
 		#include <nanvix/arch/mppa.h>
 	#endif
 

@@ -48,18 +48,18 @@ master.test-srcs := $(TESTDIR)/master.c
 cluster-system := nodeos
 
 
-cluster-bin := noc.test
+cluster-bin := mailbox.test
 
-noc.test-srcs := $(SRCDIR)/kernel/arch/mppa/noc.c \
-				 $(SRCDIR)/kernel/sys/timer.c     \
-				 $(TESTDIR)/noc.c
+mailbox.test-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
+				 $(SRCDIR)/kernel/sys/timer.c         \
+				 $(TESTDIR)/mailbox.c
 
 #=============================================================================
 # Testing Binary
 #=============================================================================
 
 test-objs := master.test \
-			 noc.test    \
+			 mailbox.test    \
 
 test-name := test.img
 

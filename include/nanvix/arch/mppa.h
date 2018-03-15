@@ -65,16 +65,6 @@
 	 * @brief Size (in bytes) of a mailbox message.
 	 */
 	#define MAILBOX_MSG_SIZE 64
-
-	/**
-	 * @brief NoC packet.
-	 */
-	struct noc_packet
-	{
-		unsigned magic;                /**< Magic header.         */
-		unsigned source;               /**< Cluster ID of source. */
-		char payload[NOC_PACKET_SIZE]; /**< Payload.              */
-	};
 	
 	/* Foard denitions. */
 	#define arch_get_cluster_id() mppa_getpid()

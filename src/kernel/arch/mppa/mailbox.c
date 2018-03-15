@@ -21,6 +21,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <string.h>
+#include <stdio.h>
 
 /**
  * @brief Number of mailboxes.
@@ -89,11 +90,9 @@ static void mailbox_free(int mbxid)
 {
 	/* Sanity check. */
 	assert((mbxid >= 0) && (mbxid < NR_MAILBOX));
-	assert(mailboxes[i].flags & MAILBOX_USED);
+	assert(mailboxes[mbxid].flags & MAILBOX_USED);
 
-	mailboxes[i].flags = 0;
-
-	return (-ENOENT);
+	mailboxes[mbxid].flags = 0;
 }
 
 /*=======================================================================*
@@ -131,6 +130,7 @@ static int mailbox_name(const char *name)
 		{ CCLUSTER13, "/cpu13" },
 		{ CCLUSTER14, "/cpu14" },
 		{ CCLUSTER15, "/cpu15" }
+	};
 	
 	/* Search for mailbox name. */
 	for (int i = 0; i < NR_CCLUSTER; i++)
@@ -176,7 +176,7 @@ static void mailbox_remotes(char *remotes, int local)
 				CCLUSTER1, CCLUSTER15, IOCLUSTER0, IOCLUSTER1
 		);
 	}
-	else if (rx_node == CCLUSTER15)
+	else if (local  == CCLUSTER15)
 	{
 		sprintf(remotes,
 				"%d..%d,%d,%d",
@@ -209,7 +209,7 @@ int mailbox_create(const char *name)
 	int local;          /* ID of local cluster.               */
 	int fd;             /* File descriptor for NoC connector. */
 	int mbxid;          /* ID of mailbix.                     */
-	char remotes[128]   /* IDs of remote clusters.            */
+	char remotes[128];  /* IDs of remote clusters.            */
 	char pathname[128]; /* NoC connector name.                */
 
 	/* Invalid mailbox name. */
@@ -217,7 +217,7 @@ int mailbox_create(const char *name)
 		return (-EINVAL);
 
 	local = mailbox_name(name);
-	assert(local == arch_get_cluster_id);
+	assert(local == arch_get_cluster_id());
 
 	/* Allocate a mailbox. */
 	mbxid = mailbox_alloc();
@@ -227,7 +227,7 @@ int mailbox_create(const char *name)
 	mailbox_remotes(remotes, local);
 
 	sprintf(pathname,
-			"/mppa/rqueue/%d:%d/%s:%d/1:%d",
+			"/mppa/rqueue/%d:%d/[%s]:%d/1.%d",
 			local,
 			local + 16,
 			remotes,
@@ -236,7 +236,7 @@ int mailbox_create(const char *name)
 	);
 
 	fd = mppa_open(pathname, O_RDONLY);
-	assert(rqueue_fd != -1);
+	assert(fd != -1);
 
 	/* Initialize mailbox. */
 	mailboxes[mbxid].fd = fd;
@@ -262,7 +262,7 @@ int mailbox_open(const char *name)
 	int local;          /* ID of local cluster.               */
 	int fd;             /* File descriptor for NoC connector. */
 	int mbxid;          /* ID of mailbix.                     */
-	char remotes[128]   /* IDs of remote clusters.            */
+	char remotes[128];  /* IDs of remote clusters.            */
 	char pathname[128]; /* NoC connector name.                */
 
 	/* Invalid mailbox name. */
@@ -280,7 +280,7 @@ int mailbox_open(const char *name)
 	mailbox_remotes(remotes, local);
 
 	sprintf(pathname,
-			"/mppa/rqueue/%d:%d/%s:%d/1:%d",
+			"/mppa/rqueue/%d:%d/[%s]:%d/1.%d",
 			local,
 			local + 16,
 			remotes,
@@ -289,7 +289,7 @@ int mailbox_open(const char *name)
 	);
 
 	fd = mppa_open(pathname, O_WRONLY);
-	assert(rqueue_fd != -1);
+	assert(fd != -1);
 
 	/* Initialize mailbox. */
 	mailboxes[mbxid].fd = fd;
@@ -318,11 +318,11 @@ int mailbox_read(int mbxid, void *buf)
 		return (-EINVAL);
 
 	/*  Invalid mailbox. */
-	if (!(mailboxes[i].flags & MAILBOX_USED))
+	if (!(mailboxes[mbxid].flags & MAILBOX_USED))
 		return (-EINVAL);
 
 	/* Operation no supported. */
-	if (mailboxes[i] & MAILBOX_WRONLY)
+	if (mailboxes[mbxid].flags & MAILBOX_WRONLY)
 		return (-ENOTSUP);
 
 	/* Invalid buffer. */
@@ -354,11 +354,11 @@ int mailbox_write(int mbxid, const void *buf)
 		return (-EINVAL);
 
 	/*  Invalid mailbox. */
-	if (!(mailboxes[i].flags & MAILBOX_USED))
+	if (!(mailboxes[mbxid].flags & MAILBOX_USED))
 		return (-EINVAL);
 
 	/* Operation no supported. */
-	if (!(mailboxes[i] & MAILBOX_WRONLY))
+	if (!(mailboxes[mbxid].flags & MAILBOX_WRONLY))
 		return (-ENOTSUP);
 
 	/* Invalid buffer. */
@@ -389,7 +389,7 @@ int mailbox_close(int mbxid)
 		return (-EINVAL);
 
 	/*  Invalid mailbox. */
-	if (!(mailboxes[i].flags & MAILBOX_USED))
+	if (!(mailboxes[mbxid].flags & MAILBOX_USED))
 		return (-EINVAL);
 
 	mailbox_free(mbxid);
@@ -416,7 +416,7 @@ int mailbox_unlink(int mbxid)
 		return (-EINVAL);
 
 	/*  Invalid mailbox. */
-	if (!(mailboxes[i].flags & MAILBOX_USED))
+	if (!(mailboxes[mbxid].flags & MAILBOX_USED))
 		return (-EINVAL);
 
 	mailbox_free(mbxid);
