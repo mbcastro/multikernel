@@ -113,7 +113,7 @@ static int mailbox_name(const char *name)
 	static const struct {
 		int id;     /**< Cluster ID. */
 		char *name; /**< Mailbox name. */
-	} names[NR_CCLUSTER] = {
+	} names[NR_CCLUSTER + NR_IOCLUSTER] = {
 		{ CCLUSTER0,  "/cpu0" },
 		{ CCLUSTER1,  "/cpu1" },
 		{ CCLUSTER2,  "/cpu2" },
@@ -129,11 +129,13 @@ static int mailbox_name(const char *name)
 		{ CCLUSTER12, "/cpu12" },
 		{ CCLUSTER13, "/cpu13" },
 		{ CCLUSTER14, "/cpu14" },
-		{ CCLUSTER15, "/cpu15" }
+		{ CCLUSTER15, "/cpu15" },
+		{ IOCLUSTER0, "/io0" },
+		{ IOCLUSTER1, "/io1" }
 	};
 	
 	/* Search for mailbox name. */
-	for (int i = 0; i < NR_CCLUSTER; i++)
+	for (int i = 0; i < NR_CCLUSTER + NR_IOCLUSTER; i++)
 	{
 		/* Found. */
 		if (!strcmp(name, names[i].name))
@@ -141,6 +143,27 @@ static int mailbox_name(const char *name)
 	}
 
 	return (-ENOENT);
+}
+
+/*=======================================================================*
+ * mailbox_noctag()
+ *=======================================================================*/
+
+/**
+ * @brief Computes the mailbox NoC tag for a cluster.
+ *
+ * @param local Id of target cluster.
+ */
+static int mailbox_noctag(int local)
+{
+	if ((local >= CCLUSTER0) && (local <= CCLUSTER15))
+		return (local + 16);
+	else if (local == IOCLUSTER0)
+		return (32);
+	else if (local == IOCLUSTER1)
+		return (64);
+
+	return (0);
 }
 
 /*=======================================================================*
@@ -211,6 +234,7 @@ int mailbox_create(const char *name)
 	int mbxid;          /* ID of mailbix.                     */
 	char remotes[128];  /* IDs of remote clusters.            */
 	char pathname[128]; /* NoC connector name.                */
+	int noctag;         /* NoC tag used for transfers.        */
 
 	/* Invalid mailbox name. */
 	if (name == NULL)
@@ -226,12 +250,13 @@ int mailbox_create(const char *name)
 
 	mailbox_remotes(remotes, local);
 
+	noctag = mailbox_noctag(local);
 	sprintf(pathname,
 			"/mppa/rqueue/%d:%d/[%s]:%d/1.%d",
 			local,
-			local + 16,
+			noctag,
 			remotes,
-			local + 16,
+			noctag,
 			MAILBOX_MSG_SIZE
 	);
 
@@ -264,6 +289,7 @@ int mailbox_open(const char *name)
 	int mbxid;          /* ID of mailbix.                     */
 	char remotes[128];  /* IDs of remote clusters.            */
 	char pathname[128]; /* NoC connector name.                */
+	int noctag;         /* NoC tag used for transfers.        */
 
 	/* Invalid mailbox name. */
 	if (name == NULL)
@@ -279,12 +305,13 @@ int mailbox_open(const char *name)
 
 	mailbox_remotes(remotes, local);
 
+	noctag = mailbox_noctag(local);
 	sprintf(pathname,
 			"/mppa/rqueue/%d:%d/[%s]:%d/1.%d",
 			local,
-			local + 16,
+			noctag,
 			remotes,
-			local + 16,
+			noctag,
 			MAILBOX_MSG_SIZE
 	);
 

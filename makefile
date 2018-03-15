@@ -37,9 +37,13 @@ k1-lflags := -lmppaipc
 # IO Cluster Binaries
 #=============================================================================
 
-io-bin := master.test
+io-bin := master.test  mailbox-server.test
 
 master.test-srcs := $(TESTDIR)/master.c
+
+mailbox-server.test-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
+							$(SRCDIR)/kernel/sys/timer.c         \
+							$(TESTDIR)/mailbox-server.c
 
 #=============================================================================
 # Compute Cluster Binaries
@@ -47,19 +51,19 @@ master.test-srcs := $(TESTDIR)/master.c
 
 cluster-system := nodeos
 
+cluster-bin := mailbox-client.test
 
-cluster-bin := mailbox.test
-
-mailbox.test-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
-				 $(SRCDIR)/kernel/sys/timer.c         \
-				 $(TESTDIR)/mailbox.c
+mailbox-client.test-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
+							$(SRCDIR)/kernel/sys/timer.c         \
+							$(TESTDIR)/mailbox-client.c
 
 #=============================================================================
 # Testing Binary
 #=============================================================================
 
-test-objs := master.test \
-			 mailbox.test    \
+test-objs := master.test         \
+			 mailbox-server.test \
+			 mailbox-client.test
 
 test-name := test.img
 

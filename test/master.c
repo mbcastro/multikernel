@@ -27,36 +27,27 @@ static void test_mailbox(void)
 {
 	int sync_fd;
 	uint64_t mask;
-	mppa_pid_t server;
-	mppa_pid_t client[NR_CCLUSTER - 1];
+	mppa_pid_t client[NR_CCLUSTER];
 
 	sync_fd = mppa_open("/mppa/sync/128:8", O_RDONLY);
 
-	const char *argv0[] = {
-		"mailbox.test",
-		"server",
-		NULL
-	};
-
 	const char *argv1[] = {
-		"mailbox.test",
+		"mailbox-client.test",
 		"client",
 		NULL
 	};
-
-	server = mppa_spawn(CCLUSTER0, NULL, argv0[0], argv0, NULL);
 
 	mask = ~(1 << 0);
 	mppa_ioctl(sync_fd, MPPA_RX_SET_MATCH, mask);
 	mppa_read(sync_fd, &mask, sizeof(uint64_t));
 	mppa_close(sync_fd);
 
-	for (int i = 1; i < NR_CCLUSTER; i++)
-		client[i - 1] = mppa_spawn(i, NULL, argv1[0], argv1, NULL);
+	printf("spawning mailbox clients\n");
+	for (int i = 0; i < NR_CCLUSTER; i++)
+		client[i] = mppa_spawn(i, NULL, argv1[0], argv1, NULL);
 
-	for (int i = 1; i < NR_CCLUSTER; i++)
-		mppa_waitpid(client[i - 1], NULL, 0);
-	mppa_waitpid(server, NULL, 0);
+	for (int i = 0; i < NR_CCLUSTER; i++)
+		mppa_waitpid(client[i], NULL, 0);
 }
 
 /**

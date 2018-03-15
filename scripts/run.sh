@@ -26,9 +26,10 @@ export OUTDIR=output/bin/
 #
 function run_test
 {
-	$K1TOOLS_DIR/bin/k1-jtag-runner    \
-		--multibinary=$OUTDIR/test.img \
-		--exec-multibin=IODDR0         \
+	$K1TOOLS_DIR/bin/k1-jtag-runner                \
+		--multibinary=$OUTDIR/test.img             \
+		--exec-multibin=IODDR0:master.test         \
+		--exec-multibin=IODDR1:mailbox-server.test \
 		-- $1
 }
 
