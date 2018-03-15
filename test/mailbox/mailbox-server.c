@@ -76,14 +76,15 @@ int main(int argc, char **argv)
 	((void) argc);
 	((void) argv);
 
+	clusterid = arch_get_cluster_id();
 	total = server();
 
-	printf("cluster %2d: mailbox test [passed]\n", arch_get_cluster_id() );
-	printf("cluster %2d: server received %d KB in %lf s\n",
-			arch_get_cluster_id(),
+	printf("cluster %3d: server received %d KB in %lf s\n",
+			clusterid,
 			(NR_CCLUSTER*NMESSAGES*MAILBOX_MSG_SIZE)/1024,
 			total/1000000.0
 	);
+	printf("cluster %3d: mailbox test [passed]\n",clusterid);
 
 	return (EXIT_SUCCESS);
 }

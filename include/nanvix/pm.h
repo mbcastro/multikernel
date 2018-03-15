@@ -20,10 +20,9 @@
 #ifndef NANVIX_IPC_H_
 #define NANVIX_IPC_H_
 
-	/* Forward defnitions. */
-	extern long timer_get(void);
-	extern long timer_diff(long, long);
-	extern void timer_init(void);
+/*=======================================================================*
+ * Mailbox                                                               *
+ *=======================================================================*/
 
 	/* Forward definitions .*/
 	extern int mailbox_create(const char *);
@@ -32,5 +31,14 @@
 	extern int mailbox_write(int, const void *);
 	extern int mailbox_close(int);
 	extern int mailbox_unlink(int);
+
+/*======================================================================*
+ * Timer                                                                *
+ *=======================================================================*/
+
+	/* Forward defnitions. */
+	extern long timer_get(void);
+	extern long timer_diff(long, long);
+	extern void timer_init(void);
 
 #endif /* NANVIX_IPC_H_ */

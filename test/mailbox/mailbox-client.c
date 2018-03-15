@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 2011-2017 Pedro H. Penna <pedrohenriquepenna@gmail.com>
+ * Copyright(C) 2011-2018 Pedro H. Penna <pedrohenriquepenna@gmail.com>
  * 
  * This file is part of Nanvix.
  * 
@@ -22,11 +22,7 @@
 #include <nanvix/pm.h>
 #include <stdio.h>
 #include <string.h>
-
-/**
- * @brief Number of iterations.
- */
-#define NITERATIONS (8*1024)
+#include "mailbox.h"
 
 /**
  * @brief Unit test client.
@@ -40,11 +36,11 @@ static int client(void)
 	char msg[MAILBOX_MSG_SIZE];
 
 	for (int i = 0; i < MAILBOX_MSG_SIZE; i++)
-		msg[i] = 5;
+		msg[i] = CHECKSUM;
 
 	outbox = mailbox_open("/io1");
 
-	for (int i = 0; i < NITERATIONS; i++)
+	for (int i = 0; i < NMESSAGES; i++)
 		mailbox_write(outbox, msg);
 
 	return (1);
@@ -64,7 +60,7 @@ int main(int argc, char **argv)
 	clusterid = arch_get_cluster_id();
 	ret = client();
 
-	printf("cluster %2d: mailbox test [%s]\n", 
+	printf("cluster %3d: mailbox test [%s]\n", 
 			clusterid,
 			(ret) ? "passed" : "FAILED"
 	);

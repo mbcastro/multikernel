@@ -43,7 +43,7 @@ master.test-srcs := $(TESTDIR)/master.c
 
 mailbox-server.test-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
 							$(SRCDIR)/kernel/sys/timer.c         \
-							$(TESTDIR)/mailbox-server.c
+							$(TESTDIR)/mailbox/mailbox-server.c
 
 #=============================================================================
 # Compute Cluster Binaries
@@ -55,7 +55,7 @@ cluster-bin := mailbox-client.test
 
 mailbox-client.test-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
 							$(SRCDIR)/kernel/sys/timer.c         \
-							$(TESTDIR)/mailbox-client.c
+							$(TESTDIR)/mailbox/mailbox-client.c
 
 #=============================================================================
 # Testing Binary
