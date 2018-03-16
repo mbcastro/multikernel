@@ -16,13 +16,3 @@ fill_buffer(char *buffer, int size, int cluster_id)
   for (i=0; i < size; i++)
     buffer[i] = cluster_id + 1;
 }
-
-void
-print_buffer(char *buffer, int size) 
-{
-  int i;
-  LOG("Master buffer:\n");
-  for (i=0; i < size; i++)
-    LOG("%d ", buffer[i]);
-  LOG("\n");
-}

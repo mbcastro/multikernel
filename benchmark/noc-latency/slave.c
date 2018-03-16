@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-
+#include <nanvix/arch/mppa.h>
 #include "common.h"
 #include "interface_mppa.h"
 
@@ -15,11 +15,13 @@ int main(int argc,char **argv) {
   
   for(i = 0; i < MAX_BUFFER_SIZE; i++)
     comm_buffer[i] = 0;
-  
+
+  ((void) argc);
+  ((void) argv);
+
   // Set initial parameters
-  int nb_clusters = atoi(argv[0]);
-  int nb_threads  = atoi(argv[1]);
-  int cluster_id  = atoi(argv[2]);
+  int cluster_id  =  arch_get_cluster_id();
+ 
   
   // Initialize global barrier
   barrier_t *global_barrier = mppa_create_slave_barrier (BARRIER_SYNC_MASTER, BARRIER_SYNC_SLAVE);
@@ -34,7 +36,6 @@ int main(int argc,char **argv) {
 
   mppa_barrier_wait(global_barrier);
   
-  LOG("Slave %d started\n", cluster_id);
   
   int nb_exec;
   for (nb_exec = 1; nb_exec <= NB_EXEC; nb_exec++) {
@@ -62,8 +63,6 @@ int main(int argc,char **argv) {
   
   mppa_close_portal(write_portal);
   mppa_close_portal(read_portal);
-  
-  LOG("Slave %d finished\n", cluster_id);
   
   mppa_exit(0);
   

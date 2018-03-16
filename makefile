@@ -49,9 +49,9 @@ rmem-server.test-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
 						 $(SRCDIR)/kernel/sys/memread.c       \
 						 $(SRCDIR)/servers/rmem.c
 
-noc-latency-master-srcs := $(SRCDIR)/kernel/sys/timer.c      \
-						   $(BENCHDIR)/noc-latency/master.c  \
-						   $(BENCHDIR)/noc-latency/interface \
+noc-latency-master-srcs := $(SRCDIR)/kernel/sys/timer.c             \
+						   $(BENCHDIR)/noc-latency/master.c         \
+						   $(BENCHDIR)/noc-latency/interface_mppa.c \
 						   $(BENCHDIR)/noc-latency/common.c
 
 #=============================================================================
@@ -60,7 +60,7 @@ noc-latency-master-srcs := $(SRCDIR)/kernel/sys/timer.c      \
 
 cluster-system := nodeos
 
-cluster-bin := rmem noc-latency
+cluster-bin := rmem noc-latency-slave
 
 rmem-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
 			 $(SRCDIR)/kernel/arch/mppa/portal.c  \
@@ -89,8 +89,8 @@ test-name := test.img
 # Benchmark Binary
 #=============================================================================
 
-noc-latency-objs := noc-latency.master \
-			 noc-latency.slave
+noc-latency-objs := noc-latency-master \
+			 noc-latency-slave
 
 noc-latency-name := noc-latency.img
 

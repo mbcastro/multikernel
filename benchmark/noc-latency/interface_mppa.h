@@ -13,8 +13,8 @@
  * GLOBAL CONSTANTS
  */
 
-#define BARRIER_SYNC_MASTER "/mppa/sync/128:1"
-#define BARRIER_SYNC_SLAVE "/mppa/sync/[0..15]:2"
+#define BARRIER_SYNC_MASTER "/mppa/sync/128:101"
+#define BARRIER_SYNC_SLAVE "/mppa/sync/[0..15]:102"
 
 #define TRUE 1
 #define FALSE 0
@@ -63,9 +63,5 @@ barrier_t *mppa_create_master_barrier (char *path_master, char *path_slave, int 
 barrier_t *mppa_create_slave_barrier (char *path_master, char *path_slave);
 void mppa_barrier_wait (barrier_t *barrier);
 void mppa_close_barrier (barrier_t *barrier);
-
-void mppa_init_time(void);
-inline uint64_t mppa_get_time(void);
-inline uint64_t mppa_diff_time(uint64_t t1, uint64_t t2);
 
 #endif // __INTERFACE_MPPA_H

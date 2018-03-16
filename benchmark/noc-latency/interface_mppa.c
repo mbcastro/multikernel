@@ -1,4 +1,5 @@
 #include <mppa/osconfig.h>
+#include <nanvix/arch/mppa.h>
 #include "interface_mppa.h"
 
 void set_path_name(char *path, char *template_path, int rx, int tag) {
@@ -41,7 +42,7 @@ portal_t *mppa_create_write_portal (char *path, void* buffer, unsigned long buff
   
   // Select the DMA interface according to the receiver's rank.
   // This is only possible on the IO-node!
-  if (__k1_get_cluster_id() == 128)
+  if (arch_get_cluster_id() == 128)
     assert(mppa_ioctl(ret->file_descriptor, MPPA_TX_SET_IFACE, receiver_rank % 4) == 0);
   
   // We need to initialize an aiocb for asynchronous writes.
@@ -124,6 +125,7 @@ barrier_t *mppa_create_slave_barrier (char *path_master, char *path_slave) {
   int status;
   
   barrier_t *ret = (barrier_t*) malloc (sizeof (barrier_t));
+  assert(ret != NULL);
   
   ret->sync_fd_master = mppa_open(path_master, O_WRONLY);
   assert(ret->sync_fd_master != -1);
@@ -133,7 +135,8 @@ barrier_t *mppa_create_slave_barrier (char *path_master, char *path_slave) {
   
   // set match to 0000...000.
   // the IO will send a massage containing 1111...11111, so it will allow mppa_read() to return
-  status = mppa_ioctl(ret->sync_fd_slave, MPPA_RX_SET_MATCH, (long long) 0);
+  uint64_t mask = 0;
+  status = mppa_ioctl(ret->sync_fd_slave, MPPA_RX_SET_MATCH, mask);
   assert(status == 0);
   
   ret->mode = BARRIER_SLAVE;
@@ -166,7 +169,7 @@ void mppa_barrier_wait(barrier_t *barrier) {
 
     // the cluster sets its corresponding bit to 1
     mask = 0;
-    mask |= 1 << __k1_get_cluster_id();
+    mask |= 1 << arch_get_cluster_id();
     
     // the cluster sends the mask to the IO
     status = mppa_write(barrier->sync_fd_master, &mask, sizeof(mask));

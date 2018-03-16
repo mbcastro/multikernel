@@ -21,6 +21,7 @@
 #define NANVIX_IPC_H_
 
 	#include <inttypes.h>
+	#include <stddef.h>
 
 /*=======================================================================*
  * Naming                                                                *

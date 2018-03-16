@@ -37,9 +37,9 @@ function run_test
 #
 function run_benchmark
 {
-	$K1TOOLS_DIR/bin/k1-jtag-runner           \
-		--multibinary=$OUTDIR/noc-latency.img \
-		--exec-multibin=IODDR0:master         \
+	$K1TOOLS_DIR/bin/k1-jtag-runner               \
+		--multibinary=$OUTDIR/noc-latency.img     \
+		--exec-multibin=IODDR0:noc-latency-master \
 		-- $1
 }
 
@@ -65,6 +65,6 @@ then
 	printf "Running benchmark with PORTAL communication...\n"
 	for i in 1 2 4 8 16; do
 		printf "\t Number of clusters = $i\n"
-		run_benchmark $i cut -d " " -f3 >> result/data.csv
+		run_benchmark $i | cut -d ";" -f 5,6 >> noc-latency-$i.out
 	done
 fi
