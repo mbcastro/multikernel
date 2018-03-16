@@ -22,6 +22,9 @@
 #include <stdio.h>
 #include <string.h>
 
+/**
+ * @brief Lookup table of cluster names.
+ */
 static const struct {
 	int id;     /**< Cluster ID. */
 	char *name; /**< Portal name. */
@@ -59,7 +62,7 @@ static const struct {
  * name is returned. Upon failure, a negative error code is returned
  * instead.
  */
-int name_lookup(const char *name)
+int name_cluster_id(const char *name)
 {
 	/* Search for portal name. */
 	for (int i = 0; i < NR_CCLUSTER + NR_IOCLUSTER; i++)
@@ -84,7 +87,7 @@ int name_lookup(const char *name)
  * @returns Upon successful completion the pathname that matches the cluster ID
  * @p clusterid is returned. Upon failure, NULL is returned instead.
  */
-const char *name_lookdown(int clusterid)
+const char *name_cluster_name(int clusterid)
 {
 	/* Search for portal name. */
 	for (int i = 0; i < NR_CCLUSTER + NR_IOCLUSTER; i++)

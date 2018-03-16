@@ -55,15 +55,15 @@ rmem-server.test-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
 
 cluster-system := nodeos
 
-cluster-bin := rmem-client.test
+cluster-bin := rmem-regular.kernel
 
-rmem-client.test-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
+rmem-regular.kernel-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
 						 $(SRCDIR)/kernel/arch/mppa/portal.c  \
 						 $(SRCDIR)/kernel/arch/mppa/name.c    \
 						 $(SRCDIR)/kernel/sys/timer.c         \
 						 $(SRCDIR)/kernel/sys/memwrite.c      \
 						 $(SRCDIR)/kernel/sys/memread.c       \
-						 $(TESTDIR)/rmem/rmem-client.c
+						 $(TESTDIR)/rmem/rmem-regular.c
 
 #=============================================================================
 # Testing Binary
@@ -71,7 +71,7 @@ rmem-client.test-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
 
 test-objs := master.test      \
 			 rmem-server.test \
-			 rmem-client.test
+			 rmem-regular.kernel
 
 test-name := test.img
 

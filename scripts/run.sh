@@ -30,13 +30,20 @@ function run_test
 		--multibinary=$OUTDIR/test.img          \
 		--exec-multibin=IODDR0:master.test      \
 		--exec-multibin=IODDR1:rmem-server.test \
-		-- $1
+		-- $1 $2
 }
 
 if [ $1 == 'tests' ];
 then
-	echo "=== TESTING"
-	run_test mailbox
+	for ncclusters in 1 2 4 8 16;
+	do
+		echo "=== TESTING $ncclusters"
+		run_test regular-random $ncclusters
+		echo "---"
+		run_test regular-read $ncclusters
+		echo "---"
+		run_test regular-write $ncclusters
+	done
 else
 	echo "Missing parameters"
 	echo "Usage: run.sh <benchmarks | tests>"

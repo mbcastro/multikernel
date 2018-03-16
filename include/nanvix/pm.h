@@ -27,8 +27,8 @@
  *=======================================================================*/
 
 	/* Forward definitions. */
-	extern int name_lookup(const char *);
-	extern const char *name_lookdown(int);
+	extern int name_cluster_id(const char *);
+	extern const char *name_cluster_name(int);
 	extern void name_remotes(char *, int);
 
 /*=======================================================================*

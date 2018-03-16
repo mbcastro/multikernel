@@ -40,7 +40,7 @@ void memread(uint64_t addr, void *buf, size_t n)
 	clusterid = arch_get_cluster_id();
 
 	outbox = mailbox_open("/io1");
-	inportal = portal_create(name_lookdown(clusterid));
+	inportal = portal_create(name_cluster_name(clusterid));
 
 	/* Build operation header. */
 	msg.source = clusterid;

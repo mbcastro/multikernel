@@ -27,7 +27,7 @@
 /**
  * @brief Number of access to remote memory.
  */
-#define NACCESSES 1024
+#define NACCESSES RMEM_SIZE/RMEM_BLOCK_SIZE
 
 char data[RMEM_BLOCK_SIZE];
 
@@ -36,31 +36,39 @@ char data[RMEM_BLOCK_SIZE];
  */
 int main(int argc, char **argv)
 {
-	int wmode;
+	int wmode = 0;
+	int clusterid;
 	long start, end, total;
 
 	/* Invalid number of arguments. */
 	if (argc != 2)
 		return (-EINVAL);
 	
-	wmode = (!strcmp(argv[1], "write")) ? 1 : 0;
-	
+	clusterid = arch_get_cluster_id();
+
+	if (!strcmp(argv[1], "write"))
+		wmode = 1;
+	else if (!strcmp(argv[1], "read"))
+		wmode = 0;
+	else 
+		wmode = clusterid%2;
+
 	timer_init();
 
 	start = timer_get();
 	for (int i = 0; i < NACCESSES; i++)
 	{
 		if (wmode)
-			memwrite(0, data, RMEM_BLOCK_SIZE);
+			memwrite(i, data, RMEM_BLOCK_SIZE);
 		else
-			memread(0, data, RMEM_BLOCK_SIZE);
+			memread(i, data, RMEM_BLOCK_SIZE);
 	}
 	end = timer_get();
 
 	total = timer_diff(start, end);
 
 	printf("cluster %3d: %.2lf MB/s (%d MB %.2lf s)\n", 
-			arch_get_cluster_id(),
+			clusterid,
 			(NACCESSES*RMEM_BLOCK_SIZE/(1024*1024))/(total/1000000.0),
 			(NACCESSES*RMEM_BLOCK_SIZE)/(1024*1024),
 			total/1000000.0

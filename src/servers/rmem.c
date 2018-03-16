@@ -71,7 +71,7 @@ int main(int argc, char **argv)
 		}
 		else if (msg.op == RMEM_READ)
 		{
-			int outportal = portal_open(name_lookdown(msg.source));
+			int outportal = portal_open(name_cluster_name(msg.source));
 			portal_write(outportal, &rmem[msg.blknum], msg.size);
 			portal_close(outportal);
 		}

@@ -143,7 +143,7 @@ int mailbox_create(const char *name)
 	if (name == NULL)
 		return (-EINVAL);
 
-	local = name_lookup(name);
+	local = name_cluster_id(name);
 	assert(local == arch_get_cluster_id());
 
 	/* Allocate a mailbox. */
@@ -198,7 +198,7 @@ int mailbox_open(const char *name)
 	if (name == NULL)
 		return (-EINVAL);
 
-	local = name_lookup(name);
+	local = name_cluster_id(name);
 	assert(local != arch_get_cluster_id());
 
 	/* Allocate a mailbox. */

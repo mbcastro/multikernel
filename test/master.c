@@ -19,53 +19,73 @@
 
 #include <mppa/osconfig.h>
 #include <nanvix/arch/mppa.h>
+#include <stdlib.h>
+
+const char *args[3][3] = {
+	{"rmem-regular.kernel", "random", NULL},
+	{"rmem-regular.kernel", "read", NULL},
+	{"rmem-regular.kernel", "write", NULL}
+};
 
 /**
- * @brief Mailboxes testing unit.
+ * Prints program usage and exits.
  */
-static void test_mailbox(void)
+static void usage(void)
+{
+	printf("missing parameters\n");
+	printf("Usage: test rmem <kernel>\n");
+	printf("kernel:\n");
+	printf("  regular-random Regular writes and reads\n");
+	printf("  regular-read   Regular reads\n");
+	printf("  regular-write  Regular writes\n");
+
+	exit(-1);
+}
+
+/**
+ * @brief Parse arguments.
+ */
+static const char **parse(const char *arg)
+{
+	if (!strcmp(arg, "regular-random"))
+		return (args[0]);
+	else if (!strcmp(arg, "regular-read"))
+		return (args[1]);
+
+	return (args[2]);
+}
+
+/**
+ * @brief Remote memory unit test.
+ */
+int main(int argc, char **argv)
 {
 	int sync_fd;
 	uint64_t mask;
+	int ncclusters;
 	mppa_pid_t client[NR_CCLUSTER];
+	const char **arg;
 
+	/* Missing parameters. */
+	if (argc < 3)
+		usage();
+
+	/* Sync with remote memory server. */
 	sync_fd = mppa_open("/mppa/sync/128:8", O_RDONLY);
-
-	const char *argv1[] = {
-		"rmem-client.test",
-		"write",
-		NULL
-	};
-
 	mask = ~(1 << 0);
 	mppa_ioctl(sync_fd, MPPA_RX_SET_MATCH, mask);
 	mppa_read(sync_fd, &mask, sizeof(uint64_t));
 	mppa_close(sync_fd);
 
-	printf("spawning mailbox clients\n");
-	for (int i = 0; i < NR_CCLUSTER; i++)
-		client[i] = mppa_spawn(i, NULL, argv1[0], argv1, NULL);
+	ncclusters = atoi(argv[2]);
+	arg = parse(argv[1]);
 
-	for (int i = 0; i < NR_CCLUSTER; i++)
+	printf("[IODDR0] spawning kernels\n");
+	for (int i = 0; i < ncclusters; i++)
+		client[i] = mppa_spawn(i, NULL, arg[0], arg, NULL);
+
+	for (int i = 0; i < ncclusters; i++)
 		mppa_waitpid(client[i], NULL, 0);
-}
 
-/**
- * @brief IPC library unit test
- */
-int main(int argc, char **argv)
-{
-	if (argc < 2)
-	{
-		printf("missing parameters");
-		printf("usage: test <testing unit>");
-		printf("  mailbox Mailboxes.");
-
-		return (0);
-	}
-
-	if (!strcmp(argv[1], "mailbox"))
-		test_mailbox();
-
-	return (0);
+	return (EXIT_SUCCESS);
 }
