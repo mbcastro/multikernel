@@ -118,10 +118,20 @@ int main(int argc, char **argv)
 	pattern = argv[1];
 	workload = argv[2];
 
+	/* Wait master IO cluster. */
+	barrier_open();
+	barrier_wait();
+
 	if (!strcmp(pattern, "regular"))
 		kernel_regular(workload);
 	else
 		kernel_irregular(workload);
+
+	/* Wait master IO cluster. */
+	barrier_wait();
+
+	/* House keeping. */
+	barrier_close();
 
 	return (EXIT_SUCCESS);
 }

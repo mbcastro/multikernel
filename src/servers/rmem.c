@@ -35,7 +35,6 @@ static char rmem[RMEM_SIZE];
 int main(int argc, char **argv)
 {
 	int inbox;
-	int iobarrier;
 
 	((void) argc);
 	((void) argv);
@@ -44,13 +43,11 @@ int main(int argc, char **argv)
 	printf("[RMEM] booting up server\n");
 #endif
 
-	iobarrier = barrier_open(BARRIER_IOCLUSTERS);
 	inbox = mailbox_create("/io1");
 
-	/* Wait for other IOs. */
-	barrier_wait(iobarrier);
-
-	timer_init();
+	/* Release master IO cluster. */
+	barrier_open(NR_IOCLUSTER);
+	barrier_release();
 
 	while(1)
 	{
@@ -74,7 +71,7 @@ int main(int argc, char **argv)
 	}
 
 	mailbox_unlink(inbox);
-	baerrier_close(iobarrier);
+	baerrier_close();
 
 	return (EXIT_SUCCESS);
 }

@@ -25,219 +25,119 @@
 #include <stdio.h>
 
 /**
- * @brief Number of barriers.
- */
-#define NR_BARRIER 16
-
-/**
- * @brief Barrier flags.
- */
-/**@{*/
-#define BARRIER_USED       (1 << 0)
-#define BARRIER_IOCLUSTERS (1 << 1)
-/**@}*/
-
-/**
  * @brief Barrier.
  */
-struct barrier
+struct
 {
-	int local;  /**< Local cluster.  */
-	int remote; /**< Remote cluster. */
-	int flags;  /**< Flags.          */
-};
-
-/**
- * @brief table of barriers.
- */
-static struct barrier barriers[NR_BARRIER];
-
-/*=======================================================================*
- * barrier_alloc()                                                       *
- *=======================================================================*/
-
-/**
- * @brief Allocates a barrier.
- *
- * @return Upon successful completion the ID of the newly allocated
- * barrier is returned. Upon failure, a negative error code is returned
- * instead.
- */
-static int barrier_alloc(void)
-{
-	/* Search for a free barrier. */
-	for (int i = 0; i < NR_BARRIER; i++)
-	{
-		/* Found. */
-		if (!(barriers[i].flags & BARRIER_USED))
-		{
-			barriers[i].flags |= BARRIER_USED;
-			return (i);
-		}
-	}
-
-	return (-ENOENT);
-}
-
-/*=======================================================================*
- * barrier_free()                                                        *
- *=======================================================================*/
-
-/**
- * @brief Frees a barrier.
- *
- * @param barid ID of the target barrier.
- */
-static void barrier_free(int barid)
-{
-	/* Sanity check. */
-	assert((barid >= 0) && (barid < NR_BARRIER));
-	assert(barriers[barid].flags & BARRIER_USED);
-
-	barriers[barid].flags = 0;
-	mppa_close(barriers[barid].fd);
-}
-/*=======================================================================*
- * barrier_noctag()                                                      *
- *=======================================================================*/
-
-/**
- * @brief Computes the barrier NoC tag for a cluster.
- *
- * @param local Id of target cluster.
- */
-static int barrier_noctag(int local)
-{
-	if ((local >= CCLUSTER0) && (local <= CCLUSTER15))
-		return (96 + local);
-	else if (local == IOCLUSTER0)
-		return (96 + 16 + 0);
-	else if (local == IOCLUSTER1)
-		return (96 + 16 + 1);
-
-	return (0);
-}
+	int local;  /**< Local cluster sync.   */
+	int remote; /**< Remote cluster sync. */
+} barrier;
 
 /*=======================================================================*
  * barrier_open()                                                        *
  *=======================================================================*/
 
 /**
- * @brief Opens a barrier.
+ * @brief Opens the global barrier.
  *
- * @param name Barrier group.
- *
- * @returns Upon successful completion, the ID of the target barrier is
- * returned. Upon failure, a negative error code is returned instead.
+ * @param ncclusters Number of compute clusters in the barrier.
  */
-int barrier_open(int group)
+void barrier_open(int ncclusters)
 {
-	int local;          /* ID of local cluster.               */
-	int fd;             /* File descriptor for NoC connector. */
-	int barid;          /* ID of mailbix.                     */
-	char pathname[128]; /* NoC connector name.                */
-	int noctag;         /* NoC tag used for transfers.        */
+	int local;
+	uint64_t mask;
+	char pathname[128];
 
-	assert(local != arch_get_cluster_id());
+	local = arch_get_cluster_id();
 
-	/* Invalid barrier group. */
-	if ((group != BARRIER_IOCLUSTERS) || (group != BARRIER_CCLUSTERS))
-		return (-EINVAL);
+	/* I0 1 cluster barrier. */
+	if (local == IOCLUSTER1)
+	{
+		sprintf(pathname, "/mppa/sync/%d:4", IOCLUSTER0);
+		assert((barrier.remote = mppa_open(pathname, O_WRONLY)) != -1);
+	}
 
-	/* Invalid barrier group. */
+	/* IO 0 cluster barrier. */
+	else if (local == IOCLUSTER0)
+	{
+		int cclusters[NR_CCLUSTER];
 
-	/* Allocate a barrier. */
-	barid = barrier_alloc();
-	if (barid < 0)
-		return (barid);
+		sprintf(pathname, "/mppa/sync/%d:4", IOCLUSTER0);
+		assert((barrier.local = mppa_open(pathname, O_RDONLY)) != -1);
+		sprintf(pathname, "/mppa/sync/[%d..%d]:4", CCLUSTER0, CCLUSTER15);
+		assert((barrier.remote = mppa_open(pathname, O_WRONLY)) != -1);
 
-	/* Open local barrier. */
-	noctag = barrier_noctag(local);
-	sprintf(pathname,
-			"/mppa/sync/%d:%d",
-			local,
-			noctag,
-			remotes,
-			noctag,
-			BARRIER_MSG_SIZE
-	);
-	assert((fd = mppa_open(pathname, O_WRONLY)) != -1);
+		mask = ~(1 << ncclusters);
+		assert(mppa_ioctl(barrier.local, MPPA_RX_SET_MATCH, mask) == 0);
 
-	/* Initialize barrier. */
-	barriers[barid].fd = fd;
-	barriers[barid].flags |= BARRIER_WRONLY;
+		for (int i = 0; i < ncclusters; i++)
+			cclusters[i] = i;
 
-	return (barid);
+		assert(mppa_ioctl(barrier.remote, MPPA_TX_SET_RX_RANKS, ncclusters, cclusters) == 0);
+	}
+
+	else
+	{
+		sprintf(pathname, "/mppa/sync/%d:4", local);
+		assert((barrier.local = mppa_open(pathname, O_RDONLY)) != -1);
+		sprintf(pathname, "/mppa/sync/%d:4", IOCLUSTER0);
+		assert((barrier.remote = mppa_open(pathname, O_WRONLY)) != -1);
+
+		mask = 0;
+		assert(mppa_ioctl(barrier.local, MPPA_RX_SET_MATCH, mask) == 0);
+	}
 }
 
 /*=======================================================================*
- * barrier_read()                                                        *
+ * barrier_wait()                                                        *
  *=======================================================================*/
 
-/**
- * @brief Reads data from a barrier.
- *
- * @param barid ID of the target barrier.
- * @param buf   Location from where data should be written.
- *
- * @returns Upon successful completion zero is returned. Upon failure, a
- * negative error code is returned instead.
- */
-int barrier_read(int barid, void *buf)
+int barrier_wait(void)
 {
-	/* Invalid barrier ID.*/
-	if ((barid < 0) || (barid >= NR_BARRIER))
+	int local;
+	uint64_t mask;
+
+	local = arch_get_cluster_id();
+
+	/* Invalid cluster. */
+	if (local == IOCLUSTER1)
 		return (-EINVAL);
 
-	/*  Invalid barrier. */
-	if (!(barriers[barid].flags & BARRIER_USED))
-		return (-EINVAL);
-
-	/* Operation no supported. */
-	if (barriers[barid].flags & BARRIER_WRONLY)
-		return (-ENOTSUP);
-
-	/* Invalid buffer. */
-	if (buf == NULL)
-		return (-EINVAL);
-
-	assert(mppa_read(barriers[barid].fd, buf, BARRIER_MSG_SIZE) == BARRIER_MSG_SIZE);
-
+	/* IO 0 cluster barrier. */
+	if (local == IOCLUSTER0)
+	{
+		mask = ~0;	
+		assert(mppa_read(barrier.local, &mask, sizeof(uint64_t)) == sizeof(uint64_t));
+		assert(mppa_write(barrier.remote, &mask, sizeof(uint64_t)) == sizeof(uint64_t));
+	}
+	/* Compute cluster barrier. */
+	else
+	{
+		mask = 1 << arch_get_cluster_id();
+		assert(mppa_write(barrier.remote, &mask, sizeof(uint64_t)) == sizeof(uint64_t));
+		assert(mppa_read(barrier.local, &mask, sizeof(uint64_t)) == sizeof(uint64_t));
+	}
+	
 	return (0);
 }
 
 /*=======================================================================*
- * barrier_write()                                                       *
+ * barrier_release()                                                     *
  *=======================================================================*/
 
-/**
- * @brief Reases all processes that are blocked in a barrier.
- *
- * @param barid ID of the target barrier.
- * @param buf   Location from where data should be read.
- *
- * @returns Upon successful completion zero is returned. Upon failure, a
- * negative error code is returned instead.
- */
-int barrier_release(int barid, const void *buf)
+void barrier_release(void)
 {
-	/* Invalid barrier ID.*/
-	if ((barid < 0) || (barid >= NR_BARRIER))
+	int local;
+	uint64_t mask;
+
+	local = arch_get_cluster_id();
+
+	/* Invalid cluster. */
+	if (local != IOCLUSTER1)
 		return (-EINVAL);
 
-	/*  Invalid barrier. */
-	if (!(barriers[barid].flags & BARRIER_USED))
-		return (-EINVAL);
-
-	/* Operation no supported. */
-	if (!(barriers[barid].flags & BARRIER_WRONLY))
-		return (-ENOTSUP);
-
-	/* Invalid buffer. */
-	if (buf == NULL)
-		return (-EINVAL);
-
-	assert(mppa_write(barriers[barid].fd, buf, BARRIER_MSG_SIZE) == BARRIER_MSG_SIZE);
+	mask = ~0;	
+	assert(mppa_write(barrier.remote, &mask, sizeof(uint64_t)) == sizeof(uint64_t));
 
 	return (0);
 }
@@ -247,150 +147,17 @@ int barrier_release(int barid, const void *buf)
  *=======================================================================*/
 
 /**
- * @brief Closes a barrier.
- *
- * @param barid ID of the target barrier.
- *
- * @returns Upon successful completion zero is returned. Upon failure, a
- * negative error code is returned instead.
+ * @brief Closes the global barrier.
  */
-int barrier_close(int barid)
+void close_barrier(void)
 {
-	/* Invalid barrier ID.*/
-	if ((barid < 0) || (barid >= NR_BARRIER))
-		return (-EINVAL);
+	int local;
 
-	/*  Invalid barrier. */
-	if (!(barriers[barid].flags & BARRIER_USED))
-		return (-EINVAL);
+	local = arch_get_cluster_id();
 
-	barrier_free(barid);
-
-	return (0);
-}
-
-/*=======================================================================*
- * barrier_unlink()                                                      *
- *=======================================================================*/
-
-/**
- * @brief Destroys a barrier.
- *
- * @param barid ID of the target barrier.
- *
- * @returns Upon successful completion zero is returned. Upon failure, a
- * negative error code is returned instead.
- */
-int barrier_unlink(int barid)
-{
-	/* Invalid barrier ID.*/
-	if ((barid < 0) || (barid >= NR_BARRIER))
-		return (-EINVAL);
-
-	/*  Invalid barrier. */
-	if (!(barriers[barid].flags & BARRIER_USED))
-		return (-EINVAL);
-
-	barrier_free(barid);
-
-	return (0);
-}
-
-barrier_t *mppa_create_master_barrier (char *path_master, char *path_slave, int clusters) {
-  int status, i;
-  int ranks[clusters];
-  long long match;
-  
-  barrier_t *ret = (barrier_t*) malloc (sizeof (barrier_t));
-  
-  ret->sync_fd_master = mppa_open(path_master, O_RDONLY);
-  assert(ret->sync_fd_master != -1);
-  
-  ret->sync_fd_slave = mppa_open(path_slave, O_WRONLY);
-  assert(ret->sync_fd_slave != -1);
-
-  // set all bits to 1 except the less significative "cluster" bits (those ones are set to 0).
-  // when the IO receives messagens from the clusters, they will set their correspoding bit to 1.
-  // the mppa_read() on the IO will return when match = 11111...1111
-  match = (long long) - (1 << clusters);
-  status = mppa_ioctl(ret->sync_fd_master, MPPA_RX_SET_MATCH, match);
-  assert(status == 0);
-  
-  for (i = 0; i < clusters; i++)
-    ranks[i] = i;
-  
-  // configure the sync connector to receive message from "ranks"
-  status = mppa_ioctl(ret->sync_fd_slave, MPPA_TX_SET_RX_RANKS, clusters, ranks);
-  assert(status == 0);
-  
-  ret->mode = BARRIER_MASTER;
-  
-  return ret;
-}
-
-barrier_t *mppa_create_slave_barrier (char *path_master, char *path_slave) {
-  int status;
-  
-  barrier_t *ret = (barrier_t*) malloc (sizeof (barrier_t));
-  assert(ret != NULL);
-  
-  ret->sync_fd_master = mppa_open(path_master, O_WRONLY);
-  assert(ret->sync_fd_master != -1);
-  
-  ret->sync_fd_slave = mppa_open(path_slave, O_RDONLY);
-  assert(ret->sync_fd_slave != -1);
-  
-  // set match to 0000...000.
-  // the IO will send a massage containing 1111...11111, so it will allow mppa_read() to return
-  uint64_t mask = 0;
-  status = mppa_ioctl(ret->sync_fd_slave, MPPA_RX_SET_MATCH, mask);
-  assert(status == 0);
-  
-  ret->mode = BARRIER_SLAVE;
-  
-  return ret;
-}
-
-void mppa_barrier_wait(barrier_t *barrier) {
-  int status;
-  long long dummy;
-  
-  if(barrier->mode == BARRIER_MASTER) {
-    dummy = -1;
-    long long match;
-    
-    // the IO waits for a message from each of the clusters involved in the barrier
-    // each cluster will set its correspoding bit on the IO (variable match) to 1
-    // when match = 11111...1111 the following mppa_read() returns
-    status = mppa_read(barrier->sync_fd_master, &match, sizeof(match));
-    assert(status == sizeof(match));
-    
-    // the IO sends a message (dummy) containing 1111...1111 to all slaves involved in the barrier
-    // this will unblock their mppa_read()
-    status = mppa_write(barrier->sync_fd_slave, &dummy, sizeof(long long));
-    assert(status == sizeof(long long));
-  }
-  else {
-    dummy = 0;
-    long long mask;
-
-    // the cluster sets its corresponding bit to 1
-    mask = 0;
-    mask |= 1 << arch_get_cluster_id();
-    
-    // the cluster sends the mask to the IO
-    status = mppa_write(barrier->sync_fd_master, &mask, sizeof(mask));
-    assert(status == sizeof(mask));
-    
-    // the cluster waits for a message containing 1111...111 from the IO to unblock
-    status = mppa_read(barrier->sync_fd_slave, &dummy, sizeof(long long));
-    assert(status == sizeof(long long));
-  }
-}
-
-void mppa_close_barrier (barrier_t *barrier) {
-  assert(mppa_close(barrier->sync_fd_master) != -1);
-  assert(mppa_close(barrier->sync_fd_slave) != -1);
-  free(barrier);
+	/* House keeping. */
+	if (local != IOCLUSTER1)
+		assert(mppa_close(barrier.local) != -1);
+	assert(mppa_close(barrier.remote) != -1);
 }
 

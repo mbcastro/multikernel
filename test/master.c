@@ -248,31 +248,28 @@ int main(int argc, char **argv)
 	
 	timer_init();
 
-	iobarrier = barrier_open(BARRIER_IOCLUSTERS);
-	ccbarrier = barrier_open(BARRIER_CCLUSTERS);
-
-	/* Wait servers. */
-	barrier_wait(iobarrier);
+	/* Wait RMEM server. */
+	barrier_open(ncclusters);
+	barrier_wait();
 
 	printf("[IOCLUSTER0] spawning kernels\n");
 	for (int i = 0; i < ncclusters; i++)
 		client[i] = mppa_spawn(i, NULL, args[0], args, NULL);
 
 	/* Wait clients */
-	barrier_wait(ccbarrier);
+	barrier_wait();
 	start = timer_get();
 
 	printf("[IOCLUSTER0] waiting kernels\n");
 
 	/* Wait clients. */
-	barrier_wait(ccbarrier);
+	barrier_wait();
 	end = timer_get();
 	
 	/* House keeping. */
 	for (int i = 0; i < ncclusters; i++)
 		mppa_waitpid(client[i], NULL, 0);
-	barrier_close(iobarrier);
-	barrier_close(ccbarrier);
+	barrier_close();
 
 	return (EXIT_SUCCESS);
 }

@@ -43,6 +43,7 @@ master.test-srcs := $(TESTDIR)/master.c
 
 rmem-server.test-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
 						 $(SRCDIR)/kernel/arch/mppa/portal.c  \
+						 $(SRCDIR)/kernel/arch/mppa/barrier.c \
 						 $(SRCDIR)/kernel/arch/mppa/name.c    \
 						 $(SRCDIR)/kernel/sys/timer.c         \
 						 $(SRCDIR)/kernel/sys/memwrite.c      \
@@ -64,6 +65,7 @@ cluster-bin := rmem noc-latency-slave
 
 rmem-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
 			 $(SRCDIR)/kernel/arch/mppa/portal.c  \
+			 $(SRCDIR)/kernel/arch/mppa/barrier.c \
 			 $(SRCDIR)/kernel/arch/mppa/name.c    \
 			 $(SRCDIR)/kernel/sys/timer.c         \
 			 $(SRCDIR)/kernel/sys/memwrite.c      \
