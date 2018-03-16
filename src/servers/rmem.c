@@ -35,14 +35,12 @@ static char rmem[RMEM_SIZE];
 int main(int argc, char **argv)
 {
 	int inbox;
-	int inportal;
 
 	((void) argc);
 	((void) argv);
 
 	printf("[RMEM] booting up server\n");
 	inbox = mailbox_create("/io1");
-	inportal = portal_create("/io1");
 
 	printf("[RMEM] server alive\n");
 	int sync_fd = mppa_open("/mppa/sync/128:8", O_WRONLY);
@@ -60,19 +58,29 @@ int main(int argc, char **argv)
 #ifdef DEBUG
 		printf("[RMEM] client connected\n");
 #endif
-		portal_allow(inportal, msg.source);
 
 #ifdef DEBUG
 		printf("[RMEM] serving client\n");
 #endif
-		portal_read(inportal, &rmem[msg.blknum], msg.size);
+		if (msg.op == RMEM_WRITE)
+		{
+			int inportal = portal_create("/io1");
+			portal_allow(inportal, msg.source);
+			portal_read(inportal, &rmem[msg.blknum], msg.size);
+			portal_unlink(inportal);
+		}
+		else if (MSG.OP == RMEM_READ)
+		{
+			int outportal = portal_open(name_lookdown(msg.source));
+			portal_write(inportal, &rmem[msg.blknum], msg.size);
+			portal_close(inportal);
+		}
 
 #ifdef DEBUG
 		printf("[RMEM] client disconnected\n");
 #endif
 	}
 
-	portal_unlink(inportal);
 	mailbox_unlink(inbox);
 
 	return (EXIT_SUCCESS);

@@ -17,7 +17,6 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <mppa/osconfig.h>
 #include <nanvix/hal.h>
 #include <nanvix/mm.h>
 #include <nanvix/pm.h>
@@ -25,46 +24,39 @@
 #include <string.h>
 
 /**
- * @brief Number of access to remote memory.
+ * @brief Reads from a remote memory.
+ *
+ * @param addr Remote address.
+ * @param bug  Location where the data should be written to.
+ * @param n    Number of bytes to read.
  */
-#define NACCESSES 1024
-
-char data[RMEM_BLOCK_SIZE];
-
-/**
- * @brief Remote memory unit test.
- */
-int main(int argc, char **argv)
+void memread(uint64_t addr, void *buf, size_t n)
 {
-	int wmode;
-	long start, end, total;
+	int outbox;
+	int inportal;
+	int clusterid;
+	struct rmem_message msg;
 
-	/* Invalid number of arguments. */
-	if (argc != 2)
-		return (-EINVAL)
-	
-	mode = (!strcmp(argv[1], "write")) ? 1 : 0;
-	
-	timer_init();
+	clusterid = arch_get_cluster_id();
 
-	start = timer_get();
-	for (int i = 0; i < NACCESSES; i++)
-	{
-		if (wmode)
-			memwrite(0, data, RMEM_BLOCK_SIZE);
-		else
-			memread(0, data, RMEM_BLOCK_SIZE);
-	}
-	end = timer_get();
+	outbox = mailbox_open("/io1");
+	inportal = portal_create(name_lookdown(clusterid));
 
-	total = timer_diff(start, end);
+	/* Build operation header. */
+	msg.source = clusterid;
+	msg.op = RMEM_READ;
+	msg.blknum = addr;
+	msg.size = n;
 
-	printf("cluster %3d: %.2lf MB/s (%d KB %.2lf s)\n", 
-			arch_get_cluster_id(),
-			(NWRITES*RMEM_BLOCK_SIZE/(1024*1024))/(total/1000000.0),
-			NWRITES*RMEM_BLOCK_SIZE/1024,
-			total/1000000.0
-	);
+	/* Send operation header. */
+	mailbox_write(outbox, &msg);
 
-	return (EXIT_SUCCESS);
+	/* Send data. */
+	portal_allow(inportal, IOCLUSTER1);
+	portal_read(inportal, buf, n);
+
+	portal_unlink(inportal);
+	mailbox_close(outbox);
 }
+
+

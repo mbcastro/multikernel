@@ -22,6 +22,30 @@
 #include <stdio.h>
 #include <string.h>
 
+static const struct {
+	int id;     /**< Cluster ID. */
+	char *name; /**< Portal name. */
+} names[NR_CCLUSTER + NR_IOCLUSTER] = {
+	{ CCLUSTER0,  "/cpu0" },
+	{ CCLUSTER1,  "/cpu1" },
+	{ CCLUSTER2,  "/cpu2" },
+	{ CCLUSTER3,  "/cpu3" },
+	{ CCLUSTER4,  "/cpu4" },
+	{ CCLUSTER5,  "/cpu5" },
+	{ CCLUSTER6,  "/cpu6" },
+	{ CCLUSTER7,  "/cpu7" },
+	{ CCLUSTER8,  "/cpu8" },
+	{ CCLUSTER9,  "/cpu9" },
+	{ CCLUSTER10, "/cpu10" },
+	{ CCLUSTER11, "/cpu11" },
+	{ CCLUSTER12, "/cpu12" },
+	{ CCLUSTER13, "/cpu13" },
+	{ CCLUSTER14, "/cpu14" },
+	{ CCLUSTER15, "/cpu15" },
+	{ IOCLUSTER0, "/io0" },
+	{ IOCLUSTER1, "/io1" }
+};
+
 /*=======================================================================*
  * name_lookup()                                                         *
  *=======================================================================*/
@@ -37,36 +61,38 @@
  */
 int name_lookup(const char *name)
 {
-	static const struct {
-		int id;     /**< Cluster ID. */
-		char *name; /**< Portal name. */
-	} names[NR_CCLUSTER + NR_IOCLUSTER] = {
-		{ CCLUSTER0,  "/cpu0" },
-		{ CCLUSTER1,  "/cpu1" },
-		{ CCLUSTER2,  "/cpu2" },
-		{ CCLUSTER3,  "/cpu3" },
-		{ CCLUSTER4,  "/cpu4" },
-		{ CCLUSTER5,  "/cpu5" },
-		{ CCLUSTER6,  "/cpu6" },
-		{ CCLUSTER7,  "/cpu7" },
-		{ CCLUSTER8,  "/cpu8" },
-		{ CCLUSTER9,  "/cpu9" },
-		{ CCLUSTER10, "/cpu10" },
-		{ CCLUSTER11, "/cpu11" },
-		{ CCLUSTER12, "/cpu12" },
-		{ CCLUSTER13, "/cpu13" },
-		{ CCLUSTER14, "/cpu14" },
-		{ CCLUSTER15, "/cpu15" },
-		{ IOCLUSTER0, "/io0" },
-		{ IOCLUSTER1, "/io1" }
-	};
-	
 	/* Search for portal name. */
 	for (int i = 0; i < NR_CCLUSTER + NR_IOCLUSTER; i++)
 	{
 		/* Found. */
 		if (!strcmp(name, names[i].name))
 			return (names[i].id);
+	}
+
+	return (-ENOENT);
+}
+
+/*=======================================================================*
+ * name_lookdown()                                                       *
+ *=======================================================================*/
+
+/**
+ * @brief Converts a cluster ID into a pathname.
+ *
+ * @param name Target pathnamel name.
+ *
+ * @returns Upon successful completion the pathname that matches the cluster ID
+ * @p clusterid is returned. Upon failure, a negative error code is returned
+ * instead.
+ */
+const char *name_lookdown(int clusterid)
+{
+	/* Search for portal name. */
+	for (int i = 0; i < NR_CCLUSTER + NR_IOCLUSTER; i++)
+	{
+		/* Found. */
+		if (names[i].id == clusterid)
+			return (names[i].name);
 	}
 
 	return (-ENOENT);

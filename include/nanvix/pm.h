@@ -28,6 +28,7 @@
 
 	/* Forward definitions. */
 	extern int name_lookup(const char *);
+	extern const char *name_lookdown(int);
 	extern void name_remotes(char *, int);
 
 /*=======================================================================*

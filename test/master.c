@@ -33,7 +33,7 @@ static void test_mailbox(void)
 
 	const char *argv1[] = {
 		"rmem-client.test",
-		"client",
+		"write",
 		NULL
 	};
 
