@@ -1,3 +1,4 @@
+#include <nanvix/pm.h>
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
@@ -47,7 +48,7 @@ main(int argc, char **argv)
   int i, j;
   int nb_clusters;
   char path[256];
-  uint64_t start_time, exec_time;
+  long start_time, exec_time;
   
   nb_clusters = atoi(argv[1]);
   
@@ -57,8 +58,8 @@ main(int argc, char **argv)
   
   LOG("Number of clusters: %d\n", nb_clusters);
   
-  mppa_init_time();
-  
+ 	timer_init();
+
   // Spawn slave processes
   spawn_slaves("slave", nb_clusters, 1);
   
@@ -105,7 +106,7 @@ main(int argc, char **argv)
     for (i = 1; i <= MAX_BUFFER_SIZE; i *= 2) {
       mppa_barrier_wait(global_barrier);
       
-      start_time = mppa_get_time();
+      start_time = timer_get();
       
       // post asynchronous writes
       for (j = 0; j < nb_clusters; j++)
@@ -115,15 +116,15 @@ main(int argc, char **argv)
       for (j = 0; j < nb_clusters; j++)
 	mppa_async_write_wait_portal(write_portals[j]);
       
-      exec_time = mppa_diff_time(start_time, mppa_get_time());
-      printf("portal;%d;%s;%d;%d;%llu\n", nb_exec, "master-slave", nb_clusters, i, exec_time);
+      exec_time = timer_diff(start_time, timer_get());
+      printf("portal;%d;%s;%d;%d;%ld\n", nb_exec, "master-slave", nb_clusters, i, exec_time);
     }
     
     // ----------- SLAVE -> MASTER ---------------	
     for (i = 1; i <= MAX_BUFFER_SIZE; i *= 2) {
       mppa_barrier_wait(global_barrier);
       
-      start_time = mppa_get_time();
+      start_time = timer_get();
       
       // Block until receive the asynchronous write FROM ALL CLUSTERS and prepare for next asynchronous writes
       // This is possible because we set the trigger = nb_clusters, so the IO waits for nb_cluster messages
@@ -131,7 +132,7 @@ main(int argc, char **argv)
       for (j = 0; j < number_dmas; j++)
 	mppa_async_read_wait_portal(read_portals[j]);
       
-      exec_time = mppa_diff_time(start_time, mppa_get_time());
+      exec_time = timer_diff(start_time, timer_get());
       printf ("portal;%d;%s;%d;%d;%llu\n", nb_exec, "slave-master", nb_clusters, i, exec_time);
     }
   }

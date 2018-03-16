@@ -21,8 +21,7 @@ export OUTDIR=output/bin/
 
 #
 # Runs a unit test.
-
-# $1 Test unit name.
+#   $1 Test unit name.
 #
 function run_test
 {
@@ -33,6 +32,19 @@ function run_test
 		-- $1
 }
 
+#
+# Runs a benchmark.
+#
+function run_benchmark
+{
+	$K1TOOLS_DIR/bin/k1-jtag-runner           \
+		--multibinary=$OUTDIR/noc-latency.img \
+		--exec-multibin=IODDR0:master         \
+		-- $1
+}
+
+if [ $1 == "tests" ];
+then
 for ncclusters in 1 2 4 8 16;
 do
 	echo "=== TESTING $ncclusters"
@@ -45,3 +57,11 @@ do
 		done
 	done
 done
+elif [ $1 == "benchmarks" ];
+then
+	printf "Running benchmark with PORTAL communication...\n"
+	for i in 1 2 4 8 16; do
+		printf "\t Number of clusters = $i\n"
+		run_benchmark $i cut -d " " -f3 >> result/data.csv
+	done
+fi
