@@ -33,15 +33,18 @@ function run_test
 		-- $1
 }
 
-for ncclusters in 1 2 4 8 16;
+for ncclusters in {1..16};
 do
-	echo "=== TESTING $ncclusters"
 	for pattern in regular irregular;
 	do
 		for workload in write read mixed;
 		do
-			run_test "rmem --ncclusters $ncclusters --pattern $pattern --workload $workload"
-			echo "---"
+			echo "=== TESTING rmem $pattern $workload $ncclusters"
+			for i in {1..10};
+			do
+				run_test "rmem --ncclusters $ncclusters --pattern $pattern --workload $workload" >> \
+					rmem-$pattern-$workload-$ncclusters.out
+			done
 		done
 	done
 done
