@@ -1,0 +1,203 @@
+IODDR1@0.0: RM 0: [RMEM] booting up server
+IODDR1@0.0: RM 0: [RMEM] server alive
+IODDR0@0.0: RM 0: [IODDR0] spawning kernels
+IODDR0@0.0: RM 0: cluster   0: 65.68 MB/s (16 MB 0.24 s)
+IODDR0@0.0: RM 0: cluster   1: 65.41 MB/s (16 MB 0.24 s)
+IODDR0@0.0: RM 0: cluster   2: 67.40 MB/s (16 MB 0.24 s)
+IODDR0@0.0: RM 0: cluster   3: 67.46 MB/s (16 MB 0.24 s)
+IODDR0@0.0: RM 0: cluster   4: 44.21 MB/s (16 MB 0.36 s)
+IODDR0@0.0: RM 0: cluster   5: 42.31 MB/s (16 MB 0.38 s)
+IODDR0@0.0: RM 0: cluster   6: 41.93 MB/s (16 MB 0.38 s)
+IODDR0@0.0: RM 0: cluster   7: 41.97 MB/s (16 MB 0.38 s)
+IODDR0@0.0: RM 0: cluster   8: 50.67 MB/s (16 MB 0.32 s)
+IODDR0@0.0: RM 0: cluster   9: 64.31 MB/s (16 MB 0.25 s)
+IODDR0@0.0: RM 0: cluster  10: 65.70 MB/s (16 MB 0.24 s)
+IODDR0@0.0: RM 0: cluster  11: 66.07 MB/s (16 MB 0.24 s)
+IODDR0@0.0: RM 0: [IODDR0] waiting kernels
+IODDR0@0.0: RM 0: cluster  12: 70.34 MB/s (16 MB 0.23 s)
+IODDR0@0.0: RM 0: cluster  13: 55.62 MB/s (16 MB 0.29 s)
+IODDR0@0.0: RM 0: cluster  14: 55.62 MB/s (16 MB 0.29 s)
+IODDR0@0.0: RM 0: cluster  15: 63.22 MB/s (16 MB 0.25 s)
+IODDR1@0.0: RM 0: [RMEM] booting up server
+IODDR1@0.0: RM 0: [RMEM] server alive
+IODDR0@0.0: RM 0: [IODDR0] spawning kernels
+IODDR0@0.0: RM 0: cluster   0: 80.67 MB/s (16 MB 0.20 s)
+IODDR0@0.0: RM 0: cluster   1: 78.28 MB/s (16 MB 0.20 s)
+IODDR0@0.0: RM 0: cluster   2: 80.30 MB/s (16 MB 0.20 s)
+IODDR0@0.0: RM 0: cluster   3: 47.35 MB/s (16 MB 0.34 s)
+IODDR0@0.0: RM 0: cluster   4: 46.06 MB/s (16 MB 0.35 s)
+IODDR0@0.0: RM 0: cluster   5: 46.04 MB/s (16 MB 0.35 s)
+IODDR0@0.0: RM 0: cluster   6: 53.72 MB/s (16 MB 0.30 s)
+IODDR0@0.0: RM 0: cluster   8: 59.81 MB/s (16 MB 0.27 s)
+IODDR0@0.0: RM 0: [IODDR0] waiting kernels
+IODDR0@0.0: RM 0: [IODDR0] waiting kernels
+IODDR0@0.0: RM 0: cluster   7: 47.82 MB/s (16 MB 0.33 s)
+IODDR0@0.0: RM 0: cluster   9: 47.80 MB/s (16 MB 0.33 s)
+IODDR0@0.0: RM 0: cluster  10: 48.64 MB/s (16 MB 0.33 s)
+IODDR0@0.0: RM 0: cluster  11: 67.53 MB/s (16 MB 0.24 s)
+IODDR0@0.0: RM 0: cluster  12: 45.72 MB/s (16 MB 0.35 s)
+IODDR0@0.0: RM 0: cluster  13: 44.71 MB/s (16 MB 0.36 s)
+IODDR0@0.0: RM 0: cluster  14: 49.85 MB/s (16 MB 0.32 s)
+IODDR0@0.0: RM 0: cluster  15: 50.80 MB/s (16 MB 0.31 s)
+IODDR1@0.0: RM 0: [RMEM] booting up server
+IODDR1@0.0: RM 0: [RMEM] server alive
+IODDR0@0.0: RM 0: [IODDR0] spawning kernels
+IODDR0@0.0: RM 0: cluster   0: 82.81 MB/s (16 MB 0.19 s)
+IODDR0@0.0: RM 0: cluster   2: 61.68 MB/s (16 MB 0.26 s)
+IODDR0@0.0: RM 0: cluster   1: 48.28 MB/s (16 MB 0.33 s)
+IODDR0@0.0: RM 0: cluster   3: 48.26 MB/s (16 MB 0.33 s)
+IODDR0@0.0: RM 0: cluster   4: 49.09 MB/s (16 MB 0.33 s)
+IODDR0@0.0: RM 0: cluster   5: 58.38 MB/s (16 MB 0.27 s)
+IODDR0@0.0: RM 0: cluster   6: 56.44 MB/s (16 MB 0.28 s)
+IODDR0@0.0: RM 0: cluster   7: 54.68 MB/s (16 MB 0.29 s)
+IODDR0@0.0: RM 0: cluster   8: 55.66 MB/s (16 MB 0.29 s)
+IODDR0@0.0: RM 0: cluster   9: 78.12 MB/s (16 MB 0.20 s)
+IODDR0@0.0: RM 0: [IODDR0] waiting kernels
+IODDR0@0.0: RM 0: cluster  10: 53.17 MB/s (16 MB 0.30 s)
+IODDR0@0.0: RM 0: cluster  11: 51.54 MB/s (16 MB 0.31 s)
+IODDR0@0.0: RM 0: cluster  12: 51.55 MB/s (16 MB 0.31 s)
+IODDR0@0.0: RM 0: cluster  13: 57.09 MB/s (16 MB 0.28 s)
+IODDR0@0.0: RM 0: cluster  14: 61.16 MB/s (16 MB 0.26 s)
+IODDR0@0.0: RM 0: cluster  15: 61.28 MB/s (16 MB 0.26 s)
+IODDR1@0.0: RM 0: [RMEM] booting up server
+IODDR1@0.0: RM 0: [RMEM] server alive
+IODDR0@0.0: RM 0: [IODDR0] spawning kernels
+IODDR0@0.0: RM 0: cluster   0: 82.81 MB/s (16 MB 0.19 s)
+IODDR0@0.0: RM 0: cluster   1: 65.61 MB/s (16 MB 0.24 s)
+IODDR0@0.0: RM 0: cluster   2: 65.27 MB/s (16 MB 0.25 s)
+IODDR0@0.0: RM 0: cluster   3: 63.82 MB/s (16 MB 0.25 s)
+IODDR0@0.0: RM 0: cluster   4: 74.89 MB/s (16 MB 0.21 s)
+IODDR0@0.0: RM 0: cluster   5: 65.21 MB/s (16 MB 0.25 s)
+IODDR0@0.0: RM 0: cluster   6: 56.01 MB/s (16 MB 0.29 s)
+IODDR0@0.0: RM 0: cluster   7: 56.00 MB/s (16 MB 0.29 s)
+IODDR0@0.0: RM 0: cluster   8: 64.95 MB/s (16 MB 0.25 s)
+IODDR0@0.0: RM 0: cluster  10: 66.01 MB/s (16 MB 0.24 s)
+IODDR0@0.0: RM 0: cluster   9: 65.99 MB/s (16 MB 0.24 s)
+IODDR0@0.0: RM 0: cluster  11: 66.57 MB/s (16 MB 0.24 s)
+IODDR0@0.0: RM 0: cluster  12: 79.56 MB/s (16 MB 0.20 s)
+IODDR0@0.0: RM 0: [IODDR0] waiting kernels
+IODDR0@0.0: RM 0: cluster  13: 66.87 MB/s (16 MB 0.24 s)
+IODDR0@0.0: RM 0: cluster  14: 66.58 MB/s (16 MB 0.24 s)
+IODDR0@0.0: RM 0: cluster  15: 68.95 MB/s (16 MB 0.23 s)
+IODDR1@0.0: RM 0: [RMEM] booting up server
+IODDR1@0.0: RM 0: [RMEM] server alive
+IODDR0@0.0: RM 0: [IODDR0] spawning kernels
+IODDR0@0.0: RM 0: cluster   0: 82.79 MB/s (16 MB 0.19 s)
+IODDR0@0.0: RM 0: cluster   1: 80.61 MB/s (16 MB 0.20 s)
+IODDR0@0.0: RM 0: cluster   2: 78.32 MB/s (16 MB 0.20 s)
+IODDR0@0.0: RM 0: cluster   3: 66.35 MB/s (16 MB 0.24 s)
+IODDR0@0.0: RM 0: cluster   4: 65.72 MB/s (16 MB 0.24 s)
+IODDR0@0.0: RM 0: cluster   5: 65.83 MB/s (16 MB 0.24 s)
+IODDR0@0.0: RM 0: cluster   6: 70.16 MB/s (16 MB 0.23 s)
+IODDR0@0.0: RM 0: cluster   7: 56.34 MB/s (16 MB 0.28 s)
+IODDR0@0.0: RM 0: cluster   8: 54.85 MB/s (16 MB 0.29 s)
+IODDR0@0.0: RM 0: cluster   9: 60.87 MB/s (16 MB 0.26 s)
+IODDR0@0.0: RM 0: cluster  10: 73.97 MB/s (16 MB 0.22 s)
+IODDR0@0.0: RM 0: [IODDR0] waiting kernels
+IODDR0@0.0: RM 0: cluster  11: 50.40 MB/s (16 MB 0.32 s)
+IODDR0@0.0: RM 0: cluster  12: 47.78 MB/s (16 MB 0.33 s)
+IODDR0@0.0: RM 0: cluster  13: 47.22 MB/s (16 MB 0.34 s)
+IODDR0@0.0: RM 0: cluster  14: 62.10 MB/s (16 MB 0.26 s)
+IODDR0@0.0: RM 0: cluster  15: 63.20 MB/s (16 MB 0.25 s)
+IODDR1@0.0: RM 0: [RMEM] booting up server
+IODDR1@0.0: RM 0: [RMEM] server alive
+IODDR0@0.0: RM 0: [IODDR0] spawning kernels
+IODDR0@0.0: RM 0: cluster   0: 80.45 MB/s (16 MB 0.20 s)
+IODDR0@0.0: RM 0: cluster   1: 78.28 MB/s (16 MB 0.20 s)
+IODDR0@0.0: RM 0: cluster   2: 78.17 MB/s (16 MB 0.20 s)
+IODDR0@0.0: RM 0: cluster   3: 67.33 MB/s (16 MB 0.24 s)
+IODDR0@0.0: RM 0: cluster   4: 66.67 MB/s (16 MB 0.24 s)
+IODDR0@0.0: RM 0: cluster   5: 66.86 MB/s (16 MB 0.24 s)
+IODDR0@0.0: RM 0: cluster   6: 69.63 MB/s (16 MB 0.23 s)
+IODDR0@0.0: RM 0: cluster   7: 69.39 MB/s (16 MB 0.23 s)
+IODDR0@0.0: RM 0: cluster   8: 72.34 MB/s (16 MB 0.22 s)
+IODDR0@0.0: RM 0: [IODDR0] waiting kernels
+IODDR0@0.0: RM 0: cluster   9: 45.68 MB/s (16 MB 0.35 s)
+IODDR0@0.0: RM 0: cluster  11: 42.10 MB/s (16 MB 0.38 s)
+IODDR0@0.0: RM 0: cluster  10: 41.26 MB/s (16 MB 0.39 s)
+IODDR0@0.0: RM 0: cluster  12: 39.85 MB/s (16 MB 0.40 s)
+IODDR0@0.0: RM 0: cluster  13: 42.97 MB/s (16 MB 0.37 s)
+IODDR0@0.0: RM 0: cluster  14: 51.57 MB/s (16 MB 0.31 s)
+IODDR0@0.0: RM 0: cluster  15: 61.51 MB/s (16 MB 0.26 s)
+IODDR1@0.0: RM 0: [RMEM] booting up server
+IODDR1@0.0: RM 0: [RMEM] server alive
+IODDR0@0.0: RM 0: [IODDR0] spawning kernels
+IODDR0@0.0: RM 0: cluster   0: 82.81 MB/s (16 MB 0.19 s)
+IODDR0@0.0: RM 0: cluster   2: 61.68 MB/s (16 MB 0.26 s)
+IODDR0@0.0: RM 0: cluster   1: 48.28 MB/s (16 MB 0.33 s)
+IODDR0@0.0: RM 0: cluster   4: 48.26 MB/s (16 MB 0.33 s)
+IODDR0@0.0: RM 0: cluster   3: 49.09 MB/s (16 MB 0.33 s)
+IODDR0@0.0: RM 0: cluster   5: 58.93 MB/s (16 MB 0.27 s)
+IODDR0@0.0: RM 0: cluster   6: 56.40 MB/s (16 MB 0.28 s)
+IODDR0@0.0: RM 0: cluster   7: 46.67 MB/s (16 MB 0.34 s)
+IODDR0@0.0: RM 0: cluster   8: 47.76 MB/s (16 MB 0.33 s)
+IODDR0@0.0: RM 0: cluster   9: 56.17 MB/s (16 MB 0.28 s)
+IODDR0@0.0: RM 0: cluster  10: 72.21 MB/s (16 MB 0.22 s)
+IODDR0@0.0: RM 0: cluster  11: 72.70 MB/s (16 MB 0.22 s)
+IODDR0@0.0: RM 0: [IODDR0] waiting kernels
+IODDR0@0.0: RM 0: cluster  12: 46.05 MB/s (16 MB 0.35 s)
+IODDR0@0.0: RM 0: cluster  14: 44.82 MB/s (16 MB 0.36 s)
+IODDR0@0.0: RM 0: cluster  13: 44.80 MB/s (16 MB 0.36 s)
+IODDR0@0.0: RM 0: cluster  15: 51.67 MB/s (16 MB 0.31 s)
+IODDR1@0.0: RM 0: [RMEM] booting up server
+IODDR1@0.0: RM 0: [RMEM] server alive
+IODDR0@0.0: RM 0: [IODDR0] spawning kernels
+IODDR0@0.0: RM 0: cluster   0: 80.68 MB/s (16 MB 0.20 s)
+IODDR0@0.0: RM 0: cluster   1: 65.38 MB/s (16 MB 0.24 s)
+IODDR0@0.0: RM 0: cluster   2: 64.14 MB/s (16 MB 0.25 s)
+IODDR0@0.0: RM 0: cluster   3: 62.51 MB/s (16 MB 0.26 s)
+IODDR0@0.0: RM 0: cluster   5: 62.88 MB/s (16 MB 0.25 s)
+IODDR0@0.0: RM 0: cluster   4: 63.40 MB/s (16 MB 0.25 s)
+IODDR0@0.0: RM 0: cluster   6: 65.18 MB/s (16 MB 0.25 s)
+IODDR0@0.0: RM 0: cluster   7: 77.16 MB/s (16 MB 0.21 s)
+IODDR0@0.0: RM 0: cluster   8: 78.46 MB/s (16 MB 0.20 s)
+IODDR0@0.0: RM 0: cluster   9: 78.71 MB/s (16 MB 0.20 s)
+IODDR0@0.0: RM 0: cluster  10: 78.25 MB/s (16 MB 0.20 s)
+IODDR0@0.0: RM 0: cluster  11: 80.01 MB/s (16 MB 0.20 s)
+IODDR0@0.0: RM 0: [IODDR0] waiting kernels
+IODDR0@0.0: RM 0: cluster  12: 67.02 MB/s (16 MB 0.24 s)
+IODDR0@0.0: RM 0: cluster  13: 65.99 MB/s (16 MB 0.24 s)
+IODDR0@0.0: RM 0: cluster  14: 66.00 MB/s (16 MB 0.24 s)
+IODDR0@0.0: RM 0: cluster  15: 78.43 MB/s (16 MB 0.20 s)
+IODDR1@0.0: RM 0: [RMEM] booting up server
+IODDR1@0.0: RM 0: [RMEM] server alive
+IODDR0@0.0: RM 0: [IODDR0] spawning kernels
+IODDR0@0.0: RM 0: cluster   0: 68.87 MB/s (16 MB 0.23 s)
+IODDR0@0.0: RM 0: cluster   1: 66.41 MB/s (16 MB 0.24 s)
+IODDR0@0.0: RM 0: cluster   2: 66.71 MB/s (16 MB 0.24 s)
+IODDR0@0.0: RM 0: cluster   3: 46.99 MB/s (16 MB 0.34 s)
+IODDR0@0.0: RM 0: cluster   4: 45.78 MB/s (16 MB 0.35 s)
+IODDR0@0.0: RM 0: cluster   5: 45.78 MB/s (16 MB 0.35 s)
+IODDR0@0.0: RM 0: cluster   6: 52.96 MB/s (16 MB 0.30 s)
+IODDR0@0.0: RM 0: cluster   7: 61.75 MB/s (16 MB 0.26 s)
+IODDR0@0.0: RM 0: cluster   8: 41.69 MB/s (16 MB 0.38 s)
+IODDR0@0.0: RM 0: [IODDR0] waiting kernels
+IODDR0@0.0: RM 0: [IODDR0] waiting kernels
+IODDR0@0.0: RM 0: cluster  10: 40.20 MB/s (16 MB 0.40 s)
+IODDR0@0.0: RM 0: cluster   9: 40.20 MB/s (16 MB 0.40 s)
+IODDR0@0.0: RM 0: cluster  11: 47.96 MB/s (16 MB 0.33 s)
+IODDR0@0.0: RM 0: cluster  12: 71.49 MB/s (16 MB 0.22 s)
+IODDR0@0.0: RM 0: cluster  13: 68.41 MB/s (16 MB 0.23 s)
+IODDR0@0.0: RM 0: cluster  14: 67.80 MB/s (16 MB 0.24 s)
+IODDR0@0.0: RM 0: cluster  15: 68.26 MB/s (16 MB 0.23 s)
+IODDR1@0.0: RM 0: [RMEM] booting up server
+IODDR1@0.0: RM 0: [RMEM] server alive
+IODDR0@0.0: RM 0: [IODDR0] spawning kernels
+IODDR0@0.0: RM 0: cluster   0: 57.10 MB/s (16 MB 0.28 s)
+IODDR0@0.0: RM 0: cluster   2: 55.27 MB/s (16 MB 0.29 s)
+IODDR0@0.0: RM 0: cluster   1: 50.99 MB/s (16 MB 0.31 s)
+IODDR0@0.0: RM 0: cluster   3: 52.15 MB/s (16 MB 0.31 s)
+IODDR0@0.0: RM 0: cluster   4: 72.02 MB/s (16 MB 0.22 s)
+IODDR0@0.0: RM 0: cluster   5: 48.07 MB/s (16 MB 0.33 s)
+IODDR0@0.0: RM 0: cluster   6: 46.76 MB/s (16 MB 0.34 s)
+IODDR0@0.0: RM 0: cluster   7: 46.76 MB/s (16 MB 0.34 s)
+IODDR0@0.0: RM 0: cluster   8: 54.87 MB/s (16 MB 0.29 s)
+IODDR0@0.0: RM 0: cluster   9: 78.48 MB/s (16 MB 0.20 s)
+IODDR0@0.0: RM 0: [IODDR0] waiting kernels
+IODDR0@0.0: RM 0: [IODDR0] waiting kernels
+IODDR0@0.0: RM 0: cluster  10: 67.83 MB/s (16 MB 0.24 s)
+IODDR0@0.0: RM 0: cluster  11: 66.89 MB/s (16 MB 0.24 s)
+IODDR0@0.0: RM 0: cluster  12: 67.21 MB/s (16 MB 0.24 s)
+IODDR0@0.0: RM 0: cluster  13: 70.44 MB/s (16 MB 0.23 s)
+IODDR0@0.0: RM 0: cluster  14: 67.72 MB/s (16 MB 0.24 s)
+IODDR0@0.0: RM 0: cluster  15: 68.03 MB/s (16 MB 0.24 s)
