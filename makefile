@@ -46,6 +46,7 @@ rmem-server.test-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
 						 $(SRCDIR)/kernel/arch/mppa/name.c    \
 						 $(SRCDIR)/kernel/sys/timer.c         \
 						 $(SRCDIR)/kernel/sys/memwrite.c      \
+						 $(SRCDIR)/kernel/sys/memread.c       \
 						 $(SRCDIR)/servers/rmem.c
 
 #=============================================================================
@@ -61,6 +62,7 @@ rmem-client.test-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
 						 $(SRCDIR)/kernel/arch/mppa/name.c    \
 						 $(SRCDIR)/kernel/sys/timer.c         \
 						 $(SRCDIR)/kernel/sys/memwrite.c      \
+						 $(SRCDIR)/kernel/sys/memread.c       \
 						 $(TESTDIR)/rmem/rmem-client.c
 
 #=============================================================================

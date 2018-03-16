@@ -41,9 +41,9 @@ int main(int argc, char **argv)
 
 	/* Invalid number of arguments. */
 	if (argc != 2)
-		return (-EINVAL)
+		return (-EINVAL);
 	
-	mode = (!strcmp(argv[1], "write")) ? 1 : 0;
+	wmode = (!strcmp(argv[1], "write")) ? 1 : 0;
 	
 	timer_init();
 
@@ -59,10 +59,10 @@ int main(int argc, char **argv)
 
 	total = timer_diff(start, end);
 
-	printf("cluster %3d: %.2lf MB/s (%d KB %.2lf s)\n", 
+	printf("cluster %3d: %.2lf MB/s (%d MB %.2lf s)\n", 
 			arch_get_cluster_id(),
-			(NWRITES*RMEM_BLOCK_SIZE/(1024*1024))/(total/1000000.0),
-			NWRITES*RMEM_BLOCK_SIZE/1024,
+			(NACCESSES*RMEM_BLOCK_SIZE/(1024*1024))/(total/1000000.0),
+			(NACCESSES*RMEM_BLOCK_SIZE)/(1024*1024),
 			total/1000000.0
 	);
 

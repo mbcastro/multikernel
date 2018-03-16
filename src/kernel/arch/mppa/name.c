@@ -82,8 +82,7 @@ int name_lookup(const char *name)
  * @param name Target pathnamel name.
  *
  * @returns Upon successful completion the pathname that matches the cluster ID
- * @p clusterid is returned. Upon failure, a negative error code is returned
- * instead.
+ * @p clusterid is returned. Upon failure, NULL is returned instead.
  */
 const char *name_lookdown(int clusterid)
 {
@@ -95,7 +94,7 @@ const char *name_lookdown(int clusterid)
 			return (names[i].name);
 	}
 
-	return (-ENOENT);
+	return (NULL);
 }
 
 /*=======================================================================*

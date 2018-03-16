@@ -69,11 +69,11 @@ int main(int argc, char **argv)
 			portal_read(inportal, &rmem[msg.blknum], msg.size);
 			portal_unlink(inportal);
 		}
-		else if (MSG.OP == RMEM_READ)
+		else if (msg.op == RMEM_READ)
 		{
 			int outportal = portal_open(name_lookdown(msg.source));
-			portal_write(inportal, &rmem[msg.blknum], msg.size);
-			portal_close(inportal);
+			portal_write(outportal, &rmem[msg.blknum], msg.size);
+			portal_close(outportal);
 		}
 
 #ifdef DEBUG

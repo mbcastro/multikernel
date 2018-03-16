@@ -54,5 +54,6 @@
 
 	/* Forward definitions. */
 	extern void memwrite(uint64_t, const void *, size_t);
+	extern void memread(uint64_t, void *, size_t);
 
 #endif /* _MAILBOX_H_ */
