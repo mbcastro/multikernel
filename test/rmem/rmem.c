@@ -20,14 +20,13 @@
 #include <mppa/osconfig.h>
 #include <nanvix/hal.h>
 #include <nanvix/mm.h>
-#include <nanvix/pm.h>
 #include <stdio.h>
 #include <string.h>
 
 /**
  * @brief Number of access to remote memory.
  */
-#define NACCESSES RMEM_SIZE/RMEM_BLOCK_SIZE
+#define NACCESSES 30
 
 /**
  * @brief My cluster ID.
@@ -60,29 +59,21 @@ static int kernel_workload(const char *workload)
  *
  * @returns Kernel time.
  */
-static long kernel_regular(const char *workload)
+static void kernel_regular(const char *workload)
 {
-	long start, end;
-
 	/* Write. */
 	if (kernel_workload(workload))
 	{
-		start = timer_get();
-			for (int i = 0; i < NACCESSES; i++)
-				memwrite(i, data, RMEM_BLOCK_SIZE);
-		end = timer_get();
+		for (int i = 0; i < NACCESSES; i++)
+			memwrite(i, data, RMEM_BLOCK_SIZE);
 	}
 
 	/* Read. */
 	else
 	{
-		start = timer_get();
-			for (int i = 0; i < NACCESSES; i++)
-				memread(i, data, RMEM_BLOCK_SIZE);
-		end = timer_get();
+		for (int i = 0; i < NACCESSES; i++)
+			memread(i, data, RMEM_BLOCK_SIZE);
 	}
-
-	return (timer_diff(start, end));
 }
 
 /**
@@ -92,29 +83,21 @@ static long kernel_regular(const char *workload)
  *
  * @brief Kernel time.
  */
-static long kernel_irregular(const char *workload)
+static void kernel_irregular(const char *workload)
 {
-	long start, end;
-
 	/* Write. */
 	if (kernel_workload(workload))
 	{
-		start = timer_get();
-			for (int i = 0; i < NACCESSES; i++)
-				memwrite(i%(RMEM_SIZE/RMEM_BLOCK_SIZE), data, RMEM_BLOCK_SIZE);
-		end = timer_get();
+		for (int i = 0; i < NACCESSES; i++)
+			memwrite(i%(RMEM_SIZE/RMEM_BLOCK_SIZE), data, RMEM_BLOCK_SIZE);
 	}
 
 	/* Read. */
 	else
 	{
-		start = timer_get();
-			for (int i = 0; i < NACCESSES; i++)
-				memread(rand()%(RMEM_SIZE/RMEM_BLOCK_SIZE), data, RMEM_BLOCK_SIZE);
-		end = timer_get();
+		for (int i = 0; i < NACCESSES; i++)
+			memread(rand()%(RMEM_SIZE/RMEM_BLOCK_SIZE), data, RMEM_BLOCK_SIZE);
 	}
-
-	return (timer_diff(start, end));
 }
 
 /**
@@ -122,7 +105,6 @@ static long kernel_irregular(const char *workload)
  */
 int main(int argc, char **argv)
 {
-	long total;
 	const char *pattern;
 	const char *workload;
 
@@ -136,17 +118,10 @@ int main(int argc, char **argv)
 	pattern = argv[1];
 	workload = argv[2];
 
-	timer_init();
-
-	total = (!strcmp(pattern, "regular")) ? 
-		kernel_regular(workload) : kernel_irregular(workload);
-
-	printf("cluster %3d: %.2lf MB/s (%d MB %.2lf s)\n", 
-			clusterid,
-			(NACCESSES*RMEM_BLOCK_SIZE/(1024*1024))/(total/1000000.0),
-			(NACCESSES*RMEM_BLOCK_SIZE)/(1024*1024),
-			total/1000000.0
-	);
+	if (!strcmp(pattern, "regular"))
+		kernel_regular(workload);
+	else
+		kernel_irregular(workload);
 
 	return (EXIT_SUCCESS);
 }

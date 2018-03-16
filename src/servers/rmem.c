@@ -35,18 +35,20 @@ static char rmem[RMEM_SIZE];
 int main(int argc, char **argv)
 {
 	int inbox;
+	int iobarrier;
 
 	((void) argc);
 	((void) argv);
 
+#ifdef DEBUG
 	printf("[RMEM] booting up server\n");
+#endif
+
+	iobarrier = barrier_open(BARRIER_IOCLUSTERS);
 	inbox = mailbox_create("/io1");
 
-	printf("[RMEM] server alive\n");
-	int sync_fd = mppa_open("/mppa/sync/128:8", O_WRONLY);
-	uint64_t mask = (1 << 0);
-	mppa_write(sync_fd, &mask, sizeof(uint64_t));
-	mppa_close(sync_fd);
+	/* Wait for other IOs. */
+	barrier_wait(iobarrier);
 
 	timer_init();
 
@@ -55,13 +57,7 @@ int main(int argc, char **argv)
 		struct rmem_message msg;
 
 		mailbox_read(inbox, &msg);
-#ifdef DEBUG
-		printf("[RMEM] client connected\n");
-#endif
 
-#ifdef DEBUG
-		printf("[RMEM] serving client\n");
-#endif
 		if (msg.op == RMEM_WRITE)
 		{
 			int inportal = portal_create("/io1");
@@ -75,13 +71,10 @@ int main(int argc, char **argv)
 			portal_write(outportal, &rmem[msg.blknum], msg.size);
 			portal_close(outportal);
 		}
-
-#ifdef DEBUG
-		printf("[RMEM] client disconnected\n");
-#endif
 	}
 
 	mailbox_unlink(inbox);
+	baerrier_close(iobarrier);
 
 	return (EXIT_SUCCESS);
 }

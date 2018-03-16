@@ -8,21 +8,25 @@ do
 			| grep "$i;"     \
 			| tail -n 30     \
 			| cut -d";" -f 2 \
-		> /tmp/$i-$ncclusters.tmp
+		> /tmp/noc-latency-$i-$ncclusters.tmp
 	done
 
 	paste -d";"                      \
-		/tmp/?-$ncclusters.tmp       \
-		/tmp/??-$ncclusters.tmp      \
-		/tmp/???-$ncclusters.tmp     \
-		/tmp/????-$ncclusters.tmp    \
-		/tmp/?????-$ncclusters.tmp   \
-		/tmp/??????-$ncclusters.tmp  \
-		/tmp/???????-$ncclusters.tmp \
+		/tmp/noc-latency-?-$ncclusters.tmp       \
+		/tmp/noc-latency-??-$ncclusters.tmp      \
+		/tmp/noc-latency-???-$ncclusters.tmp     \
+		/tmp/noc-latency-????-$ncclusters.tmp    \
+		/tmp/noc-latency-?????-$ncclusters.tmp   \
+		/tmp/noc-latency-??????-$ncclusters.tmp  \
+		/tmp/noc-latency-???????-$ncclusters.tmp \
 	> results/noc-latency-$ncclusters.csv
 
-	echo "=="
 	cat results/rmem/rmem-regular-write-$ncclusters.out \
-		| grep cluster                                  \
-		| cut -d" " -f 12
+		| grep -v "\[IODDR0\]"                          \
+		| grep -v RMEM                                  \
+		| cut -d" " -f 4-                               \
+		| cut -d";" -f 2                                \
+	> results/rmem-$ncclusters.csv
 done
+
+rm -f /tmp/*.tmp

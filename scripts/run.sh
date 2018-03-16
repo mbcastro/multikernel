@@ -47,16 +47,13 @@ if [ $1 == "tests" ];
 then
 for ncclusters in 1 2 4 8 16;
 do
-	for pattern in regular irregular;
+	for pattern in regular;
 	do
-		for workload in write read mixed;
+		for workload in write;
 		do
 			echo "=== TESTING rmem $pattern $workload $ncclusters"
-			for i in {1..10};
-			do
 				run_test "rmem --ncclusters $ncclusters --pattern $pattern --workload $workload" >> \
-					rmem-$pattern-$workload-$ncclusters.out
-			done
+					results/rmem/rmem-$pattern-$workload-$ncclusters.out
 		done
 	done
 done

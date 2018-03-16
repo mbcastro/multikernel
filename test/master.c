@@ -199,7 +199,7 @@ static void readargs(int argc, char **argv)
 /**
  * @brief Sync with remote servers.
  */
-static void servers_sync(void)
+static void barrier_wait(int nremotes)
 {
 	int sync_fd;
 	uint64_t mask;
@@ -209,7 +209,7 @@ static void servers_sync(void)
 	assert(sync_fd != -1);
 	
 	/* Sync. */
-	mask = ~(1 << 0);
+	mask = ~(1 << (nremotes - 1));
 	mppa_ioctl(sync_fd, MPPA_RX_SET_MATCH, mask);
 	mppa_read(sync_fd, &mask, sizeof(uint64_t));
 	
@@ -226,6 +226,8 @@ static void servers_sync(void)
  */
 int main(int argc, char **argv)
 {
+	int iobarrier;
+	int ccbarrier;
 	const char *args[NR_ARGS + 1];
 	mppa_pid_t client[NR_CCLUSTER];
 
@@ -238,21 +240,39 @@ int main(int argc, char **argv)
 
 	readargs(argc, argv);
 
-	servers_sync();
-
 	/* Build slave arguments. */
 	args[0] = kernel;
 	args[1] = pattern;
 	args[2] = workload;
 	args[3] = NULL;
+	
+	timer_init();
 
-	printf("[IODDR0] spawning kernels\n");
+	iobarrier = barrier_open(BARRIER_IOCLUSTERS);
+	ccbarrier = barrier_open(BARRIER_CCLUSTERS);
+
+	/* Wait servers. */
+	barrier_wait(iobarrier);
+
+	printf("[IOCLUSTER0] spawning kernels\n");
 	for (int i = 0; i < ncclusters; i++)
 		client[i] = mppa_spawn(i, NULL, args[0], args, NULL);
 
-	printf("[IODDR0] waiting kernels\n");
+	/* Wait clients */
+	barrier_wait(ccbarrier);
+	start = timer_get();
+
+	printf("[IOCLUSTER0] waiting kernels\n");
+
+	/* Wait clients. */
+	barrier_wait(ccbarrier);
+	end = timer_get();
+	
+	/* House keeping. */
 	for (int i = 0; i < ncclusters; i++)
 		mppa_waitpid(client[i], NULL, 0);
+	barrier_close(iobarrier);
+	barrier_close(ccbarrier);
 
 	return (EXIT_SUCCESS);
 }
