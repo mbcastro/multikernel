@@ -30,21 +30,18 @@ function run_test
 		--multibinary=$OUTDIR/test.img          \
 		--exec-multibin=IODDR0:master.test      \
 		--exec-multibin=IODDR1:rmem-server.test \
-		-- $1 $2
+		-- $1
 }
 
-if [ $1 == 'tests' ];
-then
-	for ncclusters in 1 2 4 8 16;
+for ncclusters in 1 2 4 8 16;
+do
+	echo "=== TESTING $ncclusters"
+	for pattern in regular irregular;
 	do
-		echo "=== TESTING $ncclusters"
-		run_test regular-random $ncclusters
-		echo "---"
-		run_test regular-read $ncclusters
-		echo "---"
-		run_test regular-write $ncclusters
+		for workload in write read mixed;
+		do
+			run_test "rmem --ncclusters $ncclusters --pattern $pattern --workload $workload"
+			echo "---"
+		done
 	done
-else
-	echo "Missing parameters"
-	echo "Usage: run.sh <benchmarks | tests>"
-fi
+done
