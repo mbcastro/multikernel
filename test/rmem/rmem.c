@@ -20,13 +20,14 @@
 #include <mppa/osconfig.h>
 #include <nanvix/hal.h>
 #include <nanvix/mm.h>
+#include <nanvix/pm.h>
 #include <stdio.h>
 #include <string.h>
 
 /**
  * @brief Number of access to remote memory.
  */
-#define NACCESSES 30
+#define NACCESSES 64
 
 /**
  * @brief My cluster ID.
@@ -118,8 +119,12 @@ int main(int argc, char **argv)
 	pattern = argv[1];
 	workload = argv[2];
 
+#ifdef DEBUG
+	printf("cluster %d: alive!\n", clusterid);
+#endif
+
 	/* Wait master IO cluster. */
-	barrier_open();
+	barrier_open(1);
 	barrier_wait();
 
 	if (!strcmp(pattern, "regular"))
@@ -129,6 +134,10 @@ int main(int argc, char **argv)
 
 	/* Wait master IO cluster. */
 	barrier_wait();
+
+#ifdef DEBUG
+	printf("cluster %d: done!\n", clusterid);
+#endif
 
 	/* House keeping. */
 	barrier_close();

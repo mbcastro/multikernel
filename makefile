@@ -39,7 +39,9 @@ k1-lflags := -lmppaipc
 
 io-bin := master.test rmem-server.test noc-latency-master
 
-master.test-srcs := $(TESTDIR)/master.c
+master.test-srcs := $(TESTDIR)/master.c          \
+					$(SRCDIR)/kernel/sys/timer.c \
+					$(SRCDIR)/kernel/arch/mppa/barrier.c \
 
 rmem-server.test-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
 						 $(SRCDIR)/kernel/arch/mppa/portal.c  \

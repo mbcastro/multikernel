@@ -63,8 +63,8 @@
 
 	extern void barrier_open(int);
 	extern int barrier_wait(void);
-	extern void barrier_release(void);
-	extern void close_barrier(void);
+	extern int barrier_release(void);
+	extern void barrier_close(void);
 
 /*======================================================================*
  * Timer                                                                *

@@ -67,7 +67,7 @@ void barrier_open(int ncclusters)
 		sprintf(pathname, "/mppa/sync/[%d..%d]:4", CCLUSTER0, CCLUSTER15);
 		assert((barrier.remote = mppa_open(pathname, O_WRONLY)) != -1);
 
-		mask = ~(1 << ncclusters);
+		mask = ((uint64_t) -1) & ~(1 << (ncclusters - 1));
 		assert(mppa_ioctl(barrier.local, MPPA_RX_SET_MATCH, mask) == 0);
 
 		for (int i = 0; i < ncclusters; i++)
@@ -106,8 +106,8 @@ int barrier_wait(void)
 	/* IO 0 cluster barrier. */
 	if (local == IOCLUSTER0)
 	{
-		mask = ~0;	
 		assert(mppa_read(barrier.local, &mask, sizeof(uint64_t)) == sizeof(uint64_t));
+		mask = ~0;	
 		assert(mppa_write(barrier.remote, &mask, sizeof(uint64_t)) == sizeof(uint64_t));
 	}
 	/* Compute cluster barrier. */
@@ -125,7 +125,7 @@ int barrier_wait(void)
  * barrier_release()                                                     *
  *=======================================================================*/
 
-void barrier_release(void)
+int barrier_release(void)
 {
 	int local;
 	uint64_t mask;
@@ -149,7 +149,7 @@ void barrier_release(void)
 /**
  * @brief Closes the global barrier.
  */
-void close_barrier(void)
+void barrier_close(void)
 {
 	int local;
 

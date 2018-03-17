@@ -19,6 +19,7 @@
 
 #include <mppa/osconfig.h>
 #include <nanvix/arch/mppa.h>
+#include <nanvix/pm.h>
 #include <assert.h>
 #include <stdlib.h>
 
@@ -196,27 +197,6 @@ static void readargs(int argc, char **argv)
 		usage();
 }
 
-/**
- * @brief Sync with remote servers.
- */
-static void barrier_wait(int nremotes)
-{
-	int sync_fd;
-	uint64_t mask;
-
-	/* Open sync connector. */
-	sync_fd = mppa_open("/mppa/sync/128:8", O_RDONLY);
-	assert(sync_fd != -1);
-	
-	/* Sync. */
-	mask = ~(1 << (nremotes - 1));
-	mppa_ioctl(sync_fd, MPPA_RX_SET_MATCH, mask);
-	mppa_read(sync_fd, &mask, sizeof(uint64_t));
-	
-	/* House keeping. */
-	mppa_close(sync_fd);
-}
-
 /*=======================================================================*
  * main()                                                                *
  *=======================================================================*/
@@ -226,8 +206,7 @@ static void barrier_wait(int nremotes)
  */
 int main(int argc, char **argv)
 {
-	int iobarrier;
-	int ccbarrier;
+	long start, end;
 	const char *args[NR_ARGS + 1];
 	mppa_pid_t client[NR_CCLUSTER];
 
@@ -252,7 +231,10 @@ int main(int argc, char **argv)
 	barrier_open(ncclusters);
 	barrier_wait();
 
+#ifdef DEBUG
 	printf("[IOCLUSTER0] spawning kernels\n");
+#endif
+
 	for (int i = 0; i < ncclusters; i++)
 		client[i] = mppa_spawn(i, NULL, args[0], args, NULL);
 
@@ -260,12 +242,16 @@ int main(int argc, char **argv)
 	barrier_wait();
 	start = timer_get();
 
+#ifdef DEBUG
 	printf("[IOCLUSTER0] waiting kernels\n");
+#endif
 
 	/* Wait clients. */
 	barrier_wait();
 	end = timer_get();
 	
+	printf("[IOCLUSTER0]: %ld us\n", timer_diff(start, end));
+
 	/* House keeping. */
 	for (int i = 0; i < ncclusters; i++)
 		mppa_waitpid(client[i], NULL, 0);
