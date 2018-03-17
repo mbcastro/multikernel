@@ -32,15 +32,20 @@
  */
 void memread(uint64_t addr, void *buf, size_t n)
 {
-	int outbox;
-	int inportal;
-	int clusterid;
+	int clusterid;            /* CLuster ID of the calling process. */
+	static int outbox = -1;   /* Mailbox used for small transfers.  */
+	static int inportal = -1; /* Portal used for large transfers.   */
 	struct rmem_message msg;
 
 	clusterid = arch_get_cluster_id();
 
-	outbox = mailbox_open("/io1");
-	inportal = portal_create(name_cluster_name(clusterid));
+	/* Open output mailbox. */
+	if (outbox < 0)
+		outbox = mailbox_open("/io1");
+
+	/* Open input portal. */
+	if (inportal < 0)
+		inportal = portal_create(name_cluster_name(clusterid));
 
 	/* Build operation header. */
 	msg.source = clusterid;

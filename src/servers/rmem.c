@@ -34,7 +34,8 @@ static char rmem[RMEM_SIZE];
  */
 int main(int argc, char **argv)
 {
-	int inbox;
+	int inbox;    /* Mailbox for small messages. */
+	int inportal; /* Portal for data transfers.  */
 
 	((void) argc);
 	((void) argv);
@@ -44,10 +45,15 @@ int main(int argc, char **argv)
 #endif
 
 	inbox = mailbox_create("/io1");
+	inportal = portal_create("/io1");
 
 	/* Release master IO cluster. */
 	barrier_open(NR_IOCLUSTER);
 	barrier_release();
+
+#ifdef DEBUG
+	printf("[RMEM] server alive\n");
+#endif
 
 	while(1)
 	{
@@ -55,13 +61,13 @@ int main(int argc, char **argv)
 
 		mailbox_read(inbox, &msg);
 
+		/* Write. */
 		if (msg.op == RMEM_WRITE)
 		{
-			int inportal = portal_create("/io1");
 			portal_allow(inportal, msg.source);
 			portal_read(inportal, &rmem[msg.blknum], msg.size);
-			portal_unlink(inportal);
 		}
+		/* Read. */
 		else if (msg.op == RMEM_READ)
 		{
 			int outportal = portal_open(name_cluster_name(msg.source));
@@ -70,8 +76,10 @@ int main(int argc, char **argv)
 		}
 	}
 
+	/* House keeping. */
+	barrier_close();
+	portal_unlink(inportal);
 	mailbox_unlink(inbox);
-	baerrier_close();
 
 	return (EXIT_SUCCESS);
 }

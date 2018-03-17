@@ -32,12 +32,17 @@
  */
 void memwrite(uint64_t addr, const void *buf, size_t n)
 {
-	int outbox;
-	int outportal;
-	struct rmem_message msg;
+	static int outbox = -1;    /* Mailbox used for small transfers. */
+	static int outportal = -1; /* Portal used for large transfers.  */
+	struct rmem_message msg;   /* Remote memory request.            */
 
-	outbox = mailbox_open("/io1");
-	outportal = portal_open("/io1");
+	/* Open output mailbox. */
+	if (outbox < 0)
+		outbox = mailbox_open("/io1");
+
+	/* Open output portal. */
+	if (outportal < 0)
+		outportal = portal_open("/io1");
 
 	/* Build operation header. */
 	msg.source = arch_get_cluster_id();
@@ -50,8 +55,5 @@ void memwrite(uint64_t addr, const void *buf, size_t n)
 
 	/* Send data. */
 	portal_write(outportal, buf, n);
-
-	portal_close(outportal);
-	mailbox_close(outbox);
 }
 
