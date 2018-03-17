@@ -17,6 +17,11 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <nanvix/hal.h>
+#include <nanvix/mm.h>
+#include <nanvix/pm.h>
+#include <stdio.h>
+
 /**
  * @brief Underlying IPC connectors.
  */
@@ -44,5 +49,7 @@ void meminit(void)
 	_mem_inportal = portal_create(clustername);
 	_mem_outbox = mailbox_open("/io1");
 	_mem_outportal = portal_open("/io1");
+
+	initialized = 1;
 }
 

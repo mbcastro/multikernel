@@ -25,11 +25,6 @@
 #include <string.h>
 
 /**
- * @brief Number of access to remote memory.
- */
-#define NACCESSES 64
-
-/**
  * @brief My cluster ID.
  */
 int clusterid;
@@ -60,19 +55,19 @@ static int kernel_workload(const char *workload)
  *
  * @returns Kernel time.
  */
-static void kernel_regular(const char *workload)
+static void kernel_regular(const char *workload, int naccesses)
 {
 	/* Write. */
 	if (kernel_workload(workload))
 	{
-		for (int i = 0; i < NACCESSES; i++)
+		for (int i = 0; i < naccesses; i++)
 			memwrite(i, data, RMEM_BLOCK_SIZE);
 	}
 
 	/* Read. */
 	else
 	{
-		for (int i = 0; i < NACCESSES; i++)
+		for (int i = 0; i < naccesses; i++)
 			memread(i, data, RMEM_BLOCK_SIZE);
 	}
 }
@@ -80,23 +75,24 @@ static void kernel_regular(const char *workload)
 /**
  * @brief Irregular pattern kernel.
  *
- * @param workload Workload type.
+ * @param workload  Workload type.
+ * @param naccesses Number of accesses.
  *
  * @brief Kernel time.
  */
-static void kernel_irregular(const char *workload)
+static void kernel_irregular(const char *workload, int naccesses)
 {
 	/* Write. */
 	if (kernel_workload(workload))
 	{
-		for (int i = 0; i < NACCESSES; i++)
+		for (int i = 0; i < naccesses; i++)
 			memwrite(i%(RMEM_SIZE/RMEM_BLOCK_SIZE), data, RMEM_BLOCK_SIZE);
 	}
 
 	/* Read. */
 	else
 	{
-		for (int i = 0; i < NACCESSES; i++)
+		for (int i = 0; i < naccesses; i++)
 			memread(rand()%(RMEM_SIZE/RMEM_BLOCK_SIZE), data, RMEM_BLOCK_SIZE);
 	}
 }
@@ -106,11 +102,12 @@ static void kernel_irregular(const char *workload)
  */
 int main(int argc, char **argv)
 {
+	int naccesses;
 	const char *pattern;
 	const char *workload;
 
 	/* Invalid number of arguments. */
-	if (argc != 3)
+	if (argc != 4)
 		return (-EINVAL);
 	
 	clusterid = arch_get_cluster_id();
@@ -118,6 +115,7 @@ int main(int argc, char **argv)
 	/* Retrieve paramenters. */
 	pattern = argv[1];
 	workload = argv[2];
+	naccesses = atoi(argv[3]);
 
 #ifdef DEBUG
 	printf("cluster %d: alive!\n", clusterid);
@@ -128,9 +126,9 @@ int main(int argc, char **argv)
 	barrier_wait();
 
 	if (!strcmp(pattern, "regular"))
-		kernel_regular(workload);
+		kernel_regular(workload, naccesses);
 	else
-		kernel_irregular(workload);
+		kernel_irregular(workload, naccesses);
 
 	/* Wait master IO cluster. */
 	barrier_wait();

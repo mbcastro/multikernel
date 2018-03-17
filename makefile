@@ -48,7 +48,7 @@ rmem-server.test-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
 						 $(SRCDIR)/kernel/arch/mppa/barrier.c \
 						 $(SRCDIR)/kernel/arch/mppa/name.c    \
 						 $(SRCDIR)/kernel/sys/timer.c         \
-						 $(SRCDIR)/kernel/sys/miminit.c       \
+						 $(SRCDIR)/kernel/sys/meminit.c       \
 						 $(SRCDIR)/kernel/sys/memwrite.c      \
 						 $(SRCDIR)/kernel/sys/memread.c       \
 						 $(SRCDIR)/servers/rmem.c
@@ -71,7 +71,7 @@ rmem-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
 			 $(SRCDIR)/kernel/arch/mppa/barrier.c \
 			 $(SRCDIR)/kernel/arch/mppa/name.c    \
 			 $(SRCDIR)/kernel/sys/timer.c         \
-			 $(SRCDIR)/kernel/sys/miminit.c       \
+			 $(SRCDIR)/kernel/sys/meminit.c       \
 			 $(SRCDIR)/kernel/sys/memwrite.c      \
 			 $(SRCDIR)/kernel/sys/memread.c       \
 			 $(TESTDIR)/rmem/rmem.c

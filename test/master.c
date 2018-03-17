@@ -19,6 +19,7 @@
 
 #include <mppa/osconfig.h>
 #include <nanvix/arch/mppa.h>
+#include <nanvix/mm.h>
 #include <nanvix/pm.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -26,16 +27,17 @@
 /**
  * @brief Maximum number of arguments for a slave.
  */
-#define NR_ARGS 3
+#define NR_ARGS 4
 
 /**
  * @brief Parameters.
  */
 /**@{*/
-static int ncclusters = -1;  /**< Number of compute clusters to spawn. */
-static const char *kernel;   /**< Kernel.                              */
-static const char *pattern;  /**< Communication pattern.               */
-static const char *workload; /**< Workload.                            */
+static int ncclusters = -1;          /**< Number of compute clusters to spawn. */
+static const char *naccesses = NULL; /**< Number of accesses.                  */
+static const char *kernel;           /**< Kernel.                              */
+static const char *pattern;          /**< Communication pattern.               */
+static const char *workload;         /**< Workload.                            */
 /**@}*/
 
 /*=======================================================================*
@@ -55,6 +57,7 @@ static void usage(void)
 	printf("\nRemote Memory Kernel Options:\n");
 	printf("  --pattern <regular | irregular>\n");
 	printf("  --workload <read | write | mixed>\n");
+	printf("  --naccesses <int>\n");
 
 	exit(-1);
 }
@@ -120,7 +123,8 @@ enum readargs_states
 	READ_ARG,
 	SET_NCCLUSTERS,
 	SET_PATTERN,
-	SET_WORKLOAD
+	SET_WORKLOAD,
+	SET_NACCESSES
 };
 
 /**
@@ -136,6 +140,8 @@ static int readargs_parse(const char *arg)
 		return (SET_PATTERN);
 	else if (!strcmp(arg, "--workload"))
 		return (SET_WORKLOAD);
+	else if (!strcmp(arg, "--naccesses"))
+		return (SET_NACCESSES);
 
 	usage();
 
@@ -180,6 +186,11 @@ static void readargs(int argc, char **argv)
 					workload = readargs_get_workload(arg);
 					break;
 
+				/* Set workload. */
+				case SET_NACCESSES:
+					naccesses = arg;
+					break;
+
 				/* Should not happen. */
 				default:
 					usage();
@@ -193,6 +204,8 @@ static void readargs(int argc, char **argv)
 	}
 
 	/* Check global parameters. */
+	if (naccesses == NULL)
+		usage();
 	if (ncclusters < 0)
 		usage();
 }
@@ -206,7 +219,9 @@ static void readargs(int argc, char **argv)
  */
 int main(int argc, char **argv)
 {
-	long start, end;
+	int size;
+	double bandwidth;
+	long start, end, time;
 	const char *args[NR_ARGS + 1];
 	mppa_pid_t client[NR_CCLUSTER];
 
@@ -223,7 +238,8 @@ int main(int argc, char **argv)
 	args[0] = kernel;
 	args[1] = pattern;
 	args[2] = workload;
-	args[3] = NULL;
+	args[3] = naccesses;
+	args[4] = NULL;
 	
 	timer_init();
 
@@ -249,8 +265,16 @@ int main(int argc, char **argv)
 	/* Wait clients. */
 	barrier_wait();
 	end = timer_get();
-	
-	printf("[IOCLUSTER0]: %ld us\n", timer_diff(start, end));
+
+	size = ncclusters*atoi(naccesses)*RMEM_BLOCK_SIZE;
+	time = timer_diff(start, end);
+	bandwidth = size/((double)time);
+
+	printf("[IOCLUSTER0]: %d KB %ld us %.2lf GB/s\n",
+			size/1024,
+			time,
+			(bandwidth*1000000.0)/(1024*1024*1024)
+	);
 
 	/* House keeping. */
 	for (int i = 0; i < ncclusters; i++)

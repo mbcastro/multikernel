@@ -22,6 +22,7 @@
 #include <nanvix/pm.h>
 #include <stdio.h>
 #include <string.h>
+#include "mem.h"
 
 /**
  * @brief Reads from a remote memory.
