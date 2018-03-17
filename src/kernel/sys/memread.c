@@ -24,6 +24,18 @@
 #include <string.h>
 
 /**
+ * @brief Initializes the remote memory.
+ */
+static void meminit(void)
+{
+	static int initialized = 0;
+
+	/* Already initialized.  */
+	if (initialized)
+		return;
+}
+
+/**
  * @brief Reads from a remote memory.
  *
  * @param addr Remote address.
@@ -51,7 +63,7 @@ void memread(uint64_t addr, void *buf, size_t n)
 	msg.source = clusterid;
 	msg.op = RMEM_READ;
 	msg.blknum = addr;
-	msg.size = n;
+	msg.size = n;{
 
 	/* Send operation header. */
 	mailbox_write(outbox, &msg);
