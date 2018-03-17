@@ -24,18 +24,6 @@
 #include <string.h>
 
 /**
- * @brief Initializes the remote memory.
- */
-static void meminit(void)
-{
-	static int initialized = 0;
-
-	/* Already initialized.  */
-	if (initialized)
-		return;
-}
-
-/**
  * @brief Reads from a remote memory.
  *
  * @param addr Remote address.
@@ -44,36 +32,24 @@ static void meminit(void)
  */
 void memread(uint64_t addr, void *buf, size_t n)
 {
-	int clusterid;            /* CLuster ID of the calling process. */
-	static int outbox = -1;   /* Mailbox used for small transfers.  */
-	static int inportal = -1; /* Portal used for large transfers.   */
-	struct rmem_message msg;
+	int clusterid;           /* Cluster ID of the calling process. */
+	struct rmem_message msg; /* Remote memory operation.           */
 
 	clusterid = arch_get_cluster_id();
 
-	/* Open output mailbox. */
-	if (outbox < 0)
-		outbox = mailbox_open("/io1");
-
-	/* Open input portal. */
-	if (inportal < 0)
-		inportal = portal_create(name_cluster_name(clusterid));
+	meminit();
 
 	/* Build operation header. */
 	msg.source = clusterid;
 	msg.op = RMEM_READ;
 	msg.blknum = addr;
-	msg.size = n;{
+	msg.size = n;
 
 	/* Send operation header. */
-	mailbox_write(outbox, &msg);
+	mailbox_write(_mem_outbox, &msg);
 
 	/* Send data. */
-	portal_allow(inportal, IOCLUSTER1);
-	portal_read(inportal, buf, n);
-
-	portal_unlink(inportal);
-	mailbox_close(outbox);
+	portal_allow(_mem_inportal, IOCLUSTER1);
+	portal_read(_mem_inportal, buf, n);
 }
-
 

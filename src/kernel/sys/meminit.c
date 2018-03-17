@@ -17,35 +17,32 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <nanvix/hal.h>
-#include <nanvix/mm.h>
-#include <nanvix/pm.h>
-#include <stdio.h>
-#include <string.h>
+/**
+ * @brief Underlying IPC connectors.
+ */
+/**@{*/
+int _mem_outbox = -1;    /* Mailbox used for small transfers. */
+int _mem_inportal = -1;  /* Portal used for large transfers.  */
+int _mem_outportal = -1; /* Portal used for large transfers.  */
+/**@}*/
 
 /**
- * @brief Writes data to a remote memory.
- *
- * @param addr Remote address.
- * @param bug  Location where the data should be read from.
- * @param n    Number of bytes to write.
+ * @brief Initializes the RMA engine.
  */
-void memwrite(uint64_t addr, const void *buf, size_t n)
+void meminit(void)
 {
-	struct rmem_message msg;
+	const char *clustername;    /* Cluster ID of the calling process. */
+	static int initialized = 0; /* IS RMA Engine initialized?         */
 
-	meminit();
+	/* Already initialized.  */
+	if (initialized)
+		return;
 
-	/* Build operation header. */
-	msg.source = arch_get_cluster_id();
-	msg.op = RMEM_WRITE;
-	msg.blknum = addr;
-	msg.size = n;
+	clustername = name_cluster_name(arch_get_cluster_id());
 
-	/* Send operation header. */
-	mailbox_write(_mem_outbox, &msg);
-
-	/* Send data. */
-	portal_write(_mem_outportal, buf, n);
+	/* Open underlying IPC connectors. */
+	_mem_inportal = portal_create(clustername);
+	_mem_outbox = mailbox_open("/io1");
+	_mem_outportal = portal_open("/io1");
 }
 
