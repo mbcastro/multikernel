@@ -82,7 +82,7 @@ main(int argc, char **argv)
     write_portals[i] = mppa_create_write_portal(path, comm_buffer, MAX_BUFFER_SIZE, i);
   }
   
-  printf ("type;exec;direction;nb_clusters;size;time\n");
+  printf ("type;exec;direction;nb_clusters;size;time;bandwidth\n");
   
   mppa_barrier_wait(global_barrier);
   
@@ -119,7 +119,14 @@ main(int argc, char **argv)
 	mppa_async_read_wait_portal(read_portals[j]);
       
       exec_time = timer_diff(start_time, timer_get());
-      printf ("portal;%d;%s;%d;%d;%ld\n", nb_exec, "slave-master", nb_clusters, i, exec_time);
+      printf ("portal;%d;%s;%d;%d;%ld;%.2lf\n",
+			  nb_exec,
+			  "slave-master",
+			  nb_clusters,
+			  i,
+			  exec_time,
+			  (((double)i*nb_clusters)/exec_time)*(1000000.0/(1024*1024*1024))
+		);
     }
   }
   
