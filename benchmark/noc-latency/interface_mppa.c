@@ -2,37 +2,27 @@
 #include <nanvix/arch/mppa.h>
 #include "interface_mppa.h"
 
-void set_path_name(char *path, char *template_path, int rx, int tag) {
-  sprintf(path, template_path, rx, tag);
-}
-
 /**************************************
  * PORTAL COMMUNICATION
  **************************************/
 
-portal_t *mppa_create_read_portal (char *path, void* buffer, unsigned long buffer_size, int trigger, void (*function)(mppa_sigval_t)) {
+portal_t *mppa_create_read_portal (char *path, void* buffer, unsigned long size, int trigger) {
   portal_t *ret = (portal_t*) malloc (sizeof(portal_t));
-  int status;
   ret->file_descriptor = mppa_open(path, O_RDONLY);
   assert(ret->file_descriptor != -1);
   
-  mppa_aiocb_ctor(&ret->aiocb, ret->file_descriptor, buffer, buffer_size);
+  mppa_aiocb_ctor(&ret->aiocb, ret->file_descriptor, buffer, size);
   
   if (trigger > -1) {
     mppa_aiocb_set_trigger(&ret->aiocb, trigger);
   }
   
-  // Attention: we can't use callbacks with trigger/mppa_aio_wait (bug?)
-  if (function)
-    mppa_aiocb_set_callback(&ret->aiocb, function);
-  
-  status = mppa_aio_read(&ret->aiocb);
-  assert(status == 0);
+  assert(mppa_aio_read(&ret->aiocb) == 0);
   
   return ret;
 }
 
-portal_t *mppa_create_write_portal (char *path, void* buffer, unsigned long buffer_size, int receiver_rank) {		
+portal_t *mppa_create_write_portal (char *path, void* buffer, unsigned long size, int receiver_rank) {		
   portal_t *ret = (portal_t*) malloc (sizeof(portal_t));
   ret->file_descriptor = mppa_open(path, O_WRONLY);
   assert(ret->file_descriptor != -1);
@@ -49,7 +39,7 @@ portal_t *mppa_create_write_portal (char *path, void* buffer, unsigned long buff
   // It seems that the buffer and buffer size parameters are not important here,
   // because we're going to specify them with mppa_aiocb_set_pwrite()
   // before calling mppa_aio_write()
-  assert(mppa_aiocb_ctor(&ret->aiocb, ret->file_descriptor, buffer, buffer_size) == &ret->aiocb);
+  assert(mppa_aiocb_ctor(&ret->aiocb, ret->file_descriptor, buffer, size) == &ret->aiocb);
   
   return ret;
 }
@@ -69,20 +59,16 @@ void mppa_async_write_wait_portal(portal_t *portal) {
 
 void mppa_close_portal (portal_t *portal) {
   assert(mppa_close(portal->file_descriptor) != -1);
-  free (portal);
+  free(portal);
 }
 
-void mppa_write_portal (portal_t *portal, void *buffer, int buffer_size, int offset) {
-  int status;
-  status = mppa_pwrite(portal->file_descriptor, buffer, buffer_size, offset);
-  assert(status == buffer_size);
+void mppa_write_portal(portal_t *portal, void *buffer, int size, int offset) {
+  assert(mppa_pwrite(portal->file_descriptor, buffer, size, offset) == size);
 }
 
-void mppa_async_write_portal (portal_t *portal, void *buffer, int buffer_size, int offset) {
-  int status;
-  mppa_aiocb_set_pwrite(&portal->aiocb, buffer, buffer_size, offset);
-  status = mppa_aio_write(&portal->aiocb);
-  assert(status == 0);
+void mppa_async_write_portal(portal_t *portal, void *buffer, int size, int offset) {
+  mppa_aiocb_set_pwrite(&portal->aiocb, buffer, size, offset);
+  assert(mppa_aio_write(&portal->aiocb) == 0);
 }
 
 /**************************************

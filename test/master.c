@@ -35,9 +35,9 @@
 /**@{*/
 static int ncclusters = -1;          /**< Number of compute clusters to spawn. */
 static const char *naccesses = NULL; /**< Number of accesses.                  */
-static const char *kernel;           /**< Kernel.                              */
-static const char *pattern;          /**< Communication pattern.               */
-static const char *workload;         /**< Workload.                            */
+static const char *kernel = NULL;    /**< Kernel.                              */
+static const char *pattern = NULL;   /**< Communication pattern.               */
+static const char *workload = NULL;  /**< Workload.                            */
 /**@}*/
 
 /*=======================================================================*
@@ -70,6 +70,8 @@ static void usage(void)
 static const char *readargs_get_kernel(const char *arg)
 {
 	if (!strcmp(arg, "rmem"))
+		return (arg);
+	else if (!strcmp(arg, "mm"))
 		return (arg);
 
 	usage();
@@ -277,7 +279,7 @@ int main(int argc, char **argv)
 	);
 
 	/* House keeping. */
-	for (int i = 0; i < ncclusters; i++)
+	for (int i = NR_CCLUSTER - 1; i >= (NR_CCLUSTER - ncclusters); i--)
 		mppa_waitpid(client[i], NULL, 0);
 	barrier_close();
 

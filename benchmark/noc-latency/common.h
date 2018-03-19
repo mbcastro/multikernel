@@ -6,12 +6,11 @@
 #define micro (milli/1000)
 #define nano  (micro/1000)
 
-
-// maximum size of a message
-#define MAX_BUFFER_SIZE 1 * MB + MB / 2
+#define MIN_BUFFER_SIZE (1*KB)
+#define MAX_BUFFER_SIZE (512*KB)
 
 // number of executions of the benchmark
-#define NB_EXEC 30
+#define NITERATIONS 5
 
 typedef struct {
   int cluster_id;

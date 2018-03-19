@@ -87,7 +87,7 @@ noc-latency-slave-srcs := $(SRCDIR)/kernel/sys/timer.c             \
 
 test-objs := master.test      \
 			 rmem-server.test \
-			 rmem
+			 rmem 
 
 test-name := test.img
 
