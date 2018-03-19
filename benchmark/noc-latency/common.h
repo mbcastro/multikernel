@@ -10,7 +10,7 @@
 #define MAX_BUFFER_SIZE (512*KB)
 
 // number of executions of the benchmark
-#define NITERATIONS 5
+#define NITERATIONS 1537
 
 typedef struct {
   int cluster_id;

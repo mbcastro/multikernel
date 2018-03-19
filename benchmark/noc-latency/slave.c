@@ -19,13 +19,13 @@ int main(int argc,char **argv)
 
 	memset(buffer, 0, MAX_BUFFER_SIZE);
 
-	clusterid  =  arch_get_clusterid();
+	clusterid  =  arch_get_cluster_id();
 
 	/* Initialize barrier. */
 	barrier_t *global_barrier = mppa_create_slave_barrier(BARRIER_SYNC_MASTER, BARRIER_SYNC_SLAVE);
 
 	/* Initialize NoC connectors. */
-	dma = i128 + (clusterid % 4);
+	dma = 128 + (clusterid % 4);
 	sprintf(path, "/mppa/portal/%d:3", dma);
 	portal_t *write_portal = mppa_create_write_portal(path, buffer, MAX_BUFFER_SIZE, dma);
 	sprintf(path, "/mppa/portal/%d:%d", clusterid, 4 + clusterid);
@@ -36,7 +36,7 @@ int main(int argc,char **argv)
 	/* Master -> Slaves */
 	for (int i = MIN_BUFFER_SIZE; i <= MAX_BUFFER_SIZE; i *= 2)
 	{
-		for (int nb_exec = 1; nb_exec <= 1; nb_exec++)
+		for (int nb_exec = 1; nb_exec <= NITERATIONS; nb_exec++)
 		{
 			mppa_barrier_wait(global_barrier);
 			mppa_async_read_wait_portal(read_portal);
@@ -46,7 +46,7 @@ int main(int argc,char **argv)
 	/* Slaves -> Master */
 	for (int i = MIN_BUFFER_SIZE; i <= MAX_BUFFER_SIZE; i *= 2)
 	{
-		for (int nb_exec = 1; nb_exec <= 1; nb_exec++)
+		for (int nb_exec = 1; nb_exec <= NITERATIONS; nb_exec++)
 		{
 			mppa_barrier_wait(global_barrier);
 			mppa_async_write_portal(write_portal, buffer, i, clusterid * MAX_BUFFER_SIZE);

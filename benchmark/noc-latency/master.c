@@ -17,13 +17,13 @@ void spawn_slaves(int nclusters)
 	const char *argv[] = {"noc-latency-slave", NULL};
 
 	for (int i = 0; i < nclusters; i++)
-		assert((pids[i] = mppa_spawn(cluster_id, NULL, argv[0], argv, NULL)) != -1);
+		assert((pids[i] = mppa_spawn(i, NULL, argv[0], argv, NULL)) != -1);
 }
 
 void join_slaves(int nclusters) 
 {
 	for (int i = 0; i < nclusters; i++)
-		assert(mppa_waitpid(pid, NULL, 0) != -1);
+		assert(mppa_waitpid(pids[i], NULL, 0) != -1);
 }
 
 int main(int argc, char **argv) 
@@ -81,9 +81,7 @@ int main(int argc, char **argv)
 	/* Master -> Slaves */
 	for (int i = MIN_BUFFER_SIZE; i <= MAX_BUFFER_SIZE; i *= 2)
 	{
-		exec_time = 0;
-
-		for (int niterations = 1; niterations <= 1; niterations++)
+		for (int niterations = 1; niterations <= NITERATIONS; niterations++)
 		{
 			mppa_barrier_wait(global_barrier);
 
@@ -97,23 +95,21 @@ int main(int argc, char **argv)
 			for (int j = 0; j < nclusters; j++)
 				mppa_async_write_wait_portal(write_portals[j]);
 
-			exec_time+ = timer_diff(start_time, timer_get());
-		}
+			exec_time = timer_diff(start_time, timer_get());
 
-		printf("%s;%d;%d;%ld\n",
-				"master-slaves",
-				nclusters,
-				i,
-				exec_time
-		);
+			printf("%s;%d;%d;%ld\n",
+					"master-slaves",
+					nclusters,
+					i,
+					exec_time
+			);
+		}
 	}
 
 	/* Slaves -> Master */
 	for (int i = MIN_BUFFER_SIZE; i <= MAX_BUFFER_SIZE; i *= 2)
 	{
-		exec_time = 0;
-
-		for (int niterations = 1; niterations <= 1; niterations++)
+		for (int niterations = 1; niterations <= NITERATIONS; niterations++)
 		{
 			mppa_barrier_wait(global_barrier);
 
@@ -123,15 +119,15 @@ int main(int argc, char **argv)
 			for (int j = 0; j < ndmas; j++)
 				mppa_async_read_wait_portal(read_portals[j]);
 
-			exec_time += timer_diff(start_time, timer_get());
-		}
+			exec_time = timer_diff(start_time, timer_get());
 
-		printf("%s;%d;%d;%ld\n",
-				"master-slaves",
+			printf("%s;%d;%d;%ld\n",
+				"slaves-master",
 				nclusters,
 				i,
 				exec_time
-		);
+			);
+		}
 	}
   
 	join_slaves(nclusters);
