@@ -8,48 +8,46 @@
 #include "interface_mppa.h"
 #include "common.h"
 
-static char buffer[MAX_BUFFER_SIZE*16];
+static char buffer[MAX_CLUSTERS*MAX_BUFFER_SIZE];
 
-void  spawn_slaves(int nclusters) 
+int pids[MAX_CLUSTERS];
+
+void spawn_slaves(int nclusters) 
 {
-  int cluster_id;
-  int pid;
- 
- const char *argv[] = {"noc-latency-slave", NULL};
+	const char *argv[] = {"noc-latency-slave", NULL};
 
-  // Spawn slave processes
-  for (cluster_id = 0; cluster_id < nclusters; cluster_id++) {
-    pid = mppa_spawn(cluster_id, NULL, argv[0], argv, NULL);
-    assert(pid >= 0);
-  }
-  
+	for (int i = 0; i < nclusters; i++)
+		assert((pids[i] = mppa_spawn(cluster_id, NULL, argv[0], argv, NULL)) != -1);
 }
 
-int
-main(int argc, char **argv) 
+void join_slaves(int nclusters) 
 {
-  int pid;
+	for (int i = 0; i < nclusters; i++)
+		assert(mppa_waitpid(pid, NULL, 0) != -1);
+}
+
+int main(int argc, char **argv) 
+{
   int nclusters;
   char path[256];
   long start_time, exec_time;
 
-  ((void) argc);
+  assert(argc >= 2);
   
   nclusters = atoi(argv[1]);
   
-  init_buffer(buffer, MAX_BUFFER_SIZE * nclusters);
-  
  	timer_init();
+  
+  init_buffer(buffer, MAX_BUFFER_SIZE * nclusters);
 
-  // Spawn slave processes
   spawn_slaves(nclusters);
   
   // Initialize global barrier
   barrier_t *global_barrier = mppa_create_master_barrier(BARRIER_SYNC_MASTER, BARRIER_SYNC_SLAVE, nclusters);
   
   // Initialize communication portal to receive messages from clusters
-  int number_dmas = nclusters < 4 ? nclusters : 4;
-  portal_t **read_portals = (portal_t **) malloc (sizeof(portal_t *) * number_dmas);
+  int ndmas = nclusters < 4 ? nclusters : 4;
+  portal_t **read_portals = (portal_t **) malloc (sizeof(portal_t *) * ndmas);
   
   // Each DMA will receive at least one message
   int nb_msgs_per_dma[4] = {1, 1, 1, 1};
@@ -58,34 +56,34 @@ main(int argc, char **argv)
   if (nclusters > 4) {
     int remaining_messages = nclusters - 4;
     while (remaining_messages > 0) {
-      for (int i = 0; i < number_dmas && remaining_messages > 0; i++) {
+      for (int i = 0; i < ndmas && remaining_messages > 0; i++) {
 	nb_msgs_per_dma[i]++;
 	remaining_messages--;
       }
     }
   }
   
-  for (int i = 0; i < number_dmas; i++) {
+  for (int i = 0; i < ndmas; i++) {
     sprintf(path, "/mppa/portal/%d:3", 128 + i);
     read_portals[i] = mppa_create_read_portal(path, buffer, MAX_BUFFER_SIZE * nclusters, nb_msgs_per_dma[i]);
   }
     
-  // Initialize communication portals to send messages to clusters (one portal per cluster)
   portal_t **write_portals = (portal_t **) malloc (sizeof(portal_t *) * nclusters);
   for (int i = 0; i < nclusters; i++) {
     sprintf(path, "/mppa/portal/%d:%d", i, 4 + i);
     write_portals[i] = mppa_create_write_portal(path, buffer, MAX_BUFFER_SIZE, i);
   }
   
-  printf ("type;exec;direction;nclusters;size;time;bandwidth\n");
+  printf ("direction;nclusters;size;time\n");
   
   mppa_barrier_wait(global_barrier);
   
-	/* Benchmark. */
-	for (int niterations = 1; niterations <= 1; niterations++)
+	/* Master -> Slaves */
+	for (int i = MIN_BUFFER_SIZE; i <= MAX_BUFFER_SIZE; i *= 2)
 	{
-		/* Master -> Slaves */
-		for (int i = MIN_BUFFER_SIZE; i <= MAX_BUFFER_SIZE; i *= 2)
+		exec_time = 0;
+
+		for (int niterations = 1; niterations <= 1; niterations++)
 		{
 			mppa_barrier_wait(global_barrier);
 
@@ -99,50 +97,51 @@ main(int argc, char **argv)
 			for (int j = 0; j < nclusters; j++)
 				mppa_async_write_wait_portal(write_portals[j]);
 
-			exec_time = timer_diff(start_time, timer_get());
-			printf("portal;%d;%s;%d;%d;%ld;%.2lf\n",
-					niterations,
-					"master-slaves",
-					nclusters,
-					i,
-					exec_time,
-					(((double)i*nclusters)/exec_time)/(GB/micro)
-			);
+			exec_time+ = timer_diff(start_time, timer_get());
 		}
 
-		/* Slaves -> Master */
-		for (int i = MIN_BUFFER_SIZE; i <= MAX_BUFFER_SIZE; i *= 2)
+		printf("%s;%d;%d;%ld\n",
+				"master-slaves",
+				nclusters,
+				i,
+				exec_time
+		);
+	}
+
+	/* Slaves -> Master */
+	for (int i = MIN_BUFFER_SIZE; i <= MAX_BUFFER_SIZE; i *= 2)
+	{
+		exec_time = 0;
+
+		for (int niterations = 1; niterations <= 1; niterations++)
 		{
-				mppa_barrier_wait(global_barrier);
+			mppa_barrier_wait(global_barrier);
 
-				start_time = timer_get();
-				/* Send data and wait. */
-				for (int j = 0; j < number_dmas; j++)
-					mppa_async_read_wait_portal(read_portals[j]);
+			start_time = timer_get();
 
-				exec_time = timer_diff(start_time, timer_get());
+			/* Send data and wait. */
+			for (int j = 0; j < ndmas; j++)
+				mppa_async_read_wait_portal(read_portals[j]);
 
-			printf("portal;%d;%s;%d;%d;%ld;%.2lf\n",
-					niterations,
-					"slaves-master",
-					nclusters,
-					i,
-					exec_time,
-					(((double)i*nclusters)/exec_time)
-			);
+			exec_time += timer_diff(start_time, timer_get());
 		}
+
+		printf("%s;%d;%d;%ld\n",
+				"master-slaves",
+				nclusters,
+				i,
+				exec_time
+		);
 	}
   
-  /* Wait for slaves. */
-  for (pid = 0; pid < nclusters; pid++)
-	assert(mppa_waitpid(pid, NULL, 0) != -1);
+	join_slaves(nclusters);
   
-  /* House keeping. */
-  mppa_close_barrier(global_barrier);
-  for (int i = 0; i < number_dmas; i++)
-    mppa_close_portal(read_portals[i]);
-  for (int i = 0; i < nclusters; i++)
-    mppa_close_portal(write_portals[i]);
-  
-  return (0);
+	/* House keeping. */
+	mppa_close_barrier(global_barrier);
+	for (int i = 0; i < ndmas; i++)
+		mppa_close_portal(read_portals[i]);
+	for (int i = 0; i < nclusters; i++)
+		mppa_close_portal(write_portals[i]);
+
+	return (0);
 }
