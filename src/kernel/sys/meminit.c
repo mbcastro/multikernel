@@ -36,19 +36,24 @@ int _mem_outportal = -1; /* Portal used for large transfers.  */
  */
 void meminit(void)
 {
-	const char *clustername;    /* Cluster ID of the calling process. */
-	static int initialized = 0; /* IS RMA Engine initialized?         */
+	int clusterid;              /* Cluster ID of the calling process.   */
+	char pathname[128];         /* Name of underlying IPC connector.   */
+	const char *clustername;    /* Cluster name of the calling process. */
+	static int initialized = 0; /* IS RMA Engine initialized?           */
 
 	/* Already initialized.  */
 	if (initialized)
 		return;
 
-	clustername = name_cluster_name(arch_get_cluster_id());
+	/* Retrieve cluster information. */
+	clusterid = arch_get_cluster_id();
+	clustername = name_cluster_name(clusterid);
 
 	/* Open underlying IPC connectors. */
+	sprintf(pathname, "/rmem%d", clusterid%NR_IOCLUSTER_DMA);
 	_mem_inportal = portal_create(clustername);
-	_mem_outbox = mailbox_open("/io1");
-	_mem_outportal = portal_open("/io1");
+	_mem_outbox = mailbox_open(pathname);
+	_mem_outportal = portal_open(pathname);
 
 	initialized = 1;
 }

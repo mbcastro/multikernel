@@ -28,7 +28,7 @@
 static const struct {
 	int id;     /**< Cluster ID. */
 	char *name; /**< Portal name. */
-} names[NR_CCLUSTER + NR_IOCLUSTER] = {
+} names[NR_DMA] = {
 	{ CCLUSTER0,  "/cpu0" },
 	{ CCLUSTER1,  "/cpu1" },
 	{ CCLUSTER2,  "/cpu2" },
@@ -45,8 +45,14 @@ static const struct {
 	{ CCLUSTER13, "/cpu13" },
 	{ CCLUSTER14, "/cpu14" },
 	{ CCLUSTER15, "/cpu15" },
-	{ IOCLUSTER0, "/io0" },
-	{ IOCLUSTER1, "/io1" }
+	{ IOCLUSTER0 + 0, "/io0" },
+	{ IOCLUSTER0 + 1, "/io1" },
+	{ IOCLUSTER0 + 2, "/io2" },
+	{ IOCLUSTER0 + 3, "/io3" },
+	{ IOCLUSTER1 + 0, "/rmem0" }
+	{ IOCLUSTER1 + 1, "/rmem1" }
+	{ IOCLUSTER1 + 2, "/rmem2" }
+	{ IOCLUSTER1 + 3, "/rmem3" }
 };
 
 /*=======================================================================*
@@ -65,7 +71,7 @@ static const struct {
 int name_cluster_id(const char *name)
 {
 	/* Search for portal name. */
-	for (int i = 0; i < NR_CCLUSTER + NR_IOCLUSTER; i++)
+	for (int i = 0; i < NR_DMA; i++)
 	{
 		/* Found. */
 		if (!strcmp(name, names[i].name))
@@ -90,7 +96,7 @@ int name_cluster_id(const char *name)
 const char *name_cluster_name(int clusterid)
 {
 	/* Search for portal name. */
-	for (int i = 0; i < NR_CCLUSTER + NR_IOCLUSTER; i++)
+	for (int i = 0; i < NR_DMA; i++)
 	{
 		/* Found. */
 		if (names[i].id == clusterid)
@@ -115,36 +121,36 @@ void name_remotes(char *remotes, int local)
 	if (local == IOCLUSTER0)
 	{
 		sprintf(remotes,
-				"%d..%d,%d",
-				CCLUSTER0, CCLUSTER15, IOCLUSTER1
+				"%d..%d,%d..%d",
+				CCLUSTER0, CCLUSTER15, IOCLUSTER1, IOCLUSTER1 + NR_IOCLUSTER_DMA - 1
 		);
 	}
 	else if (local == IOCLUSTER1)
 	{
 		sprintf(remotes,
-				"%d..%d,%d",
-				CCLUSTER0, CCLUSTER15, IOCLUSTER0
+				"%d..%d,%d..%d",
+				CCLUSTER0, CCLUSTER15, IOCLUSTER0, IOCLUSTER0 + NR_IOCLUSTER_DMA - 1
 		);
 	}
 	else if (local == CCLUSTER0)
 	{
 		sprintf(remotes,
-				"%d..%d,%d,%d",
-				CCLUSTER1, CCLUSTER15, IOCLUSTER0, IOCLUSTER1
+				"%d..%d,%d..%d,%d..%d",
+				CCLUSTER1, CCLUSTER15, IOCLUSTER0, IOCLUSTER0 + NR_IOCLUSTER_DMA - 1, IOCLUSTER1, IOCLUSTER1 + NR_IOCLUSTER_DMA - 1
 		);
 	}
 	else if (local  == CCLUSTER15)
 	{
 		sprintf(remotes,
-				"%d..%d,%d,%d",
-				CCLUSTER0, CCLUSTER14, IOCLUSTER0, IOCLUSTER1
+				"%d..%d,%d..%d,%d..%d",
+				CCLUSTER0, CCLUSTER14, IOCLUSTER0 + NR_IOCLUSTER_DMA - 1, IOCLUSTER1, IOCLUSTER1 + NR_IOCLUSTER_DMA - 1
 		);
 	}
 	else
 	{
 		sprintf(remotes,
-				"%d..%d,%d..%d,%d,%d",
-				CCLUSTER0, local - 1, local + 1, CCLUSTER15, IOCLUSTER0, IOCLUSTER1
+				"%d..%d,%d..%d,%d..%d,%d..%d",
+				CCLUSTER0, local - 1, local + 1, CCLUSTER15, IOCLUSTER0 + NR_IOCLUSTER_DMA - 1, IOCLUSTER1, IOCLUSTER1 + NR_IOCLUSTER_DMA - 1
 		);
 	}
 }

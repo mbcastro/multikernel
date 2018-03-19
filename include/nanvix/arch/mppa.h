@@ -37,6 +37,22 @@
 	 */
 	#define NR_IOCLUSTER 2
 
+	/**
+	 * @brief Number DMAs per compute cluster.
+	 */
+	#define NR_CCLUSTER_DMA 1
+
+	/**
+	 * @brief Number of DMAs per compute cluster.
+	 */
+	#define NR_IO_CLUSTER_DMA 4
+
+	/**
+	 * @brief Overall number of DMAs
+	 */
+	#define NR_DMA \
+		(NR_CCLUSTER*NR_CCLUSTER_DMA + NR_IOCLUSTER*NR_IOCLUSTER_DMA)
+
 	/* Cluster IDs. */
 	#define CCLUSTER0    0 /**< Compute cluster  0. */
 	#define CCLUSTER1    1 /**< Compute cluster  1. */

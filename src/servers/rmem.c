@@ -17,12 +17,20 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define CONFIGURE_MAXIMUM_POSIX_THREADS 4
+
 #include <mppa/osconfig.h>
 #include <nanvix/hal.h>
 #include <nanvix/mm.h>
 #include <nanvix/pm.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <string.h>
+
+/**
+ * @brief Number of DMA engines.
+ */
+#define NR_DMA CONFIGURE_MAXIMUM_POSIX_THREADS
 
 /**
  * @brief Remote memory.
@@ -30,30 +38,20 @@
 static char rmem[RMEM_SIZE];
 
 /**
- * @brief Remote memory server.
+ * @brief Handles remote memory requests 
  */
-int main(int argc, char **argv)
+static void rmem_server(void *args)
 {
-	int inbox;    /* Mailbox for small messages. */
-	int inportal; /* Portal for data transfers.  */
+	int dma;           /* DMA channel to use. */
+	char pathname[16]; /*  */
+	int inbox;         /* Mailbox for small messages. */
+	int inportal;      /* Portal for data transfers.  */
 
-	((void) argc);
-	((void) argv);
+	dma = ((int *)args)[0];
 
-#ifdef DEBUG
-	printf("[RMEM] booting up server\n");
-#endif
-
-	inbox = mailbox_create("/io1");
-	inportal = portal_create("/io1");
-
-	/* Release master IO cluster. */
-	barrier_open(NR_IOCLUSTER);
-	barrier_release();
-
-#ifdef DEBUG
-	printf("[RMEM] server alive\n");
-#endif
+	sprintf(pathname, "/rmem%d", dma);
+	inbox = mailbox_create(pathname);
+	inportal = portal_create(pathname);
 
 	while(1)
 	{
@@ -61,13 +59,14 @@ int main(int argc, char **argv)
 
 		mailbox_read(inbox, &msg);
 
-		/* Write. */
+		/* handle write operation. */
 		if (msg.op == RMEM_WRITE)
 		{
 			portal_allow(inportal, msg.source);
 			portal_read(inportal, &rmem[msg.blknum], msg.size);
 		}
-		/* Read. */
+
+		/* Handle read operation. */
 		else if (msg.op == RMEM_READ)
 		{
 			int outportal = portal_open(name_cluster_name(msg.source));
@@ -76,10 +75,59 @@ int main(int argc, char **argv)
 		}
 	}
 
-	/* House keeping. */
-	barrier_close();
 	portal_unlink(inportal);
 	mailbox_unlink(inbox);
+}
+
+/**
+ * @brief Remote memory server.
+ */
+int main(int argc, char **argv)
+{
+	int ndmas;              /* Number of dmas to use.      */
+	int dmas[NR_DMA]        /* DMA IDs.                    */
+	pthread_t tids[NR_DMA]; /* Thread IDs.                 */
+
+	/* Missing parameters. */
+	if (arch < 2)
+	{
+		printf("missing parameters");
+		printf("Usage: rmem <num. dmas>");
+		return (-1);
+	}
+
+	ndmas = atoi(argv[1]);
+	assert((ndmas >= 1) && (ndmas <= NR_DMA));
+
+#ifdef DEBUG
+	printf("[RMEM] booting up server\n");
+#endif
+
+#ifdef DEBUG
+	printf("[RMEM] server alive\n");
+#endif
+
+	/* Spawn RMEM server threads. */
+	for (i = 0; i < ndmas; i++)
+	{
+		dmas[i] = i;
+		assert((pthread_create(&tids[i],
+			NULL,
+			rmem_server,
+			&dmas[i])) == 0
+		);
+	}
+
+	/* Release master IO cluster. */
+	barrier_open(NR_IOCLUSTER);
+	barrier_release();
+
+	/* Wait for RMEM server threads. */
+	for (i = 0; i < ndmas; i++)
+		pthread_join(tids[i]. NULL);
+
+	/* House keeping. */
+	barrier_close();
 
 	return (EXIT_SUCCESS);
 }
