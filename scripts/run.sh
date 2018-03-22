@@ -64,7 +64,7 @@ done
 elif [ $1 == "benchmarks" ];
 then
 	printf "Running benchmark with PORTAL communication...\n"
-	for i in 1;
+	for i in {1..16};
 	do
 		printf "\t Number of clusters = $i\n"
 		run_benchmark "$i"

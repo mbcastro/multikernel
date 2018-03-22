@@ -11,6 +11,9 @@
 
 static char buffer[MAX_CLUSTERS*MAX_BUFFER_SIZE];
 
+int sync_slaves;
+int sync_master;
+
 int pids[MAX_CLUSTERS];
 
 void spawn_slaves(int nclusters) 
@@ -27,29 +30,9 @@ void join_slaves(int nclusters)
 		assert(mppa_waitpid(pids[i], NULL, 0) != -1);
 }
 
-int main(int argc, char **argv)
+static void _barrier_create(void)
 {
-	int size = MAX_BUFFER_SIZE;
-	mppa_aiocb_t aiocb;
-	uint64_t mask;
-	int sync_slaves;
-	int sync_master;
-	int portal_fd;
-	int nclusters;
-	int clusters[MAX_CLUSTERS];
 	char pathname[128];
-
-	assert(argc >= 2);
-
-	nclusters = atoi(argv[1]);
-
-	spawn_slaves(nclusters);
-
-	timer_init();
-
-	/* Open input portal. */
-	portal_fd = mppa_open("/mppa/portal/128:8", O_RDONLY);
-	assert(portal_fd != -1);
 
 	/* Open sync connector. */
 	sprintf(pathname,
@@ -66,22 +49,15 @@ int main(int argc, char **argv)
 	);
 	sync_master = mppa_open(pathname, O_RDONLY);
 	assert(sync_master != -1);
+}
 
-	/* Setup read operation. */
-	mppa_aiocb_ctor(&aiocb, portal_fd, buffer, nclusters*size);
-	mppa_aiocb_set_trigger(&aiocb, nclusters);
-	assert(mppa_aio_read(&aiocb) != -1);
+static void _barrier_wait(int nclusters)
+{
+	uint64_t mask;
+	int clusters[MAX_CLUSTERS];
 
-	/* Benchmark. */
-	for (int i = 0; i < NITERATIONS; i++)
-	{
-		long exec_time;
-		long start_time;
-
-		memset(buffer, 0, nclusters*size);
-
-		for (int j = 0; j < nclusters; j++)
-			clusters[j] = j;
+	for (int j = 0; j < nclusters; j++)
+		clusters[j] = j;
 
 		/* Wait for slaves. */
 		mask = ~((1 << nclusters) - 1);
@@ -92,24 +68,63 @@ int main(int argc, char **argv)
 		mask = -1;
 		assert(mppa_ioctl(sync_slaves, MPPA_TX_SET_RX_RANKS, nclusters, clusters) == 0);
 		assert(mppa_write(sync_slaves, &mask, sizeof(uint64_t)) != -1);
+}
 
-		start_time = timer_get();
-		assert(mppa_aio_rearm(&aiocb) == nclusters*size);
-		exec_time = timer_get();
-	
-		printf("%d;%s;%d;%d;%ld\n",
-			i,
-			"ccluster-iocluster",
-			nclusters,
-			size,
-			timer_diff(start_time, exec_time)
+
+int main(int argc, char **argv)
+{
+	int size = MAX_BUFFER_SIZE;
+	mppa_aiocb_t aiocb[NR_DMA];
+	int portal_fd[NR_DMA];
+	int trigger[NR_DMA];
+	int nclusters;
+	char pathname[128];
+
+	assert(argc >= 2);
+
+	nclusters = atoi(argv[1]);
+
+	spawn_slaves(nclusters);
+
+	for (int i = 0; i < NR_DMA; i++)
+		trigger[i] = nclusters/NR_DMA;
+	for (int i = 0; i < (nclusters%NR_DMA); i++)
+		trigger[i]++;
+
+	/* Open input portal. */
+	for (int i = 0; i < NR_DMA; i++)
+	{
+		sprintf(pathname,
+				"/mppa/portal/%d:8",
+				128 + i 
 		);
+		portal_fd[i] = mppa_open(pathname, O_RDONLY);
+		assert(portal_fd[i] != -1);
+
+		/* Setup read operation. */
+		mppa_aiocb_ctor(&aiocb[i], portal_fd[i], &buffer[i*NR_DMA*size], NR_DMA*size);
+		mppa_aiocb_set_trigger(&aiocb[i], trigger[i]);
+		assert(mppa_aio_read(&aiocb[i]) != -1);
+	}
+
+	_barrier_create();
+
+	/* Benchmark. */
+	for (int i = 0; i < NITERATIONS; i++)
+	{
+		_barrier_wait(nclusters);
+
+		for (int i = 0; i < NR_DMA; i++)
+			assert(mppa_aio_rearm(&aiocb[i]) == NR_DMA*size);
+
+		_barrier_wait(nclusters);
 	}
 
 	/* House keeping. */
 	mppa_close(sync_slaves);
 	mppa_close(sync_master);
-	mppa_close(portal_fd);
+	for (int i = 0; i < NR_DMA; i++)
+		mppa_close(portal_fd[i]);
 
 	join_slaves(nclusters);
 
