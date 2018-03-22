@@ -67,6 +67,9 @@ then
 	for i in {1..16};
 	do
 		printf "\t Number of clusters = $i\n"
-		run_benchmark "$i"
+		for size in 1 2 4 8 16 32 64 256 512 1024;
+		do
+			run_benchmark "$i $size" #>> noc-latency.out
+		done
 	done
 fi

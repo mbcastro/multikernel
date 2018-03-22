@@ -12,7 +12,7 @@
 #define NR_DMA 4
 
 // number of executions of the benchmark
-#define NITERATIONS 30
+#define NITERATIONS 5
 
 void init_buffer(char *buffer, int size);
 void fill_buffer(char *buffer, int size, int cluster_id);

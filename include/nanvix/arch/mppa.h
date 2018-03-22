@@ -26,6 +26,8 @@
 
 	#include <mppaipc.h>
 	#include <HAL/hal/core/mp.h>
+	#include <HAL/hal/core/timer.h>
+	#include <HAL/hal/core/diagnostic.h>
 
 	/**
 	 * @brief Number of compute clusters.

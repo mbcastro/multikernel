@@ -16,9 +16,9 @@ int sync_master;
 
 int pids[MAX_CLUSTERS];
 
-void spawn_slaves(int nclusters) 
+void spawn_slaves(int nclusters, const char *size) 
 {
-	const char *argv[] = {"noc-latency-slave", NULL};
+	const char *argv[] = {"noc-latency-slave", size, NULL};
 
 	for (int i = 0; i < nclusters; i++)
 		assert((pids[i] = mppa_spawn(i, NULL, argv[0], argv, NULL)) != -1);
@@ -83,8 +83,9 @@ int main(int argc, char **argv)
 	assert(argc >= 2);
 
 	nclusters = atoi(argv[1]);
+	size = atoi(argv[2])*KB;
 
-	spawn_slaves(nclusters);
+	spawn_slaves(nclusters, argv[2]);
 
 	for (int i = 0; i < NR_DMA; i++)
 		trigger[i] = nclusters/NR_DMA;
@@ -109,15 +110,32 @@ int main(int argc, char **argv)
 
 	_barrier_create();
 
+	timer_init();
+
 	/* Benchmark. */
-	for (int i = 0; i < NITERATIONS; i++)
+	for (int i = 0; i <= NITERATIONS; i++)
 	{
+		long start_time, exec_time;
+
+		memset(buffer, 0, MAX_CLUSTERS*size);
+
 		_barrier_wait(nclusters);
 
+		start_time = timer_get();
 		for (int i = 0; i < NR_DMA; i++)
 			assert(mppa_aio_rearm(&aiocb[i]) == NR_DMA*size);
+		exec_time = timer_diff(start_time, timer_get());
 
-		_barrier_wait(nclusters);
+		/* Warmup. */
+		if (i == 0)
+			continue;
+
+		printf("%s;%d;%d;%ld\n",
+			"pwrite",
+			nclusters,
+			size,
+			exec_time
+		);
 	}
 
 	/* House keeping. */

@@ -17,7 +17,7 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <sys/time.h>
+#include <nanvix/hal.h>
 
 /**
  * @brief Timer error.
@@ -31,11 +31,7 @@ static long timer_error = 0;
  */
 long timer_get(void)
 {
-	struct timeval t;
-
-	gettimeofday(&t, 0);
-
-	return (t.tv_sec*1000000+t.tv_usec);
+return (__k1_counter_num(0));
 }
 
 /**
@@ -56,8 +52,9 @@ long timer_diff(long t1, long t2)
  */
 void timer_init(void)
 {
-	long start, end;
+		long start, end;
 
+	__k1_counter_enable(0, _K1_CYCLE_COUNT, 1);
 	start = timer_get();
 	end = timer_get();
 

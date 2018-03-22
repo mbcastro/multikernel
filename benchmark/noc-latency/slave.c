@@ -55,10 +55,11 @@ int main(int argc,char **argv)
 {
 	int portal_fd;
 	char pathname[128];
-	int size = MAX_BUFFER_SIZE;
+	int size;
 
 	((void) argc);
-	((void) argv);
+
+	size = atoi(argv[1]);
 
 	clusterid = arch_get_cluster_id();
 
@@ -72,34 +73,17 @@ int main(int argc,char **argv)
 	assert(mppa_ioctl(portal_fd, MPPA_TX_WAIT_RESOURCE_ON) != -1);
 	assert(mppa_ioctl(portal_fd, MPPA_TX_NOTIFY_ON) != -1);
 
-	timer_init();
-
 	_barrier_create();
 
 	/* Benchmark. */
-	long min = LONG_MAX;
-	for (int i = 0; i < NITERATIONS; i++)
+	for (int i = 0; i <= NITERATIONS; i++)
 	{
-		long start_time, exec_time;
+		memset(buffer, clusterid, size);
 
 		_barrier_wait();
 
-		start_time = timer_get();
 		assert(mppa_pwrite(portal_fd, buffer, size, (clusterid%NR_DMA)*size) == size);
-
-		_barrier_wait();
-
-		exec_time = timer_diff(start_time, timer_get());
-
-		if (exec_time < min)
-			min = exec_time;
 	}
-
-	printf("%s;%d;%ld\n",
-		"ccluster-iocluster",
-		size,
-		min
-	);
 
 	/* House keeping. */
 	mppa_close(sync_master);
