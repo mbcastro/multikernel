@@ -67,9 +67,6 @@ int main(int argc, char **argv)
 	sync_master = mppa_open(pathname, O_RDONLY);
 	assert(sync_master != -1);
 
-	for (int j = 0; j < nclusters; j++)
-		clusters[j] = j;
-
 	/* Setup read operation. */
 	mppa_aiocb_ctor(&aiocb, portal_fd, buffer, nclusters*size);
 	mppa_aiocb_set_trigger(&aiocb, nclusters);
@@ -82,6 +79,9 @@ int main(int argc, char **argv)
 		long start_time;
 
 		memset(buffer, 0, nclusters*size);
+
+		for (int j = 0; j < nclusters; j++)
+			clusters[j] = j;
 
 		/* Wait for slaves. */
 		mask = ~((1 << nclusters) - 1);
@@ -97,13 +97,11 @@ int main(int argc, char **argv)
 		assert(mppa_aio_rearm(&aiocb) == nclusters*size);
 		exec_time = timer_get();
 	
-		printf("%d;%s;%d;%d;%ld;%ld;%ld\n",
+		printf("%d;%s;%d;%d;%ld\n",
 			i,
 			"ccluster-iocluster",
 			nclusters,
 			size,
-			start_time,
-			exec_time,
 			timer_diff(start_time, exec_time)
 		);
 	}

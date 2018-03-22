@@ -7,7 +7,7 @@
 #define nano  (micro/1000)
 
 #define MIN_BUFFER_SIZE (16*KB)
-#define MAX_BUFFER_SIZE (1024*KB)
+#define MAX_BUFFER_SIZE (256*KB)
 
 // number of executions of the benchmark
 #define NITERATIONS 5
