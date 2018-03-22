@@ -37,66 +37,59 @@ k1-lflags := -lmppaipc
 # IO Cluster Binaries
 #=============================================================================
 
-io-bin := master.test rmem-server.test noc-latency-master
+io-bin := noc-latency-master
 
-master.test-srcs := $(TESTDIR)/master.c          \
-					$(SRCDIR)/kernel/sys/timer.c \
-					$(SRCDIR)/kernel/arch/mppa/barrier.c \
+#master.test-srcs := $(TESTDIR)/master.c          \
+#					$(SRCDIR)/kernel/sys/timer.c \
+#					$(SRCDIR)/kernel/arch/mppa/barrier.c \
 
-rmem-server.test-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
-						 $(SRCDIR)/kernel/arch/mppa/portal.c  \
-						 $(SRCDIR)/kernel/arch/mppa/barrier.c \
-						 $(SRCDIR)/kernel/arch/mppa/name.c    \
-						 $(SRCDIR)/kernel/sys/timer.c         \
-						 $(SRCDIR)/kernel/sys/meminit.c       \
-						 $(SRCDIR)/kernel/sys/memwrite.c      \
-						 $(SRCDIR)/kernel/sys/memread.c       \
-						 $(SRCDIR)/servers/rmem.c
+#rmem-server.test-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
+#						 $(SRCDIR)/kernel/arch/mppa/portal.c  \
+#						 $(SRCDIR)/kernel/arch/mppa/barrier.c \
+#						 $(SRCDIR)/kernel/arch/mppa/name.c    \
+#						 $(SRCDIR)/kernel/sys/timer.c         \
+#						 $(SRCDIR)/kernel/sys/meminit.c       \
+#						 $(SRCDIR)/kernel/sys/memwrite.c      \
+#						 $(SRCDIR)/kernel/sys/memread.c       \
+#						 $(SRCDIR)/servers/rmem.c
 
-noc-latency-master-srcs := $(SRCDIR)/kernel/sys/timer.c             \
-						   $(BENCHDIR)/noc-latency/master.c         \
-						   $(BENCHDIR)/noc-latency/interface_mppa.c \
-						   $(BENCHDIR)/noc-latency/common.c
+noc-latency-master-srcs := $(SRCDIR)/kernel/sys/timer.c     \
+						   $(BENCHDIR)/noc-latency/master.c 
 
 #=============================================================================
 # Compute Cluster Binaries
 #=============================================================================
 
-cluster-system := nodeos
+cluster-bin := noc-latency-slave
 
-cluster-bin := rmem noc-latency-slave
+#rmem-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
+#			 $(SRCDIR)/kernel/arch/mppa/portal.c  \
+#			 $(SRCDIR)/kernel/arch/mppa/barrier.c \
+#			 $(SRCDIR)/kernel/arch/mppa/name.c    \
+#			 $(SRCDIR)/kernel/sys/timer.c         \
+#			 $(SRCDIR)/kernel/sys/meminit.c       \
+#			 $(SRCDIR)/kernel/sys/memwrite.c      \
+#			 $(SRCDIR)/kernel/sys/memread.c       \
+#			 $(TESTDIR)/rmem/rmem.c
 
-rmem-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
-			 $(SRCDIR)/kernel/arch/mppa/portal.c  \
-			 $(SRCDIR)/kernel/arch/mppa/barrier.c \
-			 $(SRCDIR)/kernel/arch/mppa/name.c    \
-			 $(SRCDIR)/kernel/sys/timer.c         \
-			 $(SRCDIR)/kernel/sys/meminit.c       \
-			 $(SRCDIR)/kernel/sys/memwrite.c      \
-			 $(SRCDIR)/kernel/sys/memread.c       \
-			 $(TESTDIR)/rmem/rmem.c
-
-noc-latency-slave-srcs := $(SRCDIR)/kernel/sys/timer.c             \
-						  $(BENCHDIR)/noc-latency/slave.c          \
-						  $(BENCHDIR)/noc-latency/interface_mppa.c \
-						  $(BENCHDIR)/noc-latency/common.c
+noc-latency-slave-srcs := $(BENCHDIR)/noc-latency/slave.c \
+						  $(SRCDIR)/kernel/sys/timer.c
 
 #=============================================================================
 # Testing Binary
 #=============================================================================
 
-test-objs := master.test      \
-			 rmem-server.test \
-			 rmem 
+#test-objs := master.test      \
+#			 rmem-server.test \
+#			 rmem 
 
-test-name := test.img
+#test-name := test.img
 
 #=============================================================================
 # Benchmark Binary
 #=============================================================================
 
-noc-latency-objs := noc-latency-master \
-			 noc-latency-slave
+noc-latency-objs := noc-latency-master noc-latency-slave
 
 noc-latency-name := noc-latency.img
 
@@ -104,6 +97,6 @@ noc-latency-name := noc-latency.img
 # MPPA Binary
 #=============================================================================
 
-mppa-bin := test noc-latency
+mppa-bin := noc-latency
 
 include $(K1_TOOLCHAIN_DIR)/share/make/Makefile.kalray

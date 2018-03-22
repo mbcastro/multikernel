@@ -6,15 +6,11 @@
 #define micro (milli/1000)
 #define nano  (micro/1000)
 
-#define MIN_BUFFER_SIZE (1*KB)
-#define MAX_BUFFER_SIZE (512*KB)
+#define MIN_BUFFER_SIZE (16*KB)
+#define MAX_BUFFER_SIZE (1024*KB)
 
 // number of executions of the benchmark
-#define NITERATIONS 1537
-
-typedef struct {
-  int cluster_id;
-} rqueue_msg_t;
+#define NITERATIONS 5
 
 void init_buffer(char *buffer, int size);
 void fill_buffer(char *buffer, int size, int cluster_id);

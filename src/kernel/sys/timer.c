@@ -48,7 +48,7 @@ long timer_get(void)
  */
 long timer_diff(long t1, long t2)
 {
-	return (((t2 - t1) < timer_error) ? timer_error : t2 - t1 - timer_error);
+	return (((t2 - t1) <= timer_error) ? timer_error : t2 - t1 - timer_error);
 }
 
 /**

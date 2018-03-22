@@ -45,23 +45,28 @@ function run_benchmark
 
 if [ $1 == "tests" ];
 then
-for ncclusters in 1 2 4 8 16;
-do
-	for pattern in regular;
+rm -f results/rmem/*
+	for ncclusters in 1 2 4 8 16;
 	do
-		for workload in write;
+		for pattern in regular;
 		do
-			echo "=== TESTING rmem $pattern $workload $ncclusters"
-				run_test "rmem --ncclusters $ncclusters --pattern $pattern --workload $workload" >> \
-					results/rmem/rmem-$pattern-$workload-$ncclusters.out
+			for workload in write;
+			do
+				echo "=== TESTING rmem $pattern $workload $blocksize $ncclusters"
+#				for i in {1..30};
+#				do
+					run_test "rmem --ncclusters $ncclusters --pattern $pattern --workload $workload --naccesses 64" #>> \
+#						results/rmem/rmem-$pattern-$workload-$blocksize-$ncclusters.out
+#				done
+			done
 		done
-	done
 done
 elif [ $1 == "benchmarks" ];
 then
 	printf "Running benchmark with PORTAL communication...\n"
-	for i in 1 2 4 8 16; do
+	for i in 1;
+	do
 		printf "\t Number of clusters = $i\n"
-		run_benchmark $i | cut -d ";" -f 5,6 >> noc-latency-$i.out
+		run_benchmark "$i"
 	done
 fi

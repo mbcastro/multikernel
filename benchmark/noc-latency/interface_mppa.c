@@ -25,28 +25,16 @@ portal_t *mppa_create_read_portal (char *path, void* buffer, unsigned long size,
 portal_t *mppa_create_write_portal (char *path, void* buffer, unsigned long size, int receiver_rank) {		
   portal_t *ret = (portal_t*) malloc (sizeof(portal_t));
   ret->file_descriptor = mppa_open(path, O_WRONLY);
+  printf("slave: %s\n", path);
   assert(ret->file_descriptor != -1);
-  
-  // Tell mppa_io_write to wait for resources when sending a asynchronous message
-  assert(mppa_ioctl(ret->file_descriptor, MPPA_TX_WAIT_RESOURCE_ON) == 0);
-  
-  // Select the DMA interface according to the receiver's rank.
-  // This is only possible on the IO-node!
-  if (arch_get_cluster_id() == 128)
-    assert(mppa_ioctl(ret->file_descriptor, MPPA_TX_SET_IFACE, receiver_rank % 4) == 0);
-  
-  // We need to initialize an aiocb for asynchronous writes.
-  // It seems that the buffer and buffer size parameters are not important here,
-  // because we're going to specify them with mppa_aiocb_set_pwrite()
-  // before calling mppa_aio_write()
-  assert(mppa_aiocb_ctor(&ret->aiocb, ret->file_descriptor, buffer, size) == &ret->aiocb);
   
   return ret;
 }
 
 void mppa_async_read_wait_portal(portal_t *portal) {
   int status;
-  status = mppa_aio_rearm(&portal->aiocb);
+  printf("READ PORTAL\n");
+  status = mppa_aio_wait(&portal->aiocb);
   assert(status != -1);
 }
 
@@ -67,7 +55,6 @@ void mppa_write_portal(portal_t *portal, void *buffer, int size, int offset) {
 }
 
 void mppa_async_write_portal(portal_t *portal, void *buffer, int size, int offset) {
-  mppa_aiocb_set_pwrite(&portal->aiocb, buffer, size, offset);
   assert(mppa_aio_write(&portal->aiocb) == 0);
 }
 
