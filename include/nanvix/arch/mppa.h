@@ -47,7 +47,7 @@
 	/**
 	 * @brief Number of DMAs per compute cluster.
 	 */
-	#define NR_IO_CLUSTER_DMA 4
+	#define NR_IOCLUSTER_DMA 4
 
 	/**
 	 * @brief Overall number of DMAs
