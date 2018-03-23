@@ -33,9 +33,7 @@
 
 	#define MAX_BUFFER_SIZE (1024*KB)
 
-	#define NR_DMA 4
-
-	#define NITERATIONS 5
+	#define NITERATIONS 30
 
 	#define BARRIER_SLAVE_CNOC 4
 	#define BARRIER_MASTER_CNOC 12

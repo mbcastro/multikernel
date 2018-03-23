@@ -37,7 +37,7 @@ k1-lflags := -lmppaipc
 # IO Cluster Binaries
 #=============================================================================
 
-io-bin := noc-latency-master
+io-bin := portal-latency-master
 
 #master.test-srcs := $(TESTDIR)/master.c          \
 #					$(SRCDIR)/kernel/sys/timer.c \
@@ -53,13 +53,13 @@ io-bin := noc-latency-master
 #						 $(SRCDIR)/kernel/sys/memread.c       \
 #						 $(SRCDIR)/servers/rmem.c
 
-noc-latency-master-srcs := $(BENCHDIR)/noc-latency/master.c 
+portal-latency-master-srcs := $(BENCHDIR)/portal-latency/master.c 
 
 #=============================================================================
 # Compute Cluster Binaries
 #=============================================================================
 
-cluster-bin := noc-latency-slave
+cluster-bin := portal-latency-slave
 
 #rmem-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
 #			 $(SRCDIR)/kernel/arch/mppa/portal.c  \
@@ -71,8 +71,7 @@ cluster-bin := noc-latency-slave
 #			 $(SRCDIR)/kernel/sys/memread.c       \
 #			 $(TESTDIR)/rmem/rmem.c
 
-noc-latency-slave-srcs := $(BENCHDIR)/noc-latency/slave.c \
-						  $(SRCDIR)/kernel/sys/timer.c
+portal-latency-slave-srcs := $(BENCHDIR)/portal-latency/slave.c
 
 #=============================================================================
 # Testing Binary
@@ -88,14 +87,14 @@ noc-latency-slave-srcs := $(BENCHDIR)/noc-latency/slave.c \
 # Benchmark Binary
 #=============================================================================
 
-noc-latency-objs := noc-latency-master noc-latency-slave
+portal-latency-objs := portal-latency-master portal-latency-slave
 
-noc-latency-name := noc-latency.img
+portal-latency-name := portal-latency.img
 
 #=============================================================================
 # MPPA Binary
 #=============================================================================
 
-mppa-bin := noc-latency
+mppa-bin := portal-latency
 
 include $(K1_TOOLCHAIN_DIR)/share/make/Makefile.kalray

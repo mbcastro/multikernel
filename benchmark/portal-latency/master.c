@@ -111,7 +111,7 @@ static struct
 {
 	int fd;            /**< Portal connector.               */
 	mppa_aiocb_t aiocb; /**< Pending asynchronous operation. */
-} portals[NR_DMA];
+} portals[NR_IOCLUSTER_DMA];
 
 /**
  * @brief Opens input portal.
@@ -137,7 +137,7 @@ static void portal_open(char *buffer, int size, int dma, int trigger)
 	assert(portals[dma].fd != -1);
 
 	/* Setup read operation. */
-	mppa_aiocb_ctor(&portals[dma].aiocb, portals[dma].fd, &buffer[dma*NR_DMA*size], NR_DMA*size);
+	mppa_aiocb_ctor(&portals[dma].aiocb, portals[dma].fd, &buffer[dma*(NR_CCLUSTER/NR_IOCLUSTER_DMA)*size], (NR_CCLUSTER/NR_IOCLUSTER_DMA)*size);
 	mppa_aiocb_set_trigger(&portals[dma].aiocb, trigger);
 	assert(mppa_aio_read(&portals[dma].aiocb) != -1);
 }
@@ -179,7 +179,7 @@ static int pids[NR_CCLUSTER];
  */
 static void spawn_slaves(int nclusters, const char *size) 
 {
-	const char *argv[] = {"noc-latency-slave", size, NULL};
+	const char *argv[] = {"portal-latency-slave", size, NULL};
 
 	for (int i = 0; i < nclusters; i++)
 		assert((pids[i] = mppa_spawn(i, NULL, argv[0], argv, NULL)) != -1);
@@ -235,7 +235,8 @@ static void timer_init(void)
 {
 	long start, end;
 
-	__k1_counter_enable(0, _K1_CYCLE_COUNT, 1);
+	__k1_counter_enable(0, _K1_CYCLE_COUNT, 0);
+
 	start = timer_get();
 	end = timer_get();
 
@@ -258,24 +259,24 @@ int main(int argc, char **argv)
 {
 	int size;
 	int nclusters;
-	int trigger[NR_DMA];
+	int trigger[NR_IOCLUSTER_DMA];
 
 	assert(argc == 3);
 
 	/* Retrieve kernel parameters. */
 	nclusters = atoi(argv[1]);
-	size = atoi(argv[2])*KB;
+	assert((size = atoi(argv[2])*KB) <= MAX_BUFFER_SIZE);
 
-	spawn_slaves(nclusters, argv[1]);
+	spawn_slaves(nclusters, argv[2]);
 
 	/* Distribute messages across DMA channels. */
-	for (int i = 0; i < NR_DMA; i++)
-		trigger[i] = nclusters/NR_DMA;
-	for (int i = 0; i < (nclusters%NR_DMA); i++)
+	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
+		trigger[i] = nclusters/NR_IOCLUSTER_DMA;
+	for (int i = 0; i < (nclusters%NR_IOCLUSTER_DMA); i++)
 		trigger[i]++;
 
 	/* Open input portals. */
-	for (int i = 0; i < NR_DMA; i++)
+	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
 		portal_open(buffer, size, i, trigger[i]);
 
 	barrier_open(nclusters);
@@ -300,7 +301,7 @@ int main(int argc, char **argv)
 		t[1] = timer_get();
 
 		/* Read. */
-		for (int i = 0; i < NR_DMA; i++)
+		for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
 			portal_read(i);
 
 		t[2] = timer_get();
@@ -321,7 +322,7 @@ int main(int argc, char **argv)
 
 	/* House keeping. */
 	barrier_close();
-	for (int i = 0; i < NR_DMA; i++)
+	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
 		portal_close(i);
 	join_slaves(nclusters);
 

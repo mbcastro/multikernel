@@ -38,9 +38,9 @@ function run_test
 function run_benchmark
 {
 	$K1TOOLS_DIR/bin/k1-jtag-runner               \
-		--multibinary=$OUTDIR/noc-latency.img     \
-		--exec-multibin=IODDR0:noc-latency-master \
-		-- $1
+		--multibinary=$OUTDIR/portal-latency.img     \
+		--exec-multibin=IODDR0:portal-latency-master \
+		-- $1 $2
 }
 
 if [ $1 == "tests" ];
@@ -63,5 +63,5 @@ rm -f results/rmem/*
 done
 elif [ $1 == "portal-latency" ];
 then
-	run_benchmark "$2 $3"
+	run_benchmark $2 $3
 fi
