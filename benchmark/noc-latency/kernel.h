@@ -17,47 +17,28 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <nanvix/hal.h>
+#ifndef _KERNEL_H_
+#define _KERNEL_H_
 
-/**
- * @brief Timer error.
- */
-static long timer_error = 0;
+	/**
+	 * @brief Data unit sizes.
+	 */
+	#define KB (1024)    /**< Kilobyte. */
+	#define MB (1024*KB) /**< Megabyte. */
+	#define GB (1024*KB) /**< Gigabyte. */
 
-/**
- * @brief Gets the current timer value.
- *
- * @returns The current timer value;
- */
-long timer_get(void)
-{
-return (__k1_counter_num(0));
-}
+	#define milli (1.0/1000)
+	#define micro (milli/1000)
+	#define nano  (micro/1000)
 
-/**
- * @brief Computes the difference between two timer values.
- *
- * @param t1 Start time.
- * @param t2 End time.
- *
- * @returns The difference between the two timers (t2 - t1).
- */
-long timer_diff(long t1, long t2)
-{
-	return (((t2 - t1) <= timer_error) ? timer_error : t2 - t1 - timer_error);
-}
+	#define MAX_BUFFER_SIZE (1024*KB)
 
-/**
- * @brief Calibrates the timer.
- */
-void timer_init(void)
-{
-		long start, end;
+	#define NR_DMA 4
 
-	__k1_counter_enable(0, _K1_CYCLE_COUNT, 1);
-	start = timer_get();
-	end = timer_get();
+	#define NITERATIONS 5
 
-	timer_error = (end - start);
-}
+	#define BARRIER_SLAVE_CNOC 4
+	#define BARRIER_MASTER_CNOC 12
+	#define PORTAL_DNOC 8
 
+#endif /* _KERNEL_H_ */

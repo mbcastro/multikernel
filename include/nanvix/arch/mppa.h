@@ -26,6 +26,8 @@
 
 	#include <mppaipc.h>
 	#include <HAL/hal/core/mp.h>
+	#include <HAL/hal/core/timer.h>
+	#include <HAL/hal/core/diagnostic.h>
 
 	/**
 	 * @brief Number of compute clusters.
@@ -83,7 +85,7 @@
 	 */
 	#define MAILBOX_MSG_SIZE 64
 	
-	/* Foard denitions. */
-	#define arch_get_cluster_id() __k1_get_cluster_id()
+	/* Forward denitions. */
+	#define k1_get_cluster_id() __k1_get_cluster_id()
 
 #endif /* NANVIX_ARCH_MPPA256_ */
