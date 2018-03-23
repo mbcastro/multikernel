@@ -61,15 +61,7 @@ rm -f results/rmem/*
 			done
 		done
 done
-elif [ $1 == "benchmarks" ];
+elif [ $1 == "portal-latency" ];
 then
-	printf "Running benchmark with PORTAL communication...\n"
-	for i in {1..16};
-	do
-		printf "\t Number of clusters = $i\n"
-		for size in 1 2 4 8 16 32 64 256 512 1024;
-		do
-			run_benchmark "$i $size" #>> noc-latency.out
-		done
-	done
+	run_benchmark "$2 $3"
 fi

@@ -53,8 +53,7 @@ io-bin := noc-latency-master
 #						 $(SRCDIR)/kernel/sys/memread.c       \
 #						 $(SRCDIR)/servers/rmem.c
 
-noc-latency-master-srcs := $(SRCDIR)/kernel/sys/timer.c     \
-						   $(BENCHDIR)/noc-latency/master.c 
+noc-latency-master-srcs := $(BENCHDIR)/noc-latency/master.c 
 
 #=============================================================================
 # Compute Cluster Binaries

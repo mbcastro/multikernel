@@ -1,94 +1,206 @@
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <nanvix/arch/mppa.h>
-#include <nanvix/pm.h>
-#include <string.h>
-#include "common.h"
-#include <limits.h>
+/*
+ * Copyright(C) 2011-2018 Pedro H. Penna <pedrohenriquepenna@gmail.com>
+ * 
+ * This file is part of Nanvix.
+ * 
+ * Nanvix is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * Nanvix is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <mppa/osconfig.h>
+#include <nanvix/arch/mppa.h>
+#include <assert.h>
+#include <string.h>
+#include "kernel.h"
 
-int clusterid;
+/**
+ * @brief Cluster ID.
+ */
+static int clusterid;
 
-static char buffer[MAX_BUFFER_SIZE];
+/*===================================================================*
+ * Barrier                                                           *
+ *===================================================================*/
 
-int sync_slaves;
-int sync_master;
+/**
+ * @brief Global barrier.
+ */
+static struct
+{
+	int sync_slaves; /**< Slaves sync NoC connector. */
+	int sync_master; /**< Master sync NoC connector. */
+} barrier;
 
-static void _barrier_create(void)
+/**
+ * @brief Opens the global barrier.
+ */
+static void barrier_open(void)
 {
 	char pathname[128];
 
-	/* Create sync connector. */
+	/* Open slave sync connector. */
 	sprintf(pathname,
-			"/mppa/sync/[0..15]:%d",
-			4
+			"/mppa/sync/[%d..%d]:%d",
+			CCLUSTER0,
+			CCLUSTER15,
+			BARRIER_SLAVE_CNOC
 	);
-	sync_slaves = mppa_open(pathname, O_RDONLY);
-	assert(sync_slaves != -1);
+	barrier.sync_slaves = mppa_open(pathname, O_RDONLY);
+	assert(barrier.sync_slaves != -1);
 
-	/* Create sync connector. */
+	/* Open master sync connector. */
 	sprintf(pathname,
-			"/mppa/sync/128:%d",
-			12
+			"/mppa/sync/%d:%d",
+			IOCLUSTER0,
+			BARRIER_MASTER_CNOC
 	);
-	sync_master = mppa_open(pathname, O_WRONLY);
-	assert(sync_master != -1);
+	barrier.sync_master = mppa_open(pathname, O_WRONLY);
+	assert(barrier.sync_master != -1);
 }
 
-static void _barrier_wait(void)
+/**
+ * @brief Waits on the global barrier.
+ */
+static void barrier_wait(void)
 {
 	uint64_t mask;
 
 	/* Unblock master. */
 	mask = (1 << clusterid);
-	assert(mppa_write(sync_master, &mask, sizeof(uint64_t)) == sizeof(uint64_t));
+	assert(mppa_write(barrier.sync_master, &mask, sizeof(uint64_t)) == sizeof(uint64_t));
 
 	/* Wait for master. */
 	mask = 0;
-	assert(mppa_ioctl(sync_slaves, MPPA_RX_SET_MATCH, mask) != -1);
-	assert(mppa_read(sync_slaves, &mask, sizeof(uint64_t)) != -1);
+	assert(mppa_ioctl(barrier.sync_slaves, MPPA_RX_SET_MATCH, mask) != -1);
+	assert(mppa_read(barrier.sync_slaves, &mask, sizeof(uint64_t)) != -1);
 }
 
-int main(int argc,char **argv)
+/**
+ * @brief Closes the global barrier.
+ */
+static void barrier_close(void)
 {
-	int portal_fd;
+	mppa_close(barrier.sync_master);
+	mppa_close(barrier.sync_slaves);
+}
+
+/*===================================================================*
+ * Portal                                                            *
+ *===================================================================*/
+
+/**
+ * @brief Portal file descriptor.
+ */
+static int portal_fd;
+
+/**
+ * @brief Opens output portal.
+ *
+ * @param dma DMA channel to use.
+ */
+static void portal_open(int dma)
+{
 	char pathname[128];
-	int size;
-
-	((void) argc);
-
-	size = atoi(argv[1]);
-
-	clusterid = arch_get_cluster_id();
 
 	/* Open portal connector. */
 	sprintf(pathname,
-			"/mppa/portal/%d:8",
-			128 + (clusterid%NR_DMA)
+			"/mppa/portal/%d:%d",
+			IOCLUSTER0 + dma,
+			PORTAL_DNOC
 	);
 	portal_fd = mppa_open(pathname, O_WRONLY);
 	assert(portal_fd != -1);
-	assert(mppa_ioctl(portal_fd, MPPA_TX_WAIT_RESOURCE_ON) != -1);
-	assert(mppa_ioctl(portal_fd, MPPA_TX_NOTIFY_ON) != -1);
+}
 
-	_barrier_create();
+/**
+ * @brief Closes output portal.
+ */
+static inline void portal_close(void)
+{
+	assert(mppa_close(portal_fd) != -1);
+}
 
-	/* Benchmark. */
+/**
+ * @brief Writes data to output portal.
+ *
+ * @param buffer  Target buffer.
+ * @parm  size    Write size.
+ * @param offset  Write offset.
+ */
+static inline void portal_write(const void *buffer, int size, int offset)
+{
+	assert(mppa_pwrite(portal_fd, buffer, size, offset) == size);
+}
+
+/*===================================================================*
+ * Kernel                                                            *
+ *===================================================================*/
+
+/**
+ * @brief Buffer.
+ */
+static char buffer[MAX_BUFFER_SIZE];
+
+/**
+ * @brief Benchmarks write operations on a portal connector.
+ */
+int main(int argc, char **argv)
+{
+	int dma;    /* DMA channel to use. */
+	int size;   /* Write size.         */
+	int offset; /* Write offset.       */
+
+	assert(argc == 2);
+
+	/* Retrieve kernel parameters. */
+	assert((size = atoi(argv[1])*KB) <= MAX_BUFFER_SIZE);
+	clusterid = k1_get_cluster_id();
+	dma = clusterid%NR_DMA;
+	offset = dma*size;
+
+	portal_open(dma);
+	barrier_open();
+
+	/*
+	 * Touch data to initialize all pages
+	 * and warmup D-cache.
+	 */
+	memset(buffer, clusterid, size);
+
+	/* 
+	 * Benchmark. First iteration is
+	 * used to warmup resources.
+	 */
 	for (int i = 0; i <= NITERATIONS; i++)
 	{
-		memset(buffer, clusterid, size);
+		/*
+		 * Force cclusters to start
+		 * all together.
+		 */
+		barrier_wait();
 
-		_barrier_wait();
+		portal_write(buffer, size, offset);
 
-		assert(mppa_pwrite(portal_fd, buffer, size, (clusterid%NR_DMA)*size) == size);
+		/* 
+		 * Wait for other cclusters to
+		 * complete the write operation.
+		 */
+		barrier_wait();
 	}
 
 	/* House keeping. */
-	mppa_close(sync_master);
-	mppa_close(sync_slaves);
-	mppa_close(portal_fd);
+	barrier_close();
+	portal_close();
 
 	return (EXIT_SUCCESS);
 }
