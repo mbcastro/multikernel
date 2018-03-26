@@ -22,54 +22,54 @@
 #include <stdlib.h>
 #include <mppa_power.h>
 #include <mppa_async.h>
-#include <vbsp.h>
+#include <mppa_rpc.h>
 #include <string.h>
 #include <assert.h>
 #include "kernel.h"
 
-#define CHIP_FREQ (__bsp_frequency/1000000)
-
-off64_t offset;
+#define CHIP_FREQ (__bsp_frequency*MICRO)
 
 static char buffer[MAX_BUFFER_SIZE];
 
 int main(int argc, const char **argv)
 {
+	int size;
+	int clusterid;
+	uint64_t t[2];
+	off64_t offset;
+	double total_time;
+
+	assert(argc == 2);
+	assert((size = atoi(argv[1])) <= MAX_BUFFER_SIZE);
+
 	mppa_rpc_client_init();
 	mppa_async_init();
 
-	((void) argc);
-	((void) argv);
+	clusterid = __k1_get_cluster_id();
 
-	uint64_t t[2];
-	double total_time;
-	int clusterid = __k1_get_cluster_id();
-
-	mppa_async_malloc(MPPA_ASYNC_DDR_0, NR_CCLUSTER*MAX_BUFFER_SIZE, &offset, NULL);
+	assert(mppa_async_malloc(MPPA_ASYNC_DDR_0, size, &offset, NULL) == 0);
 
 	for (int i = 0; i < NITERATIONS; i++)
 	{
-		mppa_rpc_barrier_all();
 		t[0] = __k1_read_dsu_timestamp();
 
-		mppa_async_put(buffer,
+		assert(mppa_async_put(buffer,
 				MPPA_ASYNC_DDR_0,
-				offset + clusterid*MAX_BUFFER_SIZE,
-				MAX_BUFFER_SIZE,
-				NULL
+				offset,
+				size,
+				NULL) == 0
 		);
 
-		mppa_rpc_barrier_all();
 		t[1] = __k1_read_dsu_timestamp();
 
 		if (i == 0)
 			continue;
 
 		total_time = (double) ((t[1] - t[0])/(double)CHIP_FREQ);
-		printf("%d;%d;%.2lf\n", i, clusterid, total_time);
+		printf("%2d;%2d;%d;%.2lf\n", i, clusterid, size, total_time);
 	}
 
-	mppa_async_free(MPPA_ASYNC_DDR_0, offset, NULL);
+	assert(mppa_async_free(MPPA_ASYNC_DDR_0, offset, NULL) == 0);
 
 	mppa_async_final();
 

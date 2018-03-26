@@ -18,29 +18,37 @@
  */
 
 #include <mppa_power.h>
-#include <mppa_routing.h>
+#include <mppa_rpc.h>
 #include <mppa_async.h>
 #include <assert.h>
+#include <stdlib.h>
 #include <utask.h>
 #include "kernel.h"
 
 int main(int argc, const char **argv)
 {
-	mppa_rpc_server_init(1, 0, NR_CCLUSTER);
-	mppa_async_server_init();
-
 	((void) argc);
 	((void) argv);
 
+	int size;
 	utask_t t;
 	int status;
+	int nclusters;
 
-	for(int i = 0;i < NR_CCLUSTER; i++)
-		assert(mppa_power_base_spawn(i, "slave.elf", argv, NULL, MPPA_POWER_SHUFFLING_ENABLED) != -1);
+	assert(argc == 3);
+	assert((nclusters = atoi(argv[1])) <= NR_CCLUSTER);
+	assert((size = atoi(argv[2])) <= MAX_BUFFER_SIZE);
+
+	mppa_rpc_server_init(1, 0, nclusters);
+	mppa_async_server_init();
+
+	const char *args[] = { "slave.elf", argv[2], NULL };
+	for(int i = 0; i < nclusters; i++)
+		assert(mppa_power_base_spawn(i, args[0], args, NULL, MPPA_POWER_SHUFFLING_ENABLED) != -1);
 
 	utask_create(&t, NULL, (void*)mppa_rpc_server_start, NULL);
 
-	for(int i = 0; i < NR_CCLUSTER; i++)
+	for(int i = 0; i < nclusters; i++)
 		assert(mppa_power_base_waitpid(i, &status, 0) >= 0);
 
 	return 0;

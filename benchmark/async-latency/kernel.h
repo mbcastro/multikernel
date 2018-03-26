@@ -27,18 +27,14 @@
 	#define MB (1024*KB) /**< Megabyte. */
 	#define GB (1024*KB) /**< Gigabyte. */
 
-	#define milli (1.0/1000)
-	#define micro (milli/1000)
-	#define nano  (micro/1000)
+	#define MILLI (1.0/1000)
+	#define MICRO (MILLI/1000)
+	#define NANO  (MICRO/1000)
 
-	#define NR_CCLUSTER 4
+	#define NR_CCLUSTER 16
 
 	#define MAX_BUFFER_SIZE (1024*KB)
 
 	#define NITERATIONS 10
-
-	#define BARRIER_SLAVE_CNOC 4
-	#define BARRIER_MASTER_CNOC 12
-	#define PORTAL_DNOC 8
 
 #endif /* _KERNEL_H_ */

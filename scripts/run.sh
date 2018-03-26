@@ -20,48 +20,19 @@ export K1TOOLS_DIR="/usr/local/k1tools"
 export OUTDIR=output/bin/
 
 #
-# Runs a unit test.
-#   $1 Test unit name.
+# Runs a multibinary file.
 #
-function run_test
+function run
 {
-	$K1TOOLS_DIR/bin/k1-jtag-runner             \
-		--multibinary=$OUTDIR/test.img          \
-		--exec-multibin=IODDR0:master.test      \
-		--exec-multibin=IODDR1:rmem-server.test \
-		-- $1
+	local multibin=$1
+	local bin=$2
+	local args=$3
+
+	$K1TOOLS_DIR/bin/k1-jtag-runner     \
+		--multibinary=$OUTDIR/$multibin \
+		--exec-multibin=IODDR0:$bin     \
+		-- $args
 }
 
-#
-# Runs a benchmark.
-#
-function run_benchmark
-{
-	$K1TOOLS_DIR/bin/k1-jtag-runner               \
-		--multibinary=$OUTDIR/portal-latency.img     \
-		--exec-multibin=IODDR0:portal-latency-master \
-		-- $1 $2
-}
-
-if [ $1 == "tests" ];
-then
-rm -f results/rmem/*
-	for ncclusters in 1 2 4 8 16;
-	do
-		for pattern in regular;
-		do
-			for workload in write;
-			do
-				echo "=== TESTING rmem $pattern $workload $blocksize $ncclusters"
-#				for i in {1..30};
-#				do
-					run_test "rmem --ncclusters $ncclusters --pattern $pattern --workload $workload --naccesses 64" #>> \
-#						results/rmem/rmem-$pattern-$workload-$blocksize-$ncclusters.out
-#				done
-			done
-		done
-done
-elif [ $1 == "portal-latency" ];
-then
-	run_benchmark $2 $3
-fi
+run "portal-latency.img" "portal-latency-master" "1 1024"
+run "async-latency.img" "master.elf" "1 1024"

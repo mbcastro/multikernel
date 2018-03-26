@@ -25,19 +25,56 @@ SRCDIR  = $(CURDIR)/src
 TESTDIR = $(CURDIR)/test
 BENCHDIR = $(CURDIR)/benchmark
 
-# Toolchain configuration.
+
+# Toolchain Configuration
 cflags := -ansi -std=c99
-cflags += -Wall -Wextra
+cflags += -Wall -Wextra -Werror
+cflags += -Winit-self -Wswitch-default -Wfloat-equal -Wundef -Wshadow -Wuninitialized
 cflags += -O3 
 cflags += -I $(INCDIR)
 cflags += -D_KALRAY_MPPA256_
-k1-lflags := -lmppaipc
+lflags := -Wl,--defsym=_LIBNOC_DISABLE_FIFO_FULL_CHECK=0
 
 #=============================================================================
-# IO Cluster Binaries
+# Async Latency Benchmark
 #=============================================================================
 
-io-bin := portal-latency-master
+
+io-bin += master.elf
+master.elf-srcs := $(BENCHDIR)/async-latency/master.c
+master.elf-system := bare
+master.elf-lflags := -mhypervisor -lutask -lmppa_async -lmppa_request_engine
+master.elf-lflags += -lmppapower -lmppanoc -lmpparouting
+master.elf-lflags += -lpcie_queue
+
+cluster-bin += slave.elf
+slave.elf-srcs := $(BENCHDIR)/async-latency/slave.c
+slave.elf-system := bare
+slave.elf-lflags := -mhypervisor -lutask -lmppa_async -lmppa_request_engine
+slave.elf-lflags += -lmppapower -lmppanoc -lmpparouting
+slave.elf-lflags += -Wl,--defsym=USER_STACK_SIZE=0x2000 -Wl,--defsym=KSTACK_SIZE=0x1000
+
+async-latency-objs := master.elf slave.elf
+async-latency-name := async-latency.img
+
+#=============================================================================
+# Portal Latency Benchmark
+#=============================================================================
+
+io-bin += portal-latency-master
+portal-latency-master-srcs := $(BENCHDIR)/portal-latency/master.c 
+portal-latency-master-lflags := -lmppaipc
+
+cluster-bin += portal-latency-slave
+portal-latency-slave-srcs := $(BENCHDIR)/portal-latency/slave.c
+portal-latency-slave-lflags := -lmppaipc
+
+portal-latency-objs := portal-latency-master portal-latency-slave
+portal-latency-name := portal-latency.img
+
+#=============================================================================
+# Compute Cluster Binaries
+#=============================================================================
 
 #master.test-srcs := $(TESTDIR)/master.c          \
 #					$(SRCDIR)/kernel/sys/timer.c \
@@ -53,14 +90,6 @@ io-bin := portal-latency-master
 #						 $(SRCDIR)/kernel/sys/memread.c       \
 #						 $(SRCDIR)/servers/rmem.c
 
-portal-latency-master-srcs := $(BENCHDIR)/portal-latency/master.c 
-
-#=============================================================================
-# Compute Cluster Binaries
-#=============================================================================
-
-cluster-bin := portal-latency-slave
-
 #rmem-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
 #			 $(SRCDIR)/kernel/arch/mppa/portal.c  \
 #			 $(SRCDIR)/kernel/arch/mppa/barrier.c \
@@ -70,8 +99,6 @@ cluster-bin := portal-latency-slave
 #			 $(SRCDIR)/kernel/sys/memwrite.c      \
 #			 $(SRCDIR)/kernel/sys/memread.c       \
 #			 $(TESTDIR)/rmem/rmem.c
-
-portal-latency-slave-srcs := $(BENCHDIR)/portal-latency/slave.c
 
 #=============================================================================
 # Testing Binary
@@ -84,17 +111,9 @@ portal-latency-slave-srcs := $(BENCHDIR)/portal-latency/slave.c
 #test-name := test.img
 
 #=============================================================================
-# Benchmark Binary
-#=============================================================================
-
-portal-latency-objs := portal-latency-master portal-latency-slave
-
-portal-latency-name := portal-latency.img
-
-#=============================================================================
 # MPPA Binary
 #=============================================================================
 
-mppa-bin := portal-latency
+mppa-bin := portal-latency async-latency
 
 include $(K1_TOOLCHAIN_DIR)/share/make/Makefile.kalray

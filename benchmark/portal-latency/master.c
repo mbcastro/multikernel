@@ -301,8 +301,8 @@ int main(int argc, char **argv)
 		t[1] = timer_get();
 
 		/* Read. */
-		for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
-			portal_read(i);
+		for (int j = 0; j < NR_IOCLUSTER_DMA; j++)
+			portal_read(j);
 
 		t[2] = timer_get();
 		barrier_wait();
