@@ -17,17 +17,12 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdio.h>
-#include <utask.h>
-#include <stdlib.h>
-#include <mppa_power.h>
-#include <mppa_async.h>
-#include <mppa_rpc.h>
-#include <string.h>
+#include <nanvix/arch/mppa.h>
 #include <assert.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 #include "kernel.h"
-
-#define CHIP_FREQ (__bsp_frequency*MICRO)
 
 static char buffer[MAX_BUFFER_SIZE];
 
@@ -35,7 +30,7 @@ int main(int argc, const char **argv)
 {
 	int size;
 	int clusterid;
-	uint64_t t[2];
+	long t[2];
 	off64_t offset;
 	double total_time;
 
@@ -45,13 +40,16 @@ int main(int argc, const char **argv)
 	mppa_rpc_client_init();
 	mppa_async_init();
 
-	clusterid = __k1_get_cluster_id();
+	clusterid = k1_get_cluster_id();
 
 	assert(mppa_async_malloc(MPPA_ASYNC_DDR_0, size, &offset, NULL) == 0);
 
+	k1_timer_init();
+
 	for (int i = 0; i < NITERATIONS; i++)
 	{
-		t[0] = __k1_read_dsu_timestamp();
+		mppa_rpc_barrier_all();
+		t[0] = k1_timer_get();
 
 		assert(mppa_async_put(buffer,
 				MPPA_ASYNC_DDR_0,
@@ -60,13 +58,17 @@ int main(int argc, const char **argv)
 				NULL) == 0
 		);
 
-		t[1] = __k1_read_dsu_timestamp();
+		mppa_rpc_barrier_all();
+		t[1] = k1_timer_get();
 
 		if (i == 0)
 			continue;
 
-		total_time = (double) ((t[1] - t[0])/(double)CHIP_FREQ);
-		printf("%2d;%2d;%d;%.2lf\n", i, clusterid, size, total_time);
+		if (clusterid != 0)
+			continue;
+
+		total_time = k1_timer_diff(t[0], t[1]);
+		printf("%2d;%s;%2d;%d;%.2lf\n", i, "write", clusterid, size, total_time);
 	}
 
 	assert(mppa_async_free(MPPA_ASYNC_DDR_0, offset, NULL) == 0);

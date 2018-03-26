@@ -32,24 +32,26 @@ cflags += -Wall -Wextra -Werror
 cflags += -Winit-self -Wswitch-default -Wfloat-equal -Wundef -Wshadow -Wuninitialized
 cflags += -O3 
 cflags += -I $(INCDIR)
-cflags += -D_KALRAY_MPPA256_
+cflags += -D_KALRAY_MPPA256
 lflags := -Wl,--defsym=_LIBNOC_DISABLE_FIFO_FULL_CHECK=0
 
 #=============================================================================
 # Async Latency Benchmark
 #=============================================================================
 
-
 io-bin += master.elf
 master.elf-srcs := $(BENCHDIR)/async-latency/master.c
 master.elf-system := bare
+master.elf-cflags += -D_KALRAY_MPPA_256_LOW_LEVEL
 master.elf-lflags := -mhypervisor -lutask -lmppa_async -lmppa_request_engine
 master.elf-lflags += -lmppapower -lmppanoc -lmpparouting
 master.elf-lflags += -lpcie_queue
 
 cluster-bin += slave.elf
-slave.elf-srcs := $(BENCHDIR)/async-latency/slave.c
+slave.elf-srcs := $(BENCHDIR)/async-latency/slave.c \
+				  $(SRCDIR)/kernel/arch/mppa/timer.c
 slave.elf-system := bare
+slave.elf-cflags += -D_KALRAY_MPPA_256_LOW_LEVEL
 slave.elf-lflags := -mhypervisor -lutask -lmppa_async -lmppa_request_engine
 slave.elf-lflags += -lmppapower -lmppanoc -lmpparouting
 slave.elf-lflags += -Wl,--defsym=USER_STACK_SIZE=0x2000 -Wl,--defsym=KSTACK_SIZE=0x1000
@@ -62,11 +64,14 @@ async-latency-name := async-latency.img
 #=============================================================================
 
 io-bin += portal-latency-master
-portal-latency-master-srcs := $(BENCHDIR)/portal-latency/master.c 
+portal-latency-master-srcs := $(BENCHDIR)/portal-latency/master.c \
+							  $(SRCDIR)/kernel/arch/mppa/timer.c
+portal-latency-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
 portal-latency-master-lflags := -lmppaipc
 
 cluster-bin += portal-latency-slave
 portal-latency-slave-srcs := $(BENCHDIR)/portal-latency/slave.c
+portal-latency-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
 portal-latency-slave-lflags := -lmppaipc
 
 portal-latency-objs := portal-latency-master portal-latency-slave

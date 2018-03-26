@@ -21,19 +21,26 @@
 #define _KERNEL_H_
 
 	/**
-	 * @brief Data unit sizes.
+	 * @brief Data unit prefixes.
 	 */
+	/**@{*/
 	#define KB (1024)    /**< Kilobyte. */
 	#define MB (1024*KB) /**< Megabyte. */
 	#define GB (1024*KB) /**< Gigabyte. */
+	/**@}*/
 
-	#define milli (1.0/1000)
-	#define micro (milli/1000)
-	#define nano  (micro/1000)
+	/**
+	 * @brief Physical unit prefixes.
+	 */
+	/**@{*/
+	#define MILLI (1.0/1000)   /**< Milli 10^-3 */
+	#define MICRO (MILLI/1000) /**< Micro 10^-6 */
+	#define NANO  (MICRO/1000) /**< Nano 10^-9  */
+	/**@}*/
 
 	#define MAX_BUFFER_SIZE (1024*KB)
 
-	#define NITERATIONS 30
+	#define NITERATIONS 10
 
 	#define BARRIER_SLAVE_CNOC 4
 	#define BARRIER_MASTER_CNOC 12

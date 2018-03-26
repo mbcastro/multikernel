@@ -163,7 +163,7 @@ int main(int argc, char **argv)
 	assert(argc == 2);
 
 	/* Retrieve kernel parameters. */
-	assert((size = atoi(argv[1])*KB) <= MAX_BUFFER_SIZE);
+	assert((size = atoi(argv[1])) <= MAX_BUFFER_SIZE);
 	clusterid = k1_get_cluster_id();
 	dma = clusterid%NR_IOCLUSTER_DMA;
 	offset = dma*size;

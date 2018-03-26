@@ -17,17 +17,25 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NANVIX_ARCH_MPPA256_
-#define NANVIX_ARCH_MPPA256_
+#ifndef NANVIX_ARCH_MPPA256
+#define NANVIX_ARCH_MPPA256
 
-	#ifndef _KALRAY_MPPA256_
+	#ifndef _KALRAY_MPPA256
 		#error "bad target"
 	#endif
 
-	#include <mppaipc.h>
 	#include <HAL/hal/core/mp.h>
 	#include <HAL/hal/core/timer.h>
 	#include <HAL/hal/core/diagnostic.h>
+#ifdef _KALRAY_MPPA_256_HIGH_LEVEL
+	#include <mppaipc.h>
+#endif
+#ifdef _KALRAY_MPPA_256_LOW_LEVEL
+	#include <mppa_power.h>
+	#include <mppa_rpc.h>
+	#include <mppa_async.h>
+	#include <utask.h>
+#endif
 
 	/**
 	 * @brief Number of compute clusters.
@@ -74,6 +82,11 @@
 	#define CCLUSTER15  15 /**< Compute cluster 15. */
 	#define IOCLUSTER0 128 /**< IO cluster 0.       */
 	#define IOCLUSTER1 192 /**< IO cluster 1.       */
+	
+	/**
+	 * @brief Compute cluster frequency.
+	 */
+	#define CCLUSTER_FREQ (__bsp_frequency)
 
 	/**
 	 * @brief Magic number for NoC packets.
@@ -88,4 +101,9 @@
 	/* Forward denitions. */
 	#define k1_get_cluster_id() __k1_get_cluster_id()
 
-#endif /* NANVIX_ARCH_MPPA256_ */
+	/* Forward defnitions. */
+	extern long k1_timer_get(void);
+	extern long k1_timer_diff(long, long);
+	extern void k1_timer_init(void);
+
+#endif /* NANVIX_ARCH_MPPA256 */

@@ -201,53 +201,6 @@ static void join_slaves(int nclusters)
  *===================================================================*/
 
 /**
- * @brief Timer error.
- */
-static long timer_error = 0;
-
-/**
- * @brief Gets the current timer value.
- *
- * @returns The current timer value;
- */
-static inline long timer_get(void)
-{
-	return (__k1_counter_num(0));
-}
-
-/**
- * @brief Computes the difference between two timer values.
- *
- * @param t1 Start time.
- * @param t2 End time.
- *
- * @returns The difference between the two timers (t2 - t1).
- */
-static inline long timer_diff(long t1, long t2)
-{
-	return (((t2 - t1) <= timer_error) ? timer_error : t2 - t1 - timer_error);
-}
-
-/**
- * @brief Calibrates the timer.
- */
-static void timer_init(void)
-{
-	long start, end;
-
-	__k1_counter_enable(0, _K1_CYCLE_COUNT, 0);
-
-	start = timer_get();
-	end = timer_get();
-
-	timer_error = (end - start);
-}
-
-/*===================================================================*
- * Kernel                                                            *
- *===================================================================*/
-
-/**
  * @brief Buffer.
  */
 static char buffer[NR_CCLUSTER*MAX_BUFFER_SIZE];
@@ -265,7 +218,7 @@ int main(int argc, char **argv)
 
 	/* Retrieve kernel parameters. */
 	nclusters = atoi(argv[1]);
-	assert((size = atoi(argv[2])*KB) <= MAX_BUFFER_SIZE);
+	assert((size = atoi(argv[2])) <= MAX_BUFFER_SIZE);
 
 	spawn_slaves(nclusters, argv[2]);
 
@@ -291,32 +244,35 @@ int main(int argc, char **argv)
 	 * Benchmark. First iteration is
 	 * used to warmup resources.
 	 */
-	timer_init();
+	k1_timer_init();
 	for (int i = 0; i <= NITERATIONS; i++)
 	{
 		long t[4];
+		double total_time;
 
-		t[0] = timer_get();
+		t[0] = k1_timer_get();
 		barrier_wait();
-		t[1] = timer_get();
+		t[1] = k1_timer_get();
 
 		/* Read. */
 		for (int j = 0; j < NR_IOCLUSTER_DMA; j++)
 			portal_read(j);
 
-		t[2] = timer_get();
+		t[2] = k1_timer_get();
 		barrier_wait();
-		t[3] = timer_get();
+		t[3] = k1_timer_get();
 
 		/* Warmup. */
 		if (i == 0)
 			continue;
+	
+		total_time = (k1_timer_diff(t[0], t[3]) - k1_timer_diff(t[0], t[1]) - k1_timer_diff(t[2], t[3]));
 
-		printf("%s;%d;%d;%ld\n",
-			"pwrite",
+		printf("%s;%2d;%d;%.2lf\n",
+			"write",
 			nclusters,
 			size,
-			timer_diff(t[0], t[3]) - timer_diff(t[0], t[1]) - timer_diff(t[2], t[3])
+			total_time
 		);
 	}
 

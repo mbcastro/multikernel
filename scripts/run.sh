@@ -34,5 +34,8 @@ function run
 		-- $args
 }
 
-run "portal-latency.img" "portal-latency-master" "1 1024"
-run "async-latency.img" "master.elf" "1 1024"
+NCLUSTERS=1
+BUFFER_SIZE=$((1024*1024))
+
+run "portal-latency.img" "portal-latency-master" "$NCLUSTERS $BUFFER_SIZE"
+run "async-latency.img" "master.elf" "$NCLUSTERS $BUFFER_SIZE"

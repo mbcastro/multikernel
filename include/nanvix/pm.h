@@ -66,13 +66,4 @@
 	extern int barrier_release(void);
 	extern void barrier_close(void);
 
-/*======================================================================*
- * Timer                                                                *
- *=======================================================================*/
-
-	/* Forward defnitions. */
-	extern long timer_get(void);
-	extern long timer_diff(long, long);
-	extern void timer_init(void);
-
 #endif /* NANVIX_IPC_H_ */

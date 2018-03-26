@@ -17,12 +17,9 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <mppa_power.h>
-#include <mppa_rpc.h>
-#include <mppa_async.h>
+#include <nanvix/arch/mppa.h>
 #include <assert.h>
 #include <stdlib.h>
-#include <utask.h>
 #include "kernel.h"
 
 int main(int argc, const char **argv)

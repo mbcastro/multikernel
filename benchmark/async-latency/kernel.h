@@ -21,17 +21,22 @@
 #define _KERNEL_H_
 
 	/**
-	 * @brief Data unit sizes.
+	 * @brief Data unit prefixes.
 	 */
+	/**@{*/
 	#define KB (1024)    /**< Kilobyte. */
 	#define MB (1024*KB) /**< Megabyte. */
 	#define GB (1024*KB) /**< Gigabyte. */
+	/**@}*/
 
-	#define MILLI (1.0/1000)
-	#define MICRO (MILLI/1000)
-	#define NANO  (MICRO/1000)
-
-	#define NR_CCLUSTER 16
+	/**
+	 * @brief Physical unit prefixes.
+	 */
+	/**@{*/
+	#define MILLI (1.0/1000)   /**< Milli 10^-3 */
+	#define MICRO (MILLI/1000) /**< Micro 10^-6 */
+	#define NANO  (MICRO/1000) /**< Nano 10^-9  */
+	/**@}*/
 
 	#define MAX_BUFFER_SIZE (1024*KB)
 

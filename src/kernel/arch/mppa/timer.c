@@ -17,7 +17,8 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <nanvix/hal.h>
+#include <nanvix/arch/mppa.h>
+
 
 /**
  * @brief Timer error.
@@ -29,9 +30,9 @@ static long timer_error = 0;
  *
  * @returns The current timer value;
  */
-long timer_get(void)
+long k1_timer_get(void)
 {
-return (__k1_counter_num(0));
+	return (__k1_counter_num(0));
 }
 
 /**
@@ -42,7 +43,7 @@ return (__k1_counter_num(0));
  *
  * @returns The difference between the two timers (t2 - t1).
  */
-long timer_diff(long t1, long t2)
+long k1_timer_diff(long t1, long t2)
 {
 	return (((t2 - t1) <= timer_error) ? timer_error : t2 - t1 - timer_error);
 }
@@ -50,14 +51,14 @@ long timer_diff(long t1, long t2)
 /**
  * @brief Calibrates the timer.
  */
-void timer_init(void)
+void k1_timer_init(void)
 {
-		long start, end;
+	long start, end;
 
-	__k1_counter_enable(0, _K1_CYCLE_COUNT, 1);
-	start = timer_get();
-	end = timer_get();
+	__k1_counter_enable(0, _K1_CYCLE_COUNT, 0);
+
+	start = k1_timer_get();
+	end = k1_timer_get();
 
 	timer_error = (end - start);
 }
-
