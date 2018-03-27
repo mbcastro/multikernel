@@ -39,7 +39,7 @@ int main(int argc, const char **argv)
 	mppa_rpc_server_init(1, 0, nclusters);
 	mppa_async_server_init();
 
-	const char *args[] = { "slave.elf", argv[2], NULL };
+	const char *args[] = { "slave.elf", argv[1] , argv[2], NULL };
 	for(int i = 0; i < nclusters; i++)
 		assert(mppa_power_base_spawn(i, args[0], args, NULL, MPPA_POWER_SHUFFLING_ENABLED) != -1);
 

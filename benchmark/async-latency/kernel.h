@@ -40,6 +40,6 @@
 
 	#define MAX_BUFFER_SIZE (1024*KB)
 
-	#define NITERATIONS 10
+	#define NITERATIONS 30
 
 #endif /* _KERNEL_H_ */

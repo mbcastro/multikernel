@@ -34,8 +34,8 @@ int main(int argc, const char **argv)
 	off64_t offset;
 	double total_time;
 
-	assert(argc == 2);
-	assert((size = atoi(argv[1])) <= MAX_BUFFER_SIZE);
+	assert(argc == 3);
+	assert((size = atoi(argv[2])) <= MAX_BUFFER_SIZE);
 
 	mppa_rpc_client_init();
 	mppa_async_init();
@@ -57,6 +57,7 @@ int main(int argc, const char **argv)
 				size,
 				NULL) == 0
 		);
+		assert(mppa_async_fence(MPPA_ASYNC_DDR_0, NULL) == 0);
 
 		mppa_rpc_barrier_all();
 		t[1] = k1_timer_get();
@@ -68,7 +69,12 @@ int main(int argc, const char **argv)
 			continue;
 
 		total_time = k1_timer_diff(t[0], t[1]);
-		printf("%2d;%s;%2d;%d;%.2lf\n", i, "write", clusterid, size, total_time);
+		printf("%s;%d;%d;%.2lf\n",
+			"write",
+			atoi(argv[1]),
+			size,
+			total_time
+		);
 	}
 
 	assert(mppa_async_free(MPPA_ASYNC_DDR_0, offset, NULL) == 0);

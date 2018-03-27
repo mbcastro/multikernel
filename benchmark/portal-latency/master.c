@@ -268,7 +268,7 @@ int main(int argc, char **argv)
 	
 		total_time = (k1_timer_diff(t[0], t[3]) - k1_timer_diff(t[0], t[1]) - k1_timer_diff(t[2], t[3]));
 
-		printf("%s;%2d;%d;%.2lf\n",
+		printf("%s;%d;%d;%.2lf\n",
 			"write",
 			nclusters,
 			size,

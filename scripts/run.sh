@@ -34,8 +34,21 @@ function run
 		-- $args
 }
 
-NCLUSTERS=1
-BUFFER_SIZE=$((1024*1024))
+if [ $1 == "test" ];
+then
+	nclusters=4
+	size=$((1024*1024))
 
-run "portal-latency.img" "portal-latency-master" "$NCLUSTERS $BUFFER_SIZE"
-run "async-latency.img" "master.elf" "$NCLUSTERS $BUFFER_SIZE"
+	run "portal-latency.img" "portal-latency-master" "$nclusters $size"
+	run "async-latency.img" "master.elf" "$nclusters $size"
+else
+	for nclusters in 4 8 12 16;
+	do
+		echo "Running $nclusters"
+		for size in 1024 2048 4096 8192 16384 32768 65536 131072 262144 524288 1048576;
+		do
+			run "portal-latency.img" "portal-latency-master" "$nclusters $size" >> portal-latency.out
+			run "async-latency.img" "master.elf" "$nclusters $size" >> async-latency.out
+		done
+	done
+fi
