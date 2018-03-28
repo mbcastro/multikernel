@@ -34,11 +34,29 @@ cflags += -D_KALRAY_MPPA256
 lflags := -Wl,--defsym=_LIBNOC_DISABLE_FIFO_FULL_CHECK=0
 
 #=============================================================================
+# Nanvix Kernel
+#=============================================================================
+
+io-bin += rmem-server
+rmem-server-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
+					$(SRCDIR)/kernel/arch/mppa/portal.c  \
+					$(SRCDIR)/kernel/arch/mppa/barrier.c \
+					$(SRCDIR)/kernel/arch/mppa/name.c    \
+					$(SRCDIR)/servers/rmem.c
+
+# Toolchain Configuration
+rmem-server-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+rmem-server-system := rtems
+rmem-server-lflags := -lmppaipc -pthread
+
+#=============================================================================
 # Async Latency Benchmark
 #=============================================================================
 
 io-bin += master.elf
 master.elf-srcs := $(BENCHDIR)/async-latency/master.c
+
+# Toolchain Configuration
 master.elf-system := bare
 master.elf-cflags += -D_KALRAY_MPPA_256_LOW_LEVEL
 master.elf-lflags := -mhypervisor -lutask -lmppa_async -lmppa_request_engine
@@ -48,11 +66,14 @@ master.elf-lflags += -lpcie_queue
 cluster-bin += slave.elf
 slave.elf-srcs := $(BENCHDIR)/async-latency/slave.c \
 				  $(SRCDIR)/kernel/arch/mppa/timer.c
+
+# Toolchain Configuration
 slave.elf-system := bare
 slave.elf-cflags += -D_KALRAY_MPPA_256_LOW_LEVEL
 slave.elf-lflags := -mhypervisor -lutask -lmppa_async -lmppa_request_engine
 slave.elf-lflags += -lmppapower -lmppanoc -lmpparouting
-slave.elf-lflags += -Wl,--defsym=USER_STACK_SIZE=0x2000 -Wl,--defsym=KSTACK_SIZE=0x1000
+slave.elf-lflags += -Wl,--defsym=USER_STACK_SIZE=0x2000
+slave.elf-lflags += -Wl,--defsym=KSTACK_SIZE=0x1000
 
 async-latency-objs := master.elf slave.elf
 async-latency-name := async-latency.img
@@ -64,11 +85,15 @@ async-latency-name := async-latency.img
 io-bin += portal-latency-master
 portal-latency-master-srcs := $(BENCHDIR)/portal-latency/master.c \
 							  $(SRCDIR)/kernel/arch/mppa/timer.c
+
+# Toolchain Configuration
 portal-latency-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
 portal-latency-master-lflags := -lmppaipc
 
 cluster-bin += portal-latency-slave
 portal-latency-slave-srcs := $(BENCHDIR)/portal-latency/slave.c
+
+# Toolchain Configuration
 portal-latency-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
 portal-latency-slave-lflags := -lmppaipc
 
@@ -76,43 +101,33 @@ portal-latency-objs := portal-latency-master portal-latency-slave
 portal-latency-name := portal-latency.img
 
 #=============================================================================
-# Nanvix
+# RMEM Latency Benchmark
 #=============================================================================
 
-io-bin += rmem-server
-rmem-server-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
-					$(SRCDIR)/kernel/arch/mppa/portal.c  \
-					$(SRCDIR)/kernel/arch/mppa/barrier.c \
-					$(SRCDIR)/kernel/arch/mppa/name.c    \
-					$(SRCDIR)/kernel/arch/mppa/timer.c   \
-					$(SRCDIR)/servers/rmem.c
+cluster-bin += rmem-latency-slave
+rmem-latency-slave-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
+						   $(SRCDIR)/kernel/arch/mppa/portal.c  \
+						   $(SRCDIR)/kernel/arch/mppa/barrier.c \
+						   $(SRCDIR)/kernel/arch/mppa/name.c    \
+						   $(SRCDIR)/kernel/arch/mppa/timer.c   \
+						   $(SRCDIR)/kernel/sys/meminit.c       \
+						   $(SRCDIR)/kernel/sys/memread.c       \
+						   $(SRCDIR)/kernel/sys/memwrite.c      \
+						   $(BENCHDIR)/rmem-latency/slave.c
 
-rmem-server-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
-rmem-server-system := rtems
-rmem-server-lflags := -lmppaipc -pthread
+# Toolchain Configuration
+rmem-latency-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+rmem-latency-slave-lflags := -lmppaipc
 
-cluster-bin += rmem-client
-rmem-client-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
-					$(SRCDIR)/kernel/arch/mppa/portal.c  \
-					$(SRCDIR)/kernel/arch/mppa/barrier.c \
-					$(SRCDIR)/kernel/arch/mppa/name.c    \
-					$(SRCDIR)/kernel/arch/mppa/timer.c   \
-					$(SRCDIR)/kernel/sys/meminit.c       \
-					$(SRCDIR)/kernel/sys/memread.c       \
-					$(SRCDIR)/kernel/sys/memwrite.c      \
-					$(BENCHDIR)/rmem-latency/rmem.c
+io-bin += rmem-latency-master
+rmem-latency-master-srcs := $(SRCDIR)/kernel/arch/mppa/barrier.c \
+							$(BENCHDIR)/rmem-latency/master.c
 
-rmem-client-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
-rmem-client-lflags := -lmppaipc
+# Toolchain Configuration
+rmem-latency-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+rmem-latency-master-lflags := -lmppaipc
 
-io-bin += pm-server
-pm-server-srcs := $(SRCDIR)/kernel/arch/mppa/barrier.c \
-				  $(BENCHDIR)/rmem-latency/master.c
-
-pm-server-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
-pm-server-lflags := -lmppaipc
-
-rmem-latency-objs := rmem-server rmem-client pm-server
+rmem-latency-objs := rmem-server rmem-latency-slave rmem-latency-master
 rmem-latency-name := rmem-latency.img
 
 #=============================================================================

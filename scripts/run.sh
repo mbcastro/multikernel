@@ -61,7 +61,7 @@ then
 	echo "Testing PORTAL"
 	run1 "portal-latency.img" "portal-latency-master" "$nclusters $size"
 	echo "Testing RMEM"
-	run2 "rmem-latency.img" "pm-server" "rmem-server" "rmem --ncclusters $nclusters --workload write --pattern regular --naccesses 100"
+	run2 "rmem-latency.img" "rmem-latency-master" "rmem-server" "rmem --ncclusters $nclusters --workload write --pattern regular --naccesses 100"
 else
 	for nclusters in 4 8 12 16;
 	do

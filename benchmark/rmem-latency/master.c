@@ -70,7 +70,7 @@ static void usage(void)
 static const char *readargs_get_kernel(const char *arg)
 {
 	if (!strcmp(arg, "rmem"))
-		return ("rmem-client");
+		return ("rmem-latency-slave");
 	else if (!strcmp(arg, "mm"))
 		return (arg);
 
