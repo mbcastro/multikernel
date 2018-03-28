@@ -23,242 +23,65 @@
 #include <nanvix/pm.h>
 #include <assert.h>
 #include <stdlib.h>
+#include "kernel.h"
 
 /**
- * @brief Maximum number of arguments for a slave.
+ * @brief ID of slave processes.
  */
-#define NR_ARGS 4
+static int pids[NR_CCLUSTER];
 
 /**
- * @brief Parameters.
- */
-/**@{*/
-static int ncclusters = -1;          /**< Number of compute clusters to spawn. */
-static const char *naccesses = NULL; /**< Number of accesses.                  */
-static const char *kernel = NULL;    /**< Kernel.                              */
-static const char *pattern = NULL;   /**< Communication pattern.               */
-static const char *workload = NULL;  /**< Workload.                            */
-/**@}*/
-
-/*=======================================================================*
- * options()                                                             *
- *=======================================================================*/
-
-/**
- * Prints program usage and exits.
- */
-static void usage(void)
-{
-	printf("Usage: test <kernel> [global options] [kernel options]\n");
-	printf("Kernels:\n");
-	printf("  rmem   Remote memory kernel.\n");
-	printf("Global Options:\n");
-	printf("  --ncclusters <int> Number of compute clusters\n");
-	printf("\nRemote Memory Kernel Options:\n");
-	printf("  --pattern <regular | irregular>\n");
-	printf("  --workload <read | write | mixed>\n");
-	printf("  --naccesses <int>\n");
-
-	exit(-1);
-}
-
-/**
- * @brief Gets the kernel parameter.
+ * @brief Spawns slave processes. 
  *
- * @return Kernel value.
+ * @param nclusters Number of clusters to spawn.
+ * @param size      Write size.
  */
-static const char *readargs_get_kernel(const char *arg)
+static void spawn_slaves(int nclusters, char **args) 
 {
-	if (!strcmp(arg, "rmem"))
-		return ("rmem-latency-slave");
-	else if (!strcmp(arg, "mm"))
-		return (arg);
+	const char *argv[] = {"rmem-latency-slave", args[1], args[2], NULL};
 
-	printf("bad kernel\n");
-	usage();
-
-	/* Never gets here. */
-	return (NULL);
+	for (int i = 0; i < nclusters; i++)
+		assert((pids[i] = mppa_spawn(i, NULL, argv[0], argv, NULL)) != -1);
 }
 
 /**
- * Gets the pattern parameter.
+ * @brief Wait for slaves to complete.
  *
- * @returns Pattern value.
+ * @param nclusters Number of slaves to wait.
  */
-static const char *readargs_get_pattern(const char *arg)
+static void join_slaves(int nclusters) 
 {
-	if (!strcmp(arg, "irregular"))
-		return (arg);
-	else if (!strcmp(arg, "regular"))
-		return (arg);
-
-	usage();
-
-	/* Never gets here. */
-	return (NULL);
+	for (int i = 0; i < nclusters; i++)
+		assert(mppa_waitpid(pids[i], NULL, 0) != -1);
 }
 
-/**
- * Gets the workload parameter
- *
- * @returns Workload value.
- */
-static const char *readargs_get_workload(const char *arg)
-{
-	if (!strcmp(arg, "read"))
-		return (arg);
-	else if (!strcmp(arg, "write"))
-		return (arg);
-	else if (!strcmp(arg, "mixed"))
-		return (arg);
-
-	printf("bad workload\n");
-	usage();
-
-	/* Never gets here. */
-	return (NULL);
-}
-/**
- * @briefProcessing states while read command line arguments.
- */
-enum readargs_states
-{
-	READ_ARG,
-	SET_NCCLUSTERS,
-	SET_PATTERN,
-	SET_WORKLOAD,
-	SET_NACCESSES
-};
+/*===================================================================*
+ * Kernel                                                            *
+ *===================================================================*/
 
 /**
- * @brief Parses a command line argument.
- *
- * @param arg Target command line argument.
- */
-static int readargs_parse(const char *arg)
-{
-	if (!strcmp(arg, "--ncclusters"))
-		return (SET_NCCLUSTERS);
-	else if (!strcmp(arg, "--pattern"))
-		return (SET_PATTERN);
-	else if (!strcmp(arg, "--workload"))
-		return (SET_WORKLOAD);
-	else if (!strcmp(arg, "--naccesses"))
-		return (SET_NACCESSES);
-
-	printf("bad parameter\n");
-	usage();
-
-	/* Never gets here. */
-	return (-1);
-}
-
-/**
- * @brief Read command line arguments.
- */
-static void readargs(int argc, char **argv)
-{
-	enum readargs_states state;
-
-	kernel = readargs_get_kernel(argv[1]);
-
-	/* Read command line arguments. */
-	state = READ_ARG;
-	for (int i = 2; i < argc; i++)
-	{
-		char *arg;
-
-		arg = argv[i];
-
-		/* Set value. */
-		if (state != READ_ARG)
-		{
-			switch (state)
-			{
-				/* Set number of compute clusters. */
-				case SET_NCCLUSTERS:
-					ncclusters = atoi(arg);
-					break;
-
-				/* Set pattern. */
-				case SET_PATTERN:
-					pattern = readargs_get_pattern(arg);
-					break;
-
-				/* Set workload. */
-				case SET_WORKLOAD:
-					workload = readargs_get_workload(arg);
-					break;
-
-				/* Set workload. */
-				case SET_NACCESSES:
-					naccesses = arg;
-					break;
-
-				/* Should not happen. */
-				default:
-					usage();
-			}
-
-			state = READ_ARG;
-			continue;
-		}
-
-		state = readargs_parse(arg);
-	}
-
-	/* Check global parameters. */
-	if (naccesses == NULL)
-	{
-		printf("bad number of accesses\n");
-		usage();
-	}
-	if (ncclusters < 0)
-	{
-		printf("bad number of compute clusters\n");
-		usage();
-	}
-}
-
-/*=======================================================================*
- * main()                                                                *
- *=======================================================================*/
-
-/**
- * @brief Remote memory unit test.
+ * @brief Benchmarks write operations on the remote memory.
  */
 int main(int argc, char **argv)
 {
-	const char *args[NR_ARGS + 1];
-	mppa_pid_t client[NR_CCLUSTER];
+	int size;
+	int nclusters;
 
-	/* Missing parameters. */
-	if (argc < 2)
-	{
-		printf("error: missing parameters\n");
-		usage();
-	}
+	assert(argc == 3);
 
-	readargs(argc, argv);
-
-	/* Build slave arguments. */
-	args[0] = kernel;
-	args[1] = pattern;
-	args[2] = workload;
-	args[3] = naccesses;
-	args[4] = NULL;
+	/* Retrieve kernel parameters. */
+	nclusters = atoi(argv[1]);
+	assert((size = atoi(argv[2])) <= RMEM_BLOCK_SIZE);
 
 	/* Wait RMEM server. */
-	barrier_open(ncclusters);
+	barrier_open(nclusters);
 	barrier_wait();
 
 #ifdef DEBUG
 	printf("[IOCLUSTER0] spawning kernels\n");
 #endif
 
-	for (int i = 0; i < ncclusters; i++)
-		client[i] = mppa_spawn(i, NULL, args[0], args, NULL);
+	spawn_slaves(nclusters, argv);
 
 	/* Wait clients */
 	barrier_wait();
@@ -271,9 +94,8 @@ int main(int argc, char **argv)
 	barrier_wait();
 
 	/* House keeping. */
-	for (int i = NR_CCLUSTER - 1; i >= (NR_CCLUSTER - ncclusters); i--)
-		mppa_waitpid(client[i], NULL, 0);
 	barrier_close();
+	join_slaves(nclusters);
 
 	return (EXIT_SUCCESS);
 }

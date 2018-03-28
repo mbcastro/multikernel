@@ -172,7 +172,7 @@ static inline void portal_read(int dma)
 static int pids[NR_CCLUSTER];
 
 /**
- * @brief Spawens slave processes. 
+ * @brief Spawns slave processes. 
  *
  * @param nclusters Number of clusters to spawn.
  * @param size      Write size.
