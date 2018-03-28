@@ -78,47 +78,49 @@ portal-latency-objs := portal-latency-master portal-latency-slave
 portal-latency-name := portal-latency.img
 
 #=============================================================================
-# Compute Cluster Binaries
+# Nanvix
 #=============================================================================
 
-#master.test-srcs := $(TESTDIR)/master.c          \
-#					$(SRCDIR)/kernel/sys/timer.c \
-#					$(SRCDIR)/kernel/arch/mppa/barrier.c \
+io-bin += rmem-server
+rmem-server-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
+					$(SRCDIR)/kernel/arch/mppa/portal.c  \
+					$(SRCDIR)/kernel/arch/mppa/barrier.c \
+					$(SRCDIR)/kernel/arch/mppa/name.c    \
+					$(SRCDIR)/kernel/arch/mppa/timer.c   \
+					$(SRCDIR)/servers/rmem.c
 
-#rmem-server.test-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
-#						 $(SRCDIR)/kernel/arch/mppa/portal.c  \
-#						 $(SRCDIR)/kernel/arch/mppa/barrier.c \
-#						 $(SRCDIR)/kernel/arch/mppa/name.c    \
-#						 $(SRCDIR)/kernel/sys/timer.c         \
-#						 $(SRCDIR)/kernel/sys/meminit.c       \
-#						 $(SRCDIR)/kernel/sys/memwrite.c      \
-#						 $(SRCDIR)/kernel/sys/memread.c       \
-#						 $(SRCDIR)/servers/rmem.c
+rmem-server-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL -march=k1b
+rmem-server-system := rtems
+rmem-server-lflags := -lmppaipc -pthread
 
-#rmem-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
-#			 $(SRCDIR)/kernel/arch/mppa/portal.c  \
-#			 $(SRCDIR)/kernel/arch/mppa/barrier.c \
-#			 $(SRCDIR)/kernel/arch/mppa/name.c    \
-#			 $(SRCDIR)/kernel/sys/timer.c         \
-#			 $(SRCDIR)/kernel/sys/meminit.c       \
-#			 $(SRCDIR)/kernel/sys/memwrite.c      \
-#			 $(SRCDIR)/kernel/sys/memread.c       \
-#			 $(TESTDIR)/rmem/rmem.c
+cluster-bin += rmem-client
+rmem-client-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
+					$(SRCDIR)/kernel/arch/mppa/portal.c  \
+					$(SRCDIR)/kernel/arch/mppa/barrier.c \
+					$(SRCDIR)/kernel/arch/mppa/name.c    \
+					$(SRCDIR)/kernel/arch/mppa/timer.c   \
+					$(SRCDIR)/kernel/sys/meminit.c       \
+					$(SRCDIR)/kernel/sys/memread.c       \
+					$(SRCDIR)/kernel/sys/memwrite.c      \
+					$(TESTDIR)/rmem/rmem.c
 
-#=============================================================================
-# Testing Binary
-#=============================================================================
+rmem-client-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+rmem-client-lflags := -lmppaipc
 
-#test-objs := master.test      \
-#			 rmem-server.test \
-#			 rmem 
+io-bin += pm-server
+pm-server-srcs := $(SRCDIR)/kernel/arch/mppa/barrier.c \
+				  $(TESTDIR)/master.c
 
-#test-name := test.img
+pm-server-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+pm-server-lflags := -lmppaipc
+
+rmem-latency-objs := rmem-server rmem-client pm-server
+rmem-latency-name := rmem-latency.img
 
 #=============================================================================
 # MPPA Binary
 #=============================================================================
 
-mppa-bin := portal-latency async-latency
+mppa-bin := portal-latency async-latency rmem-latency
 
 include $(K1_TOOLCHAIN_DIR)/share/make/Makefile.kalray

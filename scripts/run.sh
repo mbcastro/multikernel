@@ -22,7 +22,7 @@ export OUTDIR=output/bin/
 #
 # Runs a multibinary file.
 #
-function run
+function run1
 {
 	local multibin=$1
 	local bin=$2
@@ -34,21 +34,42 @@ function run
 		-- $args
 }
 
+#
+# Runs a multibinary file.
+#
+function run2
+{
+	local multibin=$1
+	local bin1=$2
+	local bin2=$3
+	local args=$4
+
+	$K1TOOLS_DIR/bin/k1-jtag-runner     \
+		--multibinary=$OUTDIR/$multibin \
+		--exec-multibin=IODDR0:$bin1    \
+		--exec-multibin=IODDR1:$bin2    \
+		-- $args
+}
+
 if [ $1 == "test" ];
 then
-	nclusters=4
-	size=$((1024*1024))
+	nclusters=16
+	size=$((16*1024))
 
-	run "portal-latency.img" "portal-latency-master" "$nclusters $size"
-	run "async-latency.img" "master.elf" "$nclusters $size"
+	echo "Testing ASYNC"
+	run1 "async-latency.img" "master.elf" "$nclusters $size"
+	echo "Testing PORTAL"
+	run1 "portal-latency.img" "portal-latency-master" "$nclusters $size"
+	echo "Testing RMEM"
+	run2 "rmem-latency.img" "pm-server" "rmem-server" "rmem --ncclusters $nclusters --workload write --pattern regular --naccesses 100"
 else
 	for nclusters in 4 8 12 16;
 	do
 		echo "Running $nclusters"
 		for size in 1024 2048 4096 8192 16384 32768 65536 131072 262144 524288 1048576;
 		do
-			run "portal-latency.img" "portal-latency-master" "$nclusters $size" >> portal-latency.out
-			run "async-latency.img" "master.elf" "$nclusters $size" >> async-latency.out
+			run1 "portal-latency.img" "portal-latency-master" "$nclusters $size" >> portal-latency.out
+			run1 "async-latency.img" "master.elf" "$nclusters $size" >> async-latency.out
 		done
 	done
 fi

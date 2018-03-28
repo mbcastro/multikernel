@@ -48,7 +48,7 @@ void barrier_open(int ncclusters)
 	uint64_t mask;
 	char pathname[128];
 
-	local = arch_get_cluster_id();
+	local = k1_get_cluster_id();
 
 	/* I0 1 cluster barrier. */
 	if (local == IOCLUSTER1)
@@ -97,7 +97,7 @@ int barrier_wait(void)
 	int local;
 	uint64_t mask;
 
-	local = arch_get_cluster_id();
+	local = k1_get_cluster_id();
 
 	/* Invalid cluster. */
 	if (local == IOCLUSTER1)
@@ -113,7 +113,7 @@ int barrier_wait(void)
 	/* Compute cluster barrier. */
 	else
 	{
-		mask = 1 << arch_get_cluster_id();
+		mask = 1 << k1_get_cluster_id();
 		assert(mppa_write(barrier.remote, &mask, sizeof(uint64_t)) == sizeof(uint64_t));
 		assert(mppa_read(barrier.local, &mask, sizeof(uint64_t)) == sizeof(uint64_t));
 	}
@@ -130,7 +130,7 @@ int barrier_release(void)
 	int local;
 	uint64_t mask;
 
-	local = arch_get_cluster_id();
+	local = k1_get_cluster_id();
 
 	/* Invalid cluster. */
 	if (local != IOCLUSTER1)
@@ -153,7 +153,7 @@ void barrier_close(void)
 {
 	int local;
 
-	local = arch_get_cluster_id();
+	local = k1_get_cluster_id();
 
 	/* House keeping. */
 	if (local != IOCLUSTER1)

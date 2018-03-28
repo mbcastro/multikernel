@@ -26,37 +26,38 @@
  * @brief Lookup table of cluster names.
  */
 static const struct {
-	int id;     /**< Cluster ID. */
+	int id;     /**< Cluster ID.  */
+	int dma;    /**< DMA channel. */
 	char *name; /**< Portal name. */
 } names[NR_DMA] = {
-	{ CCLUSTER0,  "/cpu0" },
-	{ CCLUSTER1,  "/cpu1" },
-	{ CCLUSTER2,  "/cpu2" },
-	{ CCLUSTER3,  "/cpu3" },
-	{ CCLUSTER4,  "/cpu4" },
-	{ CCLUSTER5,  "/cpu5" },
-	{ CCLUSTER6,  "/cpu6" },
-	{ CCLUSTER7,  "/cpu7" },
-	{ CCLUSTER8,  "/cpu8" },
-	{ CCLUSTER9,  "/cpu9" },
-	{ CCLUSTER10, "/cpu10" },
-	{ CCLUSTER11, "/cpu11" },
-	{ CCLUSTER12, "/cpu12" },
-	{ CCLUSTER13, "/cpu13" },
-	{ CCLUSTER14, "/cpu14" },
-	{ CCLUSTER15, "/cpu15" },
-	{ IOCLUSTER0 + 0, "/io0" },
-	{ IOCLUSTER0 + 1, "/io1" },
-	{ IOCLUSTER0 + 2, "/io2" },
-	{ IOCLUSTER0 + 3, "/io3" },
-	{ IOCLUSTER1 + 0, "/rmem0" }
-	{ IOCLUSTER1 + 1, "/rmem1" }
-	{ IOCLUSTER1 + 2, "/rmem2" }
-	{ IOCLUSTER1 + 3, "/rmem3" }
+	{ CCLUSTER0,  CCLUSTER0, "/cpu0" },
+	{ CCLUSTER1,  CCLUSTER1, "/cpu1" },
+	{ CCLUSTER2,  CCLUSTER2,  "/cpu2" },
+	{ CCLUSTER3,  CCLUSTER3,  "/cpu3" },
+	{ CCLUSTER4,  CCLUSTER4,  "/cpu4" },
+	{ CCLUSTER5,  CCLUSTER5,  "/cpu5" },
+	{ CCLUSTER6,  CCLUSTER6,  "/cpu6" },
+	{ CCLUSTER7,  CCLUSTER7,  "/cpu7" },
+	{ CCLUSTER8,  CCLUSTER8,  "/cpu8" },
+	{ CCLUSTER9,  CCLUSTER9,  "/cpu9" },
+	{ CCLUSTER10, CCLUSTER10, "/cpu10" },
+	{ CCLUSTER11, CCLUSTER11, "/cpu11" },
+	{ CCLUSTER12, CCLUSTER12, "/cpu12" },
+	{ CCLUSTER13, CCLUSTER13, "/cpu13" },
+	{ CCLUSTER14, CCLUSTER14, "/cpu14" },
+	{ CCLUSTER15, CCLUSTER15, "/cpu15" },
+	{ IOCLUSTER0, IOCLUSTER0 + 0, "/io0" },
+	{ IOCLUSTER0, IOCLUSTER0 + 1, "/io1" },
+	{ IOCLUSTER0, IOCLUSTER0 + 2, "/io2" },
+	{ IOCLUSTER0, IOCLUSTER0 + 3, "/io3" },
+	{ IOCLUSTER1, IOCLUSTER1 + 0, "/rmem0" },
+	{ IOCLUSTER1, IOCLUSTER1 + 1, "/rmem1" },
+	{ IOCLUSTER1, IOCLUSTER1 + 2, "/rmem2" },
+	{ IOCLUSTER1, IOCLUSTER1 + 3, "/rmem3" }
 };
 
 /*=======================================================================*
- * name_lookup()                                                         *
+ * name_cluster_id()                                                     *
  *=======================================================================*/
 
 /**
@@ -76,6 +77,32 @@ int name_cluster_id(const char *name)
 		/* Found. */
 		if (!strcmp(name, names[i].name))
 			return (names[i].id);
+	}
+
+	return (-ENOENT);
+}
+
+/*=======================================================================*
+ * name_cluster_dma()                                                    *
+ *=======================================================================*/
+
+/**
+ * @brief Converts a pathnamel name into a DMA channel id.
+ *
+ * @param name Target pathnamel name.
+ *
+ * @returns Upon successful completion the DMA ID whose name is @p
+ * name is returned. Upon failure, a negative error code is returned
+ * instead.
+ */
+int name_cluster_dma(const char *name)
+{
+	/* Search for portal name. */
+	for (int i = 0; i < NR_DMA; i++)
+	{
+		/* Found. */
+		if (!strcmp(name, names[i].name))
+			return (names[i].dma);
 	}
 
 	return (-ENOENT);
@@ -118,14 +145,14 @@ const char *name_cluster_name(int clusterid)
  */
 void name_remotes(char *remotes, int local)
 {
-	if (local == IOCLUSTER0)
+	if ((local >= IOCLUSTER0) && (local < (IOCLUSTER0 + NR_IOCLUSTER_DMA)))
 	{
 		sprintf(remotes,
 				"%d..%d,%d..%d",
 				CCLUSTER0, CCLUSTER15, IOCLUSTER1, IOCLUSTER1 + NR_IOCLUSTER_DMA - 1
 		);
 	}
-	else if (local == IOCLUSTER1)
+	if ((local >= IOCLUSTER1) && (local < (IOCLUSTER1 + NR_IOCLUSTER_DMA)))
 	{
 		sprintf(remotes,
 				"%d..%d,%d..%d",
@@ -143,14 +170,14 @@ void name_remotes(char *remotes, int local)
 	{
 		sprintf(remotes,
 				"%d..%d,%d..%d,%d..%d",
-				CCLUSTER0, CCLUSTER14, IOCLUSTER0 + NR_IOCLUSTER_DMA - 1, IOCLUSTER1, IOCLUSTER1 + NR_IOCLUSTER_DMA - 1
+				CCLUSTER0, CCLUSTER14, IOCLUSTER0, IOCLUSTER0 + NR_IOCLUSTER_DMA - 1, IOCLUSTER1, IOCLUSTER1 + NR_IOCLUSTER_DMA - 1
 		);
 	}
 	else
 	{
 		sprintf(remotes,
 				"%d..%d,%d..%d,%d..%d,%d..%d",
-				CCLUSTER0, local - 1, local + 1, CCLUSTER15, IOCLUSTER0 + NR_IOCLUSTER_DMA - 1, IOCLUSTER1, IOCLUSTER1 + NR_IOCLUSTER_DMA - 1
+				CCLUSTER0, local - 1, local + 1, CCLUSTER15, IOCLUSTER0, IOCLUSTER0 + NR_IOCLUSTER_DMA - 1, IOCLUSTER1, IOCLUSTER1 + NR_IOCLUSTER_DMA - 1
 		);
 	}
 }

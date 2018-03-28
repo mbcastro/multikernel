@@ -38,7 +38,7 @@ void memwrite(uint64_t addr, const void *buf, size_t n)
 	meminit();
 
 	/* Build operation header. */
-	msg.source = arch_get_cluster_id();
+	msg.source = k1_get_cluster_id();
 	msg.op = RMEM_WRITE;
 	msg.blknum = addr;
 	msg.size = n;

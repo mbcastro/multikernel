@@ -113,9 +113,9 @@ static int portal_noctag(int local)
 {
 	if ((local >= CCLUSTER0) && (local <= CCLUSTER15))
 		return (64 + local);
-	else if (local == IOCLUSTER0)
+	else if ((local >= IOCLUSTER0) && (local < (IOCLUSTER0 + NR_IOCLUSTER_DMA)))
 		return (64 + 16 + 0);
-	else if (local == IOCLUSTER1)
+	else if ((local >= IOCLUSTER1) && (local < (IOCLUSTER1 + NR_IOCLUSTER_DMA)))
 		return (64 + 16 + 1);
 
 	return (0);
@@ -145,8 +145,8 @@ int portal_create(const char *name)
 	if (name == NULL)
 		return (-EINVAL);
 
-	local = name_cluster_id(name);
-	assert(local == arch_get_cluster_id());
+	local = name_cluster_dma(name);
+	assert(name_cluster_id(name) == k1_get_cluster_id());
 
 	/* Allocate a portal. */
 	prtid = portal_alloc();
@@ -203,14 +203,14 @@ int portal_allow(int prtid, int remote)
 
 	/* Invalid remote. */
 	if (!(((remote >= CCLUSTER0) && (remote <= CCLUSTER15)) || 
-		  (remote == IOCLUSTER0)                           || 
-		  (remote == IOCLUSTER1)))
+		  ((remote >= IOCLUSTER0) && (remote < IOCLUSTER0 + NR_IOCLUSTER_DMA)) || 
+		  ((remote >= IOCLUSTER1) && (remote < IOCLUSTER1 + NR_IOCLUSTER_DMA))))
 	{
 		return (-EINVAL);
 	}
 
 	/* Invalid remote. */
-	if (remote == arch_get_cluster_id())
+	if (remote == k1_get_cluster_id())
 		return (-EINVAL);
 
 	/* Create underlying sync. */
@@ -253,8 +253,8 @@ int portal_open(const char *name)
 	if (name == NULL)
 		return (-EINVAL);
 
-	local = name_cluster_id(name);
-	assert(local != arch_get_cluster_id());
+	local = name_cluster_dma(name);
+	assert(name_cluster_id(name) != k1_get_cluster_id());
 
 	/* Allocate a portal. */
 	prtid = portal_alloc();
@@ -275,8 +275,8 @@ int portal_open(const char *name)
 	/* Create underlying sync. */
 	sprintf(pathname,
 			"/mppa/sync/%d:%d",
-			arch_get_cluster_id(),
-			portal_noctag(arch_get_cluster_id())
+			k1_get_cluster_id(),
+			portal_noctag(k1_get_cluster_id())
 	);
 	sync_fd = mppa_open(pathname, O_RDONLY);
 	assert(sync_fd != -1);
@@ -383,7 +383,7 @@ int portal_write(int prtid, const void *buf, size_t n)
 		return (-EINVAL);
 
 	/* Wait for remote to be ready. */
-	mask = (1 << arch_get_cluster_id());
+	mask = (1 << k1_get_cluster_id());
 	assert(mppa_ioctl(portals[prtid].sync_fd, MPPA_RX_SET_MATCH, ~mask) != -1);
 	assert(mppa_read(portals[prtid].sync_fd, &mask, sizeof(uint64_t)) != -1);
 

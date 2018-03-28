@@ -70,10 +70,11 @@ static void usage(void)
 static const char *readargs_get_kernel(const char *arg)
 {
 	if (!strcmp(arg, "rmem"))
-		return (arg);
+		return ("rmem-client");
 	else if (!strcmp(arg, "mm"))
 		return (arg);
 
+	printf("bad kernel\n");
 	usage();
 
 	/* Never gets here. */
@@ -112,6 +113,7 @@ static const char *readargs_get_workload(const char *arg)
 	else if (!strcmp(arg, "mixed"))
 		return (arg);
 
+	printf("bad workload\n");
 	usage();
 
 	/* Never gets here. */
@@ -145,6 +147,7 @@ static int readargs_parse(const char *arg)
 	else if (!strcmp(arg, "--naccesses"))
 		return (SET_NACCESSES);
 
+	printf("bad parameter\n");
 	usage();
 
 	/* Never gets here. */
@@ -207,9 +210,15 @@ static void readargs(int argc, char **argv)
 
 	/* Check global parameters. */
 	if (naccesses == NULL)
+	{
+		printf("bad number of accesses\n");
 		usage();
+	}
 	if (ncclusters < 0)
+	{
+		printf("bad number of compute clusters\n");
 		usage();
+	}
 }
 
 /*=======================================================================*
@@ -221,9 +230,6 @@ static void readargs(int argc, char **argv)
  */
 int main(int argc, char **argv)
 {
-	int size;
-	double bandwidth;
-	long start, end, time;
 	const char *args[NR_ARGS + 1];
 	mppa_pid_t client[NR_CCLUSTER];
 
@@ -242,8 +248,6 @@ int main(int argc, char **argv)
 	args[2] = workload;
 	args[3] = naccesses;
 	args[4] = NULL;
-	
-	timer_init();
 
 	/* Wait RMEM server. */
 	barrier_open(ncclusters);
@@ -258,7 +262,6 @@ int main(int argc, char **argv)
 
 	/* Wait clients */
 	barrier_wait();
-	start = timer_get();
 
 #ifdef DEBUG
 	printf("[IOCLUSTER0] waiting kernels\n");
@@ -266,17 +269,6 @@ int main(int argc, char **argv)
 
 	/* Wait clients. */
 	barrier_wait();
-	end = timer_get();
-
-	size = ncclusters*atoi(naccesses)*RMEM_BLOCK_SIZE;
-	time = timer_diff(start, end);
-	bandwidth = size/((double)time);
-
-	printf("[IOCLUSTER0]: %d KB %ld us %.2lf GB/s\n",
-			size/1024,
-			time,
-			(bandwidth*1000000.0)/(1024*1024*1024)
-	);
 
 	/* House keeping. */
 	for (int i = NR_CCLUSTER - 1; i >= (NR_CCLUSTER - ncclusters); i--)

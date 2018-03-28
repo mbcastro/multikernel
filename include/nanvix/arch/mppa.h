@@ -100,6 +100,7 @@
 	
 	/* Forward denitions. */
 	#define k1_get_cluster_id() __k1_get_cluster_id()
+	#define k1_get_cpu_id() __k1_get_cpu_id()
 
 	/* Forward defnitions. */
 	extern long k1_timer_get(void);

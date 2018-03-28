@@ -36,7 +36,7 @@ void memread(uint64_t addr, void *buf, size_t n)
 	int clusterid;           /* Cluster ID of the calling process. */
 	struct rmem_message msg; /* Remote memory operation.           */
 
-	clusterid = arch_get_cluster_id();
+	clusterid = k1_get_cluster_id();
 
 	meminit();
 

@@ -46,7 +46,7 @@ void meminit(void)
 		return;
 
 	/* Retrieve cluster information. */
-	clusterid = arch_get_cluster_id();
+	clusterid = k1_get_cluster_id();
 	clustername = name_cluster_name(clusterid);
 
 	/* Open underlying IPC connectors. */

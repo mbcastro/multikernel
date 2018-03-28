@@ -109,14 +109,13 @@ static int mailbox_noctag(int local)
 {
 	if ((local >= CCLUSTER0) && (local <= CCLUSTER15))
 		return (16 + local);
-	else if (local == IOCLUSTER0)
+	else if ((local >= IOCLUSTER0) && (local < (IOCLUSTER0 + NR_IOCLUSTER_DMA)))
 		return (16 + 16 + 0);
-	else if (local == IOCLUSTER1)
+	else if ((local >= IOCLUSTER1) && (local < (IOCLUSTER1 + NR_IOCLUSTER_DMA)))
 		return (16 + 16 + 1);
 
 	return (0);
 }
-
 
 /*=======================================================================*
  * mailbox_create()                                                      *
@@ -143,8 +142,8 @@ int mailbox_create(const char *name)
 	if (name == NULL)
 		return (-EINVAL);
 
-	local = name_cluster_id(name);
-	assert(local == arch_get_cluster_id());
+	local = name_cluster_dma(name);
+	assert(name_cluster_id(name) == k1_get_cluster_id());
 
 	/* Allocate a mailbox. */
 	mbxid = mailbox_alloc();
@@ -198,8 +197,8 @@ int mailbox_open(const char *name)
 	if (name == NULL)
 		return (-EINVAL);
 
-	local = name_cluster_id(name);
-	assert(local != arch_get_cluster_id());
+	local = name_cluster_dma(name);
+	assert(name_cluster_id(name) != k1_get_cluster_id());
 
 	/* Allocate a mailbox. */
 	mbxid = mailbox_alloc();

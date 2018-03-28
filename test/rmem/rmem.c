@@ -57,11 +57,37 @@ static int kernel_workload(const char *workload)
  */
 static void kernel_regular(const char *workload, int naccesses)
 {
+	long start, end;
+	double total_time;
+
+	k1_timer_init();
+
 	/* Write. */
 	if (kernel_workload(workload))
 	{
 		for (int i = 0; i < naccesses; i++)
-			memwrite(i, data, RMEM_BLOCK_SIZE);
+		{
+			start = k1_timer_get();
+
+				memwrite(i, data, RMEM_BLOCK_SIZE);
+			
+			end = k1_timer_get();
+			total_time = k1_timer_diff(start, end);
+
+			if (clusterid != 0)
+				continue;
+
+			/* Warmup. */
+			if (i == 0)
+				continue;
+
+			printf("%s;%d;%d;%.2lf\n",
+					"write",
+					1,
+					RMEM_BLOCK_SIZE,
+					total_time
+			);
+		}
 	}
 
 	/* Read. */
@@ -105,12 +131,16 @@ int main(int argc, char **argv)
 	int naccesses;
 	const char *pattern;
 	const char *workload;
+	
+	clusterid = k1_get_cluster_id();
+
+#ifdef DEBUG
+	printf("cluster %d: spawned!\n", clusterid);
+#endif
 
 	/* Invalid number of arguments. */
 	if (argc != 4)
 		return (-EINVAL);
-	
-	clusterid = arch_get_cluster_id();
 
 	/* Retrieve paramenters. */
 	pattern = argv[1];
@@ -118,7 +148,7 @@ int main(int argc, char **argv)
 	naccesses = atoi(argv[3]);
 
 #ifdef DEBUG
-	printf("cluster %d: alive!\n", clusterid);
+	printf("ccluster %d: alive!\n", clusterid);
 #endif
 
 	/* Wait master IO cluster. */
