@@ -22,9 +22,7 @@ K1_TOOLCHAIN_DIR=/usr/local/k1tools/
 BINDIR  = $(CURDIR)/bin
 INCDIR  = $(CURDIR)/include
 SRCDIR  = $(CURDIR)/src
-TESTDIR = $(CURDIR)/test
 BENCHDIR = $(CURDIR)/benchmark
-
 
 # Toolchain Configuration
 cflags := -ansi -std=c99
@@ -89,7 +87,7 @@ rmem-server-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
 					$(SRCDIR)/kernel/arch/mppa/timer.c   \
 					$(SRCDIR)/servers/rmem.c
 
-rmem-server-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL -march=k1b
+rmem-server-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
 rmem-server-system := rtems
 rmem-server-lflags := -lmppaipc -pthread
 
@@ -102,14 +100,14 @@ rmem-client-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
 					$(SRCDIR)/kernel/sys/meminit.c       \
 					$(SRCDIR)/kernel/sys/memread.c       \
 					$(SRCDIR)/kernel/sys/memwrite.c      \
-					$(TESTDIR)/rmem/rmem.c
+					$(BENCHDIR)/rmem-latency/rmem.c
 
 rmem-client-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
 rmem-client-lflags := -lmppaipc
 
 io-bin += pm-server
 pm-server-srcs := $(SRCDIR)/kernel/arch/mppa/barrier.c \
-				  $(TESTDIR)/master.c
+				  $(BENCHDIR)/rmem-latency/master.c
 
 pm-server-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
 pm-server-lflags := -lmppaipc
