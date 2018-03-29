@@ -59,17 +59,13 @@ static void *rmem_server(void *args)
 	{
 		struct rmem_message msg;
 		
-			mailbox_read(inbox, &msg);
+		mailbox_read(inbox, &msg);
 
 		/* handle write operation. */
 		if (msg.op == RMEM_WRITE)
 		{
-				portal_allow(inportal, msg.source);
-
-
-				portal_read(inportal, &rmem[msg.blknum], msg.size);
-
-
+			portal_allow(inportal, msg.source);
+			portal_read(inportal, &rmem[msg.blknum], msg.size);
 		}
 
 		/* Handle read operation. */

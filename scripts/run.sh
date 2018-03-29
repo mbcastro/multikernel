@@ -68,8 +68,9 @@ else
 		echo "Running $nclusters"
 		for size in 1024 2048 4096 8192 16384 32768 65536 131072 262144 524288 1048576;
 		do
-			run1 "portal-latency.img" "portal-latency-master" "$nclusters $size" >> portal-latency.out
 			run1 "async-latency.img" "master.elf" "$nclusters $size" >> async-latency.out
+			run1 "portal-latency.img" "portal-latency-master" "$nclusters $size" >> portal-latency.out
+			run2 "rmem-latency.img" "rmem-latency-master" "rmem-server" "$nclusters $size" >> rmem-latency.out
 		done
 	done
 fi
