@@ -23,27 +23,174 @@
 #include <nanvix/pm.h>
 #include <assert.h>
 #include <pthread.h>
-#include <stdio.h>
 #include <string.h>
+
+#ifdef DEBUG
+#include <stdio.h>
+#endif
 
 /**
  * @brief Remote memory.
  */
 static char rmem[RMEM_SIZE];
 
+/**
+ * @brief Locks.
+ */
+static int rmem_locks[RMEM_SIZE/RMEM_BLOCK/SIZE];
+
+/**
+ * @brief Remotes waiting for a block.
+ */
+static int remotes[NR_CCLUSTER];
+
 static pthread_barrier_t barrier;
 
 static pthread_mutex_t lock;
 
+/*===================================================================*
+ * rmem_write()                                                      *
+ *===================================================================*/
+
 /**
- * @brief Handles remote memory requests 
+ * @brief Handles a write request.
+ *
+ * @param inportal Input portal for data transfer.
+ * @param remote   Remote client.
+ * @param blknum   RMEM block.
+ * @param size     Number of bytes to write.
+ */
+static inline void rmem_write(int inportal, int remote, uint64_t blknum, int size)
+{
+	portal_allow(inportal, remote);
+	portal_read(inportal, &rmem[blknum], size);
+}	
+
+/*===================================================================*
+ * rmem_read()                                                       *
+ *===================================================================*/
+
+/**
+ * @brief Handles a read request.
+ *
+ * @param remote Remote client.
+ * @param blknum RMEM block.
+ * @param size   Number of bytes to write.
+ */
+static inline void rmem_read(int remote, uint64_t blknum, int size)
+{
+	int outportal;
+
+	outportal = portal_open(name_cluster_name(remote));
+	portal_write(outportal, &rmem[blknum], size);
+	portal_close(outportal);
+}
+
+/*===================================================================*
+ * rmem_lock()                                                       *
+ *===================================================================*/
+
+/**
+ * @brief Handles a lock request.
+ *
+ * @param remote Remote client.
+ * @param blknum RMEM block.
+ */
+static inline void rmem_lock(int remote, uint64_t blknum)
+{
+	int outbox;
+	struct rmem_message msg;
+
+	pthread_mutex_lock(&lock);	
+
+	/* Sleep. */
+	if (rmem_locks[blknum] != 0)
+	{
+		remotes[remote] = blknum;
+		pthread_mux_unlock(&lock);
+		return;
+	}
+
+	/* Lock. */
+	rmem_locks[blknum] = remote + 1;
+	pthread_mux_unlock(&lock);
+
+	/* ACK message. */
+	msg.source = k1_get_cluster_id();
+	msg.op = RMEM_SUCCESS;
+	outbox = mailbox_open(name_cluster_name(remote));
+	mailbox_write(outbox, &msg);
+	mailbox_close(outbox);
+}
+
+/*===================================================================*
+ * rmem_unlock()                                                     *
+ *===================================================================*/
+
+/**
+ * @brief Handles an unlock request.
+ *
+ * @param remote Remote client.
+ * @param blknum RMEM block.
+ */
+static inline void rmem_unlock(int remote, uint64_t blknum)
+{
+	int outbox;
+	struct rmem_message msg;
+
+	pthread_mutex_lock(&lock);	
+
+	/* Nothing to do. */
+	if (rmem_locks[blknum] != (remote + 1))
+	{
+		pthread_mux_unlock(&lock);
+		return;
+	}
+
+	/* Unlock. */
+	rmem_locks[blknum] = 0;
+	remote = -1;
+
+	for (int i = 0; i < NR_CCLUSTER, i++)
+	{
+		if (remotes[i] == blknum)
+		{
+			remote = i;
+			rmem_locks[blknum] = remote + 1;
+			break;
+		}
+	}
+
+	pthread_mux_unlock(&lock);
+
+	/* ACK message. */
+	if (remote >= 0)
+	{
+		msg.source = k1_get_cluster_id();
+		msg.op = RMEM_SUCCESS;
+		outbox = mailbox_open(name_cluster_name(remote));
+		mailbox_write(outbox, &msg);
+		mailbox_close(outbox);
+	}
+}
+
+/*===================================================================*
+ * rmem_server()                                                     *
+ *===================================================================*/
+
+/**
+ * @brief Handles remote memory requests.
+ *
+ * @param args Server arguments.
+ *
+ * @returns Always returns NULL.
  */
 static void *rmem_server(void *args)
 {
-	int dma;           /* DMA channel to use. */
-	char pathname[16]; /*  */
+	int dma;           /* DMA channel to use.         */
 	int inbox;         /* Mailbox for small messages. */
-	int inportal;      /* Portal for data transfers.  */
+	int inportal;      /* Portal for receiving data.  */
+	char pathname[16]; /* RMEM bank.                  */
 
 	dma = ((int *)args)[0];
 
@@ -62,21 +209,31 @@ static void *rmem_server(void *args)
 		mailbox_read(inbox, &msg);
 
 		/* handle write operation. */
-		if (msg.op == RMEM_WRITE)
+		switch (msg.op)
 		{
-			portal_allow(inportal, msg.source);
-			portal_read(inportal, &rmem[msg.blknum], msg.size);
-		}
+			/* Write to RMEM. */
+			case RMEM_WRITE:
+				rmem_write(input, msg.source, msg.blknum, msg.size);
+				break;
 
-		/* Handle read operation. */
-		else if (msg.op == RMEM_READ)
-		{
-			int outportal = portal_open(name_cluster_name(msg.source));
-			portal_write(outportal, &rmem[msg.blknum], msg.size);
-			portal_close(outportal);
+			/* Read from RMEM. */
+			case RMEM_READ:
+				rmem_read(output, msg.source, msg.blknum, msg.size);
+				break;
+
+			/* Lock a RMEM block. */
+			case RMEM_LOCK:
+				rmem_lock(msg.source, msg.blknum);
+				break;
+
+			/* Unlock a RMEM block. */
+			case RMEM_UNLOCK:
+				rmem_unlock(msg.source, msg.blknum)
+				break;
 		}
 	}
 
+	/* House keeping. */
 	pthread_mutex_lock(&lock);
 		portal_unlink(inportal);
 		mailbox_unlink(inbox);
@@ -84,6 +241,10 @@ static void *rmem_server(void *args)
 
 	return (NULL);
 }
+
+/*===================================================================*
+ * main()                                                            *
+ *===================================================================*/
 
 /**
  * @brief Remote memory server.
@@ -102,6 +263,9 @@ int main(int argc, char **argv)
 
 	pthread_mutex_init(&lock, NULL);
 	pthread_barrier_init(&barrier, NULL, NR_IOCLUSTER_DMA + 1);
+
+	memset(remotes, 0, sizeof(remotes));
+	memset(rmem_locks, 0, sizeof(rmem_locks));
 
 	/* Spawn RMEM server threads. */
 	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
