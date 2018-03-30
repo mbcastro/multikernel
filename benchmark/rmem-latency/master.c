@@ -25,6 +25,10 @@
 #include <stdlib.h>
 #include "kernel.h"
 
+#ifdef DEBUG
+#include <stdio.h>
+#endif
+
 /**
  * @brief ID of slave processes.
  */

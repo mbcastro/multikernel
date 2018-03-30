@@ -18,37 +18,43 @@
  */
 
 #include <mppa/osconfig.h>
-#include <nanvix/hal.h>
+#include <nanvix/arch/mppa.h>
 #include <nanvix/mm.h>
 #include <nanvix/pm.h>
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 #include "kernel.h"
 
+/**
+ * @brief Local data block.
+ */
 static char data[RMEM_BLOCK_SIZE];
+
+/*====================================================================*
+ * Write Kernel                                                       *
+ *====================================================================*/
 
 /**
  * @brief Remote memory unit test.
  */
-int main(int argc, char **argv)
+static void kernel_write(int size, int nclusters, int clusterid)
 {
-	int size;
-	int clusterid;
 	long start, end;
 	long total_time;
-	
-	clusterid = k1_get_cluster_id();
 
-	/* Retrieve paramenters. */
-	assert(argc == 3);
-	assert((size = atoi(argv[2])) <= RMEM_BLOCK_SIZE);
-
-	k1_timer_init();
+	/*
+	 * Touch data to initialize all pages
+	 * and warmup D-cache.
+	 */
+	memset(data, clusterid, size);
 
 	/* Wait master IO cluster. */
 	barrier_open(1);
 	barrier_wait();
 
+	/* Benchmark. */
+	k1_timer_init();
 	for (int i = 0; i < NITERATIONS; i++)
 	{
 		start = k1_timer_get();
@@ -56,8 +62,8 @@ int main(int argc, char **argv)
 			memwrite(i, data, size);
 		
 		end = k1_timer_get();
-		total_time = k1_timer_diff(start, end);
 
+		/* Do not profile. */
 		if (clusterid != 0)
 			continue;
 
@@ -65,9 +71,11 @@ int main(int argc, char **argv)
 		if (i == 0)
 			continue;
 
+		total_time = k1_timer_diff(start, end);
+
 		printf("%s;%d;%d;%ld\n",
 				"write",
-				atoi(argv[1]),
+				nclusters,
 				size,
 				total_time
 		);
@@ -78,6 +86,29 @@ int main(int argc, char **argv)
 
 	/* House keeping. */
 	barrier_close();
+}
+
+/*====================================================================*
+ * main                                                               *
+ *====================================================================*/
+
+/**
+ * @brief Remote memory unit test.
+ */
+int main(int argc, char **argv)
+{
+	int size;
+	int nclusters;
+	int clusterid;
+	
+	clusterid = k1_get_cluster_id();
+
+	/* Retrieve paramenters. */
+	assert(argc == 3);
+	assert((nclusters = atoi(argv[1])) > 0);
+	assert((size = atoi(argv[2])) <= RMEM_BLOCK_SIZE);
+
+	kernel_write(size, nclusters, clusterid);
 
 	return (EXIT_SUCCESS);
 }
