@@ -28,11 +28,11 @@ static char buffer[MAX_BUFFER_SIZE];
 
 int main(int argc, const char **argv)
 {
+	long t[2];
 	int size;
 	int clusterid;
-	long t[2];
 	off64_t offset;
-	double total_time;
+	long total_time;
 
 	assert(argc == 3);
 	assert((size = atoi(argv[2])) <= MAX_BUFFER_SIZE);
@@ -69,7 +69,7 @@ int main(int argc, const char **argv)
 			continue;
 
 		total_time = k1_timer_diff(t[0], t[1]);
-		printf("%s;%d;%d;%.2lf\n",
+		printf("%s;%d;%d;%ld\n",
 			"write",
 			atoi(argv[1]),
 			size,

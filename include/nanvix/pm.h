@@ -17,10 +17,9 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NANVIX_IPC_H_
-#define NANVIX_IPC_H_
+#ifndef NANVIX_PM_H_
+#define NANVIX_PM_H_
 
-	#include <inttypes.h>
 	#include <stddef.h>
 
 /*=======================================================================*
@@ -62,9 +61,10 @@
  * Barrier                                                              *
  *=======================================================================*/
 
+	/* Forward definitions. */
 	extern void barrier_open(int);
 	extern int barrier_wait(void);
 	extern int barrier_release(void);
 	extern void barrier_close(void);
 
-#endif /* NANVIX_IPC_H_ */
+#endif /* NANVIX_PM_H_ */

@@ -35,7 +35,7 @@ int main(int argc, char **argv)
 	int size;
 	int clusterid;
 	long start, end;
-	double total_time;
+	long total_time;
 	
 	clusterid = k1_get_cluster_id();
 
@@ -65,7 +65,7 @@ int main(int argc, char **argv)
 		if (i == 0)
 			continue;
 
-		printf("%s;%d;%d;%.2lf\n",
+		printf("%s;%d;%d;%ld\n",
 				"write",
 				atoi(argv[1]),
 				size,

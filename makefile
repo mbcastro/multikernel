@@ -45,6 +45,7 @@ rmem-server-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
 					$(SRCDIR)/servers/rmem.c
 
 # Toolchain Configuration
+rmem-server-system := rtems
 rmem-server-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
 rmem-server-system := rtems
 rmem-server-lflags := -lmppaipc -pthread
@@ -87,6 +88,7 @@ portal-latency-master-srcs := $(BENCHDIR)/portal-latency/master.c \
 							  $(SRCDIR)/kernel/arch/mppa/timer.c
 
 # Toolchain Configuration
+portal-latency-master-system := rtems
 portal-latency-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
 portal-latency-master-lflags := -lmppaipc
 
@@ -94,6 +96,7 @@ cluster-bin += portal-latency-slave
 portal-latency-slave-srcs := $(BENCHDIR)/portal-latency/slave.c
 
 # Toolchain Configuration
+portal-latency-slave-system := nodeos
 portal-latency-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
 portal-latency-slave-lflags := -lmppaipc
 

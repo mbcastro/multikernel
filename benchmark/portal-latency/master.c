@@ -248,7 +248,7 @@ int main(int argc, char **argv)
 	for (int i = 0; i <= NITERATIONS; i++)
 	{
 		long t[4];
-		double total_time;
+		long total_time;
 
 		t[0] = k1_timer_get();
 		barrier_wait();
@@ -268,7 +268,7 @@ int main(int argc, char **argv)
 	
 		total_time = (k1_timer_diff(t[0], t[3]) - k1_timer_diff(t[0], t[1]) - k1_timer_diff(t[2], t[3]));
 
-		printf("%s;%d;%d;%.2lf\n",
+		printf("%s;%d;%d;%ld\n",
 			"write",
 			nclusters,
 			size,

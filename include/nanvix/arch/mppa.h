@@ -89,11 +89,6 @@
 	#define CCLUSTER_FREQ (__bsp_frequency)
 
 	/**
-	 * @brief Magic number for NoC packets.
-	 */
-	#define NOC_PACKET_MAGIC 0xc001f00l
-
-	/**
 	 * @brief Size (in bytes) of a mailbox message.
 	 */
 	#define MAILBOX_MSG_SIZE 64

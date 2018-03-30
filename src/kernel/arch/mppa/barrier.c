@@ -20,6 +20,7 @@
 #include <nanvix/arch/mppa.h>
 #include <nanvix/pm.h>
 #include <assert.h>
+#include <inttypes.h>
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
