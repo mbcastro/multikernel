@@ -84,8 +84,7 @@ async-latency-name := async-latency.img
 #=============================================================================
 
 io-bin += portal-latency-master
-portal-latency-master-srcs := $(BENCHDIR)/portal-latency/master.c \
-							  $(SRCDIR)/kernel/arch/mppa/timer.c
+portal-latency-master-srcs := $(BENCHDIR)/portal-latency/master.c
 
 # Toolchain Configuration
 portal-latency-master-system := rtems
@@ -93,7 +92,8 @@ portal-latency-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
 portal-latency-master-lflags := -lmppaipc
 
 cluster-bin += portal-latency-slave
-portal-latency-slave-srcs := $(BENCHDIR)/portal-latency/slave.c
+portal-latency-slave-srcs := $(BENCHDIR)/portal-latency/slave.c \
+							  $(SRCDIR)/kernel/arch/mppa/timer.c
 
 # Toolchain Configuration
 portal-latency-slave-system := nodeos

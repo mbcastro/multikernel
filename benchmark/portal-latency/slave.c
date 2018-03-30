@@ -158,12 +158,14 @@ int main(int argc, char **argv)
 {
 	int dma;    /* DMA channel to use. */
 	int size;   /* Write size.         */
+	long t[2];
 	int offset; /* Write offset.       */
+	long total_time;
 
-	assert(argc == 2);
+	assert(argc == 3);
 
 	/* Retrieve kernel parameters. */
-	assert((size = atoi(argv[1])) <= MAX_BUFFER_SIZE);
+	assert((size = atoi(argv[2])) <= MAX_BUFFER_SIZE);
 	clusterid = k1_get_cluster_id();
 	dma = clusterid%NR_IOCLUSTER_DMA;
 	offset = dma*size;
@@ -181,6 +183,7 @@ int main(int argc, char **argv)
 	 * Benchmark. First iteration is
 	 * used to warmup resources.
 	 */
+	k1_timer_init();
 	for (int i = 0; i <= NITERATIONS; i++)
 	{
 		/*
@@ -188,6 +191,7 @@ int main(int argc, char **argv)
 		 * all together.
 		 */
 		barrier_wait();
+		t[0] = k1_timer_get();
 
 		portal_write(buffer, size, offset);
 
@@ -196,6 +200,21 @@ int main(int argc, char **argv)
 		 * complete the write operation.
 		 */
 		barrier_wait();
+		t[1] = k1_timer_get();
+
+		if (i == 0)
+			continue;
+
+		if (clusterid != 0)
+			continue;
+
+		total_time = k1_timer_diff(t[0], t[1]);
+		printf("%s;%d;%d;%ld\n",
+			"write",
+			atoi(argv[1]),
+			size,
+			total_time
+		);
 	}
 
 	/* House keeping. */

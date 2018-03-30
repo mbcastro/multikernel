@@ -175,11 +175,11 @@ static int pids[NR_CCLUSTER];
  * @brief Spawns slave processes. 
  *
  * @param nclusters Number of clusters to spawn.
- * @param size      Write size.
+ * @param args      Cluster arguments.
  */
-static void spawn_slaves(int nclusters, const char *size) 
+static void spawn_slaves(int nclusters, char **args) 
 {
-	const char *argv[] = {"portal-latency-slave", size, NULL};
+	const char *argv[] = {"portal-latency-slave", args[1], args[2], NULL};
 
 	for (int i = 0; i < nclusters; i++)
 		assert((pids[i] = mppa_spawn(i, NULL, argv[0], argv, NULL)) != -1);
@@ -210,9 +210,9 @@ static char buffer[NR_CCLUSTER*MAX_BUFFER_SIZE];
  */
 int main(int argc, char **argv)
 {
-	int size;
-	int nclusters;
-	int trigger[NR_IOCLUSTER_DMA];
+	int size;                      /* Write size.            */
+	int nclusters;                 /* Number of cclusters.   */
+	int trigger[NR_IOCLUSTER_DMA]; /* Trigger level per DMA. */
 
 	assert(argc == 3);
 
@@ -220,7 +220,7 @@ int main(int argc, char **argv)
 	nclusters = atoi(argv[1]);
 	assert((size = atoi(argv[2])) <= MAX_BUFFER_SIZE);
 
-	spawn_slaves(nclusters, argv[2]);
+	spawn_slaves(nclusters, argv);
 
 	/* Distribute messages across DMA channels. */
 	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
@@ -244,36 +244,14 @@ int main(int argc, char **argv)
 	 * Benchmark. First iteration is
 	 * used to warmup resources.
 	 */
-	k1_timer_init();
 	for (int i = 0; i <= NITERATIONS; i++)
 	{
-		long t[4];
-		long total_time;
-
-		t[0] = k1_timer_get();
 		barrier_wait();
-		t[1] = k1_timer_get();
 
 		/* Read. */
 		for (int j = 0; j < NR_IOCLUSTER_DMA; j++)
 			portal_read(j);
-
-		t[2] = k1_timer_get();
 		barrier_wait();
-		t[3] = k1_timer_get();
-
-		/* Warmup. */
-		if (i == 0)
-			continue;
-	
-		total_time = (k1_timer_diff(t[0], t[3]) - k1_timer_diff(t[0], t[1]) - k1_timer_diff(t[2], t[3]));
-
-		printf("%s;%d;%d;%ld\n",
-			"write",
-			nclusters,
-			size,
-			total_time
-		);
 	}
 
 	/* House keeping. */
