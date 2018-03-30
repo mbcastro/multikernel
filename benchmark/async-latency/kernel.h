@@ -30,16 +30,13 @@
 	/**@}*/
 
 	/**
-	 * @brief Physical unit prefixes.
+	 * @brief Maximum buffer size.
 	 */
-	/**@{*/
-	#define MILLI (1.0/1000)   /**< Milli 10^-3 */
-	#define MICRO (MILLI/1000) /**< Micro 10^-6 */
-	#define NANO  (MICRO/1000) /**< Nano 10^-9  */
-	/**@}*/
-
 	#define MAX_BUFFER_SIZE (1024*KB)
 
+	/**
+	 * @brief Number of benchmark iterations.
+	 */
 	#define NITERATIONS 30
 
 #endif /* _KERNEL_H_ */

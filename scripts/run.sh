@@ -20,7 +20,7 @@ export K1TOOLS_DIR="/usr/local/k1tools"
 export OUTDIR=output/bin/
 
 #
-# Runs a multibinary file.
+# Runs a multibinary file in a single IO CLUSTER.
 #
 function run1
 {
@@ -35,7 +35,7 @@ function run1
 }
 
 #
-# Runs a multibinary file.
+# Runs a multibinary file in the two IO Clusters.
 #
 function run2
 {
