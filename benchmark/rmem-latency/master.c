@@ -42,7 +42,13 @@ static int pids[NR_CCLUSTER];
  */
 static void spawn_slaves(int nclusters, char **args) 
 {
-	const char *argv[] = {"rmem-latency-slave", args[1], args[2], NULL};
+	const char *argv[] = {
+		"rmem-latency-slave", 
+		args[1],
+		args[2],
+		args[3],
+		NULL
+	};
 
 	for (int i = 0; i < nclusters; i++)
 		assert((pids[i] = mppa_spawn(i, NULL, argv[0], argv, NULL)) != -1);
@@ -71,11 +77,11 @@ int main(int argc, char **argv)
 	int size;
 	int nclusters;
 
-	assert(argc == 3);
+	assert(argc == 4);
 
 	/* Retrieve kernel parameters. */
-	nclusters = atoi(argv[1]);
-	assert((size = atoi(argv[2])) <= RMEM_BLOCK_SIZE);
+	nclusters = atoi(argv[2]);
+	assert((size = atoi(argv[3])) <= RMEM_BLOCK_SIZE);
 
 	/* Wait RMEM server. */
 	barrier_open(nclusters);
