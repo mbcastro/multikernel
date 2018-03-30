@@ -154,19 +154,14 @@ static char buffer[MAX_BUFFER_SIZE];
 /**
  * @brief Benchmarks write operations on a portal connector.
  */
-int main(int argc, char **argv)
+static void kernel_write(int size, int nclusters)
 {
-	int dma;    /* DMA channel to use. */
-	int size;   /* Write size.         */
+	int dma;         /* DMA channel to use. */
 	long t[2];
-	int offset; /* Write offset.       */
+	int offset;      /* Write offset.       */
 	long total_time;
 
-	assert(argc == 3);
-
 	/* Retrieve kernel parameters. */
-	assert((size = atoi(argv[2])) <= MAX_BUFFER_SIZE);
-	clusterid = k1_get_cluster_id();
 	dma = clusterid%NR_IOCLUSTER_DMA;
 	offset = dma*size;
 
@@ -211,7 +206,7 @@ int main(int argc, char **argv)
 		total_time = k1_timer_diff(t[0], t[1]);
 		printf("%s;%d;%d;%ld\n",
 			"write",
-			atoi(argv[1]),
+			nclusters,
 			size,
 			total_time
 		);
@@ -220,6 +215,33 @@ int main(int argc, char **argv)
 	/* House keeping. */
 	barrier_close();
 	portal_close();
+}
+
+/*===================================================================*
+ * main                                                              *
+ *===================================================================*/
+
+/**
+ * @brief Buffer.
+ */
+static char buffer[MAX_BUFFER_SIZE];
+
+/**
+ * @brief Benchmarks write operations on a portal connector.
+ */
+int main(int argc, char **argv)
+{
+	int size;        /* Write size.         */
+	int nclusters;
+
+	clusterid = k1_get_cluster_id();
+
+	/* Retrieve parameters. */
+	assert(argc == 4);
+	assert((nclusters = atoi(argv[2])) > 0);
+	assert((size = atoi(argv[3])) <= MAX_BUFFER_SIZE);
+
+	kernel_write(size, nclusters);
 
 	return (EXIT_SUCCESS);
 }

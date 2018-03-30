@@ -132,13 +132,13 @@ int main(int argc, char **argv)
 	assert((nclusters = atoi(argv[2])) > 0);
 	assert((size = atoi(argv[3])) <= RMEM_BLOCK_SIZE);
 
-	k1_timer_init();
-
 	/*
 	 * Touch data to initialize all pages
 	 * and warmup D-cache.
 	 */
 	memset(data, clusterid, size);
+
+	k1_timer_init();
 
 	/* Wait master IO cluster. */
 	barrier_open(1);

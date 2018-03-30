@@ -38,7 +38,7 @@ static int pids[NR_CCLUSTER];
  * @brief Spawns slave processes. 
  *
  * @param nclusters Number of clusters to spawn.
- * @param size      Write size.
+ * @param args      Cluster arguments.
  */
 static void spawn_slaves(int nclusters, char **args) 
 {

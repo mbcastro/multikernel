@@ -179,7 +179,13 @@ static int pids[NR_CCLUSTER];
  */
 static void spawn_slaves(int nclusters, char **args) 
 {
-	const char *argv[] = {"portal-latency-slave", args[1], args[2], NULL};
+	const char *argv[] = {
+		"portal-latency-slave",
+		args[1],
+		args[2],
+		args[3],
+		NULL
+	};
 
 	for (int i = 0; i < nclusters; i++)
 		assert((pids[i] = mppa_spawn(i, NULL, argv[0], argv, NULL)) != -1);
@@ -214,11 +220,11 @@ int main(int argc, char **argv)
 	int nclusters;                 /* Number of cclusters.   */
 	int trigger[NR_IOCLUSTER_DMA]; /* Trigger level per DMA. */
 
-	assert(argc == 3);
+	assert(argc == 4);
 
 	/* Retrieve kernel parameters. */
-	nclusters = atoi(argv[1]);
-	assert((size = atoi(argv[2])) <= MAX_BUFFER_SIZE);
+	nclusters = atoi(argv[2]);
+	assert((size = atoi(argv[3])) <= MAX_BUFFER_SIZE);
 
 	spawn_slaves(nclusters, argv);
 
