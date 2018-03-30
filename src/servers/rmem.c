@@ -37,12 +37,12 @@ static char rmem[RMEM_SIZE];
 /**
  * @brief Locks.
  */
-static int rmem_locks[RMEM_SIZE/RMEM_BLOCK/SIZE];
+static int rmem_locks[RMEM_SIZE/RMEM_BLOCK_SIZE];
 
 /**
  * @brief Remotes waiting for a block.
  */
-static int remotes[NR_CCLUSTER];
+static uint64_t remotes[NR_CCLUSTER];
 
 static pthread_barrier_t barrier;
 
@@ -107,17 +107,17 @@ static inline void rmem_lock(int remote, uint64_t blknum)
 	if (rmem_locks[blknum] != 0)
 	{
 		remotes[remote] = blknum;
-		pthread_mux_unlock(&lock);
+		pthread_mutex_unlock(&lock);
 		return;
 	}
 
 	/* Lock. */
 	rmem_locks[blknum] = remote + 1;
-	pthread_mux_unlock(&lock);
+	pthread_mutex_unlock(&lock);
 
 	/* ACK message. */
 	msg.source = k1_get_cluster_id();
-	msg.op = RMEM_SUCCESS;
+	msg.op = 0;
 	outbox = mailbox_open(name_cluster_name(remote));
 	mailbox_write(outbox, &msg);
 	mailbox_close(outbox);
@@ -143,7 +143,7 @@ static inline void rmem_unlock(int remote, uint64_t blknum)
 	/* Nothing to do. */
 	if (rmem_locks[blknum] != (remote + 1))
 	{
-		pthread_mux_unlock(&lock);
+		pthread_mutex_unlock(&lock);
 		return;
 	}
 
@@ -151,7 +151,7 @@ static inline void rmem_unlock(int remote, uint64_t blknum)
 	rmem_locks[blknum] = 0;
 	remote = -1;
 
-	for (int i = 0; i < NR_CCLUSTER, i++)
+	for (int i = 0; i < NR_CCLUSTER; i++)
 	{
 		if (remotes[i] == blknum)
 		{
@@ -161,13 +161,13 @@ static inline void rmem_unlock(int remote, uint64_t blknum)
 		}
 	}
 
-	pthread_mux_unlock(&lock);
+	pthread_mutex_unlock(&lock);
 
 	/* ACK message. */
 	if (remote >= 0)
 	{
 		msg.source = k1_get_cluster_id();
-		msg.op = RMEM_SUCCESS;
+		msg.op = 0;
 		outbox = mailbox_open(name_cluster_name(remote));
 		mailbox_write(outbox, &msg);
 		mailbox_close(outbox);
@@ -213,12 +213,12 @@ static void *rmem_server(void *args)
 		{
 			/* Write to RMEM. */
 			case RMEM_WRITE:
-				rmem_write(input, msg.source, msg.blknum, msg.size);
+				rmem_write(inportal, msg.source, msg.blknum, msg.size);
 				break;
 
 			/* Read from RMEM. */
 			case RMEM_READ:
-				rmem_read(output, msg.source, msg.blknum, msg.size);
+				rmem_read(msg.source, msg.blknum, msg.size);
 				break;
 
 			/* Lock a RMEM block. */
@@ -228,7 +228,11 @@ static void *rmem_server(void *args)
 
 			/* Unlock a RMEM block. */
 			case RMEM_UNLOCK:
-				rmem_unlock(msg.source, msg.blknum)
+				rmem_unlock(msg.source, msg.blknum);
+				break;
+
+			/* Should not happen. */
+			default:
 				break;
 		}
 	}
