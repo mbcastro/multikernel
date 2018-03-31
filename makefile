@@ -134,9 +134,41 @@ rmem-latency-objs := rmem-server rmem-latency-slave rmem-latency-master
 rmem-latency-name := rmem-latency.img
 
 #=============================================================================
+# Kmeans Benchmark Kernel 
+#=============================================================================
+
+cluster-bin += kmeans-slave
+kmeans-slave-srcs := $(BENCHDIR)/kmeans/slave/slave.c    \
+					 $(BENCHDIR)/kmeans/slave/vector.c   \
+					 $(SRCDIR)/kernel/arch/mppa/timer.c  \
+					 $(BENCHDIR)/kmeans/slave/ipc.c     \
+					 $(BENCHDIR)/kmeans/slave/util.c
+
+# Toolchain Configuration
+kmeans-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+kmeans-slave-cflags += -I $(BENCHDIR)/include -fopenmp
+kmeans-slave-lflags := -lmppaipc -lm -lgomp
+
+io-bin += kmeans-master
+kmeans-master-srcs := $(BENCHDIR)/kmeans/master/main.c    \
+					  $(BENCHDIR)/kmeans/master/master.c  \
+					  $(BENCHDIR)/kmeans/master/vector.c  \
+					  $(SRCDIR)/kernel/arch/mppa/timer.c  \
+					  $(BENCHDIR)/kmeans/master/ipc.c     \
+					  $(BENCHDIR)/kmeans/master/util.c
+
+# Toolchain Configuration
+kmeans-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+kmeans-master-cflags += -I $(BENCHDIR)/include
+kmeans-master-lflags := -lmppaipc -lm
+
+kmeans-objs := rmem-server kmeans-slave kmeans-master
+kmeans-name := kmeans.img
+
+#=============================================================================
 # MPPA Binary
 #=============================================================================
 
-mppa-bin := portal-latency async-latency rmem-latency
+mppa-bin := portal-latency async-latency rmem-latency kmeans
 
 include $(K1_TOOLCHAIN_DIR)/share/make/Makefile.kalray
