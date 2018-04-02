@@ -72,7 +72,7 @@ static void sendwork(void)
 		data_send(outfd[i], &dimension, sizeof(int));
 		n = nclusters*sizeof(int);
 		data_send(outfd[i], lncentroids, n);
-		
+
 		n = dimension*sizeof(float);
 		for (int j = 0; j < lnpoints[i]; j++)
 			data_send(outfd[i], vector_get(data[i*(npoints/nclusters)+j]), n);
@@ -106,7 +106,7 @@ static void sync_pcentroids(void)
 	/* Receive partial centroids. */
 	n = ncentroids*dimension*sizeof(float);
 	for (int i = 0; i < nclusters; i++)
-		data_receive(infd[i], PCENTROID(i, 0), n);
+		data_receive(infd, i, PCENTROID(i, 0), n);
 
 	/* 
 	 * Send partial centroids to the
@@ -145,7 +145,7 @@ static void sync_ppopulation(void)
 	/* Receive temporary population. */
 	n = ncentroids*sizeof(int);
 	for (int i = 0; i < nclusters; i++)
-		data_receive(infd[i], PPOPULATION(i, 0), n);
+		data_receive(infd, i, PPOPULATION(i, 0), n);
 
 	/* 
 	 * Send partial population to the
@@ -185,7 +185,7 @@ static void sync_centroids(void)
 	{
 		n = lncentroids[i]*dimension*sizeof(float);
 		
-					data_receive(infd[i], CENTROID(i*(ncentroids/nclusters)), n);
+		data_receive(infd, i, CENTROID(i*(ncentroids/nclusters)), n);
 	}
 
 	/* Broadcast centroids. */
@@ -209,8 +209,8 @@ static void sync_status(void)
 	n = NUM_THREADS*sizeof(int);
 	for (int i = 0; i < nclusters; i++)
 	{
-		data_receive(infd[i], &has_changed[i*NUM_THREADS], n);
-		data_receive(infd[i], &too_far[i*NUM_THREADS], n);
+		data_receive(infd, i, &has_changed[i*NUM_THREADS], n);
+		data_receive(infd, i, &too_far[i*NUM_THREADS], n);
 	}
 
 	/* Broadcast data to slaves. */

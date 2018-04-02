@@ -21,10 +21,10 @@
 	extern void open_noc_connectors(void);
 	extern void close_noc_connectors(void);
 	extern void data_send(int, void *, size_t);
-	extern void data_receive(int, void *, size_t);
+	extern void data_receive(int, int, void *, size_t);
 
 	/* Forward definitions. */
-	extern int infd[NR_CCLUSTER];
+	extern int infd;
 	extern int outfd[NR_CCLUSTER];
 
 	/*===============================================================*

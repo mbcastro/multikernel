@@ -72,6 +72,7 @@ long total = 0;
 static void populate(void)
 {
 	start = k1_timer_get();
+
 		memset(&too_far[rank*NUM_THREADS], 0, NUM_THREADS*sizeof(int)); 
 		
 		/* Iterate over data points. */
@@ -324,7 +325,7 @@ static void kmeans(void)
 /*============================================================================*
  *                                 getwork()                                  *
  *============================================================================*/
-
+#include <stdio.h>
 /*
  * Receives work from master process.
  */
@@ -334,14 +335,13 @@ static void getwork(void)
 	
 	k1_timer_init();
 	
-	n = sizeof(int);
-	data_receive(infd, &lnpoints, n);
+	data_receive(infd, &lnpoints, sizeof(int));
 	
 	data_receive(infd, &nprocs, sizeof(int));
 	
 	data_receive(infd, &ncentroids, sizeof(int));
 	
-	data_receive(infd, &mindistance, sizeof(int));
+	data_receive(infd, &mindistance, sizeof(float));
 	
 	data_receive(infd, &dimension, sizeof(int));
 	

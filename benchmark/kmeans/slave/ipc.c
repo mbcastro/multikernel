@@ -3,6 +3,7 @@
  */
 
 #include <nanvix/arch/mppa.h>
+#include <nanvix/pm.h>
 #include <assert.h>
 #include <stdio.h>
 #include <stddef.h>
@@ -19,14 +20,11 @@ int outfd; /* Output channel. */
 void open_noc_connectors(void)
 {
 	char path[35];
-	
-	/* Open input channel. */
-	sprintf(path, "/mppa/channel/%d:%d/128:%d", rank, rank + 17, rank + 17);
-	infd = mppa_open(path, O_RDONLY);
-	assert(infd != -1);
-	sprintf(path, "/mppa/channel/128:%d/%d:%d", rank + 33, rank, rank + 33);
-	outfd = mppa_open(path, O_WRONLY);
-	assert(outfd != -1);
+
+	sprintf(path, "/cpu%d", rank);
+	infd = portal_create(path);
+
+	outfd = portal_open("/io0");
 }
 
 /*
@@ -34,8 +32,8 @@ void open_noc_connectors(void)
  */
 void close_noc_connectors(void)
 {
-	mppa_close(infd);
-	mppa_close(outfd);
+	portal_unlink(infd);
+	portal_close(outfd);
 }
 
 /*
@@ -46,7 +44,7 @@ void data_send(int fd, void *data, size_t n)
 	long start, end;
 	
 	start = k1_timer_get();
-	assert(mppa_write(fd, data, n) != -1);
+		portal_write(fd, data, n);
 	end = k1_timer_get();
 	
 	total += k1_timer_diff(start, end);
@@ -60,7 +58,8 @@ void data_receive(int fd, void *data, size_t n)
 	long start, end;
 	
 	start = k1_timer_get();
-	assert(mppa_read(fd, data, n) != -1);
+		portal_allow(fd, IOCLUSTER0);
+		portal_read(fd, data, n);
 //	k1_dcache_invalidate_mem_area(data, n);
 	end = k1_timer_get();
 	

@@ -141,6 +141,8 @@ cluster-bin += kmeans-slave
 kmeans-slave-srcs := $(BENCHDIR)/kmeans/slave/slave.c    \
 					 $(BENCHDIR)/kmeans/slave/vector.c   \
 					 $(SRCDIR)/kernel/arch/mppa/timer.c  \
+					 $(SRCDIR)/kernel/arch/mppa/portal.c  \
+					 $(SRCDIR)/kernel/arch/mppa/name.c    \
 					 $(BENCHDIR)/kmeans/slave/ipc.c
 
 # Toolchain Configuration
@@ -153,6 +155,8 @@ kmeans-master-srcs := $(BENCHDIR)/kmeans/master/main.c    \
 					  $(BENCHDIR)/kmeans/master/master.c  \
 					  $(BENCHDIR)/kmeans/master/vector.c  \
 					  $(SRCDIR)/kernel/arch/mppa/timer.c  \
+					  $(SRCDIR)/kernel/arch/mppa/portal.c  \
+					  $(SRCDIR)/kernel/arch/mppa/name.c    \
 					  $(BENCHDIR)/kmeans/master/ipc.c     \
 					  $(BENCHDIR)/kmeans/master/util.c
 
