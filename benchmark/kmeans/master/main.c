@@ -5,22 +5,17 @@
  */
 
 #include <nanvix/arch/mppa.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "master.h"
-#include "../util.h"
 
-/*
- * Clusters data. 
- */
-extern int *kmeans(vector_t *_points, int _npoints, int _ncentroids, float _mindistance);
+#define MICRO (1.0/1000000)
 
 /* Timing statistics. */
-uint64_t master = 0;          /* Time spent on master.        */
-uint64_t slave[NR_CCLUSTER]; /* Time spent on slaves.        */
-uint64_t communication = 0;   /* Time spent on communication. */
-uint64_t total = 0;           /* Total time.                  */
+long master = 0;         /* Time spent on master.        */
+long slave[NR_CCLUSTER]; /* Time spent on slaves.        */
+long communication = 0;  /* Time spent on communication. */
 
 /* Data exchange statistics. */
 size_t data_sent = 0;     /* Number of bytes received. */
@@ -47,10 +42,14 @@ static struct problem large    = { 32768, 16, 1024, 0.0 };
 static struct problem huge     = { 65536, 16, 1024, 0.0 };
 
 /* Benchmark parameters. */
-int verbose = 0;                  /* Be verbose?        */
+static int verbose = 0;           /* Be verbose?        */
 static int seed = 0;              /* Seed value.        */
-int nclusters = 1;                 /* Number of threads. */
+int nclusters = NR_CCLUSTER;      /* Number of threads. */
 static struct problem *p = &tiny; /* Problem.           */
+
+/*===================================================================*
+ * usage()                                                           *
+ *===================================================================*/
 
 /*
  * Prints program usage and exits.
@@ -71,24 +70,28 @@ static void usage(void)
 	exit(0);
 }
 
+/*===================================================================*
+ * readargs()                                                        *
+ *===================================================================*/
+
 /*
  * Reads command line arguments.
  */
 static void readargs(int argc, char **argv)
 {
-	int i;     /* Loop index.       */
 	char *arg; /* Working argument. */
 	int state; /* Processing state. */
-	
-	/* State values. */
-	#define READ_ARG     0 /* Read argument.         */
-	#define SET_nclusters 1 /* Set number of threads. */
-	#define SET_CLASS    2 /* Set problem class.     */
+
+	enum readargs_states {
+		READ_ARG,      /* Read argument.         */
+		SET_nclusters, /* Set number of threads. */
+		SET_CLASS      /* Set problem class.     */
+	};
 	
 	state = READ_ARG;
 	
 	/* Read command line arguments. */
-	for (i = 1; i < argc; i++)
+	for (int i = 1; i < argc; i++)
 	{
 		arg = argv[i];
 		
@@ -143,60 +146,82 @@ static void readargs(int argc, char **argv)
 		usage();
 }
 
+/*===================================================================*
+ * main()                                                            *
+ *===================================================================*/
+
 /*
  * Runs benchmark.
  */
 int main(int argc, char **argv)
 {
-	int i;          /* Loop index.      */
-	int *map;       /* Map of clusters. */
-	uint64_t end;   /* End time.        */
-	uint64_t start; /* Start time.      */
-	vector_t *data; /* Data points.     */
+	int *map;         /* Map of clusters.           */
+	long t[2];        /* Timings.                   */
+	vector_t *data;   /* Data points.               */
+	long time_init;   /* Total initialization time. */
+	long time_kernel; /* Total kernel time.         */
+	
+	/*---------------------------------------------------------------*
+	 * Benchmark Initialization                                      *
+	 *---------------------------------------------------------------*/
 	
 	readargs(argc, argv);
-	
-	k1_timer_init();
 	srandnum(seed);
-	
-	/* Benchmark initialization. */
+	k1_timer_init();
+
 	if (verbose)
 		printf("initializing...\n");
-	start = k1_timer_get();
-	data = smalloc(p->npoints*sizeof(vector_t));
-	for (i = 0; i < p->npoints; i++)
-	{
-		data[i] = vector_create(p->dimension);
-		vector_random(data[i]);
-	}
-	end = k1_timer_get();
-	if (verbose)
-		printf("  time spent: %f\n", k1_timer_diff(start, end)*0.000001);
+
+	t[0] = k1_timer_get();
+		data = smalloc(p->npoints*sizeof(vector_t));
+		for (int i = 0; i < p->npoints; i++)
+		{
+			data[i] = vector_create(p->dimension);
+			vector_random(data[i]);
+		}
+	t[1] = k1_timer_get();
+	time_init = k1_timer_diff(t[0], t[1]);
 	
-	/* Cluster data. */
+	/*---------------------------------------------------------------*
+	 * Cluster Data                                                  *
+	 *---------------------------------------------------------------*/
+
 	if (verbose)
 		printf("clustering data...\n");
-	start = k1_timer_get();
-	map = kmeans(data, p->npoints, p->ncentroids, p->mindistance);
-	end = k1_timer_get();
-	total = k1_timer_diff(start, end);
 
-	/* Print timing statistics. */
+	t[0] = k1_timer_get();
+		map = kmeans(data, p->npoints, p->ncentroids, p->mindistance);
+	t[1] = k1_timer_get();
+	time_kernel = k1_timer_diff(t[0], t[1]);
+
+	/*---------------------------------------------------------------*
+	 * Print Timing Statistics                                       *
+	 *---------------------------------------------------------------*/
+
 	printf("timing statistics:\n");
-	printf("  master:        %f\n", master*0.000001);
-	for (i = 0; i < nclusters; i++)
-		printf("  slave %d:      %f\n", i, slave[i]*0.000001);
-	printf("  communication: %f\n", communication*0.000001);
-	printf("  total time:    %f\n", total*0.000001);
-	printf("data exchange statistics:\n");
-	printf("  data sent:            %d\n", data_sent);
-	printf("  number sends:         %u\n", nsend);
-	printf("  data received:        %d\n", data_received);
-	printf("  number receives:      %u\n", nreceive);
+
+	printf("  initialization time: %f\n",  time_init*MICRO);
+	printf("  kernel time:          %f\n", time_kernel*MICRO);
+
+	if (verbose)
+	{
+		printf("  master:        %f\n", master*MICRO);
+		for (int i = 0; i < nclusters; i++)
+			printf("  slave %d:      %f\n", i, slave[i]*MICRO);
+		printf("  communication: %f\n", communication*MICRO);
+		printf("data exchange statistics:\n");
+		printf("  data sent:            %d\n", data_sent);
+		printf("  number sends:         %u\n", nsend);
+		printf("  data received:        %d\n", data_received);
+		printf("  number receives:      %u\n", nreceive);
+	}
 	
-	/* House keeping. */
+	/*---------------------------------------------------------------*
+	 * House Keeping                                                 *
+	 *---------------------------------------------------------------*/
+
 	free(map);
-	for (i = 0; i < p->npoints; i++)
+	for (int i = 0; i < p->npoints; i++)
 		vector_destroy(data[i]);
 	free(data);
 	

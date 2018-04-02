@@ -4,11 +4,9 @@
 
 #include <nanvix/arch/mppa.h>
 #include <assert.h>
-#include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <mppaipc.h>
-
+#include <stddef.h>
+#include "slave.h"
 
 /* Inter process communication. */
 int rank;  /* Process rank.   */
@@ -36,8 +34,35 @@ void open_noc_connectors(void)
  */
 void close_noc_connectors(void)
 {
-	/* Close channels. */
 	mppa_close(infd);
 	mppa_close(outfd);
 }
 
+/*
+ * Sends data.
+ */
+void data_send(int fd, void *data, size_t n)
+{	
+	long start, end;
+	
+	start = k1_timer_get();
+	assert(mppa_write(fd, data, n) != -1);
+	end = k1_timer_get();
+	
+	total += k1_timer_diff(start, end);
+}
+
+/*
+ * Receives data.
+ */
+void data_receive(int fd, void *data, size_t n)
+{	
+	long start, end;
+	
+	start = k1_timer_get();
+	assert(mppa_read(fd, data, n) != -1);
+//	k1_dcache_invalidate_mem_area(data, n);
+	end = k1_timer_get();
+	
+	total += k1_timer_diff(start, end);
+}

@@ -4,10 +4,39 @@
  * vector.c - Vector Library implementation.
  */
 
-#include <math.h>
-#include <string.h>
+#include <stdlib.h>
 #include "master.h"
-#include "../util.h"
+	
+/*
+ * Vector.
+ */
+struct vector
+{
+	int size;        /* Size.     */
+	float *elements; /* Elements. */
+};
+
+/*
+ * Returns the element [i] in a vector.
+ */
+#define VECTOR(v, i) \
+	(((vector_t)(v))->elements[(i)])
+	
+/*
+ * Returns the size of a vector.
+ */
+int vector_size(struct vector *v)
+{
+	return (v->size);
+}
+
+/**
+ * Returns the elements of a vector.
+ */
+float *vector_get(struct vector *v)
+{
+	return (v->elements);
+}
 
 /*
  * Creates a vector.
@@ -20,43 +49,9 @@ struct vector *vector_create(int n)
 	
 	/* Initilize vector. */
 	v->size = n;
-	v->elements = calloc(n, sizeof(float));
+	v->elements = scalloc(n, sizeof(float));
 
 	return (v);
-}
-
-/*
- * Adds two vectors.
- */
-struct vector *vector_add(struct vector *v1, const struct vector *v2)
-{
-	int i; /* Loop index.  */
-	int n; /* Vector size. */
-	
-	n = vector_size(v1);
-	
-	/* Add vectors. */
-	for (i = 0; i < n; i++)
-		VECTOR(v1, i) += VECTOR(v2, i);
-	
-	return (v1);
-}
-
-/*
- * Assigns a vector to another.
- */
-struct vector *vector_assign(struct vector *v1, const struct vector *v2)
-{
-	int i; /* Loop index.  */
-	int n; /* Vector size. */
-	
-	n = vector_size(v1);
-	
-	/* Add vectors. */
-	for (i = 0; i < n; i++)
-		VECTOR(v1, i) = VECTOR(v2, i);
-	
-	return (v1);
 }
 
 /*
@@ -69,97 +64,14 @@ void vector_destroy(struct vector *v)
 }
 
 /*
- * Computes the euclidean distance between two points.
- */
-float vector_distance(const struct vector *a, const struct vector *b)
-{
-	int i;          /* Loop index. */
-	float distance; /* Distance.   */
-
-	distance = 0;
-
-	/* Computes the euclidean distance. */
-	for (i = 0; i < a->size; i++)
-		distance +=  pow(VECTOR(a, i) - VECTOR(b, i), 2);
-	distance = sqrt(distance);
-	
-	return (distance);
-}
-
-/*
- * Tests if two vectors are equal.
- */
-int vector_equal(const struct vector *a, const struct vector *b)
-{
-	int i;
-	
-	/* Test all elements. */
-	for (i = 0; i < a->size; i++)
-	{
-		if (fabs(VECTOR(a, i) - VECTOR(b, i)) >= 0.00001)
-			return (0);
-	}
-	
-	return (1);
-}
-
-/*
- * Multiplies a vector by a scalar.
- */
-struct vector *vector_mult(struct vector *v, float scalar)
-{
-	int i; /* Loop index.  */
-	int n; /* Vector size. */
-	
-	n = vector_size(v);
-	
-	/* Add vectors. */
-	for (i = 0; i < n; i++)
-		VECTOR(v, i) *= scalar;
-	
-	return (v);
-}
-
-/*
  * Fills up vector with random numbers.
  */
 struct vector *vector_random(struct vector *v)
 {
-	int i;
-	
 	/* Fill vector. */
-	for (i = 0; i < vector_size(v); i++)
+	for (int i = 0; i < vector_size(v); i++)
 		VECTOR(v, i) = randnum() & 0xffff;
 
 	return (v);
-}
-
-/*
- * Subtracts two vectors.
- */
-struct vector *vector_sub(struct vector *v1,const struct vector *v2)
-{
-	int i; /* Loop index.  */
-	int n; /* Vector size. */
-	
-	/* Invalid argument. */
-	if (vector_size(v1) != vector_size(v2))
-		return (NULL);
-	
-	n = vector_size(v1);
-	
-	/* Subtract vectors. */
-	for (i = 0; i < n; i++)
-		VECTOR(v1, i) -= VECTOR(v2, i);
-	
-	return (v1);
-}
-
-/*
- * Clears a vector.
- */
-void vector_clear(struct vector *v)
-{
-	memset(v->elements, 0, sizeof(float)*vector_size(v));	
 }
 

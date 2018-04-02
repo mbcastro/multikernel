@@ -63,8 +63,8 @@ then
 #	echo "Testing Write RMEM"
 #	run2 "rmem-latency.img" "rmem-latency-master" "rmem-server" "write $nclusters $size"
 #	run2 "rmem-latency.img" "rmem-latency-master" "rmem-server" "read $nclusters $size"
-	echo "Kmean Kernel"
-	run1 "kmeans.img" "kmeans-master" "--nclusters $nclusters --class tiny --verbose"
+	echo "Kmeans Kernel"
+	run1 "kmeans.img" "kmeans-master" "--nclusters $nclusters --class tiny"
 else
 	for nclusters in 4 8 12 16;
 	do

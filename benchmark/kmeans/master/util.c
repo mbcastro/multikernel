@@ -6,28 +6,7 @@
 
 #include <nanvix/arch/mppa.h>
 #include <assert.h>
-#include <math.h>
-#include <mppaipc.h>
-#include <stdio.h>
-#include <stdint.h>
 #include <stdlib.h>
-
-/*
- * Prints an error message and exits.
- */
-void error(const char *msg)
-{
-	fprintf(stderr, "error: %s\n", msg);
-	exit(EXIT_FAILURE);
-}
-
-/*
- * Prints a warning message.
- */
-void warning(const char *msg)
-{
-	fprintf(stderr, "warning: %s\n", msg);
-}
 
 /*
  * Safe calloc().
@@ -36,11 +15,7 @@ void *scalloc(size_t nmemb, size_t size)
 {
 	void *p;
 	
-	p = calloc(nmemb, size);
-	
-	/* Failed to allocate memory. */
-	if (p == NULL)
-		error("cannot calloc()");
+	assert((p = calloc(nmemb, size)) != NULL);
 	
 	return (p);
 }
@@ -52,11 +27,7 @@ void *smalloc(size_t size)
 {
 	void *p;
 	
-	p = malloc(size);
-	
-	/* Failed to allocate memory. */
-	if (p == NULL)
-		error("cannot malloc()");
+	assert((p = malloc(size)) != NULL);
 	
 	return (p);
 }
@@ -95,37 +66,3 @@ unsigned randnum(void)
 	return u;
 }
 
-/*
- * Sends data.
- */
-uint64_t data_send(int outfd, void *data, size_t n)
-{	
-	ssize_t count;
-	uint64_t start, end;
-	
-	start = k1_timer_get();
-	count = mppa_write(outfd, data, n);
-	end = k1_timer_get();
-	assert(count != -1);
-	
-	return (k1_timer_diff(start, end));
-}
-
-/*
- * Receives data.
- */
-uint64_t data_receive(int infd, void *data, size_t n)
-{	
-	ssize_t count;
-	uint64_t start, end;
-	
-	start = k1_timer_get();
-	count = mppa_read(infd, data, n);
-#ifndef _MASTER_
-	//k1_dcache_invalidate_mem_area(data, n);
-#endif
-	end = k1_timer_get();
-	assert(count != -1);
-	
-	return (k1_timer_diff(start, end));
-}

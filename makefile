@@ -141,8 +141,7 @@ cluster-bin += kmeans-slave
 kmeans-slave-srcs := $(BENCHDIR)/kmeans/slave/slave.c    \
 					 $(BENCHDIR)/kmeans/slave/vector.c   \
 					 $(SRCDIR)/kernel/arch/mppa/timer.c  \
-					 $(BENCHDIR)/kmeans/slave/ipc.c     \
-					 $(BENCHDIR)/kmeans/slave/util.c
+					 $(BENCHDIR)/kmeans/slave/ipc.c
 
 # Toolchain Configuration
 kmeans-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL

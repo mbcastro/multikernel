@@ -7,51 +7,38 @@
 #ifndef _SLAVE_H_
 #define _SLAVE_H_
 
-	#include <stdlib.h>
+	#include <stddef.h>
 
-	/*
-	 * Synchronizes with master process.
-	 */
-	extern void sync_master(void);
-	
-	/*
-	 * Opens NoC connectors.
-	 */
+	/*===============================================================*
+	 * IPC                                                           *
+	 *===============================================================*/
+
+	/* Forward definitions. */
 	extern void open_noc_connectors(void);
-	
-	/*
-	 * Closes NoC connectors.
-	 */
 	extern void close_noc_connectors(void);
+	extern void data_receive(int, void *, size_t);
+	extern void data_send(int, void *, size_t);
 
-	/* Inter process communication. */
-	extern int rank;  /* Process rank.   */
-	extern int infd;  /* Input channel.  */
-	extern int outfd; /* Output channel. */
+	/* Forward definitions. */
+	extern int rank;
+	extern int infd;
+	extern int outfd;
+
+	/*===============================================================*
+	 * Vector                                                        *
+	 *===============================================================*/
 	
-	/*
-	 * Calculates the distance between two points.
-	 */
-	extern float vector_distance(float *a, float *b);
-	
-	/*
-	 * Adds two vectors.
-	 */
-	extern float *vector_add(float *v1, const float *v2);
-	
-	/*
-	 * Multiplies a vector by a scalar.
-	 */
-	extern float *vector_mult(float *v, float scalar);
-	
-	/*
-	 * Assigns a vector to another.
-	 */
-	extern float *vector_assign(float *v1, const float *v2);
-	
-	/*
-	 * Tests if two vectors are equal.
-	 */
-	extern int vector_equal(const float *v1, const float *v2);
+	/* Forward definitions. */
+	extern float vector_distance(float *, float *);
+	extern float *vector_add(float *, const float *);
+	extern float *vector_mult(float *, float);
+	extern float *vector_assign(float *, const float *);
+	extern int vector_equal(const float *, const float *);
+
+	/* Forward definitions. */
+	extern int dimension;
+
+	/* Forward definitions. */
+	extern long total;
 	
 #endif /* _SLAVE_H_ */

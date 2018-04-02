@@ -4,12 +4,8 @@
 
 #include <nanvix/arch/mppa.h>
 #include <assert.h>
-#include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <mppaipc.h>
-#include "../global.h"
-#include "../util.h"
+#include "master.h"
 
 /* Interprocess communication. */
 int infd[NR_CCLUSTER];               /* Input channels.  */
@@ -17,17 +13,48 @@ int outfd[NR_CCLUSTER];              /* Output channels. */
 static mppa_pid_t pids[NR_CCLUSTER]; /* Processes IDs.   */
 
 /*
+ * Sends data.
+ */
+void data_send(int fd, void *data, size_t n)
+{	
+	long start, end;
+	
+	start = k1_timer_get();
+		assert(mppa_write(fd, data, n) != -1);
+	end = k1_timer_get();
+
+	data_sent += n;
+	nsend++;
+	communication += k1_timer_diff(start, end);
+}
+
+/*
+ * Receives data.
+ */
+void data_receive(int fd, void *data, size_t n)
+{	
+	long start, end;
+	
+	start = k1_timer_get();
+		assert(mppa_read(fd, data, n) != 01);
+	end = k1_timer_get();
+	
+	data_received += n;
+	nreceive++;
+	communication += k1_timer_diff(start, end);
+}
+
+/*
  * Spwans slave processes.
  */
 void spawn_slaves(void)
 {
-	int i;          /* Loop index. */
 	char arg0[4];   /* Argument 0. */
 	char *args[2];  /* Arguments.  */
 
 	/* Spawn slaves. */
 	args[1] = NULL;
-	for (i = 0; i < nclusters; i++)
+	for (int i = 0; i < nclusters; i++)
 	{	
 		sprintf(arg0, "%d", i);
 		args[0] = arg0;
@@ -41,12 +68,10 @@ void spawn_slaves(void)
  */
 void join_slaves(void)
 {
-	int i;
-	
 	/* Join slaves. */
-	for (i = 0; i < nclusters; i++)
+	for (int i = 0; i < nclusters; i++)
 	{
-		data_receive(infd[i], &slave[i], sizeof(uint64_t));
+		data_receive(infd[i], &slave[i], sizeof(long));
 		mppa_waitpid(pids[i], NULL, 0);
 	}
 }
@@ -56,11 +81,10 @@ void join_slaves(void)
  */
 void open_noc_connectors(void)
 {
-	int i;          /* Loop index.     */
-	char path[35];  /* Connector path. */
+	char path[35];
 
 	/* Open channels. */
-	for (i = 0; i < nclusters; i++)
+	for (int i = 0; i < nclusters; i++)
 	{		
 		sprintf(path, "/mppa/channel/%d:%d/128:%d", i, i + 17, i + 17);
 		outfd[i] = mppa_open(path, O_WRONLY);
@@ -77,13 +101,10 @@ void open_noc_connectors(void)
  */
 void close_noc_connectors(void)
 {
-	int i;
-	
 	/* Close channels. */
-	for (i = 0; i < nclusters; i++)
+	for (int i = 0; i < nclusters; i++)
 	{
 		mppa_close(outfd[i]);
 		mppa_close(infd[i]);
 	}
 }
-
