@@ -43,10 +43,11 @@
  */
 struct portal
 {
-	int remote;    /**< Cluster ID of remote.  */
-	int portal_fd; /**< Portal NoC connector. */
-	int sync_fd;   /**< Sync connector.       */
-	int flags;     /**< Flags.                */
+	int dma_local;  /**< ID of local DMA.      */
+	int dma_remote; /**< Cluster ID of remote. */
+	int portal_fd;  /**< Portal NoC connector. */
+	int sync_fd;    /**< Sync connector.       */
+	int flags;      /**< Flags.                */
 };
 
 /**
@@ -88,16 +89,16 @@ static int portal_alloc(void)
 /**
  * @brief Frees a portal.
  *
- * @param prtid ID of the target portal.
+ * @param portalid ID of the target portal.
  */
-static void portal_free(int prtid)
+static void portal_free(int portalid)
 {
 	/* Sanity check. */
-	assert((prtid >= 0) && (prtid < NR_PORTAL));
-	assert(portals[prtid].flags & PORTAL_USED);
+	assert((portalid >= 0) && (portalid < NR_PORTAL));
+	assert(portals[portalid].flags & PORTAL_USED);
 
-	portals[prtid].flags = 0;
-	mppa_close(portals[prtid].portal_fd);
+	portals[portalid].flags = 0;
+	mppa_close(portals[portalid].portal_fd);
 }
 
 /*=======================================================================*
@@ -135,40 +136,44 @@ static int portal_noctag(int local)
  */
 int portal_create(const char *name)
 {
-	int local;          /* ID of local cluster.        */
-	int portal_fd;      /* Portal NoC Connector.       */
-	int prtid;          /* ID of mailbix.              */
-	char pathname[128]; /* NoC connector name.         */
-	int noctag;         /* NoC tag used for transfers. */
+	int local;          /* ID of local cluster.  */
+	int dma_local;      /* ID of local DMA.      */
+	int portal_fd;      /* Portal NoC Connector. */
+	int portalid;       /* ID of mailbix.        */
+	char pathname[128]; /* NoC connector name.   */
 
 	/* Invalid portal name. */
 	if (name == NULL)
 		return (-EINVAL);
 
-	local = name_cluster_dma(name);
-	assert(name_cluster_id(name) == k1_get_cluster_id());
+	local = k1_get_cluster_id();
+
+	/* Invalid cluster name. */
+	assert(name_cluster_id(name) == local);
 
 	/* Allocate a portal. */
-	prtid = portal_alloc();
-	if (prtid < 0)
-		return (prtid);
+	portalid = portal_alloc();
+	if (portalid < 0)
+		return (-ENOENT);
 
-	noctag = portal_noctag(local);
-	
 	/* Create underlying portal. */
-	sprintf(pathname,
+	dma_local = name_cluster_dma(name);
+	snprintf(pathname,
+			ARRAY_SIZE(pathname),
 			"/mppa/portal/%d:%d",
-			local,
-			noctag
+			dma_local,
+			portal_noctag(dma_local)
 	);
-	portal_fd = mppa_open(pathname, O_RDONLY);
-	assert(portal_fd != -1);
+	assert((portal_fd = mppa_open(pathname, O_RDONLY) != -1);
 
 	/* Initialize portal. */
-	portals[prtid].portal_fd = portal_fd;
-	portals[prtid].flags &= ~(PORTAL_WRONLY);
+	portals[portalid].dma_local = dma_local;
+	portals[portalid].dma_remote = -1;
+	portals[portalid].portal_fd = portal_fd;
+	portals[portalid].sync_fd = -1;
+	portals[portalid].flags &= ~(PORTAL_WRONLY);
 
-	return (prtid);
+	return (portalid);
 }
 
 /*=======================================================================*
@@ -176,54 +181,57 @@ int portal_create(const char *name)
  *=======================================================================*/
 
 /**
- * @brief Enables operations from a remote.
+ * @brief Enables read operations from a remote.
  *
- * @param prtid  target portal.
- * @param remote Remote to allow.
+ * @param portalid  Target portal.
+ * @param remote    Cluster ID of target remote.
  *
- * @returns Upons successful completion zero is returned. Upon failure, a
- * negative error code is returned instead.
+ * @returns Upons successful completion zero is returned. Upon failure,
+ * a negative error code is returned instead.
  */
-int portal_allow(int prtid, int remote)
+int portal_allow(int portalid, int remote)
 {
-	int sync_fd;
-	char pathname[128];
+	int local;          /* ID of local cluster. */
+	int sync_fd;        /* Sync NoC connector.  */
+	int dma_remote;     /* ID of remote DMA.    */
+	char pathname[128]; /* Portal pathname.     */
 
 	/* Invalid portal ID.*/
-	if ((prtid < 0) || (prtid >= NR_PORTAL))
+	if ((portalid < 0) || (portalid >= NR_PORTAL))
 		return (-EINVAL);
 
 	/*  Invalid portal. */
-	if (!(portals[prtid].flags & PORTAL_USED))
+	if (!(portals[portalid].flags & PORTAL_USED))
 		return (-EINVAL);
 
 	/* Invalid portal. */
-	if (portals[prtid].flags & PORTAL_WRONLY)
+	if (portals[portalid].flags & PORTAL_WRONLY)
 		return (-EINVAL);
 
 	/* Invalid remote. */
-	if (!(((remote >= CCLUSTER0) && (remote <= CCLUSTER15)) || 
-		  ((remote >= IOCLUSTER0) && (remote < IOCLUSTER0 + NR_IOCLUSTER_DMA)) || 
-		  ((remote >= IOCLUSTER1) && (remote < IOCLUSTER1 + NR_IOCLUSTER_DMA))))
-	{
+	if (!(k1_is_iocluster(remote) || k1_is_ccluster(remote)))
 		return (-EINVAL);
-	}
+
+	local = k1_get_cluster_id();
 
 	/* Invalid remote. */
-	if (remote == k1_get_cluster_id())
+	if (remote == local)
 		return (-EINVAL);
 
 	/* Create underlying sync. */
-	sprintf(pathname,
+	dma_remote = (k1_is_ccluster(remote)) ?
+		remote : remote + local%NR_IOCLUSTER_DMA;
+	snprintf(pathname,
+			ARRAY_SIZE(pathname),
 			"/mppa/sync/%d:%d",
-			remote,
-			portal_noctag(remote)
+			dma_remote,
+			portal_noctag(dma_remote)
 	);
-	sync_fd = mppa_open(pathname, O_WRONLY);
-	assert(sync_fd != -1);
+	assert((sync_fd = mppa_open(pathname, O_WRONLY)) != -1);
 
-	portals[prtid].remote = remote;
-	portals[prtid].sync_fd = sync_fd;
+	/* Initialize portal. */
+	portals[portalid].dma_remote = dma_remote;
+	portals[portalid].sync_fd = sync_fd;
 
 	return (0);
 }
@@ -242,52 +250,59 @@ int portal_allow(int prtid, int remote)
  */
 int portal_open(const char *name)
 {
-	int local;          /* ID of local cluster.        */
-	int portal_fd;      /* Portal NoC Connector.       */
-	int sync_fd;        /* Sync NoC connector.         */
-	int prtid;          /* ID of mailbix.              */
-	char pathname[128]; /* NoC connector name.         */
-	int noctag;         /* NoC tag used for transfers. */
+	int local;          /* ID of local cluster.  */
+	int remote;         /* ID of remote cluster. */
+	int dma_remote;     /* ID of remote DMA.     */
+	int dma_local;      /* ID of local DMA.      */
+	int portal_fd;      /* Portal NoC Connector. */
+	int sync_fd;        /* Sync NoC connector.   */
+	int portalid;       /* ID of mailbix.        */
+	char pathname[128]; /* NoC connector name.   */
 
 	/* Invalid portal name. */
 	if (name == NULL)
 		return (-EINVAL);
 
-	local = name_cluster_dma(name);
-	assert(name_cluster_id(name) != k1_get_cluster_id());
+	local = k1_get_cluster_id();
+	remote = name_cluster_id(name);
+
+	/* Invalid cluster name. */
+	assert(remote != local);
 
 	/* Allocate a portal. */
-	prtid = portal_alloc();
-	if (prtid < 0)
-		return (prtid);
+	portalid = portal_alloc();
+	if (portalid < 0)
+		return (-ENOENT);
 
-	noctag = portal_noctag(local);
-	
 	/* Create underlying portal. */
-	sprintf(pathname,
+	dma_remote = name_cluster_dma(name);
+	snprintf(pathname,
+			ARRAY_SIZE(pathname),
 			"/mppa/portal/%d:%d",
-			local,
-			noctag
+			dma_remote,
+			portal_noctag(dma_remote)
 	);
-	portal_fd = mppa_open(pathname, O_WRONLY);
-	assert(portal_fd != -1);
+	assert((portal_fd = mppa_open(pathname, O_WRONLY)) != -1);
 
 	/* Create underlying sync. */
-	sprintf(pathname,
+	dma_local = (k1_is_ccluster(local)) ?
+		local : local + remote%NR_IOCLUSTER_DMA;
+	snprintf(pathname,
+			ARRAY_SIZE(pathname),
 			"/mppa/sync/%d:%d",
-			k1_get_cluster_id(),
-			portal_noctag(k1_get_cluster_id())
+			dma_local,
+			portal_noctag(dma_local)
 	);
-	sync_fd = mppa_open(pathname, O_RDONLY);
-	assert(sync_fd != -1);
+	assert((sync_fd = mppa_open(pathname, O_RDONLY)) != -1);
 
 	/* Initialize portal. */
-	portals[prtid].remote = local;
-	portals[prtid].portal_fd = portal_fd;
-	portals[prtid].sync_fd = sync_fd;
-	portals[prtid].flags |= PORTAL_WRONLY;
+	portals[portalid].dma_local = dma_local;
+	portals[portalid].dma_remote = dma_remote;
+	portals[portalid].portal_fd = portal_fd;
+	portals[portalid].sync_fd = sync_fd;
+	portals[portalid].flags |= PORTAL_WRONLY;
 
-	return (prtid);
+	return (portalid);
 }
 
 /*=======================================================================*
@@ -297,28 +312,28 @@ int portal_open(const char *name)
 /**
  * @brief Reads data from a portal.
  *
- * @param prtid ID of the target portal.
+ * @param portalid ID of the target portal.
  * @param buf   Location from where data should be written.
  * @param n     Number of bytes to read.
  *
  * @returns Upon successful completion zero is returned. Upon failure, a
  * negative error code is returned instead.
  */
-int portal_read(int prtid, void *buf, size_t n)
+int portal_read(int portalid, void *buf, size_t n)
 {
 	uint64_t mask;
 	mppa_aiocb_t aiocb;
 
 	/* Invalid portal ID.*/
-	if ((prtid < 0) || (prtid >= NR_PORTAL))
+	if ((portalid < 0) || (portalid >= NR_PORTAL))
 		return (-EINVAL);
 
 	/*  Invalid portal. */
-	if (!(portals[prtid].flags & PORTAL_USED))
+	if (!(portals[portalid].flags & PORTAL_USED))
 		return (-EINVAL);
 
 	/* Operation no supported. */
-	if (portals[prtid].flags & PORTAL_WRONLY)
+	if (portals[portalid].flags & PORTAL_WRONLY)
 		return (-ENOTSUP);
 
 	/* Invalid buffer. */
@@ -330,13 +345,13 @@ int portal_read(int prtid, void *buf, size_t n)
 		return (-EINVAL);
 
 	/* Setup read operation. */
-	mppa_aiocb_ctor(&aiocb, portals[prtid].portal_fd, buf, n);
+	mppa_aiocb_ctor(&aiocb, portals[portalid].portal_fd, buf, n);
 	assert(mppa_aio_read(&aiocb) != -1);
 
 	/* Unblock remote. */
-	mask = (1 << portals[prtid].remote);
-	assert(mppa_write(portals[prtid].sync_fd, &mask, sizeof(uint64_t)) != -1);
-	mppa_close(portals[prtid].sync_fd);
+	mask = (1 << portals[portalid].dma_local);
+	assert(mppa_write(portals[portalid].sync_fd, &mask, sizeof(uint64_t)) != -1);
+	mppa_close(portals[portalid].sync_fd);
 
 	/* Wait read operation to complete. */
 	assert(mppa_aio_wait(&aiocb) == n);
@@ -351,27 +366,27 @@ int portal_read(int prtid, void *buf, size_t n)
 /**
  * @brief Writes data to a portal.
  *
- * @param prtid ID of the target portal.
+ * @param portalid ID of the target portal.
  * @param buf   Location from where data should be read.
  * @param n     Number of bytes to write.
  *
  * @returns Upon successful completion zero is returned. Upon failure, a
  * negative error code is returned instead.
  */
-int portal_write(int prtid, const void *buf, size_t n)
+int portal_write(int portalid, const void *buf, size_t n)
 {
 	uint64_t mask;
 
 	/* Invalid portal ID.*/
-	if ((prtid < 0) || (prtid >= NR_PORTAL))
+	if ((portalid < 0) || (portalid >= NR_PORTAL))
 		return (-EINVAL);
 
 	/*  Invalid portal. */
-	if (!(portals[prtid].flags & PORTAL_USED))
+	if (!(portals[portalid].flags & PORTAL_USED))
 		return (-EINVAL);
 
 	/* Operation no supported. */
-	if (!(portals[prtid].flags & PORTAL_WRONLY))
+	if (!(portals[portalid].flags & PORTAL_WRONLY))
 		return (-ENOTSUP);
 
 	/* Invalid buffer. */
@@ -383,12 +398,12 @@ int portal_write(int prtid, const void *buf, size_t n)
 		return (-EINVAL);
 
 	/* Wait for remote to be ready. */
-	mask = (1 << k1_get_cluster_id());
-	assert(mppa_ioctl(portals[prtid].sync_fd, MPPA_RX_SET_MATCH, ~mask) != -1);
-	assert(mppa_read(portals[prtid].sync_fd, &mask, sizeof(uint64_t)) != -1);
+	mask = (1 << portals[portalid].dma_local);
+	assert(mppa_ioctl(portals[portalid].sync_fd, MPPA_RX_SET_MATCH, ~mask) != -1);
+	assert(mppa_read(portals[portalid].sync_fd, &mask, sizeof(uint64_t)) != -1);
 
 	/* Write. */
-	assert(mppa_pwrite(portals[prtid].portal_fd, buf, n, 0) == n);
+	assert(mppa_pwrite(portals[portalid].portal_fd, buf, n, 0) == n);
 
 	return (0);
 }
@@ -400,27 +415,27 @@ int portal_write(int prtid, const void *buf, size_t n)
 /**
  * @brief Closes a portal.
  *
- * @param prtid ID of the target portal.
+ * @param portalid ID of the target portal.
  *
  * @returns Upon successful completion zero is returned. Upon failure, a
  * negative error code is returned instead.
  */
-int portal_close(int prtid)
+int portal_close(int portalid)
 {
 	/* Invalid portal ID.*/
-	if ((prtid < 0) || (prtid >= NR_PORTAL))
+	if ((portalid < 0) || (portalid >= NR_PORTAL))
 		return (-EINVAL);
 
 	/*  Invalid portal. */
-	if (!(portals[prtid].flags & PORTAL_USED))
+	if (!(portals[portalid].flags & PORTAL_USED))
 		return (-EINVAL);
 
 	/* Invalid portal. */
-	if (!(portals[prtid].flags & PORTAL_WRONLY))
+	if (!(portals[portalid].flags & PORTAL_WRONLY))
 		return (-EINVAL);
 
-	portal_free(prtid);
-	mppa_close(portals[prtid].sync_fd);
+	portal_free(portalid);
+	mppa_close(portals[portalid].sync_fd);
 
 	return (0);
 }
@@ -432,26 +447,26 @@ int portal_close(int prtid)
 /**
  * @brief Destroys a portal.
  *
- * @param prtid ID of the target portal.
+ * @param portalid ID of the target portal.
  *
  * @returns Upon successful completion zero is returned. Upon failure, a
  * negative error code is returned instead.
  */
-int portal_unlink(int prtid)
+int portal_unlink(int portalid)
 {
 	/* Invalid portal ID.*/
-	if ((prtid < 0) || (prtid >= NR_PORTAL))
+	if ((portalid < 0) || (portalid >= NR_PORTAL))
 		return (-EINVAL);
 
 	/*  Invalid portal. */
-	if (!(portals[prtid].flags & PORTAL_USED))
+	if (!(portals[portalid].flags & PORTAL_USED))
 		return (-EINVAL);
 
 	/* Invalid portal. */
-	if (portals[prtid].flags & PORTAL_WRONLY)
+	if (portals[portalid].flags & PORTAL_WRONLY)
 		return (-EINVAL);
 
-	portal_free(prtid);
+	portal_free(portalid);
 
 	return (0);
 }

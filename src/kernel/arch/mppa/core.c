@@ -19,7 +19,6 @@
 
 #include <nanvix/arch/mppa.h>
 #include <HAL/hal/core/mp.h>
-#include <assert.h>
 
 /*====================================================================*
  * k1_get_cluster_id()                                                *
@@ -83,3 +82,17 @@ inline int k1_is_iocluster(int clusterid)
 {
 	return ((clusterid == IOCLUSTER0) || (clusterid == IOCLUSTER1));
 }	
+
+/*====================================================================*
+ * k1_get_ccluster_freq()                                             *
+ *====================================================================*/
+
+/**
+ * @brief Gets the clock frequency of a compute cluster.
+ *
+ * @return The clock frequency of a compute cluster in Hertz.
+ */
+inline long k1_get_ccluster_freq(void)
+{
+	return (__bsp_frequency);
+}

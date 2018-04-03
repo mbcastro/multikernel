@@ -24,4 +24,6 @@
 		#include <nanvix/arch/mppa.h>
 	#endif
 
+	#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+
 #endif /* NANVIX_HAL_H_ */

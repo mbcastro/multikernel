@@ -24,7 +24,6 @@
 		#error "bad target"
 	#endif
 
-	#include <HAL/hal/core/mp.h>
 	#include <HAL/hal/core/timer.h>
 	#include <HAL/hal/core/diagnostic.h>
 #ifdef _KALRAY_MPPA_256_HIGH_LEVEL
@@ -82,11 +81,6 @@
 	#define CCLUSTER15  15 /**< Compute cluster 15. */
 	#define IOCLUSTER0 128 /**< IO cluster 0.       */
 	#define IOCLUSTER1 192 /**< IO cluster 1.       */
-	
-	/**
-	 * @brief Compute cluster frequency.
-	 */
-	#define CCLUSTER_FREQ (__bsp_frequency)
 
 	/**
 	 * @brief Size (in bytes) of a mailbox message.
@@ -98,6 +92,7 @@
 	extern int k1_get_cpu_id(void);
 	extern int k1_is_ccluster(int);
 	extern int k1_is_iocluster(int);
+	extern long k1_get_ccluster_freq(void);
 
 	/* Forward defnitions. */
 	extern long k1_timer_get(void);
