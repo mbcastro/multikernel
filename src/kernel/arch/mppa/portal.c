@@ -18,14 +18,13 @@
  */
 
 #include <nanvix/arch/mppa.h>
+#include <nanvix/klib.h>
 #include <nanvix/pm.h>
 #include <assert.h>
 #include <errno.h>
 #include <inttypes.h>
 #include <string.h>
 #include <stdio.h>
-
-#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 /**
  * @brief Number of portals.
@@ -161,7 +160,7 @@ int portal_create(const char *name)
 	/* Create underlying portal. */
 	dma_local = name_cluster_dma(name);
 	snprintf(pathname,
-			ARRAY_SIZE(pathname),
+			ARRAY_LENGTH(pathname),
 			"/mppa/portal/%d:%d",
 			dma_local,
 			portal_noctag(dma_local)
@@ -224,7 +223,7 @@ int portal_allow(int portalid, int remote)
 	dma_remote = (k1_is_ccluster(remote)) ?
 		remote : remote + local%NR_IOCLUSTER_DMA;
 	snprintf(pathname,
-			ARRAY_SIZE(pathname),
+			ARRAY_LENGTH(pathname),
 			"/mppa/sync/%d:%d",
 			dma_remote,
 			(k1_is_ccluster(remote)) ? 
@@ -281,7 +280,7 @@ int portal_open(const char *name)
 	/* Create underlying portal. */
 	dma_remote = name_cluster_dma(name);
 	snprintf(pathname,
-			ARRAY_SIZE(pathname),
+			ARRAY_LENGTH(pathname),
 			"/mppa/portal/%d:%d",
 			dma_remote,
 			portal_noctag(dma_remote)
@@ -292,7 +291,7 @@ int portal_open(const char *name)
 	dma_local = (k1_is_ccluster(local)) ?
 		local : local + remote%NR_IOCLUSTER_DMA;
 	snprintf(pathname,
-			ARRAY_SIZE(pathname),
+			ARRAY_LENGTH(pathname),
 			"/mppa/sync/%d:%d",
 			dma_local,
 			(k1_is_ccluster(local)) ? 
