@@ -97,6 +97,9 @@
 	#define k1_get_cluster_id() __k1_get_cluster_id()
 	#define k1_get_cpu_id() __k1_get_cpu_id()
 
+	/* Forward definitions. */
+	extern int k1_is_iocluster(int);
+
 	/* Forward defnitions. */
 	extern long k1_timer_get(void);
 	extern long k1_timer_diff(long, long);
