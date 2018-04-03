@@ -18,7 +18,36 @@
  */
 
 #include <nanvix/arch/mppa.h>
+#include <HAL/hal/core/mp.h>
 #include <assert.h>
+
+/*====================================================================*
+ * k1_get_cluster_id()                                                *
+ *====================================================================*/
+
+/**
+ * @brief Gets the ID of the underlying cluster.
+ *
+ * @return The ID of the underlying cluster.
+ */
+inline int k1_get_cluster_id(void)
+{
+	return (__k1_get_cluster_id());
+}
+
+/*====================================================================*
+ * k1_get_core_id()                                                   *
+ *====================================================================*/
+
+/**
+ * @brief Gets the ID of the underlying core.
+ *
+ * @return The ID of the underlying cluster.
+ */
+inline int k1_get_core_id(void)
+{
+	return (__k1_get_cpu_id());
+}
 
 /*====================================================================*
  * k1_is_ccluster()                                                   *
@@ -36,7 +65,7 @@
 inline int k1_is_ccluster(int clusterid)
 {
 	return ((clusterid =>= CCLUSTER0) || (clusterid <= CCLUSTER15));
-}	
+}
 
 /*====================================================================*
  * k1_is_iocluster()                                                  *

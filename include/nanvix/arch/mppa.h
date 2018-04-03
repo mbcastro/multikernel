@@ -93,11 +93,9 @@
 	 */
 	#define MAILBOX_MSG_SIZE 64
 	
-	/* Forward denitions. */
-	#define k1_get_cluster_id() __k1_get_cluster_id()
-	#define k1_get_cpu_id() __k1_get_cpu_id()
-
 	/* Forward definitions. */
+	extern int k1_get_cluster_id(void);
+	extern int k1_get_cpu_id(void);
 	extern int k1_is_ccluster(int);
 	extern int k1_is_iocluster(int);
 
