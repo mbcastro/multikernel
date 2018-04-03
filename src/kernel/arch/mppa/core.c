@@ -63,7 +63,7 @@ int k1_get_core_id(void)
  */
 inline int k1_is_ccluster(int clusterid)
 {
-	return ((clusterid >= CCLUSTER0) || (clusterid <= CCLUSTER15));
+	return ((clusterid >= CCLUSTER0) && (clusterid <= CCLUSTER15));
 }
 
 /*====================================================================*
