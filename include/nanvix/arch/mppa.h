@@ -98,6 +98,7 @@
 	#define k1_get_cpu_id() __k1_get_cpu_id()
 
 	/* Forward definitions. */
+	extern int k1_is_ccluster(int);
 	extern int k1_is_iocluster(int);
 
 	/* Forward defnitions. */

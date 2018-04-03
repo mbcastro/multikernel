@@ -21,16 +21,34 @@
 #include <assert.h>
 
 /*====================================================================*
+ * k1_is_ccluster()                                                   *
+ *====================================================================*/
+
+/**
+ * @brief Asserts whether or not the target cluster is a compute
+ * cluster.
+ *
+ * @param clusterid ID of the target cluster.
+ *
+ * @return Non zero if the target cluster is a compute cluster and zero
+ * otherwise.
+ */
+inline int k1_is_ccluster(int clusterid)
+{
+	return ((clusterid =>= CCLUSTER0) || (clusterid <= CCLUSTER15));
+}	
+
+/*====================================================================*
  * k1_is_iocluster()                                                  *
  *====================================================================*/
 
 /**
- * @brief Asserts whether or not the target cluster is an IO Cluster.
+ * @brief Asserts whether or not the target cluster is an IO cluster.
  *
  * @param clusterid ID of the target cluster.
  *
- * @return Non zero if the target cluster is and IO Cluster and zero
- * otherwise
+ * @return Non zero if the target cluster is an IO cluster and zero
+ * otherwise.
  */
 inline int k1_is_iocluster(int clusterid)
 {
