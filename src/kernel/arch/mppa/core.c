@@ -43,7 +43,7 @@ inline int k1_get_cluster_id(void)
  *
  * @return The ID of the underlying cluster.
  */
-inline int k1_get_core_id(void)
+int k1_get_core_id(void)
 {
 	return (__k1_get_cpu_id());
 }
@@ -63,7 +63,7 @@ inline int k1_get_core_id(void)
  */
 inline int k1_is_ccluster(int clusterid)
 {
-	return ((clusterid =>= CCLUSTER0) || (clusterid <= CCLUSTER15));
+	return ((clusterid >= CCLUSTER0) || (clusterid <= CCLUSTER15));
 }
 
 /*====================================================================*

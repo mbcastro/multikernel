@@ -42,6 +42,7 @@ rmem-server-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
 					$(SRCDIR)/kernel/arch/mppa/portal.c  \
 					$(SRCDIR)/kernel/arch/mppa/barrier.c \
 					$(SRCDIR)/kernel/arch/mppa/name.c    \
+					$(SRCDIR)/kernel/arch/mppa/core.c    \
 					$(SRCDIR)/servers/rmem.c
 
 # Toolchain Configuration
@@ -66,6 +67,7 @@ master.elf-lflags += -lpcie_queue
 
 cluster-bin += slave.elf
 slave.elf-srcs := $(BENCHDIR)/async-latency/slave.c \
+				  $(SRCDIR)/kernel/arch/mppa/core.c    \
 				  $(SRCDIR)/kernel/arch/mppa/timer.c
 
 # Toolchain Configuration
@@ -93,6 +95,7 @@ portal-latency-master-lflags := -lmppaipc
 
 cluster-bin += portal-latency-slave
 portal-latency-slave-srcs := $(BENCHDIR)/portal-latency/slave.c \
+							 $(SRCDIR)/kernel/arch/mppa/core.c    \
 							  $(SRCDIR)/kernel/arch/mppa/timer.c
 
 # Toolchain Configuration
@@ -113,6 +116,7 @@ rmem-latency-slave-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
 						   $(SRCDIR)/kernel/arch/mppa/barrier.c \
 						   $(SRCDIR)/kernel/arch/mppa/name.c    \
 						   $(SRCDIR)/kernel/arch/mppa/timer.c   \
+						   $(SRCDIR)/kernel/arch/mppa/core.c    \
 						   $(SRCDIR)/kernel/sys/meminit.c       \
 						   $(SRCDIR)/kernel/sys/memread.c       \
 						   $(SRCDIR)/kernel/sys/memwrite.c      \
@@ -124,6 +128,7 @@ rmem-latency-slave-lflags := -lmppaipc
 
 io-bin += rmem-latency-master
 rmem-latency-master-srcs := $(SRCDIR)/kernel/arch/mppa/barrier.c \
+							$(SRCDIR)/kernel/arch/mppa/core.c    \
 							$(BENCHDIR)/rmem-latency/master.c
 
 # Toolchain Configuration
@@ -143,6 +148,7 @@ kmeans-slave-srcs := $(BENCHDIR)/kmeans/slave/slave.c    \
 					 $(SRCDIR)/kernel/arch/mppa/timer.c  \
 					 $(SRCDIR)/kernel/arch/mppa/portal.c  \
 					 $(SRCDIR)/kernel/arch/mppa/name.c    \
+					 $(SRCDIR)/kernel/arch/mppa/core.c    \
 					 $(BENCHDIR)/kmeans/slave/ipc.c
 
 # Toolchain Configuration
@@ -157,6 +163,7 @@ kmeans-master-srcs := $(BENCHDIR)/kmeans/master/main.c    \
 					  $(SRCDIR)/kernel/arch/mppa/timer.c  \
 					  $(SRCDIR)/kernel/arch/mppa/portal.c  \
 					  $(SRCDIR)/kernel/arch/mppa/name.c    \
+					 $(SRCDIR)/kernel/arch/mppa/core.c    \
 					  $(BENCHDIR)/kmeans/master/ipc.c     \
 					  $(BENCHDIR)/kmeans/master/util.c
 

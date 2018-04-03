@@ -25,6 +25,8 @@
 #include <string.h>
 #include <stdio.h>
 
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+
 /**
  * @brief Number of portals.
  */
@@ -117,7 +119,7 @@ static int portal_noctag(int local)
 	else if ((local >= IOCLUSTER0) && (local < (IOCLUSTER0 + NR_IOCLUSTER_DMA)))
 		return (64 + 16 + 0);
 	else if ((local >= IOCLUSTER1) && (local < (IOCLUSTER1 + NR_IOCLUSTER_DMA)))
-		return (64 + 16 + 1);
+		return (64 + 16 + 0);
 
 	return (0);
 }
@@ -164,7 +166,7 @@ int portal_create(const char *name)
 			dma_local,
 			portal_noctag(dma_local)
 	);
-	assert((portal_fd = mppa_open(pathname, O_RDONLY) != -1);
+	assert((portal_fd = mppa_open(pathname, O_RDONLY)) != -1);
 
 	/* Initialize portal. */
 	portals[portalid].dma_local = dma_local;
@@ -306,6 +308,26 @@ int portal_open(const char *name)
 }
 
 /*=======================================================================*
+ * portal_sync()                                                         *
+ *=======================================================================*/
+
+/**
+ * @brief Builds sync mask for a dma.
+ *
+ * @param dma Target dma.
+ *
+ * @return Sync mask.
+ */
+static inline uint64_t portal_sync(int dma)
+{
+	if ((dma >= IOCLUSTER0) && (dma < IOCLUSTER0 + NR_IOCLUSTER_DMA))
+		return (1 << (CCLUSTER15 + 1 + dma%NR_IOCLUSTER_DMA));
+	else if ((dma >= IOCLUSTER1) && (dma < IOCLUSTER1 + NR_IOCLUSTER_DMA))
+		return (1 << (CCLUSTER15 + 1 + NR_IOCLUSTER_DMA + dma%NR_IOCLUSTER_DMA));
+	return (1 << dma);
+}
+
+/*=======================================================================*
  * portal_read()                                                         *
  *=======================================================================*/
 
@@ -349,7 +371,7 @@ int portal_read(int portalid, void *buf, size_t n)
 	assert(mppa_aio_read(&aiocb) != -1);
 
 	/* Unblock remote. */
-	mask = (1 << portals[portalid].dma_local);
+	mask = portal_sync(portals[portalid].dma_local);
 	assert(mppa_write(portals[portalid].sync_fd, &mask, sizeof(uint64_t)) != -1);
 	mppa_close(portals[portalid].sync_fd);
 
@@ -398,7 +420,7 @@ int portal_write(int portalid, const void *buf, size_t n)
 		return (-EINVAL);
 
 	/* Wait for remote to be ready. */
-	mask = (1 << portals[portalid].dma_local);
+	mask = portal_sync(portals[portalid].dma_remote);
 	assert(mppa_ioctl(portals[portalid].sync_fd, MPPA_RX_SET_MATCH, ~mask) != -1);
 	assert(mppa_read(portals[portalid].sync_fd, &mask, sizeof(uint64_t)) != -1);
 
