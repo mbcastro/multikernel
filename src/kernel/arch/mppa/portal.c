@@ -227,7 +227,9 @@ int portal_allow(int portalid, int remote)
 			ARRAY_SIZE(pathname),
 			"/mppa/sync/%d:%d",
 			dma_remote,
-			portal_noctag(dma_remote)
+			(k1_is_ccluster(remote)) ? 
+				portal_noctag(dma_remote) : 
+				portal_noctag(dma_remote) + portals[portalid].dma_local
 	);
 	assert((sync_fd = mppa_open(pathname, O_WRONLY)) != -1);
 
@@ -293,7 +295,9 @@ int portal_open(const char *name)
 			ARRAY_SIZE(pathname),
 			"/mppa/sync/%d:%d",
 			dma_local,
-			portal_noctag(dma_local)
+			(k1_is_ccluster(local)) ? 
+				portal_noctag(dma_local) : 
+				portal_noctag(dma_local) + dma_remote
 	);
 	assert((sync_fd = mppa_open(pathname, O_RDONLY)) != -1);
 
