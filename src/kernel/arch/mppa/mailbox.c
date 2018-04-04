@@ -96,6 +96,7 @@ static void mailbox_free(int mbxid)
 	mailboxes[mbxid].flags = 0;
 	mppa_close(mailboxes[mbxid].fd);
 }
+
 /*=======================================================================*
  * mailbox_noctag()                                                      *
  *=======================================================================*/

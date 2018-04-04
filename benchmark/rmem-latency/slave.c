@@ -122,6 +122,7 @@ static void kernel_read(int size, int nclusters, int clusterid)
 int main(int argc, char **argv)
 {
 	int size;
+	int barrier;
 	int nclusters;
 	int clusterid;
 	
@@ -141,8 +142,8 @@ int main(int argc, char **argv)
 	k1_timer_init();
 
 	/* Wait master IO cluster. */
-	barrier_open(1);
-	barrier_wait();
+	barrier = barrier_open(nclusters);
+	barrier_wait(barrier);
 
 	if (!strcmp(argv[1], "write"))
 		kernel_write(size, nclusters, clusterid);
@@ -150,10 +151,10 @@ int main(int argc, char **argv)
 		kernel_read(size, nclusters, clusterid);
 
 	/* Wait master IO cluster. */
-	barrier_wait();
+	barrier_wait(barrier);
 
 	/* House keeping. */
-	barrier_close();
+	barrier_close(barrier);
 
 	return (EXIT_SUCCESS);
 }
