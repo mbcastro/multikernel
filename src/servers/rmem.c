@@ -255,8 +255,9 @@ static void *rmem_server(void *args)
  */
 int main(int argc, char **argv)
 {
-	int dmas[NR_IOCLUSTER_DMA];       /* DMA IDs.    */
-	pthread_t tids[NR_IOCLUSTER_DMA]; /* Thread IDs. */
+	int global_barrier;               /* System barrier. */
+	int dmas[NR_IOCLUSTER_DMA];       /* DMA IDs.        */
+	pthread_t tids[NR_IOCLUSTER_DMA]; /* Thread IDs.     */
 
 	((void) argc);
 	((void) argv);
@@ -289,15 +290,15 @@ int main(int argc, char **argv)
 #endif
 
 	/* Release master IO cluster. */
-	barrier_open(NR_IOCLUSTER);
-	barrier_release();
+	global_barrier = barrier_open(NR_IOCLUSTER);
+	barrier_wait(global_barrier);
 
 	/* Wait for RMEM server threads. */
 	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
 		pthread_join(tids[i], NULL);
 
 	/* House keeping. */
-	barrier_close();
+	barrier_close(global_barrier);
 
 	return (EXIT_SUCCESS);
 }

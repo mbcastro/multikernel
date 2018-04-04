@@ -62,9 +62,8 @@
  *=======================================================================*/
 
 	/* Forward definitions. */
-	extern void barrier_open(int);
-	extern int barrier_wait(void);
-	extern int barrier_release(void);
-	extern void barrier_close(void);
+	extern int barrier_open(int);
+	extern int barrier_wait(int);
+	extern int barrier_close(int);
 
 #endif /* NANVIX_PM_H_ */

@@ -75,6 +75,7 @@ static void join_slaves(int nclusters)
 int main(int argc, char **argv)
 {
 	int size;
+	int global_barrier;
 	int nclusters;
 
 	assert(argc == 4);
@@ -83,29 +84,27 @@ int main(int argc, char **argv)
 	nclusters = atoi(argv[2]);
 	assert((size = atoi(argv[3])) <= RMEM_BLOCK_SIZE);
 
+#ifdef DEBUG
+	printf("[SPAWNER] server alive\n");
+#endif
+
 	/* Wait RMEM server. */
-	barrier_open(nclusters);
-	barrier_wait();
+	global_barrier = barrier_open(NR_IOCLUSTER);
+	barrier_wait(global_barrier);
 
 #ifdef DEBUG
-	printf("[IOCLUSTER0] spawning kernels\n");
+	printf("[SPAWNER] spawning kernels\n");
 #endif
 
 	spawn_slaves(nclusters, argv);
 
-	/* Wait clients */
-	barrier_wait();
-
 #ifdef DEBUG
-	printf("[IOCLUSTER0] waiting kernels\n");
+	printf("[SPAWNER] waiting kernels\n");
 #endif
 
-	/* Wait clients. */
-	barrier_wait();
-
 	/* House keeping. */
-	barrier_close();
 	join_slaves(nclusters);
+	barrier_close(global_barrier);
 
 	return (EXIT_SUCCESS);
 }

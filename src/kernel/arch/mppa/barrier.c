@@ -18,7 +18,7 @@
  */
 
 #include <nanvix/arch/mppa.h>
-#include <nanvix/pm.h>
+#include <nanvix/klib.h>
 #include <assert.h>
 #include <inttypes.h>
 #include <errno.h>
@@ -26,13 +26,100 @@
 #include <stdio.h>
 
 /**
+ * @brief Number of barriers.
+ */
+#define NR_BARRIER 3
+
+/**
+ * @brief Mailbox flags.
+ */
+/**@{*/
+#define BARRIER_USED   (1 << 0)
+#define BARRIER_WRONLY (1 << 1)
+/**@}*/
+
+/**
+ *
+ */
+
+/**
  * @brief Barrier.
  */
-struct
+struct barrier
 {
-	int local;  /**< Local cluster sync.   */
+	int local;  /**< Local cluster sync.  */
 	int remote; /**< Remote cluster sync. */
-} barrier;
+	int flags;  /**< Flags.               */
+};
+
+/**
+ * @brief table of barriers.
+ */
+static struct barrier barriers[NR_BARRIER];
+
+/*=======================================================================*
+ * barrier_alloc()                                                       *
+ *=======================================================================*/
+
+/**
+ * @brief Allocates a barrier.
+ *
+ * @return Upon successful completion the ID of the newly allocated
+ * barrier is returned. Upon failure, a negative error code is returned
+ * instead.
+ */
+static int barrier_alloc(void)
+{
+	/* Search for a free barrier. */
+	for (int i = 0; i < NR_BARRIER; i++)
+	{
+		/* Found. */
+		if (!(barriers[i].flags & BARRIER_USED))
+		{
+			barriers[i].flags |= BARRIER_USED;
+			return (i);
+		}
+	}
+
+	return (-ENOENT);
+}
+
+/*=======================================================================*
+ * barrier_free()                                                        *
+ *=======================================================================*/
+
+/**
+ * @brief Frees a barrier.
+ *
+ * @param barrierid ID of the target barrier.
+ */
+static void barrier_free(int barrierid)
+{
+	/* Sanity check. */
+	assert((barrierid >= 0) && (barrierid < NR_BARRIER));
+	assert(barriers[barrierid].flags & BARRIER_USED);
+
+	barriers[barrierid].flags = 0;
+}
+
+/*=======================================================================*
+ * barrier_noctag()                                                      *
+ *=======================================================================*/
+
+/**
+ * @brief Computes the barrier NoC tag for a cluster.
+ *
+ * @param local Id of target cluster.
+ */
+static int barrier_noctag(int local)
+{
+	if ((local == IOCLUSTER0) || (local == IOCLUSTER1))
+		return (2);
+	else if (local == CCLUSTER0)
+		return (3);
+
+	return (4);
+}
 
 /*=======================================================================*
  * barrier_open()                                                        *
@@ -41,124 +128,211 @@ struct
 /**
  * @brief Opens the global barrier.
  *
- * @param ncclusters Number of compute clusters in the barrier.
+ * @param nclusters Number of compute clusters in the barrier.
  */
-void barrier_open(int ncclusters)
+int barrier_open(int ncclusters)
 {
 	int local;
+	int barrierid;
 	uint64_t mask;
 	char pathname[128];
 
 	local = k1_get_cluster_id();
 
-	/* I0 1 cluster barrier. */
-	if (local == IOCLUSTER1)
+	/* Allocate barrier. */
+	barrierid = barrier_alloc();
+	if (barrierid < 0)
+		return (-ENOENT);
+
+	/* I0 0 cluster barrier. */
+	if (local == IOCLUSTER0)
 	{
-		sprintf(pathname, "/mppa/sync/%d:4", IOCLUSTER0);
-		assert((barrier.remote = mppa_open(pathname, O_WRONLY)) != -1);
+		snprintf(pathname,
+			ARRAY_LENGTH(pathname),
+			"/mppa/sync/%d:%d",
+			IOCLUSTER0,
+			barrier_noctag(IOCLUSTER0)
+		);
+		assert((barriers[barrierid].local = mppa_open(pathname, O_RDONLY)) != -1);
+
+		mask = 0;
+		assert(mppa_ioctl(barriers[barrierid].local, MPPA_RX_SET_MATCH, mask) == 0);
+
+		snprintf(pathname,
+			ARRAY_LENGTH(pathname),
+			"/mppa/sync/%d:%d",
+			IOCLUSTER1,
+			barrier_noctag(IOCLUSTER1)
+		);
+		assert((barriers[barrierid].remote = mppa_open(pathname, O_WRONLY)) != -1);
 	}
 
 	/* IO 0 cluster barrier. */
-	else if (local == IOCLUSTER0)
+	else if (local == IOCLUSTER1)
 	{
-		int cclusters[NR_CCLUSTER];
+		snprintf(pathname,
+			ARRAY_LENGTH(pathname),
+			"/mppa/sync/%d:%d",
+			IOCLUSTER1,
+			barrier_noctag(IOCLUSTER1)
+		);
+		assert((barriers[barrierid].local = mppa_open(pathname, O_RDONLY)) != -1);
 
-		sprintf(pathname, "/mppa/sync/%d:4", IOCLUSTER0);
-		assert((barrier.local = mppa_open(pathname, O_RDONLY)) != -1);
-		sprintf(pathname, "/mppa/sync/[%d..%d]:4", CCLUSTER0, CCLUSTER15);
-		assert((barrier.remote = mppa_open(pathname, O_WRONLY)) != -1);
+		mask = 0;
+		assert(mppa_ioctl(barriers[barrierid].local, MPPA_RX_SET_MATCH, mask) == 0);
 
-		mask = ((uint64_t) -1) & ~(1 << (ncclusters - 1));
-		assert(mppa_ioctl(barrier.local, MPPA_RX_SET_MATCH, mask) == 0);
-
-		for (int i = 0; i < ncclusters; i++)
-			cclusters[i] = i;
-
-		assert(mppa_ioctl(barrier.remote, MPPA_TX_SET_RX_RANKS, ncclusters, cclusters) == 0);
+		snprintf(pathname,
+			ARRAY_LENGTH(pathname),
+			"/mppa/sync/%d:%d",
+			IOCLUSTER0,
+			barrier_noctag(IOCLUSTER0)
+		);
+		assert((barriers[barrierid].remote = mppa_open(pathname, O_WRONLY)) != -1);
 	}
 
 	else
 	{
-		sprintf(pathname, "/mppa/sync/%d:4", local);
-		assert((barrier.local = mppa_open(pathname, O_RDONLY)) != -1);
-		sprintf(pathname, "/mppa/sync/%d:4", IOCLUSTER0);
-		assert((barrier.remote = mppa_open(pathname, O_WRONLY)) != -1);
+		/* Invalid number of clusters. */
+		if ((ncclusters < 2) || (ncclusters > NR_CCLUSTER))
+			return (-EINVAL);
 
-		mask = 0;
-		assert(mppa_ioctl(barrier.local, MPPA_RX_SET_MATCH, mask) == 0);
+		/* Master compute cluster. */
+		if (local == CCLUSTER0)
+		{
+			int cclusters[NR_CCLUSTER];
+
+			snprintf(pathname,
+				ARRAY_LENGTH(pathname),
+				"/mppa/sync/%d:%d",
+				CCLUSTER0,
+				barrier_noctag(CCLUSTER0)
+			);
+			assert((barriers[barrierid].local = mppa_open(pathname, O_RDONLY)) != -1);
+
+			mask = ~((1 << (ncclusters - 1)) - 1);
+			assert(mppa_ioctl(barriers[barrierid].local, MPPA_RX_SET_MATCH, mask) == 0);
+
+			snprintf(pathname,
+				ARRAY_LENGTH(pathname),
+				"/mppa/sync/[%d..%d]:%d",
+				CCLUSTER1,
+				CCLUSTER0 + (ncclusters - 1),
+				barrier_noctag(CCLUSTER0 + ncclusters)
+			);
+			assert((barriers[barrierid].remote = mppa_open(pathname, O_WRONLY)) != -1);
+
+			for (int i = 0; i < (ncclusters - 1); i++)
+				cclusters[i] = i;
+			assert(mppa_ioctl(barriers[barrierid].remote, MPPA_TX_SET_RX_RANKS, ncclusters - 1, cclusters) == 0);
+		}
+		else
+		{
+			snprintf(pathname,
+				ARRAY_LENGTH(pathname),
+				"/mppa/sync/[%d..%d]:%d",
+				CCLUSTER1,
+				CCLUSTER0 + (ncclusters - 1),
+				barrier_noctag(CCLUSTER0 + ncclusters)
+			);
+			assert((barriers[barrierid].local = mppa_open(pathname, O_RDONLY)) != -1);
+
+			mask = 0;
+			assert(mppa_ioctl(barriers[barrierid].local, MPPA_RX_SET_MATCH, mask) == 0);
+
+			snprintf(pathname,
+				ARRAY_LENGTH(pathname),
+				"/mppa/sync/%d:%d",
+				CCLUSTER0,
+				barrier_noctag(CCLUSTER0)
+			);
+			assert((barriers[barrierid].remote = mppa_open(pathname, O_WRONLY)) != -1);
+		}
 	}
+
+	return (barrierid);
 }
 
 /*=======================================================================*
  * barrier_wait()                                                        *
  *=======================================================================*/
 
-int barrier_wait(void)
+/**
+ * @brief Waits on a barrier.
+ *
+ * @param barrierid ID of the target barrier.
+ */
+int barrier_wait(int barrierid)
 {
 	int local;
 	uint64_t mask;
 
-	local = k1_get_cluster_id();
-
-	/* Invalid cluster. */
-	if (local == IOCLUSTER1)
+	/* Invalid barrier ID. */
+	if ((barrierid < 0) || (barrierid >= NR_BARRIER))
 		return (-EINVAL);
+
+	/* Invalid barrier. */
+	if (!(barriers[barrierid].flags & BARRIER_USED))
+		return (-EINVAL);
+
+	local = k1_get_cluster_id();
 
 	/* IO 0 cluster barrier. */
 	if (local == IOCLUSTER0)
 	{
-		assert(mppa_read(barrier.local, &mask, sizeof(uint64_t)) == sizeof(uint64_t));
+		assert(mppa_read(barriers[barrierid].local, &mask, sizeof(uint64_t)) == sizeof(uint64_t));
 		mask = ~0;	
-		assert(mppa_write(barrier.remote, &mask, sizeof(uint64_t)) == sizeof(uint64_t));
+		assert(mppa_write(barriers[barrierid].remote, &mask, sizeof(uint64_t)) == sizeof(uint64_t));
 	}
+	else if (local == IOCLUSTER1)
+	{
+		mask = ~0;	
+		assert(mppa_write(barriers[barrierid].remote, &mask, sizeof(uint64_t)) == sizeof(uint64_t));
+		assert(mppa_read(barriers[barrierid].local, &mask, sizeof(uint64_t)) == sizeof(uint64_t));
+	}
+
 	/* Compute cluster barrier. */
 	else
 	{
-		mask = 1 << k1_get_cluster_id();
-		assert(mppa_write(barrier.remote, &mask, sizeof(uint64_t)) == sizeof(uint64_t));
-		assert(mppa_read(barrier.local, &mask, sizeof(uint64_t)) == sizeof(uint64_t));
+		/* Master compute cluster. */
+		if (local == CCLUSTER0)
+		{
+			assert(mppa_read(barriers[barrierid].local, &mask, sizeof(uint64_t)) == sizeof(uint64_t));
+			mask = ~0;
+			assert(mppa_write(barriers[barrierid].remote, &mask, sizeof(uint64_t)) == sizeof(uint64_t));
+		}
+
+		/* Worker compute cluster. */
+		else
+		{
+			mask = 1 << (local - 1);
+			assert(mppa_write(barriers[barrierid].remote, &mask, sizeof(uint64_t)) == sizeof(uint64_t));
+			assert(mppa_read(barriers[barrierid].local, &mask, sizeof(uint64_t)) == sizeof(uint64_t));
+		}
 	}
 	
 	return (0);
 }
 
-/*=======================================================================*
- * barrier_release()                                                     *
- *=======================================================================*/
-
-int barrier_release(void)
-{
-	int local;
-	uint64_t mask;
-
-	local = k1_get_cluster_id();
-
-	/* Invalid cluster. */
-	if (local != IOCLUSTER1)
-		return (-EINVAL);
-
-	mask = ~0;	
-	assert(mppa_write(barrier.remote, &mask, sizeof(uint64_t)) == sizeof(uint64_t));
-
-	return (0);
-}
-
-/*=======================================================================*
- * barrier_close()                                                       *
- *=======================================================================*/
-
 /**
  * @brief Closes the global barrier.
+ *
+ * @param barrierid ID of the target barrier.
  */
-void barrier_close(void)
+int barrier_close(int barrierid)
 {
-	int local;
+	/* Invalid barrier ID. */
+	if ((barrierid < 0) || (barrierid >= NR_BARRIER))
+		return (-EINVAL);
 
-	local = k1_get_cluster_id();
+	/* Invalid barrier. */
+	if (!(barriers[barrierid].flags & BARRIER_USED))
+		return (-EINVAL);
 
-	/* House keeping. */
-	if (local != IOCLUSTER1)
-		assert(mppa_close(barrier.local) != -1);
-	assert(mppa_close(barrier.remote) != -1);
+	assert(mppa_close(barriers[barrierid].local) != -1);
+	assert(mppa_close(barriers[barrierid].remote) != -1);
+
+	barrier_free(barrierid);
+
+	return (0);
 }
 
