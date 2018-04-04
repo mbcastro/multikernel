@@ -148,8 +148,7 @@ kmeans-slave-srcs := $(BENCHDIR)/kmeans/slave/slave.c    \
 					 $(SRCDIR)/kernel/arch/mppa/timer.c  \
 					 $(SRCDIR)/kernel/arch/mppa/portal.c  \
 					 $(SRCDIR)/kernel/arch/mppa/name.c    \
-					 $(SRCDIR)/kernel/arch/mppa/core.c    \
-					 $(BENCHDIR)/kmeans/slave/ipc.c
+					 $(SRCDIR)/kernel/arch/mppa/core.c
 
 # Toolchain Configuration
 kmeans-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
