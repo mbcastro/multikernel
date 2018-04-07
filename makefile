@@ -30,7 +30,7 @@ cflags += -Wall -Wextra -Werror
 cflags += -Winit-self -Wswitch-default -Wfloat-equal -Wundef -Wshadow -Wuninitialized
 cflags += -O3 
 cflags += -I $(INCDIR)
-cflags += -D_KALRAY_MPPA256
+cflags += -D_KALRAY_MPPA256 -DDEBUG
 lflags := -Wl,--defsym=_LIBNOC_DISABLE_FIFO_FULL_CHECK=0
 
 #=============================================================================
@@ -107,6 +107,34 @@ portal-latency-objs := portal-latency-master portal-latency-slave
 portal-latency-name := portal-latency.img
 
 #=============================================================================
+# Mailbox Benchmark
+#=============================================================================
+
+cluster-bin += mailbox-slave
+mailbox-slave-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
+						   $(SRCDIR)/kernel/arch/mppa/name.c    \
+						   $(SRCDIR)/kernel/arch/mppa/timer.c   \
+						   $(SRCDIR)/kernel/arch/mppa/core.c    \
+						   $(BENCHDIR)/mailbox/slave.c
+
+# Toolchain Configuration
+mailbox-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL -DDEBUG_MAILBOX
+mailbox-slave-lflags := -lmppaipc
+
+io-bin += mailbox-master
+mailbox-master-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
+						   $(SRCDIR)/kernel/arch/mppa/name.c    \
+							$(SRCDIR)/kernel/arch/mppa/core.c    \
+							$(BENCHDIR)/mailbox/master.c
+
+# Toolchain Configuration
+mailbox-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL -DDEBUG_MAILBOX
+mailbox-master-lflags := -lmppaipc
+
+mailbox-objs := rmem-server mailbox-slave mailbox-master
+mailbox-name := mailbox.img
+
+#=============================================================================
 # RMEM Latency Benchmark
 #=============================================================================
 
@@ -143,12 +171,17 @@ rmem-latency-name := rmem-latency.img
 #=============================================================================
 
 cluster-bin += kmeans-slave
-kmeans-slave-srcs := $(BENCHDIR)/kmeans/slave/slave.c    \
-					 $(BENCHDIR)/kmeans/slave/vector.c   \
-					 $(SRCDIR)/kernel/arch/mppa/timer.c  \
+kmeans-slave-srcs := $(BENCHDIR)/kmeans/slave/slave.c     \
+					 $(BENCHDIR)/kmeans/slave/vector.c    \
+					 $(SRCDIR)/kernel/arch/mppa/mailbox.c \
 					 $(SRCDIR)/kernel/arch/mppa/portal.c  \
+					 $(SRCDIR)/kernel/arch/mppa/barrier.c \
 					 $(SRCDIR)/kernel/arch/mppa/name.c    \
-					 $(SRCDIR)/kernel/arch/mppa/core.c
+					 $(SRCDIR)/kernel/arch/mppa/timer.c   \
+					 $(SRCDIR)/kernel/arch/mppa/core.c    \
+					 $(SRCDIR)/kernel/sys/meminit.c       \
+					 $(SRCDIR)/kernel/sys/memread.c       \
+					 $(SRCDIR)/kernel/sys/memwrite.c
 
 # Toolchain Configuration
 kmeans-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
@@ -156,16 +189,21 @@ kmeans-slave-cflags += -I $(BENCHDIR)/include -fopenmp
 kmeans-slave-lflags := -lmppaipc -lm -lgomp
 
 io-bin += kmeans-master
-kmeans-master-srcs := $(BENCHDIR)/kmeans/master/main.c    \
-					  $(BENCHDIR)/kmeans/master/master.c  \
-					  $(BENCHDIR)/kmeans/master/vector.c  \
-					  $(SRCDIR)/kernel/arch/mppa/timer.c  \
+kmeans-master-srcs := $(BENCHDIR)/kmeans/master/main.c     \
+					  $(BENCHDIR)/kmeans/master/master.c   \
+					  $(BENCHDIR)/kmeans/master/vector.c   \
+					  $(BENCHDIR)/kmeans/master/util.c     \
+					  $(BENCHDIR)/kmeans/master/ipc.c      \
+					  $(SRCDIR)/kernel/arch/mppa/mailbox.c \
 					  $(SRCDIR)/kernel/arch/mppa/portal.c  \
+					  $(SRCDIR)/kernel/arch/mppa/barrier.c \
 					  $(SRCDIR)/kernel/arch/mppa/name.c    \
-					 $(SRCDIR)/kernel/arch/mppa/core.c    \
-					  $(BENCHDIR)/kmeans/master/ipc.c     \
-					  $(BENCHDIR)/kmeans/master/util.c
-
+					  $(SRCDIR)/kernel/arch/mppa/timer.c   \
+					  $(SRCDIR)/kernel/arch/mppa/core.c    \
+					  $(SRCDIR)/kernel/sys/meminit.c       \
+					  $(SRCDIR)/kernel/sys/memread.c       \
+					  $(SRCDIR)/kernel/sys/memwrite.c
+ 
 # Toolchain Configuration
 kmeans-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
 kmeans-master-cflags += -I $(BENCHDIR)/include
@@ -178,6 +216,6 @@ kmeans-name := kmeans.img
 # MPPA Binary
 #=============================================================================
 
-mppa-bin := portal-latency async-latency rmem-latency kmeans
+mppa-bin := portal-latency async-latency mailbox rmem-latency kmeans
 
 include $(K1_TOOLCHAIN_DIR)/share/make/Makefile.kalray
