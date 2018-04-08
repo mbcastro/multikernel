@@ -176,17 +176,17 @@ kmeans-objs := rmem-server kmeans-slave kmeans-master
 kmeans-name := kmeans.img
 
 #=============================================================================
-# insertion_sort Benchmark Kernel
+# Insertion_sort Benchmark Kernel
 #=============================================================================
 
 cluster-bin += insertion_sort-slave
 insertion_sort-slave-srcs := $(BENCHDIR)/insertion_sort/slave/slave.c    \
-					 $(BENCHDIR)/insertion_sort/slave/vector.c   \
+					 $(BENCHDIR)/insertion_sort/slave/sort.c   \
 					 $(SRCDIR)/kernel/arch/mppa/timer.c  \
 					 $(SRCDIR)/kernel/arch/mppa/portal.c  \
 					 $(SRCDIR)/kernel/arch/mppa/name.c    \
-					 $(SRCDIR)/kernel/arch/mppa/core.c    \
-					 $(BENCHDIR)/insertion_sort/slave/ipc.c
+					 $(SRCDIR)/kernel/arch/mppa/core.c    
+#$(BENCHDIR)/insertion_sort/slave/ipc.c
 
 # Toolchain Configuration
 insertion_sort-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
@@ -195,14 +195,19 @@ insertion_sort-slave-lflags := -lmppaipc -lm -lgomp
 
 io-bin += insertion_sort-master
 insertion_sort-master-srcs := $(BENCHDIR)/insertion_sort/master/main.c    \
-					  $(BENCHDIR)/insertion_sort/master/master.c  \
-					  $(BENCHDIR)/insertion_sort/master/vector.c  \
+					  $(BENCHDIR)/insertion_sort/master/bucketsort.c   \
+					  $(BENCHDIR)/insertion_sort/master/bucket.c \
+					  $(BENCHDIR)/insertion_sort/master/minibucket.c \
 					  $(SRCDIR)/kernel/arch/mppa/timer.c  \
 					  $(SRCDIR)/kernel/arch/mppa/portal.c  \
 					  $(SRCDIR)/kernel/arch/mppa/name.c    \
-					 $(SRCDIR)/kernel/arch/mppa/core.c    \
-					  $(BENCHDIR)/insertion_sort/master/ipc.c     \
+					  $(SRCDIR)/kernel/arch/mppa/core.c    \
+					  $(BENCHDIR)/insertion_sort/master/ipc.c  \
+					  $(BENCHDIR)/insertion_sort/master/message.c \
 					  $(BENCHDIR)/insertion_sort/master/util.c
+
+
+#$(BENCHDIR)/insertion_sort/master/ipc.c     
 
 # Toolchain Configuration
 insertion_sort-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
@@ -216,6 +221,6 @@ insertion_sort-name := insertion_sort.img
 # MPPA Binary
 #=============================================================================
 
-mppa-bin := portal-latency async-latency rmem-latency kmeans insertion_sort
+mppa-bin := portal-latency async-latency rmem-latency insertion_sort
 
 include $(K1_TOOLCHAIN_DIR)/share/make/Makefile.kalray

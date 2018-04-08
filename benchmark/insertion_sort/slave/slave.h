@@ -5,6 +5,8 @@
 #ifndef SLAVE_H_
 #define SLAVE_H_
 
+#define CLUSTER_WORKLOAD 0xfffff /* 1 MB */
+
 /*===============================================================*
  * IPC                                                           *
  *===============================================================*/
@@ -21,4 +23,5 @@ extern int rank;
 extern int infd;
 extern int outfd;
 
+extern long total;
 #endif /* SLAVE_H_ */

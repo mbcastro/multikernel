@@ -10,6 +10,19 @@
 #include <nanvix/arch/mppa.h>
 #include <stddef.h>
 
+
+/* Message types. */
+#define DIE          0 /* Die.                */
+#define SORTWORK     1 /* Sort array.         */
+#define SORTRESULT   2 /* Sort array result.  */
+#define FINDWORK     3 /* Find pivot element. */
+#define FINDRESULT   4 /* Find pivot element. */
+#define REDUCTWORK   5 /* Row reduction.      */
+#define REDUCTRESULT 6 /* Row reduction.      */
+
+
+
+
 /*============================================================================*
  *                             Mini-Buckets Library
  *============================================================================*/
@@ -24,9 +37,9 @@
  */
 struct minibucket
 {
-    int size;                      /* Current size.               */
-    int elements[MINIBUCKET_SIZE]; /* Elements.                   */
-    struct minibucket *next;       /* Next mini-bucket in a list. */
+	int size;                      /* Current size.               */
+	int elements[MINIBUCKET_SIZE]; /* Elements.                   */
+	struct minibucket *next;       /* Next mini-bucket in a list. */
 };
 
 /*
@@ -43,31 +56,31 @@ extern void minibucket_destroy(struct minibucket *minib);
  * Asserts if a mini-bucket is empty.
  */
 #define minibucket_empty(minib) \
-    ((minib)->size == 0)
+	((minib)->size == 0)
 
 /*
  * Asserts if a bucket is full.
  */
 #define minibucket_full(minib) \
-    ((minib)->size == MINIBUCKET_SIZE)
+	((minib)->size == MINIBUCKET_SIZE)
 
 /*
  * Pushes an item onto a mini-bucket.
  */
 #define minibucket_push(minib, x) \
-    ((minib)->elements[(minib)->size++] = (x))
+	((minib)->elements[(minib)->size++] = (x))
 
 /*
  * Pops an item from a mini-bucket.
  */
 #define minibucket_pop(minib, x) \
-    ((x) = (minib)->elements[--(minib)->size])
+	((x) = (minib)->elements[--(minib)->size])
 
 /*
  * Returns the top element in a bucket.
  */
 #define minibucket_top(minib) \
-    ((minib)->elements[(minib)->size - 1])
+	((minib)->elements[(minib)->size - 1])
 
 /*============================================================================*
  *                                Buckets Library
@@ -78,8 +91,8 @@ extern void minibucket_destroy(struct minibucket *minib);
  */
 struct bucket
 {
-    int size;                /* Number of elements.  */
-    struct minibucket *head; /* List of mini-buckets.*/
+	int size;                /* Number of elements.  */
+	struct minibucket *head; /* List of mini-buckets.*/
 };
 
 /*
@@ -116,8 +129,18 @@ extern void bucket_insert(struct bucket **b, int x);
  * Returns the size of a bucket.
  */
 #define bucket_size(b) \
-    ((b)->size)
-}
+	((b)->size)
+
+/*===============================================================*
+ * Utility                                                       *
+ *===============================================================*/
+
+/* Forward definitions. */
+extern void error(const char *);
+extern void *scalloc(size_t, size_t);
+extern void *smalloc(size_t);
+extern void srandnum(int);
+extern unsigned randnum(void);
 
 /*===============================================================*
  * IPC                                                           *
@@ -137,26 +160,124 @@ extern int infd;
 extern int outfd[NR_CCLUSTER];
 
 /*===============================================================*
- * Utility
+ * Message                                                       *
  *===============================================================*/
 
-/* Forward definitions. */
-extern void error(const char *);
-extern void *scalloc(size_t, size_t);
-extern void *smalloc(size_t);
-extern void srandnum(int);
-extern unsigned randnum(void);
+
+/*
+ * 	 * Message.
+ * 	 	 */
+struct message
+{
+	int type; /* Message type (see above). */
+
+	union
+	{
+		/* SORTWORK. */
+		struct 
+		{
+			int id;   /* Bucket ID.       */
+			int size; /* Minibucket size. */
+		} sortwork;
+
+		/* SORTRESULT. */
+		struct
+		{
+			int id;   /* Bucket ID.       */
+			int size; /* Minibucket size. */
+		} sortresult;
+
+		/* FINDWORK. */
+		struct 
+		{
+			int i0, j0; /* Block start.  */
+			int height; /* Block height. */
+			int width;  /* Block width.  */
+		} findwork;
+
+		/* FINDRESULT. */
+		struct
+		{
+			int ipvt;    /* ith index of pivot. */
+			int jpvt;    /* jth index of pivot. */
+			int i0, j0;  /* Block start.        */
+		} findresult;
+
+		/* REDUCTWORK. */
+		struct
+		{
+			int ipvt;   /* Row index of pivot. */
+			int i0, j0; /* Block start.        */
+			int height; /* Block height.       */
+			int width;  /* Block width.        */
+		} reductwork;
+
+		/* REDUCTRESULT. */
+		struct
+		{
+			int i0, j0; /* Block start.  */
+			int height; /* Block height. */
+			int width;  /* Block width.  */
+
+		} reductresult;
+	} u;
+
+	/* Next message of a list. */
+	struct message *next;
+};
+
+/*
+ * 	 * Creates a message.
+ * 	 	 */
+extern struct message *message_create(int type, ...);
+
+/*
+ * 	 * Destroys a message.
+ * 	 	 */
+extern void message_destroy(struct message *msg);
+
+/*
+ * 	 * Receives a message.
+ * 	 	 */
+extern struct message *message_receive(int infd, int remote);
+
+/*
+ * 	 * Sends a message.
+ * 	 	 */
+extern void message_send(int outfd, struct message *msg);
+
+/*
+ * 	 * Asserts if a list is empty.
+ * 	 	 */
+#define empty(l)  \
+	((l) == NULL) \
+
+/*
+ * 	 * Pushes a message on a list.
+ * 	 	 */
+#define push(l, msg)                \
+{ (msg)->next = (l); (l) = msg; } \
+
+/*
+ * 	 * Pops a message from a list.
+ * 	 	 */
+#define pop(l, msg)                   \
+{ (msg) = (l); (l) = (msg)->next; } \
+
+
+
 
 /*===============================================================*
  * Kernel                                                        *
  *===============================================================*/
 
 /* Forward definitions. */
-// extern int *insertion_sort(vector_t *, int, int, float);
+extern void bucketsort(int*, int);
 
 extern long master;
 extern long slave[NR_CCLUSTER];
 extern long communication;
+extern long master;
 extern size_t data_sent;
 extern size_t data_received;
 extern unsigned nsend;

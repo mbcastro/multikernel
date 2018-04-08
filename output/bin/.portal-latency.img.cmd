@@ -1,0 +1,1 @@
+cmd_output/bin/portal-latency.img := pushd output/bin > /dev/null; /usr/local/k1tools//bin/k1-create-multibinary  --clusters portal-latency-slave --clusters-names portal-latency-slave     --boot portal-latency-master --bootname portal-latency-master -T portal-latency.img -i mpk -f  ; popd > /dev/null

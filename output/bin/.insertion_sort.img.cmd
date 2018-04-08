@@ -1,0 +1,1 @@
+cmd_output/bin/insertion_sort.img := pushd output/bin > /dev/null; /usr/local/k1tools//bin/k1-create-multibinary  --clusters insertion_sort-slave --clusters-names insertion_sort-slave  --ios insertion_sort-master  --ios-names insertion_sort-master    --boot rmem-server --bootname rmem-server -T insertion_sort.img -i mpk -f  ; popd > /dev/null

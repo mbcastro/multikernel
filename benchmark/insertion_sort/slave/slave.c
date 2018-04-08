@@ -4,24 +4,23 @@
  * mppa/slave/main.c - Slave main().
  */
 
-#include <arch.h>
+#include <nanvix/arch/mppa.h>
 #include <assert.h>
-#include <global.h>
 #include <limits.h>
-#include <message.h>
 #include <omp.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <timer.h>
-#include <util.h>
-#include "ipc.h"
-#include "slave.h"
+#include <stdio.h>
+#include <stdarg.h>
+//#include <timer.h>
+#include "util.c"
+#include "message.c"
+//#include "slave.h"
 
 /* Timing statistics. */
-uint64_t start;
-uint64_t end;
-uint64_t communication = 0;
-uint64_t total = 0;
+
+long start;
+long end;
 
 /*
  * Array block.
@@ -50,9 +49,9 @@ int main(int argc, char **argv)
 
     omp_set_num_threads(NUM_THREADS);
 
-    timer_init();
+ //   timer_init();
 
-    total = 0;
+    //total = 0;
 
     ((void)argc);
 
@@ -62,6 +61,7 @@ int main(int argc, char **argv)
     /* Slave life. */
     while (1)
     {
+	printf("%d", infd);
         msg = message_receive(infd);
 
         switch (msg->type)
@@ -82,12 +82,12 @@ int main(int argc, char **argv)
                 id = msg->u.sortwork.id;
                 message_destroy(msg);
 
-                start = timer_get();
+                start = k1_timer_get();
                 for (i = block.size; i < (int)(CLUSTER_WORKLOAD/sizeof(int)); i++)
                     block.elements[i] = INT_MAX;
                 sort2power(block.elements, CLUSTER_WORKLOAD/sizeof(int), CLUSTER_WORKLOAD/NUM_THREADS);
-                end = timer_get();
-                total += timer_diff(start, end);
+                end = k1_timer_get();
+                total += k1_timer_diff(start, end);
 
                 /* Send
                  * message

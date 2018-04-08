@@ -14,6 +14,8 @@ int rank;  /* Process rank.   */
 int infd;  /* Input channel.  */
 int outfd; /* Output channel. */
 
+long total=0;
+
 /*
  * Opens NoC connectors.
  */

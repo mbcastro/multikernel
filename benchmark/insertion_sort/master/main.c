@@ -1,20 +1,23 @@
 
-#include <arch.h>
+#include <nanvix/arch/mppa.h>
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include <timer.h>
-#include <util.h>
+//#include <timer.h>
+#include "master.h"
+
+#define MICROSEC (1.0/1000000)
 
 /* Bucket sort algorithm. */
 extern void bucketsort(int *array, int n);
 
 /* Timing statistics. */
-uint64_t master = 0;          /* Time spent on master.        */
-uint64_t slave[NUM_CLUSTERS]; /* Time spent on slaves.        */
-uint64_t communication = 0;   /* Time spent on communication. */
-uint64_t total = 0;           /* Total time.                  */
+long master = 0;          /* Time spent on master.        */
+long slave[NR_CCLUSTER]; /* Time spent on slaves.        */
+long communication = 0;   /* Time spent on communication. */
+long total = 0;           /* Total time.                  */
 
 /* Data exchange statistics. */
 size_t data_sent = 0;     /* Number of bytes received. */
@@ -133,33 +136,36 @@ int main(int argc, char **argv)
 {
     int i;          /* Loop index.         */
     int *a;         /* Array to be sorted. */
-    uint64_t end;   /* End time.           */
-    uint64_t start; /* Start time.         */
+    long end;       /* End time.           */
+    long start;     /* Start time.         */
 
     readargs(argc, argv);
 
-    timer_init();
+    //timer_init();
     srandnum(seed);
 
     /* Benchmark initialization. */
-    if (verbose)
+    //if (verbose)
         printf("initializing...\n");
-    start = timer_get();
+    start = k1_timer_get();
     a = smalloc(p->n*sizeof(int));
     for (i = 0; i < p->n; i++)
         a[i] = randnum() & 0xfffff;
-    end = timer_get();
-    if (verbose)
-        printf("  time spent: %f\n", timer_diff(start, end)*MICROSEC);
+    end = k1_timer_get();
+    //if (verbose)
+        printf("  time spent: %f\n", k1_timer_diff(start, end)*MICROSEC);
 
     /* Cluster data. */
-    if (verbose)
+    //if (verbose)
+    nclusters=16;
+    printf("%d\n", nclusters);
+    printf("%d\n", p->n);
         printf("sorting...\n");
-    start = timer_get();
+    start = k1_timer_get();
     bucketsort(a, p->n);
-    end = timer_get();
+    end = k1_timer_get();
 
-    total = timer_diff(start, end);
+    total = k1_timer_diff(start, end);
 
     /* Print timing statistics. */
     printf("timing statistics:\n");
