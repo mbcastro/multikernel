@@ -1,1 +1,0 @@
-cmd_output/bin/rmem-latency.img := pushd output/bin > /dev/null; /usr/local/k1tools//bin/k1-create-multibinary  --clusters rmem-latency-slave --clusters-names rmem-latency-slave  --ios rmem-latency-master  --ios-names rmem-latency-master    --boot rmem-server --bootname rmem-server -T rmem-latency.img -i mpk -f  ; popd > /dev/null

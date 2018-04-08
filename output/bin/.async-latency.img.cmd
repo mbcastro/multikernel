@@ -1,1 +1,0 @@
-cmd_output/bin/async-latency.img := pushd output/bin > /dev/null; /usr/local/k1tools//bin/k1-create-multibinary  --clusters slave.elf --clusters-names slave.elf     --boot master.elf --bootname master.elf -T async-latency.img -i mpk -f  ; popd > /dev/null
