@@ -170,9 +170,9 @@ rmem-latency-name := rmem-latency.img
 # Kmeans Benchmark Kernel
 #=============================================================================
 
-cluster-bin += kmeans-slave
-kmeans-slave-srcs := $(BENCHDIR)/kmeans/slave/slave.c     \
-					 $(BENCHDIR)/kmeans/slave/vector.c    \
+cluster-bin += km-slave
+km-slave-srcs := $(BENCHDIR)/km/slave/slave.c     \
+					 $(BENCHDIR)/km/slave/vector.c    \
 					 $(SRCDIR)/kernel/arch/mppa/mailbox.c \
 					 $(SRCDIR)/kernel/arch/mppa/portal.c  \
 					 $(SRCDIR)/kernel/arch/mppa/barrier.c \
@@ -184,16 +184,16 @@ kmeans-slave-srcs := $(BENCHDIR)/kmeans/slave/slave.c     \
 					 $(SRCDIR)/kernel/sys/memwrite.c
 
 # Toolchain Configuration
-kmeans-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
-kmeans-slave-cflags += -I $(BENCHDIR)/include -fopenmp
-kmeans-slave-lflags := -lmppaipc -lm -lgomp
+km-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+km-slave-cflags += -I $(BENCHDIR)/include -fopenmp
+km-slave-lflags := -lmppaipc -lm -lgomp
 
-io-bin += kmeans-master
-kmeans-master-srcs := $(BENCHDIR)/kmeans/master/main.c     \
-					  $(BENCHDIR)/kmeans/master/master.c   \
-					  $(BENCHDIR)/kmeans/master/vector.c   \
-					  $(BENCHDIR)/kmeans/master/util.c     \
-					  $(BENCHDIR)/kmeans/master/ipc.c      \
+io-bin += km-master
+km-master-srcs := $(BENCHDIR)/km/master/main.c     \
+					  $(BENCHDIR)/km/master/master.c   \
+					  $(BENCHDIR)/km/master/vector.c   \
+					  $(BENCHDIR)/km/master/util.c     \
+					  $(BENCHDIR)/km/master/ipc.c      \
 					  $(SRCDIR)/kernel/arch/mppa/mailbox.c \
 					  $(SRCDIR)/kernel/arch/mppa/portal.c  \
 					  $(SRCDIR)/kernel/arch/mppa/barrier.c \
@@ -205,54 +205,54 @@ kmeans-master-srcs := $(BENCHDIR)/kmeans/master/main.c     \
 					  $(SRCDIR)/kernel/sys/memwrite.c
  
 # Toolchain Configuration
-kmeans-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
-kmeans-master-cflags += -I $(BENCHDIR)/include
-kmeans-master-lflags := -lmppaipc -lm
+km-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+km-master-cflags += -I $(BENCHDIR)/include
+km-master-lflags := -lmppaipc -lm
 
-kmeans-objs := rmem-server kmeans-slave kmeans-master
-kmeans-name := kmeans.img
+km-objs := rmem-server km-slave km-master
+km-name := km.img
 
 #=============================================================================
 # Insertion_sort Benchmark Kernel
 #=============================================================================
 
-cluster-bin += insertion_sort-slave
-insertion_sort-slave-srcs := $(BENCHDIR)/insertion_sort/slave/slave.c    \
-					 $(BENCHDIR)/insertion_sort/slave/sort.c   \
+cluster-bin += is-slave
+is-slave-srcs := $(BENCHDIR)/is/slave/slave.c    \
+					 $(BENCHDIR)/is/slave/sort.c   \
 					 $(SRCDIR)/kernel/arch/mppa/timer.c  \
 					 $(SRCDIR)/kernel/arch/mppa/portal.c  \
 					 $(SRCDIR)/kernel/arch/mppa/name.c    \
 					 $(SRCDIR)/kernel/arch/mppa/core.c    
-#$(BENCHDIR)/insertion_sort/slave/ipc.c
+#$(BENCHDIR)/is/slave/ipc.c
 
 # Toolchain Configuration
-insertion_sort-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
-insertion_sort-slave-cflags += -I $(BENCHDIR)/include -fopenmp
-insertion_sort-slave-lflags := -lmppaipc -lm -lgomp
+is-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+is-slave-cflags += -I $(BENCHDIR)/include -fopenmp
+is-slave-lflags := -lmppaipc -lm -lgomp
 
-io-bin += insertion_sort-master
-insertion_sort-master-srcs := $(BENCHDIR)/insertion_sort/master/main.c    \
-					  $(BENCHDIR)/insertion_sort/master/bucketsort.c   \
-					  $(BENCHDIR)/insertion_sort/master/bucket.c \
-					  $(BENCHDIR)/insertion_sort/master/minibucket.c \
+io-bin += is-master
+is-master-srcs := $(BENCHDIR)/is/master/main.c    \
+					  $(BENCHDIR)/is/master/bucketsort.c   \
+					  $(BENCHDIR)/is/master/bucket.c \
+					  $(BENCHDIR)/is/master/minibucket.c \
 					  $(SRCDIR)/kernel/arch/mppa/timer.c  \
 					  $(SRCDIR)/kernel/arch/mppa/portal.c  \
 					  $(SRCDIR)/kernel/arch/mppa/name.c    \
 					  $(SRCDIR)/kernel/arch/mppa/core.c    \
-					  $(BENCHDIR)/insertion_sort/master/ipc.c  \
-					  $(BENCHDIR)/insertion_sort/master/message.c \
-					  $(BENCHDIR)/insertion_sort/master/util.c
+					  $(BENCHDIR)/is/master/ipc.c  \
+					  $(BENCHDIR)/is/master/message.c \
+					  $(BENCHDIR)/is/master/util.c
 
 
-#$(BENCHDIR)/insertion_sort/master/ipc.c     
+#$(BENCHDIR)/is/master/ipc.c     
 
 # Toolchain Configuration
-insertion_sort-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
-insertion_sort-master-cflags += -I $(BENCHDIR)/include
-insertion_sort-master-lflags := -lmppaipc -lm
+is-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+is-master-cflags += -I $(BENCHDIR)/include
+is-master-lflags := -lmppaipc -lm
 
-insertion_sort-objs := rmem-server insertion_sort-slave insertion_sort-master
-insertion_sort-name := insertion_sort.img
+is-objs := rmem-server is-slave is-master
+is-name := is.img
 
 #=============================================================================
 # MPPA Binary
