@@ -17,15 +17,6 @@
 	/* Forward definitions. */
 	extern void spawn_slaves(void);
 	extern void join_slaves(void);
-	extern void sync_slaves(void);
-	extern void open_noc_connectors(void);
-	extern void close_noc_connectors(void);
-	extern void data_send(int, void *, size_t);
-	extern void data_receive(int, int, void *, size_t);
-
-	/* Forward definitions. */
-	extern int infd;
-	extern int outfd[NR_CCLUSTER];
 
 	/*===============================================================*
 	 * Utility                                                       *
@@ -41,30 +32,16 @@
 	/*===============================================================*
 	 * Vector                                                        *
 	 *===============================================================*/
-	
-	/*
-	 * Opaque pointer to a vector.
-	 */
-	typedef struct vector * vector_t;
-	
-	/*
-	 * Opaque pointer to a constant vector.
-	 */
-	typedef const struct vector * const_vector_t;
 
 	/* Forward definitions. */
-	extern vector_t vector_create(int);
-	extern void vector_destroy(vector_t);
-	extern vector_t vector_random(vector_t);
-	extern int vector_size(vector_t);
-	extern float *vector_get(vector_t);
+	extern float * vector_random(float *, int);
 
 	/*===============================================================*
 	 * Kernel                                                        *
 	 *===============================================================*/
 
 	/* Forward definitions. */
-	extern int *kmeans(vector_t *, int, int, float);
+	extern int *kmeans(const float *, int, int, int, float);
 
 	/* Forward definitions. */
 	extern long master;
