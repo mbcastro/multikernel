@@ -17,16 +17,12 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NANVIX_KLIB_H_
-#define NANVIX_KLIB_H_
+#ifndef _KERNEL_H_
+#define _KERNEL_H_
 
 	/**
-	 * @brief Gets the length of an array.
-	 *
-	 * @param x Target array.
-	 *
-	 * @return The length of the target array.
+	 * @brief Number of benchmark iterations.
 	 */
-	#define ARRAY_LENGTH(x) (sizeof(x) / sizeof((x)[0]))
+	#define NITERATIONS 30
 
-#endif /* NANVIX_KLIB_H_ */
+#endif /* _KERNEL_H_ */

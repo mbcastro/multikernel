@@ -17,16 +17,33 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NANVIX_KLIB_H_
-#define NANVIX_KLIB_H_
+#ifndef CONST_H_
+#define CONST_H_
 
 	/**
-	 * @brief Gets the length of an array.
-	 *
-	 * @param x Target array.
-	 *
-	 * @return The length of the target array.
+	 * @name System Information
 	 */
-	#define ARRAY_LENGTH(x) (sizeof(x) / sizeof((x)[0]))
+	/**@{*/
+	#define SYSNAME "Nanvix"       /**< Operating system name. */
+	#define NODENAME "bluedragon"  /**< Network node name.     */
+	#define RELEASE "beta"         /**< Kernel release.        */
+	#define VERSION "2.0"          /**< Kernel version.        */
+	/**@}*/
 
-#endif /* NANVIX_KLIB_H_ */
+	/**
+	 * @name Scope Constants
+	 */
+	/**@{*/
+	#define PUBLIC         /**< Global scope       */
+	#define PRIVATE static /**< File scope.        */
+	#define EXTERN extern  /**< Defined elsewhere. */
+	/**@}*/
+
+	/**
+	 * @name Logical Constants
+	 */
+	#define FALSE 0 /**< False. */
+	#define TRUE  1 /**< True.  */
+
+#endif /* CONST_H_ */
+

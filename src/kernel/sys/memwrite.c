@@ -17,16 +17,38 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NANVIX_KLIB_H_
-#define NANVIX_KLIB_H_
+#include <nanvix/hal.h>
+#include <nanvix/mm.h>
+#include <nanvix/pm.h>
+#include <stdio.h>
+#include <string.h>
+#include "mem.h"
 
-	/**
-	 * @brief Gets the length of an array.
-	 *
-	 * @param x Target array.
-	 *
-	 * @return The length of the target array.
-	 */
-	#define ARRAY_LENGTH(x) (sizeof(x) / sizeof((x)[0]))
+/**
+ * @brief Writes data to a remote memory.
+ *
+ * @param addr Remote address.
+ * @param bug  Location where the data should be read from.
+ * @param n    Number of bytes to write.
+ */
+void memwrite(uint64_t addr, const void *buf, size_t n)
+{
+	struct rmem_message msg;
 
-#endif /* NANVIX_KLIB_H_ */
+	meminit();
+
+	/* Build operation header. */
+	msg.source = k1_get_cluster_id();
+	msg.op = RMEM_WRITE;
+	msg.blknum = addr;
+	msg.size = n;
+
+	printf("send operation header()\n");
+	/* Send operation header. */
+	mailbox_write(_mem_outbox, &msg);
+	printf("send data\n");
+
+	/* Send data. */
+	portal_write(_mem_outportal, buf, n);
+}
+

@@ -17,16 +17,26 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NANVIX_KLIB_H_
-#define NANVIX_KLIB_H_
+#ifndef _KERNEL_H_
+#define _KERNEL_H_
 
 	/**
-	 * @brief Gets the length of an array.
-	 *
-	 * @param x Target array.
-	 *
-	 * @return The length of the target array.
+	 * @brief Data unit prefixes.
 	 */
-	#define ARRAY_LENGTH(x) (sizeof(x) / sizeof((x)[0]))
+	/**@{*/
+	#define KB (1024)    /**< Kilobyte. */
+	#define MB (1024*KB) /**< Megabyte. */
+	#define GB (1024*KB) /**< Gigabyte. */
+	/**@}*/
 
-#endif /* NANVIX_KLIB_H_ */
+	/**
+	 * @brief Maximum buffer size.
+	 */
+	#define MAX_BUFFER_SIZE (1024*KB)
+
+	/**
+	 * @brief Number of benchmark iterations.
+	 */
+	#define NITERATIONS 30
+
+#endif /* _KERNEL_H_ */

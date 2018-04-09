@@ -17,16 +17,15 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NANVIX_KLIB_H_
-#define NANVIX_KLIB_H_
+#ifndef _MEM_H_
+#define _MEM_H_
 
-	/**
-	 * @brief Gets the length of an array.
-	 *
-	 * @param x Target array.
-	 *
-	 * @return The length of the target array.
-	 */
-	#define ARRAY_LENGTH(x) (sizeof(x) / sizeof((x)[0]))
+	/* Forward definitions. */
+	extern int _mem_outbox;
+	extern int _mem_inportal;
+	extern int _mem_outportal;
 
-#endif /* NANVIX_KLIB_H_ */
+	/* Forward definitions. */
+	extern void meminit(void);
+
+#endif /* _MEM_H_ */

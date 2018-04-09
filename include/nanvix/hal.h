@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 2011-2017 Pedro H. Penna <pedrohenriquepenna@gmail.com>
+ * Copyright(C) 2011-2018 Pedro H. Penna <pedrohenriquepenna@gmail.com>
  * 
  * This file is part of Nanvix.
  * 
@@ -17,29 +17,11 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HAL_H_
-#define HAL_H_
+#ifndef NANVIX_HAL_H_
+#define NANVIX_HAL_H_
 
-#ifdef UNIX
+	#ifdef _KALRAY_MPPA256
+		#include <nanvix/arch/mppa.h>
+	#endif
 
-	#include <string.h>
-	#include <stdio.h>
-	#include <sys/socket.h>
-
-	/**
-	 * @brief Kernel puts().
-	 *
-	 * @param str Message.
-	 *
-	 * @return see puts().
-	 */
-	#define kputs(str) { fprintf(stderr, "%s\n", str); }
-
-	/**
-	 * @brief Non blocking IPC channel.
-	 */
-	#define _CHANNEL_NONBLOCK SOCK_NONBLOCK
-
-#endif
-
-#endif /* */
+#endif /* NANVIX_HAL_H_ */
