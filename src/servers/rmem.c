@@ -285,13 +285,13 @@ int main(int argc, char **argv)
 
 	pthread_barrier_wait(&barrier);
 
-#ifdef DEBUG
-	printf("[RMEM] server alive\n");
-#endif
-
 	/* Release master IO cluster. */
 	global_barrier = barrier_open(NR_IOCLUSTER);
 	barrier_wait(global_barrier);
+
+#ifdef DEBUG
+	printf("[RMEM] server alive\n");
+#endif
 
 	/* Wait for RMEM server threads. */
 	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)

@@ -84,9 +84,9 @@ int vector_equal(const float *v1, const float *v2)
 {
 	for (int i = 0; i < dimension; i++)
 	{
-		if (fabs(v1[i] - v2[i]) >= 0.00001)
-			return (0);
+		if (fabs(v1[i] - v2[i]) < 0.00001)
+			return (1);
 	}
 	
-	return (1);
+	return (0);
 }

@@ -163,6 +163,7 @@ int mailbox_create(const char *name)
 			noctag,
 			MAILBOX_MSG_SIZE
 	);
+//	printf("cluster %3d: %s [mailbox create]\n", local, pathname);
 	assert((fd = mppa_open(pathname, O_RDONLY)) != -1);
 
 	/* Initialize mailbox. */
@@ -219,6 +220,7 @@ int mailbox_open(const char *name)
 			noctag,
 			MAILBOX_MSG_SIZE
 	);
+//	printf("cluster %3d: %s [mailbox open]\n", local, pathname);
 	assert((fd = mppa_open(pathname, O_WRONLY)) != -1);
 
 	/* Set DMA interface for IO cluster. */

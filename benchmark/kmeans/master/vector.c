@@ -5,6 +5,7 @@
  */
 
 #include <stdlib.h>
+#include "master.h"
 
 /*
  * Fills up vector with random numbers.
