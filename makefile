@@ -1,17 +1,17 @@
 # Copyright(C) 2011-2018 Pedro H. Penna <pedrohenriquepenna@gmail.com>
-# 
+#
 # This file is part of Nanvix.
-# 
+#
 # Nanvix is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # Nanvix is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -28,7 +28,7 @@ BENCHDIR = $(CURDIR)/benchmark
 cflags := -ansi -std=c99
 cflags += -Wall -Wextra -Werror
 cflags += -Winit-self -Wswitch-default -Wfloat-equal -Wundef -Wshadow -Wuninitialized
-cflags += -O3 
+cflags += -O3
 cflags += -I $(INCDIR)
 cflags += -D_KALRAY_MPPA256 -DDEBUG
 lflags := -Wl,--defsym=_LIBNOC_DISABLE_FIFO_FULL_CHECK=0
@@ -167,7 +167,7 @@ rmem-latency-objs := rmem-server rmem-latency-slave rmem-latency-master
 rmem-latency-name := rmem-latency.img
 
 #=============================================================================
-# Kmeans Benchmark Kernel 
+# Kmeans Benchmark Kernel
 #=============================================================================
 
 cluster-bin += kmeans-slave
@@ -213,9 +213,51 @@ kmeans-objs := rmem-server kmeans-slave kmeans-master
 kmeans-name := kmeans.img
 
 #=============================================================================
+# Insertion_sort Benchmark Kernel
+#=============================================================================
+
+cluster-bin += insertion_sort-slave
+insertion_sort-slave-srcs := $(BENCHDIR)/insertion_sort/slave/slave.c    \
+					 $(BENCHDIR)/insertion_sort/slave/sort.c   \
+					 $(SRCDIR)/kernel/arch/mppa/timer.c  \
+					 $(SRCDIR)/kernel/arch/mppa/portal.c  \
+					 $(SRCDIR)/kernel/arch/mppa/name.c    \
+					 $(SRCDIR)/kernel/arch/mppa/core.c    
+#$(BENCHDIR)/insertion_sort/slave/ipc.c
+
+# Toolchain Configuration
+insertion_sort-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+insertion_sort-slave-cflags += -I $(BENCHDIR)/include -fopenmp
+insertion_sort-slave-lflags := -lmppaipc -lm -lgomp
+
+io-bin += insertion_sort-master
+insertion_sort-master-srcs := $(BENCHDIR)/insertion_sort/master/main.c    \
+					  $(BENCHDIR)/insertion_sort/master/bucketsort.c   \
+					  $(BENCHDIR)/insertion_sort/master/bucket.c \
+					  $(BENCHDIR)/insertion_sort/master/minibucket.c \
+					  $(SRCDIR)/kernel/arch/mppa/timer.c  \
+					  $(SRCDIR)/kernel/arch/mppa/portal.c  \
+					  $(SRCDIR)/kernel/arch/mppa/name.c    \
+					  $(SRCDIR)/kernel/arch/mppa/core.c    \
+					  $(BENCHDIR)/insertion_sort/master/ipc.c  \
+					  $(BENCHDIR)/insertion_sort/master/message.c \
+					  $(BENCHDIR)/insertion_sort/master/util.c
+
+
+#$(BENCHDIR)/insertion_sort/master/ipc.c     
+
+# Toolchain Configuration
+insertion_sort-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+insertion_sort-master-cflags += -I $(BENCHDIR)/include
+insertion_sort-master-lflags := -lmppaipc -lm
+
+insertion_sort-objs := rmem-server insertion_sort-slave insertion_sort-master
+insertion_sort-name := insertion_sort.img
+
+#=============================================================================
 # MPPA Binary
 #=============================================================================
 
-mppa-bin := portal-latency async-latency mailbox rmem-latency kmeans
+mppa-bin := portal-latency async-latency mailbox rmem-latency
 
 include $(K1_TOOLCHAIN_DIR)/share/make/Makefile.kalray
