@@ -5,18 +5,23 @@
  */
 
 #include <nanvix/arch/mppa.h>
+#include <nanvix/pm.h>
 #include <nanvix/mm.h>
 #include <assert.h>
 #include <math.h>
 #include <omp.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include "slave.h"
 #include "../kernel.h"
 
 #define NTHREADS 16
 
 #define DELTA (NR_CCLUSTER - 1)
+
+int rank;
+static int barrier;
 
 /* Global K-means Data */
 static int   nclusters;
@@ -38,13 +43,6 @@ static float lcentroids[(MAX_CENTROIDS/NR_CCLUSTER + DELTA)*MAX_DIMENSION];
 static float lpcentroids[(MAX_CENTROIDS/NR_CCLUSTER + DELTA)*MAX_DIMENSION];
 static float lpopulation[MAX_CENTROIDS];
 static float lppopulation[MAX_CENTROIDS/NR_CCLUSTER + DELTA];
-
-extern int barrier_open(int);
-extern int barrier_wait(int);
-extern int barrier_close(int);
-
-	int barrier_master;
-	int barrier_workers;
 
 /**
  * @brief Helper macros for array indexing.
@@ -152,11 +150,12 @@ static inline void compute_pcentroids(void)
 			
 			omp_unset_lock(&lock[j]);
 		}
-	
+
 		memwrite(OFF_PCENTROIDS(rank*ncentroids, dimension),
 			&LCENTROID(0),
 			ncentroids*dimension*sizeof(float)
 		);
+	
 		
 		memwrite(OFF_PPOPULATION(rank*ncentroids, dimension),
 			&LPOPULATION(0, 0),
@@ -250,7 +249,7 @@ static int again(void)
 		memwrite(OFF_HAS_CHANGED, &has_changed[rank], sizeof(int));
 		memwrite(OFF_TOO_FAR,     &too_far[rank],     sizeof(int));
 
-		barrier_wait(barrier_workers);
+		barrier_wait(barrier);
 
 		memread(OFF_HAS_CHANGED, &has_changed[0], nclusters*sizeof(int));
 		memread(OFF_TOO_FAR,     &too_far[0],     nclusters*sizeof(int));
@@ -292,7 +291,7 @@ static void kmeans(void)
 	{	
 		populate();
 		compute_pcentroids();
-		barrier_wait(barrier_workers);
+		barrier_wait(barrier);
 		compute_centroids();
 	} while (again());
 }
@@ -300,7 +299,6 @@ static void kmeans(void)
 /*============================================================================*
  *                                  main()                                    *
  *============================================================================*/
-
 
 /*
  * Clusters data.
@@ -314,10 +312,7 @@ int main(int argc, char **argv)
 	rank = atoi(argv[0]);
 	nclusters = atoi(argv[1]);
 
-	barrier_master = barrier_open(nclusters + 1);
-	barrier_workers = barrier_open( nclusters);
-
-	barrier_wait(barrier_master);
+	barrier = barrier_open(nclusters);
 
 	/* Read global data from remote memory. */
 	memread(OFF_MINDISTANCE, &mindistance, sizeof(float));
@@ -341,12 +336,12 @@ int main(int argc, char **argv)
 		&lmap[0],
 		lnpoints*sizeof(int)
 	);
+
+	barrier_wait(barrier);
 	
 	kmeans();
 
 	memwrite(OFF_MAP(rank*(npoints/nclusters)), &lmap[0], lnpoints*sizeof(int));
-
-	barrier_wait(barrier_master);
 
 	return (0);
 }

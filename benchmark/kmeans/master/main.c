@@ -155,7 +155,6 @@ static void readargs(int argc, char **argv)
  */
 int main(int argc, char **argv)
 {
-	int *map;         /* Map of clusters.           */
 	long t[2];        /* Timings.                   */
 	float *data;      /* Data points.               */
 	long time_init;   /* Total initialization time. */
@@ -173,9 +172,9 @@ int main(int argc, char **argv)
 		printf("initializing...\n");
 
 	t[0] = k1_timer_get();
-		data = smalloc(p->npoints*sizeof(float));
+		data = smalloc(p->npoints*p->dimension*sizeof(float));
 		for (int i = 0; i < p->npoints; i++)
-			vector_random(&data[i*p->dimension], dimension);
+			vector_random(&data[i*p->dimension], p->dimension);
 	t[1] = k1_timer_get();
 	time_init = k1_timer_diff(t[0], t[1]);
 	
@@ -187,7 +186,7 @@ int main(int argc, char **argv)
 		printf("clustering data...\n");
 
 	t[0] = k1_timer_get();
-		map = kmeans(data,
+		kmeans(data,
 			p->npoints,
 			p->dimension,
 			p->ncentroids,
@@ -222,7 +221,6 @@ int main(int argc, char **argv)
 	 * House Keeping                                                 *
 	 *---------------------------------------------------------------*/
 
-	free(map);
 	free(data);
 	
 	return (0);

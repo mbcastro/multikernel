@@ -19,10 +19,13 @@ static mppa_pid_t pids[NR_CCLUSTER];
 void spawn_slaves(void)
 {
 	char arg0[4];   /* Argument 0. */
-	char *args[2];  /* Arguments.  */
+	char arg1[4];   /* Argument 1. */
+	char *args[3];  /* Arguments.  */
 
 	/* Spawn slaves. */
-	args[1] = NULL;
+	args[1] = arg1;
+	args[2] = NULL;
+	sprintf(arg1, "%d", nclusters);
 	for (int i = 0; i < nclusters; i++)
 	{	
 		sprintf(arg0, "%d", i);

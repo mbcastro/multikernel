@@ -41,7 +41,7 @@
 	 *===============================================================*/
 
 	/* Forward definitions. */
-	extern int *kmeans(const float *, int, int, int, float);
+	extern void kmeans(const float *, int, int, int, float);
 
 	/* Forward definitions. */
 	extern long master;
