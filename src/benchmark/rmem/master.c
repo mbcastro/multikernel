@@ -43,7 +43,7 @@ static int pids[NR_CCLUSTER];
 static void spawn_slaves(int nclusters, char **args) 
 {
 	const char *argv[] = {
-		"rmem-latency-slave", 
+		"rmem-slave", 
 		args[1],
 		args[2],
 		args[3],
