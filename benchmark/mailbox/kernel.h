@@ -17,38 +17,22 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <nanvix/hal.h>
-#include <nanvix/mm.h>
-#include <nanvix/pm.h>
-#include <stdio.h>
-#include <string.h>
-#include "mem.h"
+#ifndef _KERNEL_H_
+#define _KERNEL_H_
 
-/**
- * @brief Writes data to a remote memory.
- *
- * @param addr Remote address.
- * @param bug  Location where the data should be read from.
- * @param n    Number of bytes to write.
- */
-void memwrite(uint64_t addr, const void *buf, size_t n)
-{
-	struct rmem_message msg;
+	/**
+	 * @brief Magic number for messages.
+	 */
+	#define MESSAGE_MAGIC 0xdeadbeef
 
-	meminit();
+	/**
+	 * @brief Message.
+	 */
+	struct message
+	{
+		uint32_t magic;      /**< Magic number. */
+		uint32_t unused[15]; /**< Not used.     */
+	};
 
-	/* Build operation header. */
-	msg.source = k1_get_cluster_id();
-	msg.op = RMEM_WRITE;
-	msg.blknum = addr;
-	msg.size = n;
-
-	printf("send operation header()\n");
-	/* Send operation header. */
-	mailbox_write(_mem_outbox, &msg);
-	printf("send data\n");
-
-	/* Send data. */
-	portal_write(_mem_outportal, buf, n);
-}
+#endif /* _KERNEL_H_ */
 

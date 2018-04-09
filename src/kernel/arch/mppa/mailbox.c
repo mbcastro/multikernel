@@ -18,6 +18,7 @@
  */
 
 #include <nanvix/arch/mppa.h>
+#include <nanvix/klib.h>
 #include <nanvix/pm.h>
 #include <assert.h>
 #include <errno.h>
@@ -162,9 +163,7 @@ int mailbox_create(const char *name)
 			noctag,
 			MAILBOX_MSG_SIZE
 	);
-
-	fd = mppa_open(pathname, O_RDONLY);
-	assert(fd != -1);
+	assert((fd = mppa_open(pathname, O_RDONLY)) != -1);
 
 	/* Initialize mailbox. */
 	mailboxes[mbxid].fd = fd;
@@ -187,7 +186,8 @@ int mailbox_create(const char *name)
  */
 int mailbox_open(const char *name)
 {
-	int local;          /* ID of local cluster.               */
+	int local;          /* ID of remote cluster.             */
+	int remote;         /* ID of remote cluster.             */
 	int fd;             /* File descriptor for NoC connector. */
 	int mbxid;          /* ID of mailbix.                     */
 	char remotes[128];  /* IDs of remote clusters.            */
@@ -198,28 +198,32 @@ int mailbox_open(const char *name)
 	if (name == NULL)
 		return (-EINVAL);
 
-	local = name_cluster_dma(name);
-	assert(name_cluster_id(name) != k1_get_cluster_id());
+	remote = name_cluster_dma(name);
+	local = k1_get_cluster_id();
+	assert(name_cluster_id(name) != local);
 
 	/* Allocate a mailbox. */
 	mbxid = mailbox_alloc();
 	if (mbxid < 0)
 		return (mbxid);
 
-	name_remotes(remotes, local);
+	name_remotes(remotes, remote);
 
-	noctag = mailbox_noctag(local);
-	sprintf(pathname,
+	noctag = mailbox_noctag(remote);
+	snprintf(pathname,
+			ARRAY_LENGTH(pathname),
 			"/mppa/rqueue/%d:%d/[%s]:%d/1.%d",
-			local,
+			remote,
 			noctag,
 			remotes,
 			noctag,
 			MAILBOX_MSG_SIZE
 	);
+	assert((fd = mppa_open(pathname, O_WRONLY)) != -1);
 
-	fd = mppa_open(pathname, O_WRONLY);
-	assert(fd != -1);
+	/* Set DMA interface for IO cluster. */
+	if (k1_is_iocluster(local))
+		assert(mppa_ioctl(fd, MPPA_TX_SET_INTERFACE, local%NR_IOCLUSTER_DMA) != -1);
 
 	/* Initialize mailbox. */
 	mailboxes[mbxid].fd = fd;

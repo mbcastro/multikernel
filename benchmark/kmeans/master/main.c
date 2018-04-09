@@ -157,7 +157,7 @@ int main(int argc, char **argv)
 {
 	int *map;         /* Map of clusters.           */
 	long t[2];        /* Timings.                   */
-	vector_t *data;   /* Data points.               */
+	float *data;      /* Data points.               */
 	long time_init;   /* Total initialization time. */
 	long time_kernel; /* Total kernel time.         */
 	
@@ -173,12 +173,9 @@ int main(int argc, char **argv)
 		printf("initializing...\n");
 
 	t[0] = k1_timer_get();
-		data = smalloc(p->npoints*sizeof(vector_t));
+		data = smalloc(p->npoints*sizeof(float));
 		for (int i = 0; i < p->npoints; i++)
-		{
-			data[i] = vector_create(p->dimension);
-			vector_random(data[i]);
-		}
+			vector_random(&data[i*p->dimension], dimension);
 	t[1] = k1_timer_get();
 	time_init = k1_timer_diff(t[0], t[1]);
 	
@@ -190,7 +187,12 @@ int main(int argc, char **argv)
 		printf("clustering data...\n");
 
 	t[0] = k1_timer_get();
-		map = kmeans(data, p->npoints, p->ncentroids, p->mindistance);
+		map = kmeans(data,
+			p->npoints,
+			p->dimension,
+			p->ncentroids,
+			p->mindistance
+		);
 	t[1] = k1_timer_get();
 	time_kernel = k1_timer_diff(t[0], t[1]);
 
@@ -221,8 +223,6 @@ int main(int argc, char **argv)
 	 *---------------------------------------------------------------*/
 
 	free(map);
-	for (int i = 0; i < p->npoints; i++)
-		vector_destroy(data[i]);
 	free(data);
 	
 	return (0);
