@@ -163,21 +163,21 @@ void name_remotes(char *remotes, int local)
 	{
 		sprintf(remotes,
 				"%d..%d,%d,%d",
-				CCLUSTER1, CCLUSTER15, IOCLUSTER0 + local%NR_IOCLUSTER_DMA, IOCLUSTER1 + local%NR_IOCLUSTER_DMA
+				CCLUSTER1, CCLUSTER15, IOCLUSTER0, IOCLUSTER1
 		);
 	}
 	else if (local  == CCLUSTER15)
 	{
 		sprintf(remotes,
 				"%d..%d,%d,%d",
-				CCLUSTER0, CCLUSTER14, IOCLUSTER0 + local%NR_IOCLUSTER_DMA, IOCLUSTER1 + local%NR_IOCLUSTER_DMA
+				CCLUSTER0, CCLUSTER14, IOCLUSTER0, IOCLUSTER1
 		);
 	}
 	else
 	{
 		sprintf(remotes,
 				"%d..%d,%d..%d,%d,%d",
-				CCLUSTER0, local - 1, local + 1, CCLUSTER15, IOCLUSTER0 + local%NR_IOCLUSTER_DMA, IOCLUSTER1 + local%NR_IOCLUSTER_DMA
+				CCLUSTER0, local - 1, local + 1, CCLUSTER15, IOCLUSTER0, IOCLUSTER1
 		);
 	}
 }
