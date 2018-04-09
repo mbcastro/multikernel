@@ -83,16 +83,16 @@ void kmeans(
 	barrier_wait(barrier);
 
 	/* Write parameters to remote memory. */
-	memwrite(OFF_NCLUSTERS,    &nclusters,       sizeof(int));
-	memwrite(OFF_MINDISTANCE,  &mindistance,     sizeof(float));
-	memwrite(OFF_POINTS(0, 0), &points[0],       npoints*dimension*sizeof(float));
-	memwrite(OFF_NPOINTS,      &npoints,         sizeof(int));
-	memwrite(OFF_CENTROIDS,    &centroids[0],    ncentroids*dimension*sizeof(float));
-	memwrite(OFF_NCENTROIDS,   &ncentroids,      sizeof(int));
-	memwrite(OFF_MAP(0),       &map[0],          npoints*sizeof(int));
-	memwrite(OFF_DIMENSION,    &dimension,       sizeof(int));
-	memwrite(OFF_DIMENSION,    &dimension,       sizeof(int));
-	memwrite(OFF_DIMENSION,    &dimension,       sizeof(int));
+	memwrite(OFF_NCLUSTERS,            &nclusters,       sizeof(int));
+	memwrite(OFF_MINDISTANCE,          &mindistance,     sizeof(float));
+	memwrite(OFF_POINTS(0, dimension), &points[0],       npoints*dimension*sizeof(float));
+	memwrite(OFF_NPOINTS,              &npoints,         sizeof(int));
+	memwrite(OFF_CENTROIDS,            &centroids[0],    ncentroids*dimension*sizeof(float));
+	memwrite(OFF_NCENTROIDS,           &ncentroids,      sizeof(int));
+	memwrite(OFF_MAP(0),               &map[0],          npoints*sizeof(int));
+	memwrite(OFF_DIMENSION,            &dimension,       sizeof(int));
+	memwrite(OFF_DIMENSION,            &dimension,       sizeof(int));
+	memwrite(OFF_DIMENSION,            &dimension,       sizeof(int));
 
 	printf("spawning slaves\n");
 	spawn_slaves();
