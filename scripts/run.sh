@@ -59,15 +59,13 @@ then
 
 	echo "Testing ASYNC"
 	run1 "async-latency.img" "master.elf" "$nclusters $size"
-#	echo "Testing PORTAL"
-#	run1 "portal-latency.img" "portal-latency-master" "write $nclusters $size"
+	echo "Testing PORTAL"
+	run1 "portal-latency.img" "portal-latency-master" "write $nclusters $size"
 	echo "Testing Write RMEM"
 	run2 "rmem-latency.img" "rmem-latency-master" "rmem-server" "write $nclusters $size"
 	run2 "rmem-latency.img" "rmem-latency-master" "rmem-server" "read $nclusters $size"
 	echo "Testing MAILBOX"
 	run1 "mailbox.img" "mailbox-master" "$nclusters $nmessages"
-#	echo "Kmeans Kernel"
-#	run2 "kmeans.img" "kmeans-master" "rmem-server" "--nclusters $nclusters --class tiny --verbose"
 else
 	for nclusters in 4 8 12 16;
 	do
