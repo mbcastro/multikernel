@@ -43,10 +43,8 @@ void memwrite(uint64_t addr, const void *buf, size_t n)
 	msg.blknum = addr;
 	msg.size = n;
 
-	printf("send operation header()\n");
 	/* Send operation header. */
 	mailbox_write(_mem_outbox, &msg);
-	printf("send data\n");
 
 	/* Send data. */
 	portal_write(_mem_outportal, buf, n);
