@@ -100,15 +100,15 @@ void message_destroy(struct message *msg)
 /*
  *  * Sends a message.
  *   */
-void message_send(int m_outfd, struct message *msg)
+/*void message_send(int m_outfd, struct message *msg)
 {
 	data_send(m_outfd, msg, sizeof(struct message));
 }
-
+*/
 /*
  *  * Receives a message.
  *   */
-struct message *message_receive(int m_infd, int remote)
+/*struct message *message_receive(int m_infd, int remote)
 {
 	struct message *msg;
 
@@ -118,4 +118,4 @@ struct message *message_receive(int m_infd, int remote)
 
 	return (msg);
 }
-
+*/

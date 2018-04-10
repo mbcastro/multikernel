@@ -164,7 +164,6 @@ int main(int argc, char **argv)
     start = k1_timer_get();
     bucketsort(a, p->n);
     end = k1_timer_get();
-
     total = k1_timer_diff(start, end);
 
     /* Print timing statistics. */

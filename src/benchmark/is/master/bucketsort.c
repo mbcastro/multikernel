@@ -1,8 +1,10 @@
+#include <nanvix/pm.h>
 #include <limits.h>
 #include <pthread.h>
 //#include <timer.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 #include "master.h"
 
 /* Number of buckets. */
@@ -87,8 +89,10 @@ extern void bucketsort(int *array, int n)
 	int max;                  /* Maximum number.      */
 	int i, j;                 /* Loop indexes.        */
 	int range;                /* Bucket range.        */
+	int inbox;
+	int outbox[NR_CCLUSTER];
 	struct minibucket *minib; /* Working mini-bucket. */
-	struct message *msg;      /* Working message.     */
+	struct message msg;      /* Working message.     */
 	struct bucket **todo;     /* Todo buckets.        */
 	struct bucket **done;     /* Done buckets.        */
 	long start, end;      /* Timers.              */
@@ -140,19 +144,24 @@ extern void bucketsort(int *array, int n)
 	 */
 	printf("Sort");
 	j = 0;
+	char pathname [128];
+	inbox = mailbox_create("/io0");
+	for (i = 0; i < nclusters; i++) {
+		sprintf(pathname, "/cpu%d", i);
+		outbox[i] = mailbox_open(pathname);
+	}
 	for (i = 0; i < NUM_BUCKETS; i++)
 	{
 		while (bucket_size(todo[i]) > 0)
 		{
 			minib = bucket_pop(todo[i]);
-
 			/* Send
 			 * message.
 			 */
-			msg = message_create(SORTWORK, i, minib->size);
-			message_send(outfd[j], msg);
-			message_destroy(msg);
 
+			msg = *(message_create(SORTWORK, i, minib->size));
+			assert(sizeof(msg) <= 64);
+			mailbox_write(outbox[j], &msg);
 			/* Send
 			 * data.
 			 */
@@ -176,19 +185,18 @@ extern void bucketsort(int *array, int n)
 					/* Receive
 					 * message.
 					 */
-					msg = message_receive(infd, nclusters-j);
+					mailbox_read(inbox, &msg);
 
 					/* Receive
 					 * mini-bucket.
 					 */
 					minib = minibucket_create();
-					minib->size = msg->u.sortresult.size;
+					minib->size = msg.u.sortresult.size;
 					data_receive(infd,nclusters-j, minib->elements,
 							minib->size*sizeof(int));
 
-					bucket_push(done[msg->u.sortresult.id], minib);
+					bucket_push(done[msg.u.sortresult.id], minib);
 
-					message_destroy(msg);
 				}
 			}
 		}
@@ -202,20 +210,20 @@ extern void bucketsort(int *array, int n)
 		/* Receive
 		 * message.
 		 */
-		msg = message_receive(infd, j-1);
+		mailbox_read(inbox, &msg);
 
 		/* Receive
 		 * bucket.
 		 */
-		minib = minibucket_create();
-		minib->size = msg->u.sortresult.size;
+		minib = minibucket_create(); 
+		minib->size = msg.u.sortresult.size;
 
 		data_receive(infd, j-1, minib->elements, minib->size*sizeof(int));
 
-		bucket_push(done[msg->u.sortresult.id], minib);
+		bucket_push(done[msg.u.sortresult.id], minib);
 
-		message_destroy(msg);
 	}
+
 
 	start = k1_timer_get();
 	rebuild_array(done, array);
@@ -225,6 +233,11 @@ extern void bucketsort(int *array, int n)
 	/* House
 	 * keeping.
 	 */
+	msg = *(message_create(0));
+	for (i = 0; i < nclusters; i++) {
+		mailbox_write(outbox[i], &msg);
+	}
+
 	for (i = 0; i < NUM_BUCKETS; i++)
 	{
 		bucket_destroy(todo[i]);

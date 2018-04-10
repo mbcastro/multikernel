@@ -223,6 +223,7 @@ km-name := km.img
 
 cluster-bin += is-slave
 is-slave-srcs := $(SRCDIR)/benchmark/is/slave/slave.c    \
+					 $(SRCDIR)/kernel/arch/mppa/mailbox.c     \
 					 $(SRCDIR)/benchmark/is/slave/sort.c   \
 					 $(SRCDIR)/kernel/arch/mppa/timer.c  \
 					 $(SRCDIR)/kernel/arch/mppa/portal.c  \
@@ -237,6 +238,7 @@ is-slave-lflags := -lmppaipc -lm -lgomp
 
 io-bin += is-master
 is-master-srcs := $(SRCDIR)/benchmark/is/master/main.c    \
+					  $(SRCDIR)/kernel/arch/mppa/mailbox.c     \
 					  $(SRCDIR)/benchmark/is/master/bucketsort.c   \
 					  $(SRCDIR)/benchmark/is/master/bucket.c \
 					  $(SRCDIR)/benchmark/is/master/minibucket.c \
@@ -246,7 +248,7 @@ is-master-srcs := $(SRCDIR)/benchmark/is/master/main.c    \
 					  $(SRCDIR)/kernel/arch/mppa/core.c    \
 					  $(SRCDIR)/benchmark/is/master/ipc.c  \
 					  $(SRCDIR)/benchmark/is/master/message.c \
-					  $(SRCDIR)/benchmark/is/master/util.c
+					  $(SRCDIR)/benchmark/is/master/util.c    
 
 
 #$(SRCDIR)/benchmark/is/master/ipc.c     

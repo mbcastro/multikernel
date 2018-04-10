@@ -5,6 +5,7 @@
  */
 
 #include <nanvix/arch/mppa.h>
+#include <nanvix/pm.h>
 #include <assert.h>
 #include <limits.h>
 #include <omp.h>
@@ -43,28 +44,32 @@ int main(int argc, char **argv)
 {
     int i;               /* Loop index. */
     int id;              /* Bucket ID.  */
-    struct message *msg; /* Message.    */
+    struct message msg; /* Message.    */
+    int clusterid;
+    int inbox;
+    int outbox;
+    char pathname [128];
 
 #define NUM_THREADS 4
 
     omp_set_num_threads(NUM_THREADS);
 
- //   timer_init();
-
-    //total = 0;
 
     ((void)argc);
 
     rank = atoi(argv[0]);
     open_noc_connectors();
-
+	clusterid = k1_get_cluster_id();
+	assert(rank == clusterid);
+	sprintf(pathname, "/cpu%d", clusterid);
+	inbox = mailbox_create(pathname);
+	outbox = mailbox_open("/io0");
     /* Slave life. */
     while (1)
     {
-	printf("%d", infd);
-        msg = message_receive(infd);
+        mailbox_read(inbox, &msg);
 
-        switch (msg->type)
+        switch (msg.type)
         {
             /* SORTWORK. */
             case SORTWORK:
@@ -72,15 +77,14 @@ int main(int argc, char **argv)
                  * matrix
                  * block.
                  * */
-                block.size = msg->u.sortwork.size;
+                block.size = msg.u.sortwork.size;
                 data_receive(infd, block.elements, block.size*sizeof(int));
 
                 /* Extract
                  * message
                  * information.
                  * */
-                id = msg->u.sortwork.id;
-                message_destroy(msg);
+                id = msg.u.sortwork.id;
 
                 start = k1_timer_get();
                 for (i = block.size; i < (int)(CLUSTER_WORKLOAD/sizeof(int)); i++)
@@ -92,17 +96,17 @@ int main(int argc, char **argv)
                 /* Send
                  * message
                  * back.*/
-                msg = message_create(SORTRESULT, id, block.size);
-                message_send(outfd, msg);
+                msg = *(message_create(SORTRESULT, id, block.size));
+                mailbox_write(outbox, &msg);
+
                 data_send(outfd, block.elements, block.size*sizeof(int));
-                message_destroy(msg);
+
 
                 break;
 
                 /* DIE.
                  * */
             default:
-                message_destroy(msg);
                 goto out;
         }
     }
