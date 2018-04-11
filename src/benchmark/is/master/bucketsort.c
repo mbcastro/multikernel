@@ -39,7 +39,6 @@ static void *thread_main(void *args)
 	struct tdata *t; /* Thread's data. */
 
 	t = args;
-
 	/* Rebuild array. */
 	j = t->args.j0;
 	for (i = t->args.i0; i < t->args.in; i++)
@@ -89,16 +88,15 @@ extern void bucketsort(int *array, int n)
 	int max;                  /* Maximum number.      */
 	int i, j;                 /* Loop indexes.        */
 	int range;                /* Bucket range.        */
-	int inbox;
-	int outbox[NR_CCLUSTER];
+	//int inbox;
+	//int outbox[NR_CCLUSTER];
 	struct minibucket *minib; /* Working mini-bucket. */
-	struct message msg;      /* Working message.     */
+	struct message *msg;      /* Working message.     */
 	struct bucket **todo;     /* Todo buckets.        */
 	struct bucket **done;     /* Done buckets.        */
 	long start, end;      /* Timers.              */
-
+	k1_timer_init();
 	/* Setup slaves. */
-	printf("setup");
 	open_noc_connectors();
 	spawn_slaves();
 
@@ -113,7 +111,6 @@ extern void bucketsort(int *array, int n)
 	/* Find max
 	 * number in the
 	 * array. */
-	printf("Find max number in the array");	
 	start = k1_timer_get();
 	max = INT_MIN;
 	for (i = 0; i < n; i++)
@@ -126,7 +123,6 @@ extern void bucketsort(int *array, int n)
 	/* Distribute
 	 * numbers.
 	 */
-	printf("Distribute numbers");
 	range = max/NUM_BUCKETS;
 	for (i = 0; i < n; i++)
 	{
@@ -142,14 +138,7 @@ extern void bucketsort(int *array, int n)
 	/* Sort
 	 * buckets.
 	 */
-	printf("Sort");
 	j = 0;
-	char pathname [128];
-	inbox = mailbox_create("/io0");
-	for (i = 0; i < nclusters; i++) {
-		sprintf(pathname, "/cpu%d", i);
-		outbox[i] = mailbox_open(pathname);
-	}
 	for (i = 0; i < NUM_BUCKETS; i++)
 	{
 		while (bucket_size(todo[i]) > 0)
@@ -159,16 +148,16 @@ extern void bucketsort(int *array, int n)
 			 * message.
 			 */
 
-			msg = *(message_create(SORTWORK, i, minib->size));
-			assert(sizeof(msg) <= 64);
-			mailbox_write(outbox[j], &msg);
+			msg = message_create(SORTWORK, i, minib->size);
+			data_send(outfd[j], msg, sizeof(struct message));
+			message_destroy(msg);
+
 			/* Send
 			 * data.
 			 */
 
 			data_send(outfd[j], minib->elements, minib->size*sizeof(int));
 			minibucket_destroy(minib);
-
 			j++;
 
 			/*
@@ -177,6 +166,7 @@ extern void bucketsort(int *array, int n)
 			 */
 			if (j == nclusters)
 			{
+
 				/* Receive
 				 * results.
 				 */
@@ -185,17 +175,19 @@ extern void bucketsort(int *array, int n)
 					/* Receive
 					 * message.
 					 */
-					mailbox_read(inbox, &msg);
-
+					//mailbox_read(inbox, &msg);
+					msg = message_create(DIE);
+					data_receive(infd, nclusters-j, msg, sizeof(struct message));
+					assert(msg->type == SORTRESULT);
 					/* Receive
 					 * mini-bucket.
 					 */
 					minib = minibucket_create();
-					minib->size = msg.u.sortresult.size;
+					minib->size = msg->u.sortresult.size;
 					data_receive(infd,nclusters-j, minib->elements,
 							minib->size*sizeof(int));
-
-					bucket_push(done[msg.u.sortresult.id], minib);
+					
+					bucket_push(done[msg->u.sortresult.id], minib);
 
 				}
 			}
@@ -205,26 +197,26 @@ extern void bucketsort(int *array, int n)
 	/* Receive
 	 * results.
 	 */
+	msg = message_create(DIE);
 	for (/* NOOP */ ; j > 0; j--)
 	{
 		/* Receive
 		 * message.
 		 */
-		mailbox_read(inbox, &msg);
-
+		data_receive(infd, j, msg, sizeof(struct message));
 		/* Receive
 		 * bucket.
 		 */
 		minib = minibucket_create(); 
-		minib->size = msg.u.sortresult.size;
+		minib->size = msg->u.sortresult.size;
 
 		data_receive(infd, j-1, minib->elements, minib->size*sizeof(int));
 
-		bucket_push(done[msg.u.sortresult.id], minib);
+		bucket_push(done[msg->u.sortresult.id], minib);
 
 	}
 
-
+	message_destroy(msg);
 	start = k1_timer_get();
 	rebuild_array(done, array);
 	end = k1_timer_get();
@@ -233,9 +225,9 @@ extern void bucketsort(int *array, int n)
 	/* House
 	 * keeping.
 	 */
-	msg = *(message_create(0));
+	msg = message_create(DIE);
 	for (i = 0; i < nclusters; i++) {
-		mailbox_write(outbox[i], &msg);
+		data_send(outfd[i], msg, sizeof(struct message));
 	}
 
 	for (i = 0; i < NUM_BUCKETS; i++)

@@ -13,10 +13,8 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdarg.h>
-//#include <timer.h>
 #include "util.c"
 #include "message.c"
-//#include "slave.h"
 
 /* Timing statistics. */
 
@@ -44,11 +42,7 @@ int main(int argc, char **argv)
 {
     int i;               /* Loop index. */
     int id;              /* Bucket ID.  */
-    struct message msg; /* Message.    */
-    int clusterid;
-    int inbox;
-    int outbox;
-    char pathname [128];
+    struct message *msg; /* Message.    */
 
 #define NUM_THREADS 4
 
@@ -59,17 +53,14 @@ int main(int argc, char **argv)
 
     rank = atoi(argv[0]);
     open_noc_connectors();
-	clusterid = k1_get_cluster_id();
-	assert(rank == clusterid);
-	sprintf(pathname, "/cpu%d", clusterid);
-	inbox = mailbox_create(pathname);
-	outbox = mailbox_open("/io0");
     /* Slave life. */
+    k1_timer_init();
+    msg = message_create(0);
     while (1)
     {
-        mailbox_read(inbox, &msg);
+        data_receive(infd, msg, sizeof(struct message));
 
-        switch (msg.type)
+        switch (msg->type)
         {
             /* SORTWORK. */
             case SORTWORK:
@@ -77,14 +68,17 @@ int main(int argc, char **argv)
                  * matrix
                  * block.
                  * */
-                block.size = msg.u.sortwork.size;
+                block.size = msg->u.sortwork.size;
                 data_receive(infd, block.elements, block.size*sizeof(int));
-
                 /* Extract
                  * message
                  * information.
                  * */
-                id = msg.u.sortwork.id;
+                id = msg->u.sortwork.id;
+
+                msg = message_create(SORTRESULT, id, block.size);
+                data_send(outfd, msg, sizeof(struct message));
+
 
                 start = k1_timer_get();
                 for (i = block.size; i < (int)(CLUSTER_WORKLOAD/sizeof(int)); i++)
@@ -92,13 +86,9 @@ int main(int argc, char **argv)
                 sort2power(block.elements, CLUSTER_WORKLOAD/sizeof(int), CLUSTER_WORKLOAD/NUM_THREADS);
                 end = k1_timer_get();
                 total += k1_timer_diff(start, end);
-
                 /* Send
                  * message
                  * back.*/
-                msg = *(message_create(SORTRESULT, id, block.size));
-                mailbox_write(outbox, &msg);
-
                 data_send(outfd, block.elements, block.size*sizeof(int));
 
 
@@ -107,15 +97,13 @@ int main(int argc, char **argv)
                 /* DIE.
                  * */
             default:
-                goto out;
+		data_send(outfd, &total, sizeof(long));
+		close_noc_connectors();
+		mppa_exit(0);
+		return (0);
         }
     }
 
-out:
 
-    data_send(outfd, &total, sizeof(uint64_t));
-    close_noc_connectors();
-    mppa_exit(0);
-    return (0);
 }
 

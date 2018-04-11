@@ -255,7 +255,7 @@ is-master-srcs := $(SRCDIR)/benchmark/is/master/main.c    \
 
 # Toolchain Configuration
 is-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
-is-master-cflags += -I $(SRCDIR)/benchmark/include
+is-master-cflags += -I $(SRCDIR)/benchmark/include -lpthread
 is-master-lflags := -lmppaipc -lm
 
 is-objs := rmem-server is-slave is-master
@@ -265,6 +265,6 @@ is-name := is.img
 # MPPA Binary
 #=============================================================================
 
-mppa-bin := portal async mailbox rmem
+mppa-bin := portal async mailbox rmem is
 
 include $(K1_TOOLCHAIN_DIR)/share/make/Makefile.kalray

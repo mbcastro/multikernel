@@ -40,7 +40,7 @@ static struct problem huge     = { 134217728 };
 
 /* Benchmark parameters. */
 int verbose = 0;                  /* Be verbose?        */
-int nclusters = 1;                /* Number of threads. */
+int nclusters = 16;                /* Number of threads. */
 static int seed = 0;              /* Seed number.       */
 static struct problem *p = &tiny; /* Problem.           */
 
@@ -141,25 +141,22 @@ int main(int argc, char **argv)
 
     readargs(argc, argv);
 
-    //timer_init();
+    k1_timer_init();
     srandnum(seed);
 
     /* Benchmark initialization. */
-    //if (verbose)
+    if (verbose)
         printf("initializing...\n");
     start = k1_timer_get();
     a = smalloc(p->n*sizeof(int));
     for (i = 0; i < p->n; i++)
         a[i] = randnum() & 0xfffff;
     end = k1_timer_get();
-    //if (verbose)
+    if (verbose)
         printf("  time spent: %f\n", k1_timer_diff(start, end)*MICROSEC);
 
     /* Cluster data. */
-    //if (verbose)
-    nclusters=16;
-    printf("%d\n", nclusters);
-    printf("%d\n", p->n);
+    if (verbose)
         printf("sorting...\n");
     start = k1_timer_get();
     bucketsort(a, p->n);
