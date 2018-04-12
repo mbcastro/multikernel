@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "slave.h"
-#include "../kernel.h"
+#include "../../kernel.h"
 
 #define NTHREADS 16
 

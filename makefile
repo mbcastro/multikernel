@@ -176,8 +176,8 @@ rmem-name := rmem.img
 #=============================================================================
 
 cluster-bin += km-slave
-km-slave-srcs := $(SRCDIR)/benchmark/km/slave/slave.c     \
-					 $(SRCDIR)/benchmark/km/slave/vector.c    \
+km-slave-srcs := $(SRCDIR)/benchmark/km/rmem/slave/slave.c     \
+					 $(SRCDIR)/benchmark/km/rmem/slave/vector.c    \
 					 $(SRCDIR)/kernel/arch/mppa/mailbox.c \
 					 $(SRCDIR)/kernel/arch/mppa/portal.c  \
 					 $(SRCDIR)/kernel/arch/mppa/barrier.c \
@@ -194,11 +194,11 @@ km-slave-cflags += -I $(SRCDIR)/benchmark/include -fopenmp
 km-slave-lflags := -lmppaipc -lm -lgomp
 
 io-bin += km-master
-km-master-srcs := $(SRCDIR)/benchmark/km/master/main.c     \
-					  $(SRCDIR)/benchmark/km/master/master.c   \
-					  $(SRCDIR)/benchmark/km/master/vector.c   \
-					  $(SRCDIR)/benchmark/km/master/util.c     \
-					  $(SRCDIR)/benchmark/km/master/ipc.c      \
+km-master-srcs := $(SRCDIR)/benchmark/km/rmem/master/main.c     \
+					  $(SRCDIR)/benchmark/km/rmem/master/master.c   \
+					  $(SRCDIR)/benchmark/km/rmem/master/vector.c   \
+					  $(SRCDIR)/benchmark/km/rmem/master/util.c     \
+					  $(SRCDIR)/benchmark/km/rmem/master/ipc.c      \
 					  $(SRCDIR)/kernel/arch/mppa/mailbox.c \
 					  $(SRCDIR)/kernel/arch/mppa/portal.c  \
 					  $(SRCDIR)/kernel/arch/mppa/barrier.c \

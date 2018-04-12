@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "master.h"
-#include "../kernel.h"
+#include "../../kernel.h"
 
 
 /**
