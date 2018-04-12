@@ -205,7 +205,6 @@ int main(int argc, char **argv)
 	/*---------------------------------------------------------------*
 	 * Benchmark Initialization                                      *
 	 *---------------------------------------------------------------*/
-	printf("%s\n", argv[0]);
 	
 	readargs(argc, argv);
 	srandnum(seed);
