@@ -10,19 +10,6 @@
 #include <stdlib.h>
 #include "master.h"
 
-#define MICRO (1.0/1000000)
-
-/* Timing statistics. */
-long master = 0;         /* Time spent on master.        */
-long slave[NR_CCLUSTER]; /* Time spent on slaves.        */
-long communication = 0;  /* Time spent on communication. */
-
-/* Data exchange statistics. */
-size_t data_sent = 0;     /* Number of bytes received. */
-unsigned nsend = 0;       /* Number of sends.          */
-size_t data_received = 0; /* Number of bytes sent.     */
-unsigned nreceive = 0;    /* Number of receives.       */
-
 /*
  * Problem.
  */
@@ -156,10 +143,7 @@ static void readargs(int argc, char **argv)
 int main(int argc, char **argv)
 {
 	int *map;         /* Map of clusters.           */
-	long t[2];        /* Timings.                   */
 	vector_t *data;   /* Data points.               */
-	long time_init;   /* Total initialization time. */
-	long time_kernel; /* Total kernel time.         */
 	
 	/*---------------------------------------------------------------*
 	 * Benchmark Initialization                                      *
@@ -167,20 +151,16 @@ int main(int argc, char **argv)
 	
 	readargs(argc, argv);
 	srandnum(seed);
-	k1_timer_init();
 
 	if (verbose)
 		printf("initializing...\n");
 
-	t[0] = k1_timer_get();
-		data = smalloc(p->npoints*sizeof(vector_t));
-		for (int i = 0; i < p->npoints; i++)
-		{
-			data[i] = vector_create(p->dimension);
-			vector_random(data[i]);
-		}
-	t[1] = k1_timer_get();
-	time_init = k1_timer_diff(t[0], t[1]);
+	data = smalloc(p->npoints*sizeof(vector_t));
+	for (int i = 0; i < p->npoints; i++)
+	{
+		data[i] = vector_create(p->dimension);
+		vector_random(data[i]);
+	}
 	
 	/*---------------------------------------------------------------*
 	 * Cluster Data                                                  *
@@ -189,32 +169,7 @@ int main(int argc, char **argv)
 	if (verbose)
 		printf("clustering data...\n");
 
-	t[0] = k1_timer_get();
 		map = kmeans(data, p->npoints, p->ncentroids, p->mindistance);
-	t[1] = k1_timer_get();
-	time_kernel = k1_timer_diff(t[0], t[1]);
-
-	/*---------------------------------------------------------------*
-	 * Print Timing Statistics                                       *
-	 *---------------------------------------------------------------*/
-
-	printf("timing statistics:\n");
-
-	printf("  initialization time: %f\n",  time_init*MICRO);
-	printf("  kernel time:          %f\n", time_kernel*MICRO);
-
-	if (verbose)
-	{
-		printf("  master:        %f\n", master*MICRO);
-		for (int i = 0; i < nclusters; i++)
-			printf("  slave %d:      %f\n", i, slave[i]*MICRO);
-		printf("  communication: %f\n", communication*MICRO);
-		printf("data exchange statistics:\n");
-		printf("  data sent:            %d\n", data_sent);
-		printf("  number sends:         %u\n", nsend);
-		printf("  data received:        %d\n", data_received);
-		printf("  number receives:      %u\n", nreceive);
-	}
 	
 	/*---------------------------------------------------------------*
 	 * House Keeping                                                 *

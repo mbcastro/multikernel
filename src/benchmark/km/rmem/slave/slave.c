@@ -59,9 +59,6 @@ static int   lppopulation[MAX_CENTROIDS/NR_CCLUSTER + DELTA];
 /* Thread communication. */
 static omp_lock_t lock[NTHREADS];
 
-/* Timing statistics. */
-long total = 0;
-
 /*===================================================================*
  * populate()                                                        *
  *===================================================================*/
@@ -71,53 +68,46 @@ long total = 0;
  */
 static void populate(void)
 {
-	long t[2];
+	barrier_wait(barrier);
+
+	memread(OFF_CENTROIDS, &centroids[0], ncentroids*dimension*sizeof(float));
+
+	memset(ltoo_far, 0, NTHREADS*sizeof(int));
 	
-	t[0] = k1_timer_get();
+	/* Iterate over data points. */
+	#pragma omp parallel for
+	for (int i = 0; i < lnpoints; i++)
+	{
+		int tid;
+		float distance;
 
-		barrier_wait(barrier);
+		tid = omp_get_thread_num();
 
-		memread(OFF_CENTROIDS, &centroids[0], ncentroids*dimension*sizeof(float));
-
-		memset(ltoo_far, 0, NTHREADS*sizeof(int));
+		distance = vector_distance(&CENTROID(0, lmap[i]), &LPOINT(i));
 		
-		/* Iterate over data points. */
-		#pragma omp parallel for
-		for (int i = 0; i < lnpoints; i++)
+		/* Look for closest cluster. */
+		for (int j = 0; j < ncentroids; j++)
 		{
-			int tid;
-			float distance;
+			float tmp;
 
-			tid = omp_get_thread_num();
-
-			distance = vector_distance(&CENTROID(0, lmap[i]), &LPOINT(i));
-			
-			/* Look for closest cluster. */
-			for (int j = 0; j < ncentroids; j++)
-			{
-				float tmp;
-
-				/* Point is in this cluster. */
-				if (j == lmap[i])
-					continue;
-					
-				tmp = vector_distance(&CENTROID(0, j), &LPOINT(i));
+			/* Point is in this cluster. */
+			if (j == lmap[i])
+				continue;
 				
-				/* Found. */
-				if (tmp < distance)
-				{
-					lmap[i] = j;
-					distance = tmp;
-				}
-			}
+			tmp = vector_distance(&CENTROID(0, j), &LPOINT(i));
 			
-			/* Cluster is too far away. */
-			if (distance > mindistance)
-				ltoo_far[tid] = 1;
+			/* Found. */
+			if (tmp < distance)
+			{
+				lmap[i] = j;
+				distance = tmp;
+			}
 		}
-
-	t[1] = k1_timer_get();
-	total += k1_timer_diff(t[0], t[1]);
+		
+		/* Cluster is too far away. */
+		if (distance > mindistance)
+			ltoo_far[tid] = 1;
+	}
 }
 
 /*====================================================================*
@@ -129,42 +119,35 @@ static void populate(void)
  */
 static inline void compute_pcentroids(void)
 {
-	long t[2];
+	memset(&lhas_changed,      0, NTHREADS*sizeof(int));
+	memset(&LCENTROID(0, 0),   0, ncentroids*dimension*sizeof(float));
+	memset(&LPOPULATION(0, 0), 0, ncentroids*sizeof(int));
 
-	t[0] = k1_timer_get();
+	/* Compute partial centroids. */
+	#pragma omp parallel for
+	for (int i = 0; i < lnpoints; i++)
+	{
+		int j;
 
-		memset(&lhas_changed,      0, NTHREADS*sizeof(int));
-		memset(&LCENTROID(0, 0),   0, ncentroids*dimension*sizeof(float));
-		memset(&LPOPULATION(0, 0), 0, ncentroids*sizeof(int));
-
-		/* Compute partial centroids. */
-		#pragma omp parallel for
-		for (int i = 0; i < lnpoints; i++)
-		{
-			int j;
-
-			j = lmap[i]%NTHREADS;
-			
-			omp_set_lock(&lock[j]);
-			
-				vector_add(&LCENTROID(0, lmap[i]), &LPOINT(i));
-				LPOPULATION(0, lmap[i])++;
-			
-			omp_unset_lock(&lock[j]);
-		}
-
-		memwrite(OFF_PCENTROIDS(rank, 0),
-			&LCENTROID(0, 0),
-			ncentroids*dimension*sizeof(float)
-		);
+		j = lmap[i]%NTHREADS;
 		
-		memwrite(OFF_PPOPULATION(rank, 0),
-			&LPOPULATION(0, 0),
-			ncentroids*sizeof(int)
-		);
+		omp_set_lock(&lock[j]);
+		
+			vector_add(&LCENTROID(0, lmap[i]), &LPOINT(i));
+			LPOPULATION(0, lmap[i])++;
+		
+		omp_unset_lock(&lock[j]);
+	}
+
+	memwrite(OFF_PCENTROIDS(rank, 0),
+		&LCENTROID(0, 0),
+		ncentroids*dimension*sizeof(float)
+	);
 	
-	t[1] = k1_timer_get();
-	total += k1_timer_diff(t[0], t[1]);
+	memwrite(OFF_PPOPULATION(rank, 0),
+		&LPOPULATION(0, 0),
+		ncentroids*sizeof(int)
+	);
 }
 
 /*===================================================================*
@@ -176,64 +159,57 @@ static inline void compute_pcentroids(void)
  */
 static void compute_centroids(void)
 {
-	long t[2];
+	barrier_wait(barrier);
 
-	t[0] = k1_timer_get();
+	/* Compute centroids. */
+	for (int i = 0; i < nclusters; i++)
+	{
+		if (i == rank)
+			continue;
 
-		barrier_wait(barrier);
-
-		/* Compute centroids. */
-		for (int i = 0; i < nclusters; i++)
-		{
-			if (i == rank)
-				continue;
-
-			memread(OFF_PCENTROIDS(i, rank*(ncentroids/nclusters)*dimension),
-				&LPCENTROID(0),
-				lncentroids*dimension*sizeof(float)
-			);
-
-			memread(OFF_PPOPULATION(i, rank*(ncentroids/nclusters)),
-				&LPPOPULATION(0),
-				lncentroids*sizeof(int)
-			);
-
-			#pragma omp parallel for
-			for (int j = 0; j < lncentroids; j++)
-			{
-				if (LPPOPULATION(j) < 1)
-					continue;
-				
-				LPOPULATION(rank, j) += LPPOPULATION(j);
-				vector_add(&LCENTROID(rank, j), &LPCENTROID(j));
-			}
-		}
-			
-		#pragma omp parallel for
-		for (int j = 0; j < lncentroids; j++)
-		{
-			if (LPOPULATION(rank, j) > 1)
-				vector_mult(&LCENTROID(rank, j), 1.0/LPOPULATION(rank, j));
-			
-			/* Cluster mean has changed. */
-			if (!vector_equal(&CENTROID(rank, j), &LCENTROID(rank, j)))
-			{
-				lhas_changed[omp_get_thread_num()] = 1;
-				vector_assign(&CENTROID(rank, j), &LCENTROID(rank, j));
-			}
-		}
-
-		barrier_wait(barrier);
-		memwrite(OFF_CENTROIDS +
-				rank*(ncentroids/nclusters)*dimension*sizeof(float),
-			&CENTROID(rank, 0),
+		memread(OFF_PCENTROIDS(i, rank*(ncentroids/nclusters)*dimension),
+			&LPCENTROID(0),
 			lncentroids*dimension*sizeof(float)
 		);
 
-		barrier_wait(barrier);
+		memread(OFF_PPOPULATION(i, rank*(ncentroids/nclusters)),
+			&LPPOPULATION(0),
+			lncentroids*sizeof(int)
+		);
 
-	t[1] = k1_timer_get();
-	total += k1_timer_diff(t[0], t[1]);
+		#pragma omp parallel for
+		for (int j = 0; j < lncentroids; j++)
+		{
+			if (LPPOPULATION(j) < 1)
+				continue;
+			
+			LPOPULATION(rank, j) += LPPOPULATION(j);
+			vector_add(&LCENTROID(rank, j), &LPCENTROID(j));
+		}
+	}
+		
+	#pragma omp parallel for
+	for (int j = 0; j < lncentroids; j++)
+	{
+		if (LPOPULATION(rank, j) > 1)
+			vector_mult(&LCENTROID(rank, j), 1.0/LPOPULATION(rank, j));
+		
+		/* Cluster mean has changed. */
+		if (!vector_equal(&CENTROID(rank, j), &LCENTROID(rank, j)))
+		{
+			lhas_changed[omp_get_thread_num()] = 1;
+			vector_assign(&CENTROID(rank, j), &LCENTROID(rank, j));
+		}
+	}
+
+	barrier_wait(barrier);
+	memwrite(OFF_CENTROIDS +
+			rank*(ncentroids/nclusters)*dimension*sizeof(float),
+		&CENTROID(rank, 0),
+		lncentroids*dimension*sizeof(float)
+	);
+
+	barrier_wait(barrier);
 }
 
 /*============================================================================*
@@ -245,40 +221,29 @@ static void compute_centroids(void)
  */
 static int again(void)
 {
-	long t[2];
+	too_far[rank] = 0;
+	has_changed[rank] = 0;
 
-	t[0] = k1_timer_get();
+	for (int i = 0; i < NTHREADS; i++)
+	{
+		too_far[rank] |= ltoo_far[i];
+		has_changed[rank] |= lhas_changed[i];
+	}	
 
-		too_far[rank] = 0;
-		has_changed[rank] = 0;
+	memwrite(OFF_HAS_CHANGED(rank), &has_changed[rank], sizeof(int));
+	memwrite(OFF_TOO_FAR(rank),     &too_far[rank],     sizeof(int));
 
-		for (int i = 0; i < NTHREADS; i++)
-		{
-			too_far[rank] |= ltoo_far[i];
-			has_changed[rank] |= lhas_changed[i];
-		}	
+	barrier_wait(barrier);
 
-		memwrite(OFF_HAS_CHANGED(rank), &has_changed[rank], sizeof(int));
-		memwrite(OFF_TOO_FAR(rank),     &too_far[rank],     sizeof(int));
-
-		barrier_wait(barrier);
-
-		memread(OFF_HAS_CHANGED(0), &has_changed[0], nclusters*sizeof(int));
-		memread(OFF_TOO_FAR(0),     &too_far[0],     nclusters*sizeof(int));
-		
-		/* Checks if another iteration is needed. */	
-		for (int i = 0; i < nclusters; i++)
-		{
-			if (has_changed[i] && too_far[i])
-			{
-				t[1] = k1_timer_get();
-				total += k1_timer_diff(t[0], t[1]);
-				return (1);
-			}
-		}
+	memread(OFF_HAS_CHANGED(0), &has_changed[0], nclusters*sizeof(int));
+	memread(OFF_TOO_FAR(0),     &too_far[0],     nclusters*sizeof(int));
 	
-	t[1] = k1_timer_get();
-	total += k1_timer_diff(t[0], t[1]);
+	/* Checks if another iteration is needed. */	
+	for (int i = 0; i < nclusters; i++)
+	{
+		if (has_changed[i] && too_far[i])
+			return (1);
+	}
 			
 	return (0);
 }
@@ -292,8 +257,6 @@ static int again(void)
  */
 static void kmeans(void)
 {	
-	int it = 0;
-
 	omp_set_num_threads(NTHREADS);
 
 	/* Initialize locks. */
@@ -307,8 +270,6 @@ static void kmeans(void)
 		compute_pcentroids();
 		barrier_wait(barrier);
 		compute_centroids();
-		if (k1_get_cluster_id() == 0)
-			printf("kmeans it: %d\n", ++it);
 	} while (again());
 }
 
@@ -321,6 +282,7 @@ static void kmeans(void)
  */
 int main(int argc, char **argv)
 {
+	uint64_t t[2];
 	int npoints;
 	
 	((void)argc);
@@ -328,32 +290,38 @@ int main(int argc, char **argv)
 	rank = atoi(argv[0]);
 	nclusters = atoi(argv[1]);
 
-	barrier = barrier_open(nclusters);
+	k1_timer_init();
 
-	/* Read global data from remote memory. */
-	memread(OFF_MINDISTANCE, &mindistance, sizeof(float));
-	memread(OFF_NPOINTS,     &npoints,     sizeof(int));
-	memread(OFF_NCENTROIDS,  &ncentroids,  sizeof(int));
-	memread(OFF_DIMENSION,   &dimension,   sizeof(int));
+	t[0] = k1_timer_get();
+		barrier = barrier_open(nclusters);
 
-	lnpoints = (rank < (nclusters - 1)) ?
-		npoints/nclusters : (npoints/nclusters + npoints%nclusters);
+		/* Read global data from remote memory. */
+		memread(OFF_MINDISTANCE, &mindistance, sizeof(float));
+		memread(OFF_NPOINTS,     &npoints,     sizeof(int));
+		memread(OFF_NCENTROIDS,  &ncentroids,  sizeof(int));
+		memread(OFF_DIMENSION,   &dimension,   sizeof(int));
 
-	lncentroids = (rank < (nclusters - 1)) ?
-		ncentroids/nclusters : (ncentroids/nclusters + ncentroids%nclusters);
+		lnpoints = (rank < (nclusters - 1)) ?
+			npoints/nclusters : (npoints/nclusters + npoints%nclusters);
 
-	/* Read local data from remote memory. */
-	memread(OFF_POINTS(rank*(npoints/nclusters), dimension),
-		&lpoints[0],
-		lnpoints*dimension*sizeof(float)
-	);
+		lncentroids = (rank < (nclusters - 1)) ?
+			ncentroids/nclusters : (ncentroids/nclusters + ncentroids%nclusters);
+
+		/* Read local data from remote memory. */
+		memread(OFF_POINTS(rank*(npoints/nclusters), dimension),
+			&lpoints[0],
+			lnpoints*dimension*sizeof(float)
+		);
+		
+		memread(OFF_MAP(rank*(npoints/nclusters)),
+			&lmap[0],
+			lnpoints*sizeof(int)
+		);
 	
-	memread(OFF_MAP(rank*(npoints/nclusters)),
-		&lmap[0],
-		lnpoints*sizeof(int)
-	);
-	
-	kmeans();
+		kmeans();
+	t[1] = k1_timer_get();
+
+	printf("%d;%" PRIu64 "\n", rank, k1_timer_diff(t[0], t[1]));
 
 	memwrite(OFF_MAP(rank*(npoints/nclusters)),
 		&lmap[0],

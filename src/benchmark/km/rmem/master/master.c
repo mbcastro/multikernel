@@ -74,7 +74,6 @@ void kmeans(
 	static float centroids[LENGTH_CENTROIDS]; /* Centroids.       */
 	static int  map[LENGTH_MAP];              /* Cluster mapping. */
 
-	printf("initializing\n");
 	kmeans_init(points, npoints, dimension, centroids, ncentroids, map);
 
 	barrier = barrier_open(NR_IOCLUSTER);
@@ -92,7 +91,6 @@ void kmeans(
 	memwrite(OFF_DIMENSION,            &dimension,       sizeof(int));
 	memwrite(OFF_DIMENSION,            &dimension,       sizeof(int));
 
-	printf("spawning slaves\n");
 	spawn_slaves();
 
 	join_slaves();

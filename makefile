@@ -29,7 +29,7 @@ cflags += -Wall -Wextra -Werror
 cflags += -Winit-self -Wswitch-default -Wfloat-equal -Wundef -Wshadow -Wuninitialized
 cflags += -O3
 cflags += -I $(INCDIR)
-cflags += -D_KALRAY_MPPA256 -DDEBUG
+cflags += -D_KALRAY_MPPA256
 lflags := -Wl,--defsym=_LIBNOC_DISABLE_FIFO_FULL_CHECK=0
 
 #=============================================================================
@@ -202,7 +202,6 @@ km-rmem-master-srcs := $(SRCDIR)/benchmark/km/rmem/master/main.c     \
 					  $(SRCDIR)/kernel/arch/mppa/portal.c  \
 					  $(SRCDIR)/kernel/arch/mppa/barrier.c \
 					  $(SRCDIR)/kernel/arch/mppa/name.c    \
-					  $(SRCDIR)/kernel/arch/mppa/timer.c   \
 					  $(SRCDIR)/kernel/arch/mppa/core.c    \
 					  $(SRCDIR)/kernel/sys/meminit.c       \
 					  $(SRCDIR)/kernel/sys/memread.c       \
@@ -220,7 +219,6 @@ cluster-bin += km-portal-slave
 km-portal-slave-srcs := $(SRCDIR)/benchmark/km/portal/slave/slave.c     \
 					 $(SRCDIR)/benchmark/km/portal/slave/vector.c    \
 					 $(SRCDIR)/benchmark/km/portal/slave/ipc.c    \
-					 $(SRCDIR)/kernel/arch/mppa/mailbox.c \
 					 $(SRCDIR)/kernel/arch/mppa/portal.c  \
 					 $(SRCDIR)/kernel/arch/mppa/barrier.c \
 					 $(SRCDIR)/kernel/arch/mppa/name.c    \
@@ -238,11 +236,8 @@ km-portal-master-srcs := $(SRCDIR)/benchmark/km/portal/master/main.c     \
 					  $(SRCDIR)/benchmark/km/portal/master/vector.c   \
 					  $(SRCDIR)/benchmark/km/portal/master/util.c     \
 					  $(SRCDIR)/benchmark/km/portal/master/ipc.c      \
-					  $(SRCDIR)/kernel/arch/mppa/mailbox.c \
 					  $(SRCDIR)/kernel/arch/mppa/portal.c  \
-					  $(SRCDIR)/kernel/arch/mppa/barrier.c \
 					  $(SRCDIR)/kernel/arch/mppa/name.c    \
-					  $(SRCDIR)/kernel/arch/mppa/timer.c   \
 					  $(SRCDIR)/kernel/arch/mppa/core.c
  
 # Toolchain Configuration

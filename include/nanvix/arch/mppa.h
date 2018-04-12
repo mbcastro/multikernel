@@ -14,7 +14,7 @@
  * GNU General Public License for more details.
  * 
  * You should have received a copy of the GNU General Public License
- * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
+ * auint64_t with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #ifndef NANVIX_ARCH_MPPA256
@@ -24,6 +24,7 @@
 		#error "bad target"
 	#endif
 
+#include <inttypes.h>
 	#include <HAL/hal/core/timer.h>
 	#include <HAL/hal/core/diagnostic.h>
 #ifdef _KALRAY_MPPA_256_HIGH_LEVEL
@@ -95,8 +96,8 @@
 	extern long k1_get_ccluster_freq(void);
 
 	/* Forward defnitions. */
-	extern long k1_timer_get(void);
-	extern long k1_timer_diff(long, long);
+	extern uint64_t k1_timer_get(void);
+	extern uint64_t k1_timer_diff(uint64_t, uint64_t);
 	extern void k1_timer_init(void);
 
 #endif /* NANVIX_ARCH_MPPA256 */

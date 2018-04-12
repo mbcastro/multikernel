@@ -9,9 +9,10 @@
 #include <omp.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include "slave.h"
 
-#define NUM_THREADS 1
+#define NUM_THREADS 16
 
 #define DIMENSION          16
 #define NUM_POINTS     262144
@@ -57,11 +58,6 @@ static float lcentroids[LCENTROIDS_SIZE + DELTA*DIMENSION];            /* Local 
 /* Thread communication. */
 static omp_lock_t lock[NUM_THREADS];
 
-/* Timing statistics. */
-long start;
-long end;
-long total = 0;
-
 /*===================================================================*
  * populate()                                                        *
  *===================================================================*/
@@ -71,44 +67,39 @@ long total = 0;
  */
 static void populate(void)
 {
-	start = k1_timer_get();
+	memset(&too_far[rank*NUM_THREADS], 0, NUM_THREADS*sizeof(int)); 
+	
+	/* Iterate over data points. */
+	#pragma omp parallel for
+	for (int i = 0; i < lnpoints; i++)
+	{
+		float distance;
 
-		memset(&too_far[rank*NUM_THREADS], 0, NUM_THREADS*sizeof(int)); 
+		distance = vector_distance(CENTROID(map[i]), POINT(i));
 		
-		/* Iterate over data points. */
-		#pragma omp parallel for
-		for (int i = 0; i < lnpoints; i++)
+		/* Look for closest cluster. */
+		for (int j = 0; j < ncentroids; j++)
 		{
-			float distance;
+			float tmp;
 
-			distance = vector_distance(CENTROID(map[i]), POINT(i));
-			
-			/* Look for closest cluster. */
-			for (int j = 0; j < ncentroids; j++)
-			{
-				float tmp;
-
-				/* Point is in this cluster. */
-				if (j == map[i])
-					continue;
-					
-				tmp = vector_distance(CENTROID(j), POINT(i));
+			/* Point is in this cluster. */
+			if (j == map[i])
+				continue;
 				
-				/* Found. */
-				if (tmp < distance)
-				{
-					map[i] = j;
-					distance = tmp;
-				}
-			}
+			tmp = vector_distance(CENTROID(j), POINT(i));
 			
-			/* Cluster is too far away. */
-			if (distance > mindistance)
-				too_far[rank*NUM_THREADS + omp_get_thread_num()] = 1;
+			/* Found. */
+			if (tmp < distance)
+			{
+				map[i] = j;
+				distance = tmp;
+			}
 		}
-
-	end = k1_timer_get();
-	total += k1_timer_diff(start, end);
+		
+		/* Cluster is too far away. */
+		if (distance > mindistance)
+			too_far[rank*NUM_THREADS + omp_get_thread_num()] = 1;
+	}
 }
 
 /*===================================================================*
@@ -201,72 +192,62 @@ static void sync_status(void)
 static void compute_centroids(void)
 {
 	int population;
-
-	start = k1_timer_get();
 	
-		memcpy(lcentroids, CENTROID(rank*(ncentroids/nprocs)), lncentroids[rank]*dimension*sizeof(float));
-		memset(&has_changed[rank*NUM_THREADS], 0, NUM_THREADS*sizeof(int));
-		memset(centroids, 0, (ncentroids + DELTA*nprocs)*dimension*sizeof(float));
-		memset(ppopulation, 0, (ncentroids + nprocs*DELTA)*sizeof(int));
+	memcpy(lcentroids, CENTROID(rank*(ncentroids/nprocs)), lncentroids[rank]*dimension*sizeof(float));
+	memset(&has_changed[rank*NUM_THREADS], 0, NUM_THREADS*sizeof(int));
+	memset(centroids, 0, (ncentroids + DELTA*nprocs)*dimension*sizeof(float));
+	memset(ppopulation, 0, (ncentroids + nprocs*DELTA)*sizeof(int));
 
-		/* Compute partial centroids. */
-		#pragma omp parallel for
-		for (int i = 0; i < lnpoints; i++)
-		{
-			int j;
+	/* Compute partial centroids. */
+	#pragma omp parallel for
+	for (int i = 0; i < lnpoints; i++)
+	{
+		int j;
 
-			j = map[i]%NUM_THREADS;
+		j = map[i]%NUM_THREADS;
+		
+		omp_set_lock(&lock[j]);
+		
+		vector_add(CENTROID(map[i]), POINT(i));
 			
-			omp_set_lock(&lock[j]);
-			
-			vector_add(CENTROID(map[i]), POINT(i));
-				
-			ppopulation[map[i]]++;
-			
-			omp_unset_lock(&lock[j]);
-		}
-	
-	end = k1_timer_get();
-	total += k1_timer_diff(start, end);
+		ppopulation[map[i]]++;
+		
+		omp_unset_lock(&lock[j]);
+	}
 	
 	sync_pcentroids();
 	sync_ppopulation();
 	
-	start = k1_timer_get();
-
-		/* Compute centroids. */
-		#pragma omp parallel for private(population)
-		for (int j = 0; j < lncentroids[rank]; j++)
-		{
-			population = 0;
-			
-			for (int i = 0; i < nprocs; i++)
-			{
-				if (*POPULATION(i, j) == 0)
-					continue;
-				
-				population += *POPULATION(i, j);
-				
-				if (i == rank)
-					continue;
-				
-				vector_add(PCENTROID(rank, j), PCENTROID(i, j));
-			}
-			
-			if (population > 1)
-				vector_mult(PCENTROID(rank, j), 1.0/population);
-			
-			/* Cluster mean has changed. */
-			if (!vector_equal(PCENTROID(rank, j), LCENTROID(j)))
-			{
-				has_changed[rank*NUM_THREADS + omp_get_thread_num()] = 1;
-				vector_assign(LCENTROID(j), PCENTROID(rank, j));
-			}
-		}
-	
-	end = k1_timer_get();
-	total += k1_timer_diff(start, end);
+	/* Compute centroids. */
+	#pragma omp parallel for private(population)
+	for (int j = 0; j < lncentroids[rank]; j++)
+	{
+		population = 0;
 		
+		for (int i = 0; i < nprocs; i++)
+		{
+			if (*POPULATION(i, j) == 0)
+				continue;
+			
+			population += *POPULATION(i, j);
+			
+			if (i == rank)
+				continue;
+			
+			vector_add(PCENTROID(rank, j), PCENTROID(i, j));
+		}
+		
+		if (population > 1)
+			vector_mult(PCENTROID(rank, j), 1.0/population);
+		
+		/* Cluster mean has changed. */
+		if (!vector_equal(PCENTROID(rank, j), LCENTROID(j)))
+		{
+			has_changed[rank*NUM_THREADS + omp_get_thread_num()] = 1;
+			vector_assign(LCENTROID(j), PCENTROID(rank, j));
+		}
+	}
+	
 	sync_centroids();
 		
 	sync_status();
@@ -281,21 +262,12 @@ static void compute_centroids(void)
  */
 static int again(void)
 {
-	start = k1_timer_get();
-		
-		/* Checks if another iteration is needed. */	
-		for (int i = 0; i < nprocs*NUM_THREADS; i++)
-		{
-			if (has_changed[i] && too_far[i])
-			{
-				end = k1_timer_get();
-				total += k1_timer_diff(start, end);
-				return (1);
-			}
-		}
-	
-	end = k1_timer_get();
-	total += k1_timer_diff(start, end);
+	/* Checks if another iteration is needed. */	
+	for (int i = 0; i < nprocs*NUM_THREADS; i++)
+	{
+		if (has_changed[i] && too_far[i])
+			return (1);
+	}
 			
 	return (0);
 }
@@ -325,15 +297,13 @@ static void kmeans(void)
 /*============================================================================*
  *                                 getwork()                                  *
  *============================================================================*/
-#include <stdio.h>
+
 /*
  * Receives work from master process.
  */
 static void getwork(void)
 {	
 	ssize_t n;
-	
-	k1_timer_init();
 	
 	data_receive(infd, &lnpoints, sizeof(int));
 	
@@ -368,20 +338,26 @@ static void getwork(void)
  */
 int main(int argc, char **argv)
 {
+	uint64_t t[2];
+
 	((void)argc);
 	
 	rank = atoi(argv[0]);
 	
-	open_noc_connectors();
+	k1_timer_init();
 	
-	getwork();
-	
-	kmeans();
-	
-	data_send(outfd, &total, sizeof(long));
+	t[0] = k1_timer_get();
+		open_noc_connectors();
+		
+		getwork();
+		
+		kmeans();
 
-	/* House keeping. */
-	close_noc_connectors();
+		/* House keeping. */
+		close_noc_connectors();
+	t[1] = k1_timer_get();
+
+	printf("%d;%" PRIu64 "\n", rank, k1_timer_diff(t[0], t[1]));
 
 	return (0);
 }

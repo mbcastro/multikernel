@@ -14,7 +14,7 @@
  * GNU General Public License for more details.
  * 
  * You should have received a copy of the GNU General Public License
- * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
+ * auint64_t with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <nanvix/arch/mppa.h>
@@ -23,16 +23,16 @@
 /**
  * @brief Timer error.
  */
-static long timer_error = 0;
+static uint64_t timer_error = 0;
 
 /**
  * @brief Gets the current timer value.
  *
  * @returns The current timer value;
  */
-long k1_timer_get(void)
+uint64_t k1_timer_get(void)
 {
-	return (__k1_counter_num(0));
+	return (__k1_read_dsu_timestamp());
 }
 
 /**
@@ -43,7 +43,7 @@ long k1_timer_get(void)
  *
  * @returns The difference between the two timers (t2 - t1).
  */
-long k1_timer_diff(long t1, long t2)
+uint64_t k1_timer_diff(uint64_t t1, uint64_t t2)
 {
 	return (((t2 - t1) <= timer_error) ? timer_error : t2 - t1 - timer_error);
 }
@@ -53,9 +53,7 @@ long k1_timer_diff(long t1, long t2)
  */
 void k1_timer_init(void)
 {
-	long start, end;
-
-	__k1_counter_enable(0, _K1_CYCLE_COUNT, 0);
+	uint64_t start, end;
 
 	start = k1_timer_get();
 	end = k1_timer_get();

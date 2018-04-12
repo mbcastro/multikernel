@@ -11,7 +11,7 @@
 #include <string.h>
 #include "master.h"
 
-#define NUM_THREADS 1
+#define NUM_THREADS 16
 
 /* Size of arrays. */
 #define CENTROIDS_SIZE ((ncentroids*dimension)+nclusters*(nclusters-1)*dimension)
@@ -100,8 +100,7 @@ static void sendwork(void)
  */
 static void sync_pcentroids(void)
 {
-	ssize_t n;           /* Bytes to send/receive. */
-	long start, end; /* Timer.                 */
+	ssize_t n;
 	
 	/* Receive partial centroids. */
 	n = ncentroids*dimension*sizeof(float);
@@ -115,15 +114,12 @@ static void sync_pcentroids(void)
 	for (int i = 0; i < nclusters; i++)
 	{
 		/* Build partial centroid. */
-		start = k1_timer_get();
 		n = lncentroids[i]*dimension*sizeof(float);
 		for (int j = 0; j < nclusters; j++)
 		{
 			memcpy(CENTROID(j*lncentroids[i]), 
 									PCENTROID(j, i*(ncentroids/nclusters)), n);
 		}
-		end = k1_timer_get();
-		master += k1_timer_diff(start, end);
 
 		n = nclusters*lncentroids[i]*dimension*sizeof(float);
 		data_send(outfd[i], centroids, n);
@@ -139,8 +135,7 @@ static void sync_pcentroids(void)
  */
 static void sync_ppopulation(void)
 {
-	ssize_t n;           /* Bytes to send/receive. */
-	long start, end; /* Timer.                 */
+	ssize_t n;
 
 	/* Receive temporary population. */
 	n = ncentroids*sizeof(int);
@@ -154,15 +149,12 @@ static void sync_ppopulation(void)
 	for (int i = 0; i < nclusters; i++)
 	{
 		/* Build partial population. */
-		start = k1_timer_get();
 		n = lncentroids[i]*sizeof(int);
 		for (int j = 0; j < nclusters; j++)
 		{
 			memcpy(&population[j*lncentroids[i]], 
 								  PPOPULATION(j, i*(ncentroids/nclusters)), n);
 		}
-		end = k1_timer_get();
-		master += k1_timer_diff(start, end);
 
 		n = nclusters*lncentroids[i]*sizeof(int);
 		data_send(outfd[i], population, n);
@@ -231,20 +223,11 @@ static void sync_status(void)
  */
 static int again(void)
 {
-	long start, end;
-	
-	start = k1_timer_get();
-		for (int i = 0; i < nclusters*NUM_THREADS; i++)
-		{
-			if (has_changed[i] && too_far[i])
-			{
-				end = k1_timer_get();
-				master += k1_timer_diff(start, end);
-				return (1);
-			}
-		}
-	end = k1_timer_get();
-	master += k1_timer_diff(start, end);
+	for (int i = 0; i < nclusters*NUM_THREADS; i++)
+	{
+		if (has_changed[i] && too_far[i])
+			return (1);
+	}
 	
 	return (0);
 }
@@ -258,9 +241,6 @@ static int again(void)
  */
 static void _kmeans(void)
 {
-	int it = 0;
-	long start, end;
-	
 	/* Create auxiliary structures. */
 	map = scalloc(npoints, sizeof(int));
 	too_far = smalloc(nclusters*NUM_THREADS*sizeof(int));
@@ -272,7 +252,6 @@ static void _kmeans(void)
 	lnpoints = smalloc(nclusters*sizeof(int));
 	lncentroids = smalloc(nclusters*sizeof(int));
 	
-	start = k1_timer_get();
 	/* Initialize mapping. */
 	for (int i = 0; i < npoints; i++)
 		map[i] = -1;
@@ -293,8 +272,6 @@ static void _kmeans(void)
 		if (map[i] < 0)
 			map[i] = randnum()%ncentroids;
 	}
-	end = k1_timer_get();
-	master += k1_timer_diff(start, end);
 	
 	sendwork();
 	
@@ -304,7 +281,6 @@ static void _kmeans(void)
 		sync_ppopulation();
 		sync_centroids();
 		sync_status();
-		printf("kmeans it: %d\n", ++it);
 	} while (again());
 	
 	/* House keeping. */
