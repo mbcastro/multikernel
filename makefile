@@ -175,8 +175,8 @@ rmem-name := rmem.img
 # Kmeans Benchmark Kernel
 #=============================================================================
 
-cluster-bin += km-slave
-km-slave-srcs := $(SRCDIR)/benchmark/km/rmem/slave/slave.c     \
+cluster-bin += km-rmem-slave
+km-rmem-slave-srcs := $(SRCDIR)/benchmark/km/rmem/slave/slave.c     \
 					 $(SRCDIR)/benchmark/km/rmem/slave/vector.c    \
 					 $(SRCDIR)/kernel/arch/mppa/mailbox.c \
 					 $(SRCDIR)/kernel/arch/mppa/portal.c  \
@@ -189,12 +189,12 @@ km-slave-srcs := $(SRCDIR)/benchmark/km/rmem/slave/slave.c     \
 					 $(SRCDIR)/kernel/sys/memwrite.c
 
 # Toolchain Configuration
-km-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
-km-slave-cflags += -I $(SRCDIR)/benchmark/include -fopenmp
-km-slave-lflags := -lmppaipc -lm -lgomp
+km-rmem-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+km-rmem-slave-cflags += -I $(SRCDIR)/benchmark/include -fopenmp
+km-rmem-slave-lflags := -lmppaipc -lm -lgomp
 
-io-bin += km-master
-km-master-srcs := $(SRCDIR)/benchmark/km/rmem/master/main.c     \
+io-bin += km-rmem-master
+km-rmem-master-srcs := $(SRCDIR)/benchmark/km/rmem/master/main.c     \
 					  $(SRCDIR)/benchmark/km/rmem/master/master.c   \
 					  $(SRCDIR)/benchmark/km/rmem/master/vector.c   \
 					  $(SRCDIR)/benchmark/km/rmem/master/util.c     \
@@ -210,12 +210,48 @@ km-master-srcs := $(SRCDIR)/benchmark/km/rmem/master/main.c     \
 					  $(SRCDIR)/kernel/sys/memwrite.c
  
 # Toolchain Configuration
-km-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
-km-master-cflags += -I $(SRCDIR)/benchmark/include
-km-master-lflags := -lmppaipc -lm
+km-rmem-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+km-rmem-master-lflags := -lmppaipc -lm
 
-km-objs := rmem-server km-slave km-master
-km-name := km.img
+km-rmem-objs := rmem-server km-rmem-slave km-rmem-master
+km-rmem-name := km-rmem.img
+
+
+cluster-bin += km-portal-slave
+km-portal-slave-srcs := $(SRCDIR)/benchmark/km/portal/slave/slave.c     \
+					 $(SRCDIR)/benchmark/km/portal/slave/vector.c    \
+					 $(SRCDIR)/benchmark/km/portal/slave/ipc.c    \
+					 $(SRCDIR)/kernel/arch/mppa/mailbox.c \
+					 $(SRCDIR)/kernel/arch/mppa/portal.c  \
+					 $(SRCDIR)/kernel/arch/mppa/barrier.c \
+					 $(SRCDIR)/kernel/arch/mppa/name.c    \
+					 $(SRCDIR)/kernel/arch/mppa/timer.c   \
+					 $(SRCDIR)/kernel/arch/mppa/core.c
+
+# Toolchain Configuration
+km-portal-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+km-portal-slave-cflags += -I $(SRCDIR)/benchmark/include -fopenmp
+km-portal-slave-lflags := -lmppaipc -lm -lgomp
+
+io-bin += km-portal-master
+km-portal-master-srcs := $(SRCDIR)/benchmark/km/portal/master/main.c     \
+					  $(SRCDIR)/benchmark/km/portal/master/master.c   \
+					  $(SRCDIR)/benchmark/km/portal/master/vector.c   \
+					  $(SRCDIR)/benchmark/km/portal/master/util.c     \
+					  $(SRCDIR)/benchmark/km/portal/master/ipc.c      \
+					  $(SRCDIR)/kernel/arch/mppa/mailbox.c \
+					  $(SRCDIR)/kernel/arch/mppa/portal.c  \
+					  $(SRCDIR)/kernel/arch/mppa/barrier.c \
+					  $(SRCDIR)/kernel/arch/mppa/name.c    \
+					  $(SRCDIR)/kernel/arch/mppa/timer.c   \
+					  $(SRCDIR)/kernel/arch/mppa/core.c
+ 
+# Toolchain Configuration
+km-portal-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+km-portal-master-lflags := -lmppaipc -lm
+
+km-portal-objs := km-portal-master km-portal-slave
+km-portal-name := km-portal.img
 
 #=============================================================================
 # Insertion_sort Benchmark Kernel
@@ -265,6 +301,6 @@ is-name := is.img
 # MPPA Binary
 #=============================================================================
 
-mppa-bin := portal async mailbox rmem is km
+mppa-bin := portal async mailbox rmem is km-rmem km-portal
 
 include $(K1_TOOLCHAIN_DIR)/share/make/Makefile.kalray

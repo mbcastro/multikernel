@@ -58,26 +58,21 @@ then
 	nmessages=2
 
 	echo "Testing ASYNC"
-#	run1 "async.img" "master.elf" "$nclusters $size"
-#	echo "Testing PORTAL"
-#	run1 "portal.img" "portal-master" "write $nclusters $size"
-#	echo "Testing MAILBOX"
-#	run1 "mailbox.img" "mailbox-master" "$nclusters $nmessages"
-#	echo "Testing IS"
-#	run1 "is.img" "is-master" "--clusters $nclusters --class tiny"
-#	echo "Testing RMEM"
-#	run2 "rmem.img" "rmem-master" "rmem-server" "write $nclusters $size"
-#	run2 "rmem.img" "rmem-master" "rmem-server" "read $nclusters $size"
-	run2 "km.img" "km-master" "rmem-server" "--nclusters $nclusters --class tiny"	
+	run1 "async.img" "master.elf" "$nclusters $size"
+	echo "Testing PORTAL"
+	run1 "portal.img" "portal-master" "write $nclusters $size"
+	echo "Testing MAILBOX"
+	run1 "mailbox.img" "mailbox-master" "$nclusters $nmessages"
+	echo "Testing RMEM"
+	run2 "rmem.img" "rmem-master" "rmem-server" "write $nclusters $size"
+	run2 "rmem.img" "rmem-master" "rmem-server" "read $nclusters $size"
 else
 	for nclusters in 4 8 12 16;
 	do
-		echo "Running $nclusters"
-		for size in 1024 2048 4096 8192 16384 32768 65536 131072 262144 524288 1048576;
-		do
-			run1 "async.img" "master.elf" "$nclusters $size" >> async.out
-			run1 "portal.img" "portal-master" "$nclusters $size" >> portal.out
-			run2 "rmem.img" "rmem-master" "rmem-server" "$nclusters $size" >> rmem.out
-		done
+		echo "Running IS"
+		run1 "is.img" "is-master" "--nclusters $nclusters --class tiny"
+		echo "Running KM"
+		run1 "km-portal.img" "km-portal-master"            "--nclusters $nclusters --class tiny"
+		run2 "km-rmem.img" "km-rmem-master" "rmem-server" "--nclusters $nclusters --class tiny"	
 	done
 fi
