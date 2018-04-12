@@ -148,17 +148,17 @@ static inline void compute_pcentroids(void)
 			omp_set_lock(&lock[j]);
 			
 				vector_add(&LCENTROID(0, lmap[i]), &LPOINT(i));
-				LPOPULATION(0, lmap[i]) =1;
+				LPOPULATION(0, lmap[i])++;
 			
 			omp_unset_lock(&lock[j]);
 		}
 
-		memwrite(OFF_PCENTROIDS(rank*ncentroids, 0),
+		memwrite(OFF_PCENTROIDS(rank, 0),
 			&LCENTROID(0, 0),
 			ncentroids*dimension*sizeof(float)
 		);
 		
-		memwrite(OFF_PPOPULATION(rank*ncentroids, 0),
+		memwrite(OFF_PPOPULATION(rank, 0),
 			&LPOPULATION(0, 0),
 			ncentroids*sizeof(int)
 		);
@@ -188,12 +188,12 @@ static void compute_centroids(void)
 			if (i == rank)
 				continue;
 
-			memread(OFF_PCENTROIDS(i*ncentroids, rank*(ncentroids/nclusters)*dimension),
+			memread(OFF_PCENTROIDS(i, rank*(ncentroids/nclusters)*dimension),
 				&LPCENTROID(0),
 				lncentroids*dimension*sizeof(float)
 			);
 
-			memread(OFF_PPOPULATION(i*ncentroids, rank*(ncentroids/nclusters)),
+			memread(OFF_PPOPULATION(i, rank*(ncentroids/nclusters)),
 				&LPPOPULATION(0),
 				lncentroids*sizeof(int)
 			);

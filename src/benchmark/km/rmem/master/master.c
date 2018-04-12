@@ -77,8 +77,6 @@ void kmeans(
 	printf("initializing\n");
 	kmeans_init(points, npoints, dimension, centroids, ncentroids, map);
 
-	printf("writing to remote memory\n");
-
 	barrier = barrier_open(NR_IOCLUSTER);
 	barrier_wait(barrier);
 
