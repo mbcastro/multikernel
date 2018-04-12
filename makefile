@@ -298,9 +298,44 @@ is-objs := rmem-server is-slave is-master
 is-name := is.img
 
 #=============================================================================
+# Gaussian Filter Portal Benchmark Kernel
+#=============================================================================
+
+cluster-bin += gf-portal-slave
+gf-portal-slave-srcs := $(SRCDIR)/benchmark/gf/portal/slave/slave.c \
+				        $(SRCDIR)/benchmark/gf/portal/slave/ipc.c   \
+				        $(SRCDIR)/kernel/arch/mppa/timer.c          \
+				        $(SRCDIR)/kernel/arch/mppa/portal.c         \
+				        $(SRCDIR)/kernel/arch/mppa/name.c           \
+				        $(SRCDIR)/kernel/arch/mppa/core.c
+
+# Toolchain Configuration
+gf-portal-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+gf-portal-slave-cflags += -I $(SRCDIR)/benchmark/include -fopenmp
+gf-portal-slave-lflags := -lmppaipc -lm -lgomp
+
+io-bin += gf-portal-master
+gf-portal-master-srcs := $(SRCDIR)/benchmark/gf/portal/master/main.c   \
+						 $(SRCDIR)/benchmark/gf/portal/master/master.c \
+						 $(SRCDIR)/benchmark/gf/portal/master/ipc.c    \
+						 $(SRCDIR)/benchmark/gf/portal/master/util.c   \
+						 $(SRCDIR)/kernel/arch/mppa/timer.c            \
+						 $(SRCDIR)/kernel/arch/mppa/portal.c           \
+						 $(SRCDIR)/kernel/arch/mppa/name.c             \
+						 $(SRCDIR)/kernel/arch/mppa/core.c
+ 
+# Toolchain Configuration
+gf-portal-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+gf-portal-master-cflags += -I $(SRCDIR)/benchmark/include
+gf-portal-master-lflags := -lmppaipc -lm
+
+gf-portal-objs := rmem-server gf-portal-slave gf-portal-master
+gf-portal-name := gf-portal.img
+
+#=============================================================================
 # MPPA Binary
 #=============================================================================
 
-mppa-bin := portal async mailbox rmem is km-rmem km-portal
+mppa-bin := portal async mailbox rmem is km-rmem km-portal gf-portal
 
 include $(K1_TOOLCHAIN_DIR)/share/make/Makefile.kalray
