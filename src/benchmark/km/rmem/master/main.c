@@ -11,17 +11,6 @@
 
 #define MICRO (1.0/1000000)
 
-/* Timing statistics. */
-long master = 0;         /* Time spent on master.        */
-long slave[NR_CCLUSTER]; /* Time spent on slaves.        */
-long communication = 0;  /* Time spent on communication. */
-
-/* Data exchange statistics. */
-size_t data_sent = 0;     /* Number of bytes received. */
-unsigned nsend = 0;       /* Number of sends.          */
-size_t data_received = 0; /* Number of bytes sent.     */
-unsigned nreceive = 0;    /* Number of receives.       */
-
 /*
  * Problem.
  */
@@ -89,7 +78,7 @@ static void readargs(int argc, char **argv)
 	
 	state = READ_ARG;
 	
-	/* Read command line arguments. */
+	/* Read command line arguments. */	
 	for (int i = 1; i < argc; i++)
 	{
 		arg = argv[i];
@@ -162,6 +151,11 @@ int main(int argc, char **argv)
 	
 	readargs(argc, argv);
 	srandnum(seed);
+
+	printf("Number of Points:    %d\n", p->npoints);
+	printf("Number of Centroids: %d\n", p->ncentroids);
+	printf("Dimension:           %d\n", p->dimension);
+	printf("Number of Clusters:  %d\n", nclusters);
 
 	if (verbose)
 		printf("initializing...\n");

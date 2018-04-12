@@ -152,6 +152,11 @@ int main(int argc, char **argv)
 	readargs(argc, argv);
 	srandnum(seed);
 
+	printf("Number of Points:    %d\n", p->npoints);
+	printf("Number of Centroids: %d\n", p->ncentroids);
+	printf("Dimension:           %d\n", p->dimension);
+	printf("Number of Clusters:  %d\n", nclusters);
+
 	if (verbose)
 		printf("initializing...\n");
 

@@ -44,6 +44,11 @@ static float lpcentroids[(MAX_CENTROIDS/NR_CCLUSTER + DELTA)*MAX_DIMENSION];
 static int   lpopulation[MAX_CENTROIDS];
 static int   lppopulation[MAX_CENTROIDS/NR_CCLUSTER + DELTA];
 
+/* Timing statistics. */
+static uint64_t t[4];
+static uint64_t time_network = 0;
+static uint64_t time_cpu = 0;
+
 /**
  * @brief Helper macros for array indexing.
  */
@@ -70,7 +75,10 @@ static void populate(void)
 {
 	barrier_wait(barrier);
 
-	memread(OFF_CENTROIDS, &centroids[0], ncentroids*dimension*sizeof(float));
+	t[0] = k1_timer_get();
+		memread(OFF_CENTROIDS, &centroids[0], ncentroids*dimension*sizeof(float));
+	t[1] = k1_timer_get();
+	time_network += k1_timer_diff(t[0], t[1]);
 
 	memset(ltoo_far, 0, NTHREADS*sizeof(int));
 	
@@ -139,15 +147,18 @@ static inline void compute_pcentroids(void)
 		omp_unset_lock(&lock[j]);
 	}
 
-	memwrite(OFF_PCENTROIDS(rank, 0),
-		&LCENTROID(0, 0),
-		ncentroids*dimension*sizeof(float)
-	);
-	
-	memwrite(OFF_PPOPULATION(rank, 0),
-		&LPOPULATION(0, 0),
-		ncentroids*sizeof(int)
-	);
+	t[0] = k1_timer_get();
+		memwrite(OFF_PCENTROIDS(rank, 0),
+			&LCENTROID(0, 0),
+			ncentroids*dimension*sizeof(float)
+		);
+		
+		memwrite(OFF_PPOPULATION(rank, 0),
+			&LPOPULATION(0, 0),
+			ncentroids*sizeof(int)
+		);
+	t[1] = k1_timer_get();
+	time_network += k1_timer_diff(t[0], t[1]);
 }
 
 /*===================================================================*
@@ -167,15 +178,21 @@ static void compute_centroids(void)
 		if (i == rank)
 			continue;
 
-		memread(OFF_PCENTROIDS(i, rank*(ncentroids/nclusters)*dimension),
-			&LPCENTROID(0),
-			lncentroids*dimension*sizeof(float)
-		);
+		t[0] = k1_timer_get();
+			memread(OFF_PCENTROIDS(i, rank*(ncentroids/nclusters)*dimension),
+				&LPCENTROID(0),
+				lncentroids*dimension*sizeof(float)
+			);
+		t[1] = k1_timer_get();
+		time_network += k1_timer_diff(t[0], t[1]);
 
-		memread(OFF_PPOPULATION(i, rank*(ncentroids/nclusters)),
-			&LPPOPULATION(0),
-			lncentroids*sizeof(int)
-		);
+		t[0] = k1_timer_get();
+			memread(OFF_PPOPULATION(i, rank*(ncentroids/nclusters)),
+				&LPPOPULATION(0),
+				lncentroids*sizeof(int)
+			);
+		t[1] = k1_timer_get();
+		time_network += k1_timer_diff(t[0], t[1]);
 
 		#pragma omp parallel for
 		for (int j = 0; j < lncentroids; j++)
@@ -202,14 +219,14 @@ static void compute_centroids(void)
 		}
 	}
 
-	barrier_wait(barrier);
-	memwrite(OFF_CENTROIDS +
-			rank*(ncentroids/nclusters)*dimension*sizeof(float),
-		&CENTROID(rank, 0),
-		lncentroids*dimension*sizeof(float)
-	);
-
-	barrier_wait(barrier);
+	t[0] = k1_timer_get();
+		memwrite(OFF_CENTROIDS +
+				rank*(ncentroids/nclusters)*dimension*sizeof(float),
+			&CENTROID(rank, 0),
+			lncentroids*dimension*sizeof(float)
+		);
+	t[1] = k1_timer_get();
+	time_network += k1_timer_diff(t[0], t[1]);
 }
 
 /*============================================================================*
@@ -230,13 +247,19 @@ static int again(void)
 		has_changed[rank] |= lhas_changed[i];
 	}	
 
-	memwrite(OFF_HAS_CHANGED(rank), &has_changed[rank], sizeof(int));
-	memwrite(OFF_TOO_FAR(rank),     &too_far[rank],     sizeof(int));
+	t[0] = k1_timer_get();
+		memwrite(OFF_HAS_CHANGED(rank), &has_changed[rank], sizeof(int));
+		memwrite(OFF_TOO_FAR(rank),     &too_far[rank],     sizeof(int));
+	t[1] = k1_timer_get();
+	time_network += k1_timer_diff(t[0], t[1]);
 
 	barrier_wait(barrier);
 
-	memread(OFF_HAS_CHANGED(0), &has_changed[0], nclusters*sizeof(int));
-	memread(OFF_TOO_FAR(0),     &too_far[0],     nclusters*sizeof(int));
+	t[0] = k1_timer_get();
+		memread(OFF_HAS_CHANGED(0), &has_changed[0], nclusters*sizeof(int));
+		memread(OFF_TOO_FAR(0),     &too_far[0],     nclusters*sizeof(int));
+	t[1] = k1_timer_get();
+	time_network += k1_timer_diff(t[0], t[1]);
 	
 	/* Checks if another iteration is needed. */	
 	for (int i = 0; i < nclusters; i++)
@@ -268,7 +291,6 @@ static void kmeans(void)
 	{	
 		populate();
 		compute_pcentroids();
-		barrier_wait(barrier);
 		compute_centroids();
 	} while (again());
 }
@@ -282,7 +304,6 @@ static void kmeans(void)
  */
 int main(int argc, char **argv)
 {
-	uint64_t t[2];
 	int npoints;
 	
 	((void)argc);
@@ -292,14 +313,18 @@ int main(int argc, char **argv)
 
 	k1_timer_init();
 
-	t[0] = k1_timer_get();
-		barrier = barrier_open(nclusters);
+	barrier = barrier_open(nclusters);
+
+	t[2] = k1_timer_get();
 
 		/* Read global data from remote memory. */
-		memread(OFF_MINDISTANCE, &mindistance, sizeof(float));
-		memread(OFF_NPOINTS,     &npoints,     sizeof(int));
-		memread(OFF_NCENTROIDS,  &ncentroids,  sizeof(int));
-		memread(OFF_DIMENSION,   &dimension,   sizeof(int));
+		t[0] = k1_timer_get();
+			memread(OFF_MINDISTANCE, &mindistance, sizeof(float));
+			memread(OFF_NPOINTS,     &npoints,     sizeof(int));
+			memread(OFF_NCENTROIDS,  &ncentroids,  sizeof(int));
+			memread(OFF_DIMENSION,   &dimension,   sizeof(int));
+		t[1] = k1_timer_get();
+		time_network += k1_timer_diff(t[0], t[1]);
 
 		lnpoints = (rank < (nclusters - 1)) ?
 			npoints/nclusters : (npoints/nclusters + npoints%nclusters);
@@ -317,16 +342,13 @@ int main(int argc, char **argv)
 			&lmap[0],
 			lnpoints*sizeof(int)
 		);
-	
+
 		kmeans();
-	t[1] = k1_timer_get();
+	
+	t[3] = k1_timer_get();
+	time_cpu = k1_timer_diff(t[2], t[3]) - time_network;
 
-	printf("%d;%" PRIu64 "\n", rank, k1_timer_diff(t[0], t[1]));
-
-	memwrite(OFF_MAP(rank*(npoints/nclusters)),
-		&lmap[0],
-		lnpoints*sizeof(int)
-	);
+	printf("%d;%" PRIu64 ";%" PRIu64 "\n", rank, time_network, time_cpu);
 
 	return (0);
 }

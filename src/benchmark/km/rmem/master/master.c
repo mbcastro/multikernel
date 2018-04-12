@@ -95,9 +95,6 @@ void kmeans(
 
 	join_slaves();
 
-	/* Read parameters from remote memory. */
-	memread(OFF_MAP(0), map, npoints*dimension*sizeof(int));
-
 	barrier_close(barrier);
 }
 
