@@ -66,13 +66,13 @@ then
 	echo "Testing RMEM"
 	run2 "rmem.img" "rmem-master" "rmem-server" "write $nclusters $size"
 	run2 "rmem.img" "rmem-master" "rmem-server" "read $nclusters $size"
-	echo "Testing Gaussian Filter with Portal"
-	run1 "gf-portal.img" "gf-portal-master" "--nclusters $nclusters --class tiny --verbose"
 else
 	for nclusters in 4 8 12 16;
 	do
 		echo "Running IS"
 		run1 "is.img" "is-master" "--nclusters $nclusters --class tiny"
+		echo "Running GF"
+		run1 "gf-portal.img" "gf-portal-master" "--nclusters $nclusters --class tiny"
 		echo "Running KM"
 		run1 "km-portal.img" "km-portal-master"            "--nclusters $nclusters --class tiny"
 		run2 "km-rmem.img" "km-rmem-master" "rmem-server" "--nclusters $nclusters --class tiny"	
