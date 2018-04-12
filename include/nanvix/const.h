@@ -24,10 +24,10 @@
 	 * @name System Information
 	 */
 	/**@{*/
-	#define SYSNAME "Nanvix"       /**< Operating system name. */
+	#define SYSNAME  "Nanvix"      /**< Operating system name. */
 	#define NODENAME "bluedragon"  /**< Network node name.     */
-	#define RELEASE "beta"         /**< Kernel release.        */
-	#define VERSION "2.0"          /**< Kernel version.        */
+	#define RELEASE  "beta"        /**< Kernel release.        */
+	#define VERSION  "2.0"         /**< Kernel version.        */
 	/**@}*/
 
 	/**

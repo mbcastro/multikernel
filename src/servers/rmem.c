@@ -34,16 +34,6 @@
  */
 static char rmem[RMEM_SIZE];
 
-/**
- * @brief Locks.
- */
-static int rmem_locks[RMEM_SIZE/RMEM_BLOCK_SIZE];
-
-/**
- * @brief Remotes waiting for a block.
- */
-static uint64_t remotes[NR_CCLUSTER];
-
 static pthread_barrier_t barrier;
 
 static pthread_mutex_t lock;
@@ -84,94 +74,6 @@ static inline void rmem_read(int remote, uint64_t blknum, int size)
 	outportal = portal_open(name_cluster_name(remote));
 	portal_write(outportal, &rmem[blknum], size);
 	portal_close(outportal);
-}
-
-/*===================================================================*
- * rmem_lock()                                                       *
- *===================================================================*/
-
-/**
- * @brief Handles a lock request.
- *
- * @param remote Remote client.
- * @param blknum RMEM block.
- */
-static inline void rmem_lock(int remote, uint64_t blknum)
-{
-	int outbox;
-	struct rmem_message msg;
-
-	pthread_mutex_lock(&lock);	
-
-	/* Sleep. */
-	if (rmem_locks[blknum] != 0)
-	{
-		remotes[remote] = blknum;
-		pthread_mutex_unlock(&lock);
-		return;
-	}
-
-	/* Lock. */
-	rmem_locks[blknum] = remote + 1;
-	pthread_mutex_unlock(&lock);
-
-	/* ACK message. */
-	msg.source = k1_get_cluster_id();
-	msg.op = 0;
-	outbox = mailbox_open(name_cluster_name(remote));
-	mailbox_write(outbox, &msg);
-	mailbox_close(outbox);
-}
-
-/*===================================================================*
- * rmem_unlock()                                                     *
- *===================================================================*/
-
-/**
- * @brief Handles an unlock request.
- *
- * @param remote Remote client.
- * @param blknum RMEM block.
- */
-static inline void rmem_unlock(int remote, uint64_t blknum)
-{
-	int outbox;
-	struct rmem_message msg;
-
-	pthread_mutex_lock(&lock);	
-
-	/* Nothing to do. */
-	if (rmem_locks[blknum] != (remote + 1))
-	{
-		pthread_mutex_unlock(&lock);
-		return;
-	}
-
-	/* Unlock. */
-	rmem_locks[blknum] = 0;
-	remote = -1;
-
-	for (int i = 0; i < NR_CCLUSTER; i++)
-	{
-		if (remotes[i] == blknum)
-		{
-			remote = i;
-			rmem_locks[blknum] = remote + 1;
-			break;
-		}
-	}
-
-	pthread_mutex_unlock(&lock);
-
-	/* ACK message. */
-	if (remote >= 0)
-	{
-		msg.source = k1_get_cluster_id();
-		msg.op = 0;
-		outbox = mailbox_open(name_cluster_name(remote));
-		mailbox_write(outbox, &msg);
-		mailbox_close(outbox);
-	}
 }
 
 /*===================================================================*
@@ -221,16 +123,6 @@ static void *rmem_server(void *args)
 				rmem_read(msg.source, msg.blknum, msg.size);
 				break;
 
-			/* Lock a RMEM block. */
-			case RMEM_LOCK:
-				rmem_lock(msg.source, msg.blknum);
-				break;
-
-			/* Unlock a RMEM block. */
-			case RMEM_UNLOCK:
-				rmem_unlock(msg.source, msg.blknum);
-				break;
-
 			/* Should not happen. */
 			default:
 				break;
@@ -268,9 +160,6 @@ int main(int argc, char **argv)
 
 	pthread_mutex_init(&lock, NULL);
 	pthread_barrier_init(&barrier, NULL, NR_IOCLUSTER_DMA + 1);
-
-	memset(remotes, 0, sizeof(remotes));
-	memset(rmem_locks, 0, sizeof(rmem_locks));
 
 	/* Spawn RMEM server threads. */
 	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)

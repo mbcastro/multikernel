@@ -38,8 +38,6 @@
 	/**@{*/
 	#define RMEM_READ   0 /**< Read.   */
 	#define RMEM_WRITE  1 /**< Write.  */
-	#define RMEM_LOCK   2 /**< Lock.   */
-	#define RMEM_UNLOCK 3 /**< Unlock. */
 	/**@}*/
 
 	/**
@@ -55,8 +53,6 @@
 	};
 
 	/* Forward definitions. */
-	extern void memunlock(uint64_t);
-	extern void memlock(uint64_t);
 	extern void memwrite(uint64_t, const void *, size_t);
 	extern void memread(uint64_t, void *, size_t);
 
