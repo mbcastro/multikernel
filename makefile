@@ -265,6 +265,6 @@ is-name := is.img
 # MPPA Binary
 #=============================================================================
 
-mppa-bin := portal async mailbox rmem is
+mppa-bin := portal async mailbox rmem is km
 
 include $(K1_TOOLCHAIN_DIR)/share/make/Makefile.kalray

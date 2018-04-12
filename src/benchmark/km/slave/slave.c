@@ -134,7 +134,7 @@ static inline void compute_pcentroids(void)
 	t[0] = k1_timer_get();
 
 		memset(&lhas_changed,      0, NTHREADS*sizeof(int));
-		memset(&LCENTROID(0, 0),  0, ncentroids*dimension*sizeof(float));
+		memset(&LCENTROID(0, 0),   0, ncentroids*dimension*sizeof(float));
 		memset(&LPOPULATION(0, 0), 0, ncentroids*sizeof(int));
 
 		/* Compute partial centroids. */
@@ -201,7 +201,7 @@ static void compute_centroids(void)
 			#pragma omp parallel for
 			for (int j = 0; j < lncentroids; j++)
 			{
-				if (fabs(LPPOPULATION(j)) < 0.000001)
+				if (LPPOPULATION(j) < 1)
 					continue;
 				
 				LPOPULATION(rank, j) += LPPOPULATION(j);
@@ -209,6 +209,7 @@ static void compute_centroids(void)
 			}
 		}
 			
+		#pragma omp parallel for
 		for (int j = 0; j < lncentroids; j++)
 		{
 			if (LPOPULATION(rank, j) > 1)
@@ -228,16 +229,6 @@ static void compute_centroids(void)
 			&CENTROID(rank, 0),
 			lncentroids*dimension*sizeof(float)
 		);
-
-		if (k1_get_cluster_id() == 0)
-		{
-			for (int i = 0 ; i < ncentroids; i++)
-			{
-				for (int j = 0; j < dimension ; j++)
-					printf("%.2f ", centroids[i*dimension + j]);
-					printf("\n");
-			}
-		}
 
 		barrier_wait(barrier);
 
