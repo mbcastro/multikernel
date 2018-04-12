@@ -47,7 +47,6 @@ rmem-server-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
 # Toolchain Configuration
 rmem-server-system := rtems
 rmem-server-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
-rmem-server-system := rtems
 rmem-server-lflags := -lmppaipc -pthread
 
 #=============================================================================
@@ -290,9 +289,9 @@ is-master-srcs := $(SRCDIR)/benchmark/is/master/main.c    \
 #$(SRCDIR)/benchmark/is/master/ipc.c     
 
 # Toolchain Configuration
+is-master-system := rtems
 is-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
-is-master-cflags += -lpthread
-is-master-lflags := -lmppaipc -lm
+is-master-lflags := -lmppaipc -pthread
 
 is-objs := rmem-server is-master is-slave 
 is-name := is.img

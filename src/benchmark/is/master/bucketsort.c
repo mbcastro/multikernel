@@ -1,3 +1,4 @@
+#include <mppa/osconfig.h>
 #include <nanvix/pm.h>
 #include <limits.h>
 #include <pthread.h>
