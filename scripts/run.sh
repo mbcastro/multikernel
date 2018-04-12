@@ -53,21 +53,22 @@ function run2
 
 if [ $1 == "test" ];
 then
-	nclusters=16
+	nclusters=1
 	size=$((16*1024))
 	nmessages=2
 
 	echo "Testing ASYNC"
-	run1 "async.img" "master.elf" "$nclusters $size"
-	echo "Testing PORTAL"
-	run1 "portal.img" "portal-master" "write $nclusters $size"
-	echo "Testing MAILBOX"
-	run1 "mailbox.img" "mailbox-master" "$nclusters $nmessages"
-	echo "Testing IS"
-	run1 "is.img" "is-master" "--clusters $nclusters --class tiny"
-	echo "Testing RMEM"
-	run2 "rmem.img" "rmem-master" "rmem-server" "write $nclusters $size"
-	run2 "rmem.img" "rmem-master" "rmem-server" "read $nclusters $size"
+#	run1 "async.img" "master.elf" "$nclusters $size"
+#	echo "Testing PORTAL"
+#	run1 "portal.img" "portal-master" "write $nclusters $size"
+#	echo "Testing MAILBOX"
+#	run1 "mailbox.img" "mailbox-master" "$nclusters $nmessages"
+#	echo "Testing IS"
+#	run1 "is.img" "is-master" "--clusters $nclusters --class tiny"
+#	echo "Testing RMEM"
+#	run2 "rmem.img" "rmem-master" "rmem-server" "write $nclusters $size"
+#	run2 "rmem.img" "rmem-master" "rmem-server" "read $nclusters $size"
+	run2 "km.img" "km-master" "rmem-server" "--nclusters $nclusters --class tiny"	
 else
 	for nclusters in 4 8 12 16;
 	do
