@@ -2,7 +2,6 @@
 #include <nanvix/pm.h>
 #include <limits.h>
 #include <pthread.h>
-//#include <timer.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -36,13 +35,14 @@ static struct tdata
  */
 static void *thread_main(void *args)
 {
-	int i, j;        /* Loop indexes.  */
+	int j;           /* Bucket index.  */
 	struct tdata *t; /* Thread's data. */
 
 	t = args;
+
 	/* Rebuild array. */
 	j = t->args.j0;
-	for (i = t->args.i0; i < t->args.in; i++)
+	for (int i = t->args.i0; i < t->args.in; i++)
 	{
 		bucket_merge(t->args.done[i], &t->args.array[j]);
 		j += bucket_size(t->args.done[i]);
@@ -57,14 +57,14 @@ static void *thread_main(void *args)
  */
 static void rebuild_array(struct bucket **done, int *array)
 {
-	int j;    /* array[] offset. */
-	int i, k; /* Loop index.     */
+	int j; /* array[] offset. */
+	int k; /* Loop index.     */
 
 #define BUCKETS_PER_CORE (NUM_BUCKETS/NUM_IO_CORES)
 
 	/* Spawn threads. */
 	j = 0;
-	for (i = 0; i < NUM_IO_CORES; i++)
+	for (int i = 0; i < NUM_IO_CORES; i++)
 	{
 		tdata[i].args.i0 = i*BUCKETS_PER_CORE;
 		tdata[i].args.in = (i + 1)*BUCKETS_PER_CORE;
@@ -77,7 +77,7 @@ static void rebuild_array(struct bucket **done, int *array)
 	}
 
 	/* Join threads. */
-	for (i = 0; i < NUM_IO_CORES; i++)
+	for (int i = 0; i < NUM_IO_CORES; i++)
 		pthread_join(tdata[i].tid, NULL);
 }
 
@@ -89,14 +89,13 @@ extern void bucketsort(int *array, int n)
 	int max;                  /* Maximum number.      */
 	int i, j;                 /* Loop indexes.        */
 	int range;                /* Bucket range.        */
-	//int inbox;
-	//int outbox[NR_CCLUSTER];
 	struct minibucket *minib; /* Working mini-bucket. */
 	struct message *msg;      /* Working message.     */
 	struct bucket **todo;     /* Todo buckets.        */
 	struct bucket **done;     /* Done buckets.        */
-	long start, end;      /* Timers.              */
+	long start, end;          /* Timers.              */
 	k1_timer_init();
+
 	/* Setup slaves. */
 	open_noc_connectors();
 	spawn_slaves();
@@ -176,7 +175,6 @@ extern void bucketsort(int *array, int n)
 					/* Receive
 					 * message.
 					 */
-					//mailbox_read(inbox, &msg);
 					msg = message_create(DIE);
 					data_receive(infd, nclusters-j, msg, sizeof(struct message));
 					assert(msg->type == SORTRESULT);
