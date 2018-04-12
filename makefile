@@ -136,7 +136,7 @@ mailbox-master-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
 mailbox-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL -DDEBUG_MAILBOX
 mailbox-master-lflags := -lmppaipc
 
-mailbox-objs := rmem-server mailbox-slave mailbox-master
+mailbox-objs := rmem-server mailbox-master mailbox-slave 
 mailbox-name := mailbox.img
 
 #=============================================================================
@@ -168,7 +168,7 @@ rmem-master-srcs := $(SRCDIR)/kernel/arch/mppa/barrier.c \
 rmem-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
 rmem-master-lflags := -lmppaipc
 
-rmem-objs := rmem-server rmem-slave rmem-master
+rmem-objs := rmem-server rmem-master rmem-slave
 rmem-name := rmem.img
 
 #=============================================================================
@@ -190,7 +190,7 @@ km-rmem-slave-srcs := $(SRCDIR)/benchmark/km/rmem/slave/slave.c     \
 
 # Toolchain Configuration
 km-rmem-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
-km-rmem-slave-cflags += -I $(SRCDIR)/benchmark/include -fopenmp
+km-rmem-slave-cflags += -fopenmp
 km-rmem-slave-lflags := -lmppaipc -lm -lgomp
 
 io-bin += km-rmem-master
@@ -213,7 +213,7 @@ km-rmem-master-srcs := $(SRCDIR)/benchmark/km/rmem/master/main.c     \
 km-rmem-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
 km-rmem-master-lflags := -lmppaipc -lm
 
-km-rmem-objs := rmem-server km-rmem-slave km-rmem-master
+km-rmem-objs := rmem-server km-rmem-master km-rmem-slave
 km-rmem-name := km-rmem.img
 
 
@@ -230,7 +230,7 @@ km-portal-slave-srcs := $(SRCDIR)/benchmark/km/portal/slave/slave.c     \
 
 # Toolchain Configuration
 km-portal-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
-km-portal-slave-cflags += -I $(SRCDIR)/benchmark/include -fopenmp
+km-portal-slave-cflags += -fopenmp
 km-portal-slave-lflags := -lmppaipc -lm -lgomp
 
 io-bin += km-portal-master
@@ -269,7 +269,7 @@ is-slave-srcs := $(SRCDIR)/benchmark/is/slave/slave.c    \
 
 # Toolchain Configuration
 is-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
-is-slave-cflags += -I $(SRCDIR)/benchmark/include -fopenmp
+is-slave-cflags += -fopenmp
 is-slave-lflags := -lmppaipc -lm -lgomp
 
 io-bin += is-master
@@ -291,10 +291,10 @@ is-master-srcs := $(SRCDIR)/benchmark/is/master/main.c    \
 
 # Toolchain Configuration
 is-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
-is-master-cflags += -I $(SRCDIR)/benchmark/include -lpthread
+is-master-cflags += -lpthread
 is-master-lflags := -lmppaipc -lm
 
-is-objs := rmem-server is-slave is-master
+is-objs := rmem-server is-master is-slave 
 is-name := is.img
 
 #=============================================================================
@@ -311,7 +311,7 @@ gf-portal-slave-srcs := $(SRCDIR)/benchmark/gf/portal/slave/slave.c \
 
 # Toolchain Configuration
 gf-portal-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
-gf-portal-slave-cflags += -I $(SRCDIR)/benchmark/include -fopenmp
+gf-portal-slave-cflags += -fopenmp
 gf-portal-slave-lflags := -lmppaipc -lm -lgomp
 
 io-bin += gf-portal-master
@@ -326,10 +326,9 @@ gf-portal-master-srcs := $(SRCDIR)/benchmark/gf/portal/master/main.c   \
  
 # Toolchain Configuration
 gf-portal-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
-gf-portal-master-cflags += -I $(SRCDIR)/benchmark/include
 gf-portal-master-lflags := -lmppaipc -lm
 
-gf-portal-objs := rmem-server gf-portal-slave gf-portal-master
+gf-portal-objs := rmem-server gf-portal-master gf-portal-slave
 gf-portal-name := gf-portal.img
 
 #=============================================================================
