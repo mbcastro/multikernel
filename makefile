@@ -322,7 +322,7 @@ gf-portal-master-srcs := $(SRCDIR)/benchmark/gf/portal/master/main.c   \
 gf-portal-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
 gf-portal-master-lflags := -lmppaipc -lm
 
-gf-portal-objs := rmem-server gf-portal-master gf-portal-slave
+gf-portal-objs := gf-portal-master gf-portal-slave
 gf-portal-name := gf-portal.img
 
 #=============================================================================
