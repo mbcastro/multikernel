@@ -19,8 +19,15 @@
 export K1TOOLS_DIR="/usr/local/k1tools"
 export OUTDIR=output/bin/
 
-CLASS=tiny
+# Global parameters.
 NCLUSTERS=16
+
+# Benchmark-specific parameters.
+CLASS=tiny
+
+# Testing unit specific parameters.
+NMESSAGES=2
+SIZE=$((16*1024))
 
 #
 # Runs a multibinary file in a single IO CLUSTER.
@@ -56,18 +63,16 @@ function run2
 
 if [[ $1 == "test" ]];
 then
-	size=$((16*1024))
-	nmessages=2
 
 	echo "Testing ASYNC"
-	run1 "async.img" "master.elf" "$NCLUSTERS $size"
+	run1 "async.img" "master.elf" "$NCLUSTERS $SIZE"
 	echo "Testing PORTAL"
-	run1 "portal.img" "portal-master" "write $NCLUSTERS $size"
+	run1 "portal.img" "portal-master" "write $NCLUSTERS $SIZE"
 	echo "Testing MAILBOX"
-	run1 "mailbox.img" "mailbox-master" "$NCLUSTERS $nmessages"
+	run1 "mailbox.img" "mailbox-master" "$NCLUSTERS $NMESSAGES"
 	echo "Testing RMEM"
-	run2 "rmem.img" "rmem-master" "rmem-server" "write $NCLUSTERS $size"
-	run2 "rmem.img" "rmem-master" "rmem-server" "read $NCLUSTERS $size"
+	run2 "rmem.img" "rmem-master" "rmem-server" "write $NCLUSTERS $SIZE"
+	run2 "rmem.img" "rmem-master" "rmem-server" "read $NCLUSTERS $SIZE"
 else
 	echo "Running KM PORTAL"
 	run1 "km-portal.img" "km-portal-master" "--nclusters $NCLUSTERS --class $CLASS"
