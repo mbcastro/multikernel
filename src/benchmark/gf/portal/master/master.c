@@ -17,10 +17,10 @@ static int masksize;       /* Dimension of mask.  */
  */
 void gauss_filter(unsigned char *img_, int imgsize_, double *mask_, int masksize_)
 {	
-	int j;               /* Loop indexes.     */ 
-	size_t n;            /* Bytes to send.    */
-	int msg;             /* Message.          */
-	int nchunks;         /* Number of chunks. */
+	int j;       /* Loop indexes.     */ 
+	size_t n;    /* Bytes to send.    */
+	int msg;     /* Message.          */
+	int nchunks; /* Number of chunks. */
 
 	/* Setup parameters. */
 	img = img_;

@@ -17,6 +17,12 @@ long total = 0;
 static int masksize;
 static double mask[MASK_SIZE*MASK_SIZE];
 static unsigned char chunk[CHUNK_SIZE*CHUNK_SIZE];
+	
+#define MASK(i, j) \
+	mask[(i)*masksize + (j)]
+
+#define CHUNK(i, j) \
+	chunk[(i)*CHUNK_SIZE + (j)]
 
 /*
  * Gaussian filter.
@@ -25,12 +31,6 @@ void gauss_filter(void)
 {
 	int half;
 	double pixel;
-	
-	#define MASK(i, j) \
-		mask[(i)*masksize + (j)]
-	
-	#define CHUNK(i, j) \
-		chunk[(i)*CHUNK_SIZE + (j)]
 	
 	half = CHUNK_SIZE >> 1;
 
