@@ -37,10 +37,9 @@ void gauss_filter(void)
 	
 	i = 0; j = 0;
 	half = CHUNK_SIZE >> 1;
-	
+
 	#pragma omp parallel default(shared) private(imgI,imgJ,maskI,maskJ,pixel,i,j)
 	{
-	printf("Cluster %d: Thread %d running\n", rank, omp_get_thread_num());
         #pragma omp for
 		for (imgI = 0; imgI < CHUNK_SIZE; imgI++)
 		{			
@@ -92,6 +91,7 @@ int main(int argc, char **argv)
 		{
 			case MSG_CHUNK:
 				data_receive(infd, chunk, CHUNK_SIZE*CHUNK_SIZE);
+				printf("Cluster %d: will call gauss_filter()\n", rank);
 				start = k1_timer_get();
 					gauss_filter();
 				end = k1_timer_get();
@@ -100,6 +100,7 @@ int main(int argc, char **argv)
 				break;
 			
 			default:
+				printf("Cluster %d: will finish\n", rank);
 				goto out;
 		}
 	}
