@@ -62,6 +62,10 @@ static omp_lock_t lock[NUM_THREADS];
 static uint64_t t[4];
 static uint64_t time_network = 0;
 static uint64_t time_cpu = 0;
+static int nwrite = 0;
+static int nread = 0;
+static size_t swrite = 0;
+static size_t sread = 0;
 
 /*===================================================================*
  * populate()                                                        *
@@ -142,6 +146,7 @@ static void sync_pcentroids(void)
 		data_send(outfd, centroids, n);
 	t[1] = k1_timer_get();
 	time_network += k1_timer_diff(t[0], t[1]);
+	nwrite++; swrite += n;
 	
 	/* Receive partial centroids. */
 	n = nprocs*lncentroids[rank]*dimension*sizeof(float);
@@ -149,6 +154,7 @@ static void sync_pcentroids(void)
 		data_receive(infd, centroids, n);
 	t[1] = k1_timer_get();
 	time_network += k1_timer_diff(t[0], t[1]);
+	nread++; sread += n;
 }
 
 /*
@@ -164,6 +170,7 @@ static void sync_ppopulation(void)
 		data_send(outfd, ppopulation, n);
 	t[1] = k1_timer_get();
 	time_network += k1_timer_diff(t[0], t[1]);
+	nwrite++; swrite += n;
 	
 	/* Receive partial population. */
 	n = nprocs*lncentroids[rank]*sizeof(int);
@@ -171,6 +178,7 @@ static void sync_ppopulation(void)
 		data_receive(infd, ppopulation, n);
 	t[1] = k1_timer_get();
 	time_network += k1_timer_diff(t[0], t[1]);
+	nread++; sread += n;
 }
 
 /*
@@ -185,12 +193,14 @@ static void sync_centroids(void)
 		data_send(outfd, lcentroids, n);
 	t[1] = k1_timer_get();
 	time_network += k1_timer_diff(t[0], t[1]);
+	nwrite++; swrite += n;
 	
 	n = ncentroids*dimension*sizeof(float);
 	t[0] = k1_timer_get();
 		data_receive(infd, centroids, n);
 	t[1] = k1_timer_get();
 	time_network += k1_timer_diff(t[0], t[1]);
+	nread++; sread += n;
 }
 
 /*
@@ -206,6 +216,7 @@ static void sync_status(void)
 		data_send(outfd, &too_far[rank*NUM_THREADS], n);
 	t[1] = k1_timer_get();
 	time_network += k1_timer_diff(t[0], t[1]);
+	nwrite += 2; swrite += n + n;
 		
 	n = nprocs*NUM_THREADS*sizeof(int);
 	t[0] = k1_timer_get();
@@ -213,6 +224,7 @@ static void sync_status(void)
 		data_receive(infd, too_far, n);
 	t[1] = k1_timer_get();
 	time_network += k1_timer_diff(t[0], t[1]);
+	nread += 2; sread += n + n;
 }
 
 /*
@@ -340,17 +352,21 @@ static void getwork(void)
 		data_receive(infd, &ncentroids, sizeof(int));
 		data_receive(infd, &mindistance, sizeof(float));
 		data_receive(infd, &dimension, sizeof(int));
-		n = nprocs*sizeof(int);
+		sread += n = nprocs*sizeof(int);
 		data_receive(infd, lncentroids, n);
 		n = dimension*sizeof(float);
 		for (int i = 0; i < lnpoints; i++)
+		{
 			data_receive(infd, &points[i*dimension], n);
-		n = ncentroids*dimension*sizeof(float);
+			nread++; sread += n;
+		}
+		sread += n = ncentroids*dimension*sizeof(float);
 		data_receive(infd, centroids, n);
-		n = lnpoints*sizeof(int);
+		sread += n = lnpoints*sizeof(int);
 		data_receive(infd, map, n);
 	t[1] = k1_timer_get();
 	time_network += k1_timer_diff(t[0], t[1]);
+	nread += 8; sread += sizeof(int) + sizeof(float);
 }
 
 /*============================================================================*
@@ -378,7 +394,15 @@ int main(int argc, char **argv)
 	/* House keeping. */
 	close_noc_connectors();
 
-	printf("%d;%" PRIu64 ";%" PRIu64 "\n", rank, time_network, time_cpu);
+	printf("%d;%" PRIu64 ";%" PRIu64 ";%d;%d;%d;%d\n",
+		rank,
+		time_network,
+		time_cpu,
+		nread,
+		sread,
+		nwrite,
+		swrite
+	);
 
 	return (0);
 }

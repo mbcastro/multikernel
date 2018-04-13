@@ -48,6 +48,10 @@ static int   lppopulation[MAX_CENTROIDS/NR_CCLUSTER + DELTA];
 static uint64_t t[4];
 static uint64_t time_network = 0;
 static uint64_t time_cpu = 0;
+static int nwrite = 0;
+static int nread = 0;
+static size_t swrite = 0;
+static size_t sread = 0;
 
 /**
  * @brief Helper macros for array indexing.
@@ -73,12 +77,16 @@ static omp_lock_t lock[NTHREADS];
  */
 static void populate(void)
 {
+	size_t n;
+
 	barrier_wait(barrier);
 
+	n = ncentroids*dimension*sizeof(float);
 	t[0] = k1_timer_get();
-		memread(OFF_CENTROIDS, &centroids[0], ncentroids*dimension*sizeof(float));
+		memread(OFF_CENTROIDS, &centroids[0], n);
 	t[1] = k1_timer_get();
 	time_network += k1_timer_diff(t[0], t[1]);
+	nread++; sread += n;
 
 	memset(ltoo_far, 0, NTHREADS*sizeof(int));
 	
@@ -127,6 +135,8 @@ static void populate(void)
  */
 static inline void compute_pcentroids(void)
 {
+	size_t n;
+
 	memset(&lhas_changed,      0, NTHREADS*sizeof(int));
 	memset(&LCENTROID(0, 0),   0, ncentroids*dimension*sizeof(float));
 	memset(&LPOPULATION(0, 0), 0, ncentroids*sizeof(int));
@@ -147,18 +157,25 @@ static inline void compute_pcentroids(void)
 		omp_unset_lock(&lock[j]);
 	}
 
+	n = ncentroids*dimension*sizeof(float);
 	t[0] = k1_timer_get();
 		memwrite(OFF_PCENTROIDS(rank, 0),
 			&LCENTROID(0, 0),
-			ncentroids*dimension*sizeof(float)
-		);
-		
-		memwrite(OFF_PPOPULATION(rank, 0),
-			&LPOPULATION(0, 0),
-			ncentroids*sizeof(int)
+			n
 		);
 	t[1] = k1_timer_get();
 	time_network += k1_timer_diff(t[0], t[1]);
+	nwrite++; swrite += n;
+		
+	n = ncentroids*sizeof(int);
+	t[0] = k1_timer_get();
+		memwrite(OFF_PPOPULATION(rank, 0),
+			&LPOPULATION(0, 0),
+			n
+		);
+	t[1] = k1_timer_get();
+	time_network += k1_timer_diff(t[0], t[1]);
+	nwrite++; swrite += n;
 }
 
 /*===================================================================*
@@ -170,6 +187,8 @@ static inline void compute_pcentroids(void)
  */
 static void compute_centroids(void)
 {
+	size_t n;
+
 	barrier_wait(barrier);
 
 	/* Compute centroids. */
@@ -178,21 +197,25 @@ static void compute_centroids(void)
 		if (i == rank)
 			continue;
 
+		n = lncentroids*dimension*sizeof(float);
 		t[0] = k1_timer_get();
 			memread(OFF_PCENTROIDS(i, rank*(ncentroids/nclusters)*dimension),
 				&LPCENTROID(0),
-				lncentroids*dimension*sizeof(float)
+				n
 			);
 		t[1] = k1_timer_get();
 		time_network += k1_timer_diff(t[0], t[1]);
+		nread++; sread += n;
 
+		n = lncentroids*sizeof(int);
 		t[0] = k1_timer_get();
 			memread(OFF_PPOPULATION(i, rank*(ncentroids/nclusters)),
 				&LPPOPULATION(0),
-				lncentroids*sizeof(int)
+				n
 			);
 		t[1] = k1_timer_get();
 		time_network += k1_timer_diff(t[0], t[1]);
+		nread++; sread += n;
 
 		#pragma omp parallel for
 		for (int j = 0; j < lncentroids; j++)
@@ -219,14 +242,16 @@ static void compute_centroids(void)
 		}
 	}
 
+	n = lncentroids*dimension*sizeof(float);
 	t[0] = k1_timer_get();
 		memwrite(OFF_CENTROIDS +
 				rank*(ncentroids/nclusters)*dimension*sizeof(float),
 			&CENTROID(rank, 0),
-			lncentroids*dimension*sizeof(float)
+			n
 		);
 	t[1] = k1_timer_get();
 	time_network += k1_timer_diff(t[0], t[1]);
+	nwrite++; swrite += n;
 }
 
 /*============================================================================*
@@ -238,6 +263,8 @@ static void compute_centroids(void)
  */
 static int again(void)
 {
+	size_t n;
+
 	too_far[rank] = 0;
 	has_changed[rank] = 0;
 
@@ -247,19 +274,23 @@ static int again(void)
 		has_changed[rank] |= lhas_changed[i];
 	}	
 
+	n = sizeof(int);
 	t[0] = k1_timer_get();
-		memwrite(OFF_HAS_CHANGED(rank), &has_changed[rank], sizeof(int));
-		memwrite(OFF_TOO_FAR(rank),     &too_far[rank],     sizeof(int));
+		memwrite(OFF_HAS_CHANGED(rank), &has_changed[rank], n);
+		memwrite(OFF_TOO_FAR(rank),     &too_far[rank],     n);
 	t[1] = k1_timer_get();
 	time_network += k1_timer_diff(t[0], t[1]);
+	nwrite += 2; swrite += n + n;
 
 	barrier_wait(barrier);
 
+	n = nclusters*sizeof(int);
 	t[0] = k1_timer_get();
 		memread(OFF_HAS_CHANGED(0), &has_changed[0], nclusters*sizeof(int));
 		memread(OFF_TOO_FAR(0),     &too_far[0],     nclusters*sizeof(int));
 	t[1] = k1_timer_get();
 	time_network += k1_timer_diff(t[0], t[1]);
+	nwrite += 2; swrite += n + n;
 	
 	/* Checks if another iteration is needed. */	
 	for (int i = 0; i < nclusters; i++)
@@ -304,6 +335,7 @@ static void kmeans(void)
  */
 int main(int argc, char **argv)
 {
+	size_t n;
 	int npoints;
 	
 	((void)argc);
@@ -318,6 +350,7 @@ int main(int argc, char **argv)
 	t[2] = k1_timer_get();
 
 		/* Read global data from remote memory. */
+		n = 3*sizeof(int) + sizeof(float);
 		t[0] = k1_timer_get();
 			memread(OFF_MINDISTANCE, &mindistance, sizeof(float));
 			memread(OFF_NPOINTS,     &npoints,     sizeof(int));
@@ -325,6 +358,7 @@ int main(int argc, char **argv)
 			memread(OFF_DIMENSION,   &dimension,   sizeof(int));
 		t[1] = k1_timer_get();
 		time_network += k1_timer_diff(t[0], t[1]);
+		nread += 4; sread += n;
 
 		lnpoints = (rank < (nclusters - 1)) ?
 			npoints/nclusters : (npoints/nclusters + npoints%nclusters);
@@ -333,22 +367,40 @@ int main(int argc, char **argv)
 			ncentroids/nclusters : (ncentroids/nclusters + ncentroids%nclusters);
 
 		/* Read local data from remote memory. */
-		memread(OFF_POINTS(rank*(npoints/nclusters), dimension),
-			&lpoints[0],
-			lnpoints*dimension*sizeof(float)
-		);
+		n = lnpoints*dimension*sizeof(float);
+		t[0] = k1_timer_get();
+			memread(OFF_POINTS(rank*(npoints/nclusters), dimension),
+				&lpoints[0],
+				n
+			);
+		t[1] = k1_timer_get();
+		time_network += k1_timer_diff(t[0], t[1]);
+		nread++; sread += n;
 		
-		memread(OFF_MAP(rank*(npoints/nclusters)),
-			&lmap[0],
-			lnpoints*sizeof(int)
-		);
+		n = lnpoints*sizeof(int);
+		t[0] = k1_timer_get();
+			memread(OFF_MAP(rank*(npoints/nclusters)),
+				&lmap[0],
+				n	
+			);
+		t[1] = k1_timer_get();
+		time_network += k1_timer_diff(t[0], t[1]);
+		nread++; sread += n;
 
 		kmeans();
 	
 	t[3] = k1_timer_get();
 	time_cpu = k1_timer_diff(t[2], t[3]) - time_network;
 
-	printf("%d;%" PRIu64 ";%" PRIu64 "\n", rank, time_network, time_cpu);
+	printf("%d;%" PRIu64 ";%" PRIu64 ";%d;%d;%d;%d\n",
+		rank,
+		time_network,
+		time_cpu,
+		nread,
+		sread,
+		nwrite,
+		swrite
+	);
 
 	return (0);
 }
