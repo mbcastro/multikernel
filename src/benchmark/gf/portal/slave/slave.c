@@ -7,6 +7,7 @@
 #include <omp.h>
 #include <stdlib.h>
 #include "slave.h"
+#include <stdio.h>
 
 /* Timing statistics. */
 long start;
@@ -39,7 +40,8 @@ void gauss_filter(void)
 	
 	#pragma omp parallel default(shared) private(imgI,imgJ,maskI,maskJ,pixel,i,j)
 	{
-		#pragma omp for
+	printf("Cluster %d: Thread %d running\n", rank, omp_get_thread_num());
+        #pragma omp for
 		for (imgI = 0; imgI < CHUNK_SIZE; imgI++)
 		{			
 			for (imgJ = 0; imgJ < CHUNK_SIZE; imgJ++)
