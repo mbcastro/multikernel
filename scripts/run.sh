@@ -19,7 +19,7 @@
 export K1TOOLS_DIR="/usr/local/k1tools"
 export OUTDIR=output/bin/
 
-CLASS=huge
+CLASS=tiny
 NCLUSTERS=16
 
 #
@@ -69,12 +69,12 @@ then
 	run2 "rmem.img" "rmem-master" "rmem-server" "write $NCLUSTERS $size"
 	run2 "rmem.img" "rmem-master" "rmem-server" "read $NCLUSTERS $size"
 else
-	#echo "Running KM PORTAL"
-	#run1 "km-portal.img" "km-portal-master"             "--nclusters $NCLUSTERS --class $CLASS"
-	#echo "Running KM RMEM"
-	#run2 "km-rmem.img"   "km-rmem-master" "rmem-server" "--nclusters $NCLUSTERS --class $CLASS"	
+	echo "Running KM PORTAL"
+	run1 "km-portal.img" "km-portal-master" "--nclusters $NCLUSTERS --class $CLASS"
+	echo "Running KM RMEM"
+	run2 "km-rmem.img" "km-rmem-master" "rmem-server" "--nclusters $NCLUSTERS --class $CLASS"	
 	echo "Running GF"
-	run1 "gf-portal.img" "gf-portal-master" "--nclusters $NCLUSTERS --class tiny"
-	#echo "Running IS"
-	#run1 "is.img" "is-master" "--nclusters $NCLUSTERS --class tiny"
+	run1 "gf-portal.img" "gf-portal-master" "--nclusters $NCLUSTERS --class $CLASS"
+	echo "Running IS"
+	run1 "is.img" "is-master" "--nclusters $NCLUSTERS --class $CLASS"
 fi

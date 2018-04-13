@@ -7,7 +7,6 @@
 #include <omp.h>
 #include <stdlib.h>
 #include "slave.h"
-#include <stdio.h>
 
 /* Timing statistics. */
 long start;
@@ -91,16 +90,14 @@ int main(int argc, char **argv)
 		{
 			case MSG_CHUNK:
 				data_receive(infd, chunk, CHUNK_SIZE*CHUNK_SIZE);
-				printf("Cluster %d: will call gauss_filter()\n", rank);
 				start = k1_timer_get();
-					gauss_filter();
+				gauss_filter();
 				end = k1_timer_get();
 				total += k1_timer_diff(start, end);
 				data_send(outfd, chunk, CHUNK_SIZE*CHUNK_SIZE);
 				break;
 			
 			default:
-				printf("Cluster %d: will finish\n", rank);
 				goto out;
 		}
 	}
