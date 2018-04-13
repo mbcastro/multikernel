@@ -96,6 +96,7 @@ int main(int argc, char **argv)
 				end = k1_timer_get();
 				total += k1_timer_diff(start, end);
 				data_send(outfd, chunk, CHUNK_SIZE*CHUNK_SIZE);
+					printf("cluster  processingdone %d\n", rank);
 				break;
 			
 			default:
@@ -106,7 +107,6 @@ int main(int argc, char **argv)
 
 out:
 	printf("cluster done %d\n", rank);
-	while(1);
     
 	
 	data_send(outfd, &total, sizeof(long));

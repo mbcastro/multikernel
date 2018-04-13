@@ -13,7 +13,7 @@
 	#define E 2.71828182845904 /* e */
 	#define SD 0.8 /* Standard deviation. */
 	
-	#define CHUNK_SIZE (16)   /* Maximum chunk size. */
+	#define CHUNK_SIZE (1024)   /* Maximum chunk size. */
 	#define MASK_SIZE  (15)     /* Maximum mask size. */
 	#define IMG_SIZE   (32768)  /* Maximum image size. */
 	

@@ -58,7 +58,6 @@ void data_receive(int fd, void *data, size_t n)
 	start = k1_timer_get();
 		portal_allow(fd, IOCLUSTER0);
 		portal_read(fd, data, n);
-//	k1_dcache_invalidate_mem_area(data, n);
 	end = k1_timer_get();
 	
 	total += k1_timer_diff(start, end);

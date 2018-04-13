@@ -11,7 +11,7 @@ static unsigned char *img; /* Image.              */
 static int imgsize;        /* Dimension of image. */
 static double *mask;       /* Mask.               */
 static int masksize;       /* Dimension of mask.  */
-
+#include <stdio.h>
 /*
  * Gaussian filter.
  */
@@ -46,6 +46,7 @@ void gauss_filter(unsigned char *img_, int imgsize_, double *mask_, int masksize
     {		
 		data_send(outfd[j], &msg, sizeof(int));
 		data_send(outfd[j], &img[i*(CHUNK_SIZE*CHUNK_SIZE)],n);
+		printf("image chunk sent to %d\n", j);
 		
 		j++;
 		
@@ -57,8 +58,9 @@ void gauss_filter(unsigned char *img_, int imgsize_, double *mask_, int masksize
 		{
 			for (/* NOOP */ ; j > 0; j--)
 			{
+			printf("wait cluster %d \n", nclusters-j);
 				data_receive(infd,nclusters-j,
-								  &img[(nclusters-j)*CHUNK_SIZE*CHUNK_SIZE], n);
+								  &img[(nclusters-j)*n], n);
 			}
 		}
 	}
