@@ -54,7 +54,7 @@ rmem-server-lflags := -lmppaipc -pthread
 #=============================================================================
 
 io-bin += master.elf
-master.elf-srcs := $(SRCDIR)/benchmark/async/master.c
+master.elf-srcs := $(SRCDIR)/test/async/master.c
 
 # Toolchain Configuration
 master.elf-system := bare
@@ -64,7 +64,7 @@ master.elf-lflags += -lmppapower -lmppanoc -lmpparouting
 master.elf-lflags += -lpcie_queue
 
 cluster-bin += slave.elf
-slave.elf-srcs := $(SRCDIR)/benchmark/async/slave.c \
+slave.elf-srcs := $(SRCDIR)/test/async/slave.c \
 				  $(SRCDIR)/kernel/arch/mppa/core.c    \
 				  $(SRCDIR)/kernel/arch/mppa/timer.c
 
@@ -84,7 +84,7 @@ async-name := async.img
 #=============================================================================
 
 io-bin += portal-master
-portal-master-srcs := $(SRCDIR)/benchmark/portal/master.c  \
+portal-master-srcs := $(SRCDIR)/test/portal/master.c  \
 					  $(SRCDIR)/kernel/arch/mppa/portal.c  \
 					  $(SRCDIR)/kernel/arch/mppa/name.c    \
 					  $(SRCDIR)/kernel/arch/mppa/core.c
@@ -95,7 +95,7 @@ portal-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
 portal-master-lflags := -lmppaipc
 
 cluster-bin += portal-slave
-portal-slave-srcs := $(SRCDIR)/benchmark/portal/slave.c   \
+portal-slave-srcs := $(SRCDIR)/test/portal/slave.c   \
 					 $(SRCDIR)/kernel/arch/mppa/portal.c  \
 					 $(SRCDIR)/kernel/arch/mppa/barrier.c \
 					 $(SRCDIR)/kernel/arch/mppa/name.c    \
@@ -119,7 +119,7 @@ mailbox-slave-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
 						   $(SRCDIR)/kernel/arch/mppa/name.c    \
 						   $(SRCDIR)/kernel/arch/mppa/timer.c   \
 						   $(SRCDIR)/kernel/arch/mppa/core.c    \
-						   $(SRCDIR)/benchmark/mailbox/slave.c
+						   $(SRCDIR)/test/mailbox/slave.c
 
 # Toolchain Configuration
 mailbox-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL -DDEBUG_MAILBOX
@@ -129,7 +129,7 @@ io-bin += mailbox-master
 mailbox-master-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
 						   $(SRCDIR)/kernel/arch/mppa/name.c    \
 							$(SRCDIR)/kernel/arch/mppa/core.c    \
-							$(SRCDIR)/benchmark/mailbox/master.c
+							$(SRCDIR)/test/mailbox/master.c
 
 # Toolchain Configuration
 mailbox-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL -DDEBUG_MAILBOX
@@ -152,7 +152,7 @@ rmem-slave-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
 						   $(SRCDIR)/kernel/sys/meminit.c       \
 						   $(SRCDIR)/kernel/sys/memread.c       \
 						   $(SRCDIR)/kernel/sys/memwrite.c      \
-						   $(SRCDIR)/benchmark/rmem/slave.c
+						   $(SRCDIR)/test/rmem/slave.c
 
 # Toolchain Configuration
 rmem-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
@@ -161,7 +161,7 @@ rmem-slave-lflags := -lmppaipc
 io-bin += rmem-master
 rmem-master-srcs := $(SRCDIR)/kernel/arch/mppa/barrier.c \
 							$(SRCDIR)/kernel/arch/mppa/core.c    \
-							$(SRCDIR)/benchmark/rmem/master.c
+							$(SRCDIR)/test/rmem/master.c
 
 # Toolchain Configuration
 rmem-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
