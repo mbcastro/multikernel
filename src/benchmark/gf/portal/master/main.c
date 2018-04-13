@@ -4,6 +4,7 @@
  * Gaussian Filter Benchmark Kernel.
  */
 
+#include <mppa/osconfig.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
