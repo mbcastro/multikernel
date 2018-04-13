@@ -6,6 +6,7 @@
 #include <nanvix/arch/mppa.h>
 #include <omp.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include "slave.h"
 
 /* Timing statistics. */
@@ -85,6 +86,7 @@ int main(int argc, char **argv)
 		switch (msg)
 		{
 			case MSG_CHUNK:
+				printf("Cluster %d will call gauss_filter()\n", rank);
 				data_receive(infd, chunk, CHUNK_SIZE*CHUNK_SIZE);
 				start = k1_timer_get();
 				gauss_filter();
@@ -94,6 +96,7 @@ int main(int argc, char **argv)
 				break;
 			
 			default:
+				printf("Cluster %d will finish\n", rank);
 				goto out;
 		}
 	}
