@@ -6,7 +6,6 @@
 #include <nanvix/arch/mppa.h>
 #include <omp.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include "slave.h"
 
 /* Timing statistics. */
@@ -72,13 +71,10 @@ int main(int argc, char **argv)
 	
 	/* Setup interprocess communication. */
 	open_noc_connectors();
-	printf("hello from cluster %d\n", rank);
 	
 	/* Receives filter mask.*/
 	data_receive(infd, &masksize, sizeof(int));
 	data_receive(infd, mask, sizeof(double)*masksize*masksize);
-
-	printf("mask received from cluster %d\n", rank);
     
 	/* Process chunks. */
     while (1)
@@ -89,25 +85,20 @@ int main(int argc, char **argv)
 		switch (msg)
 		{
 			case MSG_CHUNK:
-				printf("Cluster %d will call gauss_filter()\n", rank);
 				data_receive(infd, chunk, CHUNK_SIZE*CHUNK_SIZE);
 				start = k1_timer_get();
 				gauss_filter();
 				end = k1_timer_get();
 				total += k1_timer_diff(start, end);
 				data_send(outfd, chunk, CHUNK_SIZE*CHUNK_SIZE);
-					printf("cluster  processingdone %d\n", rank);
 				break;
 			
 			default:
-				printf("Cluster %d will finish\n", rank);
 				goto out;
 		}
 	}
 
 out:
-	printf("cluster done %d\n", rank);
-    
 	
 	data_send(outfd, &total, sizeof(long));
 	
