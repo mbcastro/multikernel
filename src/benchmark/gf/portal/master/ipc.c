@@ -93,7 +93,6 @@ void open_noc_connectors(void)
     }
 }
 
-
 /*
  * Close NoC connectors.
  */
