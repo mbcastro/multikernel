@@ -38,6 +38,7 @@ void gauss_filter(void)
 	double pixel;
 	int imgI, imgJ, maskI, maskJ;
 
+	i = 0; j = 0;
 	half = CHUNK_SIZE >> 1;
 
     #pragma omp parallel default(shared) private(imgI,imgJ,maskI,maskJ,pixel,i,j)
