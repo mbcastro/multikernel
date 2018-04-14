@@ -240,13 +240,13 @@ int main(int argc, char **argv)
 	 * Print Timing Statistics                                       *
 	 *---------------------------------------------------------------*/
 
+	if (verbose)
+	{
+
 	printf("timing statistics:\n");
 
 	printf("  initialization time: %f\n",  time_init*MICRO);
 	printf("  kernel time:          %f\n", time_kernel*MICRO);
-
-	if (verbose)
-	{
 		printf("  master:        %f\n", master*MICRO);
 		for (int i = 0; i < nclusters; i++)
 			printf("  slave %d:      %f\n", i, slave[i]*MICRO);

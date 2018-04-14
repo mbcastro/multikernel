@@ -4,6 +4,9 @@
 * master.c - Master process.
 */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "master.h"
 
 /* Gaussian Filter. */
@@ -17,57 +20,74 @@ static int masksize;       /* Dimension of mask.  */
  */
 void gauss_filter(unsigned char *img_, int imgsize_, double *mask_, int masksize_)
 {	
-	int j;       /* Loop indexes.     */ 
-	size_t n;    /* Bytes to send.    */
+	int nchunks = 0;
 	int msg;     /* Message.          */
-	int nchunks; /* Number of chunks. */
+	unsigned char *newimg;
 
 	/* Setup parameters. */
 	img = img_;
 	mask = mask_;
 	imgsize = imgsize_;
 	masksize = masksize_;
+
+	newimg = smalloc(imgsize*imgsize*sizeof(unsigned char));
 	
 	open_noc_connectors();
 	spawn_slaves();
 	
 	 /* Send mask. */
-    n = sizeof(double)*masksize*masksize;	
 	for (int i = 0; i < nclusters; i++)
 	{
 		data_send(outfd[i], &masksize, sizeof(int));
-		data_send(outfd[i], mask, n);
+		data_send(outfd[i], mask, sizeof(double)*masksize*masksize);
 	}
     
     /* Process image in chunks. */
-    j = 0; n = CHUNK_SIZE*CHUNK_SIZE; msg = MSG_CHUNK;
-    nchunks = (imgsize*imgsize)/(CHUNK_SIZE*CHUNK_SIZE);
-    for (int i = 0; i < nchunks; i++)
-    {		
-		data_send(outfd[j], &msg, sizeof(int));
-		data_send(outfd[j], &img[i*(CHUNK_SIZE*CHUNK_SIZE)],n);
-		
-		j++;
-		
-		/* 
-		 * Slave processes are busy.
-		 * So let's wait for results.
-		 */
-		if (j == nclusters)
+	int half = masksize/2;
+	msg = MSG_CHUNK;
+	for (int i = half; i < imgsize - half; i += CHUNK_SIZE)
+	{
+		for (int j = half; j < imgsize - half; j += CHUNK_SIZE)
 		{
-			for (/* NOOP */ ; j > 0; j--)
-			{
-				data_receive(infd,nclusters-j,
-								  &img[(nclusters-j)*n], n);
-			}
+			unsigned char chunk[(CHUNK_SIZE + masksize)*(CHUNK_SIZE + masksize)];
+
+			/* Build chunk. */
+			for (int k = 0; k < CHUNK_SIZE + masksize; k++)
+				memcpy(&chunk[k*(CHUNK_SIZE + masksize)], &img[(i - half + k)*imgsize + j - half], CHUNK_SIZE + masksize);
+
+			data_send(outfd[nchunks], &msg, sizeof(int));
+			data_send(outfd[nchunks], chunk, (CHUNK_SIZE + masksize)*(CHUNK_SIZE + masksize));
+
+					data_receive(infd,
+						nchunks,
+						&chunk,
+						CHUNK_SIZE*CHUNK_SIZE
+					);
+
+					/* Build chunk. */
+					for (int k = 0; k < CHUNK_SIZE; k++)
+						memcpy(&newimg[(i -half + k)*imgsize + j - half], &chunk, CHUNK_SIZE);
+
+			nchunks = (nchunks == nclusters - 1) ? 0 : nchunks + 1;
 		}
 	}
-	
-	/* Receive remaining results. */
-	for (/* NOOP */ ; j > 0; j--)
+	for (int i = 0; i < masksize; i++)
 	{
-		data_receive(infd, j-1, 
-						   &img[(nchunks - j)*CHUNK_SIZE*CHUNK_SIZE], n);
+		for (int j = 0; j < masksize; j++)
+			printf("%lf", mask[i*masksize + j]);
+		printf("\n");
+	}
+	for (int i = 0; i < imgsize; i++)
+	{
+		for (int j = 0; j < imgsize; j++)
+			printf("%d", img[i*imgsize + j]);
+		printf("\n");
+	}
+	for (int i = 0; i < imgsize; i++)
+	{
+		for (int j = 0; j < imgsize; j++)
+			printf("%d", newimg[i*imgsize + j]);
+		printf("\n");
 	}
 	
 	/* House keeping. */
@@ -76,4 +96,5 @@ void gauss_filter(unsigned char *img_, int imgsize_, double *mask_, int masksize
 		data_send(outfd[i], &msg, sizeof(int));
 	join_slaves();
 	close_noc_connectors();
+	free(newimg);
 }

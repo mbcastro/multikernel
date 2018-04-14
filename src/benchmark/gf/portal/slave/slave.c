@@ -4,6 +4,7 @@
  */
 
 #include <nanvix/arch/mppa.h>
+#include <assert.h>
 #include <omp.h>
 #include <stdlib.h>
 #include "slave.h"
@@ -16,7 +17,7 @@ long total = 0;
 /* Gaussian filter parameters. */
 static int masksize;
 static double mask[MASK_SIZE*MASK_SIZE];
-static unsigned char chunk[CHUNK_SIZE*CHUNK_SIZE];
+static unsigned char chunk[(CHUNK_SIZE + MASK_SIZE)*(CHUNK_SIZE + MASK_SIZE)];
 static unsigned char newchunk[CHUNK_SIZE*CHUNK_SIZE];
 	
 #define MASK(i, j) \
@@ -33,39 +34,36 @@ static unsigned char newchunk[CHUNK_SIZE*CHUNK_SIZE];
  */
 void gauss_filter(void)
 {
-	int i, j;
 	int half;
-	double pixel;
-	int imgI, imgJ, maskI, maskJ;
 
-	i = 0; j = 0;
-	half = CHUNK_SIZE >> 1;
+	half = masksize/2;
 
-    #pragma omp parallel default(shared) private(imgI,imgJ,maskI,maskJ,pixel,i,j)
+	#pragma omp for
+	for (int imgI = 0; imgI < CHUNK_SIZE; imgI++)
 	{
-		#pragma omp for
-		for (imgI = 0; imgI < CHUNK_SIZE; imgI++)
-		{			
-			for (imgJ = 0; imgJ < CHUNK_SIZE; imgJ++)
-			{
-				pixel = 0.0;
-				for (maskI = 0; maskI < masksize; maskI++)
-				{	
-					for (maskJ = 0; maskJ < masksize; maskJ++)
-					{
-						i = (imgI - half < 0) ? CHUNK_SIZE-1 - maskI : imgI - half;
-						j = (imgJ - half < 0) ? CHUNK_SIZE-1 - maskJ : imgJ - half;
+		for (int imgJ = 0; imgJ < CHUNK_SIZE; imgJ++)
+		{
+			double pixel = 0.0;
 
-						pixel += CHUNK(i, j)*MASK(maskI, maskJ);
-					}
+			for (int maskI = 0; maskI < masksize; maskI++)
+			{	
+				for (int maskJ = 0; maskJ < masksize; maskJ++)
+				{
+					int i, j;
+
+					i = (maskI - half < 0) ? (imgI + half) - maskI : imgI + maskI;
+					j = (maskJ - half < 0) ? (imgJ + half) - maskJ : imgJ + maskJ;
+
+					pixel += CHUNK(i, j)*MASK(maskI, maskJ);
+					assert((i >= 0) && (i < CHUNK_SIZE + masksize));
+					assert((j >= 0) && (j < CHUNK_SIZE + masksize));
 				}
-			   
-				NEWCHUNK(imgI, imgJ) = (pixel > 255) ? 255 : (int)pixel;
 			}
+		   
+			NEWCHUNK(imgI, imgJ) = (pixel > 255) ? 255 : (int)pixel;
 		}
 	}
 }
-
 
 int main(int argc, char **argv)
 {
@@ -93,7 +91,7 @@ int main(int argc, char **argv)
 		switch (msg)
 		{
 			case MSG_CHUNK:
-				data_receive(infd, chunk, CHUNK_SIZE*CHUNK_SIZE);
+				data_receive(infd, chunk, (CHUNK_SIZE + masksize)*(CHUNK_SIZE + masksize));
 				start = k1_timer_get();
 				gauss_filter();
 				end = k1_timer_get();
