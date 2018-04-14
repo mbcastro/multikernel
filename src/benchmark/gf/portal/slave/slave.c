@@ -17,12 +17,16 @@ long total = 0;
 static int masksize;
 static double mask[MASK_SIZE*MASK_SIZE];
 static unsigned char chunk[CHUNK_SIZE*CHUNK_SIZE];
+static unsigned char newchunk[CHUNK_SIZE*CHUNK_SIZE];
 	
 #define MASK(i, j) \
 	mask[(i)*masksize + (j)]
 
 #define CHUNK(i, j) \
 	chunk[(i)*CHUNK_SIZE + (j)]
+
+#define NEWCHUNK(i, j) \
+	newchunk[(i)*CHUNK_SIZE + (j)]
 
 /*
  * Gaussian filter.
@@ -31,7 +35,6 @@ void gauss_filter(void)
 {
 	int half;
 	double pixel;
-	
 	half = CHUNK_SIZE >> 1;
 
 	#pragma omp parallel for
@@ -53,7 +56,7 @@ void gauss_filter(void)
 				}
 			}
 			   
-			CHUNK(imgI, imgJ) = (pixel > 255) ? 255 : (int)pixel;
+			NEWCHUNK(imgI, imgJ) = (pixel > 255) ? 255 : (int)pixel;
 		}
 	}
 }
@@ -90,7 +93,7 @@ int main(int argc, char **argv)
 				gauss_filter();
 				end = k1_timer_get();
 				total += k1_timer_diff(start, end);
-				data_send(outfd, chunk, CHUNK_SIZE*CHUNK_SIZE);
+				data_send(outfd, newchunk, CHUNK_SIZE*CHUNK_SIZE);
 				break;
 			
 			default:
