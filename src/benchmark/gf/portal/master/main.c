@@ -11,8 +11,6 @@
 #include <math.h>
 #include "master.h"
 
-#define MICRO (1.0/1000000)
-
 /* Gaussian filter. */
 extern void gauss_filter
 (unsigned char *img, int imgsize, double *mask, int masksize);
@@ -38,7 +36,8 @@ struct problem
 };
 
 /* Problem sizes. */
-static struct problem tiny     = {  7,  64 };
+/* OUTPUT_IMG_SIZE + (MASK_SIZE-1) = INPUT_IMAGE_SIZE */
+static struct problem tiny     = {  7,   70 };  /* 64 + (7-1) = 70 */
 static struct problem small    = {  7,  4096 };
 static struct problem standard = { 11,  8192 };
 static struct problem large    = { 11, 16384 };
@@ -46,7 +45,7 @@ static struct problem huge     = { 15, 32768 };
 
 /* Benchmark parameters. */
 int verbose = 0;                  /* Be verbose?        */
-static int seed = 0;              /* Seed value.       */
+static int seed = 0;              /* Seed value.        */
 int nclusters = NR_CCLUSTER;      /* Number of threads. */
 static struct problem *p = &tiny; /* Problem.           */
 

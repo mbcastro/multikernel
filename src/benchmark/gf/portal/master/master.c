@@ -21,7 +21,7 @@ static int masksize;       /* Dimension of mask.  */
 void gauss_filter(unsigned char *img_, int imgsize_, double *mask_, int masksize_)
 {	
 	int nchunks = 0;
-	int msg;     /* Message.          */
+	int msg;     /* Message. */
 	unsigned char *newimg;
 
 	/* Setup parameters. */
@@ -30,63 +30,52 @@ void gauss_filter(unsigned char *img_, int imgsize_, double *mask_, int masksize
 	imgsize = imgsize_;
 	masksize = masksize_;
 
-	newimg = smalloc(imgsize*imgsize*sizeof(unsigned char));
+	newimg = scalloc(imgsize * imgsize, sizeof(unsigned char));
 	
 	open_noc_connectors();
 	spawn_slaves();
 	
-	 /* Send mask. */
+	/* Send mask. */
 	for (int i = 0; i < nclusters; i++)
 	{
 		data_send(outfd[i], &masksize, sizeof(int));
-		data_send(outfd[i], mask, sizeof(double)*masksize*masksize);
+		data_send(outfd[i], mask, masksize * masksize * sizeof(double));
 	}
-    
-    /* Process image in chunks. */
+
 	int half = masksize/2;
+	
+	/* Process image in chunks. Each chunk includes a halo zone: total size (CHUNK_SIZE + masksize - 1)^2. */
+	int chunk_with_halo_size = CHUNK_SIZE + masksize - 1;
+	unsigned char *chunk = (unsigned char *) smalloc(chunk_with_halo_size * chunk_with_halo_size * sizeof(unsigned char));
 	msg = MSG_CHUNK;
 	for (int i = half; i < imgsize - half; i += CHUNK_SIZE)
 	{
 		for (int j = half; j < imgsize - half; j += CHUNK_SIZE)
 		{
-			unsigned char chunk[(CHUNK_SIZE + masksize)*(CHUNK_SIZE + masksize)];
+			/* Build chunk. */
+			printf("Building chunk[%d, %d]:\n", i - half, j - half);
+			for (int k = 0; k < chunk_with_halo_size; k++)
+				memcpy(&chunk[k * chunk_with_halo_size], &img[(i - half + k) * imgsize + j - half], chunk_with_halo_size);
+			
+			data_send(outfd[nchunks], &msg, sizeof(int));
+			data_send(outfd[nchunks], chunk, chunk_with_halo_size * chunk_with_halo_size * sizeof(unsigned char));
+
+			/* Receives chunk without halo. */
+			data_receive(infd, nchunks, chunk, CHUNK_SIZE * CHUNK_SIZE * sizeof(unsigned char));
 
 			/* Build chunk. */
-			for (int k = 0; k < CHUNK_SIZE + masksize; k++)
-				memcpy(&chunk[k*(CHUNK_SIZE + masksize)], &img[(i - half + k)*imgsize + j - half], CHUNK_SIZE + masksize);
-
-			data_send(outfd[nchunks], &msg, sizeof(int));
-			data_send(outfd[nchunks], chunk, (CHUNK_SIZE + masksize)*(CHUNK_SIZE + masksize));
-
-					data_receive(infd,
-						nchunks,
-						&chunk,
-						CHUNK_SIZE*CHUNK_SIZE
-					);
-
-					/* Build chunk. */
-					for (int k = 0; k < CHUNK_SIZE; k++)
-						memcpy(&newimg[(i -half + k)*imgsize + j - half], &chunk, CHUNK_SIZE);
+			for (int k = 0; k < CHUNK_SIZE; k++)
+				memcpy(&newimg[(i + k)*imgsize + j], &chunk[k * CHUNK_SIZE], CHUNK_SIZE);
 
 			nchunks = (nchunks == nclusters - 1) ? 0 : nchunks + 1;
 		}
 	}
-	for (int i = 0; i < masksize; i++)
-	{
-		for (int j = 0; j < masksize; j++)
-			printf("%lf", mask[i*masksize + j]);
-		printf("\n");
-	}
+	
+	printf("OUTPUT MPPA:\n");
 	for (int i = 0; i < imgsize; i++)
 	{
 		for (int j = 0; j < imgsize; j++)
-			printf("%d", img[i*imgsize + j]);
-		printf("\n");
-	}
-	for (int i = 0; i < imgsize; i++)
-	{
-		for (int j = 0; j < imgsize; j++)
-			printf("%d", newimg[i*imgsize + j]);
+			printf("%d ", newimg[i*imgsize + j]);
 		printf("\n");
 	}
 	
@@ -96,5 +85,6 @@ void gauss_filter(unsigned char *img_, int imgsize_, double *mask_, int masksize
 		data_send(outfd[i], &msg, sizeof(int));
 	join_slaves();
 	close_noc_connectors();
+	free(chunk);
 	free(newimg);
 }

@@ -7,20 +7,9 @@
 #ifndef _MASTER_H_
 #define _MASTER_H_
 
-    #include <nanvix/arch/mppa.h>
-	
-	#define PI 3.14159265359 /* pi */
-	#define E 2.71828182845904 /* e */
-	#define SD 0.8 /* Standard deviation. */
-	
-	#define CHUNK_SIZE (9)   /* Maximum chunk size. */
-	#define MASK_SIZE  (15)     /* Maximum mask size. */
-	#define IMG_SIZE   (32768)  /* Maximum image size. */
-	
-	/* Type of messages. */
-	#define MSG_CHUNK 1
-	#define MSG_DIE   0
-	
+  #include <nanvix/arch/mppa.h>
+  #include "../../kernel.h"
+
 	/*===============================================================*
 	 * IPC                                                           *
 	 *===============================================================*/

@@ -298,6 +298,7 @@ is-name := is.img
 cluster-bin += gf-portal-slave
 gf-portal-slave-srcs := $(SRCDIR)/benchmark/gf/portal/slave/slave.c \
 				        $(SRCDIR)/benchmark/gf/portal/slave/ipc.c   \
+						 		$(SRCDIR)/benchmark/gf/util.c               \
 				        $(SRCDIR)/kernel/arch/mppa/timer.c          \
 				        $(SRCDIR)/kernel/arch/mppa/portal.c         \
 				        $(SRCDIR)/kernel/arch/mppa/name.c           \
@@ -312,7 +313,7 @@ io-bin += gf-portal-master
 gf-portal-master-srcs := $(SRCDIR)/benchmark/gf/portal/master/main.c   \
 						 $(SRCDIR)/benchmark/gf/portal/master/master.c \
 						 $(SRCDIR)/benchmark/gf/portal/master/ipc.c    \
-						 $(SRCDIR)/benchmark/gf/portal/master/util.c   \
+						 $(SRCDIR)/benchmark/gf/util.c                 \
 						 $(SRCDIR)/kernel/arch/mppa/timer.c            \
 						 $(SRCDIR)/kernel/arch/mppa/portal.c           \
 						 $(SRCDIR)/kernel/arch/mppa/name.c             \
