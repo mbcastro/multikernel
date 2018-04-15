@@ -53,7 +53,6 @@ void gauss_filter(unsigned char *img_, int imgsize_, double *mask_, int masksize
 		for (int j = half; j < imgsize - half; j += CHUNK_SIZE)
 		{
 			/* Build chunk. */
-			printf("Building chunk[%d, %d]:\n", i - half, j - half);
 			for (int k = 0; k < chunk_with_halo_size; k++)
 				memcpy(&chunk[k * chunk_with_halo_size], &img[(i - half + k) * imgsize + j - half], chunk_with_halo_size);
 			
