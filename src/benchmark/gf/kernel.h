@@ -3,7 +3,7 @@
 
 #define MICRO (1.0/1000000)
 
-#define CHUNK_SIZE (16)     /* Size of chunks. */
+#define CHUNK_SIZE (16)     /* Maximum chunk size. */
 
 #define PI 3.14159265359    /* pi */
 #define E 2.71828182845904  /* e */

@@ -18,17 +18,18 @@ long total = 0;
 /* Gaussian Filter. */
 static double *mask;       			/* Mask.               */
 static int masksize;       			/* Dimension of mask.  */
-static unsigned char *chunk;		/* Image input chunk.	 */
-static unsigned char *newchunk;	/* Image output chunk. */
+static unsigned char *chunk;		/* Image input chunk.  */
+static unsigned char *newchunk;	    /* Image output chunk. */
+static int chunksize;               /* Chunk size.         */
 	
 #define MASK(i, j) \
 	mask[(i)*masksize + (j)]
 
 #define CHUNK(i, j) \
-	chunk[(i)*(CHUNK_SIZE + masksize - 1) + (j)]
+	chunk[(i)*(chunksize + masksize - 1) + (j)]
 
 #define NEWCHUNK(i, j) \
-	newchunk[(i)*CHUNK_SIZE + (j)]
+	newchunk[(i)*chunksize + (j)]
 
 /*
  * Gaussian filter.
@@ -41,9 +42,9 @@ void gauss_filter(void)
 	#pragma omp parallel default(shared) private(chunkI,chunkJ,maskI,maskJ,pixel)
 	{
 		#pragma omp for
-		for (chunkI = 0; chunkI < CHUNK_SIZE; chunkI++)
+		for (chunkI = 0; chunkI < chunksize; chunkI++)
 		{
-			for (chunkJ = 0; chunkJ < CHUNK_SIZE; chunkJ++)
+			for (chunkJ = 0; chunkJ < chunksize; chunkJ++)
 			{
 				pixel = 0.0;
 				
@@ -75,10 +76,15 @@ int main(int argc, char **argv)
 
 	/* Allocates filter mask and chunks. */
 	mask = (double *) smalloc(masksize * masksize * sizeof(double));
-	
-	int chunk_with_halo_size = CHUNK_SIZE + masksize - 1;
+
+	/* Receives chunk size. */
+	// NOT WORKING
+	//data_receive(infd, &chunksize, sizeof(int));
+	chunksize = CHUNK_SIZE;
+
+	int chunk_with_halo_size = chunksize + masksize - 1;
 	chunk = (unsigned char *) smalloc(chunk_with_halo_size * chunk_with_halo_size * sizeof(unsigned char));
-	newchunk = (unsigned char *) smalloc(CHUNK_SIZE * CHUNK_SIZE * sizeof(unsigned char));
+	newchunk = (unsigned char *) smalloc(chunksize * chunksize * sizeof(unsigned char));
 	
 	assert(newchunk != NULL);
 	assert(chunk != NULL);
@@ -100,7 +106,7 @@ int main(int argc, char **argv)
 				gauss_filter();
 				end = k1_timer_get();
 				total += k1_timer_diff(start, end);
-				data_send(outfd, newchunk, CHUNK_SIZE * CHUNK_SIZE * sizeof(unsigned char));
+				data_send(outfd, newchunk, chunksize * chunksize * sizeof(unsigned char));
 				break;
 			
 			default:

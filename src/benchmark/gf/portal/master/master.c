@@ -14,6 +14,7 @@ static unsigned char *img; /* Image.              */
 static int imgsize;        /* Dimension of image. */
 static double *mask;       /* Mask.               */
 static int masksize;       /* Dimension of mask.  */
+static int chunksize;
 
 /*
  * Gaussian filter.
@@ -29,28 +30,34 @@ void gauss_filter(unsigned char *img_, int imgsize_, double *mask_, int masksize
 	mask = mask_;
 	imgsize = imgsize_;
 	masksize = masksize_;
+	//SHOULD BE THE FOLLOWING WHEN CHUNKSIZE COMM. WORKS
+	//chunksize = ((imgsize - masksize + 1) * (imgsize - masksize + 1)) / (CHUNK_SIZE * CHUNK_SIZE) < 16 ? (imgsize - masksize + 1) / 4 : CHUNK_SIZE;
+	chunksize = CHUNK_SIZE;
+	printf("Chunk size = %d\n", chunksize);
 
 	newimg = scalloc(imgsize * imgsize, sizeof(unsigned char));
 	
 	open_noc_connectors();
 	spawn_slaves();
 	
-	/* Send mask. */
+	/* Send mask and chunk size. */
 	for (int i = 0; i < nclusters; i++)
 	{
 		data_send(outfd[i], &masksize, sizeof(int));
 		data_send(outfd[i], mask, masksize * masksize * sizeof(double));
+		//NOT WORKING
+		//data_send(outfd[i], &chunksize, sizeof(int));
 	}
 
 	int half = masksize/2;
 	
-	/* Process image in chunks. Each chunk includes a halo zone: total size (CHUNK_SIZE + masksize - 1)^2. */
-	int chunk_with_halo_size = CHUNK_SIZE + masksize - 1;
+	/* Process image in chunks. Each chunk includes a halo zone: total size (chunksize + masksize - 1)^2. */
+	int chunk_with_halo_size = chunksize + masksize - 1;
 	unsigned char *chunk = (unsigned char *) smalloc(chunk_with_halo_size * chunk_with_halo_size * sizeof(unsigned char));
 	msg = MSG_CHUNK;
-	for (int i = half; i < imgsize - half; i += CHUNK_SIZE)
+	for (int i = half; i < imgsize - half; i += chunksize)
 	{
-		for (int j = half; j < imgsize - half; j += CHUNK_SIZE)
+		for (int j = half; j < imgsize - half; j += chunksize)
 		{
 			/* Build chunk. */
 			for (int k = 0; k < chunk_with_halo_size; k++)
@@ -60,11 +67,11 @@ void gauss_filter(unsigned char *img_, int imgsize_, double *mask_, int masksize
 			data_send(outfd[nchunks], chunk, chunk_with_halo_size * chunk_with_halo_size * sizeof(unsigned char));
 
 			/* Receives chunk without halo. */
-			data_receive(infd, nchunks, chunk, CHUNK_SIZE * CHUNK_SIZE * sizeof(unsigned char));
+			data_receive(infd, nchunks, chunk, chunksize * chunksize * sizeof(unsigned char));
 
 			/* Build chunk. */
-			for (int k = 0; k < CHUNK_SIZE; k++)
-				memcpy(&newimg[(i + k)*imgsize + j], &chunk[k * CHUNK_SIZE], CHUNK_SIZE);
+			for (int k = 0; k < chunksize; k++)
+				memcpy(&newimg[(i + k)*imgsize + j], &chunk[k * chunksize], chunksize);
 
 			nchunks = (nchunks == nclusters - 1) ? 0 : nchunks + 1;
 		}
