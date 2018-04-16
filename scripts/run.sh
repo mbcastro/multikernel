@@ -74,12 +74,12 @@ then
 	run2 "rmem.img" "rmem-master" "rmem-server" "write $NCLUSTERS $SIZE"
 	run2 "rmem.img" "rmem-master" "rmem-server" "read $NCLUSTERS $SIZE"
 else
-	echo "Running KM PORTAL"
-	run1 "km-portal.img" "km-portal-master" "--nclusters $NCLUSTERS --class $CLASS"
-	echo "Running KM RMEM"
-	run2 "km-rmem.img" "km-rmem-master" "rmem-server" "--nclusters $NCLUSTERS --class $CLASS"	
+	#echo "Running KM PORTAL"
+	#run1 "km-portal.img" "km-portal-master" "--nclusters $NCLUSTERS --class $CLASS"
+	#echo "Running KM RMEM"
+	#run2 "km-rmem.img" "km-rmem-master" "rmem-server" "--nclusters $NCLUSTERS --class $CLASS"	
 	echo "Running GF"
 	run1 "gf-portal.img" "gf-portal-master" "--nclusters $NCLUSTERS --class $CLASS"
-	echo "Running IS"
-	run1 "is.img" "is-master" "--nclusters $NCLUSTERS --class $CLASS"
+	#echo "Running IS"
+	#run1 "is.img" "is-master" "--nclusters $NCLUSTERS --class $CLASS"
 fi

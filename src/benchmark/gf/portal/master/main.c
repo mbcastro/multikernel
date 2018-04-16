@@ -11,8 +11,6 @@
 #include <math.h>
 #include "master.h"
 
-#define MICRO (1.0/1000000)
-
 /* Gaussian filter. */
 extern void gauss_filter
 (unsigned char *img, int imgsize, double *mask, int masksize);
@@ -38,15 +36,16 @@ struct problem
 };
 
 /* Problem sizes. */
-static struct problem tiny     = {  7,  2048 };
-static struct problem small    = {  7,  4096 };
-static struct problem standard = { 11,  8192 };
-static struct problem large    = { 11, 16384 };
-static struct problem huge     = { 15, 32768 };
+/* OUTPUT_IMG_SIZE + (MASK_SIZE-1) = INPUT_IMAGE_SIZE */
+static struct problem tiny     = {  7,  2054 }; /* 2048  + (7-1)  = 2054 */
+static struct problem small    = {  7,  4102 }; /* 4096  + (7-1)  = 4102 */
+static struct problem standard = { 11,  8202 }; /* 8192  + (11-1) = 8202 */
+static struct problem large    = { 11, 16394 }; /* 16384 + (11-1) = 16394 */
+static struct problem huge     = { 15, 32782 }; /* 32768 + (15-1) = 32782 */
 
 /* Benchmark parameters. */
 int verbose = 0;                  /* Be verbose?        */
-static int seed = 0;              /* Seed value.       */
+static int seed = 0;              /* Seed value.        */
 int nclusters = NR_CCLUSTER;      /* Number of threads. */
 static struct problem *p = &tiny; /* Problem.           */
 
@@ -240,13 +239,13 @@ int main(int argc, char **argv)
 	 * Print Timing Statistics                                       *
 	 *---------------------------------------------------------------*/
 
+	if (verbose)
+	{
+
 	printf("timing statistics:\n");
 
 	printf("  initialization time: %f\n",  time_init*MICRO);
 	printf("  kernel time:          %f\n", time_kernel*MICRO);
-
-	if (verbose)
-	{
 		printf("  master:        %f\n", master*MICRO);
 		for (int i = 0; i < nclusters; i++)
 			printf("  slave %d:      %f\n", i, slave[i]*MICRO);

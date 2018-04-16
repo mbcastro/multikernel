@@ -4,64 +4,54 @@
  */
 
 #include <nanvix/arch/mppa.h>
+#include <assert.h>
 #include <omp.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include "slave.h"
 
-/* Timing statistics. */
-long start;
-long end;
-long total = 0;
+/* Gaussian Filter. */
+static double *mask;       			/* Mask.               */
+static int masksize;       			/* Dimension of mask.  */
+static unsigned char *chunk;		/* Image input chunk.  */
+static unsigned char *newchunk;	    /* Image output chunk. */
+static int chunksize;               /* Chunk size.         */
+	
+#define MASK(i, j) \
+	mask[(i)*masksize + (j)]
 
-/* Gaussian filter parameters. */
-static int masksize;
-static double mask[MASK_SIZE*MASK_SIZE];
-static unsigned char chunk[CHUNK_SIZE*CHUNK_SIZE];
+#define CHUNK(i, j) \
+	chunk[(i)*(chunksize + masksize - 1) + (j)]
+
+#define NEWCHUNK(i, j) \
+	newchunk[(i)*chunksize + (j)]
 
 /*
  * Gaussian filter.
  */
 void gauss_filter(void)
 {
-	int i, j;
-	int half;
 	double pixel;
-	int imgI, imgJ, maskI, maskJ;
-	
-	#define MASK(i, j) \
-		mask[(i)*masksize + (j)]
-	
-	#define CHUNK(i, j) \
-		chunk[(i)*CHUNK_SIZE + (j)]
-	
-	i = 0; j = 0;
-	half = CHUNK_SIZE >> 1;
+	int chunkI, chunkJ, maskI, maskJ;
 
-	#pragma omp parallel default(shared) private(imgI,imgJ,maskI,maskJ,pixel,i,j)
+	#pragma omp parallel default(shared) private(chunkI,chunkJ,maskI,maskJ,pixel)
 	{
-        #pragma omp for
-		for (imgI = 0; imgI < CHUNK_SIZE; imgI++)
-		{			
-			for (imgJ = 0; imgJ < CHUNK_SIZE; imgJ++)
+		#pragma omp for
+		for (chunkI = 0; chunkI < chunksize; chunkI++)
+		{
+			for (chunkJ = 0; chunkJ < chunksize; chunkJ++)
 			{
 				pixel = 0.0;
+				
 				for (maskI = 0; maskI < masksize; maskI++)
-				{	
 					for (maskJ = 0; maskJ < masksize; maskJ++)
-					{
-						i = (imgI - half < 0) ? CHUNK_SIZE-1 - maskI : imgI - half;
-						j = (imgJ - half < 0) ? CHUNK_SIZE-1 - maskJ : imgJ - half;
-
-						pixel += CHUNK(i, j)*MASK(maskI, maskJ);
-					}
-				}
-				   
-				CHUNK(imgI, imgJ) = (pixel > 255) ? 255 : (int)pixel;
+						pixel += CHUNK(chunkI + maskI, chunkJ + maskJ) * MASK(maskI, maskJ);
+			   
+				NEWCHUNK(chunkI, chunkJ) = (pixel > 255) ? 255 : (int)pixel;
 			}
 		}
 	}
 }
-
 
 int main(int argc, char **argv)
 {
@@ -75,13 +65,26 @@ int main(int argc, char **argv)
 	
 	/* Setup interprocess communication. */
 	open_noc_connectors();
-	
-	/* Receives filter mask.*/
+
+	/* Receives filter mask size. */
 	data_receive(infd, &masksize, sizeof(int));
-	data_receive(infd, mask, sizeof(double)*masksize*masksize);
-    
+
+	/* Allocates filter mask and chunks. */
+	mask = (double *) smalloc(masksize * masksize * sizeof(double));
+
+	/* Receives filter mask. */
+	data_receive(infd, mask, masksize * masksize * sizeof(double));
+
+	/* Receives chunk size. */
+	data_receive(infd, &chunksize, sizeof(int));
+		
+	int chunk_with_halo_size = chunksize + masksize - 1;
+
+	chunk = (unsigned char *) smalloc(chunk_with_halo_size * chunk_with_halo_size * sizeof(unsigned char));
+	newchunk = (unsigned char *) smalloc(chunksize * chunksize * sizeof(unsigned char));
+	
 	/* Process chunks. */
-    while (1)
+	while (1)
 	{
 		data_receive(infd, &msg, sizeof(int));
 
@@ -89,12 +92,9 @@ int main(int argc, char **argv)
 		switch (msg)
 		{
 			case MSG_CHUNK:
-				data_receive(infd, chunk, CHUNK_SIZE*CHUNK_SIZE);
-				start = k1_timer_get();
+				data_receive(infd, chunk, chunk_with_halo_size * chunk_with_halo_size * sizeof(unsigned char));
 				gauss_filter();
-				end = k1_timer_get();
-				total += k1_timer_diff(start, end);
-				data_send(outfd, chunk, CHUNK_SIZE*CHUNK_SIZE);
+				data_send(outfd, newchunk, chunksize * chunksize * sizeof(unsigned char));
 				break;
 			
 			default:
@@ -104,10 +104,13 @@ int main(int argc, char **argv)
 
 out:
 	
-	data_send(outfd, &total, sizeof(long));
 	
 	close_noc_connectors();
-	mppa_exit(0);
+
+	free(mask);
+	free(chunk);
+	free(newchunk);
+	
 	return (0);
 }
 	
