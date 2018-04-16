@@ -46,13 +46,6 @@
     extern void gauss_filter(unsigned char *, int, double *, int);
 
 	/* Forward definitions. */
-	extern long master;
-	extern long slave[NR_CCLUSTER];
-	extern long communication;
-	extern size_t data_sent;
-	extern size_t data_received;
-	extern unsigned nsend;
-	extern unsigned nreceive;
 	extern int nclusters;
 
 #endif /* _MASTER_H_ */

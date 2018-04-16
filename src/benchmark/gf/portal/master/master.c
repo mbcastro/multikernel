@@ -44,7 +44,6 @@ void gauss_filter(unsigned char *img_, int imgsize_, double *mask_, int masksize
 	{
 		data_send(outfd[i], &masksize, sizeof(int));
 		data_send(outfd[i], mask, masksize * masksize * sizeof(double));
-		//NOT WORKING
 		data_send(outfd[i], &chunksize, sizeof(int));
 	}
 

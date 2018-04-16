@@ -39,13 +39,7 @@ void close_noc_connectors(void)
  */
 void data_send(int fd, void *data, size_t n)
 {	
-	long start, end;
-	
-	start = k1_timer_get();
-		portal_write(fd, data, n);
-	end = k1_timer_get();
-	
-	total += k1_timer_diff(start, end);
+	portal_write(fd, data, n);
 }
 
 /*
@@ -53,12 +47,6 @@ void data_send(int fd, void *data, size_t n)
  */
 void data_receive(int fd, void *data, size_t n)
 {	
-	long start, end;
-	
-	start = k1_timer_get();
-		portal_allow(fd, IOCLUSTER0);
-		portal_read(fd, data, n);
-	end = k1_timer_get();
-	
-	total += k1_timer_diff(start, end);
+	portal_allow(fd, IOCLUSTER0);
+	portal_read(fd, data, n);
 }

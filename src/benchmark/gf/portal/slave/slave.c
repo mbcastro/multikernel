@@ -10,11 +10,6 @@
 #include <stdio.h>
 #include "slave.h"
 
-/* Timing statistics. */
-long start;
-long end;
-long total = 0;
-
 /* Gaussian Filter. */
 static double *mask;       			/* Mask.               */
 static int masksize;       			/* Dimension of mask.  */
@@ -98,10 +93,7 @@ int main(int argc, char **argv)
 		{
 			case MSG_CHUNK:
 				data_receive(infd, chunk, chunk_with_halo_size * chunk_with_halo_size * sizeof(unsigned char));
-				start = k1_timer_get();
 				gauss_filter();
-				end = k1_timer_get();
-				total += k1_timer_diff(start, end);
 				data_send(outfd, newchunk, chunksize * chunksize * sizeof(unsigned char));
 				break;
 			
@@ -112,7 +104,6 @@ int main(int argc, char **argv)
 
 out:
 	
-	data_send(outfd, &total, sizeof(long));
 	
 	close_noc_connectors();
 
@@ -120,7 +111,6 @@ out:
 	free(chunk);
 	free(newchunk);
 	
-	mppa_exit(0);
 	return (0);
 }
 	

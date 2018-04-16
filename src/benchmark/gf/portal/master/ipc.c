@@ -17,15 +17,7 @@ static mppa_pid_t pids[NR_CCLUSTER]; /* Processes IDs.   */
  */
 void data_send(int fd, void *data, size_t n)
 {
-    long start, end;
-
-    start = k1_timer_get();
-        portal_write(fd, data, n);
-    end = k1_timer_get();
-
-    data_sent += n;
-    nsend++;
-    communication += k1_timer_diff(start, end);
+	portal_write(fd, data, n);
 }
 
 /*
@@ -33,16 +25,8 @@ void data_send(int fd, void *data, size_t n)
  */
 void data_receive(int fd, int remote, void *data, size_t n)
 {
-    long start, end;
-
-    start = k1_timer_get();
-        portal_allow(fd, remote);
-        portal_read(fd, data, n);
-    end = k1_timer_get();
-
-    data_received += n;
-    nreceive++;
-    communication += k1_timer_diff(start, end);
+	portal_allow(fd, remote);
+	portal_read(fd, data, n);
 }
 
 /*
@@ -70,10 +54,7 @@ void spawn_slaves(void)
 void join_slaves(void)
 {
     for (int i = 0; i < nclusters; i++)
-    {
-        data_receive(infd, i, &slave[i], sizeof(long));
         mppa_waitpid(pids[i], NULL, 0);
-    }
 }
 
 /*
