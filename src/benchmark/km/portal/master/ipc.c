@@ -1,5 +1,20 @@
 /*
- * Copyright(C) 2015 Pedro H. Penna <pedrohenriquepenna@gmail.com>
+ * Copyright(C) 2011-2018 Pedro H. Penna <pedrohenriquepenna@gmail.com>
+ * 
+ * This file is part of CAP Benchmarks.
+ * 
+ * CAP Benchmarks is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option) any
+ * later version.
+ * 
+ * CAP Benchmarks is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+ * details.
+ * 
+ * You should have received a copy of the GNU General Public License along with
+ * CAP Benchmarks. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <nanvix/arch/mppa.h>
@@ -14,15 +29,24 @@ int outfd[NR_CCLUSTER];              /* Output channels. */
 static mppa_pid_t pids[NR_CCLUSTER]; /* Processes IDs.   */
 
 /*
- * Sends data.
+ * @brief Sends data.
+ *
+ * @param fd   Output NoC connector.
+ * @param data Target buffer.
+ * @param n    Number of bytes to send.
  */
-void data_send(int fd, void *data, size_t n)
-{	
+void data_send(int fd, const void *data, size_t n)
+{
 	portal_write(fd, data, n);
 }
 
 /*
- * Receives data.
+ * @brief Receives data.
+ *
+ * @param fd     Input NoC connector.
+ * @param remote Remote cluster.
+ * @param data   Target buffer.
+ * @param n      Number of bytes to receive.
  */
 void data_receive(int fd, int remote, void *data, size_t n)
 {	
@@ -30,13 +54,13 @@ void data_receive(int fd, int remote, void *data, size_t n)
 	portal_read(fd, data, n);
 }
 
-/*
- * Spwans slave processes.
+/**
+ * @brief Spwans slave processes.
  */
 void spawn_slaves(void)
 {
-	char arg0[4];   /* Argument 0. */
-	char *args[2];  /* Arguments.  */
+	char arg0[4];  /* Argument 0. */
+	char *args[2]; /* Arguments.  */
 
 	/* Spawn slaves. */
 	args[1] = NULL;
@@ -44,13 +68,18 @@ void spawn_slaves(void)
 	{	
 		sprintf(arg0, "%d", i);
 		args[0] = arg0;
-		pids[i] = mppa_spawn(i, NULL, "km-portal-slave", (const char **)args, NULL);
+		pids[i] = mppa_spawn(i,
+					NULL,
+					KM_SLAVE_BINARY,
+					(const char **)args,
+					NULL
+				);
 		assert(pids[i] != -1);
 	}
 }
 
 /*
- * Joins slave processes.
+ * @brief Wait slave processes to complete.
  */
 void join_slaves(void)
 {
@@ -58,8 +87,8 @@ void join_slaves(void)
 		mppa_waitpid(pids[i], NULL, 0);
 }
 
-/*
- * Open NoC connectors.
+/**
+ * @brief Open NoC connectors.
  */
 void open_noc_connectors(void)
 {
@@ -75,13 +104,14 @@ void open_noc_connectors(void)
 	}
 }
 
-/*
- * Close NoC connectors.
+/**
+ * @brief Close NoC connectors.
  */
 void close_noc_connectors(void)
 {
-	portal_unlink(infd);
 	/* Close channels. */
 	for (int i = 0; i < nclusters; i++)
 		portal_close(outfd[i]);
+
+	portal_unlink(infd);
 }

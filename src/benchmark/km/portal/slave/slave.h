@@ -37,8 +37,5 @@
 
 	/* Forward definitions. */
 	extern int dimension;
-
-	/* Forward definitions. */
-	extern long total;
 	
 #endif /* _SLAVE_H_ */

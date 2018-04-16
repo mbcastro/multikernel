@@ -1,14 +1,27 @@
 /*
- * Copyright(C) 2014 Pedro H. Penna <pedrohenriquepenna@gmail.com>
+ * Copyright(C) 2011-2018 Pedro H. Penna <pedrohenriquepenna@gmail.com>
  * 
- * vector.c - Vector Library implementation.
+ * This file is part of CAP Benchmarks.
+ * 
+ * CAP Benchmarks is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option) any
+ * later version.
+ * 
+ * CAP Benchmarks is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+ * details.
+ * 
+ * You should have received a copy of the GNU General Public License along with
+ * CAP Benchmarks. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdlib.h>
 #include "master.h"
 	
-/*
- * Vector.
+/**
+ * @brief Vector.
  */
 struct vector
 {
@@ -22,8 +35,10 @@ struct vector
 #define VECTOR(v, i) \
 	(((vector_t)(v))->elements[(i)])
 	
-/*
- * Returns the size of a vector.
+/**
+ * @brief Returns the size of a vector.
+ *
+ * @param v Target vector.
  */
 int vector_size(struct vector *v)
 {
@@ -55,7 +70,9 @@ struct vector *vector_create(int n)
 }
 
 /*
- * Destroys a vector.
+ * @param Destroys a vector.
+ *
+ * @param v Target vector.
  */
 void vector_destroy(struct vector *v)
 {

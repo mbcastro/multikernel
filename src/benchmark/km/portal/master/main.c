@@ -1,7 +1,20 @@
 /*
- * Copyright(C) 2014 Pedro H. Penna <pedrohenriquepenna@gmail.com>
+ * Copyright(C) 2011-2018 Pedro H. Penna <pedrohenriquepenna@gmail.com>
  * 
- * Kmeans Benchmark Kernel.
+ * This file is part of CAP Benchmarks.
+ * 
+ * CAP Benchmarks is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option) any
+ * later version.
+ * 
+ * CAP Benchmarks is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+ * details.
+ * 
+ * You should have received a copy of the GNU General Public License along with
+ * CAP Benchmarks. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <nanvix/arch/mppa.h>
@@ -11,7 +24,7 @@
 #include "master.h"
 
 /*
- * Problem.
+ * @brief Problem description.
  */
 struct problem
 {
@@ -29,31 +42,31 @@ static struct problem large    = { 32768, 16, 1024, 0.0 };
 static struct problem huge     = { 65536, 16, 1024, 0.0 };
 
 /* Benchmark parameters. */
-static int verbose = 0;           /* Be verbose?        */
-static int seed = 0;              /* Seed value.        */
-int nclusters = NR_CCLUSTER;      /* Number of threads. */
-static struct problem *p = &tiny; /* Problem.           */
+static int verbose = 0;           /* Be verbose?                 */
+static int seed = KM_SEED;        /* Seed value.                 */
+static struct problem *p = &tiny; /* Problem.                    */
+int nclusters = NR_CCLUSTER;      /* Number of Compute Clusters. */
 
 /*===================================================================*
  * usage()                                                           *
  *===================================================================*/
 
-/*
- * Prints program usage and exits.
+/**
+ * @brief Prints program usage and exits.
  */
 static void usage(void)
 {
 	printf("Usage: kmeans [options]\n");
 	printf("Brief: Kmeans Benchmark Kernel\n");
 	printf("Options:\n");
-	printf("  --help             Display this information and exit\n");
-	printf("  --nclusters <value> Set number of threads\n");
-	printf("  --class <name>     Set problem class:\n");
-	printf("                       - small\n");
-	printf("                       - standard\n");
-	printf("                       - large\n");
-	printf("                       - huge\n");
-	printf("  --verbose          Be verbose\n");
+	printf("  --help              Display this information and exit\n");
+	printf("  --nclusters <value> Set number of compute clusters to use\n");
+	printf("  --class <name>      Set problem class:\n");
+	printf("                        - small\n");
+	printf("                        - standard\n");
+	printf("                        - large\n");
+	printf("                        - huge\n");
+	printf("  --verbose           Be verbose\n");
 	exit(0);
 }
 
@@ -61,8 +74,11 @@ static void usage(void)
  * readargs()                                                        *
  *===================================================================*/
 
-/*
- * Reads command line arguments.
+/**
+ * @brief Reads command line arguments.
+ *
+ * @param argc Argument counter.
+ * @param argv Arguments list.
  */
 static void readargs(int argc, char **argv)
 {
@@ -137,13 +153,13 @@ static void readargs(int argc, char **argv)
  * main()                                                            *
  *===================================================================*/
 
-/*
- * Runs benchmark.
+/**
+ * @brief K-means Benchmark Kernel
  */
 int main(int argc, char **argv)
 {
-	int *map;         /* Map of clusters.           */
-	vector_t *data;   /* Data points.               */
+	int *map;       /* Map of clusters. */
+	vector_t *data; /* Data points.     */
 	
 	/*---------------------------------------------------------------*
 	 * Benchmark Initialization                                      *
@@ -152,6 +168,7 @@ int main(int argc, char **argv)
 	readargs(argc, argv);
 	srandnum(seed);
 
+	/* Print benchmark information. */
 	printf("Number of Points:    %d\n", p->npoints);
 	printf("Number of Centroids: %d\n", p->ncentroids);
 	printf("Dimension:           %d\n", p->dimension);
@@ -160,6 +177,7 @@ int main(int argc, char **argv)
 	if (verbose)
 		printf("initializing...\n");
 
+	/* Generate workload. */
 	data = smalloc(p->npoints*sizeof(vector_t));
 	for (int i = 0; i < p->npoints; i++)
 	{
@@ -174,12 +192,13 @@ int main(int argc, char **argv)
 	if (verbose)
 		printf("clustering data...\n");
 
-		map = kmeans(data, p->npoints, p->ncentroids, p->mindistance);
+	map = kmeans(data, p->npoints, p->ncentroids, p->mindistance);
 	
 	/*---------------------------------------------------------------*
 	 * House Keeping                                                 *
 	 *---------------------------------------------------------------*/
 
+	/* House keeping. */
 	free(map);
 	for (int i = 0; i < p->npoints; i++)
 		vector_destroy(data[i]);

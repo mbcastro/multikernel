@@ -1,7 +1,20 @@
 /*
- * Copyright(C) 2014 Pedro H. Penna <pedrohenriquepenna@gmail.com>
+ * Copyright(C) 2011-2018 Pedro H. Penna <pedrohenriquepenna@gmail.com>
  * 
- * master.h -  Private master library.
+ * This file is part of CAP Benchmarks.
+ * 
+ * CAP Benchmarks is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option) any
+ * later version.
+ * 
+ * CAP Benchmarks is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+ * details.
+ * 
+ * You should have received a copy of the GNU General Public License along with
+ * CAP Benchmarks. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #ifndef _MASTER_H_
@@ -13,15 +26,22 @@
 	/*===============================================================*
 	 * IPC                                                           *
 	 *===============================================================*/
-	
+
+	/**
+	 * @brief Binary name of slave process.
+	 */
+	#define KM_SLAVE_BINARY "km-portal-slave"
+
 	/* Forward definitions. */
 	extern void spawn_slaves(void);
 	extern void join_slaves(void);
-	extern void sync_slaves(void);
 	extern void open_noc_connectors(void);
 	extern void close_noc_connectors(void);
-	extern void data_send(int, void *, size_t);
+	extern void data_send(int, const void *, size_t);
 	extern void data_receive(int, int, void *, size_t);
+
+	/* Forward definitions. */
+	extern int nclusters;
 
 	/* Forward definitions. */
 	extern int infd;
@@ -63,17 +83,12 @@
 	 * Kernel                                                        *
 	 *===============================================================*/
 
-	/* Forward definitions. */
-	extern int *kmeans(vector_t *, int, int, float);
+	/**
+	 * @brief Defaultkernel parameters.
+	 */
+	#define KM_SEED 0 /**< Default seed value. */
 
 	/* Forward definitions. */
-	extern long master;
-	extern long slave[NR_CCLUSTER];
-	extern long communication;
-	extern size_t data_sent;
-	extern size_t data_received;
-	extern unsigned nsend;
-	extern unsigned nreceive;
-	extern int nclusters;
+	extern int *kmeans(vector_t *, int, int, float);
 
 #endif /* _MASTER_H_ */

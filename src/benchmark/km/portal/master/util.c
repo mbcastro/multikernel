@@ -1,15 +1,31 @@
 /*
- * Copyright(C) 2014 Pedro H. Penna <pedrohenriquepenna@gmail.com>
+ * Copyright(C) 2011-2018 Pedro H. Penna <pedrohenriquepenna@gmail.com>
  * 
- * util.c - Utility library implementation.
+ * This file is part of CAP Benchmarks.
+ * 
+ * CAP Benchmarks is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option) any
+ * later version.
+ * 
+ * CAP Benchmarks is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+ * details.
+ * 
+ * You should have received a copy of the GNU General Public License along with
+ * CAP Benchmarks. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <nanvix/arch/mppa.h>
 #include <assert.h>
 #include <stdlib.h>
 
-/*
- * Safe calloc().
+/**
+ * @brief Safe calloc().
+ *
+ * @param nmemb Number of elements.
+ * @param size  Size of each element.
  */
 void *scalloc(size_t nmemb, size_t size)
 {
@@ -20,8 +36,10 @@ void *scalloc(size_t nmemb, size_t size)
 	return (p);
 }
 
-/*
- * Safe malloc().
+/**
+ * @brief Safe malloc().
+ *
+ * @param size Number of bytes to allocate.
  */
 void *smalloc(size_t size)
 {
@@ -38,8 +56,10 @@ void *smalloc(size_t size)
 static unsigned randum_w = RANDNUM_W;
 static unsigned randum_z = RANDNUM_Z;
 
-/*
- * Initializes the random number generator.
+/**
+ * @brief Initializes the random number generator.
+ *
+ * @param seed Seed value.
  */
 void srandnum(int seed)
 {
@@ -52,13 +72,13 @@ void srandnum(int seed)
 }
 
 /*
- * Generates a random number.
+ * @brief Generates a random number.
  */
 unsigned randnum(void)
 {
 	unsigned u;
 	
-	/* 0 <= u < 2^32 */
+	/* u in [0, 2^32) */
 	randum_z = 36969 * (randum_z & 65535) + (randum_z >> 16);
 	randum_w = 18000 * (randum_w & 65535) + (randum_w >> 16);
 	u = (randum_z << 16) + randum_w;
