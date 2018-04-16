@@ -77,23 +77,19 @@ int main(int argc, char **argv)
 	/* Allocates filter mask and chunks. */
 	mask = (double *) smalloc(masksize * masksize * sizeof(double));
 
-	/* Receives chunk size. */
-	// NOT WORKING
-	//data_receive(infd, &chunksize, sizeof(int));
-	chunksize = CHUNK_SIZE;
-
-	int chunk_with_halo_size = chunksize + masksize - 1;
-	chunk = (unsigned char *) smalloc(chunk_with_halo_size * chunk_with_halo_size * sizeof(unsigned char));
-	newchunk = (unsigned char *) smalloc(chunksize * chunksize * sizeof(unsigned char));
-	
-	assert(newchunk != NULL);
-	assert(chunk != NULL);
-	
 	/* Receives filter mask. */
 	data_receive(infd, mask, masksize * masksize * sizeof(double));
 
+	/* Receives chunk size. */
+	data_receive(infd, &chunksize, sizeof(int));
+		
+	int chunk_with_halo_size = chunksize + masksize - 1;
+
+	chunk = (unsigned char *) smalloc(chunk_with_halo_size * chunk_with_halo_size * sizeof(unsigned char));
+	newchunk = (unsigned char *) smalloc(chunksize * chunksize * sizeof(unsigned char));
+	
 	/* Process chunks. */
-  while (1)
+	while (1)
 	{
 		data_receive(infd, &msg, sizeof(int));
 

@@ -30,10 +30,9 @@ void gauss_filter(unsigned char *img_, int imgsize_, double *mask_, int masksize
 	mask = mask_;
 	imgsize = imgsize_;
 	masksize = masksize_;
-	//SHOULD BE THE FOLLOWING WHEN CHUNKSIZE COMM. WORKS
-	//chunksize = ((imgsize - masksize + 1) * (imgsize - masksize + 1)) / (CHUNK_SIZE * CHUNK_SIZE) < 16 ? (imgsize - masksize + 1) / 4 : CHUNK_SIZE;
-	chunksize = CHUNK_SIZE;
-	printf("Chunk size = %d\n", chunksize);
+
+	/* Chunk size is adjusted to generate at least 16 chunks. */
+	chunksize = ((imgsize - masksize + 1) * (imgsize - masksize + 1)) / (CHUNK_SIZE * CHUNK_SIZE) < 16 ? (imgsize - masksize + 1) / 4 : CHUNK_SIZE;
 
 	newimg = scalloc(imgsize * imgsize, sizeof(unsigned char));
 	
@@ -46,7 +45,7 @@ void gauss_filter(unsigned char *img_, int imgsize_, double *mask_, int masksize
 		data_send(outfd[i], &masksize, sizeof(int));
 		data_send(outfd[i], mask, masksize * masksize * sizeof(double));
 		//NOT WORKING
-		//data_send(outfd[i], &chunksize, sizeof(int));
+		data_send(outfd[i], &chunksize, sizeof(int));
 	}
 
 	int half = masksize/2;
@@ -77,13 +76,13 @@ void gauss_filter(unsigned char *img_, int imgsize_, double *mask_, int masksize
 		}
 	}
 	
-	printf("OUTPUT MPPA:\n");
+	/*printf("OUTPUT MPPA:\n");
 	for (int i = 0; i < imgsize; i++)
 	{
 		for (int j = 0; j < imgsize; j++)
 			printf("%d ", newimg[i*imgsize + j]);
 		printf("\n");
-	}
+		}*/
 	
 	/* House keeping. */
 	msg = MSG_DIE;
