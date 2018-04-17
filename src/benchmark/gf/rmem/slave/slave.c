@@ -1,120 +1,121 @@
 /*
- * Copyright(C) 2014 Pedro H. Penna <pedrohenriquepenna@gmail.com>
- * 
- * slave.c - gf slave process.
+ * Copyright(C) 2014 Matheus M. Queiroz <matheus.miranda.queiroz@gmail.com>, 
+ *                   Pedro H. Penna <pedrohenriquepenna@gmail.com>
  */
 
-#include <global.h>
-#include <mppaipc.h>
+#include <nanvix/arch/mppa.h>
+#include <nanvix/pm.h>
+#include <nanvix/mm.h>
+#include <assert.h>
 #include <omp.h>
-#include <timer.h>
-#include <util.h>
-#include <ipc.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include "slave.h"
 
-/* Timing statistics. */
-uint64_t start;
-uint64_t end;
-uint64_t communication = 0;
-uint64_t total = 0;
+/* Cluster rank. */
+int rank;
 
-/* Gaussian filter parameters. */
-static int masksize;
-static double mask[MASK_SIZE*MASK_SIZE];
-static unsigned char chunk[CHUNK_SIZE*CHUNK_SIZE];
+/* Gaussian Filter. */
+static int imgsize;       			/* IMG dimension.      */
+
+static double *mask;       			/* Mask.               */
+static int masksize;       			/* Mask dimension.     */
+
+static unsigned char *chunk;		/* Image input chunk.  */
+static unsigned char *newchunk;	/* Image output chunk. */
+
+static int chunksize;           /* Chunk size.         */
+
+static int nclusters;           /* Number of clusters. */
+	
+#define MASK(i, j) \
+	mask[(i)*masksize + (j)]
+
+#define CHUNK(i, j) \
+	chunk[(i)*(chunksize + masksize - 1) + (j)]
+
+#define NEWCHUNK(i, j) \
+	newchunk[(i)*chunksize + (j)]
 
 /*
  * Gaussian filter.
  */
 void gauss_filter(void)
 {
-	int i, j;
-	int half;
 	double pixel;
-	int imgI, imgJ, maskI, maskJ;
-	
-	#define MASK(i, j) \
-		mask[(i)*masksize + (j)]
-	
-	#define CHUNK(i, j) \
-		chunk[(i)*CHUNK_SIZE + (j)]
-	
-	i = 0; j = 0;
-	half = CHUNK_SIZE >> 1;
-	
-	#pragma omp parallel default(shared) private(imgI,imgJ,maskI,maskJ,pixel,i,j)
+	int chunkI, chunkJ, maskI, maskJ;
+
+	#pragma omp parallel default(shared) private(chunkI,chunkJ,maskI,maskJ,pixel)
 	{
 		#pragma omp for
-		for (imgI = 0; imgI < CHUNK_SIZE; imgI++)
-		{			
-			for (imgJ = 0; imgJ < CHUNK_SIZE; imgJ++)
+		for (chunkI = 0; chunkI < chunksize; chunkI++)
+		{
+			for (chunkJ = 0; chunkJ < chunksize; chunkJ++)
 			{
 				pixel = 0.0;
+				
 				for (maskI = 0; maskI < masksize; maskI++)
-				{	
 					for (maskJ = 0; maskJ < masksize; maskJ++)
-					{
-						i = (imgI - half < 0) ? CHUNK_SIZE-1 - maskI : imgI - half;
-						j = (imgJ - half < 0) ? CHUNK_SIZE-1 - maskJ : imgJ - half;
-
-						pixel += CHUNK(i, j)*MASK(maskI, maskJ);
-					}
-				}
-				   
-				CHUNK(imgI, imgJ) = (pixel > 255) ? 255 : (int)pixel;
+						pixel += CHUNK(chunkI + maskI, chunkJ + maskJ) * MASK(maskI, maskJ);
+			   
+				NEWCHUNK(chunkI, chunkJ) = (pixel > 255) ? 255 : (int)pixel;
 			}
 		}
 	}
 }
 
-
 int main(int argc, char **argv)
 {
-	int msg;
-	
-	timer_init();
-
 	((void)argc);
 	
-    total = 0;
-
 	rank = atoi(argv[0]);	
 	
-	/* Setup interprocess communication. */
-	open_noc_connectors();
+	/* Read input parameters. */
+	memread(OFF_NCLUSTERS, &nclusters, sizeof(int));
+	memread(OFF_MASKSIZE,  &masksize,  sizeof(int));
+	memread(OFF_IMGSIZE,   &imgsize,   sizeof(int));
 	
-	/* Receives filter mask.*/
-	data_receive(infd, &masksize, sizeof(int));
-	data_receive(infd, mask, sizeof(double)*masksize*masksize);
-    
-	/* Process chunks. */
-    while (1)
+	/* Allocate filter mask. */
+	mask = (double *) smalloc(masksize * masksize * sizeof(double));
+
+	/* Read filter mask. */
+	memread(OFF_MASK,  &mask[0], masksize * masksize * sizeof(double));
+
+	/* Chunk size is adjusted to generate at least 16 chunks. */
+	chunksize = ((imgsize - masksize + 1) * (imgsize - masksize + 1)) / (CHUNK_SIZE * CHUNK_SIZE) < 16 ? (imgsize - masksize + 1) / 4 : CHUNK_SIZE;
+	int chunk_with_halo_size = chunksize + masksize - 1;
+	int nb_chunks = ((imgsize - masksize + 1) * (imgsize - masksize + 1)) / (chunksize * chunksize);
+	
+	/* Allocate chunks. */
+	chunk = (unsigned char *) smalloc(chunk_with_halo_size * chunk_with_halo_size * sizeof(unsigned char));
+	newchunk = (unsigned char *) smalloc(chunksize * chunksize * sizeof(unsigned char));
+
+	printf("Cluster %d: nclusters=%d, masksize=%d, imgsize=%d, nb_chunks=%d, chunksize=%d, chunksize_halo=%d\n", rank, nclusters, masksize, imgsize, nb_chunks, chunksize, chunk_with_halo_size);
+	
+	/* Process chunks in a round-robin fashion. */	
+	/*
+	for(int ck = rank; ck < nb_chunks; ck += nclusters)
 	{
-		data_receive(infd, &msg, sizeof(int));
-
-		/* Parse message. */
-		switch (msg)
-		{
-			case MSG_CHUNK:
-				data_receive(infd, chunk, CHUNK_SIZE*CHUNK_SIZE);
-				start = timer_get();
-				gauss_filter();
-				end = timer_get();
-				total += timer_diff(start, end);
-				data_send(outfd, chunk, CHUNK_SIZE*CHUNK_SIZE);
-				break;
+		// should compute an offset from OFF_IMAGE here based on the chunk number (ck) and process rank (img_offset)
+		for (int k = 0; k < chunk_with_halo_size; k++)
+			memread(OFF_IMAGE + img_offset + k * imgsize,
+              &chunk[k * chunk_with_halo_size],
+              chunk_with_halo_size * sizeof(unsigned char));
 			
-			default:
-				goto out;
-		}
+		gauss_filter();
+		
+		// should compute an offset from OFF_NEWIMAGE here based on the chunk number (ck) and process rank (newimg_offset)
+		for (int k = 0; k < chunksize; k++)
+		memwrite(OFF_NEWIMAGE + newimg_offset + k * imgsize,
+             &newchunk[k * chunksize],
+						 chunksize * sizeof(unsigned char));
 	}
-
-out:
+	*/
 	
-	data_send(outfd, &total, sizeof(uint64_t));
+	free(mask);
+ 	free(chunk);
+ 	free(newchunk);
 	
-	close_noc_connectors();
-	mppa_exit(0);
 	return (0);
 }
 	

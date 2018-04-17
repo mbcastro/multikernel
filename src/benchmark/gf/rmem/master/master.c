@@ -12,46 +12,50 @@
 #include <stdlib.h>
 #include <string.h>
 #include "master.h"
-#include "../kernel.h"
+#include "../../kernel.h"
 
+/* Gaussian Filter. */
+static unsigned char *img;    /* Input image.        */
+static int imgsize;           /* Dimension of image. */
+static double *mask;          /* Mask.               */
+static int masksize;          /* Dimension of mask.  */
 
 /*
  * Gaussian filter.
  */
-void gauss_filter(
-    unsigned char *img,
-    int imgsize,
-    double *mask,
-    int masksize)
+void gauss_filter(unsigned char *img_, int imgsize_, double *mask_, int masksize_)
 {	
-	int barrier;
-	int j;               /* Loop indexes.     */ 
-	int msg;             /* Message.          */
-	int nchunks;         /* Number of chunks. */
-	size_t n;            /* Bytes to send.    */
-
-	if(verbose)
-		printf("writing to remote memory\n");
-
-	barrier = barrier_open(NR_IOCLUSTER);
-	barrier_wait(barrier);
-
-	/* Write parameters to remote memory. */
-	memwrite(OFF_NCLUSTERS,            &nclusters,       sizeof(int));
-	memwrite(OFF_MASK_SIZE,            &masksize,        sizeof(int));
-	memwrite(OFF_IMAGE_SIZE,           &imgsize,         sizeof(int));
-	memwrite(OFF_MASK,                 &mask[0],         masksize*masksize*sizeof(double));
-	memwrite(OFF_IMAGE,                &img[0],          imgsize*imgsize*sizeof(double));
-
-	if(verbose)
-		printf("spawning slaves\n");
-
-	spawn_slaves();
+  unsigned char *newimg; /* Output image.    */
+  int barrier;
 	
-	join_slaves();
+	/* Setup parameters. */
+	img = img_;
+	mask = mask_;
+	imgsize = imgsize_;
+	masksize = masksize_;
 
-	/* Read parameters from remote memory. */
-	memread(OFF_IMAGE, img, imgsize*imgsize*sizeof(double));
+  /* Allocate output image. */
+  newimg = scalloc(imgsize * imgsize, sizeof(unsigned char));
 
+  /* RMEM barrier. */
+  barrier = barrier_open(NR_IOCLUSTER);
+  barrier_wait(barrier);
+
+  /* Write parameters to remote memory. */
+  memwrite(OFF_NCLUSTERS, &nclusters, sizeof(int));
+  memwrite(OFF_MASKSIZE,  &masksize,  sizeof(int));
+  memwrite(OFF_IMGSIZE,   &imgsize,   sizeof(int));
+  memwrite(OFF_MASK,      &mask[0],   sizeof(double));
+  memwrite(OFF_IMAGE,     &img[0],    sizeof(unsigned char));
+  memwrite(OFF_NEWIMAGE,  &newimg[0], sizeof(unsigned char));
+
+  /* Spawn slave processes. */
+	spawn_slaves();
+  
+  /* Wait for all slave processes to finish. */
+  join_slaves();
+
+  /* House keeping. */
 	barrier_close(barrier);
+	free(newimg);
 }

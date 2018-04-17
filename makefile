@@ -292,6 +292,49 @@ is-objs := rmem-server is-master is-slave
 is-name := is.img
 
 #=============================================================================
+# Gaussian Filter RMEM Benchmark Kernel
+#=============================================================================
+
+cluster-bin += gf-rmem-slave
+gf-rmem-slave-srcs := $(SRCDIR)/benchmark/gf/rmem/slave/slave.c     \
+					 $(SRCDIR)/benchmark/gf/util.c        \
+					 $(SRCDIR)/kernel/arch/mppa/mailbox.c \
+					 $(SRCDIR)/kernel/arch/mppa/portal.c  \
+					 $(SRCDIR)/kernel/arch/mppa/barrier.c \
+					 $(SRCDIR)/kernel/arch/mppa/name.c    \
+					 $(SRCDIR)/kernel/arch/mppa/timer.c   \
+					 $(SRCDIR)/kernel/arch/mppa/core.c    \
+					 $(SRCDIR)/kernel/sys/meminit.c       \
+					 $(SRCDIR)/kernel/sys/memread.c       \
+					 $(SRCDIR)/kernel/sys/memwrite.c
+
+# Toolchain Configuration
+gf-rmem-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+gf-rmem-slave-cflags += -fopenmp
+gf-rmem-slave-lflags := -lmppaipc -lm -lgomp
+
+io-bin += gf-rmem-master
+gf-rmem-master-srcs := $(SRCDIR)/benchmark/gf/rmem/master/main.c \
+					  $(SRCDIR)/benchmark/gf/rmem/master/master.c \
+					  $(SRCDIR)/benchmark/gf/rmem/master/ipc.c    \
+					  $(SRCDIR)/benchmark/gf/util.c               \
+					  $(SRCDIR)/kernel/arch/mppa/mailbox.c        \
+					  $(SRCDIR)/kernel/arch/mppa/portal.c         \
+					  $(SRCDIR)/kernel/arch/mppa/barrier.c        \
+					  $(SRCDIR)/kernel/arch/mppa/name.c           \
+					  $(SRCDIR)/kernel/arch/mppa/core.c           \
+					  $(SRCDIR)/kernel/sys/meminit.c              \
+					  $(SRCDIR)/kernel/sys/memread.c              \
+					  $(SRCDIR)/kernel/sys/memwrite.c
+ 
+# Toolchain Configuration
+gf-rmem-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+gf-rmem-master-lflags := -lmppaipc -lm
+
+gf-rmem-objs := rmem-server gf-rmem-master gf-rmem-slave
+gf-rmem-name := gf-rmem.img
+
+#=============================================================================
 # Gaussian Filter Portal Benchmark Kernel
 #=============================================================================
 
@@ -330,6 +373,6 @@ gf-portal-name := gf-portal.img
 # MPPA Binary
 #=============================================================================
 
-mppa-bin := portal async mailbox rmem is km-rmem km-portal gf-portal
+mppa-bin := portal async mailbox rmem is km-rmem km-portal gf-rmem gf-portal
 
 include $(K1_TOOLCHAIN_DIR)/share/make/Makefile.kalray
