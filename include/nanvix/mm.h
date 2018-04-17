@@ -21,6 +21,7 @@
 #define NANVIX_MM_H_
 	
 	#include <inttypes.h>
+	#include <stddef.h>
 	
 	/**
 	 * @brief Remote memory block size (in bytes).
