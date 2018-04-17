@@ -37,11 +37,11 @@ struct problem
 
 /* Problem sizes. */
 /* OUTPUT_IMG_SIZE + (MASK_SIZE-1) = INPUT_IMAGE_SIZE */
-static struct problem tiny     = {  7,  2054 }; /* 2048  + (7-1)  = 2054 */
-static struct problem small    = {  7,  4102 }; /* 4096  + (7-1)  = 4102 */
-static struct problem standard = { 11,  8202 }; /* 8192  + (11-1) = 8202 */
-static struct problem large    = { 11, 16394 }; /* 16384 + (11-1) = 16394 */
-static struct problem huge     = { 15, 32782 }; /* 32768 + (15-1) = 32782 */
+static struct problem tiny     = {  7,  1030 }; /* 1024  + (7-1)  = 1030  */
+static struct problem small    = {  7,  2054 }; /* 2048  + (7-1)  = 2054  */
+static struct problem standard = {  7,  4102 }; /* 4096  + (7-1)  = 4102  */
+static struct problem large    = { 11,  8202 }; /* 8192  + (11-1) = 8202  */
+static struct problem huge     = { 15, 16398 }; /* 16384 + (15-1) = 16398 */
 
 /* Benchmark parameters. */
 int verbose = 0;                  /* Be verbose?        */
@@ -241,11 +241,9 @@ int main(int argc, char **argv)
 
 	if (verbose)
 	{
-
-	printf("timing statistics:\n");
-
-	printf("  initialization time: %f\n",  time_init*MICRO);
-	printf("  kernel time:          %f\n", time_kernel*MICRO);
+		printf("timing statistics:\n");
+		printf("  initialization time: %f\n",  time_init*MICRO);
+		printf("  kernel time:          %f\n", time_kernel*MICRO);
 		printf("  master:        %f\n", master*MICRO);
 		for (int i = 0; i < nclusters; i++)
 			printf("  slave %d:      %f\n", i, slave[i]*MICRO);
@@ -260,7 +258,7 @@ int main(int argc, char **argv)
 	/*---------------------------------------------------------------*
 	 * House Keeping                                                 *
 	 *---------------------------------------------------------------*/
-
+	 
 	free(mask);
 	free(img);
 	

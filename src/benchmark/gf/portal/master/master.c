@@ -10,21 +10,21 @@
 #include "master.h"
 
 /* Gaussian Filter. */
-static unsigned char *img; /* Image.              */
-static int imgsize;        /* Dimension of image. */
-static double *mask;       /* Mask.               */
-static int masksize;       /* Dimension of mask.  */
-static int chunksize;
+static unsigned char *img;    /* Input image.        */
+static int imgsize;           /* Dimension of image. */
+static double *mask;          /* Mask.               */
+static int masksize;          /* Dimension of mask.  */
 
 /*
  * Gaussian filter.
  */
 void gauss_filter(unsigned char *img_, int imgsize_, double *mask_, int masksize_)
 {	
+	unsigned char *newimg; /* Output image.  */
+	int chunksize;         /* Size of chunk. */
+	int msg;               /* Message.       */
 	int nchunks = 0;
-	int msg;     /* Message. */
-	unsigned char *newimg;
-
+	
 	/* Setup parameters. */
 	img = img_;
 	mask = mask_;
@@ -59,7 +59,7 @@ void gauss_filter(unsigned char *img_, int imgsize_, double *mask_, int masksize
 		{
 			/* Build chunk. */
 			for (int k = 0; k < chunk_with_halo_size; k++)
-				memcpy(&chunk[k * chunk_with_halo_size], &img[(i - half + k) * imgsize + j - half], chunk_with_halo_size);
+				memcpy(&chunk[k * chunk_with_halo_size], &img[(i - half + k) * imgsize + j - half], chunk_with_halo_size * sizeof(unsigned char));
 			
 			data_send(outfd[nchunks], &msg, sizeof(int));
 			data_send(outfd[nchunks], chunk, chunk_with_halo_size * chunk_with_halo_size * sizeof(unsigned char));
@@ -69,7 +69,7 @@ void gauss_filter(unsigned char *img_, int imgsize_, double *mask_, int masksize
 
 			/* Build chunk. */
 			for (int k = 0; k < chunksize; k++)
-				memcpy(&newimg[(i + k)*imgsize + j], &chunk[k * chunksize], chunksize);
+				memcpy(&newimg[(i + k)*imgsize + j], &chunk[k * chunksize], chunksize * sizeof(unsigned char));
 
 			nchunks = (nchunks == nclusters - 1) ? 0 : nchunks + 1;
 		}
