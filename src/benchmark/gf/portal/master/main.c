@@ -37,7 +37,8 @@ struct problem
 
 /* Problem sizes. */
 /* OUTPUT_IMG_SIZE + (MASK_SIZE-1) = INPUT_IMAGE_SIZE */
-static struct problem tiny     = {  7,  1030 }; /* 1024  + (7-1)  = 1030  */
+// static struct problem tiny     = {  7,  1030 }; /* 1024  + (7-1)  = 1030  */
+static struct problem tiny     = {  7,  70   }; /* 64  + (7-1)  = 70  */
 static struct problem small    = {  7,  2054 }; /* 2048  + (7-1)  = 2054  */
 static struct problem standard = {  7,  4102 }; /* 4096  + (7-1)  = 4102  */
 static struct problem large    = { 11,  8202 }; /* 8192  + (11-1) = 8202  */
