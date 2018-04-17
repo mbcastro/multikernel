@@ -7,6 +7,7 @@
 
 // #define CHUNK_SIZE (512)     /* Maximum chunk size. */
 #define CHUNK_SIZE (16)     /* Maximum chunk size. */
+#define MASK_SIZE   15
 
 #define PI 3.14159265359    /* pi */
 #define E 2.71828182845904  /* e */

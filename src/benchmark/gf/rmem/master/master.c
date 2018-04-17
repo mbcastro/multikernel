@@ -25,37 +25,31 @@ static int masksize;          /* Dimension of mask.  */
  */
 void gauss_filter(unsigned char *img_, int imgsize_, double *mask_, int masksize_)
 {	
-  unsigned char *newimg; /* Output image.    */
-  int barrier;
-	
+	int barrier;
+
 	/* Setup parameters. */
 	img = img_;
 	mask = mask_;
 	imgsize = imgsize_;
 	masksize = masksize_;
 
-  /* Allocate output image. */
-  newimg = scalloc(imgsize * imgsize, sizeof(unsigned char));
+	/* RMEM barrier. */
+	barrier = barrier_open(NR_IOCLUSTER);
+	barrier_wait(barrier);
 
-  /* RMEM barrier. */
-  barrier = barrier_open(NR_IOCLUSTER);
-  barrier_wait(barrier);
+	/* Write parameters to remote memory. */
+	memwrite(OFF_NCLUSTERS, &nclusters, sizeof(int));
+	memwrite(OFF_MASKSIZE,  &masksize,  sizeof(int));
+	memwrite(OFF_IMGSIZE,   &imgsize,   sizeof(int));
+	memwrite(OFF_MASK,      mask,       masksize*masksize*sizeof(double));
+	memwrite(OFF_IMAGE,     img,        imgsize*imgsize*sizeof(unsigned char));
 
-  /* Write parameters to remote memory. */
-  memwrite(OFF_NCLUSTERS, &nclusters, sizeof(int));
-  memwrite(OFF_MASKSIZE,  &masksize,  sizeof(int));
-  memwrite(OFF_IMGSIZE,   &imgsize,   sizeof(int));
-  memwrite(OFF_MASK,      &mask[0],   sizeof(double));
-  memwrite(OFF_IMAGE,     &img[0],    sizeof(unsigned char));
-  memwrite(OFF_NEWIMAGE,  &newimg[0], sizeof(unsigned char));
-
-  /* Spawn slave processes. */
+	/* Spawn slave processes. */
 	spawn_slaves();
-  
-  /* Wait for all slave processes to finish. */
-  join_slaves();
 
-  /* House keeping. */
+	/* Wait for all slave processes to finish. */
+	join_slaves();
+
+	/* House keeping. */
 	barrier_close(barrier);
-	free(newimg);
 }
