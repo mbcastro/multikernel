@@ -1,6 +1,5 @@
 /*
- * Copyright(C) 2011-2018 Matheus Queiroz <matheus.miranda.queiroz@gmail.com>
- *                        Pedro Henrique Penna <pedrohenriquepenna@gmail.com>
+ * Copyright(C) 2011-2018 Pedro Henrique Penna <pedrohenriquepenna@gmail.com>
  *                        Márcio Castro <mbcastro@gmail.com>
  * 
  * This file is part of CAP Bench.
