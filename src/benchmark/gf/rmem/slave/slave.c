@@ -128,10 +128,6 @@ int main(int argc, char **argv)
 
 	/* Find the number of chunks that will be generated. */
 	nchunks = ((imgsize - masksize + 1)*(imgsize - masksize + 1))/(CHUNK_SIZE*CHUNK_SIZE);
-
-	if (rank == 0)
-	 printf("Cluster %d: nclusters=%d, masksize=%d, imgsize=%d, nchunks=%d, CHUNK_SIZE=%d\n", rank, nclusters, masksize, imgsize, nchunks, CHUNK_SIZE);
-	
 	
 	/* Process chunks in a round-robin fashion. */	
 	for(int ck = rank; ck < nchunks; ck += nclusters)
@@ -145,30 +141,10 @@ int main(int argc, char **argv)
 			(CHUNK_SIZE + masksize - 1),
 			(CHUNK_SIZE + masksize - 1)
 		);
-
 	
-		if(rank == 0) {
-		 	for(int i = 0; i < CHUNK_SIZE + masksize - 1; i++) {
-		 		for(int j = 0; j < CHUNK_SIZE + masksize - 1; j++)
-		 			printf("%2d ", chunk[(CHUNK_SIZE + masksize - 1) * i + j]);
-		 		printf("\n");
-		 	}
-		 		printf("------\n");
-		}
-
 		gauss_filter();
 		
-		
-		if(rank == 0) {
-		 	for(int i = 0; i < CHUNK_SIZE; i++) {
-		 		for(int j = 0; j < CHUNK_SIZE; j++)
-		 			printf("%2d ", newchunk[(CHUNK_SIZE) * i + j]);
-		 		printf("\n");
-		 	}
-		 		printf("------\n");
-		}
-
-			memwrites(newchunk,
+		memwrites(newchunk,
 			OFF_NEWIMAGE + ((masksize/2)*imgsize) + (ck/chunks_per_col)*(CHUNK_SIZE)*imgsize + masksize/2 + (ck%chunks_per_row)*(CHUNK_SIZE),
 			imgsize,
 			CHUNK_SIZE,

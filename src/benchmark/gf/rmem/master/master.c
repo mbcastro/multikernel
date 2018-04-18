@@ -33,34 +33,9 @@ void gauss_filter(unsigned char *img_, int imgsize_, double *mask_, int masksize
 	imgsize = imgsize_;
 	masksize = masksize_;
 
-	// for(int i = 0; i < imgsize; i++) {
-	// 	for(int j = 0; j < imgsize; j++)
-	// 		printf("%d ", img[imgsize * i + j]);
-	// 	printf("\n");
-	// }
-
 	/* RMEM barrier. */
 	barrier = barrier_open(NR_IOCLUSTER);
 	barrier_wait(barrier);
-
-	memset(img, 0, imgsize*imgsize*sizeof(unsigned char)); 
-
-	for (int i = masksize/2; i < imgsize - masksize/2; i++)
-	{
-		for (int j = masksize/2; j < imgsize - masksize/2; j++)
-		{
-			img[i*imgsize + j] = ((i - masksize/2)/16)*4 + (j - masksize/2)/16 + 1;
-		}
-	}
-	for (int i = 0; i < 35; i++)
-	{
-		for (int j = 0; j < 35; j++)
-		{
-			printf("%2d ", img[i*imgsize + j]);
-		}
-		printf("\n");
-	}
-		printf("====\n");
 
 	/* Write parameters to remote memory. */
 	memwrite(OFF_NCLUSTERS, &nclusters, sizeof(int));
@@ -76,7 +51,6 @@ void gauss_filter(unsigned char *img_, int imgsize_, double *mask_, int masksize
 	/* Spawn slave processes. */
 	spawn_slaves();
 
-
 	/* Wait for all slave processes to finish. */
 	join_slaves();
 
@@ -84,15 +58,6 @@ void gauss_filter(unsigned char *img_, int imgsize_, double *mask_, int masksize
 		img,
 		imgsize*imgsize*sizeof(unsigned char)
 	);
-
-	for (int i = 0; i < 35; i++)
-	{
-		for (int j = 35; j < 70; j++)
-		{
-			printf("%2d ", img[i*imgsize + j]);
-		}
-		printf("\n");
-	}
 
 	/* House keeping. */
 	barrier_close(barrier);
