@@ -1,7 +1,21 @@
 /*
- * Copyright(C) 2014 Pedro H. Penna <pedrohenriquepenna@gmail.com>
+ * Copyright(C) 2011-2018 Pedro Henrique Penna <pedrohenriquepenna@gmail.com>
+ *                        Márcio Castro <mbcastro@gmail.com>
  * 
- * master.h -  Private master library.
+ * This file is part of CAP Bench.
+ * 
+ * CAP Bench is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * 
+ * CAP Bench is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+ * details.
+ * 
+ * You should have received a copy of the GNU General Public License along with
+ * CAP Bench. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #ifndef _MASTER_H_
@@ -18,14 +32,15 @@
 	/* Forward definitions. */
 	extern void spawn_slaves(void);
 	extern void join_slaves(void);
+
+	/* Forward definitions. */
+	extern int nclusters;
 	
 	/*===============================================================*
 	 * Utility                                                       *
 	 *===============================================================*/
 
 	/* Forward definitions. */
-	extern void error(const char *);
-	extern void *scalloc(size_t, size_t);
 	extern void *smalloc(size_t);
 	extern void srandnum(int);
 	extern unsigned randnum(void);
@@ -35,9 +50,6 @@
 	 *===============================================================*/
 
 	/* Forward definitions. */
-    extern void gauss_filter(unsigned char *, int, double *, int);
-
-	/* Forward definitions. */
-	extern int nclusters;
+	extern void gauss_filter(unsigned char *, int, const double *, int);
 
 #endif /* _MASTER_H_ */

@@ -1,7 +1,21 @@
 /*
- * Copyright(C) 2014 Pedro H. Penna <pedrohenriquepenna@gmail.com>
+ * Copyright(C) 2011-2018 Pedro Henrique Penna <pedrohenriquepenna@gmail.com>
+ *                        Márcio Castro <mbcastro@gmail.com>
  * 
- * Gaussian Filter Benchmark Kernel.
+ * This file is part of CAP Bench.
+ * 
+ * CAP Bench is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * 
+ * CAP Bench is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+ * details.
+ * 
+ * You should have received a copy of the GNU General Public License along with
+ * CAP Bench. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdio.h>
@@ -9,21 +23,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include "master.h"
-
-/* Gaussian filter. */
-extern void gauss_filter
-(unsigned char *img, int imgsize, double *mask, int masksize);
-
-/* Timing statistics. */
-long master = 0;          /* Time spent on master.        */
-long slave[NR_CCLUSTER];  /* Time spent on slaves.        */
-long communication = 0;   /* Time spent on communication. */
-
-/* Data exchange statistics. */
-size_t data_sent = 0;     /* Number of bytes received. */
-unsigned nsend = 0;       /* Number of sends.          */
-size_t data_received = 0; /* Number of bytes sent.     */
-unsigned nreceive = 0;    /* Number of receives.       */
 
 /*
  * Problem.
@@ -35,18 +34,16 @@ struct problem
 };
 
 /* Problem sizes. */
-/* OUTPUT_IMG_SIZE + (MASK_SIZE-1) = INPUT_IMAGE_SIZE */
-// static struct problem tiny     = {  7,  1030 }; /* 1024  + (7-1)  = 1030  */
-static struct problem tiny     = {  7,  70   }; /* 64  + (7-1)  = 70  */
-static struct problem small    = {  7,  2054 }; /* 2048  + (7-1)  = 2054  */
-static struct problem standard = {  7,  4102 }; /* 4096  + (7-1)  = 4102  */
-static struct problem large    = { 11,  8202 }; /* 8192  + (11-1) = 8202  */
+static struct problem tiny     = {  7,    70};  /*   64  + (7-1)  =    70 */
+static struct problem small    = {  7,  2054 }; /* 2048  + (7-1)  =  2054 */
+static struct problem standard = {  7,  4102 }; /* 4096  + (7-1)  =  4102 */
+static struct problem large    = { 11,  8202 }; /* 8192  + (11-1) =  8202 */
 static struct problem huge     = { 15, 16398 }; /* 16384 + (15-1) = 16398 */
 
 /* Benchmark parameters. */
-int verbose = 0;                  /* Be verbose?        */
-static int seed = 0;              /* Seed value.        */
 int nclusters = NR_CCLUSTER;      /* Number of threads. */
+static int verbose = 0;           /* Be verbose?        */
+static int seed = 0;              /* Seed value.        */
 static struct problem *p = &tiny; /* Problem.           */
 
 /*===================================================================*
@@ -156,7 +153,6 @@ static void readargs(int argc, char **argv)
 static void generate_mask(double *mask)
 {
 	int half;
-	int i, j;
 	double sec;
 	double first;
 	double total;
@@ -168,9 +164,9 @@ static void generate_mask(double *mask)
 	#define MASK(i, j) \
 		mask[(i)*p->masksize + (j)]
 
-	for (i = -half; i <= half; i++)
+	for (int i = -half; i <= half; i++)
 	{
-		for (j = -half; j <= half; j++)
+		for (int j = -half; j <= half; j++)
 		{
 			sec = -((i*i + j*j)/2.0*SD*SD);
 			sec = pow(E, sec);
@@ -180,9 +176,9 @@ static void generate_mask(double *mask)
 		}
 	}
 	
-	for (i = 0 ; i < p->masksize; i++)
+	for (int i = 0 ; i < p->masksize; i++)
 	{
-		for (j = 0; j < p->masksize; j++)
+		for (int j = 0; j < p->masksize; j++)
 			MASK(i, j) /= total;
 	}
 }
@@ -196,11 +192,8 @@ static void generate_mask(double *mask)
  */
 int main(int argc, char **argv)
 {
-	// long t[2];          /* Timings.                   */
-	// long time_init;     /* Total initialization time. */
-	// long time_kernel;   /* Total kernel time.         */
-	double *mask;       /* Mask.                      */
-	unsigned char *img; /* Image.                     */
+	double *mask;       /* Mask.  */
+	unsigned char *img; /* Image. */
 	
 	/*---------------------------------------------------------------*
 	 * Benchmark Initialization                                      *
@@ -208,7 +201,6 @@ int main(int argc, char **argv)
 	
 	readargs(argc, argv);
 	srandnum(seed);
-
 	
 	if (verbose)
 		printf("initializing...\n");

@@ -150,12 +150,12 @@ int main(int argc, char **argv)
 	((void)argc);
 	
 	rank = atoi(argv[0]);	
+	nclusters = atoi(argv[1]);
 	
 	/* Read input parameters. */
-	memread(OFF_NCLUSTERS, &nclusters, sizeof(int));
-	memread(OFF_MASKSIZE,  &masksize,  sizeof(int));
-	memread(OFF_IMGSIZE,   &imgsize,   sizeof(int));
-	memread(OFF_MASK,      mask,       masksize*masksize*sizeof(double));
+	memread(OFF_MASKSIZE,  &masksize, sizeof(int));
+	memread(OFF_IMGSIZE,   &imgsize,  sizeof(int));
+	memread(OFF_MASK,      mask,      masksize*masksize*sizeof(double));
 
 	halosize = masksize/2;
 	tilesize = (CHUNK_SIZE + masksize - 1);

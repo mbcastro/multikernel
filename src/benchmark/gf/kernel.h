@@ -21,9 +21,8 @@
 #ifndef _KERNEL_H_
 #define _KERNEL_H_
 
-#define MICRO (1.0/1000000)
+	#define MICRO (1.0/1000000)
 
-// #define CHUNK_SIZE (512)     /* Maximum chunk size. */
 	#define CHUNK_SIZE (16)     /* Maximum chunk size. */
 	#define MASK_SIZE   15
 
@@ -36,7 +35,6 @@
 	#define MSG_DIE   0
 
 	/* RMEM definitions. */
-	#define SIZE_NCLUSTERS   (sizeof(int))
 	#define SIZE_MASKSIZE    (sizeof(int))
 	#define SIZE_IMGSIZE     (sizeof(int))
 
@@ -44,10 +42,8 @@
 	#define SIZE_IMAGE       (imgsize * imgsize * sizeof(unsigned char))
 	#define SIZE_NEWIMAGE    SIZE_IMAGE
 
-	#define OFF_NCLUSTERS  (0)
-	#define OFF_MASKSIZE   (OFF_NCLUSTERS + SIZE_NCLUSTERS)
+	#define OFF_MASKSIZE   (0)
 	#define OFF_IMGSIZE    (OFF_MASKSIZE  + SIZE_MASKSIZE)
-
 	#define OFF_MASK       (OFF_IMGSIZE   + SIZE_IMGSIZE) 
 	#define OFF_IMAGE      (OFF_MASK      + SIZE_MASK)
 	#define OFF_NEWIMAGE   (OFF_IMAGE     + SIZE_IMAGE)
