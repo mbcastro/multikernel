@@ -78,7 +78,7 @@ void gauss_filter(unsigned char *img_, int imgsize_, double *mask_, int masksize
 	/* Wait for all slave processes to finish. */
 	join_slaves();
 
-	memread(OFF_NEWIMAGE, img, imgsize*imgsize*sizeof(unsigned char));
+	memread(OFF_NEWIMAGE, &img[(masksize/2)*imgsize + masksize/2], (imgsize - masksize+1)*(imgsize - masksize + 1)*sizeof(unsigned char));
 
 	for (int i = 0; i < 35; i++)
 	{

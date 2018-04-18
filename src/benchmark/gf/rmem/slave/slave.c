@@ -149,8 +149,9 @@ int main(int argc, char **argv)
 		 	}
 		 		printf("------\n");
 		}
+
 			memwrites(newchunk,
-			OFF_NEWIMAGE + ((masksize/2)*imgsize) + (ck/chunks_per_col)*(CHUNK_SIZE)*imgsize + (ck%chunks_per_row)*(CHUNK_SIZE),
+			OFF_NEWIMAGE + ((masksize/2)*imgsize) + (ck/chunks_per_col)*(CHUNK_SIZE)*imgsize + masksize/2 + (ck%chunks_per_row)*(CHUNK_SIZE),
 			imgsize,
 			CHUNK_SIZE,
 			CHUNK_SIZE
