@@ -78,7 +78,7 @@ void memwrites(unsigned char *buffer, uint64_t base, uint64_t offset, size_t str
 	
 	for (size_t i = 0; i < count; i++)
 	{
-		memwrite(base + i*(offset)*dsize,
+		memwrite(base + i*offset*dsize,
 			&buffer[i*stride],
 			stride*dsize
 		);
@@ -91,7 +91,7 @@ void memreads(unsigned char *buffer, uint64_t base, uint64_t offset, size_t stri
 	
 	for (size_t i = 0; i < count; i++)
 	{
-		memread(base + i*(offset)*dsize,
+		memread(base + i*offset*dsize,
 			&buffer[i*stride],
 			stride*dsize
 		);
