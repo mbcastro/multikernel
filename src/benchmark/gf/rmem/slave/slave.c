@@ -18,10 +18,6 @@
  * You should have received a copy of the GNU General Public License along with
  * CAP Bench. If not, see <http://www.gnu.org/licenses/>.
  */
-/*
- * Copyright(C) 2014 , 
- *                   Pedro H. Penna <pedrohenriquepenna@gmail.com>
- */
 
 #include <nanvix/arch/mppa.h>
 #include <nanvix/pm.h>
@@ -73,6 +69,16 @@ void gauss_filter(void)
 		   
 			NEWCHUNK(chunkI, chunkJ) = (pixel > 255) ? 255 : (int)pixel;
 		}
+	}
+}
+
+void memreads(char *buffer, uint64_t base, uint64_t offset, size_t stride, size_t count)
+{
+	for (size_t i = 0; i < count; i++)
+	{
+		memread(base + i*(offset + stride),
+			&buffer[i*stride],
+			stride);
 	}
 }
 
