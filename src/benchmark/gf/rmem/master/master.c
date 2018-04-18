@@ -33,6 +33,12 @@ void gauss_filter(unsigned char *img_, int imgsize_, double *mask_, int masksize
 	imgsize = imgsize_;
 	masksize = masksize_;
 
+	// for(int i = 0; i < imgsize; i++) {
+	// 	for(int j = 0; j < imgsize; j++)
+	// 		printf("%d ", img[imgsize * i + j]);
+	// 	printf("\n");
+	// }
+
 	/* RMEM barrier. */
 	barrier = barrier_open(NR_IOCLUSTER);
 	barrier_wait(barrier);
