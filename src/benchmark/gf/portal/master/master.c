@@ -21,7 +21,6 @@ static int masksize;          /* Dimension of mask.  */
 void gauss_filter(unsigned char *img_, int imgsize_, double *mask_, int masksize_)
 {	
 	unsigned char *newimg; /* Output image.  */
-	int chunksize;         /* Size of chunk. */
 	int msg;               /* Message.       */
 	int nchunks = 0;
 	
@@ -30,9 +29,6 @@ void gauss_filter(unsigned char *img_, int imgsize_, double *mask_, int masksize
 	mask = mask_;
 	imgsize = imgsize_;
 	masksize = masksize_;
-
-	/* Chunk size is adjusted to generate at least 16 chunks. */
-	chunksize = ((imgsize - masksize + 1) * (imgsize - masksize + 1)) / (CHUNK_SIZE * CHUNK_SIZE) < 16 ? (imgsize - masksize + 1) / 4 : CHUNK_SIZE;
 
 	newimg = scalloc(imgsize * imgsize, sizeof(unsigned char));
 	
@@ -44,18 +40,17 @@ void gauss_filter(unsigned char *img_, int imgsize_, double *mask_, int masksize
 	{
 		data_send(outfd[i], &masksize, sizeof(int));
 		data_send(outfd[i], mask, masksize * masksize * sizeof(double));
-		data_send(outfd[i], &chunksize, sizeof(int));
 	}
 
 	int half = masksize/2;
 	
-	/* Process image in chunks. Each chunk includes a halo zone: total size (chunksize + masksize - 1)^2. */
-	int chunk_with_halo_size = chunksize + masksize - 1;
+	/* Process image in chunks. Each chunk includes a halo zone: total size (CHUNK_SIZE + masksize - 1)^2. */
+	int chunk_with_halo_size = CHUNK_SIZE + masksize - 1;
 	unsigned char *chunk = (unsigned char *) smalloc(chunk_with_halo_size * chunk_with_halo_size * sizeof(unsigned char));
 	msg = MSG_CHUNK;
-	for (int i = half; i < imgsize - half; i += chunksize)
+	for (int i = half; i < imgsize - half; i += CHUNK_SIZE)
 	{
-		for (int j = half; j < imgsize - half; j += chunksize)
+		for (int j = half; j < imgsize - half; j += CHUNK_SIZE)
 		{
 			/* Build chunk. */
 			for (int k = 0; k < chunk_with_halo_size; k++)
@@ -65,30 +60,33 @@ void gauss_filter(unsigned char *img_, int imgsize_, double *mask_, int masksize
 			data_send(outfd[nchunks], chunk, chunk_with_halo_size * chunk_with_halo_size * sizeof(unsigned char));
 
 			/* Receives chunk without halo. */
-			data_receive(infd, nchunks, chunk, chunksize * chunksize * sizeof(unsigned char));
+			data_receive(infd, nchunks, chunk, CHUNK_SIZE * CHUNK_SIZE * sizeof(unsigned char));
 
 			/* Build chunk. */
-			for (int k = 0; k < chunksize; k++)
-				memcpy(&newimg[(i + k)*imgsize + j], &chunk[k * chunksize], chunksize * sizeof(unsigned char));
+			for (int k = 0; k < CHUNK_SIZE; k++)
+				memcpy(&newimg[(i + k)*imgsize + j], &chunk[k * CHUNK_SIZE], CHUNK_SIZE * sizeof(unsigned char));
 
 			nchunks = (nchunks == nclusters - 1) ? 0 : nchunks + 1;
 		}
 	}
 	
-	/*printf("OUTPUT MPPA:\n");
+	printf("OUTPUT MPPA:\n");
 	for (int i = 0; i < imgsize; i++)
 	{
 		for (int j = 0; j < imgsize; j++)
 			printf("%d ", newimg[i*imgsize + j]);
 		printf("\n");
-		}*/
+	}
 	
 	/* House keeping. */
 	msg = MSG_DIE;
 	for (int i = 0; i < nclusters; i++)
 		data_send(outfd[i], &msg, sizeof(int));
+	
 	join_slaves();
+	
 	close_noc_connectors();
+	
 	free(chunk);
 	free(newimg);
 }
