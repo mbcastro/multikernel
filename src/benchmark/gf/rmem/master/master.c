@@ -69,20 +69,25 @@ void gauss_filter(unsigned char *img_, int imgsize_, double *mask_, int masksize
 	memwrite(OFF_MASK,      mask,       masksize*masksize*sizeof(double));
 	memwrite(OFF_IMAGE,     img,        imgsize*imgsize*sizeof(unsigned char));
 
+	/* Clean up before getting the output image result. */
+	memset(img, 0, imgsize*imgsize*sizeof(unsigned char)); 
+	memwrite(OFF_NEWIMAGE,     img,        imgsize*imgsize*sizeof(unsigned char));
+
 	/* Spawn slave processes. */
 	spawn_slaves();
 
-	/* Clean up before getting the output image result. */
-	memset(img, 0, imgsize*imgsize*sizeof(unsigned char)); 
 
 	/* Wait for all slave processes to finish. */
 	join_slaves();
 
-	memread(OFF_NEWIMAGE, &img[(masksize/2)*imgsize + masksize/2], (imgsize - masksize+1)*(imgsize - masksize + 1)*sizeof(unsigned char));
+	memread(OFF_NEWIMAGE,
+		img,
+		imgsize*imgsize*sizeof(unsigned char)
+	);
 
 	for (int i = 0; i < 35; i++)
 	{
-		for (int j = 0; j < 35; j++)
+		for (int j = 35; j < 70; j++)
 		{
 			printf("%2d ", img[i*imgsize + j]);
 		}
