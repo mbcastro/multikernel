@@ -21,22 +21,18 @@
 #include <nanvix/arch/mppa.h>
 #include <nanvix/pm.h>
 #include <nanvix/mm.h>
-#include <assert.h>
 #include <omp.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include "slave.h"
 
-/* Cluster rank. */
-int rank;
-
-/* Gaussian Filter. */
+/* Kernel parameters. */
 static int imgsize;       			                                                   /* IMG dimension.      */
 static int masksize;       			                                                   /* Mask dimension.     */
 static double mask[MASK_SIZE*MASK_SIZE];       			                               /* Mask.               */
 static unsigned char chunk[(CHUNK_SIZE + MASK_SIZE - 1)*(CHUNK_SIZE + MASK_SIZE - 1)]; /* Image input chunk.  */
 static unsigned char newchunk[CHUNK_SIZE*CHUNK_SIZE];	                               /* Image output chunk. */
 static int nclusters;                                                                  /* Number of clusters. */
+
 	
 #define MASK(i, j) \
 	mask[(i)*masksize + (j)]
@@ -47,10 +43,10 @@ static int nclusters;                                                           
 #define NEWCHUNK(i, j) \
 	newchunk[(i)*CHUNK_SIZE + (j)]
 
-/*
- * Gaussian filter.
+/**
+ * @brief Convolutes a Gaussian filter on  an image.
  */
-void gauss_filter(void)
+static void gauss_filter(void)
 {
 	#pragma omp for
 	for (int chunkI = 0; chunkI < CHUNK_SIZE; chunkI++)
@@ -60,8 +56,10 @@ void gauss_filter(void)
 			double pixel = 0.0;
 			
 			for (int maskI = 0; maskI < masksize; maskI++)
+			{
 				for (int maskJ = 0; maskJ < masksize; maskJ++)
 					pixel += CHUNK(chunkI + maskI, chunkJ + maskJ) * MASK(maskI, maskJ);
+			}
 		   
 			NEWCHUNK(chunkI, chunkJ) = (pixel > 255) ? 255 : (int)pixel;
 		}
@@ -77,8 +75,13 @@ void gauss_filter(void)
  * @param stride Stride size.
  * @param count  Number of strides to write.
  */
-void memwrites(unsigned char *buffer, uint64_t base, uint64_t offset, size_t stride, size_t count)
-{
+static void memwrites(
+	const unsigned char *buffer,
+	uint64_t base,
+	uint64_t offset,
+	size_t stride,
+	size_t count
+) {
 	int dsize = sizeof(unsigned char);
 	
 	for (size_t i = 0; i < count; i++)
@@ -99,8 +102,13 @@ void memwrites(unsigned char *buffer, uint64_t base, uint64_t offset, size_t str
  * @param stride Stride size.
  * @param count  Number of strides to read.
  */
-void memreads(unsigned char *buffer, uint64_t base, uint64_t offset, size_t stride, size_t count)
-{
+static void memreads(
+	unsigned char *buffer,
+	uint64_t base,
+	uint64_t offset,
+	size_t stride,
+	size_t count
+) {
 	int dsize = sizeof(unsigned char);
 	
 	for (size_t i = 0; i < count; i++)
@@ -111,9 +119,16 @@ void memreads(unsigned char *buffer, uint64_t base, uint64_t offset, size_t stri
 		);
 	}
 }
+
+/**
+ * @brief Convolutes a Gaussian filter on an image. 
+ */
 int main(int argc, char **argv)
 {
-	int nchunks;
+	int rank;           /* Cluster rank.             */
+	int nchunks;        /* Total number of chunks.   */
+	int chunks_per_row; /* Number of chunks per row. */
+	int chunks_per_col; /* Number of chunks per col. */
 
 	((void)argc);
 	
@@ -126,16 +141,27 @@ int main(int argc, char **argv)
 	memread(OFF_MASK,      mask,       masksize*masksize*sizeof(double));
 
 	/* Find the number of chunks that will be generated. */
-	nchunks = ((imgsize - masksize + 1)*(imgsize - masksize + 1))/(CHUNK_SIZE*CHUNK_SIZE);
+	chunks_per_row = (imgsize - masksize + 1)/CHUNK_SIZE;
+	chunks_per_col = (imgsize - masksize + 1)/CHUNK_SIZE;
+	nchunks = chunks_per_row*chunks_per_col;
 	
-	/* Process chunks in a round-robin fashion. */	
+	/* Process chunks in a round-robin. */
 	for(int ck = rank; ck < nchunks; ck += nclusters)
 	{
-		int chunks_per_row = (imgsize - masksize + 1)/CHUNK_SIZE;
-		int chunks_per_col = (imgsize - masksize + 1)/CHUNK_SIZE;
+		uint64_t base;  /* Base address for remote read/write. */
+		uint64_t off_y; /* Row offset for working chunk.       */
+		uint64_t off_x; /* Column offset for working chunk.    */
+
+		/* Compute offsets. */
+		off_y = (ck/chunks_per_col)*CHUNK_SIZE*imgsize;
+		off_x = (ck%chunks_per_row)*CHUNK_SIZE;
+
+		base = OFF_IMAGE +
+			off_y + /* Vertical skip.   */
+			off_x;  /* Horizontal skip. */
 
 		memreads(chunk,
-			OFF_IMAGE + (ck/chunks_per_col)*(CHUNK_SIZE)*imgsize + (ck%chunks_per_row)*CHUNK_SIZE,
+			base,
 			imgsize,
 			(CHUNK_SIZE + masksize - 1),
 			(CHUNK_SIZE + masksize - 1)
@@ -143,13 +169,16 @@ int main(int argc, char **argv)
 	
 		gauss_filter();
 		
+		base = OFF_NEWIMAGE +
+			(masksize/2)*imgsize + off_y + /* Vertical skip.   */
+			masksize/2 + off_x;            /* Horizontal skip. */
+
 		memwrites(newchunk,
-			OFF_NEWIMAGE + ((masksize/2)*imgsize) + (ck/chunks_per_col)*(CHUNK_SIZE)*imgsize + masksize/2 + (ck%chunks_per_row)*(CHUNK_SIZE),
+			base,
 			imgsize,
 			CHUNK_SIZE,
 			CHUNK_SIZE
 		);
-		
 	}
 	
 	return (0);
