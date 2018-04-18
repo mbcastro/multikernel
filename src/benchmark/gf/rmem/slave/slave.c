@@ -96,17 +96,21 @@ int main(int argc, char **argv)
 	memread(OFF_IMGSIZE,   &imgsize,   sizeof(int));
 	memread(OFF_MASK,      mask,       masksize*masksize*sizeof(double));
 
-	/* Chunk size is adjusted to generate at least 16 chunks. */
+	/* Find the number of chunks that will be generated. */
 	nchunks = ((imgsize - masksize + 1)*(imgsize - masksize + 1))/(CHUNK_SIZE*CHUNK_SIZE);
 
 	// printf("Cluster %d: nclusters=%d, masksize=%d, imgsize=%d, nchunks=%d, CHUNK_SIZE=%d\n", rank, nclusters, masksize, imgsize, nchunks, CHUNK_SIZE);
 	
+	int half = masksize/2;
+	int base_offset;
+	
 	/* Process chunks in a round-robin fashion. */	
 	for(int ck = rank; ck < nchunks; ck += nclusters)
 	{
+		base_offset = OFF_IMAGE + ck*CHUNK_SIZE;
 		for (int k = 0; k < CHUNK_SIZE + masksize - 1; k++)
 		{
-			memread(OFF_IMAGE + ck*CHUNK_SIZE + k*imgsize,
+			memread(base_offset + k*imgsize,
 				&chunk[k*(CHUNK_SIZE + masksize - 1)],
 				(CHUNK_SIZE + masksize - 1)*sizeof(unsigned char)
 			);
@@ -122,17 +126,18 @@ int main(int argc, char **argv)
 
 		gauss_filter();
 
-		// if(rank == 3) {
+		// if(rank == 0) {
 		// 	for(int i = 0; i < CHUNK_SIZE; i++) {
 		// 		for(int j = 0; j < CHUNK_SIZE; j++)
 		// 			printf("%d ", newchunk[CHUNK_SIZE * i + j]);
 		// 		printf("\n");
 		// 	}
 		// }
-		
+
+		base_offset = (OFF_NEWIMAGE + half*imgsize) + half + ck*CHUNK_SIZE;
 		for (int k = 0; k < CHUNK_SIZE; k++)
 		{
-			memwrite(OFF_NEWIMAGE + (masksize/2 * imgsize) + masksize/2 + ck*CHUNK_SIZE + k*imgsize,
+			memwrite(base_offset + k*imgsize,
 				 &newchunk[k*CHUNK_SIZE],
 				 CHUNK_SIZE*sizeof(unsigned char));
 		}
