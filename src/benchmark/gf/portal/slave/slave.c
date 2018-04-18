@@ -10,21 +10,20 @@
 #include <stdio.h>
 #include "slave.h"
 
-/* Gaussian Filter. */
-static double *mask;       			/* Mask.               */
-static int masksize;       			/* Dimension of mask.  */
-static unsigned char *chunk;		/* Image input chunk.  */
-static unsigned char *newchunk;	    /* Image output chunk. */
-static int chunksize;               /* Chunk size.         */
+/* Kernel parameters. */
+static int masksize;       			                                                       /* Mask dimension.     */
+static double mask[MASK_SIZE*MASK_SIZE];       			                                   /* Mask.               */
+static unsigned char chunk[(CHUNK_SIZE + MASK_SIZE - 1)*(CHUNK_SIZE + MASK_SIZE - 1)]; /* Image input chunk.  */
+static unsigned char newchunk[CHUNK_SIZE*CHUNK_SIZE];	                                 /* Image output chunk. */
 	
 #define MASK(i, j) \
 	mask[(i)*masksize + (j)]
 
 #define CHUNK(i, j) \
-	chunk[(i)*(chunksize + masksize - 1) + (j)]
+	chunk[(i)*(CHUNK_SIZE + masksize - 1) + (j)]
 
 #define NEWCHUNK(i, j) \
-	newchunk[(i)*chunksize + (j)]
+	newchunk[(i)*CHUNK_SIZE + (j)]
 
 /*
  * Gaussian filter.
@@ -37,9 +36,9 @@ void gauss_filter(void)
 	#pragma omp parallel default(shared) private(chunkI,chunkJ,maskI,maskJ,pixel)
 	{
 		#pragma omp for
-		for (chunkI = 0; chunkI < chunksize; chunkI++)
+		for (chunkI = 0; chunkI < CHUNK_SIZE; chunkI++)
 		{
-			for (chunkJ = 0; chunkJ < chunksize; chunkJ++)
+			for (chunkJ = 0; chunkJ < CHUNK_SIZE; chunkJ++)
 			{
 				pixel = 0.0;
 				
@@ -69,20 +68,9 @@ int main(int argc, char **argv)
 	/* Receives filter mask size. */
 	data_receive(infd, &masksize, sizeof(int));
 
-	/* Allocates filter mask and chunks. */
-	mask = (double *) smalloc(masksize * masksize * sizeof(double));
-
 	/* Receives filter mask. */
 	data_receive(infd, mask, masksize * masksize * sizeof(double));
 
-	/* Receives chunk size. */
-	data_receive(infd, &chunksize, sizeof(int));
-		
-	int chunk_with_halo_size = chunksize + masksize - 1;
-
-	chunk = (unsigned char *) smalloc(chunk_with_halo_size * chunk_with_halo_size * sizeof(unsigned char));
-	newchunk = (unsigned char *) smalloc(chunksize * chunksize * sizeof(unsigned char));
-	
 	/* Process chunks. */
 	while (1)
 	{
@@ -92,24 +80,18 @@ int main(int argc, char **argv)
 		switch (msg)
 		{
 			case MSG_CHUNK:
-				data_receive(infd, chunk, chunk_with_halo_size * chunk_with_halo_size * sizeof(unsigned char));
+				data_receive(infd, chunk, (CHUNK_SIZE + masksize - 1) * (CHUNK_SIZE + masksize - 1) * sizeof(unsigned char));
 				gauss_filter();
-				data_send(outfd, newchunk, chunksize * chunksize * sizeof(unsigned char));
+				data_send(outfd, newchunk, CHUNK_SIZE * CHUNK_SIZE * sizeof(unsigned char));
 				break;
-			
+				
 			default:
 				goto out;
 		}
 	}
 
 out:
-	
-	
 	close_noc_connectors();
-
-	free(mask);
-	free(chunk);
-	free(newchunk);
 	
 	return (0);
 }
