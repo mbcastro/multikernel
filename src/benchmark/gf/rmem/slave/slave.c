@@ -26,14 +26,79 @@
 #include "slave.h"
 
 /* Kernel parameters. */
-static int imgsize;       			                                                   /* IMG dimension.      */
-static int masksize;       			                                                   /* Mask dimension.     */
-static double mask[MASK_SIZE*MASK_SIZE];       			                               /* Mask.               */
-static unsigned char chunk[(CHUNK_SIZE + MASK_SIZE - 1)*(CHUNK_SIZE + MASK_SIZE - 1)]; /* Image input chunk.  */
-static unsigned char newchunk[CHUNK_SIZE*CHUNK_SIZE];	                               /* Image output chunk. */
-static int nclusters;                                                                  /* Number of clusters. */
+static int imgsize;                         /* IMG dimension.      */
+static int masksize;                        /* Mask dimension.     */
+static double mask[MASK_SIZE2];             /* Mask.               */
+static unsigned char chunk[TILE_SIZE2];     /* Image input chunk.  */
+static unsigned char newchunk[CHUNK_SIZE2]; /* Image output chunk. */
+static int nclusters;                       /* Number of clusters. */
 
+/*===========================================================================*
+ * memwrites()                                                               *
+ *===========================================================================*/
+
+/**
+ * @brief Stride writes data to remote memory.
+ *
+ * @param buffer Target buffer.
+ * @param base   Base address on remote memory.
+ * @param offset Stride offset.
+ * @param stride Stride size.
+ * @param count  Number of strides to write.
+ */
+static void memwrites(
+	const unsigned char *buffer,
+	uint64_t base,
+	uint64_t offset,
+	size_t stride,
+	size_t count
+) {
+	int dsize = sizeof(unsigned char);
 	
+	for (size_t i = 0; i < count; i++)
+	{
+		memwrite(base + i*offset*dsize,
+			&buffer[i*stride],
+			stride*dsize
+		);
+	}
+}
+
+/*===========================================================================*
+ * memreads()                                                               *
+ *===========================================================================*/
+
+/**
+ * @brief Stride reads data from remote memory.
+ *
+ * @param buffer Target buffer.
+ * @param base   Base address on remote memory.
+ * @param offset Stride offset.
+ * @param stride Stride size.
+ * @param count  Number of strides to read.
+ */
+static void memreads(
+	unsigned char *buffer,
+	uint64_t base,
+	uint64_t offset,
+	size_t stride,
+	size_t count
+) {
+	int dsize = sizeof(unsigned char);
+	
+	for (size_t i = 0; i < count; i++)
+	{
+		memread(base + i*offset*dsize,
+			&buffer[i*stride],
+			stride*dsize
+		);
+	}
+}
+
+/*===========================================================================*
+ * gauss_filter()                                                            *
+ *===========================================================================*/
+
 #define MASK(i, j) \
 	mask[(i)*masksize + (j)]
 
@@ -66,59 +131,9 @@ static void gauss_filter(void)
 	}
 }
 
-/**
- * @brief Stride writes data to remote memory.
- *
- * @param buffer Target buffer.
- * @param base   Base address on remote memory.
- * @param offset Stride offset.
- * @param stride Stride size.
- * @param count  Number of strides to write.
- */
-static void memwrites(
-	const unsigned char *buffer,
-	uint64_t base,
-	uint64_t offset,
-	size_t stride,
-	size_t count
-) {
-	int dsize = sizeof(unsigned char);
-	
-	for (size_t i = 0; i < count; i++)
-	{
-		memwrite(base + i*offset*dsize,
-			&buffer[i*stride],
-			stride*dsize
-		);
-	}
-}
-
-/**
- * @brief Stride reads data from remote memory.
- *
- * @param buffer Target buffer.
- * @param base   Base address on remote memory.
- * @param offset Stride offset.
- * @param stride Stride size.
- * @param count  Number of strides to read.
- */
-static void memreads(
-	unsigned char *buffer,
-	uint64_t base,
-	uint64_t offset,
-	size_t stride,
-	size_t count
-) {
-	int dsize = sizeof(unsigned char);
-	
-	for (size_t i = 0; i < count; i++)
-	{
-		memread(base + i*offset*dsize,
-			&buffer[i*stride],
-			stride*dsize
-		);
-	}
-}
+/*===========================================================================*
+ * main()                                                                    *
+ *===========================================================================*/
 
 /**
  * @brief Convolutes a Gaussian filter on an image. 
@@ -126,6 +141,8 @@ static void memreads(
 int main(int argc, char **argv)
 {
 	int rank;           /* Cluster rank.             */
+	int halosize;       /* Halo size.                */
+	int tilesize;       /* Tile size.                */
 	int nchunks;        /* Total number of chunks.   */
 	int chunks_per_row; /* Number of chunks per row. */
 	int chunks_per_col; /* Number of chunks per col. */
@@ -139,6 +156,9 @@ int main(int argc, char **argv)
 	memread(OFF_MASKSIZE,  &masksize,  sizeof(int));
 	memread(OFF_IMGSIZE,   &imgsize,   sizeof(int));
 	memread(OFF_MASK,      mask,       masksize*masksize*sizeof(double));
+
+	halosize = masksize/2;
+	tilesize = (CHUNK_SIZE + masksize - 1);
 
 	/* Find the number of chunks that will be generated. */
 	chunks_per_row = (imgsize - masksize + 1)/CHUNK_SIZE;
@@ -163,15 +183,15 @@ int main(int argc, char **argv)
 		memreads(chunk,
 			base,
 			imgsize,
-			(CHUNK_SIZE + masksize - 1),
-			(CHUNK_SIZE + masksize - 1)
+			tilesize,
+			tilesize
 		);
 	
 		gauss_filter();
 		
 		base = OFF_NEWIMAGE +
-			(masksize/2)*imgsize + off_y + /* Vertical skip.   */
-			masksize/2 + off_x;            /* Horizontal skip. */
+			halosize*imgsize + off_y + /* Vertical skip.   */
+			halosize + off_x;          /* Horizontal skip. */
 
 		memwrites(newchunk,
 			base,
