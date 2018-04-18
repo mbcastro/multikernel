@@ -15,17 +15,6 @@
 extern void gauss_filter
 (unsigned char *img, int imgsize, double *mask, int masksize);
 
-/* Timing statistics. */
-long master = 0;          /* Time spent on master.        */
-long slave[NR_CCLUSTER];  /* Time spent on slaves.        */
-long communication = 0;   /* Time spent on communication. */
-
-/* Data exchange statistics. */
-size_t data_sent = 0;     /* Number of bytes received. */
-unsigned nsend = 0;       /* Number of sends.          */
-size_t data_received = 0; /* Number of bytes sent.     */
-unsigned nreceive = 0;    /* Number of receives.       */
-
 /*
  * Problem.
  */
@@ -36,8 +25,6 @@ struct problem
 };
 
 /* Problem sizes. */
-/* OUTPUT_IMG_SIZE + (MASK_SIZE-1) = INPUT_IMAGE_SIZE */
-// static struct problem tiny     = {  7,  1030 }; /* 1024  + (7-1)  = 1030  */
 static struct problem tiny     = {  7,  70   }; /* 64  + (7-1)  = 70  */
 static struct problem small    = {  7,  2054 }; /* 2048  + (7-1)  = 2054  */
 static struct problem standard = {  7,  4102 }; /* 4096  + (7-1)  = 4102  */
@@ -197,11 +184,8 @@ static void generate_mask(double *mask)
  */
 int main(int argc, char **argv)
 {
-	long t[2];          /* Timings.                   */
-	long time_init;     /* Total initialization time. */
-	long time_kernel;   /* Total kernel time.         */
-	double *mask;       /* Mask.                      */
-	unsigned char *img; /* Image.                     */
+	double *mask;       /* Mask.  */
+	unsigned char *img; /* Image. */
 	
 	/*---------------------------------------------------------------*
 	 * Benchmark Initialization                                      *
@@ -209,19 +193,15 @@ int main(int argc, char **argv)
 	
 	readargs(argc, argv);
 	srandnum(seed);
-	k1_timer_init();
 	
 	if (verbose)
 		printf("initializing...\n");
 
-	t[0] = k1_timer_get();
-		img = smalloc(p->imgsize*p->imgsize*sizeof(char));
-		for (int i = 0; i < p->imgsize*p->imgsize; i++)
-			img[i] = randnum() & 0xff;
-		mask = smalloc(p->masksize*p->masksize*sizeof(double));
-		generate_mask(mask);
-	t[1] = k1_timer_get();
-	time_init = k1_timer_diff(t[0], t[1]);
+	img = smalloc(p->imgsize*p->imgsize*sizeof(char));
+	for (int i = 0; i < p->imgsize*p->imgsize; i++)
+		img[i] = randnum() & 0xff;
+	mask = smalloc(p->masksize*p->masksize*sizeof(double));
+	generate_mask(mask);
 		
 	/*---------------------------------------------------------------*
 	 * Applying filter                                               *
@@ -230,32 +210,8 @@ int main(int argc, char **argv)
 	if (verbose)
 		printf("applying filter...\n");
 
-	t[0] = k1_timer_get();
-		gauss_filter(img, p->imgsize, mask, p->masksize);
-	t[1] = k1_timer_get();
-	
-	time_kernel = k1_timer_diff(t[0], t[1]);
+	gauss_filter(img, p->imgsize, mask, p->masksize);
 
-	/*---------------------------------------------------------------*
-	 * Print Timing Statistics                                       *
-	 *---------------------------------------------------------------*/
-
-	if (verbose)
-	{
-		printf("timing statistics:\n");
-		printf("  initialization time: %f\n",  time_init*MICRO);
-		printf("  kernel time:          %f\n", time_kernel*MICRO);
-		printf("  master:        %f\n", master*MICRO);
-		for (int i = 0; i < nclusters; i++)
-			printf("  slave %d:      %f\n", i, slave[i]*MICRO);
-		printf("  communication: %f\n", communication*MICRO);
-		printf("data exchange statistics:\n");
-		printf("  data sent:            %d\n", data_sent);
-		printf("  number sends:         %u\n", nsend);
-		printf("  data received:        %d\n", data_received);
-		printf("  number receives:      %u\n", nreceive);
-	}
-	
 	/*---------------------------------------------------------------*
 	 * House Keeping                                                 *
 	 *---------------------------------------------------------------*/

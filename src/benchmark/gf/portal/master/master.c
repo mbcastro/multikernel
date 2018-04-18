@@ -70,14 +70,6 @@ void gauss_filter(unsigned char *img_, int imgsize_, double *mask_, int masksize
 		}
 	}
 	
-	printf("OUTPUT MPPA:\n");
-	for (int i = 0; i < imgsize; i++)
-	{
-		for (int j = 0; j < imgsize; j++)
-			printf("%d ", newimg[i*imgsize + j]);
-		printf("\n");
-	}
-	
 	/* House keeping. */
 	msg = MSG_DIE;
 	for (int i = 0; i < nclusters; i++)

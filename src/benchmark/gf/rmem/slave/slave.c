@@ -178,10 +178,13 @@ int main(int argc, char **argv)
 	t[2] = k1_timer_get();
 		
 		/* Read input parameters. */
-		memread(OFF_MASKSIZE,  &masksize, sizeof(int));
-		memread(OFF_IMGSIZE,   &imgsize,  sizeof(int));
-		memread(OFF_MASK,      mask,      masksize*masksize*sizeof(double));
-		nread += 3; sread += 2*sizeof(int) +masksize*masksize*sizeof(double);
+		t[0] = k1_timer_get();
+			memread(OFF_MASKSIZE,  &masksize, sizeof(int));
+			memread(OFF_IMGSIZE,   &imgsize,  sizeof(int));
+			memread(OFF_MASK,      mask,      masksize*masksize*sizeof(double));
+		t[1] = k1_timer_get();
+		time_network += k1_timer_diff(t[0], t[1]);
+		nread += 3; sread += 2*sizeof(int) + masksize*masksize*sizeof(double);
 
 		halosize = masksize/2;
 		tilesize = (CHUNK_SIZE + masksize - 1);
