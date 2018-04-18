@@ -60,13 +60,19 @@ void gauss_filter(unsigned char *img_, int imgsize_, double *mask_, int masksize
 			data_send(outfd[nchunks], chunk, chunk_with_halo_size * chunk_with_halo_size * sizeof(unsigned char));
 
 			/* Receives chunk without halo. */
-			data_receive(infd, nchunks, chunk, CHUNK_SIZE * CHUNK_SIZE * sizeof(unsigned char));
+			if (++nchunks == nclusters)
+			{
+				for (int ck = 0; ck < nchunks; ck++)
+				{
+					data_receive(infd, ck, chunk, CHUNK_SIZE*CHUNK_SIZE*sizeof(unsigned char));
 
-			/* Build chunk. */
-			for (int k = 0; k < CHUNK_SIZE; k++)
-				memcpy(&newimg[(i + k)*imgsize + j], &chunk[k * CHUNK_SIZE], CHUNK_SIZE * sizeof(unsigned char));
+					/* Build chunk. */
+					for (int k = 0; k < CHUNK_SIZE; k++)
+						memcpy(&newimg[(i + k)*imgsize + j], &chunk[k * CHUNK_SIZE], CHUNK_SIZE * sizeof(unsigned char));
+				}
 
-			nchunks = (nchunks == nclusters - 1) ? 0 : nchunks + 1;
+				nchunks = 0;
+			}
 		}
 	}
 	
