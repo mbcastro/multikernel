@@ -72,16 +72,28 @@ void gauss_filter(void)
 	}
 }
 
-void memreads(char *buffer, uint64_t base, uint64_t offset, size_t stride, size_t count)
+void memwrites(unsigned char *buffer, uint64_t base, uint64_t offset, size_t stride, size_t count)
 {
 	for (size_t i = 0; i < count; i++)
 	{
-		memread(base + i*(offset + stride),
+		memwrite(base + i*(offset),
 			&buffer[i*stride],
-			stride);
+			stride
+		);
 	}
 }
 
+void memreads(unsigned char *buffer, uint64_t base, uint64_t offset, size_t stride, size_t count)
+{
+	for (size_t i = 0; i < count; i++)
+	{
+		memread(base + i*(offset),
+			&buffer[i*stride],
+			stride
+		);
+	}
+}
+#include <string.h>
 int main(int argc, char **argv)
 {
 	int nchunks;
@@ -99,48 +111,51 @@ int main(int argc, char **argv)
 	/* Find the number of chunks that will be generated. */
 	nchunks = ((imgsize - masksize + 1)*(imgsize - masksize + 1))/(CHUNK_SIZE*CHUNK_SIZE);
 
-	// printf("Cluster %d: nclusters=%d, masksize=%d, imgsize=%d, nchunks=%d, CHUNK_SIZE=%d\n", rank, nclusters, masksize, imgsize, nchunks, CHUNK_SIZE);
+	if (rank == 0)
+	 printf("Cluster %d: nclusters=%d, masksize=%d, imgsize=%d, nchunks=%d, CHUNK_SIZE=%d\n", rank, nclusters, masksize, imgsize, nchunks, CHUNK_SIZE);
 	
-	int half = masksize/2;
-	int base_offset;
 	
 	/* Process chunks in a round-robin fashion. */	
 	for(int ck = rank; ck < nchunks; ck += nclusters)
 	{
-		base_offset = OFF_IMAGE + ck*CHUNK_SIZE;
-		for (int k = 0; k < CHUNK_SIZE + masksize - 1; k++)
-		{
-			memread(base_offset + k*imgsize,
-				&chunk[k*(CHUNK_SIZE + masksize - 1)],
-				(CHUNK_SIZE + masksize - 1)*sizeof(unsigned char)
-			);
-		}
+		int chunks_per_row = (imgsize - masksize + 1)/CHUNK_SIZE;
+		int chunks_per_col = (imgsize - masksize + 1)/CHUNK_SIZE;
 
-		// if(rank == 0) {
-		// 	for(int i = 0; i < CHUNK_SIZE + masksize - 1; i++) {
-		// 		for(int j = 0; j < CHUNK_SIZE + masksize - 1; j++)
-		// 			printf("%d ", chunk[(CHUNK_SIZE + masksize - 1) * i + j]);
-		// 		printf("\n");
-		// 	}
-		// }
+		memreads(chunk,
+			OFF_IMAGE + (ck/chunks_per_col)*(CHUNK_SIZE)*imgsize + (ck%chunks_per_row)*CHUNK_SIZE,
+			imgsize,
+			(CHUNK_SIZE + masksize - 1),
+			(CHUNK_SIZE + masksize - 1)
+		);
+
+	
+		if(rank == 0) {
+		 	for(int i = 0; i < CHUNK_SIZE + masksize - 1; i++) {
+		 		for(int j = 0; j < CHUNK_SIZE + masksize - 1; j++)
+		 			printf("%2d ", chunk[(CHUNK_SIZE + masksize - 1) * i + j]);
+		 		printf("\n");
+		 	}
+		 		printf("------\n");
+		}
 
 		gauss_filter();
-
-		// if(rank == 0) {
-		// 	for(int i = 0; i < CHUNK_SIZE; i++) {
-		// 		for(int j = 0; j < CHUNK_SIZE; j++)
-		// 			printf("%d ", newchunk[CHUNK_SIZE * i + j]);
-		// 		printf("\n");
-		// 	}
-		// }
-
-		base_offset = (OFF_NEWIMAGE + half*imgsize) + half + ck*CHUNK_SIZE;
-		for (int k = 0; k < CHUNK_SIZE; k++)
-		{
-			memwrite(base_offset + k*imgsize,
-				 &newchunk[k*CHUNK_SIZE],
-				 CHUNK_SIZE*sizeof(unsigned char));
+		
+		
+		if(rank == 0) {
+		 	for(int i = 0; i < CHUNK_SIZE; i++) {
+		 		for(int j = 0; j < CHUNK_SIZE; j++)
+		 			printf("%2d ", newchunk[(CHUNK_SIZE) * i + j]);
+		 		printf("\n");
+		 	}
+		 		printf("------\n");
 		}
+			memwrites(newchunk,
+			OFF_NEWIMAGE + ((masksize/2)*imgsize) + (ck/chunks_per_col)*(CHUNK_SIZE)*imgsize + (ck%chunks_per_row)*(CHUNK_SIZE),
+			imgsize,
+			CHUNK_SIZE,
+			CHUNK_SIZE
+		);
+		
 	}
 	
 	return (0);
