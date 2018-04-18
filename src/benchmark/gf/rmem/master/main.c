@@ -213,7 +213,7 @@ int main(int argc, char **argv)
 	if (verbose)
 		printf("initializing...\n");
 
-	img = smalloc(p->imgsize*p->imgsize*sizeof(char));
+	img = smalloc(p->imgsize*p->imgsize*sizeof(unsigned char));
 	for (int i = 0; i < p->imgsize*p->imgsize; i++)
 		img[i] = randnum() & 0xff;
 	mask = smalloc(p->masksize*p->masksize*sizeof(double));

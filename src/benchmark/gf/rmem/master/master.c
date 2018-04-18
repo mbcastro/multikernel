@@ -37,12 +37,16 @@ void gauss_filter(unsigned char *img_, int imgsize_, double *mask_, int masksize
 	barrier = barrier_open(NR_IOCLUSTER);
 	barrier_wait(barrier);
 
+	/* Allocate output IMG. */
+	unsigned char *newimg = scalloc(imgsize*imgsize, sizeof(unsigned char));
+
 	/* Write parameters to remote memory. */
 	memwrite(OFF_NCLUSTERS, &nclusters, sizeof(int));
 	memwrite(OFF_MASKSIZE,  &masksize,  sizeof(int));
 	memwrite(OFF_IMGSIZE,   &imgsize,   sizeof(int));
 	memwrite(OFF_MASK,      mask,       masksize*masksize*sizeof(double));
 	memwrite(OFF_IMAGE,     img,        imgsize*imgsize*sizeof(unsigned char));
+	memwrite(OFF_NEWIMAGE,  newimg,     imgsize*imgsize*sizeof(unsigned char));
 
 	/* Spawn slave processes. */
 	spawn_slaves();
@@ -50,6 +54,15 @@ void gauss_filter(unsigned char *img_, int imgsize_, double *mask_, int masksize
 	/* Wait for all slave processes to finish. */
 	join_slaves();
 
+	memread(OFF_NEWIMAGE,  newimg,     imgsize*imgsize*sizeof(unsigned char));
+
+	// for(int i = 0; i < imgsize; i++) {
+	// 	for(int j = 0; j < imgsize; j++)
+	// 		printf("%d ", newimg[imgsize * i + j]);
+	// 	printf("\n");
+	// }
+	
 	/* House keeping. */
 	barrier_close(barrier);
+	free(newimg);
 }

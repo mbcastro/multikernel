@@ -22,7 +22,7 @@ static int imgsize;       			/* IMG dimension.      */
 static double mask[MASK_SIZE*MASK_SIZE];       			/* Mask.               */
 static int masksize;       			/* Mask dimension.     */
 
-static unsigned char chunk[(CHUNK_SIZE + MASK_SIZE)*(CHUNK_SIZE + MASK_SIZE)]; /* Image input chunk.  */
+static unsigned char chunk[(CHUNK_SIZE + MASK_SIZE - 1)*(CHUNK_SIZE + MASK_SIZE - 1)]; /* Image input chunk.  */
 static unsigned char newchunk[CHUNK_SIZE*CHUNK_SIZE];	                       /* Image output chunk. */
 
 static int nclusters;           /* Number of clusters. */
@@ -74,24 +74,40 @@ int main(int argc, char **argv)
 	/* Chunk size is adjusted to generate at least 16 chunks. */
 	nchunks = ((imgsize - masksize + 1)*(imgsize - masksize + 1))/(CHUNK_SIZE*CHUNK_SIZE);
 
-	printf("Cluster %d: nclusters=%d, masksize=%d, imgsize=%d, nchunks=%d, CHUNK_SIZE=%d\n", rank, nclusters, masksize, imgsize, nchunks, CHUNK_SIZE);
+	// printf("Cluster %d: nclusters=%d, masksize=%d, imgsize=%d, nchunks=%d, CHUNK_SIZE=%d\n", rank, nclusters, masksize, imgsize, nchunks, CHUNK_SIZE);
 	
 	/* Process chunks in a round-robin fashion. */	
 	for(int ck = rank; ck < nchunks; ck += nclusters)
 	{
-		for (int k = 0; k < CHUNK_SIZE + masksize; k++)
+		for (int k = 0; k < CHUNK_SIZE + masksize - 1; k++)
 		{
-			memread(OFF_IMAGE + ck*CHUNK_SIZE*CHUNK_SIZE + k*imgsize,
-				&chunk[k*(CHUNK_SIZE + masksize)],
-				(CHUNK_SIZE + masksize)*sizeof(unsigned char)
+			memread(OFF_IMAGE + ck*CHUNK_SIZE + k*imgsize,
+				&chunk[k*(CHUNK_SIZE + masksize - 1)],
+				(CHUNK_SIZE + masksize - 1)*sizeof(unsigned char)
 			);
 		}
-			
+
+		// if(rank == 0) {
+		// 	for(int i = 0; i < CHUNK_SIZE + masksize - 1; i++) {
+		// 		for(int j = 0; j < CHUNK_SIZE + masksize - 1; j++)
+		// 			printf("%d ", chunk[(CHUNK_SIZE + masksize - 1) * i + j]);
+		// 		printf("\n");
+		// 	}
+		// }
+
 		gauss_filter();
+
+		// if(rank == 3) {
+		// 	for(int i = 0; i < CHUNK_SIZE; i++) {
+		// 		for(int j = 0; j < CHUNK_SIZE; j++)
+		// 			printf("%d ", newchunk[CHUNK_SIZE * i + j]);
+		// 		printf("\n");
+		// 	}
+		// }
 		
 		for (int k = 0; k < CHUNK_SIZE; k++)
 		{
-			memwrite(OFF_NEWIMAGE + ck*CHUNK_SIZE*CHUNK_SIZE + k*imgsize,
+			memwrite(OFF_NEWIMAGE + (masksize/2 * imgsize) + masksize/2 + ck*CHUNK_SIZE + k*imgsize,
 				 &newchunk[k*CHUNK_SIZE],
 				 CHUNK_SIZE*sizeof(unsigned char));
 		}
