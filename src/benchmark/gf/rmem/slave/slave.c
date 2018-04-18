@@ -32,15 +32,12 @@
 int rank;
 
 /* Gaussian Filter. */
-static int imgsize;       			/* IMG dimension.      */
-
-static double mask[MASK_SIZE*MASK_SIZE];       			/* Mask.               */
-static int masksize;       			/* Mask dimension.     */
-
+static int imgsize;       			                                                   /* IMG dimension.      */
+static int masksize;       			                                                   /* Mask dimension.     */
+static double mask[MASK_SIZE*MASK_SIZE];       			                               /* Mask.               */
 static unsigned char chunk[(CHUNK_SIZE + MASK_SIZE - 1)*(CHUNK_SIZE + MASK_SIZE - 1)]; /* Image input chunk.  */
-static unsigned char newchunk[CHUNK_SIZE*CHUNK_SIZE];	                       /* Image output chunk. */
-
-static int nclusters;           /* Number of clusters. */
+static unsigned char newchunk[CHUNK_SIZE*CHUNK_SIZE];	                               /* Image output chunk. */
+static int nclusters;                                                                  /* Number of clusters. */
 	
 #define MASK(i, j) \
 	mask[(i)*masksize + (j)]
@@ -72,6 +69,15 @@ void gauss_filter(void)
 	}
 }
 
+/**
+ * @brief Stride writes data to remote memory.
+ *
+ * @param buffer Target buffer.
+ * @param base   Base address on remote memory.
+ * @param offset Stride offset.
+ * @param stride Stride size.
+ * @param count  Number of strides to write.
+ */
 void memwrites(unsigned char *buffer, uint64_t base, uint64_t offset, size_t stride, size_t count)
 {
 	int dsize = sizeof(unsigned char);
@@ -85,6 +91,15 @@ void memwrites(unsigned char *buffer, uint64_t base, uint64_t offset, size_t str
 	}
 }
 
+/**
+ * @brief Stride reads data from remote memory.
+ *
+ * @param buffer Target buffer.
+ * @param base   Base address on remote memory.
+ * @param offset Stride offset.
+ * @param stride Stride size.
+ * @param count  Number of strides to read.
+ */
 void memreads(unsigned char *buffer, uint64_t base, uint64_t offset, size_t stride, size_t count)
 {
 	int dsize = sizeof(unsigned char);
@@ -97,7 +112,6 @@ void memreads(unsigned char *buffer, uint64_t base, uint64_t offset, size_t stri
 		);
 	}
 }
-#include <string.h>
 int main(int argc, char **argv)
 {
 	int nchunks;
