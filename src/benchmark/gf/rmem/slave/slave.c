@@ -74,10 +74,12 @@ void gauss_filter(void)
 
 void memwrites(unsigned char *buffer, uint64_t base, uint64_t offset, size_t stride, size_t count)
 {
+	int dsize = sizeof(unsigned char);
+	
 	for (size_t i = 0; i < count; i++)
 	{
-		memwrite(base + i*(offset),
-			&buffer[i*stride],
+		memwrite(base + i*(offset)*dsize,
+			&buffer[i*stride*dsize],
 			stride
 		);
 	}
@@ -85,10 +87,12 @@ void memwrites(unsigned char *buffer, uint64_t base, uint64_t offset, size_t str
 
 void memreads(unsigned char *buffer, uint64_t base, uint64_t offset, size_t stride, size_t count)
 {
+	int dsize = sizeof(unsigned char);
+	
 	for (size_t i = 0; i < count; i++)
 	{
-		memread(base + i*(offset),
-			&buffer[i*stride],
+		memread(base + i*(offset)*dsize,
+			&buffer[i*stride*dsize],
 			stride
 		);
 	}
