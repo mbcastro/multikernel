@@ -45,8 +45,8 @@ static int   lpopulation[MAX_CENTROIDS];
 static int   lppopulation[MAX_CENTROIDS/NR_CCLUSTER + DELTA];
 
 /* Timing statistics. */
-static uint64_t t[4];
-static uint64_t time_network = 0;
+static uint64_t t[6] = { 0, 0, 0, 0, 0, 0 };
+static uint64_t time_network[2] = { 0, 0 };
 static uint64_t time_cpu = 0;
 static int nwrite = 0;
 static int nread = 0;
@@ -85,7 +85,7 @@ static void populate(void)
 	t[0] = k1_timer_get();
 		memread(OFF_CENTROIDS, &centroids[0], n);
 	t[1] = k1_timer_get();
-	time_network += k1_timer_diff(t[0], t[1]);
+	time_network[0] += k1_timer_diff(t[0], t[1]);
 	nread++; sread += n;
 
 	memset(ltoo_far, 0, NTHREADS*sizeof(int));
@@ -158,23 +158,23 @@ static inline void compute_pcentroids(void)
 	}
 
 	n = ncentroids*dimension*sizeof(float);
-	t[0] = k1_timer_get();
+	t[4] = k1_timer_get();
 		memwrite(OFF_PCENTROIDS(rank, 0),
 			&LCENTROID(0, 0),
 			n
 		);
-	t[1] = k1_timer_get();
-	time_network += k1_timer_diff(t[0], t[1]);
+	t[5] = k1_timer_get();
+	time_network[1] += k1_timer_diff(t[4], t[5]);
 	nwrite++; swrite += n;
 		
 	n = ncentroids*sizeof(int);
-	t[0] = k1_timer_get();
+	t[4] = k1_timer_get();
 		memwrite(OFF_PPOPULATION(rank, 0),
 			&LPOPULATION(0, 0),
 			n
 		);
-	t[1] = k1_timer_get();
-	time_network += k1_timer_diff(t[0], t[1]);
+	t[5] = k1_timer_get();
+	time_network[1] += k1_timer_diff(t[4], t[5]);
 	nwrite++; swrite += n;
 }
 
@@ -204,7 +204,7 @@ static void compute_centroids(void)
 				n
 			);
 		t[1] = k1_timer_get();
-		time_network += k1_timer_diff(t[0], t[1]);
+		time_network[0] += k1_timer_diff(t[0], t[1]);
 		nread++; sread += n;
 
 		n = lncentroids*sizeof(int);
@@ -214,7 +214,7 @@ static void compute_centroids(void)
 				n
 			);
 		t[1] = k1_timer_get();
-		time_network += k1_timer_diff(t[0], t[1]);
+		time_network[0] += k1_timer_diff(t[0], t[1]);
 		nread++; sread += n;
 
 		#pragma omp parallel for
@@ -243,14 +243,14 @@ static void compute_centroids(void)
 	}
 
 	n = lncentroids*dimension*sizeof(float);
-	t[0] = k1_timer_get();
+	t[4] = k1_timer_get();
 		memwrite(OFF_CENTROIDS +
 				rank*(ncentroids/nclusters)*dimension*sizeof(float),
 			&CENTROID(rank, 0),
 			n
 		);
-	t[1] = k1_timer_get();
-	time_network += k1_timer_diff(t[0], t[1]);
+	t[5] = k1_timer_get();
+	time_network[1] += k1_timer_diff(t[4], t[5]);
 	nwrite++; swrite += n;
 }
 
@@ -275,11 +275,11 @@ static int again(void)
 	}	
 
 	n = sizeof(int);
-	t[0] = k1_timer_get();
+	t[4] = k1_timer_get();
 		memwrite(OFF_HAS_CHANGED(rank), &has_changed[rank], n);
 		memwrite(OFF_TOO_FAR(rank),     &too_far[rank],     n);
-	t[1] = k1_timer_get();
-	time_network += k1_timer_diff(t[0], t[1]);
+	t[5] = k1_timer_get();
+	time_network[1] += k1_timer_diff(t[4], t[5]);
 	nwrite += 2; swrite += n + n;
 
 	barrier_wait(barrier);
@@ -289,7 +289,7 @@ static int again(void)
 		memread(OFF_HAS_CHANGED(0), &has_changed[0], nclusters*sizeof(int));
 		memread(OFF_TOO_FAR(0),     &too_far[0],     nclusters*sizeof(int));
 	t[1] = k1_timer_get();
-	time_network += k1_timer_diff(t[0], t[1]);
+	time_network[0] += k1_timer_diff(t[0], t[1]);
 	nwrite += 2; swrite += n + n;
 	
 	/* Checks if another iteration is needed. */	
@@ -357,7 +357,7 @@ int main(int argc, char **argv)
 			memread(OFF_NCENTROIDS,  &ncentroids,  sizeof(int));
 			memread(OFF_DIMENSION,   &dimension,   sizeof(int));
 		t[1] = k1_timer_get();
-		time_network += k1_timer_diff(t[0], t[1]);
+		time_network[0] += k1_timer_diff(t[0], t[1]);
 		nread += 4; sread += n;
 
 		lnpoints = (rank < (nclusters - 1)) ?
@@ -374,7 +374,7 @@ int main(int argc, char **argv)
 				n
 			);
 		t[1] = k1_timer_get();
-		time_network += k1_timer_diff(t[0], t[1]);
+		time_network[0] += k1_timer_diff(t[0], t[1]);
 		nread++; sread += n;
 		
 		n = lnpoints*sizeof(int);
@@ -384,17 +384,18 @@ int main(int argc, char **argv)
 				n	
 			);
 		t[1] = k1_timer_get();
-		time_network += k1_timer_diff(t[0], t[1]);
+		time_network[0] += k1_timer_diff(t[0], t[1]);
 		nread++; sread += n;
 
 		kmeans();
 	
 	t[3] = k1_timer_get();
-	time_cpu = k1_timer_diff(t[2], t[3]) - time_network;
+	time_cpu = k1_timer_diff(t[2], t[3]) - (time_network[0] + time_network[1]);
 
-	printf("%d;%" PRIu64 ";%" PRIu64 ";%d;%d;%d;%d\n",
+	printf("%d;%" PRIu64 ";%" PRIu64 ";%" PRIu64 ";%d;%d;%d;%d\n",
 		rank,
-		time_network,
+		time_network[0],
+		time_network[1],
 		time_cpu,
 		nread,
 		sread,

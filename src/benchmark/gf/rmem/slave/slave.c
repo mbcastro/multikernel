@@ -36,8 +36,8 @@ static unsigned char newchunk[CHUNK_SIZE2]; /* Image output chunk. */
 static int nclusters;                       /* Number of clusters. */
 
 /* Timing statistics. */
-static uint64_t t[4];
-static uint64_t time_network = 0;
+static uint64_t t[6] = { 0, 0, 0, 0, 0, 0 };
+static uint64_t time_network[2] = { 0, 0 };
 static uint64_t time_cpu = 0;
 static int nwrite = 0;
 static int nread = 0;
@@ -68,13 +68,13 @@ static void memwrites(
 	
 	for (size_t i = 0; i < count; i++)
 	{
-		t[0] = k1_timer_get();
+		t[4] = k1_timer_get();
 			memwrite(base + i*offset*dsize,
 				&buffer[i*stride],
 				stride*dsize
 			);
-		t[1] = k1_timer_get();
-		time_network += k1_timer_diff(t[0], t[1]);
+		t[5] = k1_timer_get();
+		time_network[1] += k1_timer_diff(t[4], t[5]);
 		nwrite++;
 		swrite += stride*dsize;
 	}
@@ -110,7 +110,7 @@ static void memreads(
 				stride*dsize
 			);
 		t[1] = k1_timer_get();
-		time_network += k1_timer_diff(t[0], t[1]);
+		time_network[0] += k1_timer_diff(t[0], t[1]);
 		nread++;
 		sread += stride*dsize;
 	}
@@ -183,7 +183,7 @@ int main(int argc, char **argv)
 			memread(OFF_IMGSIZE,   &imgsize,  sizeof(int));
 			memread(OFF_MASK,      mask,      masksize*masksize*sizeof(double));
 		t[1] = k1_timer_get();
-		time_network += k1_timer_diff(t[0], t[1]);
+		time_network[0] += k1_timer_diff(t[0], t[1]);
 		nread += 3; sread += 2*sizeof(int) + masksize*masksize*sizeof(double);
 
 		halosize = masksize/2;
@@ -231,11 +231,12 @@ int main(int argc, char **argv)
 		}
 	
 	t[3] = k1_timer_get();
-	time_cpu = k1_timer_diff(t[2], t[3]) - time_network;
+	time_cpu = k1_timer_diff(t[2], t[3]) - (time_network[0] - time_network[1]);
 
-	printf("%d;%" PRIu64 ";%" PRIu64 ";%d;%d;%d;%d\n",
+	printf("%d;%" PRIu64 ";%" PRIu64 ";%" PRIu64 ";%d;%d;%d;%d\n",
 		rank,
-		time_network,
+		time_network[0],
+		time_network[1],
 		time_cpu,
 		nread,
 		sread,
