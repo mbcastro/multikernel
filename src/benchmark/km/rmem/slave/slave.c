@@ -37,12 +37,12 @@ static int   lnpoints;
 static int   lncentroids;
 static int   ltoo_far[NTHREADS];
 static int   lhas_changed[NTHREADS];
-static int   lmap[MAX_POINTS/NR_CCLUSTER + DELTA];
-static float lpoints[(MAX_POINTS/NR_CCLUSTER + DELTA)*MAX_DIMENSION];
-static float lcentroids[MAX_CENTROIDS*MAX_DIMENSION];
-static float lpcentroids[(MAX_CENTROIDS/NR_CCLUSTER + DELTA)*MAX_DIMENSION];
-static int   lpopulation[MAX_CENTROIDS];
-static int   lppopulation[MAX_CENTROIDS/NR_CCLUSTER + DELTA];
+static int   lmap[MAX_POINTS/4 + DELTA];
+static float lpoints[(MAX_POINTS/4 + DELTA)*MAX_DIMENSION];
+static float lcentroids[(MAX_CENTROIDS + DELTA)*MAX_DIMENSION];
+static float lpcentroids[(MAX_CENTROIDS + DELTA)*MAX_DIMENSION];
+static int   lpopulation[MAX_CENTROIDS + DELTA];
+static int   lppopulation[MAX_CENTROIDS + DELTA];
 
 /* Timing statistics. */
 static uint64_t t[6] = { 0, 0, 0, 0, 0, 0 };
@@ -82,6 +82,7 @@ static void populate(void)
 	barrier_wait(barrier);
 
 	n = ncentroids*dimension*sizeof(float);
+	assert(n < sizeof(centroids));
 	t[0] = k1_timer_get();
 		memread(OFF_CENTROIDS, &centroids[0], n);
 	t[1] = k1_timer_get();
@@ -198,6 +199,7 @@ static void compute_centroids(void)
 			continue;
 
 		n = lncentroids*dimension*sizeof(float);
+		assert(n < sizeof(lpcentroids));
 		t[0] = k1_timer_get();
 			memread(OFF_PCENTROIDS(i, rank*(ncentroids/nclusters)*dimension),
 				&LPCENTROID(0),
@@ -208,6 +210,7 @@ static void compute_centroids(void)
 		nread++; sread += n;
 
 		n = lncentroids*sizeof(int);
+		assert(n < sizeof(lppopulation));
 		t[0] = k1_timer_get();
 			memread(OFF_PPOPULATION(i, rank*(ncentroids/nclusters)),
 				&LPPOPULATION(0),
@@ -270,8 +273,11 @@ static int again(void)
 
 	for (int i = 0; i < NTHREADS; i++)
 	{
-		too_far[rank] |= ltoo_far[i];
-		has_changed[rank] |= lhas_changed[i];
+		if (ltoo_far[i] && lhas_changed[i])
+		{
+			too_far[rank] = has_changed[rank] = 1;
+			break;
+		}
 	}	
 
 	n = sizeof(int);
@@ -366,8 +372,10 @@ int main(int argc, char **argv)
 		lncentroids = (rank < (nclusters - 1)) ?
 			ncentroids/nclusters : (ncentroids/nclusters + ncentroids%nclusters);
 
+
 		/* Read local data from remote memory. */
 		n = lnpoints*dimension*sizeof(float);
+		assert(n < sizeof(lpoints));
 		t[0] = k1_timer_get();
 			memread(OFF_POINTS(rank*(npoints/nclusters), dimension),
 				&lpoints[0],
@@ -376,8 +384,9 @@ int main(int argc, char **argv)
 		t[1] = k1_timer_get();
 		time_network[0] += k1_timer_diff(t[0], t[1]);
 		nread++; sread += n;
-		
+
 		n = lnpoints*sizeof(int);
+		assert(n < sizeof(lmap));
 		t[0] = k1_timer_get();
 			memread(OFF_MAP(rank*(npoints/nclusters)),
 				&lmap[0],
