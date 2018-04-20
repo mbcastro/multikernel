@@ -23,7 +23,7 @@ export OUTDIR=output/bin/
 NCLUSTERS=16
 
 # Benchmark-specific parameters.
-CLASS=tiny
+CLASS=small
 
 # Testing unit specific parameters.
 NMESSAGES=2
