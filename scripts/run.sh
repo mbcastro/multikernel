@@ -23,7 +23,7 @@ export OUTDIR=output/bin/
 NCLUSTERS=16
 
 # Benchmark-specific parameters.
-CLASS=tiny
+CLASS=small
 
 # Testing unit specific parameters.
 NMESSAGES=2
@@ -73,17 +73,26 @@ then
 	echo "Testing RMEM"
 	run2 "rmem.img" "rmem-master" "rmem-server" "write $NCLUSTERS $SIZE"
 	run2 "rmem.img" "rmem-master" "rmem-server" "read $NCLUSTERS $SIZE"
-else
-	echo "Running KM PORTAL"
-	run1 "km-portal.img" "km-portal-master" "--nclusters $NCLUSTERS --class $CLASS"
-	echo "Running KM RMEM"
-	run2 "km-rmem.img" "km-rmem-master" "rmem-server" "--nclusters $NCLUSTERS --class $CLASS"	
-	echo "Running GF PORTAL"
-	run1 "gf-portal.img" "gf-portal-master" "--nclusters $NCLUSTERS --class $CLASS"
-	echo "Running GF RMEM"
-	run2 "gf-rmem.img" "gf-rmem-master" "rmem-server" "--nclusters $NCLUSTERS --class $CLASS"	
-	echo "Running IS PORTAL"
-	run1 "is-portal.img" "is-portal-master" "--nclusters $NCLUSTERS --class $CLASS"
-	#echo "Running IS RMEM"
-	#run2 "is-rmem.img" "is-rmem-master" "rmem-server" "--nclusters $NCLUSTERS --class $CLASS"	
+elif [[ $1 == "benchmark" ]];
+then
+	if [[ $2 == "km" ]];
+	then
+		echo "Running KM PORTAL"
+		run1 "km-portal.img" "km-portal-master" "--nclusters $NCLUSTERS --class $CLASS"
+		echo "Running KM RMEM"
+		run2 "km-rmem.img" "km-rmem-master" "rmem-server" "--nclusters $NCLUSTERS --class $CLASS"	
+	elif [[ $2 == "gf" ]];
+	then
+		echo "Running GF PORTAL"
+		run1 "gf-portal.img" "gf-portal-master" "--nclusters $NCLUSTERS --class $CLASS"
+		echo "Running GF RMEM"
+		run2 "gf-rmem.img" "gf-rmem-master" "rmem-server" "--nclusters $NCLUSTERS --class $CLASS"	
+	elif [[ $2 == "is" ]];
+	then
+
+		echo "Running IS PORTAL"
+		run1 "is-portal.img" "is-portal-master" "--nclusters $NCLUSTERS --class $CLASS"
+		#echo "Running IS RMEM"
+		#run2 "is-rmem.img" "is-rmem-master" "rmem-server" "--nclusters $NCLUSTERS --class $CLASS"	
+	fi
 fi

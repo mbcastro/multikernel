@@ -43,7 +43,7 @@ void gauss_filter(unsigned char *img_, int imgsize_, double *mask_, int masksize
 	}
 
 	int half = masksize/2;
-	
+
 	/* Process image in chunks. Each chunk includes a halo zone: total size (CHUNK_SIZE + masksize - 1)^2. */
 	int chunk_with_halo_size = CHUNK_SIZE + masksize - 1;
 	unsigned char *chunk = (unsigned char *) smalloc(chunk_with_halo_size * chunk_with_halo_size * sizeof(unsigned char));
@@ -60,22 +60,51 @@ void gauss_filter(unsigned char *img_, int imgsize_, double *mask_, int masksize
 			data_send(outfd[nchunks], chunk, chunk_with_halo_size * chunk_with_halo_size * sizeof(unsigned char));
 
 			/* Receives chunk without halo. */
-			data_receive(infd, nchunks, chunk, CHUNK_SIZE * CHUNK_SIZE * sizeof(unsigned char));
+			if (++nchunks == nclusters)
+			{
+				for (int ck = 0; ck < nchunks; ck++)
+				{
+					int ii;
+					int jj;
 
-			/* Build chunk. */
-			for (int k = 0; k < CHUNK_SIZE; k++)
-				memcpy(&newimg[(i + k)*imgsize + j], &chunk[k * CHUNK_SIZE], CHUNK_SIZE * sizeof(unsigned char));
+					data_receive(infd, ck, chunk, CHUNK_SIZE*CHUNK_SIZE*sizeof(unsigned char));
 
-			nchunks = (nchunks == nclusters - 1) ? 0 : nchunks + 1;
+					ii = i;
+					jj = j - (nclusters - ck + 1)*CHUNK_SIZE;
+					if (jj < 0)
+					{
+						jj = imgsize - half - jj;
+						ii -= CHUNK_SIZE;
+					}
+
+					/* Build chunk. */
+					for (int k = 0; k < CHUNK_SIZE; k++)
+						memcpy(&newimg[(ii + k)*imgsize + jj], &chunk[k * CHUNK_SIZE], CHUNK_SIZE * sizeof(unsigned char));
+				}
+
+				nchunks = 0;
+			}
 		}
 	}
-	
-	printf("OUTPUT MPPA:\n");
-	for (int i = 0; i < imgsize; i++)
+
+	for (int ck = 0; ck < nchunks; ck++)
 	{
-		for (int j = 0; j < imgsize; j++)
-			printf("%d ", newimg[i*imgsize + j]);
-		printf("\n");
+		int ii;
+		int jj;
+
+		data_receive(infd, ck, chunk, CHUNK_SIZE*CHUNK_SIZE*sizeof(unsigned char));
+
+		ii = imgsize - half - CHUNK_SIZE;
+		jj = imgsize - half - (nclusters - ck + 1)*CHUNK_SIZE;
+		if (jj < 0)
+		{
+			jj = imgsize - half - jj;
+			ii -= CHUNK_SIZE;
+		}
+
+		/* Build chunk. */
+		for (int k = 0; k < CHUNK_SIZE; k++)
+			memcpy(&newimg[(ii + k)*imgsize + jj], &chunk[k * CHUNK_SIZE], CHUNK_SIZE * sizeof(unsigned char));
 	}
 	
 	/* House keeping. */

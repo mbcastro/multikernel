@@ -23,6 +23,8 @@
 #include <nanvix/mm.h>
 #include <omp.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <inttypes.h>
 #include "slave.h"
 
 /* Kernel parameters. */
@@ -32,6 +34,15 @@ static double mask[MASK_SIZE2];             /* Mask.               */
 static unsigned char chunk[TILE_SIZE2];     /* Image input chunk.  */
 static unsigned char newchunk[CHUNK_SIZE2]; /* Image output chunk. */
 static int nclusters;                       /* Number of clusters. */
+
+/* Timing statistics. */
+static uint64_t t[6] = { 0, 0, 0, 0, 0, 0 };
+static uint64_t time_network[2] = { 0, 0 };
+static uint64_t time_cpu = 0;
+static int nwrite = 0;
+static int nread = 0;
+static size_t swrite = 0;
+static size_t sread = 0;
 
 /*===========================================================================*
  * memwrites()                                                               *
@@ -57,10 +68,15 @@ static void memwrites(
 	
 	for (size_t i = 0; i < count; i++)
 	{
-		memwrite(base + i*offset*dsize,
-			&buffer[i*stride],
-			stride*dsize
-		);
+		t[4] = k1_timer_get();
+			memwrite(base + i*offset*dsize,
+				&buffer[i*stride],
+				stride*dsize
+			);
+		t[5] = k1_timer_get();
+		time_network[1] += k1_timer_diff(t[4], t[5]);
+		nwrite++;
+		swrite += stride*dsize;
 	}
 }
 
@@ -88,10 +104,15 @@ static void memreads(
 	
 	for (size_t i = 0; i < count; i++)
 	{
-		memread(base + i*offset*dsize,
-			&buffer[i*stride],
-			stride*dsize
-		);
+		t[0] = k1_timer_get();
+			memread(base + i*offset*dsize,
+				&buffer[i*stride],
+				stride*dsize
+			);
+		t[1] = k1_timer_get();
+		time_network[0] += k1_timer_diff(t[0], t[1]);
+		nread++;
+		sread += stride*dsize;
 	}
 }
 
@@ -151,55 +172,77 @@ int main(int argc, char **argv)
 	
 	rank = atoi(argv[0]);	
 	nclusters = atoi(argv[1]);
-	
-	/* Read input parameters. */
-	memread(OFF_MASKSIZE,  &masksize, sizeof(int));
-	memread(OFF_IMGSIZE,   &imgsize,  sizeof(int));
-	memread(OFF_MASK,      mask,      masksize*masksize*sizeof(double));
 
-	halosize = masksize/2;
-	tilesize = (CHUNK_SIZE + masksize - 1);
+	k1_timer_init();
 
-	/* Find the number of chunks that will be generated. */
-	chunks_per_row = (imgsize - masksize + 1)/CHUNK_SIZE;
-	chunks_per_col = (imgsize - masksize + 1)/CHUNK_SIZE;
-	nchunks = chunks_per_row*chunks_per_col;
-	
-	/* Process chunks in a round-robin. */
-	for(int ck = rank; ck < nchunks; ck += nclusters)
-	{
-		uint64_t base;  /* Base address for remote read/write. */
-		uint64_t off_y; /* Row offset for working chunk.       */
-		uint64_t off_x; /* Column offset for working chunk.    */
-
-		/* Compute offsets. */
-		off_y = (ck/chunks_per_col)*CHUNK_SIZE*imgsize;
-		off_x = (ck%chunks_per_row)*CHUNK_SIZE;
-
-		base = OFF_IMAGE +
-			off_y + /* Vertical skip.   */
-			off_x;  /* Horizontal skip. */
-
-		memreads(chunk,
-			base,
-			imgsize,
-			tilesize,
-			tilesize
-		);
-	
-		gauss_filter();
+	t[2] = k1_timer_get();
 		
-		base = OFF_NEWIMAGE +
-			halosize*imgsize + off_y + /* Vertical skip.   */
-			halosize + off_x;          /* Horizontal skip. */
+		/* Read input parameters. */
+		t[0] = k1_timer_get();
+			memread(OFF_MASKSIZE,  &masksize, sizeof(int));
+			memread(OFF_IMGSIZE,   &imgsize,  sizeof(int));
+			memread(OFF_MASK,      mask,      masksize*masksize*sizeof(double));
+		t[1] = k1_timer_get();
+		time_network[0] += k1_timer_diff(t[0], t[1]);
+		nread += 3; sread += 2*sizeof(int) + masksize*masksize*sizeof(double);
 
-		memwrites(newchunk,
-			base,
-			imgsize,
-			CHUNK_SIZE,
-			CHUNK_SIZE
-		);
-	}
+		halosize = masksize/2;
+		tilesize = (CHUNK_SIZE + masksize - 1);
+
+		/* Find the number of chunks that will be generated. */
+		chunks_per_row = (imgsize - masksize + 1)/CHUNK_SIZE;
+		chunks_per_col = (imgsize - masksize + 1)/CHUNK_SIZE;
+		nchunks = chunks_per_row*chunks_per_col;
+		
+		/* Process chunks in a round-robin. */
+		for(int ck = rank; ck < nchunks; ck += nclusters)
+		{
+			uint64_t base;  /* Base address for remote read/write. */
+			uint64_t off_y; /* Row offset for working chunk.       */
+			uint64_t off_x; /* Column offset for working chunk.    */
+
+			/* Compute offsets. */
+			off_y = (ck/chunks_per_col)*CHUNK_SIZE*imgsize;
+			off_x = (ck%chunks_per_row)*CHUNK_SIZE;
+
+			base = OFF_IMAGE +
+				off_y + /* Vertical skip.   */
+				off_x;  /* Horizontal skip. */
+
+			memreads(chunk,
+				base,
+				imgsize,
+				tilesize,
+				tilesize
+			);
+		
+			gauss_filter();
+			
+			base = OFF_NEWIMAGE +
+				halosize*imgsize + off_y + /* Vertical skip.   */
+				halosize + off_x;          /* Horizontal skip. */
+
+			memwrites(newchunk,
+				base,
+				imgsize,
+				CHUNK_SIZE,
+				CHUNK_SIZE
+			);
+		}
+	
+	t[3] = k1_timer_get();
+	time_cpu = k1_timer_diff(t[2], t[3]) - (time_network[0] - time_network[1]);
+
+	printf("%d;%" PRIu64 ";%" PRIu64 ";%" PRIu64 ";%d;%d;%d;%d\n",
+		rank,
+		time_network[0],
+		time_network[1],
+		time_cpu,
+		nread,
+		sread,
+		nwrite,
+		swrite
+	);
 	
 	return (0);
 }
