@@ -16,7 +16,7 @@
 #include "slave.h"
 #include "../../kernel.h"
 
-#define NTHREADS 13
+#define NTHREADS 16
 
 #define DELTA (NR_CCLUSTER - 1)
 
