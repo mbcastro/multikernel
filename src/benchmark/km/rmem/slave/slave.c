@@ -16,7 +16,7 @@
 #include "slave.h"
 #include "../../kernel.h"
 
-#define NTHREADS 16
+#define NTHREADS 13
 
 #define DELTA (NR_CCLUSTER - 1)
 
@@ -82,7 +82,7 @@ static void populate(void)
 	barrier_wait(barrier);
 
 	n = ncentroids*dimension*sizeof(float);
-	assert(n < sizeof(centroids));
+	assert(n <= sizeof(centroids));
 	t[0] = k1_timer_get();
 		memread(OFF_CENTROIDS, &centroids[0], n);
 	t[1] = k1_timer_get();
@@ -199,7 +199,7 @@ static void compute_centroids(void)
 			continue;
 
 		n = lncentroids*dimension*sizeof(float);
-		assert(n < sizeof(lpcentroids));
+		assert(n <= sizeof(lpcentroids));
 		t[0] = k1_timer_get();
 			memread(OFF_PCENTROIDS(i, rank*(ncentroids/nclusters)*dimension),
 				&LPCENTROID(0),
@@ -210,7 +210,7 @@ static void compute_centroids(void)
 		nread++; sread += n;
 
 		n = lncentroids*sizeof(int);
-		assert(n < sizeof(lppopulation));
+		assert(n <= sizeof(lppopulation));
 		t[0] = k1_timer_get();
 			memread(OFF_PPOPULATION(i, rank*(ncentroids/nclusters)),
 				&LPPOPULATION(0),
@@ -375,7 +375,7 @@ int main(int argc, char **argv)
 
 		/* Read local data from remote memory. */
 		n = lnpoints*dimension*sizeof(float);
-		assert(n < sizeof(lpoints));
+		assert(n <= sizeof(lpoints));
 		t[0] = k1_timer_get();
 			memread(OFF_POINTS(rank*(npoints/nclusters), dimension),
 				&lpoints[0],
@@ -386,7 +386,7 @@ int main(int argc, char **argv)
 		nread++; sread += n;
 
 		n = lnpoints*sizeof(int);
-		assert(n < sizeof(lmap));
+		assert(n <= sizeof(lmap));
 		t[0] = k1_timer_get();
 			memread(OFF_MAP(rank*(npoints/nclusters)),
 				&lmap[0],
