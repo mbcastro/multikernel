@@ -9,7 +9,7 @@
 
 #include <nanvix/arch/mppa.h>
 #include <stddef.h>
-
+#include "../../kernel.h"
 
 /* Message types. */
 #define DIE          0 /* Die.                */
@@ -22,15 +22,10 @@
 
 
 
-
 /*============================================================================*
  *                             Mini-Buckets Library
  *============================================================================*/
 
-/*
- * Size of mini-bucket.
- */
-#define MINIBUCKET_SIZE 262144
 
 /*
  * Mini-bucket.

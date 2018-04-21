@@ -89,7 +89,10 @@ then
 		run2 "gf-rmem.img" "gf-rmem-master" "rmem-server" "--nclusters $NCLUSTERS --class $CLASS"	
 	elif [[ $2 == "is" ]];
 	then
-		echo "Running IS"
-		run1 "is.img" "is-master" "--nclusters $NCLUSTERS --class $CLASS"
+
+		echo "Running IS PORTAL"
+		run1 "is-portal.img" "is-portal-master" "--nclusters $NCLUSTERS --class $CLASS"
+		#echo "Running IS RMEM"
+		#run2 "is-rmem.img" "is-rmem-master" "rmem-server" "--nclusters $NCLUSTERS --class $CLASS"	
 	fi
 fi

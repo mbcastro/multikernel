@@ -248,13 +248,65 @@ km-portal-objs := km-portal-master km-portal-slave
 km-portal-name := km-portal.img
 
 #=============================================================================
-# Insertion_sort Benchmark Kernel
+# Insertion Sort RMEM Benchmark Kernel
 #=============================================================================
 
-cluster-bin += is-slave
-is-slave-srcs := $(SRCDIR)/benchmark/is/slave/slave.c    \
-					 $(SRCDIR)/kernel/arch/mppa/mailbox.c     \
-					 $(SRCDIR)/benchmark/is/slave/sort.c   \
+cluster-bin += is-rmem-slave
+is-rmem-slave-srcs := $(SRCDIR)/benchmark/is/rmem/slave/slave.c    \
+					 $(SRCDIR)/benchmark/is/rmem/slave/sort.c   \
+					 $(SRCDIR)/kernel/arch/mppa/timer.c  \
+					 $(SRCDIR)/kernel/arch/mppa/mailbox.c  \
+					 $(SRCDIR)/kernel/arch/mppa/barrier.c  \
+					 $(SRCDIR)/kernel/arch/mppa/portal.c  \
+					 $(SRCDIR)/kernel/arch/mppa/name.c    \
+					 $(SRCDIR)/kernel/arch/mppa/core.c    \
+					 $(SRCDIR)/kernel/sys/meminit.c       \
+					 $(SRCDIR)/kernel/sys/memread.c       \
+					 $(SRCDIR)/kernel/sys/memwrite.c
+#$(SRCDIR)/benchmark/is/slave/ipc.c
+
+# Toolchain Configuration
+is-rmem-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+is-rmem-slave-cflags += -fopenmp
+is-rmem-slave-lflags := -lmppaipc -lm -lgomp
+
+io-bin += is-rmem-master
+is-rmem-master-srcs := $(SRCDIR)/benchmark/is/rmem/master/main.c    \
+					  $(SRCDIR)/benchmark/is/rmem/master/bucketsort.c   \
+					  $(SRCDIR)/benchmark/is/rmem/master/bucket.c \
+					  $(SRCDIR)/benchmark/is/rmem/master/minibucket.c \
+					  $(SRCDIR)/benchmark/is/rmem/master/ipc.c  \
+					  $(SRCDIR)/benchmark/is/rmem/master/message.c \
+					  $(SRCDIR)/benchmark/is/rmem/master/util.c    \
+					  $(SRCDIR)/kernel/arch/mppa/timer.c  \
+					  $(SRCDIR)/kernel/arch/mppa/mailbox.c  \
+					  $(SRCDIR)/kernel/arch/mppa/portal.c  \
+					  $(SRCDIR)/kernel/arch/mppa/barrier.c  \
+					  $(SRCDIR)/kernel/arch/mppa/name.c    \
+					  $(SRCDIR)/kernel/arch/mppa/core.c    \
+					  $(SRCDIR)/kernel/sys/meminit.c    \
+					  $(SRCDIR)/kernel/sys/memread.c    \
+					  $(SRCDIR)/kernel/sys/memwrite.c    
+
+
+#$(SRCDIR)/benchmark/is/master/ipc.c     
+
+# Toolchain Configuration
+is-rmem-master-system := rtems
+is-rmem-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+is-rmem-master-lflags := -lmppaipc -pthread
+
+is-rmem-objs := rmem-server is-rmem-master is-rmem-slave 
+is-rmem-name := is-rmem.img
+
+
+#=============================================================================
+# Insertion Sort Portal Benchmark Kernel
+#=============================================================================
+
+cluster-bin += is-portal-slave
+is-portal-slave-srcs := $(SRCDIR)/benchmark/is/portal/slave/slave.c    \
+					 $(SRCDIR)/benchmark/is/portal/slave/sort.c   \
 					 $(SRCDIR)/kernel/arch/mppa/timer.c  \
 					 $(SRCDIR)/kernel/arch/mppa/portal.c  \
 					 $(SRCDIR)/kernel/arch/mppa/name.c    \
@@ -262,34 +314,33 @@ is-slave-srcs := $(SRCDIR)/benchmark/is/slave/slave.c    \
 #$(SRCDIR)/benchmark/is/slave/ipc.c
 
 # Toolchain Configuration
-is-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
-is-slave-cflags += -fopenmp
-is-slave-lflags := -lmppaipc -lm -lgomp
+is-portal-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+is-portal-slave-cflags += -fopenmp
+is-portal-slave-lflags := -lmppaipc -lm -lgomp
 
-io-bin += is-master
-is-master-srcs := $(SRCDIR)/benchmark/is/master/main.c    \
-					  $(SRCDIR)/kernel/arch/mppa/mailbox.c     \
-					  $(SRCDIR)/benchmark/is/master/bucketsort.c   \
-					  $(SRCDIR)/benchmark/is/master/bucket.c \
-					  $(SRCDIR)/benchmark/is/master/minibucket.c \
+io-bin += is-portal-master
+is-portal-master-srcs := $(SRCDIR)/benchmark/is/portal/master/main.c    \
+					  $(SRCDIR)/benchmark/is/portal/master/bucketsort.c   \
+					  $(SRCDIR)/benchmark/is/portal/master/bucket.c \
+					  $(SRCDIR)/benchmark/is/portal/master/minibucket.c \
+					  $(SRCDIR)/benchmark/is/portal/master/ipc.c  \
+					  $(SRCDIR)/benchmark/is/portal/master/message.c \
+					  $(SRCDIR)/benchmark/is/portal/master/util.c    \
 					  $(SRCDIR)/kernel/arch/mppa/timer.c  \
 					  $(SRCDIR)/kernel/arch/mppa/portal.c  \
 					  $(SRCDIR)/kernel/arch/mppa/name.c    \
-					  $(SRCDIR)/kernel/arch/mppa/core.c    \
-					  $(SRCDIR)/benchmark/is/master/ipc.c  \
-					  $(SRCDIR)/benchmark/is/master/message.c \
-					  $(SRCDIR)/benchmark/is/master/util.c    
+					  $(SRCDIR)/kernel/arch/mppa/core.c    
 
 
 #$(SRCDIR)/benchmark/is/master/ipc.c     
 
 # Toolchain Configuration
-is-master-system := rtems
-is-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
-is-master-lflags := -lmppaipc -pthread
+is-portal-master-system := rtems
+is-portal-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+is-portal-master-lflags := -lmppaipc -pthread
 
-is-objs := rmem-server is-master is-slave 
-is-name := is.img
+is-portal-objs := is-portal-master is-portal-slave 
+is-portal-name := is-portal.img
 
 #=============================================================================
 # Gaussian Filter RMEM Benchmark Kernel
@@ -373,6 +424,6 @@ gf-portal-name := gf-portal.img
 # MPPA Binary
 #=============================================================================
 
-mppa-bin := portal async mailbox rmem is km-rmem km-portal gf-rmem gf-portal
+mppa-bin := portal async mailbox rmem is-rmem is-portal km-rmem km-portal gf-rmem gf-portal
 
 include $(K1_TOOLCHAIN_DIR)/share/make/Makefile.kalray
