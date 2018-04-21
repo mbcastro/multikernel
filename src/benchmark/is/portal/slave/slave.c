@@ -16,6 +16,7 @@
 #include "util.c"
 #include "message.c"
 
+#define NUM_THREADS 16
 /* Timing statistics. */
 
 long start;
@@ -33,7 +34,7 @@ struct
 /*
  * Sorts an array of numbers.
  */
-extern void sort2power(int *array, int size, int chunksize);
+extern void sort2power(int rank, int *array, int size, int chunksize);
 
 /*
  * Obeys master.
@@ -44,7 +45,6 @@ int main(int argc, char **argv)
     int id;              /* Bucket ID.  */
     struct message *msg; /* Message.    */
 
-#define NUM_THREADS 4
 
     omp_set_num_threads(NUM_THREADS);
 
@@ -83,7 +83,7 @@ int main(int argc, char **argv)
                 start = k1_timer_get();
                 for (i = block.size; i < (int)(CLUSTER_WORKLOAD/sizeof(int)); i++)
                     block.elements[i] = INT_MAX;
-                sort2power(block.elements, CLUSTER_WORKLOAD/sizeof(int), CLUSTER_WORKLOAD/NUM_THREADS);
+                sort2power(rank, block.elements, (int)(CLUSTER_WORKLOAD/sizeof(int)), (int)(CLUSTER_WORKLOAD/NUM_THREADS));
                 end = k1_timer_get();
                 total += k1_timer_diff(start, end);
                 /* Send

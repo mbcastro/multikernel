@@ -48,6 +48,10 @@ static void *thread_main(void *args)
 		j += bucket_size(t->args.done[i]);
 	}
 
+	//printf("========================T%d=================\n", t->args.j0);
+	//for (int i = t->args.j0; i < j; i+=500) {
+	//	printf("Elem: %d\n", t->args.array[i]);
+	//}
 	pthread_exit(NULL);
 	return (NULL);
 }
@@ -68,6 +72,7 @@ static void rebuild_array(struct bucket **done, int *array)
 	{
 		tdata[i].args.i0 = i*BUCKETS_PER_CORE;
 		tdata[i].args.in = (i + 1)*BUCKETS_PER_CORE;
+		tdata[i].args.j0 = j;
 		tdata[i].args.done = done;
 		tdata[i].args.array = array;
 		pthread_create(&tdata[i].tid, NULL, thread_main, (void *)&tdata[i]);
@@ -187,6 +192,10 @@ extern void bucketsort(int *array, int n)
 							minib->size*sizeof(int));
 					
 					bucket_push(done[msg->u.sortresult.id], minib);
+				//	printf("========================J%d=================\n", j);
+				//	for (i = 0; i < minib->size; i += 100) {
+				//		printf("Elem: %d\n", minib->elements[i]);
+				//	}
 
 				}
 			}
@@ -214,13 +223,20 @@ extern void bucketsort(int *array, int n)
 		bucket_push(done[msg->u.sortresult.id], minib);
 
 	}
-
+//for (i = 0; i < NUM_BUCKETS; i++) {
+//	for (j = 0; j < done[i]->size; j += 100) {
+//		printf("Elem: %d\n", (bucket_pop(done[i]))->elements[j]);
+//	}
+//}
 	message_destroy(msg);
 	start = k1_timer_get();
 	rebuild_array(done, array);
 	end = k1_timer_get();
 	master += k1_timer_diff(start, end);
 
+//	for (j = 0; j < n; j += 1000) {
+//		printf("Elem: %d\n", array[j]);
+//	}
 	/* House
 	 * keeping.
 	 */
