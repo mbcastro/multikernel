@@ -85,13 +85,10 @@ static void kernel_write(int size, int nclusters)
 		if (i == 0)
 			continue;
 
-		if (clusterid != 0)
-			continue;
-
 		total_time = k1_timer_diff(t[0], t[1]);
 		printf("%s;%d;%d;%ld\n",
 			"write",
-			nclusters,
+			clusterid,
 			size,
 			total_time
 		);

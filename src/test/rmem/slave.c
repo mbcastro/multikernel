@@ -40,21 +40,22 @@ static char data[RMEM_BLOCK_SIZE];
  */
 static void kernel_write(int size, int nclusters, int clusterid)
 {
+	int barrier;
 	long start, end;
 	long total_time;
 
+	barrier = barrier_open(nclusters);
+
 	/* Benchmark. */
-	for (int i = 0; i < NITERATIONS; i++)
+	for (int i = 0; i <= NITERATIONS; i++)
 	{
+		barrier_wait(barrier);
 		start = k1_timer_get();
 
 			memwrite(i, data, size);
 		
+		barrier_wait(barrier);
 		end = k1_timer_get();
-
-		/* Do not profile. */
-		if (clusterid != 0)
-			continue;
 
 		/* Warmup. */
 		if (i == 0)
@@ -64,11 +65,14 @@ static void kernel_write(int size, int nclusters, int clusterid)
 
 		printf("%s;%d;%d;%ld\n",
 				"write",
-				nclusters,
+				clusterid,
 				size,
 				total_time
 		);
 	}
+
+	/* House keeping. */
+	barrier_close(barrier);
 }
 
 /*====================================================================*
@@ -80,17 +84,22 @@ static void kernel_write(int size, int nclusters, int clusterid)
  */
 static void kernel_read(int size, int nclusters, int clusterid)
 {
+	int barrier;
 	long start, end;
 	long total_time;
 
+	barrier = barrier_open(nclusters);
+
 	/* Benchmark. */
 	k1_timer_init();
-	for (int i = 0; i < NITERATIONS; i++)
+	for (int i = 0; i <= NITERATIONS; i++)
 	{
 		start = k1_timer_get();
+		barrier_wait(barrier);
 
 			memread(i, data, size);
-		
+			
+		barrier_wait(barrier);
 		end = k1_timer_get();
 
 		/* Do not profile. */
@@ -105,11 +114,14 @@ static void kernel_read(int size, int nclusters, int clusterid)
 
 		printf("%s;%d;%d;%ld\n",
 				"read",
-				nclusters,
+				clusterid,
 				size,
 				total_time
 		);
 	}
+
+	/* House keeping. */
+	barrier_close(barrier);
 }
 
 /*====================================================================*
@@ -122,7 +134,6 @@ static void kernel_read(int size, int nclusters, int clusterid)
 int main(int argc, char **argv)
 {
 	int size;
-	int barrier;
 	int nclusters;
 	int clusterid;
 	
@@ -139,22 +150,10 @@ int main(int argc, char **argv)
 	 */
 	memset(data, clusterid, size);
 
-	k1_timer_init();
-
-	/* Wait master IO cluster. */
-	barrier = barrier_open(nclusters);
-	barrier_wait(barrier);
-
 	if (!strcmp(argv[1], "write"))
 		kernel_write(size, nclusters, clusterid);
 	else
 		kernel_read(size, nclusters, clusterid);
-
-	/* Wait master IO cluster. */
-	barrier_wait(barrier);
-
-	/* House keeping. */
-	barrier_close(barrier);
 
 	return (EXIT_SUCCESS);
 }

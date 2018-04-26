@@ -42,7 +42,7 @@ int main(int argc, const char **argv)
 
 	clusterid = k1_get_cluster_id();
 
-	assert(mppa_async_malloc(MPPA_ASYNC_DDR_0, size, &offset, NULL) == 0);
+	assert(mppa_async_malloc(MPPA_ASYNC_DDR_0,  NR_CCLUSTER*size, &offset, NULL) == 0);
 
 	k1_timer_init();
 
@@ -53,7 +53,7 @@ int main(int argc, const char **argv)
 
 		assert(mppa_async_put(buffer,
 				MPPA_ASYNC_DDR_0,
-				offset,
+				offset + clusterid*size,
 				size,
 				NULL) == 0
 		);
@@ -65,13 +65,10 @@ int main(int argc, const char **argv)
 		if (i == 0)
 			continue;
 
-		if (clusterid != 0)
-			continue;
-
 		total_time = k1_timer_diff(t[0], t[1]);
 		printf("%s;%d;%d;%ld\n",
 			"write",
-			atoi(argv[1]),
+			clusterid,
 			size,
 			total_time
 		);
