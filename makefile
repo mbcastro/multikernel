@@ -421,9 +421,52 @@ gf-portal-objs := gf-portal-master gf-portal-slave
 gf-portal-name := gf-portal.img
 
 #=============================================================================
+# Gaussian Filter RMEM Benchmark Kernel - CHUNKS IN MASTER
+#=============================================================================
+
+cluster-bin += gf-rmem-pre-chunk2-slave
+gf-rmem-pre-chunk2-slave-srcs := $(SRCDIR)/benchmark/gf/rmem-pre-chunk2/slave/slave.c     \
+					 $(SRCDIR)/benchmark/gf/util.c        \
+					 $(SRCDIR)/kernel/arch/mppa/mailbox.c \
+					 $(SRCDIR)/kernel/arch/mppa/portal.c  \
+					 $(SRCDIR)/kernel/arch/mppa/barrier.c \
+					 $(SRCDIR)/kernel/arch/mppa/name.c    \
+					 $(SRCDIR)/kernel/arch/mppa/timer.c   \
+					 $(SRCDIR)/kernel/arch/mppa/core.c    \
+					 $(SRCDIR)/kernel/sys/meminit.c       \
+					 $(SRCDIR)/kernel/sys/memread.c       \
+					 $(SRCDIR)/kernel/sys/memwrite.c
+
+# Toolchain Configuration
+gf-rmem-pre-chunk2-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+gf-rmem-pre-chunk2-slave-cflags += -fopenmp
+gf-rmem-pre-chunk2-slave-lflags := -lmppaipc -lm -lgomp
+
+io-bin += gf-rmem-pre-chunk2-master
+gf-rmem-pre-chunk2-master-srcs := $(SRCDIR)/benchmark/gf/rmem-pre-chunk2/master/main.c \
+					  $(SRCDIR)/benchmark/gf/rmem-pre-chunk2/master/master.c \
+					  $(SRCDIR)/benchmark/gf/rmem-pre-chunk2/master/ipc.c    \
+					  $(SRCDIR)/benchmark/gf/util.c               \
+					  $(SRCDIR)/kernel/arch/mppa/mailbox.c        \
+					  $(SRCDIR)/kernel/arch/mppa/portal.c         \
+					  $(SRCDIR)/kernel/arch/mppa/barrier.c        \
+					  $(SRCDIR)/kernel/arch/mppa/name.c           \
+					  $(SRCDIR)/kernel/arch/mppa/core.c           \
+					  $(SRCDIR)/kernel/sys/meminit.c              \
+					  $(SRCDIR)/kernel/sys/memread.c              \
+					  $(SRCDIR)/kernel/sys/memwrite.c
+ 
+# Toolchain Configuration
+gf-rmem-pre-chunk2-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+gf-rmem-pre-chunk2-master-lflags := -lmppaipc -lm
+
+gf-rmem-pre-chunk2-objs := rmem-server gf-rmem-pre-chunk2-master gf-rmem-pre-chunk2-slave
+gf-rmem-pre-chunk2-name := gf-rmem-pre-chunk2.img
+
+#=============================================================================
 # MPPA Binary
 #=============================================================================
 
-mppa-bin := portal async mailbox rmem is-rmem is-portal km-rmem km-portal gf-rmem gf-portal
+mppa-bin := portal async mailbox rmem is-rmem is-portal km-rmem km-portal gf-rmem gf-portal gf-rmem-pre-chunk2
 
 include $(K1_TOOLCHAIN_DIR)/share/make/Makefile.kalray
