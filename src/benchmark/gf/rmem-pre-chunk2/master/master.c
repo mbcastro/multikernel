@@ -34,7 +34,7 @@
  * @param mask    Gaussian mask.
  * @param massize Size of mask.
  */
-void gauss_filter(unsigned char *img, int imgsize, const double *mask, int masksize)
+void gauss_filter(unsigned char *img, int imgsize, const double *mask, int masksize, unsigned char *chunk, int chunksize)
 {	
 	int barrier;
 	const int imgsize2 = imgsize*imgsize;
@@ -46,13 +46,14 @@ void gauss_filter(unsigned char *img, int imgsize, const double *mask, int masks
 
 	/* Write parameters to remote memory. */
 	memwrite(OFF_MASKSIZE,  &masksize,  sizeof(int));
-	memwrite(OFF_IMGSIZE,   &imgsize,   sizeof(int));
+    memwrite(OFF_IMGSIZE,   &imgsize,   sizeof(int));
+	memwrite(OFF_CHUNKSIZE, &chunksize, sizeof(int));
 	memwrite(OFF_MASK,      mask,       masksize2*sizeof(double));
-	memwrite(OFF_IMAGE,     img,        imgsize2*sizeof(unsigned char));
+	memwrite(OFF_CHUNKS,    chunk,      chunksize*sizeof(unsigned char));
 
 	/* Clean up before getting the output image. */
 	memset(img, 0, imgsize2*sizeof(unsigned char)); 
-	memwrite(OFF_NEWIMAGE, img, imgsize2*sizeof(unsigned char));
+	memwrite(OFF_IMAGE, img, imgsize2*sizeof(unsigned char));
 
 	/* Spawn slave processes. */
 	spawn_slaves();
@@ -61,11 +62,29 @@ void gauss_filter(unsigned char *img, int imgsize, const double *mask, int masks
 	join_slaves();
 
 	/* Read output image. */
-	memread(OFF_NEWIMAGE,
+	memread(OFF_IMAGE,
 		img,
 		imgsize2*sizeof(unsigned char)
 	);
 
+    unsigned char *newimg = smalloc(imgsize*imgsize*sizeof(unsigned char));
+    memset(newimg, 0, imgsize2*sizeof(unsigned char)); 
+
+    /*
+     * Rearrange chunks.
+     */
+    int half_mask = masksize >> 1;
+    int chunk_offset = 0;
+    for (int chunkI = 0; chunkI < imgsize-masksize+1; chunkI += CHUNK_SIZE) {
+        for (int chunkJ = 0; chunkJ < imgsize-masksize+1; chunkJ += CHUNK_SIZE) {
+            for (int chunk_rows = 0; chunk_rows < CHUNK_SIZE; ++chunk_rows) {
+                memcpy(&newimg[(chunkI+half_mask)*imgsize + (chunk_rows*imgsize) + chunkJ+half_mask], &img[chunk_offset], CHUNK_SIZE);
+                chunk_offset += CHUNK_SIZE;
+            }
+        }
+    }
+
 	/* House keeping. */
 	barrier_close(barrier);
+    free(newimg);
 }
