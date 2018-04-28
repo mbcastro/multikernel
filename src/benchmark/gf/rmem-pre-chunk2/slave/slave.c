@@ -53,31 +53,22 @@ static size_t sread = 0;
  *
  * @param buffer Target buffer.
  * @param base   Base address on remote memory.
- * @param offset Stride offset.
- * @param stride Stride size.
- * @param count  Number of strides to write.
+ * @param offset Chunk offset.
  */
 static void memwrites(
 	const unsigned char *buffer,
 	uint64_t base,
-	uint64_t offset,
-	size_t stride,
-	size_t count
+	uint64_t offset
 ) {
-	int dsize = sizeof(unsigned char);
-	
-	for (size_t i = 0; i < count; i++)
-	{
 		t[4] = k1_timer_get();
-			memwrite(base + i*offset*dsize,
-				&buffer[i*stride],
-				stride*dsize
+			memwrite(base + offset,
+				buffer,
+				sizeof(newchunk)
 			);
 		t[5] = k1_timer_get();
 		time_network[1] += k1_timer_diff(t[4], t[5]);
 		nwrite++;
-		swrite += stride*dsize;
-	}
+		swrite += sizeof(newchunk);
 }
 
 /*===========================================================================*
@@ -89,31 +80,22 @@ static void memwrites(
  *
  * @param buffer Target buffer.
  * @param base   Base address on remote memory.
- * @param offset Stride offset.
- * @param stride Stride size.
- * @param count  Number of strides to read.
+ * @param offset Chunk offset.
  */
 static void memreads(
 	unsigned char *buffer,
 	uint64_t base,
-	uint64_t offset,
-	size_t stride,
-	size_t count
+	uint64_t offset
 ) {
-	int dsize = sizeof(unsigned char);
-	
-	for (size_t i = 0; i < count; i++)
-	{
 		t[0] = k1_timer_get();
-			memread(base + i*offset*dsize,
-				&buffer[i*stride],
-				stride*dsize
+			memread(base + offset,
+				buffer,
+				sizeof(chunk)
 			);
 		t[1] = k1_timer_get();
 		time_network[0] += k1_timer_diff(t[0], t[1]);
 		nread++;
-		sread += stride*dsize;
-	}
+		sread += sizeof(chunk);
 }
 
 /*===========================================================================*
@@ -146,7 +128,6 @@ static void gauss_filter(void)
 				for (int maskJ = 0; maskJ < masksize; maskJ++)
 					pixel += CHUNK(chunkI + maskI, chunkJ + maskJ) * MASK(maskI, maskJ);
 			}
-		   
 			NEWCHUNK(chunkI, chunkJ) = (pixel > 255) ? 255 : (int)pixel;
 		}
 	}
@@ -162,8 +143,6 @@ static void gauss_filter(void)
 int main(int argc, char **argv)
 {
 	int rank;           /* Cluster rank.             */
-	int halosize;       /* Halo size.                */
-	int tilesize;       /* Tile size.                */
 	int nchunks;        /* Total number of chunks.   */
 	int chunks_per_row; /* Number of chunks per row. */
 	int chunks_per_col; /* Number of chunks per col. */
@@ -186,9 +165,6 @@ int main(int argc, char **argv)
 		time_network[0] += k1_timer_diff(t[0], t[1]);
 		nread += 3; sread += 2*sizeof(int) + masksize*masksize*sizeof(double);
 
-		halosize = masksize/2;
-		tilesize = (CHUNK_SIZE + masksize - 1);
-
 		/* Find the number of chunks that will be generated. */
 		chunks_per_row = (imgsize - masksize + 1)/CHUNK_SIZE;
 		chunks_per_col = (imgsize - masksize + 1)/CHUNK_SIZE;
@@ -197,36 +173,28 @@ int main(int argc, char **argv)
 		/* Process chunks in a round-robin. */
 		for(int ck = rank; ck < nchunks; ck += nclusters)
 		{
-			uint64_t base;  /* Base address for remote read/write. */
-			uint64_t off_y; /* Row offset for working chunk.       */
-			uint64_t off_x; /* Column offset for working chunk.    */
+            uint64_t base;   /* Base address for remote read/write. */
+			uint64_t offset; /* Offset to working chunk.            */
 
 			/* Compute offsets. */
-			off_y = (ck/chunks_per_col)*CHUNK_SIZE*imgsize;
-			off_x = (ck%chunks_per_row)*CHUNK_SIZE;
+			offset = ck * (CHUNK_SIZE+masksize-1) * (CHUNK_SIZE+masksize-1);
 
-			base = OFF_IMAGE +
-				off_y + /* Vertical skip.   */
-				off_x;  /* Horizontal skip. */
+			base = OFF_CHUNKS;
 
 			memreads(chunk,
 				base,
-				imgsize,
-				tilesize,
-				tilesize
+                offset
 			);
-		
-			gauss_filter();
-			
-			base = OFF_NEWIMAGE +
-				halosize*imgsize + off_y + /* Vertical skip.   */
-				halosize + off_x;          /* Horizontal skip. */
 
+			gauss_filter();
+
+            /* Compute offsets. */
+            offset = ck*CHUNK_SIZE2;
+
+            base = OFF_IMAGE;
 			memwrites(newchunk,
 				base,
-				imgsize,
-				CHUNK_SIZE,
-				CHUNK_SIZE
+				offset
 			);
 		}
 	
