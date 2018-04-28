@@ -86,7 +86,9 @@ then
 		echo "Running GF PORTAL"
 		run1 "gf-portal.img" "gf-portal-master" "--nclusters $NCLUSTERS --class $CLASS"
 		echo "Running GF RMEM"
-		run2 "gf-rmem.img" "gf-rmem-master" "rmem-server" "--nclusters $NCLUSTERS --class $CLASS"	
+		run2 "gf-rmem.img" "gf-rmem-master" "rmem-server" "--nclusters $NCLUSTERS --class $CLASS"
+        echo "Running GF RMEM chunk on master"
+        run2 "gf-rmem-pre-chunk2.img" "gf-rmem-pre-chunk2-master" "rmem-server" "--nclusters $NCLUSTERS --class $CLASS"	
 	elif [[ $2 == "is" ]];
 	then
 
