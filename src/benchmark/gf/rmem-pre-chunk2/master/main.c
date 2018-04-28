@@ -34,7 +34,7 @@ struct problem
 };
 
 /* Problem sizes. */
-static struct problem tiny     = {  7,    70};  /*   64  + (7-1)  =    70 */
+static struct problem tiny     = {  7,  2054 }; /* 2048  + (7-1)  =  2054 */
 static struct problem small    = {  7,  2054 }; /* 2048  + (7-1)  =  2054 */
 static struct problem standard = {  7,  4102 }; /* 4096  + (7-1)  =  4102 */
 static struct problem large    = { 11,  8202 }; /* 8192  + (11-1) =  8202 */
@@ -183,7 +183,6 @@ static void generate_mask(double *mask)
 	}
 }
 
-
 /*===================================================================*
  * prepare_chunks()                                                  *
  *===================================================================*/
@@ -193,15 +192,15 @@ static void generate_mask(double *mask)
  */
 static void prepare_chunks(unsigned char *img, unsigned char *chunk)
 {
-	int chunk_offset = 0;
-	for (int chunkI = 0; chunkI < p->imgsize; chunkI += CHUNK_SIZE) {
-		for (int chunkJ = 0; chunkJ < p->imgsize; chunkJ += CHUNK_SIZE) {
-			for (int chunk_rows = 0; chunk_rows < CHUNK_SIZE; ++chunk_rows) {
-				memcpy(&chunk[chunk_offset], &img[(chunkI*p->imgsize) + (chunk_rows*p->imgsize) + chunkJ], TILE_SIZE);
-				chunk_offset += TILE_SIZE;
-			}
-		}
-	}
+    int chunk_offset = 0;
+    for (int chunkI = 0; chunkI < p->imgsize-p->masksize+1; chunkI += CHUNK_SIZE) {
+        for (int chunkJ = 0; chunkJ < p->imgsize-p->masksize+1; chunkJ += CHUNK_SIZE) {
+            for (int chunk_rows = 0; chunk_rows < CHUNK_SIZE+p->masksize-1; ++chunk_rows) {
+                memcpy(&chunk[chunk_offset], &img[chunkI*p->imgsize + (chunk_rows*p->imgsize) + chunkJ], CHUNK_SIZE+p->masksize-1);
+                chunk_offset += CHUNK_SIZE+p->masksize-1;
+            }
+        }
+    }
 }
 
 
@@ -215,8 +214,9 @@ static void prepare_chunks(unsigned char *img, unsigned char *chunk)
 int main(int argc, char **argv)
 {
 	double *mask;         /* Mask.  */
-	unsigned char *img;   /* Image. */
+    unsigned char *img;   /* Image. */
 	unsigned char *chunk; /* Chunk. */
+
 	
 	/*---------------------------------------------------------------*
 	 * Benchmark Initialization                                      *
@@ -230,13 +230,17 @@ int main(int argc, char **argv)
 
 	img = smalloc(p->imgsize*p->imgsize*sizeof(unsigned char));
 	for (int i = 0; i < p->imgsize*p->imgsize; i++)
-		img[i] = randnum() & 0xff;
+		img[i] = randnum() & 0xff /*i % p->imgsize*/;
 	mask = smalloc(p->masksize*p->masksize*sizeof(double));
 	generate_mask(mask);
-	
-	chunk = smalloc(p->imgsize*p->imgsize*sizeof(unsigned char));
-	prepare_chunks(img, chunk);
 
+	int chunks_per_row = (p->imgsize - p->masksize + 1)/CHUNK_SIZE;
+    int chunks_per_col = (p->imgsize - p->masksize + 1)/CHUNK_SIZE;
+    int nchunks = chunks_per_row*chunks_per_col;
+    int tile_size2 = (CHUNK_SIZE+p->masksize-1)*(CHUNK_SIZE+p->masksize-1);
+
+    chunk = smalloc(nchunks*tile_size2*sizeof(unsigned char));
+    prepare_chunks(img, chunk);
 	/*---------------------------------------------------------------*
 	 * Applying filter                                               *
 	 *---------------------------------------------------------------*/
@@ -244,7 +248,7 @@ int main(int argc, char **argv)
 	if (verbose)
 		printf("applying filter...\n");
 
-		gauss_filter(img, p->imgsize, mask, p->masksize);
+		gauss_filter(img, p->imgsize, mask, p->masksize, chunk, nchunks*tile_size2);
 
 	/*---------------------------------------------------------------*
 	 * House Keeping                                                 *
