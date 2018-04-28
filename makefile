@@ -424,8 +424,8 @@ gf-portal-name := gf-portal.img
 # Gaussian Filter RMEM Benchmark Kernel - CHUNKS IN MASTER
 #=============================================================================
 
-cluster-bin += gf-rmem-pre-chunk2-slave
-gf-rmem-pre-chunk2-slave-srcs := $(SRCDIR)/benchmark/gf/rmem-pre-chunk2/slave/slave.c     \
+cluster-bin += gf-dense-slave
+gf-dense-slave-srcs := $(SRCDIR)/benchmark/gf/rmem-dense/slave/slave.c     \
 					 $(SRCDIR)/benchmark/gf/util.c        \
 					 $(SRCDIR)/kernel/arch/mppa/mailbox.c \
 					 $(SRCDIR)/kernel/arch/mppa/portal.c  \
@@ -438,14 +438,14 @@ gf-rmem-pre-chunk2-slave-srcs := $(SRCDIR)/benchmark/gf/rmem-pre-chunk2/slave/sl
 					 $(SRCDIR)/kernel/sys/memwrite.c
 
 # Toolchain Configuration
-gf-rmem-pre-chunk2-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
-gf-rmem-pre-chunk2-slave-cflags += -fopenmp
-gf-rmem-pre-chunk2-slave-lflags := -lmppaipc -lm -lgomp
+gf-dense-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+gf-dense-slave-cflags += -fopenmp
+gf-dense-slave-lflags := -lmppaipc -lm -lgomp
 
-io-bin += gf-rmem-pre-chunk2-master
-gf-rmem-pre-chunk2-master-srcs := $(SRCDIR)/benchmark/gf/rmem-pre-chunk2/master/main.c \
-					  $(SRCDIR)/benchmark/gf/rmem-pre-chunk2/master/master.c \
-					  $(SRCDIR)/benchmark/gf/rmem-pre-chunk2/master/ipc.c    \
+io-bin += gf-dense-master
+gf-dense-master-srcs := $(SRCDIR)/benchmark/gf/rmem-dense/master/main.c \
+					  $(SRCDIR)/benchmark/gf/rmem-dense/master/master.c \
+					  $(SRCDIR)/benchmark/gf/rmem-dense/master/ipc.c    \
 					  $(SRCDIR)/benchmark/gf/util.c               \
 					  $(SRCDIR)/kernel/arch/mppa/mailbox.c        \
 					  $(SRCDIR)/kernel/arch/mppa/portal.c         \
@@ -457,16 +457,16 @@ gf-rmem-pre-chunk2-master-srcs := $(SRCDIR)/benchmark/gf/rmem-pre-chunk2/master/
 					  $(SRCDIR)/kernel/sys/memwrite.c
  
 # Toolchain Configuration
-gf-rmem-pre-chunk2-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
-gf-rmem-pre-chunk2-master-lflags := -lmppaipc -lm
+gf-dense-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+gf-dense-master-lflags := -lmppaipc -lm
 
-gf-rmem-pre-chunk2-objs := rmem-server gf-rmem-pre-chunk2-master gf-rmem-pre-chunk2-slave
-gf-rmem-pre-chunk2-name := gf-rmem-pre-chunk2.img
+gf-dense-objs := rmem-server gf-dense-master gf-dense-slave
+gf-dense-name := gf-dense.img
 
 #=============================================================================
 # MPPA Binary
 #=============================================================================
 
-mppa-bin := portal async mailbox rmem is-rmem is-portal km-rmem km-portal gf-rmem gf-portal gf-rmem-pre-chunk2
+mppa-bin := portal async mailbox rmem is-rmem is-portal km-rmem km-portal gf-rmem gf-portal gf-dense
 
 include $(K1_TOOLCHAIN_DIR)/share/make/Makefile.kalray

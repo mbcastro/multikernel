@@ -30,7 +30,7 @@ void spawn_slaves(void)
 	{	
 		sprintf(arg0, "%d", i);
 		args[0] = arg0;
-		pids[i] = mppa_spawn(i, NULL, "gf-rmem-pre-chunk2-slave", (const char **)args, NULL);
+		pids[i] = mppa_spawn(i, NULL, "gf-dense-slave", (const char **)args, NULL);
 		assert(pids[i] != -1);
 	}
 }
