@@ -50,6 +50,6 @@
 	 *===============================================================*/
 
 	/* Forward definitions. */
-	extern void gauss_filter(unsigned char *, int, const double *, int);
+    extern void gauss_filter(unsigned char *, int, const double *, int, unsigned char *, int);
 
 #endif /* _MASTER_H_ */
