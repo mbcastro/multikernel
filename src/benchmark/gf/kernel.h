@@ -25,6 +25,7 @@
 
 	#define CHUNK_SIZE (512)     /* Maximum chunk size. */
 	#define MASK_SIZE   15
+    #define NCHUNKS    1024     /* Maximum number of chunks */
 
 	#define PI 3.14159265359    /* pi */
 	#define E 2.71828182845904  /* e */
@@ -41,16 +42,14 @@
 	#define SIZE_MASK        (masksize * masksize * sizeof(double))
 	#define SIZE_IMAGE       (imgsize * imgsize * sizeof(unsigned char))
 	#define SIZE_NEWIMAGE    SIZE_IMAGE
+    #define SIZE_CHUNKS      NCHUNKS * (CHUNK_SIZE+masksize-1) * (CHUNK_SIZE+masksize-1)
 
 	#define OFF_MASKSIZE   (0)
 	#define OFF_IMGSIZE    (OFF_MASKSIZE  + SIZE_MASKSIZE)
 	#define OFF_MASK       (OFF_IMGSIZE   + SIZE_IMGSIZE) 
 	#define OFF_IMAGE      (OFF_MASK      + SIZE_MASK)
-	#define OFF_NEWIMAGE   (OFF_IMAGE     + SIZE_IMAGE)
-
-	#define CHUNK_SIZE2 (CHUNK_SIZE*CHUNK_SIZE)    /**< (Chunk Size)^2        */
-	#define MASK_SIZE2 (MASK_SIZE*MASK_SIZE)       /**< (Mask Size)^2         */
-	#define TILE_SIZE (CHUNK_SIZE + MASK_SIZE - 1) /**< Size of chunk + mask. */
-	#define TILE_SIZE2 (TILE_SIZE*TILE_SIZE)       /**< (Tile Size)^2         */
+    #define OFF_NEWIMAGE   (OFF_IMAGE     + SIZE_IMAGE)
+	#define OFF_CHUNKS     (OFF_NEWIMAGE  + SIZE_NEWIMAGE)
+    #define OFF_CHUNKSIZE  (OFF_CHUNKS    + SIZE_CHUNKS)
 
 #endif /* _KERNEL_H_ */
