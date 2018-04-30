@@ -424,8 +424,8 @@ gf-portal-name := gf-portal.img
 # Gaussian Filter RMEM Benchmark Kernel - CHUNKS IN MASTER
 #=============================================================================
 
-cluster-bin += gf-dense-slave
-gf-dense-slave-srcs := $(SRCDIR)/benchmark/gf/rmem-dense/slave/slave.c     \
+cluster-bin += gf-dense-rmem-slave
+gf-dense-rmem-slave-srcs := $(SRCDIR)/benchmark/gf/rmem-dense/slave/slave.c     \
 					 $(SRCDIR)/benchmark/gf/util.c        \
 					 $(SRCDIR)/kernel/arch/mppa/mailbox.c \
 					 $(SRCDIR)/kernel/arch/mppa/portal.c  \
@@ -438,12 +438,12 @@ gf-dense-slave-srcs := $(SRCDIR)/benchmark/gf/rmem-dense/slave/slave.c     \
 					 $(SRCDIR)/kernel/sys/memwrite.c
 
 # Toolchain Configuration
-gf-dense-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
-gf-dense-slave-cflags += -fopenmp
-gf-dense-slave-lflags := -lmppaipc -lm -lgomp
+gf-dense-rmem-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+gf-dense-rmem-slave-cflags += -fopenmp
+gf-dense-rmem-slave-lflags := -lmppaipc -lm -lgomp
 
-io-bin += gf-dense-master
-gf-dense-master-srcs := $(SRCDIR)/benchmark/gf/rmem-dense/master/main.c \
+io-bin += gf-dense-rmem-master
+gf-dense-rmem-master-srcs := $(SRCDIR)/benchmark/gf/rmem-dense/master/main.c \
 					  $(SRCDIR)/benchmark/gf/rmem-dense/master/master.c \
 					  $(SRCDIR)/benchmark/gf/rmem-dense/master/ipc.c    \
 					  $(SRCDIR)/benchmark/gf/util.c               \
@@ -457,16 +457,16 @@ gf-dense-master-srcs := $(SRCDIR)/benchmark/gf/rmem-dense/master/main.c \
 					  $(SRCDIR)/kernel/sys/memwrite.c
  
 # Toolchain Configuration
-gf-dense-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
-gf-dense-master-lflags := -lmppaipc -lm
+gf-dense-rmem-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+gf-dense-rmem-master-lflags := -lmppaipc -lm
 
-gf-dense-objs := rmem-server gf-dense-master gf-dense-slave
-gf-dense-name := gf-dense.img
+gf-dense-rmem-objs := rmem-server gf-dense-rmem-master gf-dense-rmem-slave
+gf-dense-rmem-name := gf-dense-rmem.img
 
 #=============================================================================
 # MPPA Binary
 #=============================================================================
 
-mppa-bin := portal async mailbox rmem is-rmem is-portal km-rmem km-portal gf-rmem gf-portal gf-dense
+mppa-bin := portal async mailbox rmem is-rmem is-portal km-rmem km-portal gf-rmem gf-portal gf-dense-rmem
 
 include $(K1_TOOLCHAIN_DIR)/share/make/Makefile.kalray

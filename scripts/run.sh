@@ -88,7 +88,7 @@ then
 		echo "Running GF RMEM"
 		run2 "gf-rmem.img" "gf-rmem-master" "rmem-server" "--nclusters $NCLUSTERS --class $CLASS"
 		echo "Running GF RMEM DENSE"
-		run2 "gf-dense.img" "gf-dense-master" "rmem-server" "--nclusters $NCLUSTERS --class $CLASS"	
+		run2 "gf-dense-rmem.img" "gf-dense-rmem-master" "rmem-server" "--nclusters $NCLUSTERS --class $CLASS"	
 	elif [[ $2 == "is" ]];
 	then
 
