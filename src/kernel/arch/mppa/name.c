@@ -30,7 +30,7 @@ static int nprocess = 0;
 /**
  * @brief Lookup table of cluster names.
  */
-static const struct {
+static struct {
 	int id;     /**< Cluster ID.  */
 	int dma;    /**< DMA channel. */
 	char *name; /**< Portal name. */
@@ -173,11 +173,12 @@ void name_remotes(char *remotes, int local)
  * @param DMA		DMA channel.
  * @param name	Portal name.
  */
-int register_name(int id, int dma, char *name){
+int register_name(int id, int dma, const char name[])
+{
 	if(nprocess >= NR_DMA)
 		return -1;
 	names[nprocess].id = id;
 	names[nprocess].dma = dma;
-	names[nprocess].name = name;
+	sprintf(names[nprocess].name, "%s", name);
 	return ++nprocess;
 }

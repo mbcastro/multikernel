@@ -31,7 +31,7 @@
 	extern int name_cluster_dma(const char *);
 	extern const char *name_cluster_name(int);
 	extern void name_remotes(char *, int);
-	extern int register_name(int id, int dma, char *name);
+	extern int register_name(int, int, const char *);
 
 /*=======================================================================*
  * Mailbox                                                               *

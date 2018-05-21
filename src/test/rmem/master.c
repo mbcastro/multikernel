@@ -43,9 +43,10 @@ static int pids[NR_CCLUSTER];
  * @param argv 			NULL-terminated array of pointers to argument strings.
  * @param envp 			NULL-terminated array of pointers to environment strings.
  */
- mppa_pid_t mppa_spawn_register(int node, const void *context[], const char *name, const char *argv[], const char *envp[]){
-	 assert((pids[node] = mppa_spawn(node, context, name, argv, envp)) != -1);
-
+ mppa_pid_t mppa_spawn_register(int node, const void *context[], const char *name, const char *argv[], const char *envp[])
+ {
+	 assert(register_name(node, node, argv[0]) != -1);
+	 return mppa_spawn(node, context, name, argv, envp);
  }
 
 /**
