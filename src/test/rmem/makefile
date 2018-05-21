@@ -117,6 +117,7 @@ rmem-slave-lflags := -lmppaipc
 io-bin += rmem-master
 rmem-master-srcs := $(SRCDIR)/kernel/arch/mppa/barrier.c \
 							$(SRCDIR)/kernel/arch/mppa/core.c    \
+							$(SRCDIR)/kernel/arch/mppa/name.c    \
 							$(SRCDIR)/test/rmem/master.c
 
 # Toolchain Configuration
