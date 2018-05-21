@@ -1,18 +1,18 @@
 /*
  * Copyright(C) 2011-2018 Pedro H. Penna <pedrohenriquepenna@gmail.com>
- * 
+ *
  * This file is part of Nanvix.
- * 
+ *
  * Nanvix is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * Nanvix is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
@@ -23,38 +23,18 @@
 #include <string.h>
 
 /**
+ * @brief Number of process.
+ */
+static int nprocess = 0;
+
+/**
  * @brief Lookup table of cluster names.
  */
 static const struct {
 	int id;     /**< Cluster ID.  */
 	int dma;    /**< DMA channel. */
 	char *name; /**< Portal name. */
-} names[NR_DMA] = {
-	{ CCLUSTER0,  CCLUSTER0,      "/cpu0"  },
-	{ CCLUSTER1,  CCLUSTER1,      "/cpu1"  },
-	{ CCLUSTER2,  CCLUSTER2,      "/cpu2"  },
-	{ CCLUSTER3,  CCLUSTER3,      "/cpu3"  },
-	{ CCLUSTER4,  CCLUSTER4,      "/cpu4"  },
-	{ CCLUSTER5,  CCLUSTER5,      "/cpu5"  },
-	{ CCLUSTER6,  CCLUSTER6,      "/cpu6"  },
-	{ CCLUSTER7,  CCLUSTER7,      "/cpu7"  },
-	{ CCLUSTER8,  CCLUSTER8,      "/cpu8"  },
-	{ CCLUSTER9,  CCLUSTER9,      "/cpu9"  },
-	{ CCLUSTER10, CCLUSTER10,     "/cpu10" },
-	{ CCLUSTER11, CCLUSTER11,     "/cpu11" },
-	{ CCLUSTER12, CCLUSTER12,     "/cpu12" },
-	{ CCLUSTER13, CCLUSTER13,     "/cpu13" },
-	{ CCLUSTER14, CCLUSTER14,     "/cpu14" },
-	{ CCLUSTER15, CCLUSTER15,     "/cpu15" },
-	{ IOCLUSTER0, IOCLUSTER0 + 0, "/io0"   },
-	{ IOCLUSTER0, IOCLUSTER0 + 1, "/io1"   },
-	{ IOCLUSTER0, IOCLUSTER0 + 2, "/io2"   },
-	{ IOCLUSTER0, IOCLUSTER0 + 3, "/io3"   },
-	{ IOCLUSTER1, IOCLUSTER1 + 0, "/rmem0" },
-	{ IOCLUSTER1, IOCLUSTER1 + 1, "/rmem1" },
-	{ IOCLUSTER1, IOCLUSTER1 + 2, "/rmem2" },
-	{ IOCLUSTER1, IOCLUSTER1 + 3, "/rmem3" }
-};
+} names[NR_DMA] = {{ 0, 0, 0},	};
 
 /*=======================================================================*
  * name_cluster_id()                                                     *
@@ -180,4 +160,24 @@ void name_remotes(char *remotes, int local)
 				CCLUSTER0, local - 1, local + 1, CCLUSTER15, IOCLUSTER0, IOCLUSTER1
 		);
 	}
+}
+
+/*=======================================================================*
+ * register_name()                                                        *
+ *=======================================================================*/
+
+/**
+ * @brief Register a process name
+ *
+ * @param id		Cluster ID.
+ * @param DMA		DMA channel.
+ * @param name	Portal name.
+ */
+int register_name(int id, int dma, char *name){
+	if(nprocess >= NR_DMA)
+		return -1;
+	names[nprocess].id = id;
+	names[nprocess].dma = dma;
+	names[nprocess].name = name;
+	return ++nprocess;
 }

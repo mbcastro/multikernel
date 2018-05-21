@@ -1,18 +1,18 @@
 /*
  * Copyright(C) 2011-2018 Pedro H. Penna <pedrohenriquepenna@gmail.com>
- * 
+ *
  * This file is part of Nanvix.
- * 
+ *
  * Nanvix is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * Nanvix is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
@@ -35,15 +35,29 @@
 static int pids[NR_CCLUSTER];
 
 /**
- * @brief Spawns slave processes. 
+ * @brief Spawn process and register its name
+ *
+ * @param node 			From host, node is the id returned by mppa_load. From an IODDR, node is the NoC node where to spawn.
+ * @param context 	unused argument, must be NULL.
+ * @param name 			Name in the multi-binary file of the executable to run.
+ * @param argv 			NULL-terminated array of pointers to argument strings.
+ * @param envp 			NULL-terminated array of pointers to environment strings.
+ */
+ mppa_pid_t mppa_spawn_register(int node, const void *context[], const char *name, const char *argv[], const char *envp[]){
+	 assert((pids[node] = mppa_spawn(node, context, name, argv, envp)) != -1);
+
+ }
+
+/**
+ * @brief Spawns slave processes.
  *
  * @param nclusters Number of clusters to spawn.
  * @param args      Cluster arguments.
  */
-static void spawn_slaves(int nclusters, char **args) 
+static void spawn_slaves(int nclusters, char **args)
 {
 	const char *argv[] = {
-		"rmem-slave", 
+		"rmem-slave",
 		args[1],
 		args[2],
 		args[3],
@@ -51,7 +65,7 @@ static void spawn_slaves(int nclusters, char **args)
 	};
 
 	for (int i = 0; i < nclusters; i++)
-		assert((pids[i] = mppa_spawn(i, NULL, argv[0], argv, NULL)) != -1);
+		assert((pids[i] = mppa_spawn_register(i, NULL, argv[0], argv, NULL)) != -1);
 }
 
 /**
@@ -59,7 +73,7 @@ static void spawn_slaves(int nclusters, char **args)
  *
  * @param nclusters Number of slaves to wait.
  */
-static void join_slaves(int nclusters) 
+static void join_slaves(int nclusters)
 {
 	for (int i = 0; i < nclusters; i++)
 		assert(mppa_waitpid(pids[i], NULL, 0) != -1);
