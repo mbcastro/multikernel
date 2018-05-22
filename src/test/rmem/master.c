@@ -45,7 +45,9 @@ static int pids[NR_CCLUSTER];
  */
 int mppa_spawn_register(int node, const void *context[], const char *name, const char *argv[], const char *envp[])
 {
-	assert(register_name(node, node, argv[0]) != -1);
+	char path[35];
+	sprintf(path, "/cpu%d", node);
+	assert(register_name(node, (node%NR_DMA), path, argv[0]) != -1);
 	return mppa_spawn(node, context, name, argv, envp);
 }
 
