@@ -21,6 +21,7 @@
 #include <nanvix/hal.h>
 #include <nanvix/mm.h>
 #include <nanvix/pm.h>
+#include <nanvix/name.h>
 #include <nanvix/arch/mppa.h>
 #include <assert.h>
 #include <pthread.h>
@@ -43,32 +44,32 @@ static struct {
 	int id;     				/**< Cluster ID.  */
 	int dma;    				/**< DMA channel. */
 	char *name; 				/**< Portal name. */
-	char *process_name 	/**< Process name. */
+	char *process_name;	/**< Process name. */
 } names[NR_DMA] = {
-	{ CCLUSTER0,  CCLUSTER0,      "/cpu0"  ,	},
-	{ CCLUSTER1,  CCLUSTER1,      "/cpu1"  ,	},
-	{ CCLUSTER2,  CCLUSTER2,      "/cpu2"  ,	},
-	{ CCLUSTER3,  CCLUSTER3,      "/cpu3"  ,	},
-	{ CCLUSTER4,  CCLUSTER4,      "/cpu4"  ,	},
-	{ CCLUSTER5,  CCLUSTER5,      "/cpu5"  ,	},
-	{ CCLUSTER6,  CCLUSTER6,      "/cpu6"  ,	},
-	{ CCLUSTER7,  CCLUSTER7,      "/cpu7"  ,	},
-	{ CCLUSTER8,  CCLUSTER8,      "/cpu8"  ,	},
-	{ CCLUSTER9,  CCLUSTER9,      "/cpu9"  ,	},
-	{ CCLUSTER10, CCLUSTER10,     "/cpu10" ,	},
-	{ CCLUSTER11, CCLUSTER11,     "/cpu11" ,	},
-	{ CCLUSTER12, CCLUSTER12,     "/cpu12" ,	},
-	{ CCLUSTER13, CCLUSTER13,     "/cpu13" ,	},
-	{ CCLUSTER14, CCLUSTER14,     "/cpu14" ,	},
-	{ CCLUSTER15, CCLUSTER15,     "/cpu15" ,	},
-	{ IOCLUSTER0, IOCLUSTER0 + 0, "/io0"   ,	},
-	{ IOCLUSTER0, IOCLUSTER0 + 1, "/io1"   ,	},
-	{ IOCLUSTER0, IOCLUSTER0 + 2, "/io2"   ,	},
-	{ IOCLUSTER0, IOCLUSTER0 + 3, "/io3"   ,	},
-	{ IOCLUSTER1, IOCLUSTER1 + 0, "/rmem0" ,	},
-	{ IOCLUSTER1, IOCLUSTER1 + 1, "/rmem1" ,	},
-	{ IOCLUSTER1, IOCLUSTER1 + 2, "/rmem2" ,	},
-	{ IOCLUSTER1, IOCLUSTER1 + 3, "/rmem3" ,	}
+	{ CCLUSTER0,  CCLUSTER0,      "/cpu0",	""  },
+	{ CCLUSTER1,  CCLUSTER1,      "/cpu1",	""  },
+	{ CCLUSTER2,  CCLUSTER2,      "/cpu2",	""  },
+	{ CCLUSTER3,  CCLUSTER3,      "/cpu3",	""  },
+	{ CCLUSTER4,  CCLUSTER4,      "/cpu4",	""  },
+	{ CCLUSTER5,  CCLUSTER5,      "/cpu5",	""  },
+	{ CCLUSTER6,  CCLUSTER6,      "/cpu6",	""  },
+	{ CCLUSTER7,  CCLUSTER7,      "/cpu7",	""  },
+	{ CCLUSTER8,  CCLUSTER8,      "/cpu8",	""  },
+	{ CCLUSTER9,  CCLUSTER9,      "/cpu9",	""  },
+	{ CCLUSTER10, CCLUSTER10,     "/cpu10",	""  },
+	{ CCLUSTER11, CCLUSTER11,     "/cpu11",	""  },
+	{ CCLUSTER12, CCLUSTER12,     "/cpu12",	""  },
+	{ CCLUSTER13, CCLUSTER13,     "/cpu13",	""  },
+	{ CCLUSTER14, CCLUSTER14,     "/cpu14",	""  },
+	{ CCLUSTER15, CCLUSTER15,     "/cpu15",	""  },
+	{ IOCLUSTER0, IOCLUSTER0 + 0, "/io0"	,	""  },
+	{ IOCLUSTER0, IOCLUSTER0 + 1, "/io1"  ,	""  },
+	{ IOCLUSTER0, IOCLUSTER0 + 2, "/io2"  ,	""  },
+	{ IOCLUSTER0, IOCLUSTER0 + 3, "/io3"  ,	""  },
+	{ IOCLUSTER1, IOCLUSTER1 + 0, "/rmem0",	""  },
+	{ IOCLUSTER1, IOCLUSTER1 + 1, "/rmem1",	""  },
+	{ IOCLUSTER1, IOCLUSTER1 + 2, "/rmem2",	""  },
+	{ IOCLUSTER1, IOCLUSTER1 + 3, "/rmem3",	""  }
 };
 
 /*=======================================================================*
@@ -232,6 +233,7 @@ void name_remotes(char *remotes, int local)
  * @param id		Cluster ID.
  * @param DMA		DMA channel.
  * @param name	Portal name.
+ * @param process_name	Process name.
  */
 int register_name(int id, int dma, const char *name, const char *process_name)
 {
@@ -277,19 +279,6 @@ void remove_name(const char *name)
 
 	return;
 }
-
-/**
- * @brief name query message.
- */
-struct name_message
-{
-  uint16_t source;     	/**< Source cluster.	*/
-  uint16_t op;      		/**< Operation.     	*/
-	int id;     					/**< Cluster ID.  		*/
-	int dma;    					/**< DMA channel. 		*/
-	char *name;        	  /**< Portal name. 		*/
-	char *process_name 		/**< Process name. 		*/
-};
 
 static pthread_barrier_t barrier;
 
@@ -367,13 +356,12 @@ static void *name_server(void *args)
  *===================================================================*/
 
 /**
- * @brief Remote memory server.
+ * @brief Remote name server.
  */
 int main(int argc, char **argv)
 {
 	int global_barrier;               /* System barrier. */
-	int dmas[NR_IOCLUSTER_DMA];       /* DMA IDs.        */
-	pthread_t tids[NR_IOCLUSTER_DMA]; /* Thread IDs.     */
+	pthread_t tid; 										/* Thread ID .     */
 
 	((void) argc);
 	((void) argv);
@@ -383,23 +371,20 @@ int main(int argc, char **argv)
 #endif
 
 	pthread_mutex_init(&lock, NULL);
-	pthread_barrier_init(&barrier, NULL, NR_IOCLUSTER_DMA + 1);
+	pthread_barrier_init(&barrier, NULL, 2);
 
-	/* Spawn name server threads. */
-	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
-	{
-		dmas[i] = i;
-		assert((pthread_create(&tids[i],
-			NULL,
-			name_server,
-			&dmas[i])) == 0
-		);
-	}
+	/* Spawn name server thread. */
+	int dma = 0;
+	assert((pthread_create(&tid,
+		NULL,
+		name_server,
+		&dma)) == 0
+	);
 
 	pthread_barrier_wait(&barrier);
 
 	/* Release master IO cluster. */
-	global_barrier = barrier_open(NR_IOCLUSTER);
+	global_barrier = barrier_open(1);
 	barrier_wait(global_barrier);
 
 #ifdef DEBUG
@@ -407,8 +392,7 @@ int main(int argc, char **argv)
 #endif
 
 	/* Wait for name server threads. */
-	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
-		pthread_join(tids[i], NULL);
+	pthread_join(tid, NULL);
 
 	/* House keeping. */
 	barrier_close(global_barrier);
