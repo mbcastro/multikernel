@@ -49,7 +49,28 @@ name-server-system := rtems
 name-server-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
 name-server-lflags := -lmppaipc -pthread
 
-name-objs := name-server
+#=============================================================================
+# Name server test
+#=============================================================================
+
+cluster-bin += name-slave
+name-slave-srcs := $(SRCDIR)/kernel/arch/mppa/barrier.c \
+							 $(SRCDIR)/kernel/arch/mppa/core.c    \
+						   $(SRCDIR)/test/name/slave.c
+
+# Toolchain Configuration
+name-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+name-slave-lflags := -lmppaipc
+
+io-bin += name-master
+name-master-srcs := $(SRCDIR)/kernel/arch/mppa/barrier.c \
+							$(SRCDIR)/test/name/master.c
+
+# Toolchain Configuration
+name-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+name-master-lflags := -lmppaipc
+
+name-objs := name-server name-master name-slave
 name-name := name.img
 
 #=============================================================================

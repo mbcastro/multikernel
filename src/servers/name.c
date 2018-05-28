@@ -62,7 +62,7 @@ static struct {
 	{ CCLUSTER13, CCLUSTER13,     "/cpu13",	""  },
 	{ CCLUSTER14, CCLUSTER14,     "/cpu14",	""  },
 	{ CCLUSTER15, CCLUSTER15,     "/cpu15",	""  },
-	{ IOCLUSTER0, IOCLUSTER0 + 0, "/io0"	,	""  },
+	{ IOCLUSTER0, IOCLUSTER0 + 0, "/io0"  , ""  },
 	{ IOCLUSTER0, IOCLUSTER0 + 1, "/io1"  ,	""  },
 	{ IOCLUSTER0, IOCLUSTER0 + 2, "/io2"  ,	""  },
 	{ IOCLUSTER0, IOCLUSTER0 + 3, "/io3"  ,	""  },
