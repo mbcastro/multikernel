@@ -52,6 +52,56 @@ struct mailbox
  */
 static struct mailbox mailboxes[NR_MAILBOX];
 
+
+/*=======================================================================*
+ * name_remotes()                                                        *
+ *=======================================================================*/
+
+/**
+ * @brief Builds a list of remotes.
+ *
+ * @param remotes List of IDs of remote clusters.
+ * @param local   ID of local cluster.
+ */
+void name_remotes(char *remotes, int local)
+{
+	if ((local >= IOCLUSTER0) && (local < (IOCLUSTER0 + NR_IOCLUSTER_DMA)))
+	{
+		sprintf(remotes,
+				"%d..%d,%d",
+				CCLUSTER0, CCLUSTER15, IOCLUSTER1
+		);
+	}
+	else if ((local >= IOCLUSTER1) && (local < (IOCLUSTER1 + NR_IOCLUSTER_DMA)))
+	{
+		sprintf(remotes,
+				"%d..%d,%d",
+				CCLUSTER0, CCLUSTER15, IOCLUSTER0
+		);
+	}
+	else if (local == CCLUSTER0)
+	{
+		sprintf(remotes,
+				"%d..%d,%d,%d",
+				CCLUSTER1, CCLUSTER15, IOCLUSTER0, IOCLUSTER1
+		);
+	}
+	else if (local  == CCLUSTER15)
+	{
+		sprintf(remotes,
+				"%d..%d,%d,%d",
+				CCLUSTER0, CCLUSTER14, IOCLUSTER0, IOCLUSTER1
+		);
+	}
+	else
+	{
+		sprintf(remotes,
+				"%d..%d,%d..%d,%d,%d",
+				CCLUSTER0, local - 1, local + 1, CCLUSTER15, IOCLUSTER0, IOCLUSTER1
+		);
+	}
+}
+
 /*=======================================================================*
  * mailbox_alloc()                                                       *
  *=======================================================================*/
@@ -144,8 +194,9 @@ int mailbox_create(const char *name)
 	if (name == NULL)
 		return (-EINVAL);
 
-	local = name_cluster_dma(name);
-	assert(name_cluster_id(name) == k1_get_cluster_id());
+	// local = name_cluster_dma(name);
+	// assert(name_cluster_id(name) == k1_get_cluster_id());
+	local = k1_get_cluster_id();
 
 	/* Allocate a mailbox. */
 	mbxid = mailbox_alloc();
@@ -198,9 +249,13 @@ int mailbox_open(const char *name)
 	if (name == NULL)
 		return (-EINVAL);
 
-	remote = name_cluster_dma(name);
+	if(strcmp("/io0", name) == 0)
+		remote = 128;
+	else
+		remote = 0;
+	// remote = name_cluster_dma(name);
 	local = k1_get_cluster_id();
-	assert(name_cluster_id(name) != local);
+	// assert(name_cluster_id(name) != local);
 
 	/* Allocate a mailbox. */
 	mbxid = mailbox_alloc();

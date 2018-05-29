@@ -28,38 +28,12 @@
 #include <stdio.h>
 #endif
 
+#define NR_SLAVE 1
+
 /**
  * @brief ID of slave processes.
  */
-static int pids[NR_CCLUSTER];
-
-/**
- * @brief Spawns slave processes.
- *
- * @param nclusters Number of clusters to spawn.
- * @param args      Cluster arguments.
- */
-static void spawn_slaves(int nclusters, char **args)
-{
-	const char *argv[] = {
-		"name-slave",
-		NULL
-	};
-
-	for (int i = 0; i < nclusters; i++)
-		assert((pids[i] = mppa_spawn(i, NULL, argv[0], argv, NULL)) != -1);
-}
-
-/**
- * @brief Wait for slaves to complete.
- *
- * @param nclusters Number of slaves to wait.
- */
-static void join_slaves(int nclusters)
-{
-	for (int i = 0; i < nclusters; i++)
-		assert(mppa_waitpid(pids[i], NULL, 0) != -1);
-}
+static int pids[NR_SLAVE];
 
 /*===================================================================*
  * Kernel                                                            *
@@ -68,38 +42,18 @@ static void join_slaves(int nclusters)
 /**
  * @brief Querying the name server.
  */
-int main(int argc, char **argv)
+int main()
 {
-	int size;
-	int global_barrier;
-	int nclusters;
+	const char *argv[] = {
+		"name-slave",
+		NULL
+	};
 
-	assert(argc == 2);
+	for (int i = 0; i < NR_SLAVE; i++)
+		assert((pids[i] = mppa_spawn(i, NULL, argv[0], argv, NULL)) != -1);
 
-	/* Retrieve kernel parameters. */
-	nclusters = atoi(argv[2]);
-
-#ifdef DEBUG
-	printf("[SPAWNER] server alive\n");
-#endif
-
-	/* Wait name server. */
-	global_barrier = barrier_open(NR_IOCLUSTER);
-	barrier_wait(global_barrier);
-
-#ifdef DEBUG
-	printf("[SPAWNER] spawning kernels\n");
-#endif
-
-	spawn_slaves(nclusters, argv);
-
-#ifdef DEBUG
-	printf("[SPAWNER] waiting kernels\n");
-#endif
-
-	/* House keeping. */
-	join_slaves(nclusters);
-	barrier_close(global_barrier);
+	for (int i = 0; i < NR_SLAVE; i++)
+		assert(mppa_waitpid(pids[i], NULL, 0) != -1);
 
 	return (EXIT_SUCCESS);
 }

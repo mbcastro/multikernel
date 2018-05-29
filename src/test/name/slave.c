@@ -24,6 +24,7 @@
 #include <nanvix/name.h>
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 static pthread_mutex_t lock;
@@ -47,19 +48,21 @@ int main()
 	msg.op = NAME_QUERY;
 	msg.id = 0;     					/**< Cluster ID.  		*/
 
+  printf("Creating inbox of cluster %d...\n", k1_get_cluster_id());
   sprintf(pathname, "/cpu%d", k1_get_cluster_id());
   pthread_mutex_lock(&lock);
 		inbox = mailbox_create(pathname);
 	pthread_mutex_unlock(&lock);
 
 	/* Send name request. */
+  printf("Sending request to name server...\n");
 	mailbox_write(mailbox_open("/io0"), &msg);
 
-  ans.op = 3;
+  ans.op = 0;
   while(1){
     mailbox_read(inbox, &ans);
 
-    if(ans.op != 3)
+    if(ans.op != 0)
       printf("Message : op = %d, name = %s\n", ans.op, ans.name);
   }
 

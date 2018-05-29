@@ -23,9 +23,9 @@
   /**
    * @brief name request types
    */
-  #define NAME_QUERY 0
-  #define NAME_ADD 1
-  #define NAME_REMOVE 2
+  #define NAME_QUERY 1
+  #define NAME_ADD 2
+  #define NAME_REMOVE 3
 
   /**
    * @brief name query message.
@@ -36,8 +36,8 @@
     uint16_t op;      		/**< Operation.     	*/
   	int id;     					/**< Cluster ID.  		*/
   	int dma;    					/**< DMA channel. 		*/
-  	const char *name;        	  /**< Portal name. 		*/
-  	const char *process_name;		/**< Process name. 		*/
+  	char name[50];        	  /**< Portal name. 		*/
+  	char process_name[50];		/**< Process name. 		*/
   };
 
 #endif /* _NAME_H_ */

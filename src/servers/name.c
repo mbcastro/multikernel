@@ -175,55 +175,6 @@ const char *name_process_name(int clusterid)
 }
 
 /*=======================================================================*
- * name_remotes()                                                        *
- *=======================================================================*/
-
-/**
- * @brief Builds a list of remotes.
- *
- * @param remotes List of IDs of remote clusters.
- * @param local   ID of local cluster.
- */
-void name_remotes(char *remotes, int local)
-{
-	if ((local >= IOCLUSTER0) && (local < (IOCLUSTER0 + NR_IOCLUSTER_DMA)))
-	{
-		sprintf(remotes,
-				"%d..%d,%d",
-				CCLUSTER0, CCLUSTER15, IOCLUSTER1
-		);
-	}
-	else if ((local >= IOCLUSTER1) && (local < (IOCLUSTER1 + NR_IOCLUSTER_DMA)))
-	{
-		sprintf(remotes,
-				"%d..%d,%d",
-				CCLUSTER0, CCLUSTER15, IOCLUSTER0
-		);
-	}
-	else if (local == CCLUSTER0)
-	{
-		sprintf(remotes,
-				"%d..%d,%d,%d",
-				CCLUSTER1, CCLUSTER15, IOCLUSTER0, IOCLUSTER1
-		);
-	}
-	else if (local  == CCLUSTER15)
-	{
-		sprintf(remotes,
-				"%d..%d,%d,%d",
-				CCLUSTER0, CCLUSTER14, IOCLUSTER0, IOCLUSTER1
-		);
-	}
-	else
-	{
-		sprintf(remotes,
-				"%d..%d,%d..%d,%d,%d",
-				CCLUSTER0, local - 1, local + 1, CCLUSTER15, IOCLUSTER0, IOCLUSTER1
-		);
-	}
-}
-
-/*=======================================================================*
  * register_name()                                                        *
  *=======================================================================*/
 
@@ -323,7 +274,7 @@ static void *name_server(void *args)
 			case NAME_QUERY:
 				msg.id = name_cluster_id(msg.name);
 				msg.dma = name_cluster_dma(msg.name);
-				msg.process_name = name_process_name(msg.id);
+				sprintf(msg.process_name, "%s", name_process_name(msg.id));
 				mailbox_write(msg.source, &msg);
 				break;
 
