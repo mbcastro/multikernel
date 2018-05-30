@@ -28,7 +28,7 @@
 #include <stdio.h>
 #endif
 
-#define NR_SLAVE 3
+#define NR_SLAVE 1
 
 /**
  * @brief ID of slave processes.

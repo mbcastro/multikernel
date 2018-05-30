@@ -37,8 +37,13 @@
 int main()
 {
   struct name_message msg;
-  char pathname[16];
   int inbox, server;         /* Mailbox for small messages. */
+
+  printf("Creating inbox of cluster %d...\n", k1_get_cluster_id());
+  inbox = mailbox_create(k1_get_cluster_id());
+  server = mailbox_open(IOCLUSTER0);
+
+  /* Ask for a unregistered name */
 
 	/* Build operation header. */
 	msg.source = k1_get_cluster_id();
@@ -48,10 +53,38 @@ int main()
 	sprintf(msg.name, "/cpu%d", k1_get_cluster_id());
   sprintf(msg.process_name, "_");
 
-  printf("Creating inbox of cluster %d...\n", k1_get_cluster_id());
-  sprintf(pathname, "/cpu%d", k1_get_cluster_id());
-	inbox = mailbox_create(k1_get_cluster_id());
-  server = mailbox_open(IOCLUSTER0);
+  /* Send name request. */
+  printf("Sending request for /cpu%d...\n", k1_get_cluster_id());
+	assert(mailbox_write(server, &msg) == 0);
+
+  while(msg.id == -1){
+    assert(mailbox_read(inbox, &msg) == 0);
+  }
+  printf("Before registration [op: %d, name: %s, process name: %s, id: %d, dma: %d]\n", msg.op, msg.name, msg.process_name, msg.id, msg.dma);
+
+  /* Add name */
+
+  /* Build operation header. */
+	msg.source = k1_get_cluster_id();
+	msg.op = NAME_ADD;
+  msg.id = k1_get_cluster_id();
+  msg.dma = k1_get_cluster_id();
+	sprintf(msg.name, "/cpu%d", k1_get_cluster_id());
+  sprintf(msg.process_name, "process_on_cpu%d", k1_get_cluster_id());
+
+  /* Send name request. */
+  printf("Sending add request for /cpu%d...\n", k1_get_cluster_id());
+	assert(mailbox_write(server, &msg) == 0);
+
+  /* Ask for a registered name */
+
+	/* Build operation header. */
+	msg.source = k1_get_cluster_id();
+	msg.op = NAME_QUERY;
+  msg.id = -1;
+  msg.dma = -1;
+	sprintf(msg.name, "/cpu%d", k1_get_cluster_id());
+  sprintf(msg.process_name, "_");
 
   /* Send name request. */
   printf("Sending request for /cpu%d...\n", k1_get_cluster_id());
@@ -60,7 +93,40 @@ int main()
   while(msg.id == -1){
     assert(mailbox_read(inbox, &msg) == 0);
   }
-  printf("Server response = [op: %d, name: %s, process name: %s, id: %d, dma: %d]\n", msg.op, msg.name, msg.process_name, msg.id, msg.dma);
+  printf("After registration [op: %d, name: %s, process name: %s, id: %d, dma: %d]\n", msg.op, msg.name, msg.process_name, msg.id, msg.dma);
+
+  /* Remove name */
+
+  /* Build operation header. */
+	msg.source = k1_get_cluster_id();
+	msg.op = NAME_REMOVE;
+  msg.id = -1;
+  msg.dma = -1;
+	sprintf(msg.name, "/cpu%d", k1_get_cluster_id());
+  sprintf(msg.process_name, " ");
+
+  /* Send name request. */
+  printf("Sending remove request for /cpu%d...\n", k1_get_cluster_id());
+	assert(mailbox_write(server, &msg) == 0);
+
+  /* Ask for a deleted name */
+
+	/* Build operation header. */
+	msg.source = k1_get_cluster_id();
+	msg.op = NAME_QUERY;
+  msg.id = -1;
+  msg.dma = -1;
+	sprintf(msg.name, "/cpu%d", k1_get_cluster_id());
+  sprintf(msg.process_name, "_");
+
+  /* Send name request. */
+  printf("Sending request for /cpu%d...\n", k1_get_cluster_id());
+	assert(mailbox_write(server, &msg) == 0);
+
+  while(msg.id == -1){
+    assert(mailbox_read(inbox, &msg) == 0);
+  }
+  printf("After deletion [op: %d, name: %s, process name: %s, id: %d, dma: %d]\n", msg.op, msg.name, msg.process_name, msg.id, msg.dma);
 
 	return (EXIT_SUCCESS);
 }

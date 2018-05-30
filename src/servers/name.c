@@ -33,9 +33,9 @@
 #endif
 
 /**
- * @brief Number of process.
+ * @brief Number of cluster name registered.
  */
-static int nprocess = 0;
+static int nr_cluster = 0;
 
 /**
  * @brief Lookup table of cluster names.
@@ -43,33 +43,33 @@ static int nprocess = 0;
 static struct {
 	int id;     				/**< Cluster ID.  */
 	int dma;    				/**< DMA channel. */
-	char *name; 				/**< Portal name. */
-	char *process_name;	/**< Process name. */
+	char name[50]; 				/**< Portal name. */
+	char process_name[50];	/**< Process name. */
 } names[NR_DMA] = {
-	{ CCLUSTER0,  CCLUSTER0,      "/cpu0",	""  },
-	{ CCLUSTER1,  CCLUSTER1,      "/cpu1",	""  },
-	{ CCLUSTER2,  CCLUSTER2,      "/cpu2",	""  },
-	{ CCLUSTER3,  CCLUSTER3,      "/cpu3",	"name"  },
-	{ CCLUSTER4,  CCLUSTER4,      "/cpu4",	""  },
-	{ CCLUSTER5,  CCLUSTER5,      "/cpu5",	""  },
-	{ CCLUSTER6,  CCLUSTER6,      "/cpu6",	""  },
-	{ CCLUSTER7,  CCLUSTER7,      "/cpu7",	""  },
-	{ CCLUSTER8,  CCLUSTER8,      "/cpu8",	""  },
-	{ CCLUSTER9,  CCLUSTER9,      "/cpu9",	""  },
-	{ CCLUSTER10, CCLUSTER10,     "/cpu10",	""  },
-	{ CCLUSTER11, CCLUSTER11,     "/cpu11",	""  },
-	{ CCLUSTER12, CCLUSTER12,     "/cpu12",	""  },
-	{ CCLUSTER13, CCLUSTER13,     "/cpu13",	""  },
-	{ CCLUSTER14, CCLUSTER14,     "/cpu14",	""  },
-	{ CCLUSTER15, CCLUSTER15,     "/cpu15",	""  },
-	{ IOCLUSTER0, IOCLUSTER0 + 0, "/io0"  , ""  },
-	{ IOCLUSTER0, IOCLUSTER0 + 1, "/io1"  ,	""  },
-	{ IOCLUSTER0, IOCLUSTER0 + 2, "/io2"  ,	""  },
-	{ IOCLUSTER0, IOCLUSTER0 + 3, "/io3"  ,	""  },
-	{ IOCLUSTER1, IOCLUSTER1 + 0, "/rmem0",	""  },
-	{ IOCLUSTER1, IOCLUSTER1 + 1, "/rmem1",	""  },
-	{ IOCLUSTER1, IOCLUSTER1 + 2, "/rmem2",	""  },
-	{ IOCLUSTER1, IOCLUSTER1 + 3, "/rmem3",	""  }
+	{ CCLUSTER0,  CCLUSTER0,      " ",	" "  },
+	{ CCLUSTER1,  CCLUSTER1,      " ",	" "  },
+	{ CCLUSTER2,  CCLUSTER2,      " ",	" "  },
+	{ CCLUSTER3,  CCLUSTER3,      " ",	" "  },
+	{ CCLUSTER4,  CCLUSTER4,      " ",	" "  },
+	{ CCLUSTER5,  CCLUSTER5,      " ",	" "  },
+	{ CCLUSTER6,  CCLUSTER6,      " ",	" "  },
+	{ CCLUSTER7,  CCLUSTER7,      " ",	" "  },
+	{ CCLUSTER8,  CCLUSTER8,      " ",	" "  },
+	{ CCLUSTER9,  CCLUSTER9,      " ",	" "  },
+	{ CCLUSTER10, CCLUSTER10,     " ",	" "  },
+	{ CCLUSTER11, CCLUSTER11,     " ",	" "  },
+	{ CCLUSTER12, CCLUSTER12,     " ",	" "  },
+	{ CCLUSTER13, CCLUSTER13,     " ",	" "  },
+	{ CCLUSTER14, CCLUSTER14,     " ",	" "  },
+	{ CCLUSTER15, CCLUSTER15,     " ",	" "  },
+	{ IOCLUSTER0, IOCLUSTER0 + 0, " ",	" "  },
+	{ IOCLUSTER0, IOCLUSTER0 + 1, " ",	" "  },
+	{ IOCLUSTER0, IOCLUSTER0 + 2, " ",	" "  },
+	{ IOCLUSTER0, IOCLUSTER0 + 3, " ",	" "  },
+	{ IOCLUSTER1, IOCLUSTER1 + 0, " ",	" "  },
+	{ IOCLUSTER1, IOCLUSTER1 + 1, " ",	" "  },
+	{ IOCLUSTER1, IOCLUSTER1 + 2, " ",	" "  },
+	{ IOCLUSTER1, IOCLUSTER1 + 3, " ",	" "  }
 };
 
 /*=======================================================================*
@@ -136,7 +136,7 @@ int name_cluster_dma(const char *name)
  * @returns Upon successful completion the pathname that matches the cluster ID
  * @p clusterid is returned. Upon failure, NULL is returned instead.
  */
-const char *name_cluster_name(int clusterid)
+const char *id_cluster_name(int clusterid)
 {
 	/* Search for portal name. */
 	for (int i = 0; i < NR_DMA; i++)
@@ -150,7 +150,7 @@ const char *name_cluster_name(int clusterid)
 }
 
 /*=======================================================================*
- * name_process_name()                                                      *
+ * id_process_name()                                                      *
  *=======================================================================*/
 
 /**
@@ -161,7 +161,7 @@ const char *name_cluster_name(int clusterid)
  * @returns Upon successful completion the process name that matches the cluster ID.
  * Upon failure, NULL is returned instead.
  */
-const char *name_process_name(int clusterid)
+const char *id_process_name(int clusterid)
 {
 	/* Search for process name. */
 	for (int i = 0; i < NR_DMA; i++)
@@ -185,16 +185,38 @@ const char *name_process_name(int clusterid)
  * @param DMA		DMA channel.
  * @param name	Portal name.
  * @param process_name	Process name.
+ *
+ * @returns Upon successful registration the number of name is returned.
+ * Upon failure, a negative error code is returned instead.
  */
 int register_name(int id, int dma, const char *name, const char *process_name)
 {
-	if(nprocess >= NR_DMA)
-		return -1;
-	names[nprocess].id = id;
-	names[nprocess].dma = dma;
-	sprintf(names[nprocess].name, "%s", name);
-	sprintf(names[nprocess].process_name, "%s", process_name);
-	return ++nprocess;
+	int index;
+
+	/* No DMA available. */
+	if(nr_cluster >= NR_DMA)
+		return (-EINVAL);
+
+	/* Compute index registration */
+	if(dma >= 0 && dma < NR_CCLUSTER)
+		index = dma;
+	else if(dma >= IOCLUSTER0 && dma <= IOCLUSTER0 + 3)
+	 	index = NR_CCLUSTER + dma%IOCLUSTER0;
+	else if(dma >= IOCLUSTER1 && dma <= IOCLUSTER1 + 3)
+	 	index = NR_CCLUSTER + NR_IOCLUSTER_DMA + dma%IOCLUSTER1;
+	else
+		return (-EINVAL);
+
+	/* DMA channel not available */
+	if(strcmp(names[index].name, " "))
+		return (-EINVAL);
+
+	names[index].id = id;
+	names[index].dma = dma;
+	sprintf(names[index].name, "%s", name);
+	sprintf(names[index].process_name, "%s", process_name);
+
+	return ++nr_cluster;
 }
 
 /*=======================================================================*
@@ -218,14 +240,9 @@ void remove_name(const char *name)
 
 	if(i < NR_DMA)
 	{
-		for(int j = i; j < nprocess - 1; j++)
-		{
-			names[j].id = names[j+1].id;
-			names[j].dma = names[j+1].dma;
-			sprintf(names[j].name, "%s", names[j+1].name);
-			sprintf(names[j].process_name, "%s", names[j+1].process_name);
-		}
-		nprocess--;
+		sprintf(names[i].name, " ");
+		sprintf(names[i].process_name, " ");
+		nr_cluster--;
 	}
 
 	return;
@@ -250,13 +267,11 @@ static void *name_server(void *args)
 {
 	int dma;           /* DMA channel to use.         */
 	int inbox;         /* Mailbox for small messages. */
-	char pathname[16]; /* name bank.                  */
 
 	dma = ((int *)args)[0];
 
-	sprintf(pathname, "/io%d", dma);
 	pthread_mutex_lock(&lock);
-		inbox = mailbox_create(IOCLUSTER0);
+		inbox = mailbox_create(IOCLUSTER0 + dma);
 	pthread_mutex_unlock(&lock);
 
 	pthread_barrier_wait(&barrier);
@@ -275,9 +290,13 @@ static void *name_server(void *args)
 				#ifdef DEBUG
 					printf("Entering name query case... name: %s\n", msg.name);
 				#endif
+
+				/* Lookup */
 				msg.id = name_cluster_id(msg.name);
 				msg.dma = name_cluster_dma(msg.name);
-				sprintf(msg.process_name, "%s", name_process_name(msg.id));
+				sprintf(msg.process_name, "%s", id_process_name(msg.id));
+
+				/* Send response */
 				int source = mailbox_open(msg.source);
 				assert(source >= 0);
 				assert(mailbox_write(source, &msg) == 0);
@@ -289,7 +308,8 @@ static void *name_server(void *args)
 				#ifdef DEBUG
 					printf("Entering add name case... id: %d, dma: %d, name: %s, process name: %s\n", msg.id, msg.dma, msg.name, msg.process_name);
 				#endif
-				assert(register_name(msg.id, msg.dma, msg.name, msg.process_name) != -1);
+
+				assert(register_name(msg.id, msg.dma, msg.name, msg.process_name) != -2);
 				break;
 
       /* Remove name. */
@@ -297,6 +317,7 @@ static void *name_server(void *args)
 				#ifdef DEBUG
 					printf("Entering remove name case... name: %s\n", msg.name);
 				#endif
+
 				remove_name(msg.name);
 				break;
 
