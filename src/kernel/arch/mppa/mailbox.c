@@ -20,6 +20,7 @@
 #include <nanvix/arch/mppa.h>
 #include <nanvix/klib.h>
 #include <nanvix/pm.h>
+#include <nanvix/name.h>
 #include <assert.h>
 #include <errno.h>
 #include <string.h>
@@ -176,27 +177,20 @@ static int mailbox_noctag(int local)
 /**
  * @brief Creates a mailbox.
  *
- * @param name Mailbox name.
+ * @param DMA channel of local cluster.
  *
  * @returns Upon successful completion, the ID of the new mailbox is
  * returned. Upon failure, a negative error code is returned instead.
  */
-int mailbox_create(const char *name)
+int mailbox_create(int local)
 {
-	int local;          /* ID of local cluster.               */
 	int fd;             /* File descriptor for NoC connector. */
 	int mbxid;          /* ID of mailbix.                     */
 	char remotes[128];  /* IDs of remote clusters.            */
 	char pathname[128]; /* NoC connector name.                */
 	int noctag;         /* NoC tag used for transfers.        */
 
-	/* Invalid mailbox name. */
-	if (name == NULL)
-		return (-EINVAL);
-
-	// local = name_cluster_dma(name);
-	// assert(name_cluster_id(name) == k1_get_cluster_id());
-	local = k1_get_cluster_id();
+	assert(local == k1_get_cluster_id());
 
 	/* Allocate a mailbox. */
 	mbxid = mailbox_alloc();
@@ -230,32 +224,22 @@ int mailbox_create(const char *name)
 /**
  * @brief Opens a mailbox.
  *
- * @param name Mailbox name.
+ * @param DMA channel of remote cluster.
  *
  * @returns Upon successful completion, the ID of the target mailbox is
  * returned. Upon failure, a negative error code is returned instead.
  */
-int mailbox_open(const char *name)
+int mailbox_open(int remote)
 {
-	int local;          /* ID of remote cluster.             */
-	int remote;         /* ID of remote cluster.             */
+	int local;          /* ID of local cluster.             */
 	int fd;             /* File descriptor for NoC connector. */
 	int mbxid;          /* ID of mailbix.                     */
 	char remotes[128];  /* IDs of remote clusters.            */
 	char pathname[128]; /* NoC connector name.                */
 	int noctag;         /* NoC tag used for transfers.        */
 
-	/* Invalid mailbox name. */
-	if (name == NULL)
-		return (-EINVAL);
-
-	if(strcmp("/io0", name) == 0)
-		remote = 128;
-	else
-		remote = 0;
-	// remote = name_cluster_dma(name);
 	local = k1_get_cluster_id();
-	// assert(name_cluster_id(name) != local);
+	assert(remote != local);
 
 	/* Allocate a mailbox. */
 	mbxid = mailbox_alloc();

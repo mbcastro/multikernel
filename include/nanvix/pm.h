@@ -27,8 +27,8 @@
  *=======================================================================*/
 
 	/* Forward definitions .*/
-	extern int mailbox_create(const char *);
-	extern int mailbox_open(const char *);
+	extern int mailbox_create(int);
+	extern int mailbox_open(int);
 	extern int mailbox_read(int, void *);
 	extern int mailbox_write(int, const void *);
 	extern int mailbox_close(int);

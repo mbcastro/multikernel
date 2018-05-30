@@ -45,16 +45,16 @@ int main()
 	msg.op = NAME_QUERY;
   msg.id = -1;
   msg.dma = -1;
-	sprintf(msg.name, "/cpu3");
+	sprintf(msg.name, "/cpu%d", k1_get_cluster_id());
   sprintf(msg.process_name, "_");
 
   printf("Creating inbox of cluster %d...\n", k1_get_cluster_id());
   sprintf(pathname, "/cpu%d", k1_get_cluster_id());
-	inbox = mailbox_create(pathname);
-  server = mailbox_open("/io0");
+	inbox = mailbox_create(k1_get_cluster_id());
+  server = mailbox_open(IOCLUSTER0);
 
   /* Send name request. */
-  printf("Sending request for /cpu3...\n");
+  printf("Sending request for /cpu%d...\n", k1_get_cluster_id());
 	assert(mailbox_write(server, &msg) == 0);
 
   while(msg.id == -1){

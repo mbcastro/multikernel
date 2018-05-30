@@ -21,7 +21,7 @@
 #define NANVIX_NAME_H_
 
   /**
-   * @brief name request types
+   * @brief name request types.
    */
   #define NAME_QUERY 1
   #define NAME_ADD 2

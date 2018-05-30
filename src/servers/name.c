@@ -256,7 +256,7 @@ static void *name_server(void *args)
 
 	sprintf(pathname, "/io%d", dma);
 	pthread_mutex_lock(&lock);
-		inbox = mailbox_create(pathname);
+		inbox = mailbox_create(IOCLUSTER0);
 	pthread_mutex_unlock(&lock);
 
 	pthread_barrier_wait(&barrier);
@@ -278,7 +278,7 @@ static void *name_server(void *args)
 				msg.id = name_cluster_id(msg.name);
 				msg.dma = name_cluster_dma(msg.name);
 				sprintf(msg.process_name, "%s", name_process_name(msg.id));
-				int source = mailbox_open(name_cluster_name(msg.source));
+				int source = mailbox_open(msg.source);
 				assert(source >= 0);
 				assert(mailbox_write(source, &msg) == 0);
 				assert(mailbox_close(source) == 0);
