@@ -17,7 +17,6 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <mppa/osconfig.h>
 #include <nanvix/arch/mppa.h>
 #include <nanvix/mm.h>
 #include <nanvix/pm.h>
@@ -26,8 +25,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-static pthread_mutex_t lock;
+#include <pthread.h>
 
 /*====================================================================*
  * main                                                               *
@@ -39,32 +37,30 @@ static pthread_mutex_t lock;
 int main()
 {
   struct name_message msg;
-  struct name_message ans;
   char pathname[16];
-  int inbox;         /* Mailbox for small messages. */
+  int inbox, server;         /* Mailbox for small messages. */
 
 	/* Build operation header. */
 	msg.source = k1_get_cluster_id();
 	msg.op = NAME_QUERY;
-	msg.id = 0;     					/**< Cluster ID.  		*/
+  msg.id = -1;
+  msg.dma = -1;
+	sprintf(msg.name, "/cpu3");
+  sprintf(msg.process_name, "_");
 
   printf("Creating inbox of cluster %d...\n", k1_get_cluster_id());
   sprintf(pathname, "/cpu%d", k1_get_cluster_id());
-  pthread_mutex_lock(&lock);
-		inbox = mailbox_create(pathname);
-	pthread_mutex_unlock(&lock);
+	inbox = mailbox_create(pathname);
+  server = mailbox_open("/io0");
 
-	/* Send name request. */
-  printf("Sending request to name server...\n");
-	mailbox_write(mailbox_open("/io0"), &msg);
+  /* Send name request. */
+  printf("Sending request for /cpu3...\n");
+	assert(mailbox_write(server, &msg) == 0);
 
-  ans.op = 0;
-  while(1){
-    mailbox_read(inbox, &ans);
-
-    if(ans.op != 0)
-      printf("Message : op = %d, name = %s\n", ans.op, ans.name);
+  while(msg.id == -1){
+    assert(mailbox_read(inbox, &msg) == 0);
   }
+  printf("Server response = [op: %d, name: %s, process name: %s, id: %d, dma: %d]\n", msg.op, msg.name, msg.process_name, msg.id, msg.dma);
 
 	return (EXIT_SUCCESS);
 }

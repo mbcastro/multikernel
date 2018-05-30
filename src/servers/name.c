@@ -49,7 +49,7 @@ static struct {
 	{ CCLUSTER0,  CCLUSTER0,      "/cpu0",	""  },
 	{ CCLUSTER1,  CCLUSTER1,      "/cpu1",	""  },
 	{ CCLUSTER2,  CCLUSTER2,      "/cpu2",	""  },
-	{ CCLUSTER3,  CCLUSTER3,      "/cpu3",	""  },
+	{ CCLUSTER3,  CCLUSTER3,      "/cpu3",	"name"  },
 	{ CCLUSTER4,  CCLUSTER4,      "/cpu4",	""  },
 	{ CCLUSTER5,  CCLUSTER5,      "/cpu5",	""  },
 	{ CCLUSTER6,  CCLUSTER6,      "/cpu6",	""  },
@@ -265,26 +265,38 @@ static void *name_server(void *args)
 	{
 		struct name_message msg;
 
-		mailbox_read(inbox, &msg);
+		assert(mailbox_read(inbox, &msg) == 0);
 
 		/* handle name query. */
 		switch (msg.op)
 		{
 			/* Query name. */
 			case NAME_QUERY:
+				#ifdef DEBUG
+					printf("Entering name query case... name: %s\n", msg.name);
+				#endif
 				msg.id = name_cluster_id(msg.name);
 				msg.dma = name_cluster_dma(msg.name);
 				sprintf(msg.process_name, "%s", name_process_name(msg.id));
-				mailbox_write(msg.source, &msg);
+				int source = mailbox_open(name_cluster_name(msg.source));
+				assert(source >= 0);
+				assert(mailbox_write(source, &msg) == 0);
+				assert(mailbox_close(source) == 0);
 				break;
 
 			/* Add name. */
 			case NAME_ADD:
+				#ifdef DEBUG
+					printf("Entering add name case... id: %d, dma: %d, name: %s, process name: %s\n", msg.id, msg.dma, msg.name, msg.process_name);
+				#endif
 				assert(register_name(msg.id, msg.dma, msg.name, msg.process_name) != -1);
 				break;
 
       /* Remove name. */
 			case NAME_REMOVE:
+				#ifdef DEBUG
+					printf("Entering remove name case... name: %s\n", msg.name);
+				#endif
 				remove_name(msg.name);
 				break;
 

@@ -30,6 +30,7 @@ cflags += -Winit-self -Wswitch-default -Wfloat-equal -Wundef -Wshadow -Wuninitia
 cflags += -O3
 cflags += -I $(INCDIR)
 cflags += -D_KALRAY_MPPA256
+cflags += -DDEBUG
 lflags := -Wl,--defsym=_LIBNOC_DISABLE_FIFO_FULL_CHECK=0
 O := $(SRCDIR)/../output
 
@@ -60,7 +61,7 @@ name-slave-srcs := $(SRCDIR)/kernel/arch/mppa/barrier.c \
 
 # Toolchain Configuration
 name-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
-name-slave-lflags := -lmppaipc
+name-slave-lflags := -lmppaipc -pthread
 
 io-bin += name-master
 name-master-srcs := $(SRCDIR)/kernel/arch/mppa/barrier.c \
