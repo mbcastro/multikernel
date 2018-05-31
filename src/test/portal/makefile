@@ -42,6 +42,7 @@ km-portal-slave-srcs := $(SRCDIR)/benchmark/km/portal/slave/slave.c     \
 					 $(SRCDIR)/benchmark/km/portal/slave/vector.c    \
 					 $(SRCDIR)/benchmark/km/portal/slave/ipc.c    \
 					 $(SRCDIR)/kernel/arch/mppa/portal.c  \
+					 $(SRCDIR)/kernel/arch/mppa/mailbox.c  \
 					 $(SRCDIR)/kernel/arch/mppa/barrier.c \
 					 $(SRCDIR)/kernel/arch/mppa/name.c    \
 					 $(SRCDIR)/kernel/arch/mppa/timer.c   \
@@ -59,6 +60,7 @@ km-portal-master-srcs := $(SRCDIR)/benchmark/km/portal/master/main.c     \
 					  $(SRCDIR)/benchmark/km/portal/master/util.c     \
 					  $(SRCDIR)/benchmark/km/portal/master/ipc.c      \
 					  $(SRCDIR)/kernel/arch/mppa/portal.c  \
+						$(SRCDIR)/kernel/arch/mppa/mailbox.c  \
 					  $(SRCDIR)/kernel/arch/mppa/name.c    \
 					  $(SRCDIR)/kernel/arch/mppa/core.c
 
@@ -76,6 +78,7 @@ km-portal-name := km-portal.img
 io-bin += portal-master
 portal-master-srcs := $(SRCDIR)/test/portal/master.c  \
 					  $(SRCDIR)/kernel/arch/mppa/portal.c  \
+						$(SRCDIR)/kernel/arch/mppa/mailbox.c  \
 					  $(SRCDIR)/kernel/arch/mppa/name.c    \
 					  $(SRCDIR)/kernel/arch/mppa/core.c
 
@@ -87,6 +90,7 @@ portal-master-lflags := -lmppaipc
 cluster-bin += portal-slave
 portal-slave-srcs := $(SRCDIR)/test/portal/slave.c   \
 					 $(SRCDIR)/kernel/arch/mppa/portal.c  \
+					 $(SRCDIR)/kernel/arch/mppa/mailbox.c  \
 					 $(SRCDIR)/kernel/arch/mppa/barrier.c \
 					 $(SRCDIR)/kernel/arch/mppa/name.c    \
 					 $(SRCDIR)/kernel/arch/mppa/timer.c   \
@@ -109,6 +113,7 @@ is-portal-slave-srcs := $(SRCDIR)/benchmark/is/portal/slave/slave.c    \
 					 $(SRCDIR)/benchmark/is/portal/slave/sort.c   \
 					 $(SRCDIR)/kernel/arch/mppa/timer.c  \
 					 $(SRCDIR)/kernel/arch/mppa/portal.c  \
+					 $(SRCDIR)/kernel/arch/mppa/mailbox.c  \
 					 $(SRCDIR)/kernel/arch/mppa/name.c    \
 					 $(SRCDIR)/kernel/arch/mppa/core.c
 #$(SRCDIR)/benchmark/is/slave/ipc.c
@@ -128,6 +133,7 @@ is-portal-master-srcs := $(SRCDIR)/benchmark/is/portal/master/main.c    \
 					  $(SRCDIR)/benchmark/is/portal/master/util.c    \
 					  $(SRCDIR)/kernel/arch/mppa/timer.c  \
 					  $(SRCDIR)/kernel/arch/mppa/portal.c  \
+						$(SRCDIR)/kernel/arch/mppa/mailbox.c  \
 					  $(SRCDIR)/kernel/arch/mppa/name.c    \
 					  $(SRCDIR)/kernel/arch/mppa/core.c
 
@@ -152,6 +158,7 @@ gf-portal-slave-srcs := $(SRCDIR)/benchmark/gf/portal/slave/slave.c \
 						 		$(SRCDIR)/benchmark/gf/util.c               \
 				        $(SRCDIR)/kernel/arch/mppa/timer.c          \
 				        $(SRCDIR)/kernel/arch/mppa/portal.c         \
+								$(SRCDIR)/kernel/arch/mppa/mailbox.c  \
 				        $(SRCDIR)/kernel/arch/mppa/name.c           \
 				        $(SRCDIR)/kernel/arch/mppa/core.c
 
@@ -167,6 +174,7 @@ gf-portal-master-srcs := $(SRCDIR)/benchmark/gf/portal/master/main.c   \
 						 $(SRCDIR)/benchmark/gf/util.c                 \
 						 $(SRCDIR)/kernel/arch/mppa/timer.c            \
 						 $(SRCDIR)/kernel/arch/mppa/portal.c           \
+						 $(SRCDIR)/kernel/arch/mppa/mailbox.c  \
 						 $(SRCDIR)/kernel/arch/mppa/name.c             \
 						 $(SRCDIR)/kernel/arch/mppa/core.c
 

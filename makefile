@@ -16,7 +16,7 @@
 # along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
 #
 
-all: async mailbox portal rmem
+all: async mailbox portal rmem name
 
 async:
 	cd $(CURDIR)/src/test/async/; make;
@@ -30,8 +30,12 @@ portal:
 rmem:
 	cd $(CURDIR)/src/test/rmem/; make;
 
+name:
+	cd $(CURDIR)/src/test/name/; make;
+
 clean:
 	cd $(CURDIR)/src/test/async/; make clean;
 	cd $(CURDIR)/src/test/mailbox/; make clean;
 	cd $(CURDIR)/src/test/portal/; make clean;
 	cd $(CURDIR)/src/test/rmem/; make clean;
+	cd $(CURDIR)/src/test/name/; make clean;

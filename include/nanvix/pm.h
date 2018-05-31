@@ -23,6 +23,20 @@
 	#include <stddef.h>
 
 /*=======================================================================*
+ * Naming                                                                *
+ *=======================================================================*/
+
+	/* Forward definitions. */
+	extern int name_cluster_id(const char *);
+	extern int name_cluster_dma(const char *);
+	extern const char *id_cluster_name(int);
+	extern const char *id_process_name(int);
+	extern void name_remotes(char *, int);
+	extern void register_name(int, int, const char *, const char *);
+	extern void remove_name(const char *);
+
+
+/*=======================================================================*
  * Mailbox                                                               *
  *=======================================================================*/
 

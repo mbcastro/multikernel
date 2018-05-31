@@ -41,6 +41,7 @@ O := $(SRCDIR)/../output
 io-bin += name-server
 name-server-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
 					$(SRCDIR)/kernel/arch/mppa/barrier.c \
+					$(SRCDIR)/kernel/arch/mppa/name.c \
 					$(SRCDIR)/kernel/arch/mppa/core.c    \
 					$(SRCDIR)/servers/name.c
 
@@ -57,6 +58,7 @@ cluster-bin += name-slave
 name-slave-srcs := $(SRCDIR)/kernel/arch/mppa/barrier.c \
 							 $(SRCDIR)/kernel/arch/mppa/core.c    \
 							 $(SRCDIR)/kernel/arch/mppa/mailbox.c \
+							 $(SRCDIR)/kernel/arch/mppa/name.c \
 						   $(SRCDIR)/test/name/slave.c
 
 # Toolchain Configuration
@@ -66,6 +68,7 @@ name-slave-lflags := -lmppaipc -pthread
 io-bin += name-master
 name-master-srcs := $(SRCDIR)/kernel/arch/mppa/barrier.c \
 							$(SRCDIR)/kernel/arch/mppa/mailbox.c \
+							$(SRCDIR)/kernel/arch/mppa/name.c \
 							$(SRCDIR)/kernel/arch/mppa/core.c    \
 							$(SRCDIR)/test/name/master.c
 

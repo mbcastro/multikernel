@@ -118,6 +118,7 @@ io-bin += rmem-master
 rmem-master-srcs := $(SRCDIR)/kernel/arch/mppa/barrier.c \
 							$(SRCDIR)/kernel/arch/mppa/core.c    \
 							$(SRCDIR)/kernel/arch/mppa/name.c    \
+							$(SRCDIR)/kernel/arch/mppa/mailbox.c  \
 							$(SRCDIR)/test/rmem/master.c
 
 # Toolchain Configuration

@@ -73,7 +73,7 @@ static struct {
 };
 
 /*=======================================================================*
- * name_cluster_id()                                                     *
+ * server_name_cluster_id()                                                     *
  *=======================================================================*/
 
 /**
@@ -85,7 +85,7 @@ static struct {
  * name is returned. Upon failure, a negative error code is returned
  * instead.
  */
-int name_cluster_id(const char *name)
+int server_name_cluster_id(const char *name)
 {
 	/* Search for portal name. */
 	for (int i = 0; i < NR_DMA; i++)
@@ -99,7 +99,7 @@ int name_cluster_id(const char *name)
 }
 
 /*=======================================================================*
- * name_cluster_dma()                                                    *
+ * server_name_cluster_dma()                                                    *
  *=======================================================================*/
 
 /**
@@ -111,7 +111,7 @@ int name_cluster_id(const char *name)
  * name is returned. Upon failure, a negative error code is returned
  * instead.
  */
-int name_cluster_dma(const char *name)
+int server_name_cluster_dma(const char *name)
 {
 	/* Search for portal name. */
 	for (int i = 0; i < NR_DMA; i++)
@@ -136,7 +136,7 @@ int name_cluster_dma(const char *name)
  * @returns Upon successful completion the pathname that matches the cluster ID
  * @p clusterid is returned. Upon failure, NULL is returned instead.
  */
-const char *id_cluster_name(int clusterid)
+const char *server_id_cluster_name(int clusterid)
 {
 	/* Search for portal name. */
 	for (int i = 0; i < NR_DMA; i++)
@@ -150,7 +150,7 @@ const char *id_cluster_name(int clusterid)
 }
 
 /*=======================================================================*
- * id_process_name()                                                      *
+ * server_id_process_name()                                                      *
  *=======================================================================*/
 
 /**
@@ -161,7 +161,7 @@ const char *id_cluster_name(int clusterid)
  * @returns Upon successful completion the process name that matches the cluster ID.
  * Upon failure, NULL is returned instead.
  */
-const char *id_process_name(int clusterid)
+const char *server_id_process_name(int clusterid)
 {
 	/* Search for process name. */
 	for (int i = 0; i < NR_DMA; i++)
@@ -175,7 +175,7 @@ const char *id_process_name(int clusterid)
 }
 
 /*=======================================================================*
- * register_name()                                                        *
+ * server_register_name()                                                        *
  *=======================================================================*/
 
 /**
@@ -189,7 +189,7 @@ const char *id_process_name(int clusterid)
  * @returns Upon successful registration the number of name is returned.
  * Upon failure, a negative error code is returned instead.
  */
-int register_name(int id, int dma, const char *name, const char *process_name)
+int server_register_name(int id, int dma, const char *name, const char *process_name)
 {
 	int index;
 
@@ -220,7 +220,7 @@ int register_name(int id, int dma, const char *name, const char *process_name)
 }
 
 /*=======================================================================*
- * remove_name()                                                        *
+ * server_remove_name()                                                        *
  *=======================================================================*/
 
 /**
@@ -228,7 +228,7 @@ int register_name(int id, int dma, const char *name, const char *process_name)
  *
  * @param name	Portal name.
  */
-void remove_name(const char *name)
+void server_remove_name(const char *name)
 {
 	/* Search for portal name. */
 	int i = 0;
@@ -292,9 +292,16 @@ static void *name_server(void *args)
 				#endif
 
 				/* Lookup */
-				msg.id = name_cluster_id(msg.name);
-				msg.dma = name_cluster_dma(msg.name);
-				sprintf(msg.process_name, "%s", id_process_name(msg.id));
+
+				if(msg.id == -1){
+					/* ID query */
+					msg.id = server_name_cluster_id(msg.name);
+				}else{
+					/* name query */
+					sprintf(msg.name, "%s", server_id_cluster_name(msg.id));
+				}
+				msg.dma = server_name_cluster_dma(msg.name);
+				sprintf(msg.process_name, "%s", server_id_process_name(msg.id));
 
 				/* Send response */
 				int source = mailbox_open(msg.source);
@@ -309,7 +316,7 @@ static void *name_server(void *args)
 					printf("Entering add name case... id: %d, dma: %d, name: %s, process name: %s\n", msg.id, msg.dma, msg.name, msg.process_name);
 				#endif
 
-				assert(register_name(msg.id, msg.dma, msg.name, msg.process_name) != -2);
+				assert(server_register_name(msg.id, msg.dma, msg.name, msg.process_name) != -2);
 				break;
 
       /* Remove name. */
@@ -318,7 +325,7 @@ static void *name_server(void *args)
 					printf("Entering remove name case... name: %s\n", msg.name);
 				#endif
 
-				remove_name(msg.name);
+				server_remove_name(msg.name);
 				break;
 
 			/* Should not happen. */
@@ -375,7 +382,7 @@ int main(int argc, char **argv)
 	printf("[NAME_RESOLUTION] server alive\n");
 #endif
 
-	/* Wait for name server threads. */
+	/* Wait for name server thread. */
 	pthread_join(tid, NULL);
 
 	/* House keeping. */

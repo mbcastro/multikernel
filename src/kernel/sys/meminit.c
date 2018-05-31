@@ -1,18 +1,18 @@
 /*
  * Copyright(C) 2011-2018 Pedro H. Penna <pedrohenriquepenna@gmail.com>
- * 
+ *
  * This file is part of Nanvix.
- * 
+ *
  * Nanvix is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * Nanvix is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
@@ -47,14 +47,13 @@ void meminit(void)
 
 	/* Retrieve cluster information. */
 	clusterid = k1_get_cluster_id();
-	clustername = name_cluster_name(clusterid);
+	clustername = id_cluster_name(clusterid);
 
 	/* Open underlying IPC connectors. */
 	sprintf(pathname, "/rmem%d", clusterid%NR_IOCLUSTER_DMA);
 	_mem_inportal = portal_create(clustername);
-	_mem_outbox = mailbox_open(pathname);
+	_mem_outbox = mailbox_open(clusterid);
 	_mem_outportal = portal_open(pathname);
 
 	initialized = 1;
 }
-

@@ -1,18 +1,18 @@
 /*
  * Copyright(C) 2011-2017 Pedro H. Penna <pedrohenriquepenna@gmail.com>
- * 
+ *
  * This file is part of Nanvix.
- * 
+ *
  * Nanvix is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * Nanvix is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
@@ -54,7 +54,7 @@ static inline void rmem_write(int inportal, int remote, uint64_t blknum, int siz
 {
 	portal_allow(inportal, remote);
 	portal_read(inportal, &rmem[blknum], size);
-}	
+}
 
 /*===================================================================*
  * rmem_read()                                                       *
@@ -71,7 +71,7 @@ static inline void rmem_read(int remote, uint64_t blknum, int size)
 {
 	int outportal;
 
-	outportal = portal_open(name_cluster_name(remote));
+	outportal = portal_open(id_cluster_name(remote));
 	portal_write(outportal, &rmem[blknum], size);
 	portal_close(outportal);
 }
@@ -98,7 +98,7 @@ static void *rmem_server(void *args)
 
 	sprintf(pathname, "/rmem%d", dma);
 	pthread_mutex_lock(&lock);
-		inbox = mailbox_create(pathname);
+		inbox = mailbox_create(dma);
 		inportal = portal_create(pathname);
 	pthread_mutex_unlock(&lock);
 
@@ -107,7 +107,7 @@ static void *rmem_server(void *args)
 	while(1)
 	{
 		struct rmem_message msg;
-		
+
 		mailbox_read(inbox, &msg);
 
 		/* handle write operation. */
