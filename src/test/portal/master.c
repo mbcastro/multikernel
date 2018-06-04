@@ -1,18 +1,18 @@
 /*
  * Copyright(C) 2011-2018 Pedro H. Penna <pedrohenriquepenna@gmail.com>
- * 
+ *
  * This file is part of Nanvix.
- * 
+ *
  * Nanvix is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * Nanvix is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
@@ -35,12 +35,12 @@
 static int pids[NR_CCLUSTER];
 
 /**
- * @brief Spawns slave processes. 
+ * @brief Spawns slave processes.
  *
  * @param nclusters Number of clusters to spawn.
  * @param args      Cluster arguments.
  */
-static void spawn_slaves(int nclusters, char **args) 
+static void spawn_slaves(int nclusters, char **args)
 {
 	const char *argv[] = {
 		"portal-slave",
@@ -59,7 +59,7 @@ static void spawn_slaves(int nclusters, char **args)
  *
  * @param nclusters Number of slaves to wait.
  */
-static void join_slaves(int nclusters) 
+static void join_slaves(int nclusters)
 {
 	for (int i = 0; i < nclusters; i++)
 		assert(mppa_waitpid(pids[i], NULL, 0) != -1);
@@ -89,11 +89,14 @@ int main(int argc, char **argv)
 	nclusters = atoi(argv[2]);
 	assert((size = atoi(argv[3])) <= MAX_BUFFER_SIZE);
 
+	/* Register process name*/
+	register_name(IOCLUSTER1, "/portal1", "portal-test");
+
 	/*
 	 * Open input portal before sapwning
 	 * slaves so that we are synced.
 	 */
-	inportal = portal_create("/io0");
+	inportal = portal_create("/portal1");
 
 	spawn_slaves(nclusters, argv);
 
@@ -103,7 +106,7 @@ int main(int argc, char **argv)
 	 */
 	memset(buffer, 0, nclusters*size);
 
-	/* 
+	/*
 	 * Benchmark. First iteration is
 	 * used to warmup resources.
 	 */

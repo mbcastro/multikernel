@@ -32,7 +32,7 @@
 	extern const char *id_cluster_name(int);
 	extern const char *id_process_name(int);
 	extern void name_remotes(char *, int);
-	extern void register_name(int, int, const char *, const char *);
+	extern void register_name(int, const char *, const char *);
 	extern void remove_name(const char *);
 
 

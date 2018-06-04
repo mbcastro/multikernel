@@ -32,6 +32,10 @@
 #include <stdio.h>
 #endif
 
+static pthread_barrier_t barrier;
+
+static pthread_mutex_t lock;
+
 /**
  * @brief Number of cluster name registered.
  */
@@ -62,7 +66,7 @@ static struct {
 	{ CCLUSTER13, CCLUSTER13,     " ",	" "  },
 	{ CCLUSTER14, CCLUSTER14,     " ",	" "  },
 	{ CCLUSTER15, CCLUSTER15,     " ",	" "  },
-	{ IOCLUSTER0, IOCLUSTER0 + 0, " ",	" "  },
+	{ IOCLUSTER0, IOCLUSTER0 + 0, "/io0",	"name-server"  },
 	{ IOCLUSTER0, IOCLUSTER0 + 1, " ",	" "  },
 	{ IOCLUSTER0, IOCLUSTER0 + 2, " ",	" "  },
 	{ IOCLUSTER0, IOCLUSTER0 + 3, " ",	" "  },
@@ -142,7 +146,7 @@ const char *server_id_cluster_name(int clusterid)
 	for (int i = 0; i < NR_DMA; i++)
 	{
 		/* Found. */
-		if (names[i].id == clusterid)
+		if (names[i].dma == clusterid)
 			return (names[i].name);
 	}
 
@@ -167,7 +171,7 @@ const char *server_id_process_name(int clusterid)
 	for (int i = 0; i < NR_DMA; i++)
 	{
 		/* Found. */
-		if (names[i].id == clusterid)
+		if (names[i].dma == clusterid)
 			return (names[i].process_name);
 	}
 
@@ -181,7 +185,6 @@ const char *server_id_process_name(int clusterid)
 /**
  * @brief Register a process name
  *
- * @param id		Cluster ID.
  * @param DMA		DMA channel.
  * @param name	Portal name.
  * @param process_name	Process name.
@@ -189,13 +192,14 @@ const char *server_id_process_name(int clusterid)
  * @returns Upon successful registration the number of name is returned.
  * Upon failure, a negative error code is returned instead.
  */
-int server_register_name(int id, int dma, const char *name, const char *process_name)
+int server_register_name(int dma, const char *name, const char *process_name)
 {
-	int index;
+	int index = -1;
+
 
 	/* No DMA available. */
 	if(nr_cluster >= NR_DMA)
-		return (-EINVAL);
+		return -1;
 
 	/* Compute index registration */
 	if(dma >= 0 && dma < NR_CCLUSTER)
@@ -209,10 +213,12 @@ int server_register_name(int id, int dma, const char *name, const char *process_
 
 	/* DMA channel not available */
 	if(strcmp(names[index].name, " "))
-		return (-EINVAL);
+		return -3;
 
-	names[index].id = id;
-	names[index].dma = dma;
+	#ifdef DEBUG
+		printf("Writing %s, %s at index %d.\n", name, process_name, index);
+	#endif
+
 	sprintf(names[index].name, "%s", name);
 	sprintf(names[index].process_name, "%s", process_name);
 
@@ -248,10 +254,6 @@ void server_remove_name(const char *name)
 	return;
 }
 
-static pthread_barrier_t barrier;
-
-static pthread_mutex_t lock;
-
 /*===================================================================*
  * name_server()                                                     *
  *===================================================================*/
@@ -285,19 +287,19 @@ static void *name_server(void *args)
 		/* handle name query. */
 		switch (msg.op)
 		{
-			/* Query name. */
+			/* Lookup */
 			case NAME_QUERY:
-				#ifdef DEBUG
-					printf("Entering name query case... name: %s\n", msg.name);
-				#endif
-
-				/* Lookup */
-
 				if(msg.id == -1){
 					/* ID query */
+					#ifdef DEBUG
+						printf("Entering NAME_QUERY case... name provided: %s.\n", msg.name);
+					#endif
 					msg.id = server_name_cluster_id(msg.name);
 				}else{
 					/* name query */
+					#ifdef DEBUG
+						printf("Entering NAME_QUERY case... id provided: %d.\n", msg.id);
+					#endif
 					sprintf(msg.name, "%s", server_id_cluster_name(msg.id));
 				}
 				msg.dma = server_name_cluster_dma(msg.name);
@@ -313,16 +315,16 @@ static void *name_server(void *args)
 			/* Add name. */
 			case NAME_ADD:
 				#ifdef DEBUG
-					printf("Entering add name case... id: %d, dma: %d, name: %s, process name: %s\n", msg.id, msg.dma, msg.name, msg.process_name);
+					printf("Entering NAME_ADD case... dma: %d, name: %s, process name: %s.\n", msg.dma, msg.name, msg.process_name);
 				#endif
 
-				assert(server_register_name(msg.id, msg.dma, msg.name, msg.process_name) != -2);
+				assert(server_register_name(msg.dma, msg.name, msg.process_name) > 0);
 				break;
 
       /* Remove name. */
 			case NAME_REMOVE:
 				#ifdef DEBUG
-					printf("Entering remove name case... name: %s\n", msg.name);
+					printf("Entering NAME_REMOVE case... name: %s.\n", msg.name);
 				#endif
 
 				server_remove_name(msg.name);
@@ -361,9 +363,6 @@ int main(int argc, char **argv)
 	printf("[NAME_RESOLUTION] booting up server\n");
 #endif
 
-	pthread_mutex_init(&lock, NULL);
-	pthread_barrier_init(&barrier, NULL, 2);
-
 	/* Spawn name server thread. */
 	int dma = 0;
 	assert((pthread_create(&tid,
@@ -372,10 +371,8 @@ int main(int argc, char **argv)
 		&dma)) == 0
 	);
 
-	pthread_barrier_wait(&barrier);
-
 	/* Release master IO cluster. */
-	global_barrier = barrier_open(1);
+	global_barrier = barrier_open(NR_IOCLUSTER);
 	barrier_wait(global_barrier);
 
 #ifdef DEBUG

@@ -45,11 +45,11 @@ int name_cluster_id(const char *name)
   int inbox, server;         /* Mailbox for small messages. */
 
   #ifdef DEBUG
-    printf("Creating inbox of cluster %d...\n", k1_get_cluster_id());
+    printf("name_cluster_id(%s): Creating inbox of cluster %d...\n", name, k1_get_cluster_id());
   #endif
 
-  inbox = mailbox_create(k1_get_cluster_id());
   server = mailbox_open(IOCLUSTER0);
+  inbox = mailbox_create(k1_get_cluster_id());
 
   /* Build operation header. */
 	msg.source = k1_get_cluster_id();
@@ -61,7 +61,7 @@ int name_cluster_id(const char *name)
 
   /* Send name request. */
   #ifdef DEBUG
-    printf("Sending request for %s...\n", name);
+    printf("Sending request for name: %s...\n", name);
   #endif
 
   assert(mailbox_write(server, &msg) == 0);
@@ -71,8 +71,8 @@ int name_cluster_id(const char *name)
   }
 
   /* House keeping. */
-  mailbox_close(server);
-  mailbox_close(inbox);
+  assert(mailbox_close(server) == 0);
+  assert(mailbox_close(inbox) == 0);
 
 	return msg.id;
 }
@@ -95,7 +95,7 @@ int name_cluster_dma(const char *name)
   int inbox, server;         /* Mailbox for small messages. */
 
   #ifdef DEBUG
-    printf("Creating inbox of cluster %d...\n", k1_get_cluster_id());
+    printf("name_cluster_dma(%s): Creating inbox of cluster %d...\n", name, k1_get_cluster_id());
   #endif
 
   inbox = mailbox_create(k1_get_cluster_id());
@@ -111,7 +111,7 @@ int name_cluster_dma(const char *name)
 
   /* Send name request. */
   #ifdef DEBUG
-    printf("Sending request for %s...\n", name);
+    printf("Sending request for name: %s...\n", name);
   #endif
 
   assert(mailbox_write(server, &msg) == 0);
@@ -121,8 +121,8 @@ int name_cluster_dma(const char *name)
   }
 
   /* House keeping. */
-  mailbox_close(server);
-  mailbox_close(inbox);
+  assert(mailbox_close(server) == 0);
+  assert(mailbox_close(inbox) == 0);
 
 	return msg.dma;
 }
@@ -144,7 +144,7 @@ const char *id_cluster_name(int clusterid)
   int inbox, server;         /* Mailbox for small messages. */
 
   #ifdef DEBUG
-    printf("Creating inbox of cluster %d...\n", k1_get_cluster_id());
+    printf("id_cluster_name(%d): Creating inbox of cluster %d...\n", clusterid, k1_get_cluster_id());
   #endif
 
   inbox = mailbox_create(k1_get_cluster_id());
@@ -170,8 +170,8 @@ const char *id_cluster_name(int clusterid)
   }
 
   /* House keeping. */
-  mailbox_close(server);
-  mailbox_close(inbox);
+  assert(mailbox_close(server) == 0);
+  assert(mailbox_close(inbox) == 0);
 
 	return msg.name;
 }
@@ -193,7 +193,7 @@ const char *id_process_name(int clusterid)
   int inbox, server;         /* Mailbox for small messages. */
 
   #ifdef DEBUG
-    printf("Creating inbox of cluster %d...\n", k1_get_cluster_id());
+    printf("id_process_name(%d): Creating inbox of cluster %d...\n", clusterid, k1_get_cluster_id());
   #endif
 
   inbox = mailbox_create(k1_get_cluster_id());
@@ -219,10 +219,10 @@ const char *id_process_name(int clusterid)
   }
 
   /* House keeping. */
-  mailbox_close(server);
-  mailbox_close(inbox);
+  assert(mailbox_close(server) == 0);
+  assert(mailbox_close(inbox) == 0);
 
-	return msg.name;
+	return msg.process_name;
 }
 
 /*=======================================================================*
@@ -281,17 +281,16 @@ void name_remotes(char *remotes, int local)
 /**
  * @brief Register a process name
  *
- * @param id		Cluster ID.
  * @param DMA		DMA channel.
  * @param name	Portal name.
  * @param process_name	Process name.
  */
-void register_name(int id, int dma, const char *name, const char *process_name)
+void register_name(int dma, const char *name, const char *process_name)
 {
   int server;         /* Mailbox for small messages. */
 
   #ifdef DEBUG
-    printf("Creating inbox of cluster %d...\n", k1_get_cluster_id());
+    printf("register_name(%s): opening name server mailbox from cluster %d...\n", name, k1_get_cluster_id());
   #endif
 
   server = mailbox_open(IOCLUSTER0);
@@ -299,7 +298,6 @@ void register_name(int id, int dma, const char *name, const char *process_name)
   /* Build operation header. */
 	msg.source = k1_get_cluster_id();
 	msg.op = NAME_ADD;
-  msg.id = id;
   msg.dma = dma;
 	sprintf(msg.name, name);
   sprintf(msg.process_name, process_name);
@@ -310,6 +308,9 @@ void register_name(int id, int dma, const char *name, const char *process_name)
   #endif
 
   assert(mailbox_write(server, &msg) == 0);
+
+  /* House keeping. */
+  assert(mailbox_close(server) == 0);
 }
 
 /*=======================================================================*
@@ -326,7 +327,7 @@ void remove_name(const char *name)
   int server;         /* Mailbox for small messages. */
 
   #ifdef DEBUG
-    printf("Creating inbox of cluster %d...\n", k1_get_cluster_id());
+    printf("remove_name(%s): opening name server mailbox from cluster %d...\n", name, k1_get_cluster_id());
   #endif
 
   server = mailbox_open(IOCLUSTER0);
@@ -340,6 +341,12 @@ void remove_name(const char *name)
   sprintf(msg.process_name, " ");
 
   /* Send name request. */
-  printf("Sending remove request for name: %s...\n", name);
+  #ifdef DEBUG
+    printf("Sending remove request for name: %s...\n", name);
+  #endif
+
 	assert(mailbox_write(server, &msg) == 0);
+
+  /* House keeping. */
+  assert(mailbox_close(server) == 0);
 }

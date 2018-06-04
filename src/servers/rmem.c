@@ -98,7 +98,7 @@ static void *rmem_server(void *args)
 
 	sprintf(pathname, "/rmem%d", dma);
 	pthread_mutex_lock(&lock);
-		inbox = mailbox_create(dma);
+		inbox = mailbox_create(IOCLUSTER1 + dma);
 		inportal = portal_create(pathname);
 	pthread_mutex_unlock(&lock);
 
@@ -150,6 +150,7 @@ int main(int argc, char **argv)
 	int global_barrier;               /* System barrier. */
 	int dmas[NR_IOCLUSTER_DMA];       /* DMA IDs.        */
 	pthread_t tids[NR_IOCLUSTER_DMA]; /* Thread IDs.     */
+	char pathname[16];
 
 	((void) argc);
 	((void) argv);
@@ -160,6 +161,13 @@ int main(int argc, char **argv)
 
 	pthread_mutex_init(&lock, NULL);
 	pthread_barrier_init(&barrier, NULL, NR_IOCLUSTER_DMA + 1);
+
+	/* Register name processes */
+	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
+	{
+		sprintf(pathname, "/rmem%d", i);
+		register_name(IOCLUSTER1 + i, pathname, "rmem-server");
+	}
 
 	/* Spawn RMEM server threads. */
 	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)

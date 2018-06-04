@@ -30,8 +30,25 @@ cflags += -Winit-self -Wswitch-default -Wfloat-equal -Wundef -Wshadow -Wuninitia
 cflags += -O3
 cflags += -I $(INCDIR)
 cflags += -D_KALRAY_MPPA256
+cflags += -DDEBUG
 lflags := -Wl,--defsym=_LIBNOC_DISABLE_FIFO_FULL_CHECK=0
 O := $(SRCDIR)/../output
+
+#=============================================================================
+# Name server
+#=============================================================================
+
+io-bin += name-server
+name-server-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
+					$(SRCDIR)/kernel/arch/mppa/barrier.c \
+					$(SRCDIR)/kernel/arch/mppa/name.c \
+					$(SRCDIR)/kernel/arch/mppa/core.c    \
+					$(SRCDIR)/servers/name.c
+
+# Toolchain Configuration
+name-server-system := rtems
+name-server-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+name-server-lflags := -lmppaipc -pthread
 
 #=============================================================================
 # Kmeans Benchmark Kernel
@@ -68,7 +85,7 @@ km-portal-master-srcs := $(SRCDIR)/benchmark/km/portal/master/main.c     \
 km-portal-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
 km-portal-master-lflags := -lmppaipc -lm
 
-km-portal-objs := km-portal-master km-portal-slave
+km-portal-objs := km-portal-master km-portal-slave name-server
 km-portal-name := km-portal.img
 
 #=============================================================================
@@ -101,7 +118,7 @@ portal-slave-system := nodeos
 portal-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
 portal-slave-lflags := -lmppaipc
 
-portal-objs := portal-master portal-slave
+portal-objs := portal-master portal-slave name-server
 portal-name := portal.img
 
 #=============================================================================
@@ -145,7 +162,7 @@ is-portal-master-system := rtems
 is-portal-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
 is-portal-master-lflags := -lmppaipc -pthread
 
-is-portal-objs := is-portal-master is-portal-slave
+is-portal-objs := is-portal-master is-portal-slave name-server
 is-portal-name := is-portal.img
 
 #=============================================================================
@@ -182,7 +199,7 @@ gf-portal-master-srcs := $(SRCDIR)/benchmark/gf/portal/master/main.c   \
 gf-portal-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
 gf-portal-master-lflags := -lmppaipc -lm
 
-gf-portal-objs := gf-portal-master gf-portal-slave
+gf-portal-objs := gf-portal-master gf-portal-slave name-server
 gf-portal-name := gf-portal.img
 
 #=============================================================================

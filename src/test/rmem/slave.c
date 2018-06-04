@@ -1,18 +1,18 @@
 /*
  * Copyright(C) 2011-2018 Pedro H. Penna <pedrohenriquepenna@gmail.com>
- * 
+ *
  * This file is part of Nanvix.
- * 
+ *
  * Nanvix is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * Nanvix is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
@@ -53,7 +53,7 @@ static void kernel_write(int size, int nclusters, int clusterid)
 		start = k1_timer_get();
 
 			memwrite(i, data, size);
-		
+
 		barrier_wait(barrier);
 		end = k1_timer_get();
 
@@ -98,7 +98,7 @@ static void kernel_read(int size, int nclusters, int clusterid)
 		barrier_wait(barrier);
 
 			memread(i, data, size);
-			
+
 		barrier_wait(barrier);
 		end = k1_timer_get();
 
@@ -136,13 +136,25 @@ int main(int argc, char **argv)
 	int size;
 	int nclusters;
 	int clusterid;
-	
+	int barrier;
+	char pathname[15];
+	char process_name[50];
+
 	clusterid = k1_get_cluster_id();
 
 	/* Retrieve parameters. */
 	assert(argc == 4);
 	assert((nclusters = atoi(argv[2])) > 0);
 	assert((size = atoi(argv[3])) <= RMEM_BLOCK_SIZE);
+
+	barrier = barrier_open(nclusters);
+
+	/* Register process name */
+	sprintf(pathname, "/cpu%d", clusterid);
+	sprintf(process_name, "rmem-test%d", clusterid);
+	register_name(clusterid, pathname, process_name);
+
+	barrier_wait(barrier);
 
 	/*
 	 * Touch data to initialize all pages

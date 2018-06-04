@@ -30,6 +30,7 @@ cflags += -Winit-self -Wswitch-default -Wfloat-equal -Wundef -Wshadow -Wuninitia
 cflags += -O3
 cflags += -I $(INCDIR)
 cflags += -D_KALRAY_MPPA256
+cflags += -DDEBUG
 lflags := -Wl,--defsym=_LIBNOC_DISABLE_FIFO_FULL_CHECK=0
 O := $(SRCDIR)/../output
 
@@ -119,7 +120,7 @@ rmem-master-srcs := $(SRCDIR)/kernel/arch/mppa/barrier.c \
 							$(SRCDIR)/kernel/arch/mppa/core.c    \
 							$(SRCDIR)/kernel/arch/mppa/name.c    \
 							$(SRCDIR)/kernel/arch/mppa/mailbox.c  \
-							$(SRCDIR)/test/rmem/master.c
+							$(SRCDIR)/test/rmem/master.c					\
 
 # Toolchain Configuration
 rmem-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
@@ -168,7 +169,6 @@ is-rmem-master-srcs := $(SRCDIR)/benchmark/is/rmem/master/main.c    \
 					  $(SRCDIR)/kernel/sys/meminit.c    \
 					  $(SRCDIR)/kernel/sys/memread.c    \
 					  $(SRCDIR)/kernel/sys/memwrite.c
-
 
 #$(SRCDIR)/benchmark/is/master/ipc.c
 
