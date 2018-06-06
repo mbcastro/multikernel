@@ -373,16 +373,16 @@ static void spawn_slaves(int nclusters, char **args)
 		assert((pids[i] = mppa_spawn(i, NULL, argv[0], argv, NULL)) != -1);
 }
 
-	// /**
-	//  * @brief Wait for slaves to complete.
-	//  *
-	//  * @param nclusters Number of slaves to wait.
-	//  */
-	// static void join_slaves(int nclusters)
-	// {
-	// 	for (int i = 0; i < nclusters; i++)
-	// 		assert(mppa_waitpid(pids[i], NULL, 0) != -1);
-	// }
+// /**
+//  * @brief Wait for slaves to complete.
+//  *
+//  * @param nclusters Number of slaves to wait.
+//  */
+// static void join_slaves(int nclusters)
+// {
+// 	for (int i = 0; i < nclusters; i++)
+// 		assert(mppa_waitpid(pids[i], NULL, 0) != -1);
+// }
 
 /*===================================================================*
  * Kernel                                                            *
@@ -424,6 +424,7 @@ int main(int argc, char **argv)
 	/* Wait RMEM server. */
 	global_barrier = barrier_open(NR_IOCLUSTER);
 	barrier_wait(global_barrier);
+	barrier_close(global_barrier);
 
 #ifdef DEBUG
 	printf("[SPAWNER] server alive\n");
@@ -439,10 +440,15 @@ int main(int argc, char **argv)
 	printf("[SPAWNER] waiting kernels\n");
 #endif
 
-	// join_slaves(nclusters);
+// join_slaves(nclusters);
 
-	/* Wait for name server thread. */
-	pthread_join(tid_name_server, NULL);
+// pthread_join(tid_name_server, NULL);
+
+	/* Wait for slaves. */
+	global_barrier = barrier_open(nclusters + 2);
+	barrier_wait(global_barrier);
+
+	printf("master crossed the barrier\n");
 
 	/* House keeping. */
 	barrier_close(global_barrier);

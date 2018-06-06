@@ -134,10 +134,10 @@ static void kernel_read(int size, int nclusters, int clusterid)
  */
 int main(int argc, char **argv)
 {
+	int barrier;
 	int size;
 	int nclusters;
 	int clusterid;
-	int barrier;
 	char pathname[50];
 	char process_name[50];
 
@@ -155,7 +155,9 @@ int main(int argc, char **argv)
 	snprintf(process_name, ARRAY_LENGTH(process_name), "rmem-test%d", clusterid);
 	register_name(clusterid, pathname, process_name);
 
+	/* Wait for others slaves name registration */
 	barrier_wait(barrier);
+	barrier_close(barrier);
 
 	/*
 	 * Touch data to initialize all pages
@@ -170,6 +172,16 @@ int main(int argc, char **argv)
 		printf("READ\n");
 		kernel_read(size, nclusters, clusterid);
 	}
+
 	printf("END of %d\n", k1_get_cluster_id());
+
+	/* Wait for slaves. */
+	barrier = barrier_open(nclusters + 2);
+	barrier_wait(barrier);
+
+	printf("%d crossed the barrier\n", k1_get_cluster_id());
+
+	barrier_close(barrier);
+
 	return (EXIT_SUCCESS);
 }

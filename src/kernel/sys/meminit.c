@@ -47,10 +47,13 @@ void meminit(void)
 
 	/* Retrieve cluster information. */
 	clusterid = k1_get_cluster_id();
+	printf("meminit id_cluster_name(%d)\n", clusterid);
 	clustername = id_cluster_name(clusterid);
+
 
 	/* Open underlying IPC connectors. */
 	sprintf(pathname, "/rmem%d", clusterid%NR_IOCLUSTER_DMA);
+	printf("portal_create(%s)\n", clustername);
 	_mem_inportal = portal_create(clustername);
 	_mem_outbox = _mailbox_open(IOCLUSTER1 + clusterid%NR_IOCLUSTER_DMA, STD);
 	_mem_outportal = portal_open(pathname);

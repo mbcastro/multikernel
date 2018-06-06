@@ -90,7 +90,7 @@ int main(int argc, char **argv)
   /* Wait for others clusters */
   barrier_wait(barrier);
 
-  /* Message exchange test usign name resolution */
+  /* Message exchange test using name resolution */
 
   inbox = mailbox_create(pathname);
   sprintf(out_pathname, "/cpu%d", (clusterid + 1)%nclusters);

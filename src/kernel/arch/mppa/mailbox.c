@@ -215,7 +215,14 @@ int _mailbox_create(int local, int type)
 	char pathname[128]; /* NoC connector name.                */
 	int noctag;         /* NoC tag used for transfers.        */
 
-	assert(local == k1_get_cluster_id());
+	// printf("[MAILBOX_CREATE] type:%d local:%d getclusterid:%d.\n", type, local, k1_get_cluster_id());
+
+	if(local >= IOCLUSTER0 && local < IOCLUSTER0 + NR_IOCLUSTER_DMA)
+		assert(local == k1_get_cluster_id() + local%IOCLUSTER0);
+	else if(local >= IOCLUSTER1 && local < IOCLUSTER1 + NR_IOCLUSTER_DMA)
+		assert(local == k1_get_cluster_id() + local%IOCLUSTER1);
+	else
+		assert(local == k1_get_cluster_id());
 
 	/* Allocate a mailbox. */
 	mbxid = mailbox_alloc();
