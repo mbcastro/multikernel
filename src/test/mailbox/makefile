@@ -30,7 +30,7 @@ cflags += -Winit-self -Wswitch-default -Wfloat-equal -Wundef -Wshadow -Wuninitia
 cflags += -O3
 cflags += -I $(INCDIR)
 cflags += -D_KALRAY_MPPA256
-cflags += -DDEBUG
+#cflags += -DDEBUG
 lflags := -Wl,--defsym=_LIBNOC_DISABLE_FIFO_FULL_CHECK=0
 O := $(SRCDIR)/../output
 

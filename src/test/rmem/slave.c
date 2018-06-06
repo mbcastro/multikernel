@@ -21,6 +21,7 @@
 #include <nanvix/arch/mppa.h>
 #include <nanvix/mm.h>
 #include <nanvix/pm.h>
+#include <nanvix/klib.h>
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
@@ -137,7 +138,7 @@ int main(int argc, char **argv)
 	int nclusters;
 	int clusterid;
 	int barrier;
-	char pathname[15];
+	char pathname[50];
 	char process_name[50];
 
 	clusterid = k1_get_cluster_id();
@@ -150,8 +151,8 @@ int main(int argc, char **argv)
 	barrier = barrier_open(nclusters);
 
 	/* Register process name */
-	sprintf(pathname, "/cpu%d", clusterid);
-	sprintf(process_name, "rmem-test%d", clusterid);
+	snprintf(pathname, ARRAY_LENGTH(pathname), "/cpu%d", clusterid);
+	snprintf(process_name, ARRAY_LENGTH(process_name), "rmem-test%d", clusterid);
 	register_name(clusterid, pathname, process_name);
 
 	barrier_wait(barrier);
@@ -162,10 +163,13 @@ int main(int argc, char **argv)
 	 */
 	memset(data, clusterid, size);
 
-	if (!strcmp(argv[1], "write"))
+	if (!strcmp(argv[1], "write")){
+		printf("WRITE\n");
 		kernel_write(size, nclusters, clusterid);
-	else
+	}else{
+		printf("READ\n");
 		kernel_read(size, nclusters, clusterid);
-
+	}
+	printf("END of %d\n", k1_get_cluster_id());
 	return (EXIT_SUCCESS);
 }

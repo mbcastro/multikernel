@@ -154,7 +154,7 @@ const char *server_id_cluster_name(int clusterid)
 	for (int i = 0; i < NR_DMA; i++)
 	{
 		/* Found. */
-		if (names[i].dma == clusterid)
+		if (names[i].id == clusterid)
 			return (names[i].name);
 	}
 
@@ -179,7 +179,7 @@ const char *server_id_process_name(int clusterid)
 	for (int i = 0; i < NR_DMA; i++)
 	{
 		/* Found. */
-		if (names[i].dma == clusterid)
+		if (names[i].id == clusterid)
 			return (names[i].process_name);
 	}
 
@@ -280,7 +280,7 @@ static void *name_server(void *args)
 	dma = ((int *)args)[0];
 
 	pthread_mutex_lock(&lock);
-		inbox = mailbox_create(IOCLUSTER0 + dma);
+		inbox = mailbox_create(IOCLUSTER0 + dma, NAME);
 	pthread_mutex_unlock(&lock);
 
 	pthread_barrier_wait(&barrier);
@@ -289,31 +289,31 @@ static void *name_server(void *args)
 	{
 		struct name_message msg;
 
-		assert(mailbox_read(inbox, &msg) == 0);
+		assert(mailbox_read(inbox, &msg) == STD);
 
 		/* handle name query. */
 		switch (msg.op)
 		{
-			/* Query name. */
+			/* Lookup */
 			case NAME_QUERY:
-				#ifdef DEBUG
-					printf("Entering name query case... name: %s\n.", msg.name);
-				#endif
-
-				/* Lookup */
-
 				if(msg.id == -1){
 					/* ID query */
+					#ifdef DEBUG
+						printf("Entering NAME_QUERY case... name provided: %s.\n", msg.name);
+					#endif
 					msg.id = server_name_cluster_id(msg.name);
 				}else{
 					/* name query */
+					#ifdef DEBUG
+						printf("Entering NAME_QUERY case... id provided: %d.\n", msg.id);
+					#endif
 					sprintf(msg.name, "%s", server_id_cluster_name(msg.id));
 				}
 				msg.dma = server_name_cluster_dma(msg.name);
 				sprintf(msg.process_name, "%s", server_id_process_name(msg.id));
 
 				/* Send response */
-				int source = mailbox_open(msg.source);
+				int source = mailbox_open(msg.source, NAME);
 				assert(source >= 0);
 				assert(mailbox_write(source, &msg) == 0);
 				assert(mailbox_close(source) == 0);
@@ -322,16 +322,16 @@ static void *name_server(void *args)
 			/* Add name. */
 			case NAME_ADD:
 				#ifdef DEBUG
-					printf("Entering add name case... dma: %d, name: %s, process name: %s.\n", msg.dma, msg.name, msg.process_name);
+					printf("Entering NAME_ADD case... dma: %d, name: %s, process name: %s.\n", msg.dma, msg.name, msg.process_name);
 				#endif
 
 				assert(server_register_name(msg.dma, msg.name, msg.process_name) > 0);
 				break;
 
-      /* Remove name. */
+			/* Remove name. */
 			case NAME_REMOVE:
 				#ifdef DEBUG
-					printf("Entering remove name case... name: %s.\n", msg.name);
+					printf("Entering NAME_REMOVE case... name: %s.\n", msg.name);
 				#endif
 
 				server_remove_name(msg.name);
@@ -371,16 +371,16 @@ static void spawn_slaves(int nclusters, char **args)
 		assert((pids[i] = mppa_spawn(i, NULL, argv[0], argv, NULL)) != -1);
 }
 
-/**
- * @brief Wait for slaves to complete.
- *
- * @param nclusters Number of slaves to wait.
- */
-static void join_slaves(int nclusters)
-{
-	for (int i = 0; i < nclusters; i++)
-		assert(mppa_waitpid(pids[i], NULL, 0) != -1);
-}
+	// /**
+	//  * @brief Wait for slaves to complete.
+	//  *
+	//  * @param nclusters Number of slaves to wait.
+	//  */
+	// static void join_slaves(int nclusters)
+	// {
+	// 	for (int i = 0; i < nclusters; i++)
+	// 		assert(mppa_waitpid(pids[i], NULL, 0) != -1);
+	// }
 
 /*===================================================================*
  * Kernel                                                            *
@@ -437,12 +437,13 @@ int main(int argc, char **argv)
 	printf("[SPAWNER] waiting kernels\n");
 #endif
 
-	/* House keeping. */
-	join_slaves(nclusters);
-	barrier_close(global_barrier);
+	// join_slaves(nclusters);
 
 	/* Wait for name server thread. */
 	pthread_join(tid_name_server, NULL);
+
+	/* House keeping. */
+	barrier_close(global_barrier);
 
 	return (EXIT_SUCCESS);
 }

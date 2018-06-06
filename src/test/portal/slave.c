@@ -49,7 +49,6 @@ static void kernel_write(int size, int nclusters)
 	int outportal;
 
 	outportal = portal_open("/portal1");
-
 	barrier = barrier_open(nclusters);
 
 	/*

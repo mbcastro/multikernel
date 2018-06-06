@@ -38,7 +38,7 @@ void meminit(void)
 {
 	int clusterid;              /* Cluster ID of the calling process.   */
 	char pathname[128];         /* Name of underlying IPC connector.   */
-	const char *clustername;    /* Cluster name of the calling process. */
+	char *clustername;    /* Cluster name of the calling process. */
 	static int initialized = 0; /* IS RMA Engine initialized?           */
 
 	/* Already initialized.  */
@@ -52,7 +52,7 @@ void meminit(void)
 	/* Open underlying IPC connectors. */
 	sprintf(pathname, "/rmem%d", clusterid%NR_IOCLUSTER_DMA);
 	_mem_inportal = portal_create(clustername);
-	_mem_outbox = mailbox_open(clusterid);
+	_mem_outbox = mailbox_open(IOCLUSTER1 + clusterid%NR_IOCLUSTER_DMA, STD);
 	_mem_outportal = portal_open(pathname);
 
 	initialized = 1;

@@ -23,6 +23,7 @@
 #include <nanvix/pm.h>
 #include <nanvix/name.h>
 #include <nanvix/arch/mppa.h>
+#include <nanvix/klib.h>
 #include <assert.h>
 #include <pthread.h>
 #include <string.h>
@@ -89,7 +90,7 @@ static struct {
  * name is returned. Upon failure, a negative error code is returned
  * instead.
  */
-int server_name_cluster_id(const char *name)
+int server_name_cluster_id(char name[50])
 {
 	/* Search for portal name. */
 	for (int i = 0; i < NR_DMA; i++)
@@ -115,7 +116,7 @@ int server_name_cluster_id(const char *name)
  * name is returned. Upon failure, a negative error code is returned
  * instead.
  */
-int server_name_cluster_dma(const char *name)
+int server_name_cluster_dma(char name[50])
 {
 	/* Search for portal name. */
 	for (int i = 0; i < NR_DMA; i++)
@@ -140,7 +141,7 @@ int server_name_cluster_dma(const char *name)
  * @returns Upon successful completion the pathname that matches the cluster ID
  * @p clusterid is returned. Upon failure, NULL is returned instead.
  */
-const char *server_id_cluster_name(int clusterid)
+char *server_id_cluster_name(int clusterid)
 {
 	/* Search for portal name. */
 	for (int i = 0; i < NR_DMA; i++)
@@ -165,14 +166,15 @@ const char *server_id_cluster_name(int clusterid)
  * @returns Upon successful completion the process name that matches the cluster ID.
  * Upon failure, NULL is returned instead.
  */
-const char *server_id_process_name(int clusterid)
+char *server_id_process_name(int clusterid)
 {
 	/* Search for process name. */
 	for (int i = 0; i < NR_DMA; i++)
 	{
 		/* Found. */
-		if (names[i].dma == clusterid)
+		if (names[i].dma == clusterid){
 			return (names[i].process_name);
+		}
 	}
 
 	return (NULL);
@@ -192,10 +194,9 @@ const char *server_id_process_name(int clusterid)
  * @returns Upon successful registration the number of name is returned.
  * Upon failure, a negative error code is returned instead.
  */
-int server_register_name(int dma, const char *name, const char *process_name)
+int server_register_name(int dma, char name[50], char process_name[50])
 {
 	int index = -1;
-
 
 	/* No DMA available. */
 	if(nr_cluster >= NR_DMA)
@@ -216,11 +217,11 @@ int server_register_name(int dma, const char *name, const char *process_name)
 		return -3;
 
 	#ifdef DEBUG
-		printf("Writing %s, %s at index %d.\n", name, process_name, index);
+		printf("writing [%s, %s] at index %d.\n", name, process_name, index);
 	#endif
 
-	sprintf(names[index].name, "%s", name);
-	sprintf(names[index].process_name, "%s", process_name);
+	snprintf(names[index].name, ARRAY_LENGTH(names[index].name), "%s", name);
+	snprintf(names[index].process_name, ARRAY_LENGTH(names[index].process_name), "%s", process_name);
 
 	return ++nr_cluster;
 }
@@ -234,7 +235,7 @@ int server_register_name(int dma, const char *name, const char *process_name)
  *
  * @param name	Portal name.
  */
-void server_remove_name(const char *name)
+void server_remove_name(char name[50])
 {
 	/* Search for portal name. */
 	int i = 0;
@@ -246,8 +247,8 @@ void server_remove_name(const char *name)
 
 	if(i < NR_DMA)
 	{
-		sprintf(names[i].name, " ");
-		sprintf(names[i].process_name, " ");
+		snprintf(names[i].name, ARRAY_LENGTH(names[i].name), " ");
+		snprintf(names[i].process_name, ARRAY_LENGTH(names[i].process_name), " ");
 		nr_cluster--;
 	}
 
@@ -273,7 +274,7 @@ static void *name_server(void *args)
 	dma = ((int *)args)[0];
 
 	pthread_mutex_lock(&lock);
-		inbox = mailbox_create(IOCLUSTER0 + dma);
+		inbox = mailbox_create(IOCLUSTER0 + dma, NAME);
 	pthread_mutex_unlock(&lock);
 
 	pthread_barrier_wait(&barrier);
@@ -300,13 +301,13 @@ static void *name_server(void *args)
 					#ifdef DEBUG
 						printf("Entering NAME_QUERY case... id provided: %d.\n", msg.id);
 					#endif
-					sprintf(msg.name, "%s", server_id_cluster_name(msg.id));
+					snprintf(msg.name, ARRAY_LENGTH(msg.name), "%s", server_id_cluster_name(msg.id));
 				}
 				msg.dma = server_name_cluster_dma(msg.name);
-				sprintf(msg.process_name, "%s", server_id_process_name(msg.id));
+				snprintf(msg.process_name, ARRAY_LENGTH(msg.process_name), "%s", server_id_process_name(msg.id));
 
 				/* Send response */
-				int source = mailbox_open(msg.source);
+				int source = mailbox_open(msg.source, NAME);
 				assert(source >= 0);
 				assert(mailbox_write(source, &msg) == 0);
 				assert(mailbox_close(source) == 0);

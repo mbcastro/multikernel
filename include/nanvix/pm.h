@@ -27,22 +27,26 @@
  *=======================================================================*/
 
 	/* Forward definitions. */
-	extern int name_cluster_id(const char *);
-	extern int name_cluster_dma(const char *);
-	extern const char *id_cluster_name(int);
-	extern const char *id_process_name(int);
+	extern int name_cluster_id(char *);
+	extern int name_cluster_dma(char *);
+	extern char *id_cluster_name(int);
+	extern char *id_process_name(int);
 	extern void name_remotes(char *, int);
-	extern void register_name(int, const char *, const char *);
-	extern void remove_name(const char *);
+	extern void register_name(int, char *, char *);
+	extern void remove_name(char *);
 
 
 /*=======================================================================*
  * Mailbox                                                               *
  *=======================================================================*/
 
+  /* Mailbox types */
+	#define NAME 1
+	#define STD 0
+
 	/* Forward definitions .*/
-	extern int mailbox_create(int);
-	extern int mailbox_open(int);
+	extern int mailbox_create(int, int);
+	extern int mailbox_open(int, int);
 	extern int mailbox_read(int, void *);
 	extern int mailbox_write(int, const void *);
 	extern int mailbox_close(int);
@@ -54,8 +58,8 @@
 
 	/* Forward definitions .*/
 	extern int portal_allow(int, int);
-	extern int portal_create(const char *);
-	extern int portal_open(const char *);
+	extern int portal_create(char *);
+	extern int portal_open(char *);
 	extern int portal_read(int, void *, size_t);
 	extern int portal_write(int, const void *, size_t);
 	extern int portal_close(int);

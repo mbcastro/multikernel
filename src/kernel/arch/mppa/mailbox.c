@@ -108,15 +108,34 @@ static void mailbox_free(int mbxid)
  *
  * @param local Id of target cluster.
  */
-static int mailbox_noctag(int local)
+static int mailbox_noctag(int local, int type)
 {
-	if ((local >= CCLUSTER0) && (local <= CCLUSTER15))
-		return (16 + local);
-	else if ((local >= IOCLUSTER0) && (local < (IOCLUSTER0 + NR_IOCLUSTER_DMA)))
-		return (16 + 16 + 0);
-	else if ((local >= IOCLUSTER1) && (local < (IOCLUSTER1 + NR_IOCLUSTER_DMA)))
-		return (16 + 16 + 1);
+	#define OFFSET 50
 
+	if ((local >= CCLUSTER0) && (local <= CCLUSTER15))
+	{
+		if(type)
+		{
+			return (OFFSET + 16 + local);
+		}
+		return (16 + local);
+	}
+	else if ((local >= IOCLUSTER0) && (local < (IOCLUSTER0 + NR_IOCLUSTER_DMA)))
+	{
+		if(type)
+		{
+			return (OFFSET + 16 + 16 + 0);
+		}
+		return (16 + 16 + 0);
+	}
+	else if ((local >= IOCLUSTER1) && (local < (IOCLUSTER1 + NR_IOCLUSTER_DMA)))
+	{
+		if(type)
+		{
+			return (OFFSET + 16 + 16 + 1);
+		}
+		return (16 + 16 + 1);
+	}
 	return (0);
 }
 
@@ -132,7 +151,7 @@ static int mailbox_noctag(int local)
  * @returns Upon successful completion, the ID of the new mailbox is
  * returned. Upon failure, a negative error code is returned instead.
  */
-int mailbox_create(int local)
+int mailbox_create(int local, int type)
 {
 	int fd;             /* File descriptor for NoC connector. */
 	int mbxid;          /* ID of mailbix.                     */
@@ -140,6 +159,7 @@ int mailbox_create(int local)
 	char pathname[128]; /* NoC connector name.                */
 	int noctag;         /* NoC tag used for transfers.        */
 
+	// printf("[MAILBOX] local:%d getclusterid:%d\n", local, k1_get_cluster_id());
 	assert(local == k1_get_cluster_id());
 
 	/* Allocate a mailbox. */
@@ -149,7 +169,7 @@ int mailbox_create(int local)
 
 	name_remotes(remotes, local);
 
-	noctag = mailbox_noctag(local);
+	noctag = mailbox_noctag(local, type);
 	sprintf(pathname,
 			"/mppa/rqueue/%d:%d/[%s]:%d/1.%d",
 			local,
@@ -179,7 +199,7 @@ int mailbox_create(int local)
  * @returns Upon successful completion, the ID of the target mailbox is
  * returned. Upon failure, a negative error code is returned instead.
  */
-int mailbox_open(int remote)
+int mailbox_open(int remote, int type)
 {
 	int local;          /* ID of local cluster.             */
 	int fd;             /* File descriptor for NoC connector. */
@@ -189,6 +209,7 @@ int mailbox_open(int remote)
 	int noctag;         /* NoC tag used for transfers.        */
 
 	local = k1_get_cluster_id();
+	// printf("[MAILBOX] local:%d remote: %d\n", local, remote);
 	assert(remote != local);
 
 	/* Allocate a mailbox. */
@@ -198,7 +219,7 @@ int mailbox_open(int remote)
 
 	name_remotes(remotes, remote);
 
-	noctag = mailbox_noctag(remote);
+	noctag = mailbox_noctag(remote, type);
 	snprintf(pathname,
 			ARRAY_LENGTH(pathname),
 			"/mppa/rqueue/%d:%d/[%s]:%d/1.%d",

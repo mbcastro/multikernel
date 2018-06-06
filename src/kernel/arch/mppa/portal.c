@@ -135,7 +135,7 @@ static int portal_noctag(int local)
  * @returns Upon successful completion, the ID of the new portal is
  * returned. Upon failure, a negative error code is returned instead.
  */
-int portal_create(const char *name)
+int portal_create(char *name)
 {
 	int local;          /* ID of local cluster.  */
 	int dma_local;      /* ID of local DMA.      */
@@ -253,7 +253,7 @@ int portal_allow(int portalid, int remote)
  * @returns Upon successful completion, the ID of the target portal is
  * returned. Upon failure, a negative error code is returned instead.
  */
-int portal_open(const char *name)
+int portal_open(char *name)
 {
 	int local;          /* ID of local cluster.  */
 	int remote;         /* ID of remote cluster. */

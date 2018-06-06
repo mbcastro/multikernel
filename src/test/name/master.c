@@ -21,16 +21,16 @@
 #include <nanvix/arch/mppa.h>
 #include <nanvix/mm.h>
 #include <nanvix/pm.h>
+#include <nanvix/klib.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
-
-#define NR_SLAVE 16
+#include <string.h>
 
 /**
  * @brief ID of slave processes.
  */
-static int pids[NR_SLAVE];
+static int pids[NR_CCLUSTER];
 
 /*===================================================================*
  * Kernel                                                            *
@@ -39,13 +39,19 @@ static int pids[NR_SLAVE];
 /**
  * @brief Querying the name server.
  */
-int main()
+int main(int argc, char **argv)
 {
 	int global_barrier;
-	char pathname[15];
+	int nclusters;
+	char pathname[50];
 	char process_name[50];
 
-	const char *argv[] = {
+	assert(argc == 2);
+
+	/* Retrieve kernel parameters. */
+	nclusters = atoi(argv[1]);
+
+	const char *args[] = {
 		"name-slave",
 		NULL
 	};
@@ -56,21 +62,24 @@ int main()
 
 	/* IO cluster registration test */
 	for(int i = 0; i < NR_IOCLUSTER_DMA; i++){
-		sprintf(pathname, "/name%d", i);
-		sprintf(process_name, "name-test%d", i);
+		snprintf(pathname, ARRAY_LENGTH(pathname), "/name%d", i);
+		snprintf(process_name, ARRAY_LENGTH(process_name), "name-test%d", i);
 	  register_name(k1_get_cluster_id() + i, pathname, process_name);
 
-		printf("name_cluster_id(%s) call from IO cluster, id: %d.\n", pathname, name_cluster_id(pathname));
-	  printf("name_cluster_dma(%s) call from IO cluster, dma: %d.\n", pathname, name_cluster_dma(pathname));
-	  printf("id_cluster_name(%d) call from IO cluster, name: %s.\n", k1_get_cluster_id() + i, id_cluster_name(k1_get_cluster_id() + i));
-	  printf("id_process_name(%d) call from IO cluster, name: %s.\n", k1_get_cluster_id() + i, id_process_name(k1_get_cluster_id() + i));
+		assert(name_cluster_id(pathname) == k1_get_cluster_id());
+	  assert(name_cluster_dma(pathname) == k1_get_cluster_id() + i);
+	  assert(strcmp(id_cluster_name(k1_get_cluster_id() + i), pathname) == 0);
+	  assert(strcmp(id_process_name(k1_get_cluster_id() + i), process_name) == 0);
 	}
 
-	for (int i = 0; i < NR_SLAVE; i++)
-		assert((pids[i] = mppa_spawn(i, NULL, argv[0], argv, NULL)) != -1);
+	for (int i = 0; i < nclusters; i++)
+		assert((pids[i] = mppa_spawn(i, NULL, args[0], args, NULL)) != -1);
 
-	for (int i = 0; i < NR_SLAVE; i++)
+	for (int i = 0; i < nclusters; i++)
 		assert(mppa_waitpid(pids[i], NULL, 0) != -1);
+
+	/* House keeping. */
+	barrier_close(global_barrier);
 
 	return (EXIT_SUCCESS);
 }

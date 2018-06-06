@@ -98,7 +98,7 @@ static void *rmem_server(void *args)
 
 	sprintf(pathname, "/rmem%d", dma);
 	pthread_mutex_lock(&lock);
-		inbox = mailbox_create(IOCLUSTER1 + dma);
+		inbox = mailbox_create(IOCLUSTER1 + dma, STD);
 		inportal = portal_create(pathname);
 	pthread_mutex_unlock(&lock);
 

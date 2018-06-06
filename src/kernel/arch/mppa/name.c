@@ -20,6 +20,7 @@
 #include <nanvix/arch/mppa.h>
 #include <nanvix/name.h>
 #include <nanvix/pm.h>
+#include <nanvix/klib.h>
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
@@ -40,7 +41,7 @@ struct name_message msg;
  * name is returned. Upon failure, a negative error code is returned
  * instead.
  */
-int name_cluster_id(const char *name)
+int name_cluster_id(char *name)
 {
   int inbox, server;         /* Mailbox for small messages. */
 
@@ -48,16 +49,16 @@ int name_cluster_id(const char *name)
     printf("name_cluster_id(%s): Creating inbox of cluster %d...\n", name, k1_get_cluster_id());
   #endif
 
-  server = mailbox_open(IOCLUSTER0);
-  inbox = mailbox_create(k1_get_cluster_id());
+  inbox = mailbox_create(k1_get_cluster_id(), NAME);
+  server = mailbox_open(IOCLUSTER0, NAME);
 
   /* Build operation header. */
 	msg.source = k1_get_cluster_id();
 	msg.op = NAME_QUERY;
   msg.id = -1;
   msg.dma = -1;
-	sprintf(msg.name, name);
-  sprintf(msg.process_name, " ");
+	snprintf(msg.name, ARRAY_LENGTH(msg.name), name);
+  snprintf(msg.process_name, ARRAY_LENGTH(msg.process_name), " ");
 
   /* Send name request. */
   #ifdef DEBUG
@@ -90,7 +91,7 @@ int name_cluster_id(const char *name)
  * name is returned. Upon failure, a negative error code is returned
  * instead.
  */
-int name_cluster_dma(const char *name)
+int name_cluster_dma(char *name)
 {
   int inbox, server;         /* Mailbox for small messages. */
 
@@ -98,16 +99,16 @@ int name_cluster_dma(const char *name)
     printf("name_cluster_dma(%s): Creating inbox of cluster %d...\n", name, k1_get_cluster_id());
   #endif
 
-  inbox = mailbox_create(k1_get_cluster_id());
-  server = mailbox_open(IOCLUSTER0);
+  inbox = mailbox_create(k1_get_cluster_id(), NAME);
+  server = mailbox_open(IOCLUSTER0, NAME);
 
   /* Build operation header. */
 	msg.source = k1_get_cluster_id();
 	msg.op = NAME_QUERY;
   msg.id = -1;
   msg.dma = -1;
-	sprintf(msg.name, name);
-  sprintf(msg.process_name, " ");
+	snprintf(msg.name, ARRAY_LENGTH(msg.name), name);
+  snprintf(msg.process_name, ARRAY_LENGTH(msg.process_name), " ");
 
   /* Send name request. */
   #ifdef DEBUG
@@ -139,7 +140,7 @@ int name_cluster_dma(const char *name)
  * @returns Upon successful completion the pathname that matches the cluster ID
  * @p clusterid is returned. Upon failure, NULL is returned instead.
  */
-const char *id_cluster_name(int clusterid)
+char *id_cluster_name(int clusterid)
 {
   int inbox, server;         /* Mailbox for small messages. */
 
@@ -147,16 +148,16 @@ const char *id_cluster_name(int clusterid)
     printf("id_cluster_name(%d): Creating inbox of cluster %d...\n", clusterid, k1_get_cluster_id());
   #endif
 
-  inbox = mailbox_create(k1_get_cluster_id());
-  server = mailbox_open(IOCLUSTER0);
+  inbox = mailbox_create(k1_get_cluster_id(), NAME);
+  server = mailbox_open(IOCLUSTER0, NAME);
 
   /* Build operation header. */
 	msg.source = k1_get_cluster_id();
 	msg.op = NAME_QUERY;
   msg.id = clusterid;
   msg.dma = -1;
-	sprintf(msg.name, " ");
-  sprintf(msg.process_name, " ");
+	snprintf(msg.name, ARRAY_LENGTH(msg.name), " ");
+  snprintf(msg.process_name, ARRAY_LENGTH(msg.process_name), " ");
 
   /* Send name request. */
   #ifdef DEBUG
@@ -188,7 +189,7 @@ const char *id_cluster_name(int clusterid)
  * @returns Upon successful completion the process name that matches the cluster ID.
  * Upon failure, NULL is returned instead.
  */
-const char *id_process_name(int clusterid)
+char *id_process_name(int clusterid)
 {
   int inbox, server;         /* Mailbox for small messages. */
 
@@ -196,16 +197,16 @@ const char *id_process_name(int clusterid)
     printf("id_process_name(%d): Creating inbox of cluster %d...\n", clusterid, k1_get_cluster_id());
   #endif
 
-  inbox = mailbox_create(k1_get_cluster_id());
-  server = mailbox_open(IOCLUSTER0);
+  inbox = mailbox_create(k1_get_cluster_id(), NAME);
+  server = mailbox_open(IOCLUSTER0, NAME);
 
   /* Build operation header. */
 	msg.source = k1_get_cluster_id();
 	msg.op = NAME_QUERY;
   msg.id = clusterid;
   msg.dma = -1;
-	sprintf(msg.name, " ");
-  sprintf(msg.process_name, " ");
+  snprintf(msg.name, ARRAY_LENGTH(msg.name), " ");
+  snprintf(msg.process_name, ARRAY_LENGTH(msg.process_name), " ");
 
   /* Send name request. */
   #ifdef DEBUG
@@ -285,7 +286,7 @@ void name_remotes(char *remotes, int local)
  * @param name	Portal name.
  * @param process_name	Process name.
  */
-void register_name(int dma, const char *name, const char *process_name)
+void register_name(int dma, char *name, char *process_name)
 {
   int server;         /* Mailbox for small messages. */
 
@@ -293,14 +294,14 @@ void register_name(int dma, const char *name, const char *process_name)
     printf("register_name(%s): opening name server mailbox from cluster %d...\n", name, k1_get_cluster_id());
   #endif
 
-  server = mailbox_open(IOCLUSTER0);
+  server = mailbox_open(IOCLUSTER0, NAME);
 
   /* Build operation header. */
 	msg.source = k1_get_cluster_id();
 	msg.op = NAME_ADD;
   msg.dma = dma;
-	sprintf(msg.name, name);
-  sprintf(msg.process_name, process_name);
+	snprintf(msg.name, ARRAY_LENGTH(msg.name), name);
+  snprintf(msg.process_name, ARRAY_LENGTH(msg.process_name), process_name);
 
   /* Send name request. */
   #ifdef DEBUG
@@ -322,7 +323,7 @@ void register_name(int dma, const char *name, const char *process_name)
  *
  * @param name	Portal name.
  */
-void remove_name(const char *name)
+void remove_name(char *name)
 {
   int server;         /* Mailbox for small messages. */
 
@@ -330,15 +331,15 @@ void remove_name(const char *name)
     printf("remove_name(%s): opening name server mailbox from cluster %d...\n", name, k1_get_cluster_id());
   #endif
 
-  server = mailbox_open(IOCLUSTER0);
+  server = mailbox_open(IOCLUSTER0, NAME);
 
   /* Build operation header. */
 	msg.source = k1_get_cluster_id();
 	msg.op = NAME_REMOVE;
   msg.id = -1;
   msg.dma = -1;
-	sprintf(msg.name, name);
-  sprintf(msg.process_name, " ");
+  snprintf(msg.name, ARRAY_LENGTH(msg.name), name);
+  snprintf(msg.process_name, ARRAY_LENGTH(msg.process_name), " ");
 
   /* Send name request. */
   #ifdef DEBUG

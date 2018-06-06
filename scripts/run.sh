@@ -63,13 +63,14 @@ function run2
 
 if [[ $1 == "test" ]];
 then
-
 	echo "Testing ASYNC"
 	run1 "async.img" "master.elf" "$NCLUSTERS $SIZE"
 	echo "Testing PORTAL"
 	run2 "portal.img" "name-server" "portal-master" "write $NCLUSTERS $SIZE"
 	echo "Testing MAILBOX"
 	run1 "mailbox.img" "mailbox-master" "$NCLUSTERS $NMESSAGES"
+	echo "Testing NAME"
+	run2 "name.img" "name-server" "name-master" "$NCLUSTERS"
 	echo "Testing RMEM"
 	run2 "rmem.img" "rmem-master" "rmem-server" "write $NCLUSTERS $SIZE"
 	run2 "rmem.img" "rmem-master" "rmem-server" "read $NCLUSTERS $SIZE"

@@ -43,8 +43,8 @@ static void kernel(int nmessages)
 	clusterid = k1_get_cluster_id();
 
 	/* Open mailboxes. */
-	inbox = mailbox_create(clusterid);
-	outbox = mailbox_open(IOCLUSTER0);
+	inbox = mailbox_create(clusterid, STD);
+	outbox = mailbox_open(IOCLUSTER0, STD);
 
 	/* Send messages. */
 	for (int i = 0; i < nmessages; i++)
