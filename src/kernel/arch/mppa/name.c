@@ -282,9 +282,9 @@ void name_remotes(char *remotes, int local)
 /**
  * @brief Register a process name
  *
- * @param DMA		DMA channel.
- * @param name	Portal name.
- * @param process_name	Process name.
+ * @param dma          DMA channel.
+ * @param name	       Portal name.
+ * @param process_name Process name.
  */
 void register_name(int dma, char *name, char *process_name)
 {
