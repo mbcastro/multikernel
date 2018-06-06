@@ -19,7 +19,6 @@
 
 #include <nanvix/arch/mppa.h>
 
-
 /**
  * @brief Timer error.
  */
