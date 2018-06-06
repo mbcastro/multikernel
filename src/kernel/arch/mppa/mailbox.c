@@ -114,7 +114,7 @@ static int mailbox_noctag(int local, int type)
 
 	if ((local >= CCLUSTER0) && (local <= CCLUSTER15))
 	{
-		if(type)
+		if (type)
 		{
 			return (OFFSET + 16 + local);
 		}
@@ -122,7 +122,7 @@ static int mailbox_noctag(int local, int type)
 	}
 	else if ((local >= IOCLUSTER0) && (local < (IOCLUSTER0 + NR_IOCLUSTER_DMA)))
 	{
-		if(type)
+		if (type)
 		{
 			return (OFFSET + 16 + 16 + 0);
 		}
@@ -130,7 +130,7 @@ static int mailbox_noctag(int local, int type)
 	}
 	else if ((local >= IOCLUSTER1) && (local < (IOCLUSTER1 + NR_IOCLUSTER_DMA)))
 	{
-		if(type)
+		if (type)
 		{
 			return (OFFSET + 16 + 16 + 1);
 		}
@@ -220,9 +220,9 @@ int _mailbox_create(int local, int type)
 	/* printf("[MAILBOX_CREATE] type:%d local:%d getclusterid:%d.\n", type,
 	                                         local, k1_get_cluster_id()); */
 
-	if(local >= IOCLUSTER0 && local < IOCLUSTER0 + NR_IOCLUSTER_DMA)
+	if (local >= IOCLUSTER0 && local < IOCLUSTER0 + NR_IOCLUSTER_DMA)
 		assert(local == k1_get_cluster_id() + local%IOCLUSTER0);
-	else if(local >= IOCLUSTER1 && local < IOCLUSTER1 + NR_IOCLUSTER_DMA)
+	else if (local >= IOCLUSTER1 && local < IOCLUSTER1 + NR_IOCLUSTER_DMA)
 		assert(local == k1_get_cluster_id() + local%IOCLUSTER1);
 	else
 		assert(local == k1_get_cluster_id());

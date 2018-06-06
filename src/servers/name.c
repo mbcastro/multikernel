@@ -205,15 +205,15 @@ static int server_register_name(int dma, char *name, char *process_name)
 #endif
 
 	/* No DMA available. */
-	if(nr_cluster >= NR_DMA)
+	if (nr_cluster >= NR_DMA)
 		return (-EINVAL);
 
 	/* Compute index registration */
 	if (dma >= 0 && dma < NR_CCLUSTER)
 		index = dma;
-	else if(dma >= IOCLUSTER0 && dma <= IOCLUSTER0 + 3)
+	else if (dma >= IOCLUSTER0 && dma <= IOCLUSTER0 + 3)
 	 	index = NR_CCLUSTER + dma%IOCLUSTER0;
-	else if(dma >= IOCLUSTER1 && dma <= IOCLUSTER1 + 3)
+	else if (dma >= IOCLUSTER1 && dma <= IOCLUSTER1 + 3)
 	 	index = NR_CCLUSTER + NR_IOCLUSTER_DMA + dma%IOCLUSTER1;
 	else
 		return (-EINVAL);
@@ -227,8 +227,8 @@ static int server_register_name(int dma, char *name, char *process_name)
 #endif
 
 	snprintf(names[index].name, ARRAY_LENGTH(names[index].name), "%s", name);
-	snprintf(names[index].process_name,
-	             ARRAY_LENGTH(names[index].process_name), "%s", process_name);
+	snprintf(names[index].process_name, ARRAY_LENGTH(names[index].process_name)
+	                                                     , "%s", process_name);
 
 	return (++nr_cluster);
 }
@@ -256,7 +256,7 @@ static void server_remove_name(char *name)
 		i++;
 	}
 
-	if(i < NR_DMA)
+	if (i < NR_DMA)
 	{
 		snprintf(names[i].name, ARRAY_LENGTH(names[i].name), " ");
 		snprintf(names[i].process_name, ARRAY_LENGTH(names[i].process_name),
@@ -302,7 +302,7 @@ static void *name_server(void *args)
 		{
 			/* Lookup. */
 			case NAME_QUERY:
-				if(msg.id == -1){
+				if (msg.id == -1){
 					/* ID query. */
 					#ifdef DEBUG
 						printf("Entering NAME_QUERY case... name provided:%s.\n"
