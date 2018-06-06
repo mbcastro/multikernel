@@ -94,7 +94,7 @@ static void kernel(int inbox, int nclusters, int nmessages)
 	{
 		int outbox;
 
-		outbox = mailbox_open(i, STD);
+		outbox = _mailbox_open(i, STD);
 
 		for (int j = 0; j < nmessages; j++)
 		{
@@ -130,7 +130,7 @@ int main(int argc, char **argv)
 #endif
 
 	/* Open mailbox. */
-	inbox = mailbox_create(IOCLUSTER0, STD);
+	inbox = _mailbox_create(IOCLUSTER0, STD);
 
 	spawn_slaves(nclusters, argv);
 

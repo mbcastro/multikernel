@@ -140,7 +140,63 @@ static int mailbox_noctag(int local, int type)
 }
 
 /*=======================================================================*
- * mailbox_create()                                                      *
+* mailbox_create()                                                      *
+*=======================================================================*/
+
+/**
+* @brief Creates a mailbox.
+*
+* @param name Mailbox name.
+*
+* @returns Upon successful completion, the ID of the new mailbox is
+* returned. Upon failure, a negative error code is returned instead.
+*/
+int mailbox_create(char *name)
+{
+	int local;          /* ID of local cluster.               */
+
+	/* Invalid mailbox name. */
+	if (name == NULL)
+	return (-EINVAL);
+
+	local = name_cluster_dma(name);
+	// printf("[MAILBOX_CREATE] name:%s local:%d getclusterid:%d\n", name, local, k1_get_cluster_id());
+	assert(name_cluster_id(name) == k1_get_cluster_id());
+
+	return _mailbox_create(local, STD);
+}
+
+/*=======================================================================*
+* mailbox_open()                                                        *
+*=======================================================================*/
+
+/**
+* @brief Opens a mailbox.
+*
+* @param name Mailbox name.
+*
+* @returns Upon successful completion, the ID of the target mailbox is
+* returned. Upon failure, a negative error code is returned instead.
+*/
+int mailbox_open(char *name)
+{
+	int local;          /* ID of remote cluster.             */
+	int remote;         /* ID of remote cluster.             */
+
+	/* Invalid mailbox name. */
+	if (name == NULL)
+	return (-EINVAL);
+
+	remote = name_cluster_dma(name);
+	local = k1_get_cluster_id();
+	// printf("[MAILBOX_OPEN] name: %s local:%d remote: %d\n", name, local, remote);
+	assert(name_cluster_id(name) != local);
+
+	return _mailbox_open(remote, STD);
+}
+
+/*=======================================================================*
+ * _mailbox_create()                                                      *
  *=======================================================================*/
 
 /**
@@ -151,7 +207,7 @@ static int mailbox_noctag(int local, int type)
  * @returns Upon successful completion, the ID of the new mailbox is
  * returned. Upon failure, a negative error code is returned instead.
  */
-int mailbox_create(int local, int type)
+int _mailbox_create(int local, int type)
 {
 	int fd;             /* File descriptor for NoC connector. */
 	int mbxid;          /* ID of mailbix.                     */
@@ -159,7 +215,6 @@ int mailbox_create(int local, int type)
 	char pathname[128]; /* NoC connector name.                */
 	int noctag;         /* NoC tag used for transfers.        */
 
-	// printf("[MAILBOX] local:%d getclusterid:%d\n", local, k1_get_cluster_id());
 	assert(local == k1_get_cluster_id());
 
 	/* Allocate a mailbox. */
@@ -188,7 +243,7 @@ int mailbox_create(int local, int type)
 }
 
 /*=======================================================================*
- * mailbox_open()                                                        *
+ * _mailbox_open()                                                        *
  *=======================================================================*/
 
 /**
@@ -199,7 +254,7 @@ int mailbox_create(int local, int type)
  * @returns Upon successful completion, the ID of the target mailbox is
  * returned. Upon failure, a negative error code is returned instead.
  */
-int mailbox_open(int remote, int type)
+int _mailbox_open(int remote, int type)
 {
 	int local;          /* ID of local cluster.             */
 	int fd;             /* File descriptor for NoC connector. */
@@ -209,7 +264,6 @@ int mailbox_open(int remote, int type)
 	int noctag;         /* NoC tag used for transfers.        */
 
 	local = k1_get_cluster_id();
-	// printf("[MAILBOX] local:%d remote: %d\n", local, remote);
 	assert(remote != local);
 
 	/* Allocate a mailbox. */

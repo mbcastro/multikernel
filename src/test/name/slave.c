@@ -27,6 +27,8 @@
 #include <string.h>
 #include <pthread.h>
 
+int msg;
+
 /*====================================================================*
  * main                                                               *
  *====================================================================*/
@@ -34,30 +36,44 @@
 /**
  * @brief Remote name unit test.
  */
-int main()
+int main(int argc, char **argv)
 {
-  char pathname[15];
+  char pathname[50];
+  char out_pathname[50];
   char process_name[50];             /* Process name */
+  int barrier;
+  int clusterid;
+  int nclusters;
+  int inbox;
+  int outbox;
+
+  clusterid = k1_get_cluster_id();
+
+  /* Retrieve parameters. */
+	assert(argc == 2);
+	assert((nclusters = atoi(argv[1])) > 0);
+
+  barrier = barrier_open(nclusters);
+
+  sprintf(pathname, "/cpu%d", clusterid);
+  sprintf(process_name, "process_on_cpu%d", clusterid);
 
   /* Primitives test */
-
-  sprintf(pathname, "/cpu%d", k1_get_cluster_id());
-  sprintf(process_name, "process_on_cpu%d", k1_get_cluster_id());
 
   /* Ask for an unregistered entry */
   assert(name_cluster_id(pathname) == -2);
   assert(name_cluster_dma(pathname) == -2);
-  assert(!strcmp(id_cluster_name(k1_get_cluster_id()), " "));
-  assert(!strcmp(id_process_name(k1_get_cluster_id()), " "));
+  assert(!strcmp(id_cluster_name(clusterid), " "));
+  assert(!strcmp(id_process_name(clusterid), " "));
 
   /* Register this cluster */
-  register_name(k1_get_cluster_id(), pathname, process_name);
+  register_name(clusterid, pathname, process_name);
 
   /* Ask for a registered entry */
-  assert(name_cluster_id(pathname) == k1_get_cluster_id());
-  assert(name_cluster_dma(pathname) == k1_get_cluster_id());
-  assert(!strcmp(id_cluster_name(k1_get_cluster_id()), pathname));
-  assert(!strcmp(id_process_name(k1_get_cluster_id()), process_name));
+  assert(name_cluster_id(pathname) == clusterid);
+  assert(name_cluster_dma(pathname) == clusterid);
+  assert(!strcmp(id_cluster_name(clusterid), pathname));
+  assert(!strcmp(id_process_name(clusterid), process_name));
 
   /* Remove the entry */
   remove_name(pathname);
@@ -65,8 +81,38 @@ int main()
   /* Verify that the entry is removed */
   assert(name_cluster_id(pathname) == -2);
   assert(name_cluster_dma(pathname) == -2);
-  assert(!strcmp(id_cluster_name(k1_get_cluster_id()), " "));
-  assert(!strcmp(id_process_name(k1_get_cluster_id()), " "));
+  assert(!strcmp(id_cluster_name(clusterid), " "));
+  assert(!strcmp(id_process_name(clusterid), " "));
+
+  /* Register this cluster */
+  register_name(clusterid, pathname, process_name);
+
+  /* Wait for others clusters */
+  barrier_wait(barrier);
+
+  /* Message exchange test usign name resolution */
+
+  inbox = mailbox_create(pathname);
+  sprintf(out_pathname, "/cpu%d", (clusterid + 1)%nclusters);
+
+  printf("Sending message to %s from %s...\n", out_pathname, pathname);
+
+  outbox = mailbox_open(out_pathname);
+
+  msg = clusterid;
+  assert(mailbox_write(outbox, &msg) == 0);
+
+  msg = -1;
+  while(msg == -1){
+    assert(mailbox_read(inbox, &msg) == 0);
+  }
+
+  printf("Message from /cpu%d received by %s.\n", msg, pathname);
+
+  /* House keeping. */
+  assert(mailbox_close(outbox) == 0);
+  assert(mailbox_close(inbox) == 0);
+  barrier_close(barrier);
 
 	return (EXIT_SUCCESS);
 }

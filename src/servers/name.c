@@ -274,7 +274,7 @@ static void *name_server(void *args)
 	dma = ((int *)args)[0];
 
 	pthread_mutex_lock(&lock);
-		inbox = mailbox_create(IOCLUSTER0 + dma, NAME);
+		inbox = _mailbox_create(IOCLUSTER0 + dma, NAME);
 	pthread_mutex_unlock(&lock);
 
 	pthread_barrier_wait(&barrier);
@@ -307,7 +307,7 @@ static void *name_server(void *args)
 				snprintf(msg.process_name, ARRAY_LENGTH(msg.process_name), "%s", server_id_process_name(msg.id));
 
 				/* Send response */
-				int source = mailbox_open(msg.source, NAME);
+				int source = _mailbox_open(msg.source, NAME);
 				assert(source >= 0);
 				assert(mailbox_write(source, &msg) == 0);
 				assert(mailbox_close(source) == 0);

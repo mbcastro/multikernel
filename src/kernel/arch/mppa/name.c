@@ -49,8 +49,8 @@ int name_cluster_id(char *name)
     printf("name_cluster_id(%s): Creating inbox of cluster %d...\n", name, k1_get_cluster_id());
   #endif
 
-  inbox = mailbox_create(k1_get_cluster_id(), NAME);
-  server = mailbox_open(IOCLUSTER0, NAME);
+  inbox = _mailbox_create(k1_get_cluster_id(), NAME);
+  server = _mailbox_open(IOCLUSTER0, NAME);
 
   /* Build operation header. */
 	msg.source = k1_get_cluster_id();
@@ -99,8 +99,8 @@ int name_cluster_dma(char *name)
     printf("name_cluster_dma(%s): Creating inbox of cluster %d...\n", name, k1_get_cluster_id());
   #endif
 
-  inbox = mailbox_create(k1_get_cluster_id(), NAME);
-  server = mailbox_open(IOCLUSTER0, NAME);
+  inbox = _mailbox_create(k1_get_cluster_id(), NAME);
+  server = _mailbox_open(IOCLUSTER0, NAME);
 
   /* Build operation header. */
 	msg.source = k1_get_cluster_id();
@@ -148,8 +148,8 @@ char *id_cluster_name(int clusterid)
     printf("id_cluster_name(%d): Creating inbox of cluster %d...\n", clusterid, k1_get_cluster_id());
   #endif
 
-  inbox = mailbox_create(k1_get_cluster_id(), NAME);
-  server = mailbox_open(IOCLUSTER0, NAME);
+  inbox = _mailbox_create(k1_get_cluster_id(), NAME);
+  server = _mailbox_open(IOCLUSTER0, NAME);
 
   /* Build operation header. */
 	msg.source = k1_get_cluster_id();
@@ -197,8 +197,8 @@ char *id_process_name(int clusterid)
     printf("id_process_name(%d): Creating inbox of cluster %d...\n", clusterid, k1_get_cluster_id());
   #endif
 
-  inbox = mailbox_create(k1_get_cluster_id(), NAME);
-  server = mailbox_open(IOCLUSTER0, NAME);
+  inbox = _mailbox_create(k1_get_cluster_id(), NAME);
+  server = _mailbox_open(IOCLUSTER0, NAME);
 
   /* Build operation header. */
 	msg.source = k1_get_cluster_id();
@@ -294,7 +294,7 @@ void register_name(int dma, char *name, char *process_name)
     printf("register_name(%s): opening name server mailbox from cluster %d...\n", name, k1_get_cluster_id());
   #endif
 
-  server = mailbox_open(IOCLUSTER0, NAME);
+  server = _mailbox_open(IOCLUSTER0, NAME);
 
   /* Build operation header. */
 	msg.source = k1_get_cluster_id();
@@ -331,7 +331,7 @@ void remove_name(char *name)
     printf("remove_name(%s): opening name server mailbox from cluster %d...\n", name, k1_get_cluster_id());
   #endif
 
-  server = mailbox_open(IOCLUSTER0, NAME);
+  server = _mailbox_open(IOCLUSTER0, NAME);
 
   /* Build operation header. */
 	msg.source = k1_get_cluster_id();

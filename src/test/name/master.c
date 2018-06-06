@@ -53,6 +53,7 @@ int main(int argc, char **argv)
 
 	const char *args[] = {
 		"name-slave",
+		argv[1],
 		NULL
 	};
 
