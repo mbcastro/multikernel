@@ -150,12 +150,13 @@ int main(int argc, char **argv)
 
 	barrier = barrier_open(nclusters);
 
-	/* Register process name */
+	/* Register process name. */
 	snprintf(pathname, ARRAY_LENGTH(pathname), "/cpu%d", clusterid);
-	snprintf(process_name, ARRAY_LENGTH(process_name), "rmem-test%d", clusterid);
+	snprintf(process_name, ARRAY_LENGTH(process_name), "rmem-test%d",
+	                                                       clusterid);
 	register_name(clusterid, pathname, process_name);
 
-	/* Wait for others slaves name registration */
+	/* Wait for others slaves name registration. */
 	barrier_wait(barrier);
 	barrier_close(barrier);
 

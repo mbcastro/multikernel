@@ -54,10 +54,10 @@ static int nr_cluster = 0;
  * @brief Lookup table of cluster names.
  */
 static struct {
-	int id;     				/**< Cluster ID.  */
-	int dma;    				/**< DMA channel. */
-	char name[50]; 				/**< Portal name. */
-	char process_name[50];	/**< Process name. */
+	int id;     						/**< Cluster ID.  */
+	int dma;    						/**< DMA channel. */
+	char name[50]; 						/**< Portal name. */
+	char process_name[PROC_NAME_MAX];	/**< Process name. */
 } names[NR_DMA] = {
 	{ CCLUSTER0,  CCLUSTER0,      " ",	" "  },
 	{ CCLUSTER1,  CCLUSTER1,      " ",	" "  },
@@ -75,7 +75,7 @@ static struct {
 	{ CCLUSTER13, CCLUSTER13,     " ",	" "  },
 	{ CCLUSTER14, CCLUSTER14,     " ",	" "  },
 	{ CCLUSTER15, CCLUSTER15,     " ",	" "  },
-	{ IOCLUSTER0, IOCLUSTER0 + 0, "/io0",	"name-server"  },
+	{ IOCLUSTER0, IOCLUSTER0 + 0, "/io0",	"name-server" },
 	{ IOCLUSTER0, IOCLUSTER0 + 1, " ",	" "  },
 	{ IOCLUSTER0, IOCLUSTER0 + 2, " ",	" "  },
 	{ IOCLUSTER0, IOCLUSTER0 + 3, " ",	" "  },
@@ -86,19 +86,19 @@ static struct {
 };
 
 /*=======================================================================*
- * server_name_cluster_id()                                                     *
+ * server_name_cluster_id()                                              *
  *=======================================================================*/
 
 /**
- * @brief Converts a pathnamel name into a cluster ID.
+ * @brief Resolves a process name into a cluster ID.
  *
- * @param name Target pathnamel name.
+ * @param name Target process name.
  *
- * @returns Upon successful completion the cluster ID whose name is @p
- * name is returned. Upon failure, a negative error code is returned
- * instead.
+ * @returns Upon successful completion, the cluster ID whose name is
+ * @p name is returned. Upon failure, a negative error code is
+ * returned instead.
  */
-int server_name_cluster_id(char name[50])
+static int server_name_cluster_id(const char *name)
 {
 	/* Search for portal name. */
 	for (int i = 0; i < NR_DMA; i++)
@@ -112,7 +112,7 @@ int server_name_cluster_id(char name[50])
 }
 
 /*=======================================================================*
- * server_name_cluster_dma()                                                    *
+ * server_name_cluster_dma()                                             *
  *=======================================================================*/
 
 /**
@@ -124,7 +124,7 @@ int server_name_cluster_id(char name[50])
  * name is returned. Upon failure, a negative error code is returned
  * instead.
  */
-int server_name_cluster_dma(char name[50])
+static int server_name_cluster_dma(const char *name)
 {
 	/* Search for portal name. */
 	for (int i = 0; i < NR_DMA; i++)
@@ -149,7 +149,7 @@ int server_name_cluster_dma(char name[50])
  * @returns Upon successful completion the pathname that matches the cluster ID
  * @p clusterid is returned. Upon failure, NULL is returned instead.
  */
-char *server_id_cluster_name(int clusterid)
+static char *server_id_cluster_name(int clusterid)
 {
 	/* Search for portal name. */
 	for (int i = 0; i < NR_DMA; i++)
@@ -163,7 +163,7 @@ char *server_id_cluster_name(int clusterid)
 }
 
 /*=======================================================================*
- * server_id_process_name()                                                      *
+ * server_id_process_name()                                              *
  *=======================================================================*/
 
 /**
@@ -171,10 +171,11 @@ char *server_id_cluster_name(int clusterid)
  *
  * @param name Target process name.
  *
- * @returns Upon successful completion the process name that matches the cluster ID.
+ * @returns Upon successful completion the process name that matches
+ * the cluster ID.
  * Upon failure, NULL is returned instead.
  */
-char *server_id_process_name(int clusterid)
+static char *server_id_process_name(int clusterid)
 {
 	/* Search for process name. */
 	for (int i = 0; i < NR_DMA; i++)
@@ -189,29 +190,34 @@ char *server_id_process_name(int clusterid)
 }
 
 /*=======================================================================*
- * server_register_name()                                                        *
+ * server_register_name()                                                *
  *=======================================================================*/
 
 /**
  * @brief Register a process name
  *
- * @param DMA		DMA channel.
- * @param name	Portal name.
+ * @param DMA			DMA channel.
+ * @param name			Portal name.
  * @param process_name	Process name.
  *
  * @returns Upon successful registration the number of name is returned.
  * Upon failure, a negative error code is returned instead.
  */
-int server_register_name(int dma, char name[50], char process_name[50])
+static int server_register_name(int dma, char *name, char *process_name)
 {
 	int index = -1;
 
+#ifdef DEBUG
+	printf("Entering NAME_ADD case... dma: %d, name: %s, process name: %s.\n",
+	                                                 dma, name, process_name);
+#endif
+
 	/* No DMA available. */
 	if(nr_cluster >= NR_DMA)
-		return -1;
+		return (-EINVAL);
 
 	/* Compute index registration */
-	if(dma >= 0 && dma < NR_CCLUSTER)
+	if (dma >= 0 && dma < NR_CCLUSTER)
 		index = dma;
 	else if(dma >= IOCLUSTER0 && dma <= IOCLUSTER0 + 3)
 	 	index = NR_CCLUSTER + dma%IOCLUSTER0;
@@ -221,21 +227,22 @@ int server_register_name(int dma, char name[50], char process_name[50])
 		return (-EINVAL);
 
 	/* DMA channel not available */
-	if(strcmp(names[index].name, " "))
-		return -3;
+	if (strcmp(names[index].name, " "))
+		return (-3);
 
-	#ifdef DEBUG
-		printf("writing [%s, %s] at index %d.\n", name, process_name, index);
-	#endif
+#ifdef DEBUG
+	printf("writing [%s, %s] at index %d.\n", name, process_name, index);
+#endif
 
 	snprintf(names[index].name, ARRAY_LENGTH(names[index].name), "%s", name);
-	snprintf(names[index].process_name, ARRAY_LENGTH(names[index].process_name), "%s", process_name);
+	snprintf(names[index].process_name,
+	             ARRAY_LENGTH(names[index].process_name), "%s", process_name);
 
-	return ++nr_cluster;
+	return (++nr_cluster);
 }
 
 /*=======================================================================*
- * server_remove_name()                                                        *
+ * server_remove_name()                                                  *
  *=======================================================================*/
 
 /**
@@ -243,10 +250,14 @@ int server_register_name(int dma, char name[50], char process_name[50])
  *
  * @param name	Portal name.
  */
-void server_remove_name(char name[50])
+static void server_remove_name(char *name)
 {
 	/* Search for portal name. */
 	int i = 0;
+
+#ifdef DEBUG
+	printf("Entering NAME_REMOVE case... name: %s.\n", msg);
+#endif
 
 	while(i < NR_DMA && strcmp(name, names[i].name))
 	{
@@ -256,7 +267,8 @@ void server_remove_name(char name[50])
 	if(i < NR_DMA)
 	{
 		snprintf(names[i].name, ARRAY_LENGTH(names[i].name), " ");
-		snprintf(names[i].process_name, ARRAY_LENGTH(names[i].process_name), " ");
+		snprintf(names[i].process_name, ARRAY_LENGTH(names[i].process_name),
+		                                                               " ");
 		nr_cluster--;
 	}
 
@@ -276,8 +288,8 @@ void server_remove_name(char name[50])
  */
 static void *name_server(void *args)
 {
-	int dma;           /* DMA channel to use.         */
-	int inbox;         /* Mailbox for small messages. */
+	int dma;   /* DMA channel to use.         */
+	int inbox; /* Mailbox for small messages. */
 
 	dma = ((int *)args)[0];
 
@@ -296,25 +308,29 @@ static void *name_server(void *args)
 		/* handle name query. */
 		switch (msg.op)
 		{
-			/* Lookup */
+			/* Lookup. */
 			case NAME_QUERY:
 				if(msg.id == -1){
-					/* ID query */
+					/* ID query. */
 					#ifdef DEBUG
-						printf("Entering NAME_QUERY case... name provided: %s.\n", msg.name);
+						printf("Entering NAME_QUERY case... name provided:%s.\n"
+						                                            , msg.name);
 					#endif
 					msg.id = server_name_cluster_id(msg.name);
 				}else{
-					/* name query */
+					/* Name query. */
 					#ifdef DEBUG
-						printf("Entering NAME_QUERY case... id provided: %d.\n", msg.id);
+						printf("Entering NAME_QUERY case... id provided:%d.\n"
+						                                            , msg.id);
 					#endif
-					snprintf(msg.name, ARRAY_LENGTH(msg.name), "%s", server_id_cluster_name(msg.id));
+					snprintf(msg.name, ARRAY_LENGTH(msg.name), "%s",
+					                server_id_cluster_name(msg.id));
 				}
 				msg.dma = server_name_cluster_dma(msg.name);
-				snprintf(msg.process_name, ARRAY_LENGTH(msg.process_name), "%s", server_id_process_name(msg.id));
+				snprintf(msg.process_name, ARRAY_LENGTH(msg.process_name),
+				                    "%s", server_id_process_name(msg.id));
 
-				/* Send response */
+				/* Send response. */
 				int source = _mailbox_open(msg.source, NAME);
 				assert(source >= 0);
 				assert(mailbox_write(source, &msg) == 0);
@@ -323,19 +339,12 @@ static void *name_server(void *args)
 
 			/* Add name. */
 			case NAME_ADD:
-				#ifdef DEBUG
-					printf("Entering NAME_ADD case... dma: %d, name: %s, process name: %s.\n", msg.dma, msg.name, msg.process_name);
-				#endif
-
-				assert(server_register_name(msg.dma, msg.name, msg.process_name) > 0);
+				assert(server_register_name(msg.dma, msg.name,
+					                    msg.process_name) > 0);
 				break;
 
-      /* Remove name. */
+			/* Remove name. */
 			case NAME_REMOVE:
-				#ifdef DEBUG
-					printf("Entering NAME_REMOVE case... name: %s.\n", msg.name);
-				#endif
-
 				server_remove_name(msg.name);
 				break;
 
@@ -373,16 +382,16 @@ static void spawn_slaves(int nclusters, char **args)
 		assert((pids[i] = mppa_spawn(i, NULL, argv[0], argv, NULL)) != -1);
 }
 
-// /**
-//  * @brief Wait for slaves to complete.
-//  *
-//  * @param nclusters Number of slaves to wait.
-//  */
-// static void join_slaves(int nclusters)
-// {
-// 	for (int i = 0; i < nclusters; i++)
-// 		assert(mppa_waitpid(pids[i], NULL, 0) != -1);
-// }
+/**
+ * @brief Wait for slaves to complete.
+ *
+ * @param nclusters Number of slaves to wait.
+ */
+/*static void join_slaves(int nclusters)
+{
+	for (int i = 0; i < nclusters; i++)
+		assert(mppa_waitpid(pids[i], NULL, 0) != -1);
+}*/
 
 /*===================================================================*
  * Kernel                                                            *
@@ -403,8 +412,7 @@ int main(int argc, char **argv)
 	nclusters = atoi(argv[2]);
 	assert((size = atoi(argv[3])) <= RMEM_BLOCK_SIZE);
 
-	/* Deploy name server */
-
+	/* Deploy name server. */
 #ifdef DEBUG
 	printf("[NAME_RESOLUTION] booting up server\n");
 #endif
@@ -440,9 +448,9 @@ int main(int argc, char **argv)
 	printf("[SPAWNER] waiting kernels\n");
 #endif
 
-// join_slaves(nclusters);
+/* join_slaves(nclusters); */
 
-// pthread_join(tid_name_server, NULL);
+/* pthread_join(tid_name_server, NULL); */
 
 	/* Wait for slaves. */
 	global_barrier = barrier_open(nclusters + 2);

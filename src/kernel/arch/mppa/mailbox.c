@@ -139,7 +139,7 @@ static int mailbox_noctag(int local, int type)
 	return (0);
 }
 
-/*=======================================================================*
+/*======================================================================*
 * mailbox_create()                                                      *
 *=======================================================================*/
 
@@ -153,20 +153,21 @@ static int mailbox_noctag(int local, int type)
 */
 int mailbox_create(char *name)
 {
-	int local;          /* ID of local cluster.               */
+	int local;   /* ID of local cluster. */
 
 	/* Invalid mailbox name. */
 	if (name == NULL)
 	return (-EINVAL);
 
 	local = name_cluster_dma(name);
-	// printf("[MAILBOX_CREATE] name:%s local:%d getclusterid:%d\n", name, local, k1_get_cluster_id());
+	/* printf("[MAILBOX_CREATE] name:%s local:%d getclusterid:%d\n", name,
+	                                        local, k1_get_cluster_id()); */
 	assert(name_cluster_id(name) == k1_get_cluster_id());
 
-	return _mailbox_create(local, STD);
+	return (_mailbox_create(local, STD));
 }
 
-/*=======================================================================*
+/*======================================================================*
 * mailbox_open()                                                        *
 *=======================================================================*/
 
@@ -189,14 +190,15 @@ int mailbox_open(char *name)
 
 	remote = name_cluster_dma(name);
 	local = k1_get_cluster_id();
-	// printf("[MAILBOX_OPEN] name: %s local:%d remote: %d\n", name, local, remote);
+	/* printf("[MAILBOX_OPEN] name: %s local:%d remote: %d\n", name, local,
+	                                                             remote); */
 	assert(name_cluster_id(name) != local);
 
-	return _mailbox_open(remote, STD);
+	return (_mailbox_open(remote, STD));
 }
 
 /*=======================================================================*
- * _mailbox_create()                                                      *
+ * _mailbox_create()                                                     *
  *=======================================================================*/
 
 /**
@@ -215,7 +217,8 @@ int _mailbox_create(int local, int type)
 	char pathname[128]; /* NoC connector name.                */
 	int noctag;         /* NoC tag used for transfers.        */
 
-	// printf("[MAILBOX_CREATE] type:%d local:%d getclusterid:%d.\n", type, local, k1_get_cluster_id());
+	/* printf("[MAILBOX_CREATE] type:%d local:%d getclusterid:%d.\n", type,
+	                                         local, k1_get_cluster_id()); */
 
 	if(local >= IOCLUSTER0 && local < IOCLUSTER0 + NR_IOCLUSTER_DMA)
 		assert(local == k1_get_cluster_id() + local%IOCLUSTER0);
@@ -250,7 +253,7 @@ int _mailbox_create(int local, int type)
 }
 
 /*=======================================================================*
- * _mailbox_open()                                                        *
+ * _mailbox_open()                                                       *
  *=======================================================================*/
 
 /**
@@ -263,7 +266,7 @@ int _mailbox_create(int local, int type)
  */
 int _mailbox_open(int remote, int type)
 {
-	int local;          /* ID of local cluster.             */
+	int local;          /* ID of local cluster.               */
 	int fd;             /* File descriptor for NoC connector. */
 	int mbxid;          /* ID of mailbix.                     */
 	char remotes[128];  /* IDs of remote clusters.            */
@@ -294,7 +297,8 @@ int _mailbox_open(int remote, int type)
 
 	/* Set DMA interface for IO cluster. */
 	if (k1_is_iocluster(local))
-		assert(mppa_ioctl(fd, MPPA_TX_SET_INTERFACE, local%NR_IOCLUSTER_DMA) != -1);
+		assert(mppa_ioctl(fd, MPPA_TX_SET_INTERFACE, local%NR_IOCLUSTER_DMA)
+		                                                             != -1);
 
 	/* Initialize mailbox. */
 	mailboxes[mbxid].fd = fd;
@@ -334,7 +338,8 @@ int mailbox_read(int mbxid, void *buf)
 	if (buf == NULL)
 		return (-EINVAL);
 
-	assert(mppa_read(mailboxes[mbxid].fd, buf, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
+	assert(mppa_read(mailboxes[mbxid].fd, buf, MAILBOX_MSG_SIZE)
+	                                       == MAILBOX_MSG_SIZE);
 
 	return (0);
 }
@@ -370,7 +375,8 @@ int mailbox_write(int mbxid, const void *buf)
 	if (buf == NULL)
 		return (-EINVAL);
 
-	assert(mppa_write(mailboxes[mbxid].fd, buf, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
+	assert(mppa_write(mailboxes[mbxid].fd, buf, MAILBOX_MSG_SIZE)
+	                                         == MAILBOX_MSG_SIZE);
 
 	return (0);
 }

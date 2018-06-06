@@ -27,8 +27,6 @@
 #include <string.h>
 #include <pthread.h>
 
-int msg;
-
 /*====================================================================*
  * main                                                               *
  *====================================================================*/
@@ -38,81 +36,82 @@ int msg;
  */
 int main(int argc, char **argv)
 {
-  char pathname[50];
-  char out_pathname[50];
-  char process_name[50];             /* Process name */
-  int barrier;
-  int clusterid;
-  int nclusters;
-  int inbox;
-  int outbox;
+	char pathname[50];
+	char out_pathname[50];
+	char process_name[50];              /* Process name. */
+	int barrier;
+	int clusterid;
+	int nclusters;
+	int inbox;
+	int outbox;
+	int msg;
 
-  clusterid = k1_get_cluster_id();
+	clusterid = k1_get_cluster_id();
 
-  /* Retrieve parameters. */
+	/* Retrieve parameters. */
 	assert(argc == 2);
 	assert((nclusters = atoi(argv[1])) > 0);
 
-  barrier = barrier_open(nclusters);
+	barrier = barrier_open(nclusters);
 
-  sprintf(pathname, "/cpu%d", clusterid);
-  sprintf(process_name, "process_on_cpu%d", clusterid);
+	sprintf(pathname, "/cpu%d", clusterid);
+	sprintf(process_name, "process_on_cpu%d", clusterid);
 
-  /* Primitives test */
+	/* Primitives test. */
 
-  /* Ask for an unregistered entry */
-  assert(name_cluster_id(pathname) == -2);
-  assert(name_cluster_dma(pathname) == -2);
-  assert(!strcmp(id_cluster_name(clusterid), " "));
-  assert(!strcmp(id_process_name(clusterid), " "));
+	/* Ask for an unregistered entry. */
+	assert(name_cluster_id(pathname) == -2);
+	assert(name_cluster_dma(pathname) == -2);
+	assert(!strcmp(id_cluster_name(clusterid), " "));
+	assert(!strcmp(id_process_name(clusterid), " "));
 
-  /* Register this cluster */
-  register_name(clusterid, pathname, process_name);
+	/* Register this cluster. */
+	register_name(clusterid, pathname, process_name);
 
-  /* Ask for a registered entry */
-  assert(name_cluster_id(pathname) == clusterid);
-  assert(name_cluster_dma(pathname) == clusterid);
-  assert(!strcmp(id_cluster_name(clusterid), pathname));
-  assert(!strcmp(id_process_name(clusterid), process_name));
+	/* Ask for a registered entry. */
+	assert(name_cluster_id(pathname) == clusterid);
+	assert(name_cluster_dma(pathname) == clusterid);
+	assert(!strcmp(id_cluster_name(clusterid), pathname));
+	assert(!strcmp(id_process_name(clusterid), process_name));
 
-  /* Remove the entry */
-  remove_name(pathname);
+	/* Remove the entry. */
+	remove_name(pathname);
 
-  /* Verify that the entry is removed */
-  assert(name_cluster_id(pathname) == -2);
-  assert(name_cluster_dma(pathname) == -2);
-  assert(!strcmp(id_cluster_name(clusterid), " "));
-  assert(!strcmp(id_process_name(clusterid), " "));
+	/* Verify that the entry is removed. */
+	assert(name_cluster_id(pathname) == -2);
+	assert(name_cluster_dma(pathname) == -2);
+	assert(!strcmp(id_cluster_name(clusterid), " "));
+	assert(!strcmp(id_process_name(clusterid), " "));
 
-  /* Register this cluster */
-  register_name(clusterid, pathname, process_name);
+	/* Register this cluster. */
+	register_name(clusterid, pathname, process_name);
 
-  /* Wait for others clusters */
-  barrier_wait(barrier);
+	/* Wait for others clusters. */
+	barrier_wait(barrier);
 
-  /* Message exchange test using name resolution */
+	/* Message exchange test using name resolution. */
 
-  inbox = mailbox_create(pathname);
-  sprintf(out_pathname, "/cpu%d", (clusterid + 1)%nclusters);
+	inbox = mailbox_create(pathname);
+	sprintf(out_pathname, "/cpu%d", (clusterid + 1)%nclusters);
 
-  printf("Sending message to %s from %s...\n", out_pathname, pathname);
+	printf("Sending message to %s from %s...\n", out_pathname, pathname);
 
-  outbox = mailbox_open(out_pathname);
+	outbox = mailbox_open(out_pathname);
 
-  msg = clusterid;
-  assert(mailbox_write(outbox, &msg) == 0);
+	msg = clusterid;
+	assert(mailbox_write(outbox, &msg) == 0);
 
-  msg = -1;
-  while(msg == -1){
-    assert(mailbox_read(inbox, &msg) == 0);
-  }
+	msg = -1;
+	while(msg == -1){
+		assert(mailbox_read(inbox, &msg) == 0);
+	}
 
-  printf("Message from /cpu%d received by %s.\n", msg, pathname);
+	printf("Message from /cpu%d received by %s.\n", msg, pathname);
 
-  /* House keeping. */
-  assert(mailbox_close(outbox) == 0);
-  assert(mailbox_close(inbox) == 0);
-  barrier_close(barrier);
+	/* House keeping. */
+	assert(mailbox_close(outbox) == 0);
+	assert(mailbox_close(inbox) == 0);
+	barrier_close(barrier);
 
 	return (EXIT_SUCCESS);
 }

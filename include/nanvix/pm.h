@@ -40,7 +40,7 @@
  * Mailbox                                                               *
  *=======================================================================*/
 
-  /* Mailbox types */
+	/* Mailbox types */
 	#define NAME 1
 	#define STD 0
 

@@ -37,8 +37,8 @@ int _mem_outportal = -1; /* Portal used for large transfers.  */
 void meminit(void)
 {
 	int clusterid;              /* Cluster ID of the calling process.   */
-	char pathname[128];         /* Name of underlying IPC connector.   */
-	char *clustername;    /* Cluster name of the calling process. */
+	char pathname[128];         /* Name of underlying IPC connector.    */
+	char *clustername;          /* Cluster name of the calling process. */
 	static int initialized = 0; /* IS RMA Engine initialized?           */
 
 	/* Already initialized.  */
@@ -47,13 +47,10 @@ void meminit(void)
 
 	/* Retrieve cluster information. */
 	clusterid = k1_get_cluster_id();
-	printf("meminit id_cluster_name(%d)\n", clusterid);
 	clustername = id_cluster_name(clusterid);
-
 
 	/* Open underlying IPC connectors. */
 	sprintf(pathname, "/rmem%d", clusterid%NR_IOCLUSTER_DMA);
-	printf("portal_create(%s)\n", clustername);
 	_mem_inportal = portal_create(clustername);
 	_mem_outbox = _mailbox_open(IOCLUSTER1 + clusterid%NR_IOCLUSTER_DMA, STD);
 	_mem_outportal = portal_open(pathname);

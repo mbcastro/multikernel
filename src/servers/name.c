@@ -46,9 +46,9 @@ static int nr_cluster = 0;
  * @brief Lookup table of cluster names.
  */
 static struct {
-	int id;     				/**< Cluster ID.  */
-	int dma;    				/**< DMA channel. */
-	char name[50]; 				/**< Portal name. */
+	int id;     						/**< Cluster ID.  */
+	int dma;    						/**< DMA channel. */
+	char name[50]; 						/**< Portal name. */
 	char process_name[PROC_NAME_MAX];	/**< Process name. */
 } names[NR_DMA] = {
 	{ CCLUSTER0,  CCLUSTER0,      " ",	" "  },
@@ -163,7 +163,8 @@ static char *server_id_cluster_name(int clusterid)
  *
  * @param name Target process name.
  *
- * @returns Upon successful completion the process name that matches the cluster ID.
+ * @returns Upon successful completion the process name that matches
+ * the cluster ID.
  * Upon failure, NULL is returned instead.
  */
 static char *server_id_process_name(int clusterid)
@@ -187,8 +188,8 @@ static char *server_id_process_name(int clusterid)
 /**
  * @brief Register a process name
  *
- * @param DMA		DMA channel.
- * @param name	Portal name.
+ * @param DMA			DMA channel.
+ * @param name			Portal name.
  * @param process_name	Process name.
  *
  * @returns Upon successful registration the number of name is returned.
@@ -199,7 +200,8 @@ static int server_register_name(int dma, char *name, char *process_name)
 	int index = -1;
 
 #ifdef DEBUG
-	printf("Entering NAME_ADD case... dma: %d, name: %s, process name: %s.\n", dma, name, process_name);
+	printf("Entering NAME_ADD case... dma: %d, name: %s, process name: %s.\n",
+	                                                 dma, name, process_name);
 #endif
 
 	/* No DMA available. */
@@ -225,7 +227,8 @@ static int server_register_name(int dma, char *name, char *process_name)
 #endif
 
 	snprintf(names[index].name, ARRAY_LENGTH(names[index].name), "%s", name);
-	snprintf(names[index].process_name, ARRAY_LENGTH(names[index].process_name), "%s", process_name);
+	snprintf(names[index].process_name,
+	             ARRAY_LENGTH(names[index].process_name), "%s", process_name);
 
 	return (++nr_cluster);
 }
@@ -256,7 +259,8 @@ static void server_remove_name(char *name)
 	if(i < NR_DMA)
 	{
 		snprintf(names[i].name, ARRAY_LENGTH(names[i].name), " ");
-		snprintf(names[i].process_name, ARRAY_LENGTH(names[i].process_name), " ");
+		snprintf(names[i].process_name, ARRAY_LENGTH(names[i].process_name),
+		                                                               " ");
 		nr_cluster--;
 	}
 
@@ -296,25 +300,29 @@ static void *name_server(void *args)
 		/* handle name query. */
 		switch (msg.op)
 		{
-			/* Lookup */
+			/* Lookup. */
 			case NAME_QUERY:
 				if(msg.id == -1){
-					/* ID query */
+					/* ID query. */
 					#ifdef DEBUG
-						printf("Entering NAME_QUERY case... name provided: %s.\n", msg.name);
+						printf("Entering NAME_QUERY case... name provided:%s.\n"
+						                                            , msg.name);
 					#endif
 					msg.id = server_name_cluster_id(msg.name);
 				}else{
-					/* name query */
+					/* Name query. */
 					#ifdef DEBUG
-						printf("Entering NAME_QUERY case... id provided: %d.\n", msg.id);
+						printf("Entering NAME_QUERY case... id provided:%d.\n"
+						                                            , msg.id);
 					#endif
-					snprintf(msg.name, ARRAY_LENGTH(msg.name), "%s", server_id_cluster_name(msg.id));
+					snprintf(msg.name, ARRAY_LENGTH(msg.name), "%s",
+					                server_id_cluster_name(msg.id));
 				}
 				msg.dma = server_name_cluster_dma(msg.name);
-				snprintf(msg.process_name, ARRAY_LENGTH(msg.process_name), "%s", server_id_process_name(msg.id));
+				snprintf(msg.process_name, ARRAY_LENGTH(msg.process_name),
+				                    "%s", server_id_process_name(msg.id));
 
-				/* Send response */
+				/* Send response. */
 				int source = _mailbox_open(msg.source, NAME);
 				assert(source >= 0);
 				assert(mailbox_write(source, &msg) == 0);
@@ -323,7 +331,8 @@ static void *name_server(void *args)
 
 			/* Add name. */
 			case NAME_ADD:
-				assert(server_register_name(msg.dma, msg.name, msg.process_name) > 0);
+				assert(server_register_name(msg.dma, msg.name,
+					                    msg.process_name) > 0);
 				break;
 
 			/* Remove name. */

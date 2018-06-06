@@ -33,17 +33,17 @@
 	#define NAME_ADD    2 /**< Add a new name. */
 	#define NAME_REMOVE 3 /**< Remove a name.  */
 
-  /**
-   * @brief Name server message.
-   */
-  struct name_message
-  {
-    uint16_t source;                  /**< Source cluster. */
-    uint16_t op;                      /**< Operation.      */
-  	int id;                           /**< Cluster ID.     */
-  	int dma;                          /**< DMA channel.    */
-  	char name[50];                    /**< Portal name.    */
-  	char process_name[PROC_NAME_MAX]; /**< Process name.   */
-  };
+	/**
+	 * @brief Name server message.
+	 */
+	struct name_message
+	{
+		uint16_t source;                  /**< Source cluster. */
+		uint16_t op;                      /**< Operation.      */
+		int id;                           /**< Cluster ID.     */
+		int dma;                          /**< DMA channel.    */
+		char name[50];                    /**< Portal name.    */
+		char process_name[PROC_NAME_MAX]; /**< Process name.   */
+	};
 
 #endif /* _NAME_H_ */

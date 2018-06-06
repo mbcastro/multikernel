@@ -43,7 +43,7 @@ static void test_name_register(void)
 
 	clusterid = k1_get_cluster_id();
 
-	/* IO cluster registration test */
+	/* IO cluster registration test. */
 	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
 	{
 		snprintf(pathname, ARRAY_LENGTH(pathname), "/name%d", i);
@@ -65,7 +65,7 @@ static void test_name_lookup(void)
 
 	clusterid = k1_get_cluster_id();
 
-	/* IO cluster registration test */
+	/* IO cluster registration test. */
 	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
 	{
 		snprintf(pathname, ARRAY_LENGTH(pathname), "/name%d", i);
