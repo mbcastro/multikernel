@@ -21,20 +21,20 @@
 #define NANVIX_NAME_H_
 
 	/**
-	 * @brief Maximum length of a process name (including the terminating
-	 * null character).
+	 * @brief Maximum length of a process name (including the
+	 * terminating null character).
 	 */
 	#define PROC_NAME_MAX 50
 
-  /**
-   * @brief name request types.
-   */
-  #define NAME_QUERY 1
-  #define NAME_ADD 2
-  #define NAME_REMOVE 3
+	/**
+	 * @brief Types of requests for name server.
+	 */
+	#define NAME_QUERY  1 /**< Query a name.   */
+	#define NAME_ADD    2 /**< Add a new name. */
+	#define NAME_REMOVE 3 /**< Remove a name.  */
 
   /**
-   * @brief name query message.
+   * @brief Name server message.
    */
   struct name_message
   {
