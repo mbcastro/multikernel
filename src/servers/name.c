@@ -49,7 +49,7 @@ static struct {
 	int id;     				/**< Cluster ID.  */
 	int dma;    				/**< DMA channel. */
 	char name[50]; 				/**< Portal name. */
-	char process_name[50];	/**< Process name. */
+	char process_name[PROC_NAME_MAX];	/**< Process name. */
 } names[NR_DMA] = {
 	{ CCLUSTER0,  CCLUSTER0,      " ",	" "  },
 	{ CCLUSTER1,  CCLUSTER1,      " ",	" "  },
@@ -78,7 +78,7 @@ static struct {
 };
 
 /*=======================================================================*
- * server_name_cluster_id()                                                     *
+ * server_name_cluster_id()                                              *
  *=======================================================================*/
 
 /**
@@ -90,7 +90,7 @@ static struct {
  * name is returned. Upon failure, a negative error code is returned
  * instead.
  */
-int server_name_cluster_id(char name[50])
+int server_name_cluster_id(char name[PROC_NAME_MAX])
 {
 	/* Search for portal name. */
 	for (int i = 0; i < NR_DMA; i++)
@@ -116,7 +116,7 @@ int server_name_cluster_id(char name[50])
  * name is returned. Upon failure, a negative error code is returned
  * instead.
  */
-int server_name_cluster_dma(char name[50])
+int server_name_cluster_dma(char name[PROC_NAME_MAX])
 {
 	/* Search for portal name. */
 	for (int i = 0; i < NR_DMA; i++)
@@ -194,7 +194,7 @@ char *server_id_process_name(int clusterid)
  * @returns Upon successful registration the number of name is returned.
  * Upon failure, a negative error code is returned instead.
  */
-int server_register_name(int dma, char name[50], char process_name[50])
+int server_register_name(int dma, char name[PROC_NAME_MAX], char process_name[PROC_NAME_MAX])
 {
 	int index = -1;
 
@@ -227,7 +227,7 @@ int server_register_name(int dma, char name[50], char process_name[50])
 }
 
 /*=======================================================================*
- * server_remove_name()                                                        *
+ * server_remove_name()                                                  *
  *=======================================================================*/
 
 /**
@@ -235,7 +235,7 @@ int server_register_name(int dma, char name[50], char process_name[50])
  *
  * @param name	Portal name.
  */
-void server_remove_name(char name[50])
+void server_remove_name(char name[PROC_NAME_MAX])
 {
 	/* Search for portal name. */
 	int i = 0;

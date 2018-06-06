@@ -20,6 +20,12 @@
 #ifndef NANVIX_NAME_H_
 #define NANVIX_NAME_H_
 
+	/**
+	 * @brief Maximum length of a process name (including the terminating
+	 * null character).
+	 */
+	#define PROC_NAME_MAX 50
+
   /**
    * @brief name request types.
    */
@@ -32,12 +38,12 @@
    */
   struct name_message
   {
-    uint16_t source;     	/**< Source cluster.	*/
-    uint16_t op;      		/**< Operation.     	*/
-  	int id;     					/**< Cluster ID.  		*/
-  	int dma;    					/**< DMA channel. 		*/
-  	char name[50];        	  /**< Portal name. 		*/
-  	char process_name[50];		/**< Process name. 		*/
+    uint16_t source;                  /**< Source cluster. */
+    uint16_t op;                      /**< Operation.      */
+  	int id;                           /**< Cluster ID.     */
+  	int dma;                          /**< DMA channel.    */
+  	char name[50];                    /**< Portal name.    */
+  	char process_name[PROC_NAME_MAX]; /**< Process name.   */
   };
 
 #endif /* _NAME_H_ */
