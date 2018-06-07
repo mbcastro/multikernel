@@ -282,32 +282,32 @@ void name_remotes(char *remotes, int local)
 /**
  * @brief Register a process name
  *
- * @param dma          DMA channel.
- * @param name	       Portal name.
- * @param process_name Process name.
+ * @param dma       Target DMA channel.
+ * @param name      Portal name.
+ * @param proc_name Process name.
  */
-void register_name(int dma, char *name, char *process_name)
+void register_name(int dma, const char *name, const char *proc_name)
 {
-	int server;         /* Mailbox for small messages. */
+	int server;
 
-	#ifdef DEBUG
-		printf("register_name(%s): opening name server mailbox from cluster %d...\n", name, k1_get_cluster_id());
-	#endif
+	/* Sanity check. */
+	assert(dma >= 0);
+	assert((name != NULL) && (strlen(name) < (PROC_NAME_MAX - 1)));
+	assert((proc_name != NULL) && (strlen(proc_name) < (PROC_NAME_MAX - 1)));
 
 	server = _mailbox_open(IOCLUSTER0, NAME);
 
-	/* Build operation header. */
+	/* Build request message. */
 	msg.source = k1_get_cluster_id();
 	msg.op = NAME_ADD;
 	msg.dma = dma;
-	snprintf(msg.name, ARRAY_LENGTH(msg.name), name);
-	snprintf(msg.process_name, ARRAY_LENGTH(msg.process_name), process_name);
+	strcpy(msg.name, name);
+	strcpy(msg.process_name, proc_name);
+
+	printf("[NAME] name %s\n", msg.name);
+	printf("[NAME] process name %s\n", msg.process_name);
 
 	/* Send name request. */
-	#ifdef DEBUG
-		printf("Sending add request for name: %s...\n", name);
-	#endif
-
 	assert(mailbox_write(server, &msg) == 0);
 
 	/* House keeping. */
