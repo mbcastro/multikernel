@@ -186,41 +186,43 @@ char *name_lookup_pathname(int clusterid)
  */
 void name_remotes(char *remotes, int local)
 {
-	if ((local >= IOCLUSTER0) && (local < (IOCLUSTER0 + NR_IOCLUSTER_DMA)))
+	char tmp[5];
+
+	static int ioclusters[NR_IOCLUSTER*NR_IOCLUSTER_DMA] = {
+		IOCLUSTER0 + 0, IOCLUSTER0 + 1, IOCLUSTER0 + 2, IOCLUSTER0 + 3, 
+		IOCLUSTER1 + 0, IOCLUSTER1 + 1, IOCLUSTER1 + 2, IOCLUSTER1 + 3
+	};
+
+	static int cclusters[NR_CCLUSTER*NR_CCLUSTER_DMA] = {
+		CCLUSTER0,  CCLUSTER1,  CCLUSTER2,  CCLUSTER3,
+		CCLUSTER4,  CCLUSTER5,  CCLUSTER6,  CCLUSTER7,
+		CCLUSTER8,  CCLUSTER9,  CCLUSTER10, CCLUSTER11,
+		CCLUSTER12, CCLUSTER13, CCLUSTER14, CCLUSTER15
+	};
+
+	remotes[0] = '\0';
+
+	/* Append IO Clusters. */
+	for (unsigned i = 0; i < ARRAY_LENGTH(ioclusters); i++)
 	{
-		sprintf(remotes,
-				"%d..%d,%d",
-				CCLUSTER0, CCLUSTER15, IOCLUSTER1
-		);
+		if (local == ioclusters[i])
+			continue;
+
+		sprintf(tmp, "%d,", ioclusters[i]);
+		strcat(remotes, tmp);
 	}
-	else if ((local >= IOCLUSTER1) && (local < (IOCLUSTER1 + NR_IOCLUSTER_DMA)))
+
+	/* Append Compute Clusters. */
+	for (unsigned i = 0; i < ARRAY_LENGTH(cclusters); i++)
 	{
-		sprintf(remotes,
-				"%d..%d,%d",
-				CCLUSTER0, CCLUSTER15, IOCLUSTER0
-		);
+		if (local == cclusters[i])
+			continue;
+
+		sprintf(tmp, "%d,", cclusters[i]);
+		strcat(remotes, tmp);
 	}
-	else if (local == CCLUSTER0)
-	{
-		sprintf(remotes,
-				"%d..%d,%d,%d",
-				CCLUSTER1, CCLUSTER15, IOCLUSTER0, IOCLUSTER1
-		);
-	}
-	else if (local  == CCLUSTER15)
-	{
-		sprintf(remotes,
-				"%d..%d,%d,%d",
-				CCLUSTER0, CCLUSTER14, IOCLUSTER0, IOCLUSTER1
-		);
-	}
-	else
-	{
-		sprintf(remotes,
-				"%d..%d,%d..%d,%d,%d",
-				CCLUSTER0, local - 1, local + 1, CCLUSTER15, IOCLUSTER0, IOCLUSTER1
-		);
-	}
+
+	remotes[strlen(remotes) - 1] = '\0';
 }
 
 /*=======================================================================*
