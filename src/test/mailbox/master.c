@@ -34,7 +34,7 @@
  *===================================================================*/
 
 /**
- * @brief API Test: Create Unlink
+ * @brief API Test: Mailbox Create Unlink
  */
 static void test_mailbox_create_unlink(void)
 {
@@ -49,11 +49,30 @@ static void test_mailbox_create_unlink(void)
 }
 
 /*===================================================================*
+ * API Test: Open Close                                              *
+ *===================================================================*/
+
+/**
+ * @brief API Test: Mailbox Open Close
+ */
+static void test_mailbox_open_close(void)
+{
+	int outbox;
+	int clusterid;
+
+	clusterid = k1_get_cluster_id();
+
+	outbox = _mailbox_open(clusterid + 1, NAME);
+
+	mailbox_close(outbox);
+}
+
+/*===================================================================*
  * API Test: Mailbox Driver                                          *
  *===================================================================*/
 
 /**
- * @brief Benchmarks mailbox connector.
+ * @brief Mailbox test driver.
  */
 int main(int argc, const char **argv)
 {
@@ -61,6 +80,7 @@ int main(int argc, const char **argv)
 	((void) argv);
 
 	test_mailbox_create_unlink();
+	test_mailbox_open_close();
 
 	return (EXIT_SUCCESS);
 }
