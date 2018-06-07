@@ -29,11 +29,10 @@
 	/* Forward definitions. */
 	extern int name_cluster_id(char *);
 	extern int name_cluster_dma(char *);
-	extern char *id_cluster_name(int);
-	extern char *id_process_name(int);
+	extern char *name_lookup_pathname(int);
 	extern void name_remotes(char *, int);
-	extern void register_name(int, const char *, const char *);
-	extern void remove_name(char *);
+	extern void name_link(int, const char *);
+	extern void name_unlink(char *);
 
 /*=======================================================================*
  * Mailbox                                                               *

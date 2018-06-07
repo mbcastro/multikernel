@@ -47,7 +47,7 @@ void meminit(void)
 
 	/* Retrieve cluster information. */
 	clusterid = k1_get_cluster_id();
-	clustername = id_cluster_name(clusterid);
+	clustername = name_lookup_pathname(clusterid);
 
 	/* Open underlying IPC connectors. */
 	sprintf(pathname, "/rmem%d", clusterid%NR_IOCLUSTER_DMA);

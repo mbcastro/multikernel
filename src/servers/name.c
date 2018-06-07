@@ -48,37 +48,36 @@ static int nr_cluster = 0;
 static struct {
 	int id;     						/**< Cluster ID.  */
 	int dma;    						/**< DMA channel. */
-	char name[50]; 						/**< Portal name. */
-	char process_name[PROC_NAME_MAX];	/**< Process name. */
+	char name[PROC_NAME_MAX];			/**< Portal name. */
 } names[NR_DMA] = {
-	{ CCLUSTER0,  CCLUSTER0,      " ",	" "  },
-	{ CCLUSTER1,  CCLUSTER1,      " ",	" "  },
-	{ CCLUSTER2,  CCLUSTER2,      " ",	" "  },
-	{ CCLUSTER3,  CCLUSTER3,      " ",	" "  },
-	{ CCLUSTER4,  CCLUSTER4,      " ",	" "  },
-	{ CCLUSTER5,  CCLUSTER5,      " ",	" "  },
-	{ CCLUSTER6,  CCLUSTER6,      " ",	" "  },
-	{ CCLUSTER7,  CCLUSTER7,      " ",	" "  },
-	{ CCLUSTER8,  CCLUSTER8,      " ",	" "  },
-	{ CCLUSTER9,  CCLUSTER9,      " ",	" "  },
-	{ CCLUSTER10, CCLUSTER10,     " ",	" "  },
-	{ CCLUSTER11, CCLUSTER11,     " ",	" "  },
-	{ CCLUSTER12, CCLUSTER12,     " ",	" "  },
-	{ CCLUSTER13, CCLUSTER13,     " ",	" "  },
-	{ CCLUSTER14, CCLUSTER14,     " ",	" "  },
-	{ CCLUSTER15, CCLUSTER15,     " ",	" "  },
-	{ IOCLUSTER0, IOCLUSTER0 + 0, "/io0",	"name-server" },
-	{ IOCLUSTER0, IOCLUSTER0 + 1, " ",	" "  },
-	{ IOCLUSTER0, IOCLUSTER0 + 2, " ",	" "  },
-	{ IOCLUSTER0, IOCLUSTER0 + 3, " ",	" "  },
-	{ IOCLUSTER1, IOCLUSTER1 + 0, " ",	" "  },
-	{ IOCLUSTER1, IOCLUSTER1 + 1, " ",	" "  },
-	{ IOCLUSTER1, IOCLUSTER1 + 2, " ",	" "  },
-	{ IOCLUSTER1, IOCLUSTER1 + 3, " ",	" "  }
+	{ CCLUSTER0,  CCLUSTER0,      "\0"  },
+	{ CCLUSTER1,  CCLUSTER1,      "\0"  },
+	{ CCLUSTER2,  CCLUSTER2,      "\0"  },
+	{ CCLUSTER3,  CCLUSTER3,      "\0"  },
+	{ CCLUSTER4,  CCLUSTER4,      "\0"  },
+	{ CCLUSTER5,  CCLUSTER5,      "\0"  },
+	{ CCLUSTER6,  CCLUSTER6,      "\0"  },
+	{ CCLUSTER7,  CCLUSTER7,      "\0"  },
+	{ CCLUSTER8,  CCLUSTER8,      "\0"  },
+	{ CCLUSTER9,  CCLUSTER9,      "\0"  },
+	{ CCLUSTER10, CCLUSTER10,     "\0"  },
+	{ CCLUSTER11, CCLUSTER11,     "\0"  },
+	{ CCLUSTER12, CCLUSTER12,     "\0"  },
+	{ CCLUSTER13, CCLUSTER13,     "\0"  },
+	{ CCLUSTER14, CCLUSTER14,     "\0"  },
+	{ CCLUSTER15, CCLUSTER15,     "\0"  },
+	{ IOCLUSTER0, IOCLUSTER0 + 0, "/io0"},
+	{ IOCLUSTER0, IOCLUSTER0 + 1, "\0"  },
+	{ IOCLUSTER0, IOCLUSTER0 + 2, "\0"  },
+	{ IOCLUSTER0, IOCLUSTER0 + 3, "\0"  },
+	{ IOCLUSTER1, IOCLUSTER1 + 0, "\0"  },
+	{ IOCLUSTER1, IOCLUSTER1 + 1, "\0"  },
+	{ IOCLUSTER1, IOCLUSTER1 + 2, "\0"  },
+	{ IOCLUSTER1, IOCLUSTER1 + 3, "\0"  }
 };
 
 /*=======================================================================*
- * server_name_cluster_id()                                              *
+ * _name_lookup_id()                                                     *
  *=======================================================================*/
 
 /**
@@ -90,7 +89,7 @@ static struct {
  * @p name is returned. Upon failure, a negative error code is
  * returned instead.
  */
-static int server_name_cluster_id(const char *name)
+static int _name_lookup_id(const char *name)
 {
 	/* Search for portal name. */
 	for (int i = 0; i < NR_DMA; i++)
@@ -104,19 +103,19 @@ static int server_name_cluster_id(const char *name)
 }
 
 /*=======================================================================*
- * server_name_cluster_dma()                                             *
+ * _name_lookup_dma()                                                    *
  *=======================================================================*/
 
 /**
- * @brief Converts a pathnamel name into a DMA channel id.
+ * @brief Converts a pathname name into a DMA channel id.
  *
- * @param name Target pathnamel name.
+ * @param name Target pathname name.
  *
  * @returns Upon successful completion the DMA ID whose name is @p
  * name is returned. Upon failure, a negative error code is returned
  * instead.
  */
-static int server_name_cluster_dma(const char *name)
+static int _name_lookup_dma(const char *name)
 {
 	/* Search for portal name. */
 	for (int i = 0; i < NR_DMA; i++)
@@ -130,18 +129,18 @@ static int server_name_cluster_dma(const char *name)
 }
 
 /*=======================================================================*
- * name_lookdown()                                                       *
+ * _name_lookup_pathname()                                               *
  *=======================================================================*/
 
 /**
  * @brief Converts a cluster ID into a pathname.
  *
- * @param name Target pathnamel name.
+ * @param name Target pathname name.
  *
  * @returns Upon successful completion the pathname that matches the cluster ID
  * @p clusterid is returned. Upon failure, NULL is returned instead.
  */
-static char *server_id_cluster_name(int clusterid)
+static char *_name_lookup_pathname(int clusterid)
 {
 	/* Search for portal name. */
 	for (int i = 0; i < NR_DMA; i++)
@@ -151,38 +150,11 @@ static char *server_id_cluster_name(int clusterid)
 			return (names[i].name);
 	}
 
-	return (NULL);
+	return ("\0");
 }
 
 /*=======================================================================*
- * server_id_process_name()                                              *
- *=======================================================================*/
-
-/**
- * @brief Converts a cluster ID into a process name.
- *
- * @param name Target process name.
- *
- * @returns Upon successful completion the process name that matches
- * the cluster ID.
- * Upon failure, NULL is returned instead.
- */
-static char *server_id_process_name(int clusterid)
-{
-	/* Search for process name. */
-	for (int i = 0; i < NR_DMA; i++)
-	{
-		/* Found. */
-		if (names[i].dma == clusterid){
-			return (names[i].process_name);
-		}
-	}
-
-	return (NULL);
-}
-
-/*=======================================================================*
- * server_register_name()                                                *
+ * _name_link()                                                          *
  *=======================================================================*/
 
 /**
@@ -190,18 +162,17 @@ static char *server_id_process_name(int clusterid)
  *
  * @param DMA			DMA channel.
  * @param name			Portal name.
- * @param process_name	Process name.
  *
  * @returns Upon successful registration the number of name is returned.
  * Upon failure, a negative error code is returned instead.
  */
-static int server_register_name(int dma, char *name, char *process_name)
+static int _name_link(int dma, char *name)
 {
 	int index = -1;
 
 #ifdef DEBUG
-	printf("Entering NAME_ADD case... dma: %d, name: %s, process name: %s.\n",
-	                                                 dma, name, process_name);
+	printf("Entering NAME_ADD case... [dma: %d, name: %s].\n",
+	                                               dma, name);
 #endif
 
 	/* No DMA available. */
@@ -219,30 +190,28 @@ static int server_register_name(int dma, char *name, char *process_name)
 		return (-EINVAL);
 
 	/* DMA channel not available */
-	if (strcmp(names[index].name, " "))
+	if (strcmp(names[index].name, "\0"))
 		return (-3);
 
 #ifdef DEBUG
-	printf("writing [%s, %s] at index %d.\n", name, process_name, index);
+	printf("writing [name: %s] at index %d.\n", name, index);
 #endif
 
 	snprintf(names[index].name, ARRAY_LENGTH(names[index].name), "%s", name);
-	snprintf(names[index].process_name, ARRAY_LENGTH(names[index].process_name)
-	                                                     , "%s", process_name);
 
 	return (++nr_cluster);
 }
 
 /*=======================================================================*
- * server_remove_name()                                                  *
+ *_name_unlink()                                                         *
  *=======================================================================*/
 
 /**
- * @brief Remove a process name
+ * @brief Remove a name
  *
  * @param name	Portal name.
  */
-static void server_remove_name(char *name)
+static void _name_unlink(char *name)
 {
 	/* Search for portal name. */
 	int i = 0;
@@ -251,16 +220,14 @@ static void server_remove_name(char *name)
 	printf("Entering NAME_REMOVE case... name: %s.\n", msg);
 #endif
 
-	while(i < NR_DMA && strcmp(name, names[i].name))
+	while (i < NR_DMA && strcmp(name, names[i].name))
 	{
 		i++;
 	}
 
 	if (i < NR_DMA)
 	{
-		snprintf(names[i].name, ARRAY_LENGTH(names[i].name), " ");
-		snprintf(names[i].process_name, ARRAY_LENGTH(names[i].process_name),
-		                                                               " ");
+		strcpy(names[i].name, "\0");
 		nr_cluster--;
 	}
 
@@ -302,25 +269,26 @@ static void *name_server(void *args)
 		{
 			/* Lookup. */
 			case NAME_QUERY:
-				if (msg.id == -1){
+				if (msg.id == -1)
+				{
 					/* ID query. */
 					#ifdef DEBUG
 						printf("Entering NAME_QUERY case... name provided:%s.\n"
 						                                            , msg.name);
 					#endif
-					msg.id = server_name_cluster_id(msg.name);
-				}else{
+					msg.id = _name_lookup_id(msg.name);
+				}
+				else
+				{
 					/* Name query. */
 					#ifdef DEBUG
 						printf("Entering NAME_QUERY case... id provided:%d.\n"
 						                                            , msg.id);
 					#endif
 					snprintf(msg.name, ARRAY_LENGTH(msg.name), "%s",
-					                server_id_cluster_name(msg.id));
+					                 _name_lookup_pathname(msg.id));
 				}
-				msg.dma = server_name_cluster_dma(msg.name);
-				snprintf(msg.process_name, ARRAY_LENGTH(msg.process_name),
-				                    "%s", server_id_process_name(msg.id));
+				msg.dma = _name_lookup_dma(msg.name);
 
 				/* Send response. */
 				int source = _mailbox_open(msg.source, NAME);
@@ -331,13 +299,12 @@ static void *name_server(void *args)
 
 			/* Add name. */
 			case NAME_ADD:
-				assert(server_register_name(msg.dma, msg.name,
-					                    msg.process_name) > 0);
+				assert(_name_link(msg.dma, msg.name) > 0);
 				break;
 
 			/* Remove name. */
 			case NAME_REMOVE:
-				server_remove_name(msg.name);
+				_name_unlink(msg.name);
 				break;
 
 			/* Should not happen. */
@@ -351,7 +318,7 @@ static void *name_server(void *args)
 		mailbox_unlink(inbox);
 	pthread_mutex_unlock(&lock);
 
-	return (NULL);
+	return ("\0");
 }
 
 /*===================================================================*

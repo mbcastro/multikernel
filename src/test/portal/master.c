@@ -90,7 +90,7 @@ int main(int argc, char **argv)
 	assert((size = atoi(argv[3])) <= MAX_BUFFER_SIZE);
 
 	/* Register process name*/
-	register_name(IOCLUSTER1, "/portal1", "portal-test");
+	name_link(IOCLUSTER1, "/portal1");
 
 	/*
 	 * Open input portal before sapwning

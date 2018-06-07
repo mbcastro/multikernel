@@ -58,7 +58,6 @@ int name_cluster_id(char *name)
 	msg.id = -1;
 	msg.dma = -1;
 	snprintf(msg.name, ARRAY_LENGTH(msg.name), name);
-	snprintf(msg.process_name, ARRAY_LENGTH(msg.process_name), " ");
 
 	/* Send name request. */
 	#ifdef DEBUG
@@ -108,7 +107,6 @@ int name_cluster_dma(char *name)
 	msg.id = -1;
 	msg.dma = -1;
 	snprintf(msg.name, ARRAY_LENGTH(msg.name), name);
-	snprintf(msg.process_name, ARRAY_LENGTH(msg.process_name), " ");
 
 	/* Send name request. */
 	#ifdef DEBUG
@@ -129,7 +127,7 @@ int name_cluster_dma(char *name)
 }
 
 /*=======================================================================*
- * name_lookdown()                                                       *
+ * name_lookup_pathname()                                                       *
  *=======================================================================*/
 
 /**
@@ -140,12 +138,12 @@ int name_cluster_dma(char *name)
  * @returns Upon successful completion the pathname that matches the cluster ID
  * @p clusterid is returned. Upon failure, NULL is returned instead.
  */
-char *id_cluster_name(int clusterid)
+char *name_lookup_pathname(int clusterid)
 {
 	int inbox, server;         /* Mailbox for small messages. */
 
 	#ifdef DEBUG
-		printf("id_cluster_name(%d): Creating inbox of cluster %d...\n", clusterid, k1_get_cluster_id());
+		printf("name_lookup_pathname(%d): Creating inbox of cluster %d...\n", clusterid, k1_get_cluster_id());
 	#endif
 
 	inbox = _mailbox_create(k1_get_cluster_id(), NAME);
@@ -156,8 +154,7 @@ char *id_cluster_name(int clusterid)
 	msg.op = NAME_QUERY;
 	msg.id = clusterid;
 	msg.dma = -1;
-	snprintf(msg.name, ARRAY_LENGTH(msg.name), " ");
-	snprintf(msg.process_name, ARRAY_LENGTH(msg.process_name), " ");
+	strcpy(msg.name, "\0");
 
 	/* Send name request. */
 	#ifdef DEBUG
@@ -175,55 +172,6 @@ char *id_cluster_name(int clusterid)
 	assert(mailbox_close(inbox) == 0);
 
 	return (msg.name);
-}
-
-/*=======================================================================*
- * id_process_name()                                                     *
- *=======================================================================*/
-
-/**
- * @brief Converts a cluster ID into a process name.
- *
- * @param name Target process name.
- *
- * @returns Upon successful completion the process name that matches the cluster ID.
- * Upon failure, NULL is returned instead.
- */
-char *id_process_name(int clusterid)
-{
-	int inbox, server;         /* Mailbox for small messages. */
-
-	#ifdef DEBUG
-		printf("id_process_name(%d): Creating inbox of cluster %d...\n", clusterid, k1_get_cluster_id());
-	#endif
-
-	inbox = _mailbox_create(k1_get_cluster_id(), NAME);
-	server = _mailbox_open(IOCLUSTER0, NAME);
-
-	/* Build operation header. */
-	msg.source = k1_get_cluster_id();
-	msg.op = NAME_QUERY;
-	msg.id = clusterid;
-	msg.dma = -1;
-	snprintf(msg.name, ARRAY_LENGTH(msg.name), " ");
-	snprintf(msg.process_name, ARRAY_LENGTH(msg.process_name), " ");
-
-	/* Send name request. */
-	#ifdef DEBUG
-		printf("Sending request for ID: %d...\n", clusterid);
-	#endif
-
-	assert(mailbox_write(server, &msg) == 0);
-
-	while(msg.dma == -1){
-		assert(mailbox_read(inbox, &msg) == 0);
-	}
-
-	/* House keeping. */
-	assert(mailbox_close(server) == 0);
-	assert(mailbox_close(inbox) == 0);
-
-	return (msg.process_name);
 }
 
 /*=======================================================================*
@@ -276,7 +224,7 @@ void name_remotes(char *remotes, int local)
 }
 
 /*=======================================================================*
- * register_name()                                                       *
+ * name_link()                                                       *
  *=======================================================================*/
 
 /**
@@ -284,16 +232,14 @@ void name_remotes(char *remotes, int local)
  *
  * @param dma       Target DMA channel.
  * @param name      Portal name.
- * @param proc_name Process name.
  */
-void register_name(int dma, const char *name, const char *proc_name)
+void name_link(int dma, const char *name)
 {
 	int server;
 
 	/* Sanity check. */
 	assert(dma >= 0);
 	assert((name != NULL) && (strlen(name) < (PROC_NAME_MAX - 1)));
-	assert((proc_name != NULL) && (strlen(proc_name) < (PROC_NAME_MAX - 1)));
 
 	server = _mailbox_open(IOCLUSTER0, NAME);
 
@@ -302,10 +248,6 @@ void register_name(int dma, const char *name, const char *proc_name)
 	msg.op = NAME_ADD;
 	msg.dma = dma;
 	strcpy(msg.name, name);
-	strcpy(msg.process_name, proc_name);
-
-	printf("[NAME] name %s\n", msg.name);
-	printf("[NAME] process name %s\n", msg.process_name);
 
 	/* Send name request. */
 	assert(mailbox_write(server, &msg) == 0);
@@ -315,7 +257,7 @@ void register_name(int dma, const char *name, const char *proc_name)
 }
 
 /*=======================================================================*
- * remove_name()                                                        *
+ * name_unlink()                                                        *
  *=======================================================================*/
 
 /**
@@ -323,12 +265,12 @@ void register_name(int dma, const char *name, const char *proc_name)
  *
  * @param name	Portal name.
  */
-void remove_name(char *name)
+void name_unlink(char *name)
 {
 	int server;         /* Mailbox for small messages. */
 
 	#ifdef DEBUG
-		printf("remove_name(%s): opening name server mailbox from cluster %d...\n", name, k1_get_cluster_id());
+		printf("name_unlink(%s): opening name server mailbox from cluster %d...\n", name, k1_get_cluster_id());
 	#endif
 
 	server = _mailbox_open(IOCLUSTER0, NAME);
@@ -339,7 +281,6 @@ void remove_name(char *name)
 	msg.id = -1;
 	msg.dma = -1;
 	snprintf(msg.name, ARRAY_LENGTH(msg.name), name);
-	snprintf(msg.process_name, ARRAY_LENGTH(msg.process_name), " ");
 
 	/* Send name request. */
 	#ifdef DEBUG

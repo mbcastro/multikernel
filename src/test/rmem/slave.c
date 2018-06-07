@@ -22,6 +22,7 @@
 #include <nanvix/mm.h>
 #include <nanvix/pm.h>
 #include <nanvix/klib.h>
+#include <nanvix/name.h>
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
@@ -138,8 +139,7 @@ int main(int argc, char **argv)
 	int size;
 	int nclusters;
 	int clusterid;
-	char pathname[50];
-	char process_name[50];
+	char pathname[PROC_NAME_MAX];
 
 	clusterid = k1_get_cluster_id();
 
@@ -152,9 +152,7 @@ int main(int argc, char **argv)
 
 	/* Register process name. */
 	snprintf(pathname, ARRAY_LENGTH(pathname), "/cpu%d", clusterid);
-	snprintf(process_name, ARRAY_LENGTH(process_name), "rmem-test%d",
-	                                                       clusterid);
-	register_name(clusterid, pathname, process_name);
+	name_link(clusterid, pathname);
 
 	/* Wait for others slaves name registration. */
 	barrier_wait(barrier);
@@ -166,10 +164,13 @@ int main(int argc, char **argv)
 	 */
 	memset(data, clusterid, size);
 
-	if (!strcmp(argv[1], "write")){
+	if (!strcmp(argv[1], "write"))
+	{
 		printf("WRITE\n");
 		kernel_write(size, nclusters, clusterid);
-	}else{
+	}
+	else
+	{
 		printf("READ\n");
 		kernel_read(size, nclusters, clusterid);
 	}

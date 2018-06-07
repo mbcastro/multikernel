@@ -22,6 +22,7 @@
 #include <nanvix/mm.h>
 #include <nanvix/pm.h>
 #include <nanvix/klib.h>
+#include <nanvix/name.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -38,8 +39,7 @@ static int pids[NR_CCLUSTER];
 static void test_name_register(void)
 {
 	int clusterid;
-	char pathname[50];
-	char process_name[50];
+	char pathname[PROC_NAME_MAX];
 
 	clusterid = k1_get_cluster_id();
 
@@ -47,10 +47,9 @@ static void test_name_register(void)
 	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
 	{
 		snprintf(pathname, ARRAY_LENGTH(pathname), "/name%d", i);
-		snprintf(process_name, ARRAY_LENGTH(process_name), "name-test%d", i);
 
 		/* Register name. */
-		register_name(clusterid + i, pathname, process_name);
+		name_link(clusterid + i, pathname);
 	}
 }
 
@@ -61,7 +60,6 @@ static void test_name_lookup(void)
 {
 	int clusterid;
 	char pathname[50];
-	char process_name[50];
 
 	clusterid = k1_get_cluster_id();
 
@@ -69,12 +67,10 @@ static void test_name_lookup(void)
 	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
 	{
 		snprintf(pathname, ARRAY_LENGTH(pathname), "/name%d", i);
-		snprintf(process_name, ARRAY_LENGTH(process_name), "name-test%d", i);
 
 		assert(name_cluster_id(pathname) == clusterid);
 		assert(name_cluster_dma(pathname) == clusterid + i);
-		assert(strcmp(id_cluster_name(clusterid + i), pathname) == 0);
-		assert(strcmp(id_process_name(clusterid + i), process_name) == 0);
+		assert(strcmp(name_lookup_pathname(clusterid + i), pathname) == 0);
 	}
 }
 

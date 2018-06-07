@@ -71,7 +71,7 @@ static inline void rmem_read(int remote, uint64_t blknum, int size)
 {
 	int outportal;
 
-	outportal = portal_open(id_cluster_name(remote));
+	outportal = portal_open(name_lookup_pathname(remote));
 	portal_write(outportal, &rmem[blknum], size);
 	portal_close(outportal);
 }
@@ -166,7 +166,7 @@ int main(int argc, char **argv)
 	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
 	{
 		sprintf(pathname, "/rmem%d", i);
-		register_name(IOCLUSTER1 + i, pathname, "rmem-server");
+		name_link(IOCLUSTER1 + i, pathname);
 	}
 
 	/* Spawn RMEM server threads. */
