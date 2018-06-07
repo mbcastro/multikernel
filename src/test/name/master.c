@@ -34,6 +34,28 @@
 static int pids[NR_CCLUSTER];
 
 /**
+ * @brief API Test: master name deletion.
+ */
+static void test_name_remove(void)
+{
+	int clusterid;
+	char pathname[PROC_NAME_MAX];
+	char result[PROC_NAME_MAX];
+
+	clusterid = k1_get_cluster_id();
+
+	/* IO cluster registration test. */
+	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
+	{
+		sprintf(pathname, "/name%d", i);
+
+		/* Remove name. */
+		name_unlink(pathname);
+		assert(name_lookup_pathname(clusterid + i, result) == (-ENOENT));
+	}
+}
+
+/**
  * @brief API Test: master name registration.
  */
 static void test_name_register(void)
@@ -46,7 +68,7 @@ static void test_name_register(void)
 	/* IO cluster registration test. */
 	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
 	{
-		snprintf(pathname, ARRAY_LENGTH(pathname), "/name%d", i);
+		sprintf(pathname, "/name%d", i);
 
 		/* Register name. */
 		name_link(clusterid + i, pathname);
@@ -59,18 +81,20 @@ static void test_name_register(void)
 static void test_name_lookup(void)
 {
 	int clusterid;
-	char pathname[50];
+	char pathname[PROC_NAME_MAX];
+	char result[PROC_NAME_MAX];
 
 	clusterid = k1_get_cluster_id();
 
 	/* IO cluster registration test. */
 	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
 	{
-		snprintf(pathname, ARRAY_LENGTH(pathname), "/name%d", i);
+		sprintf(pathname, "/name%d", i);
 
 		assert(name_cluster_id(pathname) == clusterid);
 		assert(name_cluster_dma(pathname) == clusterid + i);
-		assert(strcmp(name_lookup_pathname(clusterid + i), pathname) == 0);
+		assert(name_lookup_pathname(clusterid + i, result) == 0);
+		assert(strcmp(result, pathname) == 0);
 	}
 }
 
@@ -118,6 +142,7 @@ int main(int argc, char **argv)
 
 	test_name_register();
 	test_name_lookup();
+	test_name_remove();
 	test_name_slave(nclusters);
 
 	/* House keeping. */

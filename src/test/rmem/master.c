@@ -41,8 +41,6 @@ static int pids[NR_CCLUSTER];
  */
 static pthread_t tid_name_server;
 
-static pthread_barrier_t barrier;
-
 static pthread_mutex_t lock;
 
 /**
@@ -91,7 +89,7 @@ static struct {
 /**
  * @brief Resolves a process name into a cluster ID.
  *
- * @param name Target process name.
+ * @param name 		Target process name.
  *
  * @returns Upon successful completion, the cluster ID whose name is
  * @p name is returned. Upon failure, a negative error code is
@@ -99,6 +97,9 @@ static struct {
  */
 static int _name_lookup_id(const char *name)
 {
+	/* Sanity check. */
+	assert((name != NULL) && (strlen(name) < (PROC_NAME_MAX - 1)));
+
 	/* Search for portal name. */
 	for (int i = 0; i < NR_DMA; i++)
 	{
@@ -115,16 +116,19 @@ static int _name_lookup_id(const char *name)
  *=======================================================================*/
 
 /**
- * @brief Converts a pathname name into a DMA channel id.
+ * @brief Converts a pathname name into a DMA channel number.
  *
- * @param name Target pathname name.
+ * @param name 		Target pathname name.
  *
- * @returns Upon successful completion the DMA ID whose name is @p
+ * @returns Upon successful completion the DMA number whose name is @p
  * name is returned. Upon failure, a negative error code is returned
  * instead.
  */
 static int _name_lookup_dma(const char *name)
 {
+	/* Sanity check. */
+	assert((name != NULL) && (strlen(name) < (PROC_NAME_MAX - 1)));
+
 	/* Search for portal name. */
 	for (int i = 0; i < NR_DMA; i++)
 	{
@@ -143,22 +147,30 @@ static int _name_lookup_dma(const char *name)
 /**
  * @brief Converts a cluster ID into a pathname.
  *
- * @param name Target pathname name.
+ * @param dma 		Target cluster DMA channel.
+ * @param name 		Address where the result will be written.
  *
- * @returns Upon successful completion the pathname that matches the cluster ID
- * @p clusterid is returned. Upon failure, NULL is returned instead.
+ * @returns Upon successful completion 0 is returned. Upon failure, negative
+ * error code is returned.
  */
-static char *_name_lookup_pathname(int clusterid)
+static int _name_lookup_pathname(int dma, char *name)
 {
+	/* Sanity check. */
+	assert(dma >= 0);
+	assert(name != NULL);
+
 	/* Search for portal name. */
 	for (int i = 0; i < NR_DMA; i++)
 	{
 		/* Found. */
-		if (names[i].dma == clusterid)
-			return (names[i].name);
+		if (names[i].dma == dma)
+		{
+			strcpy(name, names[i].name);
+			return (0);
+		}
 	}
 
-	return ("\0");
+	return (-ENOENT);
 }
 
 /*=======================================================================*
@@ -171,17 +183,17 @@ static char *_name_lookup_pathname(int clusterid)
  * @param DMA			DMA channel.
  * @param name			Portal name.
  *
- * @returns Upon successful registration the number of name is returned.
- * Upon failure, a negative error code is returned instead.
+ * @returns Upon successful registration the number of name registered
+ * is returned. Upon failure, a negative error code is returned instead.
  */
 static int _name_link(int dma, char *name)
 {
-	int index = -1;
+	int index;
 
-#ifdef DEBUG
-	printf("Entering NAME_ADD case... [dma: %d, name: %s].\n",
-	                                               dma, name);
-#endif
+	/* Sanity check. */
+	assert(dma >= 0);
+	assert((name != NULL) && (strlen(name) < (PROC_NAME_MAX - 1)) &&
+	                                     (strcmp(name, "\0") != 0));
 
 	/* No DMA available. */
 	if (nr_cluster >= NR_DMA)
@@ -199,13 +211,13 @@ static int _name_link(int dma, char *name)
 
 	/* DMA channel not available */
 	if (strcmp(names[index].name, "\0"))
-		return (-3);
+		return (-EINVAL);
 
 #ifdef DEBUG
 	printf("writing [name: %s] at index %d.\n", name, index);
 #endif
 
-	snprintf(names[index].name, ARRAY_LENGTH(names[index].name), "%s", name);
+	strcpy(names[index].name, name);
 
 	return (++nr_cluster);
 }
@@ -217,16 +229,19 @@ static int _name_link(int dma, char *name)
 /**
  * @brief Remove a name
  *
- * @param name	Portal name.
+ * @param name			Portal name.
+ *
+ * @returns Upon successful registration the number of name registered
+ * is returned. Upon failure, a negative error code is returned instead.
  */
-static void _name_unlink(char *name)
+static int _name_unlink(char *name)
 {
+	/* Sanity check. */
+	assert((name != NULL) && (strlen(name) < (PROC_NAME_MAX - 1)) &&
+	                                     (strcmp(name, "\0") != 0));
+
 	/* Search for portal name. */
 	int i = 0;
-
-#ifdef DEBUG
-	printf("Entering NAME_REMOVE case... name: %s.\n", msg);
-#endif
 
 	while (i < NR_DMA && strcmp(name, names[i].name))
 	{
@@ -236,10 +251,10 @@ static void _name_unlink(char *name)
 	if (i < NR_DMA)
 	{
 		strcpy(names[i].name, "\0");
-		nr_cluster--;
+		return (--nr_cluster);
 	}
 
-	return;
+	return (-ENOENT);
 }
 
 /*===================================================================*
@@ -260,11 +275,10 @@ static void *name_server(void *args)
 
 	dma = ((int *)args)[0];
 
+	/* Open server mailbox. */
 	pthread_mutex_lock(&lock);
 		inbox = _mailbox_create(IOCLUSTER0 + dma, NAME);
 	pthread_mutex_unlock(&lock);
-
-	pthread_barrier_wait(&barrier);
 
 	while(1)
 	{
@@ -277,26 +291,25 @@ static void *name_server(void *args)
 		{
 			/* Lookup. */
 			case NAME_QUERY:
-				if (msg.id == -1)
+				if (msg.dma == -1)
 				{
 					/* ID query. */
-					#ifdef DEBUG
+#ifdef DEBUG
 						printf("Entering NAME_QUERY case... name provided:%s.\n"
 						                                            , msg.name);
-					#endif
-					msg.id = _name_lookup_id(msg.name);
+#endif
+					msg.dma = _name_lookup_dma(msg.name);
 				}
 				else
 				{
 					/* Name query. */
-					#ifdef DEBUG
-						printf("Entering NAME_QUERY case... id provided:%d.\n"
-						                                            , msg.id);
-					#endif
-					snprintf(msg.name, ARRAY_LENGTH(msg.name), "%s",
-					                 _name_lookup_pathname(msg.id));
+#ifdef DEBUG
+						printf("Entering NAME_QUERY case... dma provided:%d.\n"
+						                                            , msg.dma);
+#endif
+					assert(_name_lookup_pathname(msg.dma, msg.name) == 0);
 				}
-				msg.dma = _name_lookup_dma(msg.name);
+				msg.id = _name_lookup_id(msg.name);
 
 				/* Send response. */
 				int source = _mailbox_open(msg.source, NAME);
@@ -307,12 +320,19 @@ static void *name_server(void *args)
 
 			/* Add name. */
 			case NAME_ADD:
+#ifdef DEBUG
+				printf("Entering NAME_ADD case... [dma: %d, name: %s].\n",
+				                                               msg.dma, msg.name);
+#endif
 				assert(_name_link(msg.dma, msg.name) > 0);
 				break;
 
 			/* Remove name. */
 			case NAME_REMOVE:
-				_name_unlink(msg.name);
+#ifdef DEBUG
+				printf("Entering NAME_REMOVE case... name: %s.\n", msg.name);
+#endif
+				assert(_name_unlink(msg.name) >= 0);
 				break;
 
 			/* Should not happen. */
@@ -326,7 +346,7 @@ static void *name_server(void *args)
 		mailbox_unlink(inbox);
 	pthread_mutex_unlock(&lock);
 
-	return ("\0");
+	return (NULL);
 }
 
 /**
@@ -418,7 +438,7 @@ int main(int argc, char **argv)
 /* join_slaves(nclusters); */
 
 	/* Wait for slaves. */
-	global_barrier = barrier_open(nclusters + 2);
+	global_barrier = barrier_open(nclusters);
 	barrier_wait(global_barrier);
 
 	printf("master crossed the barrier\n");

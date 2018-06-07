@@ -20,7 +20,9 @@
 #include <nanvix/hal.h>
 #include <nanvix/mm.h>
 #include <nanvix/pm.h>
+#include <nanvix/name.h>
 #include <stdio.h>
+#include <assert.h>
 
 /**
  * @brief Underlying IPC connectors.
@@ -36,10 +38,10 @@ int _mem_outportal = -1; /* Portal used for large transfers.  */
  */
 void meminit(void)
 {
-	int clusterid;              /* Cluster ID of the calling process.   */
-	char pathname[128];         /* Name of underlying IPC connector.    */
-	char *clustername;          /* Cluster name of the calling process. */
-	static int initialized = 0; /* IS RMA Engine initialized?           */
+	int clusterid;                   /* Cluster ID of the calling process.   */
+	char pathname[128];              /* Name of underlying IPC connector.    */
+	char clustername[PROC_NAME_MAX]; /* Cluster name of the calling process. */
+	static int initialized = 0;      /* IS RMA Engine initialized?           */
 
 	/* Already initialized.  */
 	if (initialized)
@@ -47,7 +49,7 @@ void meminit(void)
 
 	/* Retrieve cluster information. */
 	clusterid = k1_get_cluster_id();
-	clustername = name_lookup_pathname(clusterid);
+	assert(name_lookup_pathname(clusterid, clustername) == 0);
 
 	/* Open underlying IPC connectors. */
 	sprintf(pathname, "/rmem%d", clusterid%NR_IOCLUSTER_DMA);

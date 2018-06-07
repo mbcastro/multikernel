@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+#include <errno.h>
 
 static int msg;
 
@@ -40,6 +41,7 @@ int main(int argc, char **argv)
 {
 	char pathname[PROC_NAME_MAX];
 	char out_pathname[PROC_NAME_MAX];
+	char result[PROC_NAME_MAX];
 	int barrier;
 	int clusterid;
 	int nclusters;
@@ -59,9 +61,9 @@ int main(int argc, char **argv)
 	/* Primitives test. */
 
 	/* Ask for an unregistered entry. */
-	assert(name_cluster_id(pathname) == -2);
-	assert(name_cluster_dma(pathname) == -2);
-	assert(!strcmp(name_lookup_pathname(clusterid), "\0"));
+	assert(name_cluster_id(pathname) == (-ENOENT));
+	assert(name_cluster_dma(pathname) == (-ENOENT));
+	assert(name_lookup_pathname(clusterid, result) == (-ENOENT));
 
 	/* Register this cluster. */
 	name_link(clusterid, pathname);
@@ -69,15 +71,16 @@ int main(int argc, char **argv)
 	/* Ask for a registered entry. */
 	assert(name_cluster_id(pathname) == clusterid);
 	assert(name_cluster_dma(pathname) == clusterid);
-	assert(!strcmp(name_lookup_pathname(clusterid), pathname));
+	assert(name_lookup_pathname(clusterid, result) == 0);
+	assert(!strcmp(result, pathname));
 
 	/* Remove the entry. */
 	name_unlink(pathname);
 
 	/* Verify that the entry is removed. */
-	assert(name_cluster_id(pathname) == -2);
-	assert(name_cluster_dma(pathname) == -2);
-	assert(!strcmp(name_lookup_pathname(clusterid), "\0"));
+	assert(name_cluster_id(pathname) == (-ENOENT));
+	assert(name_cluster_dma(pathname) == (-ENOENT));
+	assert(name_lookup_pathname(clusterid, result) == (-ENOENT));
 
 	/* Register this cluster. */
 	name_link(clusterid, pathname);
@@ -86,6 +89,8 @@ int main(int argc, char **argv)
 	barrier_wait(barrier);
 
 	/* Message exchange test using name resolution. */
+
+	assert(nclusters > 1);
 
 	inbox = mailbox_create(pathname);
 	sprintf(out_pathname, "/cpu%d", (clusterid + 1)%nclusters);

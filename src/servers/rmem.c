@@ -21,6 +21,7 @@
 #include <nanvix/hal.h>
 #include <nanvix/mm.h>
 #include <nanvix/pm.h>
+#include <nanvix/name.h>
 #include <assert.h>
 #include <pthread.h>
 #include <string.h>
@@ -70,8 +71,10 @@ static inline void rmem_write(int inportal, int remote, uint64_t blknum, int siz
 static inline void rmem_read(int remote, uint64_t blknum, int size)
 {
 	int outportal;
+	char pathname[PROC_NAME_MAX];
 
-	outportal = portal_open(name_lookup_pathname(remote));
+	assert(name_lookup_pathname(remote, pathname) == 0);
+	outportal = portal_open(pathname);
 	portal_write(outportal, &rmem[blknum], size);
 	portal_close(outportal);
 }

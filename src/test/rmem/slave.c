@@ -151,7 +151,7 @@ int main(int argc, char **argv)
 	barrier = barrier_open(nclusters);
 
 	/* Register process name. */
-	snprintf(pathname, ARRAY_LENGTH(pathname), "/cpu%d", clusterid);
+	sprintf(pathname, "/cpu%d", clusterid);
 	name_link(clusterid, pathname);
 
 	/* Wait for others slaves name registration. */
@@ -178,7 +178,7 @@ int main(int argc, char **argv)
 	printf("END of %d\n", k1_get_cluster_id());
 
 	/* Wait for slaves. */
-	barrier = barrier_open(nclusters + 2);
+	barrier = barrier_open(nclusters);
 	barrier_wait(barrier);
 
 	printf("%d crossed the barrier\n", k1_get_cluster_id());

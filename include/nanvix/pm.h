@@ -29,7 +29,7 @@
 	/* Forward definitions. */
 	extern int name_cluster_id(char *);
 	extern int name_cluster_dma(char *);
-	extern char *name_lookup_pathname(int);
+	extern int name_lookup_pathname(int, char *);
 	extern void name_remotes(char *, int);
 	extern void name_link(int, const char *);
 	extern void name_unlink(char *);

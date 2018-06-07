@@ -35,7 +35,7 @@ static struct name_message msg;
 /**
  * @brief Converts a pathname name into a cluster ID.
  *
- * @param name Target pathname name.
+ * @param name 		Target pathname name.
  *
  * @returns Upon successful completion the cluster ID whose name is @p
  * name is returned. Upon failure, a negative error code is returned
@@ -43,7 +43,11 @@ static struct name_message msg;
  */
 int name_cluster_id(char *name)
 {
-	int inbox, server;         /* Mailbox for small messages. */
+	int server;         /* Mailbox for small messages. */
+	int inbox;
+
+	/* Sanity check. */
+	assert((name != NULL) && (strlen(name) < (PROC_NAME_MAX - 1)));
 
 	#ifdef DEBUG
 		printf("name_cluster_id(%s): Creating inbox of cluster %d...\n", name, k1_get_cluster_id());
@@ -57,7 +61,7 @@ int name_cluster_id(char *name)
 	msg.op = NAME_QUERY;
 	msg.id = -1;
 	msg.dma = -1;
-	snprintf(msg.name, ARRAY_LENGTH(msg.name), name);
+	strcpy(msg.name, name);
 
 	/* Send name request. */
 	#ifdef DEBUG
@@ -82,17 +86,21 @@ int name_cluster_id(char *name)
  *=======================================================================*/
 
 /**
- * @brief Converts a pathnamel name into a DMA channel id.
+ * @brief Converts a pathnamel name into a DMA channel number.
  *
- * @param name Target pathnamel name.
+ * @param name 		Target pathnamel name.
  *
- * @returns Upon successful completion the DMA ID whose name is @p
+ * @returns Upon successful completion the DMA number whose name is @p
  * name is returned. Upon failure, a negative error code is returned
  * instead.
  */
 int name_cluster_dma(char *name)
 {
-	int inbox, server;         /* Mailbox for small messages. */
+	int server;         /* Mailbox for small messages. */
+	int inbox;
+
+	/* Sanity check. */
+	assert((name != NULL) && (strlen(name) < (PROC_NAME_MAX - 1)));
 
 	#ifdef DEBUG
 		printf("name_cluster_dma(%s): Creating inbox of cluster %d...\n", name, k1_get_cluster_id());
@@ -106,11 +114,11 @@ int name_cluster_dma(char *name)
 	msg.op = NAME_QUERY;
 	msg.id = -1;
 	msg.dma = -1;
-	snprintf(msg.name, ARRAY_LENGTH(msg.name), name);
+	strcpy(msg.name, name);
 
 	/* Send name request. */
 	#ifdef DEBUG
-		printf("Sending request for name: %s...\n", name);
+		printf("Sending request for name: %s...\n", msg.name);
 	#endif
 
 	assert(mailbox_write(server, &msg) == 0);
@@ -133,17 +141,23 @@ int name_cluster_dma(char *name)
 /**
  * @brief Converts a cluster ID into a pathname.
  *
- * @param name Target pathnamel name.
+ * @param clusterid 	Target cluster ID.
+ * @param name 			Address where the result will be written.
  *
- * @returns Upon successful completion the pathname that matches the cluster ID
- * @p clusterid is returned. Upon failure, NULL is returned instead.
+ * @returns Upon successful completion 0 is returned. Upon failure, negative
+ * error code is returned.
  */
-char *name_lookup_pathname(int clusterid)
+int name_lookup_pathname(int dma, char *name)
 {
-	int inbox, server;         /* Mailbox for small messages. */
+	int inbox; 			/* Mailbox for small messages. */
+	int server;
+
+	/* Sanity check. */
+	assert(dma >= 0);
+	assert((name != NULL) && (strlen(name) < (PROC_NAME_MAX - 1)));
 
 	#ifdef DEBUG
-		printf("name_lookup_pathname(%d): Creating inbox of cluster %d...\n", clusterid, k1_get_cluster_id());
+		printf("name_lookup_pathname(%d): Creating inbox of cluster %d...\n", dma, k1_get_cluster_id());
 	#endif
 
 	inbox = _mailbox_create(k1_get_cluster_id(), NAME);
@@ -152,18 +166,18 @@ char *name_lookup_pathname(int clusterid)
 	/* Build operation header. */
 	msg.source = k1_get_cluster_id();
 	msg.op = NAME_QUERY;
-	msg.id = clusterid;
-	msg.dma = -1;
+	msg.id = -1;
+	msg.dma = dma;
 	strcpy(msg.name, "\0");
 
 	/* Send name request. */
 	#ifdef DEBUG
-		printf("Sending request for ID: %d...\n", clusterid);
+		printf("Sending request for ID: %d...\n", dma);
 	#endif
 
 	assert(mailbox_write(server, &msg) == 0);
 
-	while(msg.dma == -1){
+	while(msg.id == -1){
 		assert(mailbox_read(inbox, &msg) == 0);
 	}
 
@@ -171,7 +185,15 @@ char *name_lookup_pathname(int clusterid)
 	assert(mailbox_close(server) == 0);
 	assert(mailbox_close(inbox) == 0);
 
-	return (msg.name);
+	if(!strcmp(msg.name, "\0"))
+	{
+		return (-ENOENT);
+	}
+	else
+	{
+		strcpy(name, msg.name);
+		return (0);
+	}
 }
 
 /*=======================================================================*
@@ -269,6 +291,9 @@ void name_unlink(char *name)
 {
 	int server;         /* Mailbox for small messages. */
 
+	/* Sanity check. */
+	assert((name != NULL) && (strlen(name) < (PROC_NAME_MAX - 1)));
+
 	#ifdef DEBUG
 		printf("name_unlink(%s): opening name server mailbox from cluster %d...\n", name, k1_get_cluster_id());
 	#endif
@@ -280,11 +305,11 @@ void name_unlink(char *name)
 	msg.op = NAME_REMOVE;
 	msg.id = -1;
 	msg.dma = -1;
-	snprintf(msg.name, ARRAY_LENGTH(msg.name), name);
+	strcpy(msg.name, name);
 
 	/* Send name request. */
 	#ifdef DEBUG
-		printf("Sending remove request for name: %s...\n", name);
+		printf("Sending remove request for name: %s...\n", msg.name);
 	#endif
 
 	assert(mailbox_write(server, &msg) == 0);
