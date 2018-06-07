@@ -110,30 +110,24 @@ static void mailbox_free(int mbxid)
  */
 static int mailbox_noctag(int local, int type)
 {
-	#define OFFSET 50
+	static int OFFSET = 50;
 
 	if ((local >= CCLUSTER0) && (local <= CCLUSTER15))
 	{
 		if (type)
-		{
 			return (OFFSET + 16 + local);
-		}
 		return (16 + local);
 	}
 	else if ((local >= IOCLUSTER0) && (local < (IOCLUSTER0 + NR_IOCLUSTER_DMA)))
 	{
 		if (type)
-		{
 			return (OFFSET + 16 + 16 + 0);
-		}
 		return (16 + 16 + 0);
 	}
 	else if ((local >= IOCLUSTER1) && (local < (IOCLUSTER1 + NR_IOCLUSTER_DMA)))
 	{
 		if (type)
-		{
 			return (OFFSET + 16 + 16 + 1);
-		}
 		return (16 + 16 + 1);
 	}
 	return (0);
@@ -153,15 +147,13 @@ static int mailbox_noctag(int local, int type)
 */
 int mailbox_create(char *name)
 {
-	int local;   /* ID of local cluster. */
+	int local; /* ID of local cluster. */
 
 	/* Invalid mailbox name. */
 	if (name == NULL)
 	return (-EINVAL);
 
 	local = name_cluster_dma(name);
-	/* printf("[MAILBOX_CREATE] name:%s local:%d getclusterid:%d\n", name,
-	                                        local, k1_get_cluster_id()); */
 	assert(name_cluster_id(name) == k1_get_cluster_id());
 
 	return (_mailbox_create(local, STD));
@@ -181,8 +173,8 @@ int mailbox_create(char *name)
 */
 int mailbox_open(char *name)
 {
-	int local;          /* ID of remote cluster.             */
-	int remote;         /* ID of remote cluster.             */
+	int local;  /* ID of remote cluster. */
+	int remote; /* ID of remote cluster. */
 
 	/* Invalid mailbox name. */
 	if (name == NULL)
@@ -190,8 +182,7 @@ int mailbox_open(char *name)
 
 	remote = name_cluster_dma(name);
 	local = k1_get_cluster_id();
-	/* printf("[MAILBOX_OPEN] name: %s local:%d remote: %d\n", name, local,
-	                                                             remote); */
+
 	assert(name_cluster_id(name) != local);
 
 	return (_mailbox_open(remote, STD));
@@ -216,9 +207,6 @@ int _mailbox_create(int local, int type)
 	char remotes[128];  /* IDs of remote clusters.            */
 	char pathname[128]; /* NoC connector name.                */
 	int noctag;         /* NoC tag used for transfers.        */
-
-	/* printf("[MAILBOX_CREATE] type:%d local:%d getclusterid:%d.\n", type,
-	                                         local, k1_get_cluster_id()); */
 
 	if (local >= IOCLUSTER0 && local < IOCLUSTER0 + NR_IOCLUSTER_DMA)
 		assert(local == k1_get_cluster_id() + local%IOCLUSTER0);
@@ -299,7 +287,6 @@ int _mailbox_open(int remote, int type)
 	if (k1_is_iocluster(local))
 		assert(mppa_ioctl(fd, MPPA_TX_SET_INTERFACE, local%NR_IOCLUSTER_DMA)
 		                                                             != -1);
-
 	/* Initialize mailbox. */
 	mailboxes[mbxid].fd = fd;
 	mailboxes[mbxid].flags |= MAILBOX_WRONLY;
