@@ -35,20 +35,48 @@ lflags := -Wl,--defsym=_LIBNOC_DISABLE_FIFO_FULL_CHECK=0
 O := $(SRCDIR)/../output
 
 #=============================================================================
-# Mailbox Unit Test
+# Nanvix Kernel
 #=============================================================================
+
+io-bin += rmem-server
+rmem-server-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
+					$(SRCDIR)/kernel/arch/mppa/portal.c  \
+					$(SRCDIR)/kernel/arch/mppa/barrier.c \
+					$(SRCDIR)/kernel/arch/mppa/name.c    \
+					$(SRCDIR)/kernel/arch/mppa/core.c    \
+					$(SRCDIR)/servers/rmem.c
+
+# Toolchain Configuration
+rmem-server-system := rtems
+rmem-server-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+rmem-server-lflags := -lmppaipc -pthread
+
+#=============================================================================
+# Mailbox Benchmark
+#=============================================================================
+
+cluster-bin += mailbox-slave
+mailbox-slave-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
+						   $(SRCDIR)/kernel/arch/mppa/name.c    \
+						   $(SRCDIR)/kernel/arch/mppa/timer.c   \
+						   $(SRCDIR)/kernel/arch/mppa/core.c    \
+						   $(SRCDIR)/test/mailbox/slave.c
+
+# Toolchain Configuration
+mailbox-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL -DDEBUG_MAILBOX
+mailbox-slave-lflags := -lmppaipc
 
 io-bin += mailbox-master
 mailbox-master-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
-					   $(SRCDIR)/kernel/arch/mppa/name.c    \
-					   $(SRCDIR)/kernel/arch/mppa/core.c    \
-					   $(SRCDIR)/test/mailbox/master.c
+						   $(SRCDIR)/kernel/arch/mppa/name.c    \
+							$(SRCDIR)/kernel/arch/mppa/core.c    \
+							$(SRCDIR)/test/mailbox/master.c
 
 # Toolchain Configuration
 mailbox-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL -DDEBUG_MAILBOX
 mailbox-master-lflags := -lmppaipc
 
-mailbox-objs := mailbox-master 
+mailbox-objs := rmem-server mailbox-master mailbox-slave
 mailbox-name := mailbox.img
 
 #=============================================================================
