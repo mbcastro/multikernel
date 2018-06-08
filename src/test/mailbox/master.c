@@ -370,6 +370,22 @@ static void test_mailbox_invalid_unlink(void)
 	printf("Fault Injection Test: Invalid Unlink\n");
 
 	TEST_ASSERT(mailbox_unlink(-1) < 0);
+	TEST_ASSERT(mailbox_unlink(100000) < 0);
+}
+
+/*===================================================================*
+ * Fault Injection Test: Bad Unlink                                  *
+ *===================================================================*/
+
+/**
+ * @brief Fault Injection Test: Bad Unlink
+ */
+static void test_mailbox_bad_unlink(void)
+{
+	printf("Fault Injection Test: Bad Unlink\n");
+
+	TEST_ASSERT(mailbox_unlink(0) < 0);
+	TEST_ASSERT(mailbox_unlink(1) < 0);
 }
 
 /*===================================================================*
@@ -402,6 +418,7 @@ int main(int argc, const char **argv)
 #endif
 	test_mailbox_double_open();
 	test_mailbox_invalid_unlink();
+	test_mailbox_bad_unlink();
 
 	return (EXIT_SUCCESS);
 }
