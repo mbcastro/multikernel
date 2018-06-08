@@ -389,6 +389,21 @@ static void test_mailbox_bad_unlink(void)
 }
 
 /*===================================================================*
+ * Fault Injection Test: Invalid Close                              *
+ *===================================================================*/
+
+/**
+ * @brief Fault Injection Test: Invalid Close
+ */
+static void test_mailbox_invalid_close(void)
+{
+	printf("Fault Injection Test: Invalid Close\n");
+
+	TEST_ASSERT(mailbox_close(-1) < 0);
+	TEST_ASSERT(mailbox_close(100000) < 0);
+}
+
+/*===================================================================*
  * API Test: Mailbox Driver                                          *
  *===================================================================*/
 
@@ -419,6 +434,7 @@ int main(int argc, const char **argv)
 	test_mailbox_double_open();
 	test_mailbox_invalid_unlink();
 	test_mailbox_bad_unlink();
+	test_mailbox_invalid_close();
 
 	return (EXIT_SUCCESS);
 }
