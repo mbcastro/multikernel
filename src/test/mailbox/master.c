@@ -520,9 +520,7 @@ static void test_mailbox_null_write(void)
 	clusterid = k1_get_cluster_id();
 
 	TEST_ASSERT((outbox = _mailbox_open(clusterid + 1)) >= 0);
-
 	TEST_ASSERT(mailbox_write(outbox, NULL) < 0);
-
 	TEST_ASSERT(mailbox_close(outbox) == 0);
 }
 
@@ -570,6 +568,27 @@ static void test_mailbox_bad_read(void)
 }
 
 /*===================================================================*
+ * Fault Injection Test: Null Read                                  *
+ *===================================================================*/
+
+/**
+ * @brief Fault Injection Test: Null Read
+ */
+static void test_mailbox_null_read(void)
+{
+	int inbox;
+	int clusterid;
+
+	printf("Fault Injection Test: Null Read\n");
+
+	clusterid = k1_get_cluster_id();
+
+	TEST_ASSERT((inbox = _mailbox_create(clusterid)) >= 0);
+	TEST_ASSERT(mailbox_read(inbox, NULL) < 0);
+	TEST_ASSERT(mailbox_unlink(inbox) == 0);
+}
+
+/*===================================================================*
  * API Test: Mailbox Driver                                          *
  *===================================================================*/
 
@@ -609,6 +628,7 @@ int main(int argc, const char **argv)
 	test_mailbox_null_write();
 	test_mailbox_invalid_read();
 	test_mailbox_bad_read();
+	test_mailbox_null_read();
 
 	return (EXIT_SUCCESS);
 }
