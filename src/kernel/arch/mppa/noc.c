@@ -17,7 +17,11 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <string.h>
+#include <stdio.h>
+
 #include <nanvix/arch/mppa.h>
+#include <nanvix/klib.h>
 
 /**
  * @brief NoC tags offset
@@ -25,6 +29,54 @@
 #define NOCTAG_MAILBOX_OFF 2 /**< Mailbox. */
 #define NOCTAG_PORTAL_OFF 22 /**< POrtal.  */
 #define NOCTAG_SYNC_OFF   42 /**< Sync.    */
+
+/*=======================================================================*
+ * noc_remotes()                                                         *
+ *=======================================================================*/
+
+/**
+ * @brief Builds a list of remote NoC nodes.
+ *
+ * @param remotes   Place where the list should be stored.
+ * @param clusterid ID of local cluster.
+ */
+void noc_remotes(char *remotes, int local)
+{
+	char tmp[5];
+
+	static int cclusters[NR_CCLUSTER*NR_CCLUSTER_DMA] = {
+		CCLUSTER0,  CCLUSTER1,  CCLUSTER2,  CCLUSTER3,
+		CCLUSTER4,  CCLUSTER5,  CCLUSTER6,  CCLUSTER7,
+		CCLUSTER8,  CCLUSTER9,  CCLUSTER10, CCLUSTER11,
+		CCLUSTER12, CCLUSTER13, CCLUSTER14, CCLUSTER15
+	};
+
+	remotes[0] = '\0';
+
+	/*
+	 * Append IO Clusters.
+	 *
+	 * Not that since there are more than one NoC
+	 * node in each I/O cluster, then a NoC node
+	 * for each I/O will always be included.
+	 */
+	sprintf(tmp, "%d,", IOCLUSTER0);
+	strcat(remotes, tmp);
+	sprintf(tmp, "%d,", IOCLUSTER1);
+	strcat(remotes, tmp);
+
+	/* Append Compute Clusters. */
+	for (unsigned i = 0; i < ARRAY_LENGTH(cclusters); i++)
+	{
+		if (local == cclusters[i])
+			continue;
+
+		sprintf(tmp, "%d,", cclusters[i]);
+		strcat(remotes, tmp);
+	}
+
+	remotes[strlen(remotes) - 1] = '\0';
+}
 
 /*=======================================================================*
  * noctag_mailbox()                                                      *

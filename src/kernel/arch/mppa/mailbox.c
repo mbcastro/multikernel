@@ -207,7 +207,7 @@ int _mailbox_create(int local)
 	if ((mbxid = mailbox_alloc()) < 0)
 		return (-EAGAIN);
 
-	name_remotes(remotes, local);
+	noc_remotes(remotes, local);
 	noctag = noctag_mailbox(local);
 
 	/* Open NoC connector. */
@@ -270,7 +270,7 @@ int _mailbox_open(int remote)
 	if ((mbxid = mailbox_alloc()) < 0)
 		return (-EAGAIN);
 
-	name_remotes(remotes, remote);
+	noc_remotes(remotes, remote);
 
 	noctag = noctag_mailbox(remote);
 	snprintf(pathname,

@@ -197,48 +197,6 @@ int name_lookup_pathname(int dma, char *name)
 }
 
 /*=======================================================================*
- * name_remotes()                                                        *
- *=======================================================================*/
-
-/**
- * @brief Builds a list of remotes.
- *
- * @param remotes List of IDs of remote clusters.
- * @param local   ID of local cluster.
- */
-void name_remotes(char *remotes, int local)
-{
-	char tmp[5];
-
-	static int cclusters[NR_CCLUSTER*NR_CCLUSTER_DMA] = {
-		CCLUSTER0,  CCLUSTER1,  CCLUSTER2,  CCLUSTER3,
-		CCLUSTER4,  CCLUSTER5,  CCLUSTER6,  CCLUSTER7,
-		CCLUSTER8,  CCLUSTER9,  CCLUSTER10, CCLUSTER11,
-		CCLUSTER12, CCLUSTER13, CCLUSTER14, CCLUSTER15
-	};
-
-	remotes[0] = '\0';
-
-	/* Append IO Clusters. */
-	sprintf(tmp, "%d,", IOCLUSTER0);
-	strcat(remotes, tmp);
-	sprintf(tmp, "%d,", IOCLUSTER1);
-	strcat(remotes, tmp);
-
-	/* Append Compute Clusters. */
-	for (unsigned i = 0; i < ARRAY_LENGTH(cclusters); i++)
-	{
-		if (local == cclusters[i])
-			continue;
-
-		sprintf(tmp, "%d,", cclusters[i]);
-		strcat(remotes, tmp);
-	}
-
-	remotes[strlen(remotes) - 1] = '\0';
-}
-
-/*=======================================================================*
  * name_link()                                                       *
  *=======================================================================*/
 

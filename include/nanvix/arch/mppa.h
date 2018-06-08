@@ -106,6 +106,7 @@
 
 	/* Forward definitions. */
 	extern int noctag_mailbox(int);
+	extern void noc_remotes(char *, int);
 
 /*=======================================================================*
  *                                                                       *
