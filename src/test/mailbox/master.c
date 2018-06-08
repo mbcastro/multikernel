@@ -185,15 +185,14 @@ static void *test_mailbox_thread_read_write(void *args)
 	clusterid = k1_get_cluster_id();
 
 	pthread_mutex_lock(&lock);
-	TEST_ASSERT((inbox = _mailbox_create(clusterid + dma, NAME)) >= 0);
+	TEST_ASSERT((inbox = _mailbox_create(clusterid + dma)) >= 0);
 	pthread_mutex_unlock(&lock);
 
 	pthread_barrier_wait(&barrier);
 
 	pthread_mutex_lock(&lock);
 	TEST_ASSERT((outbox = _mailbox_open(
-		clusterid + (dma + 1)%NR_IOCLUSTER_DMA,
-		NAME)) >= 0
+		clusterid + (dma + 1)%NR_IOCLUSTER_DMA)) >= 0
 	);
 	pthread_mutex_unlock(&lock);
 
