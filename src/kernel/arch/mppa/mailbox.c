@@ -199,14 +199,31 @@ int mailbox_open(char *name)
  */
 int _mailbox_create(int local)
 {
-	int fd;             /* File descriptor for NoC connector. */
-	int mbxid;          /* ID of mailbix.                     */
-	char remotes[128];  /* IDs of remote clusters.            */
-	char pathname[128]; /* NoC connector name.                */
-	int noctag;         /* NoC tag used for transfers.        */
+	int fd;             /* NoC connector.              */
+	int clusterid;      /* Cluster ID.                 */
+	int mbxid;          /* ID of mailbix.              */
+	char remotes[128];  /* IDs of remote clusters.     */
+	char pathname[128]; /* NoC connector name.         */
+	int noctag;         /* NoC tag used for transfers. */
 
-	/* Sanity check. */
+	/* Invalid CPU ID. */
 	if (!(k1_is_ccpu(local) || k1_is_iocpu(local)))
+		return (-EINVAL);
+	
+	clusterid = k1_get_cluster_id();
+
+	/* Bad CPU ID. */
+	if (clusterid == IOCLUSTER0)
+	{
+		if (!(local >= IOCLUSTER0) && (local < (IOCLUSTER0 + NR_IOCLUSTER_DMA)))
+			return (-EINVAL);
+	}
+	else if (clusterid == IOCLUSTER1)
+	{
+		if (!(local >= IOCLUSTER1) && (local < (IOCLUSTER1 + NR_IOCLUSTER_DMA)))
+			return (-EINVAL);
+	}
+	else if (clusterid != local)
 		return (-EINVAL);
 
 	/* Allocate mailbox. */
