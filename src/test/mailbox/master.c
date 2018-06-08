@@ -199,9 +199,9 @@ static void *test_mailbox_thread_read_write(void *args)
 	pthread_barrier_wait(&barrier);
 
 	memset(buf, 1, MAILBOX_MSG_SIZE);
-	mailbox_write(outbox, buf);
+	TEST_ASSERT(mailbox_write(outbox, buf) == 0);
 	memset(buf, 0, MAILBOX_MSG_SIZE);
-	mailbox_read(inbox, buf);
+	TEST_ASSERT(mailbox_read(inbox, buf) == 0);
 
 	for (int i = 0; i < MAILBOX_MSG_SIZE; i++)
 		TEST_ASSERT(buf[i] == 1);
@@ -490,6 +490,8 @@ static void test_mailbox_bad_write(void)
 	int inbox;
 	char buf[MAILBOX_MSG_SIZE];
 	int clusterid;
+
+	printf("Fault Injection Test: Bad Write\n");
 
 	clusterid = k1_get_cluster_id();
 
