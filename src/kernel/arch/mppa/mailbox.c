@@ -60,9 +60,10 @@ static struct mailbox mailboxes[NR_MAILBOX];
 /**
  * @brief Allocates a mailbox.
  *
- * @return Upon successful completion the ID of the newly allocated
- * mailbox is returned. Upon failure, a negative error code is returned
- * instead.
+ * @return Upon successful completion, the ID of the newly allocated
+ * mailbox is returned. Upon failure, -1 is returned instead.
+ *
+ * @note This function is @b NOT thread safe.
  */
 static int mailbox_alloc(void)
 {
@@ -77,7 +78,9 @@ static int mailbox_alloc(void)
 		}
 	}
 
-	return (-ENOENT);
+	printf("[NAME] mailbox table overflow\n");
+
+	return (-1);
 }
 
 /*=======================================================================*
@@ -88,6 +91,8 @@ static int mailbox_alloc(void)
  * @brief Frees a mailbox.
  *
  * @param mbxid ID of the target mailbox.
+ *
+ * @note This function is @b NOT thread safe.
  */
 static void mailbox_free(int mbxid)
 {
@@ -195,10 +200,13 @@ int mailbox_open(char *name)
 /**
  * @brief Creates a mailbox.
  *
- * @param DMA channel of local cluster.
+ * @param local CPU ID of the target.
  *
- * @returns Upon successful completion, the ID of the new mailbox is
- * returned. Upon failure, a negative error code is returned instead.
+ * @returns Upon successful completion, the ID of the newly created
+ * mailbox is returned. Upon failure, a negative error code is
+ * returned instead.
+ *
+ * @note This function is @b NOT thread safe.
  */
 int _mailbox_create(int local, int type)
 {
@@ -215,14 +223,14 @@ int _mailbox_create(int local, int type)
 	else
 		assert(local == k1_get_cluster_id());
 
-	/* Allocate a mailbox. */
-	mbxid = mailbox_alloc();
-	if (mbxid < 0)
-		return (mbxid);
+	/* Allocate mailbox. */
+	if ((mbxid = mailbox_alloc()) < 0)
+		return (-EAGAIN);
 
 	name_remotes(remotes, local);
-
 	noctag = mailbox_noctag(local, type);
+
+	/* Open NoC connector. */
 	sprintf(pathname,
 			"/mppa/rqueue/%d:%d/[%s]:%d/1.%d",
 			local,
@@ -231,7 +239,11 @@ int _mailbox_create(int local, int type)
 			noctag,
 			MAILBOX_MSG_SIZE
 	);
-	assert((fd = mppa_open(pathname, O_RDONLY)) != -1);
+	if ((fd = mppa_open(pathname, O_RDONLY)) == -1)
+	{
+		mailbox_free(mbxid);
+		return (-EAGAIN);
+	}
 
 	/* Initialize mailbox. */
 	mailboxes[mbxid].fd = fd;
@@ -249,8 +261,11 @@ int _mailbox_create(int local, int type)
  *
  * @param DMA channel of remote cluster.
  *
- * @returns Upon successful completion, the ID of the target mailbox is
- * returned. Upon failure, a negative error code is returned instead.
+ * @returns Upon successful completion, the ID of the target mailbox
+ * is returned. Upon failure, a negative error code is returned
+ * instead.
+ *
+ * @note This function is @b NOT thread safe.
  */
 int _mailbox_open(int remote, int type)
 {
@@ -265,9 +280,8 @@ int _mailbox_open(int remote, int type)
 	assert(remote != local);
 
 	/* Allocate a mailbox. */
-	mbxid = mailbox_alloc();
-	if (mbxid < 0)
-		return (mbxid);
+	if ((mbxid = mailbox_alloc()) < 0)
+		return (-EAGAIN);
 
 	name_remotes(remotes, remote);
 
@@ -281,17 +295,25 @@ int _mailbox_open(int remote, int type)
 			noctag,
 			MAILBOX_MSG_SIZE
 	);
-	assert((fd = mppa_open(pathname, O_WRONLY)) != -1);
+	if ((fd = mppa_open(pathname, O_WRONLY)) == -1)
+		goto error0;
 
 	/* Set DMA interface for IO cluster. */
 	if (k1_is_iocluster(local))
-		assert(mppa_ioctl(fd, MPPA_TX_SET_INTERFACE, local%NR_IOCLUSTER_DMA)
-		                                                             != -1);
+	{
+		if (mppa_ioctl(fd, MPPA_TX_SET_INTERFACE, local%NR_IOCLUSTER_DMA) == -1)
+			goto error0;
+	}
+
 	/* Initialize mailbox. */
 	mailboxes[mbxid].fd = fd;
 	mailboxes[mbxid].flags |= MAILBOX_WRONLY;
 
 	return (mbxid);
+
+error0:
+	mailbox_free(mbxid);
+	return (-EAGAIN);
 }
 
 /*=======================================================================*
@@ -377,8 +399,10 @@ int mailbox_write(int mbxid, const void *buf)
  *
  * @param mbxid ID of the target mailbox.
  *
- * @returns Upon successful completion zero is returned. Upon failure, a
- * negative error code is returned instead.
+ * @returns Upon successful completion, zero is returned. Upon
+ * failure, a negative error code is returned instead.
+ *
+ * @note This function is @b NOT thread safe.
  */
 int mailbox_close(int mbxid)
 {
@@ -404,8 +428,10 @@ int mailbox_close(int mbxid)
  *
  * @param mbxid ID of the target mailbox.
  *
- * @returns Upon successful completion zero is returned. Upon failure, a
- * negative error code is returned instead.
+ * @returns Upon successful completion zero is returned. Upon failure,
+ * a negative error code is returned instead.
+ *
+ * @note This function is @b NOT thread safe.
  */
 int mailbox_unlink(int mbxid)
 {
