@@ -167,6 +167,84 @@ static void test_mailbox_open_close(void)
 }
 
 /*===================================================================*
+ * API Test: Read Write                                              *
+ *===================================================================*/
+
+/**
+ * @brief API Test: Mailbox Read Write
+ */
+static void *test_mailbox_thread_read_write(void *args)
+{
+	int dma;
+	int inbox;
+	int outbox;
+	char buf[MAILBOX_MSG_SIZE];
+	int clusterid;
+
+	dma = ((int *)args)[0];
+
+	clusterid = k1_get_cluster_id();
+
+	pthread_mutex_lock(&lock);
+	TEST_ASSERT((inbox = _mailbox_create(clusterid + dma, NAME)) >= 0);
+	pthread_mutex_unlock(&lock);
+
+	pthread_barrier_wait(&barrier);
+
+	pthread_mutex_lock(&lock);
+	TEST_ASSERT((outbox = _mailbox_open(
+		clusterid + (dma + 1)%NR_IOCLUSTER_DMA,
+		NAME)) >= 0
+	);
+	pthread_mutex_unlock(&lock);
+
+	pthread_barrier_wait(&barrier);
+
+	memset(buf, 1, MAILBOX_MSG_SIZE);
+	mailbox_write(outbox, buf);
+	memset(buf, 0, MAILBOX_MSG_SIZE);
+	mailbox_read(inbox, buf);
+
+	for (int i = 0; i < MAILBOX_MSG_SIZE; i++)
+		TEST_ASSERT(buf[i] == 1);
+
+	pthread_mutex_lock(&lock);
+	TEST_ASSERT(mailbox_close(outbox) == 0);
+	pthread_mutex_unlock(&lock);
+
+	pthread_mutex_lock(&lock);
+	TEST_ASSERT(mailbox_unlink(inbox) == 0);
+	pthread_mutex_unlock(&lock);
+
+	return (NULL);
+}
+
+/**
+ * @brief API Test: Mailbox Read Write
+ */
+static void test_mailbox_read_write(void)
+{
+	int dmas[NR_IOCLUSTER_DMA];
+	pthread_t tids[NR_IOCLUSTER_DMA];
+
+	printf("API Test: Mailbox Read Write\n");
+
+	/* Spawn driver threads. */
+	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
+	{
+		dmas[i] = i;
+		assert((pthread_create(&tids[i],
+			NULL,
+			test_mailbox_thread_read_write,
+			&dmas[i])) == 0
+		);
+	}
+
+	/* Wait for driver threads. */
+	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
+		pthread_join(tids[i], NULL);
+}
+/*===================================================================*
  * API Test: Mailbox Driver                                          *
  *===================================================================*/
 
@@ -183,6 +261,7 @@ int main(int argc, const char **argv)
 
 	test_mailbox_create_unlink();
 	test_mailbox_open_close();
+	test_mailbox_read_write();
 
 	return (EXIT_SUCCESS);
 }
