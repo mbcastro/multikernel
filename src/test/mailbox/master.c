@@ -461,11 +461,11 @@ static void test_mailbox_double_close(void)
 }
 
 /*===================================================================*
- * API Test: Invalid Write                                           *
+ * Fault Injection Test: Invalid Write                               *
  *===================================================================*/
 
 /**
- * @brief API Test: Invalid Write
+ * @brief Fault Injection Test: Invalid Write
  */
 static void test_mailbox_invalid_write(void)
 {
@@ -476,6 +476,29 @@ static void test_mailbox_invalid_write(void)
 	memset(buf, 1, MAILBOX_MSG_SIZE);
 	TEST_ASSERT(mailbox_write(-1, buf) < 0);
 	TEST_ASSERT(mailbox_write(100000, buf) < 0);
+}
+
+/*===================================================================*
+ * Fault Injection Test: Bad Write                                   *
+ *===================================================================*/
+
+/**
+ * @brief Fault Injection Test: Bad Write
+ */
+static void test_mailbox_bad_write(void)
+{
+	int inbox;
+	char buf[MAILBOX_MSG_SIZE];
+	int clusterid;
+
+	clusterid = k1_get_cluster_id();
+
+	TEST_ASSERT((inbox = _mailbox_create(clusterid)) >= 0);
+
+	memset(buf, 1, MAILBOX_MSG_SIZE);
+	TEST_ASSERT(mailbox_write(inbox, buf) < 0);
+
+	TEST_ASSERT(mailbox_unlink(inbox) == 0);
 }
 
 /*===================================================================*
@@ -514,6 +537,7 @@ int main(int argc, const char **argv)
 	test_mailbox_double_unlink();
 	test_mailbox_double_close();
 	test_mailbox_invalid_write();
+	test_mailbox_bad_write();
 
 	return (EXIT_SUCCESS);
 }
