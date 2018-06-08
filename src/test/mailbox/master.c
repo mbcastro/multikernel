@@ -527,6 +527,24 @@ static void test_mailbox_null_write(void)
 }
 
 /*===================================================================*
+ * Fault Injection Test: Invalid Write                               *
+ *===================================================================*/
+
+/**
+ * @brief Fault Injection Test: Invalid Read
+ */
+static void test_mailbox_invalid_read(void)
+{
+	char buf[MAILBOX_MSG_SIZE];
+
+	printf("Fault Injection Test: Invalid Read\n");
+
+	memset(buf, 1, MAILBOX_MSG_SIZE);
+	TEST_ASSERT(mailbox_read(-1, buf) < 0);
+	TEST_ASSERT(mailbox_read(100000, buf) < 0);
+}
+
+/*===================================================================*
  * API Test: Mailbox Driver                                          *
  *===================================================================*/
 
@@ -564,6 +582,7 @@ int main(int argc, const char **argv)
 	test_mailbox_invalid_write();
 	test_mailbox_bad_write();
 	test_mailbox_null_write();
+	test_mailbox_invalid_read();
 
 	return (EXIT_SUCCESS);
 }
