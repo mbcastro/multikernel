@@ -18,6 +18,7 @@
  */
 
 #include <assert.h>
+#include <pthread.h>
 
 #include <mppa/osconfig.h>
 
@@ -29,6 +30,16 @@
  */
 #define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
 
+/**
+ * @brief Global barrier for synchronization.
+ */
+static pthread_barrier_t barrier;
+
+/**
+ * @brief Lock for critical sections.
+ */
+static pthread_mutex_t lock;
+
 /*===================================================================*
  * API Test: Create Unlink                                           *
  *===================================================================*/
@@ -36,16 +47,53 @@
 /**
  * @brief API Test: Mailbox Create Unlink
  */
-static void test_mailbox_create_unlink(void)
+static void *test_mailbox_thread_create_unlink(void *args)
 {
+	int dma;
 	int inbox;
 	int clusterid;
 
+	dma = ((int *)args)[0];
+
 	clusterid = k1_get_cluster_id();
 
-	inbox = _mailbox_create(clusterid, NAME);
+	pthread_mutex_lock(&lock);
+	TEST_ASSERT((inbox = _mailbox_create(clusterid + dma, NAME)) >= 0);
+	pthread_mutex_unlock(&lock);
 
-	mailbox_unlink(inbox);
+	pthread_barrier_wait(&barrier);
+
+	pthread_mutex_lock(&lock);
+	TEST_ASSERT(mailbox_unlink(inbox) == 0);
+	pthread_mutex_unlock(&lock);
+
+	return (NULL);
+}
+
+/**
+ * @brief API Test: Mailbox Create Unlink
+ */
+static void test_mailbox_create_unlink(void)
+{
+	int dmas[NR_IOCLUSTER_DMA];
+	pthread_t tids[NR_IOCLUSTER_DMA];
+
+	printf("API Test: Mailbox Create Unlink\n");
+
+	/* Spawn driver threads. */
+	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
+	{
+		dmas[i] = i;
+		assert((pthread_create(&tids[i],
+			NULL,
+			test_mailbox_thread_create_unlink,
+			&dmas[i])) == 0
+		);
+	}
+
+	/* Wait for driver threads. */
+	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
+		pthread_join(tids[i], NULL);
 }
 
 /*===================================================================*
@@ -55,16 +103,56 @@ static void test_mailbox_create_unlink(void)
 /**
  * @brief API Test: Mailbox Open Close
  */
-static void test_mailbox_open_close(void)
+static void *test_mailbox_thread_open_close(void *args)
 {
+	int dma;
 	int outbox;
 	int clusterid;
 
+	dma = ((int *)args)[0];
+
 	clusterid = k1_get_cluster_id();
 
-	outbox = _mailbox_open(clusterid + 1, NAME);
+	pthread_mutex_lock(&lock);
+	TEST_ASSERT((outbox = _mailbox_open(
+		clusterid + (dma + 1)%NR_IOCLUSTER_DMA,
+		NAME)) >= 0
+	);
+	pthread_mutex_unlock(&lock);
 
-	mailbox_close(outbox);
+	pthread_barrier_wait(&barrier);
+
+	pthread_mutex_lock(&lock);
+	TEST_ASSERT(mailbox_close(outbox) == 0);
+	pthread_mutex_unlock(&lock);
+
+	return (NULL);
+}
+
+/**
+ * @brief API Test: Mailbox Open Close
+ */
+static void test_mailbox_open_close(void)
+{
+	int dmas[NR_IOCLUSTER_DMA];
+	pthread_t tids[NR_IOCLUSTER_DMA];
+
+	printf("API Test: Mailbox Open Close\n");
+
+	/* Spawn driver threads. */
+	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
+	{
+		dmas[i] = i;
+		assert((pthread_create(&tids[i],
+			NULL,
+			test_mailbox_thread_open_close,
+			&dmas[i])) == 0
+		);
+	}
+
+	/* Wait for driver threads. */
+	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
+		pthread_join(tids[i], NULL);
 }
 
 /*===================================================================*
@@ -78,6 +166,9 @@ int main(int argc, const char **argv)
 {
 	((void) argc);
 	((void) argv);
+
+	pthread_mutex_init(&lock, NULL);
+	pthread_barrier_init(&barrier, NULL, NR_IOCLUSTER_DMA);
 
 	test_mailbox_create_unlink();
 	test_mailbox_open_close();
