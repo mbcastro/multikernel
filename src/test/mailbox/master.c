@@ -260,6 +260,22 @@ static void test_mailbox_invalid_create(void)
 }
 
 /*===================================================================*
+ * Fault Injection Test: Bad Create
+ *===================================================================*/
+
+/**
+ * @brief Fault Injection Test: Bad Create
+ */
+static void test_mailbox_bad_create(void)
+{
+	int inbox;
+
+	printf("Fault Injection Test: Bad Create\n");
+
+	TEST_ASSERT((inbox = _mailbox_create(CCLUSTER0)) < 0);
+}
+
+/*===================================================================*
  * API Test: Mailbox Driver                                          *
  *===================================================================*/
 
@@ -281,6 +297,7 @@ int main(int argc, const char **argv)
 
 	/* Fault injection tests. */
 	test_mailbox_invalid_create();
+	test_mailbox_bad_create();
 
 	return (EXIT_SUCCESS);
 }
