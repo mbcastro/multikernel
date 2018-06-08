@@ -306,11 +306,11 @@ static void test_mailbox_double_create(void)
  */
 static void test_mailbox_invalid_open(void)
 {
-	int inbox;
+	int outbox;
 
 	printf("Fault Injection Test: Invalid Open\n");
 
-	TEST_ASSERT((inbox = _mailbox_open(-1)) < 0);
+	TEST_ASSERT((outbox = _mailbox_open(-1)) < 0);
 }
 
 /*===================================================================*
@@ -324,14 +324,14 @@ static void test_mailbox_invalid_open(void)
  */
 static void test_mailbox_bad_open(void)
 {
-	int inbox;
+	int outbox;
 	int clusterid;
 
 	printf("Fault Injection Test: Bad Open\n");
 
 	clusterid = k1_get_cluster_id();
 
-	TEST_ASSERT((inbox = _mailbox_open(clusterid)) < 0);
+	TEST_ASSERT((outbox = _mailbox_open(clusterid)) < 0);
 }
 
 #endif
@@ -345,17 +345,31 @@ static void test_mailbox_bad_open(void)
  */
 static void test_mailbox_double_open(void)
 {
-	int inbox;
+	int outbox;
 	int clusterid;
 
 	printf("Fault Injection Test: Double Open\n");
 
 	clusterid = k1_get_cluster_id();
 
-	TEST_ASSERT((inbox = _mailbox_open(clusterid + 1)) >= 0);
+	TEST_ASSERT((outbox = _mailbox_open(clusterid + 1)) >= 0);
 	TEST_ASSERT(_mailbox_open(clusterid + 1) < 0);
 
-	TEST_ASSERT(mailbox_unlink(inbox) == 0);
+	TEST_ASSERT(mailbox_unlink(outbox) == 0);
+}
+
+/*===================================================================*
+ * Fault Injection Test: Invalid Unlink                              *
+ *===================================================================*/
+
+/**
+ * @brief Fault Injection Test: Invalid Unlink
+ */
+static void test_mailbox_invalid_unlink(void)
+{
+	printf("Fault Injection Test: Invalid Unlink\n");
+
+	TEST_ASSERT(mailbox_unlink(-1) < 0);
 }
 
 /*===================================================================*
@@ -387,6 +401,7 @@ int main(int argc, const char **argv)
 	test_mailbox_bad_open();
 #endif
 	test_mailbox_double_open();
+	test_mailbox_invalid_unlink();
 
 	return (EXIT_SUCCESS);
 }
