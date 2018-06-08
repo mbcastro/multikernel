@@ -16,24 +16,6 @@
 # along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
 #
 
-K1_TOOLCHAIN_DIR=/usr/local/k1tools/
-
-# Directories.
-BINDIR  = $(CURDIR)/../../../bin
-INCDIR  = $(CURDIR)/../../../include
-SRCDIR  = $(CURDIR)/../../
-
-# Toolchain Configuration
-cflags := -ansi -std=c99
-cflags += -Wall -Wextra -Werror
-cflags += -Winit-self -Wswitch-default -Wfloat-equal -Wundef -Wshadow -Wuninitialized
-cflags += -O3
-cflags += -I $(INCDIR)
-cflags += -D_KALRAY_MPPA256
-#cflags += -DDEBUG
-lflags := -Wl,--defsym=_LIBNOC_DISABLE_FIFO_FULL_CHECK=0 -O=essai
-O := $(SRCDIR)/../output
-
 #=============================================================================
 # Async Latency Benchmark
 #=============================================================================

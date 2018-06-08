@@ -104,29 +104,6 @@ static void mailbox_free(int mbxid)
 	mppa_close(mailboxes[mbxid].fd);
 }
 
-/*=======================================================================*
- * mailbox_noctag()                                                      *
- *=======================================================================*/
-
-/**
- * @brief Computes the mailbox NoC tag for a cluster.
- *
- * @param local Id of target cluster.
- */
-static int mailbox_noctag(int local)
-{
-	if ((local >= IOCLUSTER0) && (local < (IOCLUSTER0 + NR_IOCLUSTER_DMA)))
-	{
-		return (2 + local%NR_IOCLUSTER_DMA);
-	}
-	else if ((local >= IOCLUSTER1) && (local < (IOCLUSTER1 + NR_IOCLUSTER_DMA)))
-	{
-		return (2 + NR_IOCLUSTER_DMA + local%NR_IOCLUSTER_DMA);
-	}
-
-	return (2 + NR_IOCLUSTER_DMA + NR_IOCLUSTER_DMA + local);
-}
-
 /*======================================================================*
 * mailbox_create()                                                      *
 *=======================================================================*/
@@ -145,7 +122,7 @@ int mailbox_create(char *name)
 
 	/* Invalid mailbox name. */
 	if (name == NULL)
-	return (-EINVAL);
+		return (-EINVAL);
 
 	local = name_cluster_dma(name);
 	assert(name_cluster_id(name) == k1_get_cluster_id());
@@ -172,7 +149,7 @@ int mailbox_open(char *name)
 
 	/* Invalid mailbox name. */
 	if (name == NULL)
-	return (-EINVAL);
+		return (-EINVAL);
 
 	remote = name_cluster_dma(name);
 	local = k1_get_cluster_id();
@@ -231,7 +208,7 @@ int _mailbox_create(int local)
 		return (-EAGAIN);
 
 	name_remotes(remotes, local);
-	noctag = mailbox_noctag(local);
+	noctag = noctag_mailbox(local);
 
 	/* Open NoC connector. */
 	sprintf(pathname,
@@ -295,7 +272,7 @@ int _mailbox_open(int remote)
 
 	name_remotes(remotes, remote);
 
-	noctag = mailbox_noctag(remote);
+	noctag = noctag_mailbox(remote);
 	snprintf(pathname,
 			ARRAY_LENGTH(pathname),
 			"/mppa/rqueue/%d:%d/[%s]:%d/1.%d",

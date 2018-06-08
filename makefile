@@ -16,6 +16,56 @@
 # along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
 #
 
+export K1_TOOLCHAIN_DIR=/usr/local/k1tools/
+
+# Directories.
+export BINDIR  = $(CURDIR)/bin
+export INCDIR  = $(CURDIR)/include
+export SRCDIR  = $(CURDIR)/src
+
+# Toolchain configuration.
+export cflags := -ansi -std=c99
+export cflags += -Wall -Wextra -Werror
+export cflags += -Winit-self -Wswitch-default -Wfloat-equal -Wundef -Wshadow -Wuninitialized
+export cflags += -O3
+export cflags += -I $(INCDIR)
+export cflags += -D_KALRAY_MPPA256
+export lflags := -Wl,--defsym=_LIBNOC_DISABLE_FIFO_FULL_CHECK=0 -O=essai
+export O := $(SRCDIR)/../output
+
+#=============================================================================
+# Name server
+#=============================================================================
+
+export io-bin += name-server rmem-server
+
+# Name Server
+export name-server-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
+					$(SRCDIR)/kernel/arch/mppa/barrier.c \
+					$(SRCDIR)/kernel/arch/mppa/name.c \
+					$(SRCDIR)/kernel/arch/mppa/core.c    \
+					$(SRCDIR)/kernel/arch/mppa/noc.c    \
+					$(SRCDIR)/servers/name.c
+
+export name-server-system := rtems
+export name-server-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+export name-server-lflags := -lmppaipc -pthread
+
+# RMEM Server
+export rmem-server-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
+					$(SRCDIR)/kernel/arch/mppa/portal.c  \
+					$(SRCDIR)/kernel/arch/mppa/barrier.c \
+					$(SRCDIR)/kernel/arch/mppa/name.c    \
+					$(SRCDIR)/kernel/arch/mppa/core.c    \
+					$(SRCDIR)/kernel/arch/mppa/noc.c    \
+					$(SRCDIR)/servers/rmem.c
+
+export rmem-server-system := rtems
+export rmem-server-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+export rmem-server-lflags := -lmppaipc -pthread
+
+#=============================================================================
+
 all: async mailbox portal rmem name
 
 async:

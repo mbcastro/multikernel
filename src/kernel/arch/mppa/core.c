@@ -44,8 +44,8 @@ inline int k1_get_cluster_id(void)
  *
  * @param clusterid ID of the target cluster.
  *
- * @return Non zero if the target cluster is a compute cluster and zero
- * otherwise.
+ * @return Non zero if the target cluster is a compute cluster and
+ * zero otherwise.
  */
 inline int k1_is_ccluster(int clusterid)
 {

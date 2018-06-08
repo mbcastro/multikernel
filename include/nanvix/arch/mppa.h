@@ -37,6 +37,10 @@
 	#include <utask.h>
 #endif
 
+/*=======================================================================*
+ * Core                                                                  *
+ *=======================================================================*/
+
 	/**
 	 * @brief Number of compute clusters.
 	 */
@@ -46,22 +50,6 @@
 	 * @brief Number of IO clusters.
 	 */
 	#define NR_IOCLUSTER 2
-
-	/**
-	 * @brief Number DMAs per compute cluster.
-	 */
-	#define NR_CCLUSTER_DMA 1
-
-	/**
-	 * @brief Number of DMAs per compute cluster.
-	 */
-	#define NR_IOCLUSTER_DMA 4
-
-	/**
-	 * @brief Overall number of DMAs
-	 */
-	#define NR_DMA \
-		(NR_CCLUSTER*NR_CCLUSTER_DMA + NR_IOCLUSTER*NR_IOCLUSTER_DMA)
 
 	/* Cluster IDs. */
 	#define CCLUSTER0    0 /**< Compute cluster  0. */
@@ -82,11 +70,6 @@
 	#define CCLUSTER15  15 /**< Compute cluster 15. */
 	#define IOCLUSTER0 128 /**< IO cluster 0.       */
 	#define IOCLUSTER1 192 /**< IO cluster 1.       */
-
-	/**
-	 * @brief Size (in bytes) of a mailbox message.
-	 */
-	#define MAILBOX_MSG_SIZE 64
 	
 	/* Forward definitions. */
 	extern int k1_get_cluster_id(void);
@@ -95,6 +78,38 @@
 	extern int k1_is_iocpu(int);
 	extern int k1_is_ccpu(int);
 	extern long k1_get_ccluster_freq(void);
+
+/*=======================================================================*
+ * NOC                                                                   *
+ *=======================================================================*/
+
+	/**
+	 * @brief Number DMAs per compute cluster.
+	 */
+	#define NR_CCLUSTER_DMA 1
+
+	/**
+	 * @brief Number of DMAs per compute cluster.
+	 */
+	#define NR_IOCLUSTER_DMA 4
+
+	/**
+	 * @brief Overall number of DMAs
+	 */
+	#define NR_DMA \
+		(NR_CCLUSTER*NR_CCLUSTER_DMA + NR_IOCLUSTER*NR_IOCLUSTER_DMA)
+
+	/**
+	 * @brief Size (in bytes) of a mailbox message.
+	 */
+	#define MAILBOX_MSG_SIZE 64
+
+	/* Forward definitions. */
+	extern int noctag_mailbox(int);
+
+/*=======================================================================*
+ *                                                                       *
+ *=======================================================================*/
 
 	/* Forward defnitions. */
 	extern uint64_t k1_timer_get(void);
