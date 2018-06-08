@@ -314,6 +314,29 @@ static void test_mailbox_invalid_open(void)
 }
 
 /*===================================================================*
+ * Fault Injection Test: Bad Open
+ *===================================================================*/
+
+#ifdef _TEST_MAILBOX_BAD_TEST_
+
+/**
+ * @brief Fault Injection Test: Bad Open
+ */
+static void test_mailbox_bad_open(void)
+{
+	int inbox;
+	int clusterid;
+
+	printf("Fault Injection Test: Bad Open\n");
+
+	clusterid = k1_get_cluster_id();
+
+	TEST_ASSERT((inbox = _mailbox_open(clusterid)) < 0);
+}
+
+#endif
+
+/*===================================================================*
  * API Test: Mailbox Driver                                          *
  *===================================================================*/
 
@@ -338,6 +361,9 @@ int main(int argc, const char **argv)
 	test_mailbox_bad_create();
 	test_mailbox_double_create();
 	test_mailbox_invalid_open();
+#ifdef _TEST_MAILBOX_BAD_TEST	
+	test_mailbox_bad_open();
+#endif
 
 	return (EXIT_SUCCESS);
 }
