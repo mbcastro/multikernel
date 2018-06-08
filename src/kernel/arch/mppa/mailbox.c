@@ -115,27 +115,18 @@ static void mailbox_free(int mbxid)
  */
 static int mailbox_noctag(int local, int type)
 {
-	static int OFFSET = 50;
+	((void) type);
 
-	if ((local >= CCLUSTER0) && (local <= CCLUSTER15))
+	if ((local >= IOCLUSTER0) && (local < (IOCLUSTER0 + NR_IOCLUSTER_DMA)))
 	{
-		if (type)
-			return (OFFSET + 16 + local);
-		return (16 + local);
-	}
-	else if ((local >= IOCLUSTER0) && (local < (IOCLUSTER0 + NR_IOCLUSTER_DMA)))
-	{
-		if (type)
-			return (OFFSET + 16 + 16 + 0);
-		return (16 + 16 + 0);
+		return (2 + local%NR_IOCLUSTER_DMA);
 	}
 	else if ((local >= IOCLUSTER1) && (local < (IOCLUSTER1 + NR_IOCLUSTER_DMA)))
 	{
-		if (type)
-			return (OFFSET + 16 + 16 + 1);
-		return (16 + 16 + 1);
+		return (2 + NR_IOCLUSTER_DMA + local%NR_IOCLUSTER_DMA);
 	}
-	return (0);
+
+	return (2 + NR_IOCLUSTER_DMA + NR_IOCLUSTER_DMA + local);
 }
 
 /*======================================================================*
@@ -277,7 +268,6 @@ int _mailbox_open(int remote, int type)
 	int noctag;         /* NoC tag used for transfers.        */
 
 	local = k1_get_cluster_id();
-	assert(remote != local);
 
 	/* Allocate a mailbox. */
 	if ((mbxid = mailbox_alloc()) < 0)
