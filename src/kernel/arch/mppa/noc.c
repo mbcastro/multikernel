@@ -24,11 +24,18 @@
 #include <nanvix/klib.h>
 
 /**
- * @brief NoC tags offset
+ * @brief NoC tags offset.
+ *
+ * @detail All NoC connectors that are listed bellow support 1:N
+ * single-direction communication. Therefore, we need NR_DMA NoC tags
+ * for each. The first two tags are used by the hardware and thus are
+ * skipped.
  */
-#define NOCTAG_MAILBOX_OFF 2 /**< Mailbox. */
-#define NOCTAG_PORTAL_OFF 22 /**< POrtal.  */
-#define NOCTAG_SYNC_OFF   42 /**< Sync.    */
+/**@{*/
+#define NOCTAG_MAILBOX_OFF 2                            /**< Mailbox. */
+#define NOCTAG_PORTAL_OFF (NOCTAG_MAILBOX_OFF + NR_DMA) /**< Portal.  */
+#define NOCTAG_SYNC_OFF   (NOCTAG_PORTAL_OFF + NR_DMA)  /**< Sync.    */
+/**@}*/
 
 /*=======================================================================*
  * noc_remotes()                                                         *

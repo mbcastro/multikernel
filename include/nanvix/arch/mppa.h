@@ -100,6 +100,15 @@
 		(NR_CCLUSTER*NR_CCLUSTER_DMA + NR_IOCLUSTER*NR_IOCLUSTER_DMA)
 
 	/**
+	 * @brief Number of mailboxes.
+	 */
+	#ifdef _KALRAY_MPPA_CCLUSTER_
+		#define NR_MAILBOX (NR_CCLUSTER_DMA*NR_DMA)
+	#else
+		#define NR_MAILBOX (NR_IOCLUSTER_DMA*NR_DMA)
+	#endif
+
+	/**
 	 * @brief Size (in bytes) of a mailbox message.
 	 */
 	#define MAILBOX_MSG_SIZE 64

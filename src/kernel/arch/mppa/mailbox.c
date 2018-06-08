@@ -27,11 +27,6 @@
 #include <stdio.h>
 
 /**
- * @brief Number of mailboxes.
- */
-#define NR_MAILBOX 256
-
-/**
  * @brief Mailbox flags.
  */
 /**@{*/
