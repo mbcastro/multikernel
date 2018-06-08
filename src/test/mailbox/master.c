@@ -242,6 +242,23 @@ static void test_mailbox_read_write(void)
 	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
 		pthread_join(tids[i], NULL);
 }
+
+/*===================================================================*
+ * Fault Injection Test: Invalid Create
+ *===================================================================*/
+
+/**
+ * @brief Fault Injection Test: Invalid Create
+ */
+static void test_mailbox_invalid_create(void)
+{
+	int inbox;
+
+	printf("Fault Injection Test: Invalid Create\n");
+
+	TEST_ASSERT((inbox = _mailbox_create(-1)) < 0);
+}
+
 /*===================================================================*
  * API Test: Mailbox Driver                                          *
  *===================================================================*/
@@ -257,9 +274,13 @@ int main(int argc, const char **argv)
 	pthread_mutex_init(&lock, NULL);
 	pthread_barrier_init(&barrier, NULL, NR_IOCLUSTER_DMA);
 
+	/* API tests. */
 	test_mailbox_create_unlink();
 	test_mailbox_open_close();
 	test_mailbox_read_write();
+
+	/* Fault injection tests. */
+	test_mailbox_invalid_create();
 
 	return (EXIT_SUCCESS);
 }

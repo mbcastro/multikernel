@@ -205,12 +205,9 @@ int _mailbox_create(int local)
 	char pathname[128]; /* NoC connector name.                */
 	int noctag;         /* NoC tag used for transfers.        */
 
-	if (local >= IOCLUSTER0 && local < IOCLUSTER0 + NR_IOCLUSTER_DMA)
-		assert(local == k1_get_cluster_id() + local%IOCLUSTER0);
-	else if (local >= IOCLUSTER1 && local < IOCLUSTER1 + NR_IOCLUSTER_DMA)
-		assert(local == k1_get_cluster_id() + local%IOCLUSTER1);
-	else
-		assert(local == k1_get_cluster_id());
+	/* Sanity check. */
+	if (!(k1_is_ccpu(local) || k1_is_iocpu(local)))
+		return (-EINVAL);
 
 	/* Allocate mailbox. */
 	if ((mbxid = mailbox_alloc()) < 0)
