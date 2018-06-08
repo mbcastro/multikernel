@@ -106,12 +106,19 @@ static void test_mailbox_create_unlink(void)
 static void *test_mailbox_thread_open_close(void *args)
 {
 	int dma;
+	int inbox;
 	int outbox;
 	int clusterid;
 
 	dma = ((int *)args)[0];
 
 	clusterid = k1_get_cluster_id();
+
+	pthread_mutex_lock(&lock);
+	TEST_ASSERT((inbox = _mailbox_create(clusterid + dma, NAME)) >= 0);
+	pthread_mutex_unlock(&lock);
+
+	pthread_barrier_wait(&barrier);
 
 	pthread_mutex_lock(&lock);
 	TEST_ASSERT((outbox = _mailbox_open(
@@ -124,6 +131,10 @@ static void *test_mailbox_thread_open_close(void *args)
 
 	pthread_mutex_lock(&lock);
 	TEST_ASSERT(mailbox_close(outbox) == 0);
+	pthread_mutex_unlock(&lock);
+
+	pthread_mutex_lock(&lock);
+	TEST_ASSERT(mailbox_unlink(inbox) == 0);
 	pthread_mutex_unlock(&lock);
 
 	return (NULL);
