@@ -38,10 +38,6 @@
  * Mailbox                                                               *
  *=======================================================================*/
 
-	/* Mailbox types */
-	#define NAME 1
-	#define STD 0
-
 	/* Forward definitions .*/
 	extern int mailbox_create(char *);
 	extern int mailbox_open(char *);
