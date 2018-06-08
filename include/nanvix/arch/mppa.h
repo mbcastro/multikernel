@@ -90,7 +90,6 @@
 	
 	/* Forward definitions. */
 	extern int k1_get_cluster_id(void);
-	extern int k1_get_core_id(void);
 	extern int k1_is_ccluster(int);
 	extern int k1_is_iocluster(int);
 	extern long k1_get_ccluster_freq(void);
