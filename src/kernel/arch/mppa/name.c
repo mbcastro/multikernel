@@ -210,11 +210,6 @@ void name_remotes(char *remotes, int local)
 {
 	char tmp[5];
 
-	static int ioclusters[NR_IOCLUSTER*NR_IOCLUSTER_DMA] = {
-		IOCLUSTER0 + 0, IOCLUSTER0 + 1, IOCLUSTER0 + 2, IOCLUSTER0 + 3, 
-		IOCLUSTER1 + 0, IOCLUSTER1 + 1, IOCLUSTER1 + 2, IOCLUSTER1 + 3
-	};
-
 	static int cclusters[NR_CCLUSTER*NR_CCLUSTER_DMA] = {
 		CCLUSTER0,  CCLUSTER1,  CCLUSTER2,  CCLUSTER3,
 		CCLUSTER4,  CCLUSTER5,  CCLUSTER6,  CCLUSTER7,
@@ -225,14 +220,10 @@ void name_remotes(char *remotes, int local)
 	remotes[0] = '\0';
 
 	/* Append IO Clusters. */
-	for (unsigned i = 0; i < ARRAY_LENGTH(ioclusters); i++)
-	{
-		if (local == ioclusters[i])
-			continue;
-
-		sprintf(tmp, "%d,", ioclusters[i]);
-		strcat(remotes, tmp);
-	}
+	sprintf(tmp, "%d,", IOCLUSTER0);
+	strcat(remotes, tmp);
+	sprintf(tmp, "%d,", IOCLUSTER1);
+	strcat(remotes, tmp);
 
 	/* Append Compute Clusters. */
 	for (unsigned i = 0; i < ARRAY_LENGTH(cclusters); i++)
