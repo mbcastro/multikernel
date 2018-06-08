@@ -42,7 +42,7 @@
 		uint16_t op;                      /**< Operation.      */
 		int id;                           /**< Cluster ID.     */
 		int dma;                          /**< DMA channel.    */
-		char name[PROC_NAME_MAX];                    /**< Portal name.    */
+		char name[PROC_NAME_MAX];         /**< Portal name.    */
 	};
 
 #endif /* _NAME_H_ */
