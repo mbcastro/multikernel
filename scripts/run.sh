@@ -42,6 +42,14 @@ function run1
 		--multibinary=$OUTDIR/$multibin \
 		--exec-multibin=IODDR0:$bin     \
 		-- $args
+
+	local ret=$?
+	if [ $ret == "0" ]
+	then
+		printf "%-30s \e[32m%s\e[0m\n" "$multibin" "passed"
+	else
+		printf "%-30s \e[91m%s\e[0m\n" "$multibin" "FAILED"
+	fi
 }
 
 #
@@ -63,15 +71,15 @@ function run2
 
 if [[ $1 == "test" ]];
 then
-	echo "Testing NAME"
-	run2 "name.img" "name-server" "name-master" "$NCLUSTERS"
-	echo "Testing PORTAL"
-	run2 "portal.img" "name-server" "portal-master" "write $NCLUSTERS $SIZE"
 	echo "Testing MAILBOX"
-	run1 "mailbox.img" "mailbox-master" "$NCLUSTERS $NMESSAGES"
-	echo "Testing RMEM"
-	run2 "rmem.img" "rmem-master" "rmem-server" "write $NCLUSTERS $SIZE"
-	run2 "rmem.img" "rmem-master" "rmem-server" "read $NCLUSTERS $SIZE"
+	run1 "mailbox.img" "mailbox-master"
+#	echo "Testing NAME"
+#	run2 "name.img" "name-server" "name-master" "$NCLUSTERS"
+#	echo "Testing PORTAL"
+#	run2 "portal.img" "name-server" "portal-master" "write $NCLUSTERS $SIZE"
+#	echo "Testing RMEM"
+#	run2 "rmem.img" "rmem-master" "rmem-server" "write $NCLUSTERS $SIZE"
+#	run2 "rmem.img" "rmem-master" "rmem-server" "read $NCLUSTERS $SIZE"
 elif [[ $1 == "benchmark" ]];
 then
 	if [[ $2 == "async" ]];
