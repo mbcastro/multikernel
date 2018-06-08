@@ -461,6 +461,24 @@ static void test_mailbox_double_close(void)
 }
 
 /*===================================================================*
+ * API Test: Invalid Write                                           *
+ *===================================================================*/
+
+/**
+ * @brief API Test: Invalid Write
+ */
+static void test_mailbox_invalid_write(void)
+{
+	char buf[MAILBOX_MSG_SIZE];
+
+	printf("Fault Injection Test: Invalid Write\n");
+
+	memset(buf, 1, MAILBOX_MSG_SIZE);
+	TEST_ASSERT(mailbox_write(-1, buf) < 0);
+	TEST_ASSERT(mailbox_write(100000, buf) < 0);
+}
+
+/*===================================================================*
  * API Test: Mailbox Driver                                          *
  *===================================================================*/
 
@@ -495,6 +513,7 @@ int main(int argc, const char **argv)
 	test_mailbox_bad_close();
 	test_mailbox_double_unlink();
 	test_mailbox_double_close();
+	test_mailbox_invalid_write();
 
 	return (EXIT_SUCCESS);
 }

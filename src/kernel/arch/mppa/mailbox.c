@@ -345,7 +345,7 @@ int mailbox_read(int mbxid, void *buf)
 	if ((mbxid < 0) || (mbxid >= NR_MAILBOX))
 		return (-EINVAL);
 
-	/*  Invalid mailbox. */
+	/*  Bad mailbox. */
 	if (!(mailboxes[mbxid].flags & MAILBOX_USED))
 		return (-EINVAL);
 
@@ -382,7 +382,7 @@ int mailbox_write(int mbxid, const void *buf)
 	if ((mbxid < 0) || (mbxid >= NR_MAILBOX))
 		return (-EINVAL);
 
-	/*  Invalid mailbox. */
+	/*  Bad mailbox. */
 	if (!(mailboxes[mbxid].flags & MAILBOX_USED))
 		return (-EINVAL);
 
