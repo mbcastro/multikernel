@@ -53,8 +53,8 @@ int name_cluster_id(char *name)
 		printf("name_cluster_id(%s): Creating inbox of cluster %d...\n", name, k1_get_cluster_id());
 	#endif
 
-	inbox = _mailbox_create(k1_get_cluster_id(), NAME);
-	server = _mailbox_open(IOCLUSTER0, NAME);
+	inbox = _mailbox_create(k1_get_cluster_id());
+	server = _mailbox_open(IOCLUSTER0);
 
 	/* Build operation header. */
 	msg.source = k1_get_cluster_id();
@@ -106,8 +106,8 @@ int name_cluster_dma(char *name)
 		printf("name_cluster_dma(%s): Creating inbox of cluster %d...\n", name, k1_get_cluster_id());
 	#endif
 
-	inbox = _mailbox_create(k1_get_cluster_id(), NAME);
-	server = _mailbox_open(IOCLUSTER0, NAME);
+	inbox = _mailbox_create(k1_get_cluster_id());
+	server = _mailbox_open(IOCLUSTER0);
 
 	/* Build operation header. */
 	msg.source = k1_get_cluster_id();
@@ -160,8 +160,8 @@ int name_lookup_pathname(int dma, char *name)
 		printf("name_lookup_pathname(%d): Creating inbox of cluster %d...\n", dma, k1_get_cluster_id());
 	#endif
 
-	inbox = _mailbox_create(k1_get_cluster_id(), NAME);
-	server = _mailbox_open(IOCLUSTER0, NAME);
+	inbox = _mailbox_create(k1_get_cluster_id());
+	server = _mailbox_open(IOCLUSTER0);
 
 	/* Build operation header. */
 	msg.source = k1_get_cluster_id();
@@ -256,7 +256,7 @@ void name_link(int dma, const char *name)
 	assert(dma >= 0);
 	assert((name != NULL) && (strlen(name) < (PROC_NAME_MAX - 1)));
 
-	server = _mailbox_open(IOCLUSTER0, NAME);
+	server = _mailbox_open(IOCLUSTER0);
 
 	/* Build request message. */
 	msg.source = k1_get_cluster_id();
@@ -291,7 +291,7 @@ void name_unlink(char *name)
 		printf("name_unlink(%s): opening name server mailbox from cluster %d...\n", name, k1_get_cluster_id());
 	#endif
 
-	server = _mailbox_open(IOCLUSTER0, NAME);
+	server = _mailbox_open(IOCLUSTER0);
 
 	/* Build operation header. */
 	msg.source = k1_get_cluster_id();

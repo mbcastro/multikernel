@@ -113,10 +113,8 @@ static void mailbox_free(int mbxid)
  *
  * @param local Id of target cluster.
  */
-static int mailbox_noctag(int local, int type)
+static int mailbox_noctag(int local)
 {
-	((void) type);
-
 	if ((local >= IOCLUSTER0) && (local < (IOCLUSTER0 + NR_IOCLUSTER_DMA)))
 	{
 		return (2 + local%NR_IOCLUSTER_DMA);
@@ -152,7 +150,7 @@ int mailbox_create(char *name)
 	local = name_cluster_dma(name);
 	assert(name_cluster_id(name) == k1_get_cluster_id());
 
-	return (_mailbox_create(local, STD));
+	return (_mailbox_create(local));
 }
 
 /*======================================================================*
@@ -181,7 +179,7 @@ int mailbox_open(char *name)
 
 	assert(name_cluster_id(name) != local);
 
-	return (_mailbox_open(remote, STD));
+	return (_mailbox_open(remote));
 }
 
 /*=======================================================================*
@@ -199,7 +197,7 @@ int mailbox_open(char *name)
  *
  * @note This function is @b NOT thread safe.
  */
-int _mailbox_create(int local, int type)
+int _mailbox_create(int local)
 {
 	int fd;             /* File descriptor for NoC connector. */
 	int mbxid;          /* ID of mailbix.                     */
@@ -219,7 +217,7 @@ int _mailbox_create(int local, int type)
 		return (-EAGAIN);
 
 	name_remotes(remotes, local);
-	noctag = mailbox_noctag(local, type);
+	noctag = mailbox_noctag(local);
 
 	/* Open NoC connector. */
 	sprintf(pathname,
@@ -258,7 +256,7 @@ int _mailbox_create(int local, int type)
  *
  * @note This function is @b NOT thread safe.
  */
-int _mailbox_open(int remote, int type)
+int _mailbox_open(int remote)
 {
 	int local;          /* ID of local cluster.               */
 	int fd;             /* File descriptor for NoC connector. */
@@ -275,7 +273,7 @@ int _mailbox_open(int remote, int type)
 
 	name_remotes(remotes, remote);
 
-	noctag = mailbox_noctag(remote, type);
+	noctag = mailbox_noctag(remote);
 	snprintf(pathname,
 			ARRAY_LENGTH(pathname),
 			"/mppa/rqueue/%d:%d/[%s]:%d/1.%d",

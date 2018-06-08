@@ -54,7 +54,7 @@ void meminit(void)
 	/* Open underlying IPC connectors. */
 	sprintf(pathname, "/rmem%d", clusterid%NR_IOCLUSTER_DMA);
 	_mem_inportal = portal_create(clustername);
-	_mem_outbox = _mailbox_open(IOCLUSTER1 + clusterid%NR_IOCLUSTER_DMA, STD);
+	_mem_outbox = _mailbox_open(IOCLUSTER1 + clusterid%NR_IOCLUSTER_DMA);
 	_mem_outportal = portal_open(pathname);
 
 	initialized = 1;
