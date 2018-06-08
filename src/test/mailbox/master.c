@@ -504,6 +504,29 @@ static void test_mailbox_bad_write(void)
 }
 
 /*===================================================================*
+ * Fault Injection Test: Null Write                                  *
+ *===================================================================*/
+
+/**
+ * @brief Fault Injection Test: Null Write
+ */
+static void test_mailbox_null_write(void)
+{
+	int outbox;
+	int clusterid;
+
+	printf("Fault Injection Test: Null Write\n");
+
+	clusterid = k1_get_cluster_id();
+
+	TEST_ASSERT((outbox = _mailbox_open(clusterid + 1)) >= 0);
+
+	TEST_ASSERT(mailbox_write(outbox, NULL) < 0);
+
+	TEST_ASSERT(mailbox_close(outbox) == 0);
+}
+
+/*===================================================================*
  * API Test: Mailbox Driver                                          *
  *===================================================================*/
 
@@ -540,6 +563,7 @@ int main(int argc, const char **argv)
 	test_mailbox_double_close();
 	test_mailbox_invalid_write();
 	test_mailbox_bad_write();
+	test_mailbox_null_write();
 
 	return (EXIT_SUCCESS);
 }
