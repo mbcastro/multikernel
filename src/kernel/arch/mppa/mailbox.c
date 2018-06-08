@@ -272,18 +272,22 @@ int _mailbox_create(int local)
  */
 int _mailbox_open(int remote)
 {
-	int local;          /* ID of local cluster.               */
-	int fd;             /* File descriptor for NoC connector. */
-	int mbxid;          /* ID of mailbix.                     */
-	char remotes[128];  /* IDs of remote clusters.            */
-	char pathname[128]; /* NoC connector name.                */
-	int noctag;         /* NoC tag used for transfers.        */
+	int clusterid;      /* Cluster ID.                 */
+	int fd;             /* NoC connector.              */
+	int mbxid;          /* ID of mailbix.              */
+	char remotes[128];  /* IDs of remote clusters.     */
+	char pathname[128]; /* NoC connector name.         */
+	int noctag;         /* NoC tag used for transfers. */
 
 	/* Invalid CPU ID. */
 	if (!(k1_is_ccpu(remote) || k1_is_iocpu(remote)))
 		return (-EINVAL);
 
-	local = k1_get_cluster_id();
+	clusterid = k1_get_cluster_id();
+
+	/* Bad CPU ID. */
+	if (clusterid == remote)
+		printf ("[MAILBOX] bad CPU ID?\n");
 
 	/* Allocate a mailbox. */
 	if ((mbxid = mailbox_alloc()) < 0)
@@ -305,9 +309,9 @@ int _mailbox_open(int remote)
 		goto error0;
 
 	/* Set DMA interface for IO cluster. */
-	if (k1_is_iocluster(local))
+	if (k1_is_iocluster(clusterid))
 	{
-		if (mppa_ioctl(fd, MPPA_TX_SET_INTERFACE, local%NR_IOCLUSTER_DMA) == -1)
+		if (mppa_ioctl(fd, MPPA_TX_SET_INTERFACE, remote%NR_IOCLUSTER_DMA) == -1)
 			goto error0;
 	}
 
