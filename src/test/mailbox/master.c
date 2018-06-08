@@ -244,7 +244,7 @@ static void test_mailbox_read_write(void)
 }
 
 /*===================================================================*
- * Fault Injection Test: Invalid Create
+ * Fault Injection Test: Invalid Create                              *
  *===================================================================*/
 
 /**
@@ -260,7 +260,7 @@ static void test_mailbox_invalid_create(void)
 }
 
 /*===================================================================*
- * Fault Injection Test: Bad Create
+ * Fault Injection Test: Bad Create                                  *
  *===================================================================*/
 
 /**
@@ -276,7 +276,7 @@ static void test_mailbox_bad_create(void)
 }
 
 /*===================================================================*
- * Fault Injection Test: Double Create
+ * Fault Injection Test: Double Create                               *
  *===================================================================*/
 
 /**
@@ -298,7 +298,7 @@ static void test_mailbox_double_create(void)
 }
 
 /*===================================================================*
- * Fault Injection Test: Invalid Open
+ * Fault Injection Test: Invalid Open                                *
  *===================================================================*/
 
 /**
@@ -314,7 +314,7 @@ static void test_mailbox_invalid_open(void)
 }
 
 /*===================================================================*
- * Fault Injection Test: Bad Open
+ * Fault Injection Test: Bad Open                                    *
  *===================================================================*/
 
 #ifdef _TEST_MAILBOX_BAD_TEST_
@@ -335,6 +335,28 @@ static void test_mailbox_bad_open(void)
 }
 
 #endif
+
+/*===================================================================*
+ * Fault Injection Test: Double Open                                 *
+ *===================================================================*/
+
+/**
+ * @brief Fault Injection Test: Double Open
+ */
+static void test_mailbox_double_open(void)
+{
+	int inbox;
+	int clusterid;
+
+	printf("Fault Injection Test: Double Open\n");
+
+	clusterid = k1_get_cluster_id();
+
+	TEST_ASSERT((inbox = _mailbox_open(clusterid + 1)) >= 0);
+	TEST_ASSERT(_mailbox_open(clusterid + 1) < 0);
+
+	TEST_ASSERT(mailbox_unlink(inbox) == 0);
+}
 
 /*===================================================================*
  * API Test: Mailbox Driver                                          *
@@ -364,6 +386,7 @@ int main(int argc, const char **argv)
 #ifdef _TEST_MAILBOX_BAD_TEST	
 	test_mailbox_bad_open();
 #endif
+	test_mailbox_double_open();
 
 	return (EXIT_SUCCESS);
 }
