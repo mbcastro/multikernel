@@ -70,6 +70,46 @@ inline int k1_is_iocluster(int clusterid)
 }	
 
 /*====================================================================*
+ * k1_is_iocpu()                                                      *
+ *====================================================================*/
+
+/**
+ * @brief Asserts wheter or not the target CPU ID is a CPU in an IO
+ * cluster.
+ *
+ * @param cpuid ID of the target CPU.
+ *
+ * @return Non zero if the target CPU is a CPU in an IO cluster and
+ * zero otherwise.
+ */
+inline int k1_is_iocpu(int cpuid)
+{
+	if ((cpuid >= IOCLUSTER0) && (cpuid < IOCLUSTER0 + NR_IOCLUSTER_DMA))
+		return (1);
+	else if ((cpuid >= IOCLUSTER1) && (cpuid < IOCLUSTER1 + NR_IOCLUSTER_DMA))
+		return (1);
+	return (0);
+}
+
+/*====================================================================*
+ * k1_is_ccpu()                                                      *
+ *====================================================================*/
+
+/**
+ * @brief Asserts wheter or not the target CPU ID is a CPU in a
+ * Compute cluster.
+ *
+ * @param cpuid ID of the target CPU.
+ *
+ * @return Non zero if the target CPU is a CPU in a compute cluster
+ * and zero otherwise.
+ */
+inline int k1_is_ccpu(int cpuid)
+{
+	return ((cpuid >= CCLUSTER0) && (cpuid <= CCLUSTER15));
+}
+
+/*====================================================================*
  * k1_get_ccluster_freq()                                             *
  *====================================================================*/
 
