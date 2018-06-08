@@ -279,6 +279,10 @@ int _mailbox_open(int remote)
 	char pathname[128]; /* NoC connector name.                */
 	int noctag;         /* NoC tag used for transfers.        */
 
+	/* Invalid CPU ID. */
+	if (!(k1_is_ccpu(remote) || k1_is_iocpu(remote)))
+		return (-EINVAL);
+
 	local = k1_get_cluster_id();
 
 	/* Allocate a mailbox. */

@@ -298,6 +298,22 @@ static void test_mailbox_double_create(void)
 }
 
 /*===================================================================*
+ * Fault Injection Test: Invalid Open
+ *===================================================================*/
+
+/**
+ * @brief Fault Injection Test: Invalid Open
+ */
+static void test_mailbox_invalid_open(void)
+{
+	int inbox;
+
+	printf("Fault Injection Test: Invalid Open\n");
+
+	TEST_ASSERT((inbox = _mailbox_open(-1)) < 0);
+}
+
+/*===================================================================*
  * API Test: Mailbox Driver                                          *
  *===================================================================*/
 
@@ -321,6 +337,7 @@ int main(int argc, const char **argv)
 	test_mailbox_invalid_create();
 	test_mailbox_bad_create();
 	test_mailbox_double_create();
+	test_mailbox_invalid_open();
 
 	return (EXIT_SUCCESS);
 }
