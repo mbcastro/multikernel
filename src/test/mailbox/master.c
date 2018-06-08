@@ -276,6 +276,28 @@ static void test_mailbox_bad_create(void)
 }
 
 /*===================================================================*
+ * Fault Injection Test: Double Create
+ *===================================================================*/
+
+/**
+ * @brief Fault Injection Test: Double Create
+ */
+static void test_mailbox_double_create(void)
+{
+	int inbox;
+	int clusterid;
+
+	printf("Fault Injection Test: Double Create\n");
+
+	clusterid = k1_get_cluster_id();
+
+	TEST_ASSERT((inbox = _mailbox_create(clusterid)) >= 0);
+	TEST_ASSERT(_mailbox_create(clusterid) < 0);
+
+	TEST_ASSERT(mailbox_unlink(inbox) == 0);
+}
+
+/*===================================================================*
  * API Test: Mailbox Driver                                          *
  *===================================================================*/
 
@@ -298,6 +320,7 @@ int main(int argc, const char **argv)
 	/* Fault injection tests. */
 	test_mailbox_invalid_create();
 	test_mailbox_bad_create();
+	test_mailbox_double_create();
 
 	return (EXIT_SUCCESS);
 }
