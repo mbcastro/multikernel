@@ -22,16 +22,17 @@
 
 cluster-bin += km-rmem-slave
 km-rmem-slave-srcs := $(SRCDIR)/benchmark/km/rmem/slave/slave.c     \
-					 $(SRCDIR)/benchmark/km/rmem/slave/vector.c    \
-					 $(SRCDIR)/kernel/arch/mppa/mailbox.c \
-					 $(SRCDIR)/kernel/arch/mppa/portal.c  \
-					 $(SRCDIR)/kernel/arch/mppa/barrier.c \
-					 $(SRCDIR)/kernel/arch/mppa/name.c    \
-					 $(SRCDIR)/kernel/arch/mppa/timer.c   \
-					 $(SRCDIR)/kernel/arch/mppa/core.c    \
-					 $(SRCDIR)/kernel/sys/meminit.c       \
-					 $(SRCDIR)/kernel/sys/memread.c       \
-					 $(SRCDIR)/kernel/sys/memwrite.c
+					$(SRCDIR)/benchmark/km/rmem/slave/vector.c    \
+					$(SRCDIR)/kernel/arch/mppa/mailbox.c \
+					$(SRCDIR)/kernel/arch/mppa/noc.c     \
+					$(SRCDIR)/kernel/arch/mppa/portal.c  \
+					$(SRCDIR)/kernel/arch/mppa/barrier.c \
+					$(SRCDIR)/kernel/arch/mppa/name.c    \
+					$(SRCDIR)/kernel/arch/mppa/timer.c   \
+					$(SRCDIR)/kernel/arch/mppa/core.c    \
+					$(SRCDIR)/kernel/sys/meminit.c       \
+					$(SRCDIR)/kernel/sys/memread.c       \
+					$(SRCDIR)/kernel/sys/memwrite.c
 
 # Toolchain Configuration
 km-rmem-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
@@ -40,18 +41,19 @@ km-rmem-slave-lflags := -lmppaipc -lm -lgomp
 
 io-bin += km-rmem-master
 km-rmem-master-srcs := $(SRCDIR)/benchmark/km/rmem/master/main.c     \
-					  $(SRCDIR)/benchmark/km/rmem/master/master.c   \
-					  $(SRCDIR)/benchmark/km/rmem/master/vector.c   \
-					  $(SRCDIR)/benchmark/km/rmem/master/util.c     \
-					  $(SRCDIR)/benchmark/km/rmem/master/ipc.c      \
-					  $(SRCDIR)/kernel/arch/mppa/mailbox.c \
-					  $(SRCDIR)/kernel/arch/mppa/portal.c  \
-					  $(SRCDIR)/kernel/arch/mppa/barrier.c \
-					  $(SRCDIR)/kernel/arch/mppa/name.c    \
-					  $(SRCDIR)/kernel/arch/mppa/core.c    \
-					  $(SRCDIR)/kernel/sys/meminit.c       \
-					  $(SRCDIR)/kernel/sys/memread.c       \
-					  $(SRCDIR)/kernel/sys/memwrite.c
+					$(SRCDIR)/benchmark/km/rmem/master/master.c   \
+					$(SRCDIR)/benchmark/km/rmem/master/vector.c   \
+					$(SRCDIR)/benchmark/km/rmem/master/util.c     \
+					$(SRCDIR)/benchmark/km/rmem/master/ipc.c      \
+					$(SRCDIR)/kernel/arch/mppa/mailbox.c          \
+					$(SRCDIR)/kernel/arch/mppa/noc.c              \
+					$(SRCDIR)/kernel/arch/mppa/portal.c           \
+					$(SRCDIR)/kernel/arch/mppa/barrier.c          \
+					$(SRCDIR)/kernel/arch/mppa/name.c             \
+					$(SRCDIR)/kernel/arch/mppa/core.c             \
+					$(SRCDIR)/kernel/sys/meminit.c                \
+					$(SRCDIR)/kernel/sys/memread.c                \
+					$(SRCDIR)/kernel/sys/memwrite.c
 
 # Toolchain Configuration
 km-rmem-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
@@ -66,15 +68,16 @@ km-rmem-name := km-rmem.img
 
 cluster-bin += rmem-slave
 rmem-slave-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
-						   $(SRCDIR)/kernel/arch/mppa/portal.c  \
-						   $(SRCDIR)/kernel/arch/mppa/barrier.c \
-						   $(SRCDIR)/kernel/arch/mppa/name.c    \
-						   $(SRCDIR)/kernel/arch/mppa/timer.c   \
-						   $(SRCDIR)/kernel/arch/mppa/core.c    \
-						   $(SRCDIR)/kernel/sys/meminit.c       \
-						   $(SRCDIR)/kernel/sys/memread.c       \
-						   $(SRCDIR)/kernel/sys/memwrite.c      \
-						   $(SRCDIR)/test/rmem/slave.c
+						$(SRCDIR)/kernel/arch/mppa/noc.c     \
+						$(SRCDIR)/kernel/arch/mppa/portal.c  \
+						$(SRCDIR)/kernel/arch/mppa/barrier.c \
+						$(SRCDIR)/kernel/arch/mppa/name.c    \
+						$(SRCDIR)/kernel/arch/mppa/timer.c   \
+						$(SRCDIR)/kernel/arch/mppa/core.c    \
+						$(SRCDIR)/kernel/sys/meminit.c       \
+						$(SRCDIR)/kernel/sys/memread.c       \
+						$(SRCDIR)/kernel/sys/memwrite.c      \
+						$(SRCDIR)/test/rmem/slave.c
 
 # Toolchain Configuration
 rmem-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
@@ -84,8 +87,9 @@ io-bin += rmem-master
 rmem-master-srcs := $(SRCDIR)/kernel/arch/mppa/barrier.c \
 							$(SRCDIR)/kernel/arch/mppa/core.c    \
 							$(SRCDIR)/kernel/arch/mppa/name.c    \
-							$(SRCDIR)/kernel/arch/mppa/mailbox.c  \
-							$(SRCDIR)/test/rmem/master.c					\
+							$(SRCDIR)/kernel/arch/mppa/mailbox.c \
+							$(SRCDIR)/kernel/arch/mppa/noc.c     \
+							$(SRCDIR)/test/rmem/master.c         \
 
 # Toolchain Configuration
 rmem-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
@@ -100,16 +104,17 @@ rmem-name := rmem.img
 
 cluster-bin += is-rmem-slave
 is-rmem-slave-srcs := $(SRCDIR)/benchmark/is/rmem/slave/slave.c    \
-					 $(SRCDIR)/benchmark/is/rmem/slave/sort.c   \
-					 $(SRCDIR)/kernel/arch/mppa/timer.c  \
-					 $(SRCDIR)/kernel/arch/mppa/mailbox.c  \
-					 $(SRCDIR)/kernel/arch/mppa/barrier.c  \
-					 $(SRCDIR)/kernel/arch/mppa/portal.c  \
-					 $(SRCDIR)/kernel/arch/mppa/name.c    \
-					 $(SRCDIR)/kernel/arch/mppa/core.c    \
-					 $(SRCDIR)/kernel/sys/meminit.c       \
-					 $(SRCDIR)/kernel/sys/memread.c       \
-					 $(SRCDIR)/kernel/sys/memwrite.c
+					$(SRCDIR)/benchmark/is/rmem/slave/sort.c   \
+					$(SRCDIR)/kernel/arch/mppa/timer.c         \
+					$(SRCDIR)/kernel/arch/mppa/mailbox.c       \
+					$(SRCDIR)/kernel/arch/mppa/noc.c           \
+					$(SRCDIR)/kernel/arch/mppa/barrier.c       \
+					$(SRCDIR)/kernel/arch/mppa/portal.c        \
+					$(SRCDIR)/kernel/arch/mppa/name.c          \
+					$(SRCDIR)/kernel/arch/mppa/core.c          \
+					$(SRCDIR)/kernel/sys/meminit.c             \
+					$(SRCDIR)/kernel/sys/memread.c             \
+					$(SRCDIR)/kernel/sys/memwrite.c
 #$(SRCDIR)/benchmark/is/slave/ipc.c
 
 # Toolchain Configuration
@@ -119,21 +124,22 @@ is-rmem-slave-lflags := -lmppaipc -lm -lgomp
 
 io-bin += is-rmem-master
 is-rmem-master-srcs := $(SRCDIR)/benchmark/is/rmem/master/main.c    \
-					  $(SRCDIR)/benchmark/is/rmem/master/bucketsort.c   \
-					  $(SRCDIR)/benchmark/is/rmem/master/bucket.c \
-					  $(SRCDIR)/benchmark/is/rmem/master/minibucket.c \
-					  $(SRCDIR)/benchmark/is/rmem/master/ipc.c  \
-					  $(SRCDIR)/benchmark/is/rmem/master/message.c \
-					  $(SRCDIR)/benchmark/is/rmem/master/util.c    \
-					  $(SRCDIR)/kernel/arch/mppa/timer.c  \
-					  $(SRCDIR)/kernel/arch/mppa/mailbox.c  \
-					  $(SRCDIR)/kernel/arch/mppa/portal.c  \
-					  $(SRCDIR)/kernel/arch/mppa/barrier.c  \
-					  $(SRCDIR)/kernel/arch/mppa/name.c    \
-					  $(SRCDIR)/kernel/arch/mppa/core.c    \
-					  $(SRCDIR)/kernel/sys/meminit.c    \
-					  $(SRCDIR)/kernel/sys/memread.c    \
-					  $(SRCDIR)/kernel/sys/memwrite.c
+					$(SRCDIR)/benchmark/is/rmem/master/bucketsort.c \
+					$(SRCDIR)/benchmark/is/rmem/master/bucket.c     \
+					$(SRCDIR)/benchmark/is/rmem/master/minibucket.c \
+					$(SRCDIR)/benchmark/is/rmem/master/ipc.c        \
+					$(SRCDIR)/benchmark/is/rmem/master/message.c    \
+					$(SRCDIR)/benchmark/is/rmem/master/util.c       \
+					$(SRCDIR)/kernel/arch/mppa/timer.c              \
+					$(SRCDIR)/kernel/arch/mppa/mailbox.c            \
+					$(SRCDIR)/kernel/arch/mppa/noc.c                \
+					$(SRCDIR)/kernel/arch/mppa/portal.c             \
+					$(SRCDIR)/kernel/arch/mppa/barrier.c            \
+					$(SRCDIR)/kernel/arch/mppa/name.c               \
+					$(SRCDIR)/kernel/arch/mppa/core.c               \
+					$(SRCDIR)/kernel/sys/meminit.c                  \
+					$(SRCDIR)/kernel/sys/memread.c                  \
+					$(SRCDIR)/kernel/sys/memwrite.c
 
 #$(SRCDIR)/benchmark/is/master/ipc.c
 
@@ -153,16 +159,17 @@ is-rmem-name := is-rmem.img
 
 cluster-bin += gf-rmem-slave
 gf-rmem-slave-srcs := $(SRCDIR)/benchmark/gf/rmem/slave/slave.c     \
-					 $(SRCDIR)/benchmark/gf/util.c        \
-					 $(SRCDIR)/kernel/arch/mppa/mailbox.c \
-					 $(SRCDIR)/kernel/arch/mppa/portal.c  \
-					 $(SRCDIR)/kernel/arch/mppa/barrier.c \
-					 $(SRCDIR)/kernel/arch/mppa/name.c    \
-					 $(SRCDIR)/kernel/arch/mppa/timer.c   \
-					 $(SRCDIR)/kernel/arch/mppa/core.c    \
-					 $(SRCDIR)/kernel/sys/meminit.c       \
-					 $(SRCDIR)/kernel/sys/memread.c       \
-					 $(SRCDIR)/kernel/sys/memwrite.c
+					$(SRCDIR)/benchmark/gf/util.c        \
+					$(SRCDIR)/kernel/arch/mppa/mailbox.c \
+					$(SRCDIR)/kernel/arch/mppa/noc.c     \
+					$(SRCDIR)/kernel/arch/mppa/portal.c  \
+					$(SRCDIR)/kernel/arch/mppa/barrier.c \
+					$(SRCDIR)/kernel/arch/mppa/name.c    \
+					$(SRCDIR)/kernel/arch/mppa/timer.c   \
+					$(SRCDIR)/kernel/arch/mppa/core.c    \
+					$(SRCDIR)/kernel/sys/meminit.c       \
+					$(SRCDIR)/kernel/sys/memread.c       \
+					$(SRCDIR)/kernel/sys/memwrite.c
 
 # Toolchain Configuration
 gf-rmem-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
@@ -171,17 +178,18 @@ gf-rmem-slave-lflags := -lmppaipc -lm -lgomp
 
 io-bin += gf-rmem-master
 gf-rmem-master-srcs := $(SRCDIR)/benchmark/gf/rmem/master/main.c \
-					  $(SRCDIR)/benchmark/gf/rmem/master/master.c \
-					  $(SRCDIR)/benchmark/gf/rmem/master/ipc.c    \
-					  $(SRCDIR)/benchmark/gf/util.c               \
-					  $(SRCDIR)/kernel/arch/mppa/mailbox.c        \
-					  $(SRCDIR)/kernel/arch/mppa/portal.c         \
-					  $(SRCDIR)/kernel/arch/mppa/barrier.c        \
-					  $(SRCDIR)/kernel/arch/mppa/name.c           \
-					  $(SRCDIR)/kernel/arch/mppa/core.c           \
-					  $(SRCDIR)/kernel/sys/meminit.c              \
-					  $(SRCDIR)/kernel/sys/memread.c              \
-					  $(SRCDIR)/kernel/sys/memwrite.c
+					$(SRCDIR)/benchmark/gf/rmem/master/master.c \
+					$(SRCDIR)/benchmark/gf/rmem/master/ipc.c    \
+					$(SRCDIR)/benchmark/gf/util.c               \
+					$(SRCDIR)/kernel/arch/mppa/mailbox.c        \
+					$(SRCDIR)/kernel/arch/mppa/noc.c            \
+					$(SRCDIR)/kernel/arch/mppa/portal.c         \
+					$(SRCDIR)/kernel/arch/mppa/barrier.c        \
+					$(SRCDIR)/kernel/arch/mppa/name.c           \
+					$(SRCDIR)/kernel/arch/mppa/core.c           \
+					$(SRCDIR)/kernel/sys/meminit.c              \
+					$(SRCDIR)/kernel/sys/memread.c              \
+					$(SRCDIR)/kernel/sys/memwrite.c
 
 # Toolchain Configuration
 gf-rmem-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
@@ -196,16 +204,17 @@ gf-rmem-name := gf-rmem.img
 
 cluster-bin += gf-dense-rmem-slave
 gf-dense-rmem-slave-srcs := $(SRCDIR)/benchmark/gf/rmem-dense/slave/slave.c     \
-					 $(SRCDIR)/benchmark/gf/util.c        \
-					 $(SRCDIR)/kernel/arch/mppa/mailbox.c \
-					 $(SRCDIR)/kernel/arch/mppa/portal.c  \
-					 $(SRCDIR)/kernel/arch/mppa/barrier.c \
-					 $(SRCDIR)/kernel/arch/mppa/name.c    \
-					 $(SRCDIR)/kernel/arch/mppa/timer.c   \
-					 $(SRCDIR)/kernel/arch/mppa/core.c    \
-					 $(SRCDIR)/kernel/sys/meminit.c       \
-					 $(SRCDIR)/kernel/sys/memread.c       \
-					 $(SRCDIR)/kernel/sys/memwrite.c
+					$(SRCDIR)/benchmark/gf/util.c        \
+					$(SRCDIR)/kernel/arch/mppa/mailbox.c \
+					$(SRCDIR)/kernel/arch/mppa/noc.c     \
+					$(SRCDIR)/kernel/arch/mppa/portal.c  \
+					$(SRCDIR)/kernel/arch/mppa/barrier.c \
+					$(SRCDIR)/kernel/arch/mppa/name.c    \
+					$(SRCDIR)/kernel/arch/mppa/timer.c   \
+					$(SRCDIR)/kernel/arch/mppa/core.c    \
+					$(SRCDIR)/kernel/sys/meminit.c       \
+					$(SRCDIR)/kernel/sys/memread.c       \
+					$(SRCDIR)/kernel/sys/memwrite.c
 
 # Toolchain Configuration
 gf-dense-rmem-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
@@ -214,17 +223,18 @@ gf-dense-rmem-slave-lflags := -lmppaipc -lm -lgomp
 
 io-bin += gf-dense-rmem-master
 gf-dense-rmem-master-srcs := $(SRCDIR)/benchmark/gf/rmem-dense/master/main.c \
-					  $(SRCDIR)/benchmark/gf/rmem-dense/master/master.c \
-					  $(SRCDIR)/benchmark/gf/rmem-dense/master/ipc.c    \
-					  $(SRCDIR)/benchmark/gf/util.c               \
-					  $(SRCDIR)/kernel/arch/mppa/mailbox.c        \
-					  $(SRCDIR)/kernel/arch/mppa/portal.c         \
-					  $(SRCDIR)/kernel/arch/mppa/barrier.c        \
-					  $(SRCDIR)/kernel/arch/mppa/name.c           \
-					  $(SRCDIR)/kernel/arch/mppa/core.c           \
-					  $(SRCDIR)/kernel/sys/meminit.c              \
-					  $(SRCDIR)/kernel/sys/memread.c              \
-					  $(SRCDIR)/kernel/sys/memwrite.c
+					$(SRCDIR)/benchmark/gf/rmem-dense/master/master.c \
+					$(SRCDIR)/benchmark/gf/rmem-dense/master/ipc.c    \
+					$(SRCDIR)/benchmark/gf/util.c                     \
+					$(SRCDIR)/kernel/arch/mppa/mailbox.c              \
+					$(SRCDIR)/kernel/arch/mppa/noc.c                  \
+					$(SRCDIR)/kernel/arch/mppa/portal.c               \
+					$(SRCDIR)/kernel/arch/mppa/barrier.c              \
+					$(SRCDIR)/kernel/arch/mppa/name.c                 \
+					$(SRCDIR)/kernel/arch/mppa/core.c                 \
+					$(SRCDIR)/kernel/sys/meminit.c                    \
+					$(SRCDIR)/kernel/sys/memread.c                    \
+					$(SRCDIR)/kernel/sys/memwrite.c
 
 # Toolchain Configuration
 gf-dense-rmem-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
