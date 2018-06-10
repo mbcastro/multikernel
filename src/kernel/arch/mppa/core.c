@@ -3,122 +3,173 @@
  * 
  * This file is part of Nanvix.
  * 
- * Nanvix is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at
- * your option) any later version.
+ * Nanvix is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
  * 
- * Nanvix is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * for more details.
+ * Nanvix is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  * 
  * You should have received a copy of the GNU General Public License
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <nanvix/arch/mppa.h>
 #include <HAL/hal/core/mp.h>
 
-/*====================================================================*
- * k1_get_cluster_id()                                                *
- *====================================================================*/
+/*============================================================================*
+ * hal_get_cluster_id()                                                       *
+ *============================================================================*/
 
 /**
  * @brief Gets the ID of the underlying cluster.
  *
- * @return The ID of the underlying cluster.
+ * @returns The ID of the underlying cluster
  */
-inline int k1_get_cluster_id(void)
+inline int hal_get_cluster_id(void)
 {
 	return (__k1_get_cluster_id());
 }
 
-/*====================================================================*
- * k1_is_ccluster()                                                   *
- *====================================================================*/
+/*============================================================================*
+ * hal_get_core_id()                                                          *
+ *============================================================================*/
 
 /**
- * @brief Asserts whether or not the target cluster is a compute
- * cluster.
+ * @brief Gets the ID of the underlying core.
  *
- * @param clusterid ID of the target cluster.
- *
- * @return Non zero if the target cluster is a compute cluster and
- * zero otherwise.
+ * @returns The ID of the underlying core.
  */
-inline int k1_is_ccluster(int clusterid)
+int hal_get_core_id(void)
 {
-	return ((clusterid >= CCLUSTER0) && (clusterid <= CCLUSTER15));
 }
 
-/*====================================================================*
- * k1_is_iocluster()                                                  *
- *====================================================================*/
+/*============================================================================*
+ * hal_get_core_type()                                                        *
+ *============================================================================*/
 
 /**
- * @brief Asserts whether or not the target cluster is an IO cluster.
+ * @brief Gets the type of the underlying core.
  *
- * @param clusterid ID of the target cluster.
+ * @returns The type of the underlying core.
+ */
+int hal_get_core_type(void)
+{
+}
+
+/*============================================================================*
+ * hal_is_ucore()                                                             *
+ *============================================================================*/
+
+/**
+ * @brief Asserts whether or not the target core is a user core.
  *
- * @return Non zero if the target cluster is an IO cluster and zero
+ * @param coreid ID of the target core.
+ *
+ * @returns One if the target core is a user core, and zero otherwise.
+ */
+int hal_is_ucore(int coreid)
+{
+}
+
+/*============================================================================*
+ * hal_is_rcore()                                                             *
+ *============================================================================*/
+
+/**
+ * @brief Asserts whether or not the target core is a resource
+ * management core.
+ *
+ * @param coreid ID of the target core.
+ *
+ * @returns One if the target core is a resource management core, and
+ * zero otherwise.
+ */
+int hal_is_rcore(int coreid)
+{
+}
+
+/*============================================================================*
+ * hal_is_score()                                                             *
+ *============================================================================*/
+
+/**
+ * @brief Asserts whether or not the taget core is a system core.
+ *
+ * @param coreid ID of the target core.
+ *
+ * @returns One if the target core is a system core, and zero
  * otherwise.
  */
-inline int k1_is_iocluster(int clusterid)
+int hal_is_score(int coreid)
 {
-	return ((clusterid == IOCLUSTER0) || (clusterid == IOCLUSTER1));
-}	
-
-/*====================================================================*
- * k1_is_iocpu()                                                      *
- *====================================================================*/
-
-/**
- * @brief Asserts wheter or not the target CPU ID is a CPU in an IO
- * cluster.
- *
- * @param cpuid ID of the target CPU.
- *
- * @return Non zero if the target CPU is a CPU in an IO cluster and
- * zero otherwise.
- */
-inline int k1_is_iocpu(int cpuid)
-{
-	if ((cpuid >= IOCLUSTER0) && (cpuid < IOCLUSTER0 + NR_IOCLUSTER_DMA))
-		return (1);
-	else if ((cpuid >= IOCLUSTER1) && (cpuid < IOCLUSTER1 + NR_IOCLUSTER_DMA))
-		return (1);
-	return (0);
 }
 
-/*====================================================================*
- * k1_is_ccpu()                                                      *
- *====================================================================*/
+/*============================================================================*
+ * hal_get_num_clusters()                                                     *
+ *============================================================================*/
 
 /**
- * @brief Asserts wheter or not the target CPU ID is a CPU in a
- * Compute cluster.
+ * @brief Gets the number of clusters in the processor.
  *
- * @param cpuid ID of the target CPU.
- *
- * @return Non zero if the target CPU is a CPU in a compute cluster
- * and zero otherwise.
+ * @returns The number of clusters in the processor.
  */
-inline int k1_is_ccpu(int cpuid)
+int hal_get_num_clusters(void)
 {
-	return ((cpuid >= CCLUSTER0) && (cpuid <= CCLUSTER15));
 }
 
-/*====================================================================*
- * k1_get_ccluster_freq()                                             *
- *====================================================================*/
+/*============================================================================*
+ * hal_get_num_cores()                                                        *
+ *============================================================================*/
 
 /**
- * @brief Gets the clock frequency of a compute cluster.
+ * @brief Gets the number of cores in the processor.
  *
- * @return The clock frequency of a compute cluster in Hertz.
+ * @returns The number of cores in the processor.
  */
-inline long k1_get_ccluster_freq(void)
+int hal_get_num_cores(void)
 {
-	return (__bsp_frequency);
 }
+
+/*============================================================================*
+ * hal_get_num_ucores()                                                       *
+ *============================================================================*/
+
+/**
+ * @brief Gets the number of user cores in the processor.
+ *
+ * @returns The number of user cores in the processor.
+ */
+int hal_get_num_ucores(void)
+{
+}
+
+/*============================================================================*
+ * hal_get_num_rcores()                                                       *
+ *============================================================================*/
+
+/**
+ * @brief Gets the number of resource management cores in the
+ * processor.
+ *
+ * @returns The number of resource management cores in the processor.
+ */
+int hal_get_num_rcores(void)
+{
+}
+
+/*============================================================================*
+ * hal_get_num_scores()                                                       *
+ *============================================================================*/
+
+/**
+ * @brief Gets the number of system cores in the processor.
+ *
+ * @returns The number of system cores in the processor.
+ */
+int hal_get_num_scores(void)
+{
+}
+
