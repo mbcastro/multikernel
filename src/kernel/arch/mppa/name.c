@@ -17,7 +17,6 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <nanvix/arch/mppa.h>
 #include <nanvix/name.h>
 #include <nanvix/pm.h>
 #include <nanvix/klib.h>
@@ -25,6 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+
+#include "mppa.h" 
 
 /**
  * @brief name server CPU ID.

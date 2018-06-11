@@ -17,13 +17,14 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <nanvix/arch/mppa.h>
 #include <nanvix/klib.h>
 #include <assert.h>
 #include <inttypes.h>
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
+
+#include "mppa.h"
 
 /**
  * @brief Number of barriers.

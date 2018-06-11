@@ -19,7 +19,7 @@
 
 #include <HAL/hal/core/mp.h>
 
-#include <nanvix/arch/mppa.h>
+#include "mppa.h" 
 
 /*============================================================================*
  * k1_is_ccluster()                                                           *

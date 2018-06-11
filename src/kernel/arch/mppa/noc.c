@@ -22,8 +22,9 @@
 
 #include <HAL/hal/core/mp.h>
 
-#include <nanvix/arch/mppa.h>
 #include <nanvix/klib.h>
+
+#include "mppa.h" 
 
 /**
  * @brief NoC tags offset.
