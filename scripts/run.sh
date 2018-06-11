@@ -46,9 +46,9 @@ function run1
 	local ret=$?
 	if [ $ret == "0" ]
 	then
-		printf "%-30s \e[32m%s\e[0m\n" "$multibin" "passed"
+		printf "[test] %-30s \e[32m%s\e[0m\n" "$multibin" "passed"
 	else
-		printf "%-30s \e[91m%s\e[0m\n" "$multibin" "FAILED"
+		printf "[test] %-30s \e[91m%s\e[0m\n" "$multibin" "FAILED"
 	fi
 }
 
@@ -67,14 +67,22 @@ function run2
 		--exec-multibin=IODDR0:$bin1    \
 		--exec-multibin=IODDR1:$bin2    \
 		-- $args
+
+	local ret=$?
+	if [ $ret == "0" ]
+	then
+		printf "[test] %-30s \e[32m%s\e[0m\n" "$multibin" "passed"
+	else
+		printf "[test] %-30s \e[91m%s\e[0m\n" "$multibin" "FAILED"
+	fi
 }
 
 if [[ $1 == "test" ]];
 then
-	# echo "Testing MAILBOX"
-	# run1 "hal-mailbox.img" "hal-mailbox-master"
+	echo "Testing MAILBOX"
+	run1 "hal-mailbox.img" "hal-mailbox-master" | grep "test"
 	echo "Testing NAME"
-	run2 "name.img" "name-server" "name-master" "$NCLUSTERS"
+	run2 "name.img" "name-server" "name-master" "$NCLUSTERS" | grep "test"
 #	echo "Testing PORTAL"
 #	run2 "portal.img" "name-server" "portal-master" "write $NCLUSTERS $SIZE"
 #	echo "Testing RMEM"

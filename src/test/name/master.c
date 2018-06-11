@@ -42,6 +42,8 @@ static void test_name_remove(void)
 {
 	char pathname[PROC_NAME_MAX];
 
+	printf("[test][api] Name Unlink\n");
+
 	/* IO cluster registration test. */
 	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
 	{
@@ -60,6 +62,8 @@ static void test_name_register(void)
 {
 	int clusterid;
 	char pathname[PROC_NAME_MAX];
+
+	printf("[test][api] Name Link\n");
 
 	clusterid = hal_get_cluster_id();
 
@@ -80,6 +84,8 @@ static void test_name_lookup(void)
 {
 	int clusterid;
 	char pathname[PROC_NAME_MAX];
+
+	printf("[test][api] Name Lookup\n");
 
 	clusterid = hal_get_cluster_id();
 
@@ -103,6 +109,8 @@ void test_name_slave(int nclusters)
 		nclusters_str,
 		NULL
 	};
+
+	printf("[test][api] Name Slaves\n");
 
 	sprintf(nclusters_str, "%d", nclusters);
 

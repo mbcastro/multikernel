@@ -70,7 +70,7 @@ export rmem-server-lflags := -lmppaipc -pthread
 
 #=============================================================================
 
-all: async hal-mailbox mailbox name portal rmem
+all: hal-mailbox name 
 
 async:
 	cd $(CURDIR)/src/test/async/ && $(MAKE);
