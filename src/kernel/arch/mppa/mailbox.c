@@ -17,138 +17,20 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <nanvix/arch/mppa.h>
-#include <nanvix/klib.h>
-#include <nanvix/pm.h>
-#include <nanvix/name.h>
-#include <assert.h>
 #include <errno.h>
-#include <string.h>
 #include <stdio.h>
 
-/**
- * @brief Mailbox flags.
- */
-/**@{*/
-#define MAILBOX_USED   (1 << 0)
-#define MAILBOX_WRONLY (1 << 1)
-/**@}*/
+#include <nanvix/hal.h>
+#include <nanvix/arch/mppa.h>
 
-/**
- * @brief Mailbox.
- */
-struct mailbox
-{
-	int fd;    /**< File descriptor of noC connector. */
-	int flags; /**< Flags.                            */
-};
-
-/**
- * @brief table of mailboxes.
- */
-static struct mailbox mailboxes[NR_MAILBOX];
-
-/*=======================================================================*
- * mailbox_alloc()                                                       *
- *=======================================================================*/
-
-/**
- * @brief Allocates a mailbox.
- *
- * @return Upon successful completion, the ID of the newly allocated
- * mailbox is returned. Upon failure, -1 is returned instead.
- *
- * @note This function is @b NOT thread safe.
- */
-static int mailbox_alloc(void)
-{
-	/* Search for a free mailbox. */
-	for (int i = 0; i < NR_MAILBOX; i++)
-	{
-		/* Found. */
-		if (!(mailboxes[i].flags & MAILBOX_USED))
-		{
-			mailboxes[i].flags |= MAILBOX_USED;
-			return (i);
-		}
-	}
-
-	printf("[NAME] mailbox table overflow\n");
-
-	return (-1);
-}
-
-/*=======================================================================*
- * mailbox_free()                                                        *
- *=======================================================================*/
-
-/**
- * @brief Frees a mailbox.
- *
- * @param mbxid ID of the target mailbox.
- *
- * @note This function is @b NOT thread safe.
- */
-static void mailbox_free(int mbxid)
-{
-	/* Sanity check. */
-	assert((mbxid >= 0) && (mbxid < NR_MAILBOX));
-	assert(mailboxes[mbxid].flags & MAILBOX_USED);
-
-	mailboxes[mbxid].flags = 0;
-	mppa_close(mailboxes[mbxid].fd);
-}
-
-/*======================================================================*
-* mailbox_create()                                                      *
-*=======================================================================*/
-
-/**
-* @brief Creates a mailbox.
-*
-* @param name Mailbox name.
-*
-* @returns Upon successful completion, the ID of the new mailbox is
-* returned. Upon failure, a negative error code is returned instead.
-*/
-int mailbox_create(char *name)
-{
-	int local; /* CPU ID of local. */
-
-	local = name_lookup(name);
-
-	return (_mailbox_create(local));
-}
-
-/*======================================================================*
-* mailbox_open()                                                        *
-*=======================================================================*/
-
-/**
-* @brief Opens a mailbox.
-*
-* @param name Mailbox name.
-*
-* @returns Upon successful completion, the ID of the target mailbox is
-* returned. Upon failure, a negative error code is returned instead.
-*/
-int mailbox_open(char *name)
-{
-	int remote; /* CPU ID of remote. */
-
-	remote = name_lookup(name);
-
-	return (_mailbox_open(remote));
-}
-
-/*=======================================================================*
- * _mailbox_create()                                                     *
- *=======================================================================*/
+/*============================================================================*
+ * hal_mailbox_create()                                                       *
+ *============================================================================*/
 
 /**
  * @brief Creates a mailbox.
  *
- * @param local      CPU ID of the target.
+ * @param coreid ID of the target core.
  *
  * @returns Upon successful completion, the ID of the newly created
  * mailbox is returned. Upon failure, a negative error code is
@@ -156,72 +38,47 @@ int mailbox_open(char *name)
  *
  * @note This function is @b NOT thread safe.
  */
-int _mailbox_create(int local)
+int hal_mailbox_create(int coreid)
 {
 	int fd;             /* NoC connector.              */
-	int clusterid;      /* Cluster ID.                 */
-	int mbxid;          /* ID of mailbix.              */
-	char remotes[128];  /* IDs of remote clusters.     */
+	char remotes[128];  /* IDs of remote NoC nodes.    */
 	char pathname[128]; /* NoC connector name.         */
 	int noctag;         /* NoC tag used for transfers. */
 
-	/* Invalid CPU ID. */
-	if (!(k1_is_ccpu(local) || k1_is_iocpu(local)))
+#ifdef _HAS_GET_CORE_ID_	
+	/* Invalid core ID. */
+	if (coreid != hal_get_core_id())
 		return (-EINVAL);
+#endif
 
-	clusterid = k1_get_cluster_id();
+	noc_remotes(remotes, coreid);
+	noctag = noctag_mailbox(coreid);
 
-	/* Bad CPU ID. */
-	if (clusterid == IOCLUSTER0)
-	{
-		if (!(local >= IOCLUSTER0) && (local < (IOCLUSTER0 + NR_IOCLUSTER_DMA)))
-			return (-EINVAL);
-	}
-	else if (clusterid == IOCLUSTER1)
-	{
-		if (!(local >= IOCLUSTER1) && (local < (IOCLUSTER1 + NR_IOCLUSTER_DMA)))
-			return (-EINVAL);
-	}
-	else if (clusterid != local)
-		return (-EINVAL);
-
-	/* Allocate mailbox. */
-	if ((mbxid = mailbox_alloc()) < 0)
-		return (-EAGAIN);
-
-	noc_remotes(remotes, local);
-	noctag = noctag_mailbox(local);
-
-	/* Open NoC connector. */
+	/* Build pathname for NoC connector. */
 	sprintf(pathname,
 			"/mppa/rqueue/%d:%d/[%s]:%d/1.%d",
-			local,
+			coreid,
 			noctag,
 			remotes,
 			noctag,
 			MAILBOX_MSG_SIZE
 	);
+
+	/* Open NoC connector. */
 	if ((fd = mppa_open(pathname, O_RDONLY)) == -1)
-	{
-		mailbox_free(mbxid);
 		return (-EAGAIN);
-	}
 
-	/* Initialize mailbox. */
-	mailboxes[mbxid].fd = fd;
-	mailboxes[mbxid].flags &= ~(MAILBOX_WRONLY);
-
-	return (mbxid);
+	return (fd);
 }
 
-/*=======================================================================*
- * _mailbox_open()                                                       *
- *=======================================================================*/
+/*============================================================================*
+ * hal_mailbox_open()                                                         *
+ *============================================================================*/
 
 /**
  * @brief Opens a mailbox.
  *
- * @param remote      CPU ID of the target.
+ * @param coreid ID of the target core.
  *
  * @returns Upon successful completion, the ID of the target mailbox
  * is returned. Upon failure, a negative error code is returned
@@ -229,139 +86,80 @@ int _mailbox_create(int local)
  *
  * @note This function is @b NOT thread safe.
  */
-int _mailbox_open(int remote)
+int hal_mailbox_open(int coreid)
 {
-	int clusterid;      /* Cluster ID.                 */
 	int fd;             /* NoC connector.              */
-	int mbxid;          /* ID of mailbix.              */
-	char remotes[128];  /* IDs of remote clusters.     */
+	char remotes[128];  /* IDs of remote NoC nodes.    */
 	char pathname[128]; /* NoC connector name.         */
 	int noctag;         /* NoC tag used for transfers. */
 
-	/* Invalid CPU ID. */
-	if (!(k1_is_ccpu(remote) || k1_is_iocpu(remote)))
+	/* Invalid core ID. */
+	if (coreid < 0)
 		return (-EINVAL);
 
-	clusterid = k1_get_cluster_id();
+#ifdef _HAS_GET_CORE_ID_	
+	/* Bad core ID. */
+	if (coreid == hal_get_core_id())
+		return (-EINVAL);
+#endif
 
-	/* Bad CPU ID. */
-	if (clusterid == remote)
-		printf ("[MAILBOX] bad CPU ID?\n");
+	noc_remotes(remotes, coreid);
+	noctag = noctag_mailbox(coreid);
 
-	/* Allocate a mailbox. */
-	if ((mbxid = mailbox_alloc()) < 0)
-		return (-EAGAIN);
-
-	noc_remotes(remotes, remote);
-
-	noctag = noctag_mailbox(remote);
-	snprintf(pathname,
-			ARRAY_LENGTH(pathname),
+	/* Build pathname for NoC connector. */
+	sprintf(pathname,
 			"/mppa/rqueue/%d:%d/[%s]:%d/1.%d",
-			remote,
+			coreid,
 			noctag,
 			remotes,
 			noctag,
 			MAILBOX_MSG_SIZE
 	);
+
+	/* Open NoC connector. */
 	if ((fd = mppa_open(pathname, O_WRONLY)) == -1)
 		goto error0;
 
 	/* Set DMA interface for IO cluster. */
-	if (k1_is_iocluster(clusterid))
+	if (k1_is_iocluster(coreid))
 	{
-		if (mppa_ioctl(fd, MPPA_TX_SET_INTERFACE, remote%NR_IOCLUSTER_DMA) == -1)
+		if (mppa_ioctl(fd, MPPA_TX_SET_INTERFACE, noc_get_dma(coreid)) == -1)
 			goto error0;
 	}
 
-	/* Initialize mailbox. */
-	mailboxes[mbxid].fd = fd;
-	mailboxes[mbxid].flags |= MAILBOX_WRONLY;
-
-	return (mbxid);
+	return (fd);
 
 error0:
-	mailbox_free(mbxid);
+	mppa_close(fd);
 	return (-EAGAIN);
 }
 
-/*=======================================================================*
- * mailbox_read()                                                        *
- *=======================================================================*/
+/*============================================================================*
+ * hal_mailbox_unlink()                                                       *
+ *============================================================================*/
 
 /**
- * @brief Reads data from a mailbox.
+ * @brief Destroys a mailbox.
  *
  * @param mbxid ID of the target mailbox.
- * @param buf   Location from where data should be written.
  *
- * @returns Upon successful completion zero is returned. Upon failure, a
- * negative error code is returned instead.
+ * @returns Upon successful completion, zero is returned. Upon failure,
+ * a negative error code is returned instead.
+ *
+ * @note This function is @b NOT thread safe.
  */
-int mailbox_read(int mbxid, void *buf)
+int hal_mailbox_unlink(int mbxid)
 {
-	/* Invalid mailbox ID.*/
-	if ((mbxid < 0) || (mbxid >= NR_MAILBOX))
+	/* Invalid mailbox. */
+	if (mbxid < 0)
 		return (-EINVAL);
 
-	/*  Bad mailbox. */
-	if (!(mailboxes[mbxid].flags & MAILBOX_USED))
-		return (-EINVAL);
-
-	/* Operation no supported. */
-	if (mailboxes[mbxid].flags & MAILBOX_WRONLY)
-		return (-ENOTSUP);
-
-	/* Invalid buffer. */
-	if (buf == NULL)
-		return (-EINVAL);
-
-	assert(mppa_read(mailboxes[mbxid].fd, buf, MAILBOX_MSG_SIZE)
-	                                       == MAILBOX_MSG_SIZE);
-
-	return (0);
+	return (mppa_close(mbxid));
 }
 
-/*=======================================================================*
- * mailbox_write()                                                       *
- *=======================================================================*/
-
-/**
- * @brief Writes data to a mailbox.
- *
- * @param mbxid ID of the target mailbox.
- * @param buf   Location from where data should be read.
- *
- * @returns Upon successful completion zero is returned. Upon failure, a
- * negative error code is returned instead.
- */
-int mailbox_write(int mbxid, const void *buf)
-{
-	/* Invalid mailbox ID.*/
-	if ((mbxid < 0) || (mbxid >= NR_MAILBOX))
-		return (-EINVAL);
-
-	/*  Bad mailbox. */
-	if (!(mailboxes[mbxid].flags & MAILBOX_USED))
-		return (-EINVAL);
-
-	/* Operation no supported. */
-	if (!(mailboxes[mbxid].flags & MAILBOX_WRONLY))
-		return (-ENOTSUP);
-
-	/* Invalid buffer. */
-	if (buf == NULL)
-		return (-EINVAL);
-
-	assert(mppa_write(mailboxes[mbxid].fd, buf, MAILBOX_MSG_SIZE)
-	                                         == MAILBOX_MSG_SIZE);
-
-	return (0);
-}
-
-/*=======================================================================*
- * mailbox_close()                                                       *
- *=======================================================================*/
+/*============================================================================*
+ * hal_mailbox_close()                                                        *
+ *============================================================================*/
 
 /**
  * @brief Closes a mailbox.
@@ -373,46 +171,87 @@ int mailbox_write(int mbxid, const void *buf)
  *
  * @note This function is @b NOT thread safe.
  */
-int mailbox_close(int mbxid)
+int hal_mailbox_close(int mbxid)
 {
-	/* Invalid mailbox ID.*/
-	if ((mbxid < 0) || (mbxid >= NR_MAILBOX))
+	/* Invalid mailbox. */
+	if (mbxid < 0)
 		return (-EINVAL);
 
-	/*  Invalid mailbox. */
-	if (!(mailboxes[mbxid].flags & MAILBOX_USED))
-		return (-EINVAL);
-
-	mailbox_free(mbxid);
-
-	return (0);
+	return (mppa_close(mbxid));
 }
 
-/*=======================================================================*
- * mailbox_unlink()                                                      *
- *=======================================================================*/
+/*============================================================================*
+ * hal_mailbox_write()                                                        *
+ *============================================================================*/
 
 /**
- * @brief Destroys a mailbox.
+ * @brief Writes data to a mailbox.
  *
  * @param mbxid ID of the target mailbox.
+ * @param buf   Buffer where the data should be read from.
+ * @param n     Number of bytes to write.
  *
- * @returns Upon successful completion zero is returned. Upon failure,
- * a negative error code is returned instead.
+ * @returns Upon successful completion, the number of bytes
+ * successfully written is returned. Upon failure, a negative error
+ * code is returned instead.
  *
  * @note This function is @b NOT thread safe.
  */
-int mailbox_unlink(int mbxid)
+size_t hal_mailbox_write(int mbxid, const void *buf, size_t n)
 {
-	/* Invalid mailbox ID.*/
-	if ((mbxid < 0) || (mbxid >= NR_MAILBOX))
+	size_t nwrite;
+
+	/* Invalid mailbox. */
+	if (mbxid < 0)
 		return (-EINVAL);
 
-	/*  Invalid mailbox. */
-	if (!(mailboxes[mbxid].flags & MAILBOX_USED))
+	/* Invalid buffer. */
+	if (buf == NULL)
 		return (-EINVAL);
 
-	mailbox_free(mbxid);
+	/* Invalid write size. */
+	if (n != MAILBOX_MSG_SIZE)
+		return (-EINVAL);
 
-	return (0);
+	nwrite = mppa_write(mbxid, buf, n);
+
+	return (nwrite);
+}
+
+/*============================================================================*
+ * hal_mailbox_read()                                                         *
+ *============================================================================*/
+
+/**
+ * @brief Reads data from a mailbox.
+ *
+ * @param mbxid ID of the target mailbox.
+ * @param buf   Buffer where the data should be written to.
+ * @param n     Number of bytes to read.
+ *
+ * @returns Upon successful completion, the number of bytes
+ * successfully read is returned. Upon failure, a negative error code
+ * is returned instead.
+ *
+ * @note This function is @b NOT thread safe.
+ */
+size_t hal_mailbox_read(int mbxid, void *buf, size_t n)
+{
+	size_t nread;
+
+	/* Invalid mailbox. */
+	if (mbxid < 0)
+		return (-EINVAL);
+
+	/* Invalid buffer. */
+	if (buf == NULL)
+		return (-EINVAL);
+
+	/* Invalid read size. */
+	if (n != MAILBOX_MSG_SIZE)
+		return (-EINVAL);
+
+	nread = mppa_read(mbxid, buf, n);
+
+	return (nread);
 }

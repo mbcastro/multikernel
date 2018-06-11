@@ -24,7 +24,7 @@ io-bin += mailbox-master
 mailbox-master-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
 					   $(SRCDIR)/kernel/arch/mppa/core.c    \
 					   $(SRCDIR)/kernel/arch/mppa/noc.c     \
-					   $(SRCDIR)/test/mailbox/master.c
+					   $(SRCDIR)/test/hal-mailbox/master.c
 
 # Toolchain Configuration
 mailbox-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL -DDEBUG_MAILBOX
