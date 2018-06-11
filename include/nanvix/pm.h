@@ -29,8 +29,8 @@
 	/* Forward definitions. */
 	extern int name_lookup(char *);
 	extern void name_remotes(char *, int);
-	extern void name_link(int, const char *);
-	extern void name_unlink(char *);
+	extern int name_link(int, const char *);
+	extern int name_unlink(char *);
 
 /*=======================================================================*
  * Mailbox                                                               *
