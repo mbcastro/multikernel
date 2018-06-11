@@ -72,11 +72,11 @@ function run2
 if [[ $1 == "test" ]];
 then
 	echo "Testing MAILBOX"
-	run1 "mailbox.img" "mailbox-master"
-	echo "Testing NAME"
-	run2 "name.img" "name-server" "name-master" "$NCLUSTERS"
-	echo "Testing PORTAL"
-	run2 "portal.img" "name-server" "portal-master" "write $NCLUSTERS $SIZE"
+	run1 "hal-mailbox.img" "hal-mailbox-master"
+#	echo "Testing NAME"
+#	run2 "name.img" "name-server" "name-master" "$NCLUSTERS"
+#	echo "Testing PORTAL"
+#	run2 "portal.img" "name-server" "portal-master" "write $NCLUSTERS $SIZE"
 #	echo "Testing RMEM"
 #	run2 "rmem.img" "rmem-master" "rmem-server" "write $NCLUSTERS $SIZE"
 #	run2 "rmem.img" "rmem-master" "rmem-server" "read $NCLUSTERS $SIZE"
