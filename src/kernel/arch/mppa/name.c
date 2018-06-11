@@ -29,14 +29,70 @@
 #include "mppa.h"
 
 /**
- * @brief name server node ID.
+ * @brief Name server node ID.
  */
 #define SERVER IOCLUSTER0
 
 /**
- * @brief name server message.
+ * @brief Name server message.
  */
 static struct name_message msg;
+
+/**
+ * @brief Mailboxes for small messages.
+ */
+static int server;
+static int client;
+
+/**
+ * @brief Is the name service initialized ?
+ */
+static int initialized = 0;
+
+/*=======================================================================*
+ * name_initialize()                                                     *
+ *=======================================================================*/
+
+/**
+ * @brief Initialize the name service.
+ *
+ * @returns Upon successful completion 0 is returned. Upon failure,
+ * a negative error code is returned instead.
+ */
+static int name_initialize(){
+
+	if (initialized)
+		return (0);
+
+	client = hal_mailbox_create(hal_get_cluster_id());
+	server = hal_mailbox_open(SERVER);
+
+	if (client >= 0 && server >= 0)
+	{
+		initialized = 1;
+		return (0);
+	}
+
+	return (-1);
+}
+
+/*=======================================================================*
+ * name_clean()                                                          *
+ *=======================================================================*/
+
+/**
+ * @brief Close client and server mailboxes.
+ */
+void name_clean(){
+
+	if (!initialized)
+		return;
+
+	assert(hal_mailbox_close(server) == 0);
+	assert(hal_mailbox_close(client) == 0);
+
+	initialized = 0;
+}
 
 /*=======================================================================*
  * name_lookup()                                                         *
@@ -53,9 +109,6 @@ static struct name_message msg;
  */
 int name_lookup(char *name)
 {
-	int server;         /* Mailbox for small messages. */
-	int inbox;
-
 	/* Sanity check. */
 	assert((name != NULL) && (strlen(name) < (PROC_NAME_MAX - 1))
 	                                && (strcmp(name, "\0") != 0));
@@ -65,8 +118,7 @@ int name_lookup(char *name)
 		                                      hal_get_cluster_id());
 	#endif
 
-	inbox = hal_mailbox_create(hal_get_cluster_id());
-	server = hal_mailbox_open(SERVER);
+	assert(name_initialize() == 0);
 
 	/* Build operation header. */
 	msg.source = hal_get_cluster_id();
@@ -83,13 +135,9 @@ int name_lookup(char *name)
 	                                   == MAILBOX_MSG_SIZE);
 
 	while(msg.nodeid == -1){
-		assert(hal_mailbox_read(inbox, &msg, MAILBOX_MSG_SIZE)
+		assert(hal_mailbox_read(client, &msg, MAILBOX_MSG_SIZE)
 		                                 == MAILBOX_MSG_SIZE);
 	}
-
-	/* House keeping. */
-	assert(hal_mailbox_close(server) == 0);
-	assert(hal_mailbox_close(inbox) == 0);
 
 	return (msg.nodeid);
 }
@@ -106,14 +154,12 @@ int name_lookup(char *name)
  */
 void name_link(int nodeid, const char *name)
 {
-	int server;        /* Mailbox for small messages. */
-
 	/* Sanity check. */
 	assert(nodeid >= 0);
 	assert((name != NULL) && (strlen(name) < (PROC_NAME_MAX - 1))
                                    && (strcmp(name, "\0") != 0));
 
-	server =hal_mailbox_open(SERVER);
+	assert(name_initialize() == 0);
 
 	/* Build operation header. */
 	msg.source = hal_get_cluster_id();
@@ -124,9 +170,6 @@ void name_link(int nodeid, const char *name)
 	/* Send link request. */
 	assert(hal_mailbox_write(server, &msg, MAILBOX_MSG_SIZE)
 	                                   == MAILBOX_MSG_SIZE);
-
-	/* House keeping. */
-	assert(hal_mailbox_close(server) == 0);
 }
 
 /*=======================================================================*
@@ -140,8 +183,6 @@ void name_link(int nodeid, const char *name)
  */
 void name_unlink(char *name)
 {
-	int server;         /* Mailbox for small messages. */
-
 	/* Sanity check. */
 	assert((name != NULL) && (strlen(name) < (PROC_NAME_MAX - 1))
 								   && (strcmp(name, "\0") != 0));
@@ -151,7 +192,7 @@ void name_unlink(char *name)
 		                          name, hal_get_cluster_id());
 	#endif
 
-	server =hal_mailbox_open(SERVER);
+	assert(name_initialize() == 0);
 
 	/* Build operation header. */
 	msg.source = hal_get_cluster_id();
@@ -166,7 +207,4 @@ void name_unlink(char *name)
 
 	assert(hal_mailbox_write(server, &msg, MAILBOX_MSG_SIZE)
 	                                    == MAILBOX_MSG_SIZE);
-
-	/* House keeping. */
-	assert(hal_mailbox_close(server) == 0);
 }
