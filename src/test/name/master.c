@@ -38,11 +38,7 @@ static int pids[NR_CCLUSTER];
  */
 static void test_name_remove(void)
 {
-	int clusterid;
 	char pathname[PROC_NAME_MAX];
-	char result[PROC_NAME_MAX];
-
-	clusterid = k1_get_cluster_id();
 
 	/* IO cluster registration test. */
 	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
@@ -51,7 +47,7 @@ static void test_name_remove(void)
 
 		/* Remove name. */
 		name_unlink(pathname);
-		assert(name_lookup_pathname(clusterid + i, result) == (-ENOENT));
+		assert(name_lookup(pathname) == (-ENOENT));
 	}
 }
 
@@ -82,7 +78,6 @@ static void test_name_lookup(void)
 {
 	int clusterid;
 	char pathname[PROC_NAME_MAX];
-	char result[PROC_NAME_MAX];
 
 	clusterid = k1_get_cluster_id();
 
@@ -91,10 +86,7 @@ static void test_name_lookup(void)
 	{
 		sprintf(pathname, "/name%d", i);
 
-		assert(name_cluster_id(pathname) == clusterid);
-		assert(name_cluster_dma(pathname) == clusterid + i);
-		assert(name_lookup_pathname(clusterid + i, result) == 0);
-		assert(strcmp(result, pathname) == 0);
+		assert(name_lookup(pathname) == clusterid + i);
 	}
 }
 

@@ -27,9 +27,7 @@
  *=======================================================================*/
 
 	/* Forward definitions. */
-	extern int name_cluster_id(char *);
-	extern int name_cluster_dma(char *);
-	extern int name_lookup_pathname(int, char *);
+	extern int name_lookup(char *);
 	extern void name_remotes(char *, int);
 	extern void name_link(int, const char *);
 	extern void name_unlink(char *);
@@ -54,6 +52,8 @@
 
 	/* Forward definitions .*/
 	extern int portal_allow(int, int);
+	extern int _portal_create(int);
+	extern int _portal_open(int);
 	extern int portal_create(char *);
 	extern int portal_open(char *);
 	extern int portal_read(int, void *, size_t);

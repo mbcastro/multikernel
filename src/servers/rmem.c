@@ -71,10 +71,8 @@ static inline void rmem_write(int inportal, int remote, uint64_t blknum, int siz
 static inline void rmem_read(int remote, uint64_t blknum, int size)
 {
 	int outportal;
-	char pathname[PROC_NAME_MAX];
 
-	assert(name_lookup_pathname(remote, pathname) == 0);
-	outportal = portal_open(pathname);
+	outportal = _portal_open(remote);
 	portal_write(outportal, &rmem[blknum], size);
 	portal_close(outportal);
 }

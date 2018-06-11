@@ -29,7 +29,7 @@
 	/**
 	 * @brief Types of requests for name server.
 	 */
-	#define NAME_QUERY  1 /**< Query a name.   */
+	#define NAME_LOOKUP 1 /**< lookup a name.  */
 	#define NAME_ADD    2 /**< Add a new name. */
 	#define NAME_REMOVE 3 /**< Remove a name.  */
 
@@ -40,8 +40,7 @@
 	{
 		uint16_t source;                  /**< Source cluster. */
 		uint16_t op;                      /**< Operation.      */
-		int id;                           /**< Cluster ID.     */
-		int dma;                          /**< DMA channel.    */
+		int core;                         /**< CPU ID.     */
 		char name[PROC_NAME_MAX];         /**< Portal name.    */
 	};
 

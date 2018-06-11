@@ -113,14 +113,9 @@ static void mailbox_free(int mbxid)
 */
 int mailbox_create(char *name)
 {
-	int local; /* ID of local cluster. */
+	int local; /* CPU ID of local. */
 
-	/* Invalid mailbox name. */
-	if (name == NULL)
-		return (-EINVAL);
-
-	local = name_cluster_dma(name);
-	assert(name_cluster_id(name) == k1_get_cluster_id());
+	local = name_lookup(name);
 
 	return (_mailbox_create(local));
 }
@@ -139,17 +134,9 @@ int mailbox_create(char *name)
 */
 int mailbox_open(char *name)
 {
-	int local;  /* ID of remote cluster. */
-	int remote; /* ID of remote cluster. */
+	int remote; /* CPU ID of remote. */
 
-	/* Invalid mailbox name. */
-	if (name == NULL)
-		return (-EINVAL);
-
-	remote = name_cluster_dma(name);
-	local = k1_get_cluster_id();
-
-	assert(name_cluster_id(name) != local);
+	remote = name_lookup(name);
 
 	return (_mailbox_open(remote));
 }
@@ -161,7 +148,7 @@ int mailbox_open(char *name)
 /**
  * @brief Creates a mailbox.
  *
- * @param local CPU ID of the target.
+ * @param local      CPU ID of the target.
  *
  * @returns Upon successful completion, the ID of the newly created
  * mailbox is returned. Upon failure, a negative error code is
@@ -181,7 +168,7 @@ int _mailbox_create(int local)
 	/* Invalid CPU ID. */
 	if (!(k1_is_ccpu(local) || k1_is_iocpu(local)))
 		return (-EINVAL);
-	
+
 	clusterid = k1_get_cluster_id();
 
 	/* Bad CPU ID. */
@@ -234,7 +221,7 @@ int _mailbox_create(int local)
 /**
  * @brief Opens a mailbox.
  *
- * @param DMA channel of remote cluster.
+ * @param remote      CPU ID of the target.
  *
  * @returns Upon successful completion, the ID of the target mailbox
  * is returned. Upon failure, a negative error code is returned

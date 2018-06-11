@@ -44,130 +44,64 @@ static pthread_t tid_name_server;
 static pthread_mutex_t lock;
 
 /**
- * @brief Number of cluster name registered.
+ * @brief Number of registration.
  */
-static int nr_cluster = 0;
+static int nr_registration = 0;
 
 /**
- * @brief Lookup table of cluster names.
+ * @brief Lookup table of process names.
  */
 static struct {
-	int id;     						/**< Cluster ID.  */
-	int dma;    						/**< DMA channel. */
+	int core;    						/**< CPU ID. */
 	char name[PROC_NAME_MAX];			/**< Portal name. */
 } names[NR_DMA] = {
-	{ CCLUSTER0,  CCLUSTER0,      "\0"  },
-	{ CCLUSTER1,  CCLUSTER1,      "\0"  },
-	{ CCLUSTER2,  CCLUSTER2,      "\0"  },
-	{ CCLUSTER3,  CCLUSTER3,      "\0"  },
-	{ CCLUSTER4,  CCLUSTER4,      "\0"  },
-	{ CCLUSTER5,  CCLUSTER5,      "\0"  },
-	{ CCLUSTER6,  CCLUSTER6,      "\0"  },
-	{ CCLUSTER7,  CCLUSTER7,      "\0"  },
-	{ CCLUSTER8,  CCLUSTER8,      "\0"  },
-	{ CCLUSTER9,  CCLUSTER9,      "\0"  },
-	{ CCLUSTER10, CCLUSTER10,     "\0"  },
-	{ CCLUSTER11, CCLUSTER11,     "\0"  },
-	{ CCLUSTER12, CCLUSTER12,     "\0"  },
-	{ CCLUSTER13, CCLUSTER13,     "\0"  },
-	{ CCLUSTER14, CCLUSTER14,     "\0"  },
-	{ CCLUSTER15, CCLUSTER15,     "\0"  },
-	{ IOCLUSTER0, IOCLUSTER0 + 0, "/io0"},
-	{ IOCLUSTER0, IOCLUSTER0 + 1, "\0"  },
-	{ IOCLUSTER0, IOCLUSTER0 + 2, "\0"  },
-	{ IOCLUSTER0, IOCLUSTER0 + 3, "\0"  },
-	{ IOCLUSTER1, IOCLUSTER1 + 0, "\0"  },
-	{ IOCLUSTER1, IOCLUSTER1 + 1, "\0"  },
-	{ IOCLUSTER1, IOCLUSTER1 + 2, "\0"  },
-	{ IOCLUSTER1, IOCLUSTER1 + 3, "\0"  }
+	{ CCLUSTER0,      "\0"  },
+	{ CCLUSTER1,      "\0"  },
+	{ CCLUSTER2,      "\0"  },
+	{ CCLUSTER3,      "\0"  },
+	{ CCLUSTER4,      "\0"  },
+	{ CCLUSTER5,      "\0"  },
+	{ CCLUSTER6,      "\0"  },
+	{ CCLUSTER7,      "\0"  },
+	{ CCLUSTER8,      "\0"  },
+	{ CCLUSTER9,      "\0"  },
+	{ CCLUSTER10,     "\0"  },
+	{ CCLUSTER11,     "\0"  },
+	{ CCLUSTER12,     "\0"  },
+	{ CCLUSTER13,     "\0"  },
+	{ CCLUSTER14,     "\0"  },
+	{ CCLUSTER15,     "\0"  },
+	{ IOCLUSTER0 + 0, "/io0"},
+	{ IOCLUSTER0 + 1, "\0"  },
+	{ IOCLUSTER0 + 2, "\0"  },
+	{ IOCLUSTER0 + 3, "\0"  },
+	{ IOCLUSTER1 + 0, "\0"  },
+	{ IOCLUSTER1 + 1, "\0"  },
+	{ IOCLUSTER1 + 2, "\0"  },
+	{ IOCLUSTER1 + 3, "\0"  }
 };
 
 /*=======================================================================*
- * _name_lookup_id()                                                     *
+ * _name_lookup()                                                    *
  *=======================================================================*/
 
 /**
- * @brief Resolves a process name into a cluster ID.
+ * @brief Converts a name into a CPU ID.
  *
- * @param name 		Target process name.
+ * @param name 		Target name.
  *
- * @returns Upon successful completion, the cluster ID whose name is
- * @p name is returned. Upon failure, a negative error code is
- * returned instead.
- */
-static int _name_lookup_id(const char *name)
-{
-	/* Sanity check. */
-	assert((name != NULL) && (strlen(name) < (PROC_NAME_MAX - 1)));
-
-	/* Search for portal name. */
-	for (int i = 0; i < NR_DMA; i++)
-	{
-		/* Found. */
-		if (!strcmp(name, names[i].name))
-			return (names[i].id);
-	}
-
-	return (-ENOENT);
-}
-
-/*=======================================================================*
- * _name_lookup_dma()                                                    *
- *=======================================================================*/
-
-/**
- * @brief Converts a pathname name into a DMA channel number.
- *
- * @param name 		Target pathname name.
- *
- * @returns Upon successful completion the DMA number whose name is @p
+ * @returns Upon successful completion the CPU ID whose name is @p
  * name is returned. Upon failure, a negative error code is returned
  * instead.
  */
-static int _name_lookup_dma(const char *name)
+static int _name_lookup(const char *name)
 {
-	/* Sanity check. */
-	assert((name != NULL) && (strlen(name) < (PROC_NAME_MAX - 1)));
-
 	/* Search for portal name. */
 	for (int i = 0; i < NR_DMA; i++)
 	{
 		/* Found. */
 		if (!strcmp(name, names[i].name))
-			return (names[i].dma);
-	}
-
-	return (-ENOENT);
-}
-
-/*=======================================================================*
- * _name_lookup_pathname()                                               *
- *=======================================================================*/
-
-/**
- * @brief Converts a cluster ID into a pathname.
- *
- * @param dma 		Target cluster DMA channel.
- * @param name 		Address where the result will be written.
- *
- * @returns Upon successful completion 0 is returned. Upon failure, negative
- * error code is returned.
- */
-static int _name_lookup_pathname(int dma, char *name)
-{
-	/* Sanity check. */
-	assert(dma >= 0);
-	assert(name != NULL);
-
-	/* Search for portal name. */
-	for (int i = 0; i < NR_DMA; i++)
-	{
-		/* Found. */
-		if (names[i].dma == dma)
-		{
-			strcpy(name, names[i].name);
-			return (0);
-		}
+			return (names[i].core);
 	}
 
 	return (-ENOENT);
@@ -178,48 +112,44 @@ static int _name_lookup_pathname(int dma, char *name)
  *=======================================================================*/
 
 /**
- * @brief Register a process name
+ * @brief Register a process name.
  *
- * @param DMA			DMA channel.
- * @param name			Portal name.
+ * @param core			CPU ID of the process to register.
+ * @param name			Name of the process to register.
  *
  * @returns Upon successful registration the number of name registered
  * is returned. Upon failure, a negative error code is returned instead.
  */
-static int _name_link(int dma, char *name)
+static int _name_link(int core, char *name)
 {
-	int index;
+	int index;          /* Index where the process will be stored. */
 
-	/* Sanity check. */
-	assert(dma >= 0);
-	assert((name != NULL) && (strlen(name) < (PROC_NAME_MAX - 1)) &&
-	                                     (strcmp(name, "\0") != 0));
-
-	/* No DMA available. */
-	if (nr_cluster >= NR_DMA)
+	/* No entry available. */
+	if (nr_registration >= NR_DMA)
 		return (-EINVAL);
 
 	/* Compute index registration */
-	if (dma >= 0 && dma < NR_CCLUSTER)
-		index = dma;
-	else if (dma >= IOCLUSTER0 && dma <= IOCLUSTER0 + 3)
-	 	index = NR_CCLUSTER + dma%IOCLUSTER0;
-	else if (dma >= IOCLUSTER1 && dma <= IOCLUSTER1 + 3)
-	 	index = NR_CCLUSTER + NR_IOCLUSTER_DMA + dma%IOCLUSTER1;
+	if (core >= 0 && core < NR_CCLUSTER)
+		index = core;
+	else if (core >= IOCLUSTER0 && core <= IOCLUSTER0 + 3)
+	 	index = NR_CCLUSTER + core%IOCLUSTER0;
+	else if (core >= IOCLUSTER1 && core <= IOCLUSTER1 + 3)
+	 	index = NR_CCLUSTER + NR_IOCLUSTER_DMA + core%IOCLUSTER1;
 	else
 		return (-EINVAL);
 
-	/* DMA channel not available */
+	/* Entry not available */
 	if (strcmp(names[index].name, "\0"))
 		return (-EINVAL);
 
 #ifdef DEBUG
-	printf("writing [name: %s] at index %d.\n", name, index);
+	printf("writing [CPU ID:%d name: %s] at index %d.\n", names[index].core,
+	                                                            name, index);
 #endif
 
 	strcpy(names[index].name, name);
 
-	return (++nr_cluster);
+	return (++nr_registration);
 }
 
 /*=======================================================================*
@@ -229,17 +159,13 @@ static int _name_link(int dma, char *name)
 /**
  * @brief Remove a name
  *
- * @param name			Portal name.
+ * @param name			Name of the process to unlink.
  *
- * @returns Upon successful registration the number of name registered
+ * @returns Upon successful registration the new number of name registered
  * is returned. Upon failure, a negative error code is returned instead.
  */
 static int _name_unlink(char *name)
 {
-	/* Sanity check. */
-	assert((name != NULL) && (strlen(name) < (PROC_NAME_MAX - 1)) &&
-	                                     (strcmp(name, "\0") != 0));
-
 	/* Search for portal name. */
 	int i = 0;
 
@@ -251,7 +177,7 @@ static int _name_unlink(char *name)
 	if (i < NR_DMA)
 	{
 		strcpy(names[i].name, "\0");
-		return (--nr_cluster);
+		return (--nr_registration);
 	}
 
 	return (-ENOENT);
@@ -286,30 +212,16 @@ static void *name_server(void *args)
 
 		assert(mailbox_read(inbox, &msg) == 0);
 
-		/* handle name query. */
+		/* Handle name requests. */
 		switch (msg.op)
 		{
 			/* Lookup. */
-			case NAME_QUERY:
-				if (msg.dma == -1)
-				{
-					/* ID query. */
+			case NAME_LOOKUP:
 #ifdef DEBUG
-						printf("Entering NAME_QUERY case... name provided:%s.\n"
-						                                            , msg.name);
+				printf("Entering NAME_LOOKUP case... name provided:%s.\n"
+						                                     , msg.name);
 #endif
-					msg.dma = _name_lookup_dma(msg.name);
-				}
-				else
-				{
-					/* Name query. */
-#ifdef DEBUG
-						printf("Entering NAME_QUERY case... dma provided:%d.\n"
-						                                            , msg.dma);
-#endif
-					assert(_name_lookup_pathname(msg.dma, msg.name) == 0);
-				}
-				msg.id = _name_lookup_id(msg.name);
+				msg.core = _name_lookup(msg.name);
 
 				/* Send response. */
 				int source = _mailbox_open(msg.source);
@@ -321,10 +233,10 @@ static void *name_server(void *args)
 			/* Add name. */
 			case NAME_ADD:
 #ifdef DEBUG
-				printf("Entering NAME_ADD case... [dma: %d, name: %s].\n",
-				                                               msg.dma, msg.name);
+				printf("Entering NAME_ADD case... [CPU ID: %d, name: %s].\n",
+				                                          msg.core, msg.name);
 #endif
-				assert(_name_link(msg.dma, msg.name) > 0);
+				assert(_name_link(msg.core, msg.name) > 0);
 				break;
 
 			/* Remove name. */
