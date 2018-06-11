@@ -359,66 +359,6 @@ static void test_hal_mailbox_double_open(void)
 }
 
 /*===================================================================*
- * Fault Injection Test: Invalid Unlink                              *
- *===================================================================*/
-
-/**
- * @brief Fault Injection Test: Invalid Unlink
- */
-static void test_hal_mailbox_invalid_unlink(void)
-{
-	printf("Fault Injection Test: Invalid Unlink\n");
-
-	TEST_ASSERT(hal_mailbox_unlink(-1) < 0);
-	TEST_ASSERT(hal_mailbox_unlink(100000) < 0);
-}
-
-/*===================================================================*
- * Fault Injection Test: Bad Unlink                                  *
- *===================================================================*/
-
-/**
- * @brief Fault Injection Test: Bad Unlink
- */
-static void test_hal_mailbox_bad_unlink(void)
-{
-	printf("Fault Injection Test: Bad Unlink\n");
-
-	TEST_ASSERT(hal_mailbox_unlink(0) < 0);
-	TEST_ASSERT(hal_mailbox_unlink(1) < 0);
-}
-
-/*===================================================================*
- * Fault Injection Test: Invalid Close                              *
- *===================================================================*/
-
-/**
- * @brief Fault Injection Test: Invalid Close
- */
-static void test_hal_mailbox_invalid_close(void)
-{
-	printf("Fault Injection Test: Invalid Close\n");
-
-	TEST_ASSERT(hal_mailbox_close(-1) < 0);
-	TEST_ASSERT(hal_mailbox_close(100000) < 0);
-}
-
-/*===================================================================*
- * Fault Injection Test: Bad Close                                  *
- *===================================================================*/
-
-/**
- * @brief Fault Injection Test: Bad Close
- */
-static void test_hal_mailbox_bad_close(void)
-{
-	printf("Fault Injection Test: Bad Close\n");
-
-	TEST_ASSERT(hal_mailbox_close(0) < 0);
-	TEST_ASSERT(hal_mailbox_close(1) < 0);
-}
-
-/*===================================================================*
  * Fault Injection Test: Double Unlink                               *
  *===================================================================*/
 
@@ -498,7 +438,7 @@ static void test_hal_mailbox_bad_write(void)
 	TEST_ASSERT((inbox = hal_mailbox_create(coreid)) >= 0);
 
 	memset(buf, 1, MAILBOX_MSG_SIZE);
-	TEST_ASSERT(hal_mailbox_write(inbox, buf, MAILBOX_MSG_SIZE) != MAILBOX_MSG_SIZE);
+	TEST_ASSERT(hal_mailbox_write(inbox, buf, 1) != MAILBOX_MSG_SIZE);
 
 	TEST_ASSERT(hal_mailbox_unlink(inbox) == 0);
 }
@@ -562,7 +502,7 @@ static void test_hal_mailbox_bad_read(void)
 	TEST_ASSERT((outbox = hal_mailbox_open(coreid + 1)) >= 0);
 
 	memset(buf, 1, MAILBOX_MSG_SIZE);
-	TEST_ASSERT(hal_mailbox_read(outbox, buf, MAILBOX_MSG_SIZE) != MAILBOX_MSG_SIZE);
+	TEST_ASSERT(hal_mailbox_read(outbox, buf, 1) != MAILBOX_MSG_SIZE);
 
 	TEST_ASSERT(hal_mailbox_close(outbox) == 0);
 }
@@ -617,10 +557,6 @@ int main(int argc, const char **argv)
 	test_hal_mailbox_bad_open();
 #endif
 	test_hal_mailbox_double_open();
-	test_hal_mailbox_invalid_unlink();
-	test_hal_mailbox_bad_unlink();
-	test_hal_mailbox_invalid_close();
-	test_hal_mailbox_bad_close();
 	test_hal_mailbox_double_unlink();
 	test_hal_mailbox_double_close();
 	test_hal_mailbox_invalid_write();

@@ -71,7 +71,7 @@
 	extern int hal_mailbox_open(int);
 	extern int hal_mailbox_unlink(int);
 	extern int hal_mailbox_close(int);
-	extern int hal_mailbox_write(int, const void *, size_t);
-	extern int hal_mailbox_read(int, void *, size_t);
+	extern size_t hal_mailbox_write(int, const void *, size_t);
+	extern size_t hal_mailbox_read(int, void *, size_t);
 
 #endif /* NANVIX_HAL_H_ */

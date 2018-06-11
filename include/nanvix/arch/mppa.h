@@ -108,9 +108,15 @@
 		#define NR_MAILBOX (NR_IOCLUSTER_DMA*NR_DMA)
 	#endif
 
+	/**
+	 * @brief Size (in bytes) of a mailbox message.
+	 */
+	#define MAILBOX_MSG_SIZE 64
+
 	/* Forward definitions. */
 	extern int noctag_mailbox(int);
 	extern void noc_remotes(char *, int);
+	extern int noc_get_dma(int);
 
 /*=======================================================================*
  *                                                                       *
