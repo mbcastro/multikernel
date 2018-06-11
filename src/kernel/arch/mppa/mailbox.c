@@ -31,7 +31,7 @@
 /**
  * @brief Creates a mailbox.
  *
- * @param coreid ID of the target core.
+ * @param nodeid ID of the target NoC node.
  *
  * @returns Upon successful completion, the ID of the newly created
  * mailbox is returned. Upon failure, a negative error code is
@@ -39,7 +39,7 @@
  *
  * @note This function is @b NOT thread safe.
  */
-int hal_mailbox_create(int coreid)
+int hal_mailbox_create(int nodeid)
 {
 	int fd;             /* NoC connector.              */
 	char remotes[128];  /* IDs of remote NoC nodes.    */
@@ -48,17 +48,17 @@ int hal_mailbox_create(int coreid)
 
 #ifdef _HAS_GET_CORE_ID_	
 	/* Invalid core ID. */
-	if (coreid != hal_get_core_id())
+	if (nodeid != noc_get_node_id())
 		return (-EINVAL);
 #endif
 
-	noc_remotes(remotes, coreid);
-	noctag = noctag_mailbox(coreid);
+	noc_remotes(remotes, nodeid);
+	noctag = noctag_mailbox(nodeid);
 
 	/* Build pathname for NoC connector. */
 	sprintf(pathname,
 			"/mppa/rqueue/%d:%d/[%s]:%d/1.%d",
-			coreid,
+			nodeid,
 			noctag,
 			remotes,
 			noctag,
@@ -79,7 +79,7 @@ int hal_mailbox_create(int coreid)
 /**
  * @brief Opens a mailbox.
  *
- * @param coreid ID of the target core.
+ * @param nodeid ID of the target NoC node.
  *
  * @returns Upon successful completion, the ID of the target mailbox
  * is returned. Upon failure, a negative error code is returned
@@ -87,7 +87,7 @@ int hal_mailbox_create(int coreid)
  *
  * @note This function is @b NOT thread safe.
  */
-int hal_mailbox_open(int coreid)
+int hal_mailbox_open(int nodeid)
 {
 	int fd;             /* NoC connector.              */
 	char remotes[128];  /* IDs of remote NoC nodes.    */
@@ -95,22 +95,22 @@ int hal_mailbox_open(int coreid)
 	int noctag;         /* NoC tag used for transfers. */
 
 	/* Invalid core ID. */
-	if (coreid < 0)
+	if (nodeid < 0)
 		return (-EINVAL);
 
 #ifdef _HAS_GET_CORE_ID_	
 	/* Invalid core ID. */
-	if (coreid == hal_get_core_id())
+	if (nodeid == noc_get_node_id())
 		return (-EINVAL);
 #endif
 
-	noc_remotes(remotes, coreid);
-	noctag = noctag_mailbox(coreid);
+	noc_remotes(remotes, nodeid);
+	noctag = noctag_mailbox(nodeid);
 
 	/* Build pathname for NoC connector. */
 	sprintf(pathname,
 			"/mppa/rqueue/%d:%d/[%s]:%d/1.%d",
-			coreid,
+			nodeid,
 			noctag,
 			remotes,
 			noctag,
@@ -122,9 +122,9 @@ int hal_mailbox_open(int coreid)
 		goto error0;
 
 	/* Set DMA interface for IO cluster. */
-	if (k1_is_iocluster(coreid))
+	if (k1_is_iocluster(nodeid))
 	{
-		if (mppa_ioctl(fd, MPPA_TX_SET_INTERFACE, noc_get_dma(coreid)) == -1)
+		if (mppa_ioctl(fd, MPPA_TX_SET_INTERFACE, noc_get_dma(nodeid)) == -1)
 			goto error0;
 	}
 
