@@ -202,7 +202,7 @@ static void *name_server(void *args)
 	{
 		struct name_message msg;
 
-		assert(hal_mailbox_read(inbox, &msg, MAILBOX_MSG_SIZE) == 0);
+		assert(hal_mailbox_read(inbox, &msg, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
 
 		/* Handle name requests. */
 		switch (msg.op)
@@ -218,7 +218,7 @@ static void *name_server(void *args)
 				/* Send response. */
 				int source =hal_mailbox_open(msg.source);
 				assert(source >= 0);
-				assert(hal_mailbox_write(source, &msg, MAILBOX_MSG_SIZE) == 0);
+				assert(hal_mailbox_write(source, &msg, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
 				assert(hal_mailbox_close(source) == 0);
 				break;
 
@@ -275,7 +275,7 @@ int main(int argc, char **argv)
 	((void) argv);
 
 #ifdef DEBUG
-	printf("[NAME] booting up server\n");
+	/* printf("[NAME] booting up server\n"); */
 #endif
 
 	/* Spawn name server thread. */
@@ -291,7 +291,7 @@ int main(int argc, char **argv)
 	barrier_wait(global_barrier);
 
 #ifdef DEBUG
-	printf("[NAME] server alive\n");
+	/* printf("[NAME] server alive\n"); */
 #endif
 
 	/* Wait for name server thread. */

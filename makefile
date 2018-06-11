@@ -34,7 +34,6 @@ export cflags += -D_KALRAY_MPPA256
 ifdef DEBUG
 export cflags += -DDEBUG
 endif
-# export cflags += -DDEBUG
 export lflags := -Wl,--defsym=_LIBNOC_DISABLE_FIFO_FULL_CHECK=0 -O=essai
 export O := $(OUTDIR)
 
@@ -42,7 +41,7 @@ export O := $(OUTDIR)
 # Servers
 #=============================================================================
 
-export io-bin += name-server rmem-server
+export io-bin += name-server
 
 # Name Server
 export name-server-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \

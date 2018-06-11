@@ -79,10 +79,10 @@ int name_lookup(char *name)
 		printf("Sending request for name: %s...\n", msg.name);
 	#endif
 
-	assert(hal_mailbox_write(server, &msg, MAILBOX_MSG_SIZE) == 0);
+	assert(hal_mailbox_write(server, &msg, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
 
 	while(msg.core == -1){
-		assert(hal_mailbox_read(inbox, &msg, MAILBOX_MSG_SIZE) == 0);
+		assert(hal_mailbox_read(inbox, &msg, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
 	}
 
 	/* House keeping. */
@@ -120,7 +120,7 @@ void name_link(int core, const char *name)
 	strcpy(msg.name, name);
 
 	/* Send link request. */
-	assert(hal_mailbox_write(server, &msg, MAILBOX_MSG_SIZE) == 0);
+	assert(hal_mailbox_write(server, &msg, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
 
 	/* House keeping. */
 	assert(hal_mailbox_close(server) == 0);
@@ -161,7 +161,7 @@ void name_unlink(char *name)
 		printf("Sending remove request for name: %s...\n", msg.name);
 	#endif
 
-	assert(hal_mailbox_write(server, &msg, MAILBOX_MSG_SIZE) == 0);
+	assert(hal_mailbox_write(server, &msg, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
 
 	/* House keeping. */
 	assert(hal_mailbox_close(server) == 0);
