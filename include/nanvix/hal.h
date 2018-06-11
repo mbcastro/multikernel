@@ -31,12 +31,6 @@
  *============================================================================*/
 
 	/**
-	 * @brief Overall number of Noc node ID.
-	 */
-	#define HAL_NR_NOC_NODES \
-		(NR_CCLUSTER*NR_CCLUSTER_DMA + NR_IOCLUSTER*NR_IOCLUSTER_DMA)
-
-	/**
 	 * @brief Type of cores.
 	 */
 	/**@{*/

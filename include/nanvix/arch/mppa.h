@@ -106,4 +106,10 @@
 	 */
 	#define MAILBOX_MSG_SIZE 64
 
+	/**
+	 * @brief Overall number of Noc node ID.
+	 */
+	#define HAL_NR_NOC_NODES \
+		(NR_CCLUSTER*NR_CCLUSTER_DMA + NR_IOCLUSTER*NR_IOCLUSTER_DMA)
+
 #endif /* NANVIX_ARCH_MPPA256 */
