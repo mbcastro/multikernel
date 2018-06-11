@@ -18,9 +18,11 @@
  */
 
 #include <mppa/osconfig.h>
+#include <mppaipc.h>
 #include <nanvix/arch/mppa.h>
 #include <nanvix/mm.h>
 #include <nanvix/pm.h>
+#include <nanvix/hal.h>
 #include <nanvix/klib.h>
 #include <nanvix/name.h>
 #include <assert.h>
@@ -59,7 +61,7 @@ static void test_name_register(void)
 	int clusterid;
 	char pathname[PROC_NAME_MAX];
 
-	clusterid = k1_get_cluster_id();
+	clusterid = hal_get_cluster_id();
 
 	/* IO cluster registration test. */
 	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
@@ -79,7 +81,7 @@ static void test_name_lookup(void)
 	int clusterid;
 	char pathname[PROC_NAME_MAX];
 
-	clusterid = k1_get_cluster_id();
+	clusterid = hal_get_cluster_id();
 
 	/* IO cluster registration test. */
 	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)

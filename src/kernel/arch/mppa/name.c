@@ -20,57 +20,110 @@
 #include <nanvix/name.h>
 #include <nanvix/pm.h>
 #include <nanvix/klib.h>
+#include <nanvix/hal.h>
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
 
-#include "mppa.h" 
+#include "mppa.h"
 
 /**
- * @brief name server CPU ID.
+ * @brief Name server node ID.
  */
 #define SERVER IOCLUSTER0
 
 /**
- * @brief name server message.
+ * @brief Name server message.
  */
 static struct name_message msg;
+
+/**
+ * @brief Mailboxes for small messages.
+ */
+static int server;
+static int client;
+
+/**
+ * @brief Is the name service initialized ?
+ */
+static int initialized = 0;
+
+/*=======================================================================*
+ * name_initialize()                                                     *
+ *=======================================================================*/
+
+/**
+ * @brief Initialize the name service.
+ *
+ * @returns Upon successful completion 0 is returned. Upon failure,
+ * a negative error code is returned instead.
+ */
+static int name_initialize(){
+
+	if (initialized)
+		return (0);
+
+	client = hal_mailbox_create(hal_get_cluster_id());
+	server = hal_mailbox_open(SERVER);
+
+	if (client >= 0 && server >= 0)
+	{
+		initialized = 1;
+		return (0);
+	}
+
+	return (-1);
+}
+
+/*=======================================================================*
+ * name_clean()                                                          *
+ *=======================================================================*/
+
+/**
+ * @brief Close client and server mailboxes.
+ */
+void name_clean(){
+
+	if (!initialized)
+		return;
+
+	assert(hal_mailbox_close(server) == 0);
+	assert(hal_mailbox_close(client) == 0);
+
+	initialized = 0;
+}
 
 /*=======================================================================*
  * name_lookup()                                                         *
  *=======================================================================*/
 
 /**
- * @brief Converts a name into a CPU ID.
+ * @brief Converts a name into a NoC node ID.
  *
  * @param name 		Target name.
  *
- * @returns Upon successful completion the CPU ID whose name is @p
+ * @returns Upon successful completion the NoC node ID whose name is @p
  * name is returned. Upon failure, a negative error code is returned
  * instead.
  */
 int name_lookup(char *name)
 {
-	int server;         /* Mailbox for small messages. */
-	int inbox;
-
 	/* Sanity check. */
 	assert((name != NULL) && (strlen(name) < (PROC_NAME_MAX - 1))
 	                                && (strcmp(name, "\0") != 0));
 
 	#ifdef DEBUG
 		printf("name_lookup(%s) called from cluster %d...\n", name,
-		                                      k1_get_cluster_id());
+		                                      hal_get_cluster_id());
 	#endif
 
-	inbox = _mailbox_create(k1_get_cluster_id());
-	server = _mailbox_open(SERVER);
+	assert(name_initialize() == 0);
 
 	/* Build operation header. */
-	msg.source = k1_get_cluster_id();
+	msg.source = hal_get_cluster_id();
 	msg.op = NAME_LOOKUP;
-	msg.core = -1;
+	msg.nodeid = -1;
 	strcpy(msg.name, name);
 
 	/* Send name request. */
@@ -78,55 +131,49 @@ int name_lookup(char *name)
 		printf("Sending request for name: %s...\n", msg.name);
 	#endif
 
-	assert(mailbox_write(server, &msg) == 0);
+	assert(hal_mailbox_write(server, &msg, MAILBOX_MSG_SIZE)
+	                                   == MAILBOX_MSG_SIZE);
 
-	while(msg.core == -1){
-		assert(mailbox_read(inbox, &msg) == 0);
+	while(msg.nodeid == -1){
+		assert(hal_mailbox_read(client, &msg, MAILBOX_MSG_SIZE)
+		                                 == MAILBOX_MSG_SIZE);
 	}
 
-	/* House keeping. */
-	assert(mailbox_close(server) == 0);
-	assert(mailbox_close(inbox) == 0);
-
-	return (msg.core);
+	return (msg.nodeid);
 }
 
 /*=======================================================================*
- * name_link()                                                       *
+ * name_link()                                                           *
  *=======================================================================*/
 
 /**
  * @brief link a process name.
  *
- * @param core      CPU ID of the process to register.
- * @param name      Name of the process to register.
+ * @param nodeid    NoC node ID of the process to link.
+ * @param name      Name of the process to link.
  */
-void name_link(int core, const char *name)
+void name_link(int nodeid, const char *name)
 {
-	int server;        /* Mailbox for small messages. */
-
 	/* Sanity check. */
-	assert(core >= 0);
+	assert(nodeid >= 0);
 	assert((name != NULL) && (strlen(name) < (PROC_NAME_MAX - 1))
                                    && (strcmp(name, "\0") != 0));
 
-	server = _mailbox_open(SERVER);
+	assert(name_initialize() == 0);
 
 	/* Build operation header. */
-	msg.source = k1_get_cluster_id();
+	msg.source = hal_get_cluster_id();
 	msg.op = NAME_ADD;
-	msg.core = core;
+	msg.nodeid = nodeid;
 	strcpy(msg.name, name);
 
 	/* Send link request. */
-	assert(mailbox_write(server, &msg) == 0);
-
-	/* House keeping. */
-	assert(mailbox_close(server) == 0);
+	assert(hal_mailbox_write(server, &msg, MAILBOX_MSG_SIZE)
+	                                   == MAILBOX_MSG_SIZE);
 }
 
 /*=======================================================================*
- * name_unlink()                                                        *
+ * name_unlink()                                                         *
  *=======================================================================*/
 
 /**
@@ -136,23 +183,21 @@ void name_link(int core, const char *name)
  */
 void name_unlink(char *name)
 {
-	int server;         /* Mailbox for small messages. */
-
 	/* Sanity check. */
 	assert((name != NULL) && (strlen(name) < (PROC_NAME_MAX - 1))
 								   && (strcmp(name, "\0") != 0));
 
 	#ifdef DEBUG
 		printf("name_unlink(%s): called from cluster %d...\n",
-		                           name, k1_get_cluster_id());
+		                          name, hal_get_cluster_id());
 	#endif
 
-	server = _mailbox_open(SERVER);
+	assert(name_initialize() == 0);
 
 	/* Build operation header. */
-	msg.source = k1_get_cluster_id();
+	msg.source = hal_get_cluster_id();
 	msg.op = NAME_REMOVE;
-	msg.core = -1;
+	msg.nodeid = -1;
 	strcpy(msg.name, name);
 
 	/* Send name request. */
@@ -160,8 +205,6 @@ void name_unlink(char *name)
 		printf("Sending remove request for name: %s...\n", msg.name);
 	#endif
 
-	assert(mailbox_write(server, &msg) == 0);
-
-	/* House keeping. */
-	assert(mailbox_close(server) == 0);
+	assert(hal_mailbox_write(server, &msg, MAILBOX_MSG_SIZE)
+	                                    == MAILBOX_MSG_SIZE);
 }

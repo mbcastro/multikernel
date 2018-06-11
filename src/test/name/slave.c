@@ -21,6 +21,7 @@
 #include <nanvix/mm.h>
 #include <nanvix/pm.h>
 #include <nanvix/name.h>
+#include <nanvix/hal.h>
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,7 +29,7 @@
 #include <pthread.h>
 #include <errno.h>
 
-static int msg;
+// static int msg;
 
 /*====================================================================*
  * main                                                               *
@@ -40,14 +41,14 @@ static int msg;
 int main(int argc, char **argv)
 {
 	char pathname[PROC_NAME_MAX];
-	char out_pathname[PROC_NAME_MAX];
+	// char out_pathname[PROC_NAME_MAX];
 	int barrier;
 	int clusterid;
 	int nclusters;
-	int inbox;
-	int outbox;
+	// int inbox;
+	// int outbox;
 
-	clusterid = k1_get_cluster_id();
+	clusterid = hal_get_cluster_id();
 
 	/* Retrieve parameters. */
 	assert(argc == 2);
@@ -74,42 +75,42 @@ int main(int argc, char **argv)
 	/* Verify that the entry is removed. */
 	assert(name_lookup(pathname) == (-ENOENT));
 
-	/* Register this cluster. */
-	name_link(clusterid, pathname);
-
-	/* Wait for others clusters. */
-	barrier_wait(barrier);
-
-	/* Message exchange test using name resolution. */
-
-	assert(nclusters > 1);
-
-	inbox = mailbox_create(pathname);
-	sprintf(out_pathname, "/cpu%d", (clusterid + 1)%nclusters);
-
-	outbox = mailbox_open(out_pathname);
-
-	msg = clusterid;
-	assert(mailbox_write(outbox, &msg) == 0);
-
-	msg = -1;
-	while(msg == -1){
-		assert(mailbox_read(inbox, &msg) == 0);
-	}
-
-	if (clusterid - 1 < 0)
-	{
-		assert(msg == (clusterid + nclusters - 1));
-	}
-	else
-	{
-		assert(msg == (clusterid - 1)%nclusters);
-
-	}
-
-	/* House keeping. */
-	assert(mailbox_close(outbox) == 0);
-	assert(mailbox_close(inbox) == 0);
+	// /* Register this cluster. */
+	// name_link(clusterid, pathname);
+	//
+	// /* Wait for others clusters. */
+	// barrier_wait(barrier);
+	//
+	// /* Message exchange test using name resolution. */
+	//
+	// assert(nclusters > 1);
+	//
+	// inbox = mailbox_create(pathname);
+	// sprintf(out_pathname, "/cpu%d", (clusterid + 1)%nclusters);
+	//
+	// outbox = mailbox_open(out_pathname);
+	//
+	// msg = clusterid;
+	// assert(mailbox_write(outbox, &msg) == 0);
+	//
+	// msg = -1;
+	// while(msg == -1){
+	// 	assert(mailbox_read(inbox, &msg) == 0);
+	// }
+	//
+	// if (clusterid - 1 < 0)
+	// {
+	// 	assert(msg == (clusterid + nclusters - 1));
+	// }
+	// else
+	// {
+	// 	assert(msg == (clusterid - 1)%nclusters);
+	//
+	// }
+	//
+	// /* House keeping. */
+	// assert(mailbox_close(outbox) == 0);
+	// assert(mailbox_close(inbox) == 0);
 	barrier_close(barrier);
 
 	return (EXIT_SUCCESS);

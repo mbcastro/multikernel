@@ -23,6 +23,7 @@
 
 #include <nanvix/hal.h>
 #include <nanvix/name.h>
+#include <nanvix/pm.h>
 
 /**
  * @brief Mailbox flags.
@@ -79,7 +80,7 @@ static inline int mailbox_is_valid(int mbxid)
  */
 static inline int mailbox_is_used(int mbxid)
 {
-	return (mailboxes[i].flags & MAILBOX_USED);
+	return (mailboxes[mbxid].flags & MAILBOX_USED);
 }
 
 /*============================================================================*
@@ -195,7 +196,7 @@ static void mailbox_free(int mbxid)
 	assert(mailbox_is_valid(mbxid));
 	assert(mailbox_is_used(mbxid));
 
-	mailbox_clear_flags();
+	mailbox_clear_flags(mbxid);
 }
 
 /*============================================================================*
@@ -225,11 +226,10 @@ int mailbox_create(char *name)
 		return (-EAGAIN);
 
 	/* Link name. */
-	if (name_link(name, coreid) < 0)
-		goto error0;
+	name_link(coreid, name);
 
 	/* Create underlying HW channel. */
-	if ((fd = hal_mailbox_create(local)) == -1)
+	if ((fd = hal_mailbox_create(hal_get_cluster_id())) == -1)
 		goto error1;
 
 	/* Initialize mailbox. */
@@ -239,9 +239,11 @@ int mailbox_create(char *name)
 
 error1:
 	name_unlink(name);
+/*
 error0:
 	mailbox_free(mbxid);
 	return (-EAGAIN);
+*/
 }
 
 /*============================================================================*
@@ -320,11 +322,7 @@ int mailbox_read(int mbxid, void *buf)
 	if (buf == NULL)
 		return (-EINVAL);
 
-	/* Invalid read size. */
-	if (n > MAILBOX_MSG_SIZE)
-		return (-EINVAL);
-
-	return (hal_mailbox_read(mailboxes[mbxid].fd, buf));
+	return (hal_mailbox_read(mailboxes[mbxid].fd, buf, MAILBOX_MSG_SIZE));
 }
 
 /*============================================================================*

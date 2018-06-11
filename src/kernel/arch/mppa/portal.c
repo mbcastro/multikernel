@@ -25,7 +25,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "mppa.h" 
+#include "mppa.h"
 
 /**
  * @brief Number of portals.
@@ -224,7 +224,7 @@ int portal_allow(int portalid, int remote)
 	if (!(k1_is_iocluster(remote) || k1_is_ccluster(remote)))
 		return (-EINVAL);
 
-	local = k1_get_cluster_id();
+	local = hal_get_cluster_id();
 
 	/* Invalid remote. */
 	if (remote == local)
@@ -271,7 +271,7 @@ int _portal_open(int remote)
 	int portalid;       /* ID of mailbix.        */
 	char pathname[128]; /* NoC connector name.   */
 
-	local = k1_get_cluster_id();
+	local = hal_get_cluster_id();
 
 	/* Allocate a portal. */
 	portalid = portal_alloc();

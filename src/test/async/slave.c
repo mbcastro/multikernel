@@ -40,7 +40,7 @@ int main(int argc, const char **argv)
 	mppa_rpc_client_init();
 	mppa_async_init();
 
-	clusterid = k1_get_cluster_id();
+	clusterid = hal_get_cluster_id();
 
 	assert(mppa_async_malloc(MPPA_ASYNC_DDR_0,  NR_CCLUSTER*size, &offset, NULL) == 0);
 

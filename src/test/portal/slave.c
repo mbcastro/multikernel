@@ -115,7 +115,7 @@ int main(int argc, char **argv)
 	int size;        /* Write size.         */
 	int nclusters;
 
-	clusterid = k1_get_cluster_id();
+	clusterid = hal_get_cluster_id();
 
 	/* Retrieve parameters. */
 	assert(argc == 4);

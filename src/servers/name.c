@@ -44,9 +44,9 @@ static int nr_registration = 0;
  * @brief Lookup table of process names.
  */
 static struct {
-	int core;    						/**< CPU ID. */
-	char name[PROC_NAME_MAX];			/**< Portal name. */
-} names[NR_DMA] = {
+	int nodeid;    						/**< NoC node ID.  */
+	char name[PROC_NAME_MAX];			/**< Process name. */
+} names[HAL_NR_NOC_NODES] = {
 	{ CCLUSTER0,      "\0"  },
 	{ CCLUSTER1,      "\0"  },
 	{ CCLUSTER2,      "\0"  },
@@ -74,26 +74,26 @@ static struct {
 };
 
 /*=======================================================================*
- * _name_lookup()                                                    *
+ * _name_lookup()                                                        *
  *=======================================================================*/
 
 /**
- * @brief Converts a name into a CPU ID.
+ * @brief Converts a name into a NoC node ID.
  *
  * @param name 		Target name.
  *
- * @returns Upon successful completion the CPU ID whose name is @p
+ * @returns Upon successful completion the NoC node ID whose name is @p
  * name is returned. Upon failure, a negative error code is returned
  * instead.
  */
 static int _name_lookup(const char *name)
 {
 	/* Search for portal name. */
-	for (int i = 0; i < NR_DMA; i++)
+	for (int i = 0; i < HAL_NR_NOC_NODES; i++)
 	{
 		/* Found. */
 		if (!strcmp(name, names[i].name))
-			return (names[i].core);
+			return (names[i].nodeid);
 	}
 
 	return (-ENOENT);
@@ -106,27 +106,27 @@ static int _name_lookup(const char *name)
 /**
  * @brief Register a process name.
  *
- * @param core			CPU ID of the process to register.
+ * @param nodeid		NoC node ID of the process to register.
  * @param name			Name of the process to register.
  *
  * @returns Upon successful registration the number of name registered
  * is returned. Upon failure, a negative error code is returned instead.
  */
-static int _name_link(int core, char *name)
+static int _name_link(int nodeid, char *name)
 {
 	int index;          /* Index where the process will be stored. */
 
 	/* No entry available. */
-	if (nr_registration >= NR_DMA)
+	if (nr_registration >= HAL_NR_NOC_NODES)
 		return (-EINVAL);
 
 	/* Compute index registration */
-	if (core >= 0 && core < NR_CCLUSTER)
-		index = core;
-	else if (core >= IOCLUSTER0 && core <= IOCLUSTER0 + 3)
-	 	index = NR_CCLUSTER + core%IOCLUSTER0;
-	else if (core >= IOCLUSTER1 && core <= IOCLUSTER1 + 3)
-	 	index = NR_CCLUSTER + NR_IOCLUSTER_DMA + core%IOCLUSTER1;
+	if (nodeid >= 0 && nodeid < NR_CCLUSTER)
+		index = nodeid;
+	else if (nodeid >= IOCLUSTER0 && nodeid <= IOCLUSTER0 + 3)
+	 	index = NR_CCLUSTER + nodeid%IOCLUSTER0;
+	else if (nodeid >= IOCLUSTER1 && nodeid <= IOCLUSTER1 + 3)
+	 	index = NR_CCLUSTER + NR_IOCLUSTER_DMA + nodeid%IOCLUSTER1;
 	else
 		return (-EINVAL);
 
@@ -135,8 +135,8 @@ static int _name_link(int core, char *name)
 		return (-EINVAL);
 
 #ifdef DEBUG
-	printf("writing [CPU ID:%d name: %s] at index %d.\n", names[index].core,
-	                                                            name, index);
+	printf("writing [nodeid ID:%d name: %s] at index %d.\n",
+	                   names[index].nodeid, name, index);
 #endif
 
 	strcpy(names[index].name, name);
@@ -161,12 +161,12 @@ static int _name_unlink(char *name)
 	/* Search for portal name. */
 	int i = 0;
 
-	while (i < NR_DMA && strcmp(name, names[i].name))
+	while (i < HAL_NR_NOC_NODES && strcmp(name, names[i].name))
 	{
 		i++;
 	}
 
-	if (i < NR_DMA)
+	if (i < HAL_NR_NOC_NODES)
 	{
 		strcpy(names[i].name, "\0");
 		return (--nr_registration);
@@ -195,14 +195,15 @@ static void *name_server(void *args)
 
 	/* Open server mailbox. */
 	pthread_mutex_lock(&lock);
-		inbox = _mailbox_create(IOCLUSTER0 + dma);
+		inbox = hal_mailbox_create(IOCLUSTER0 + dma);
 	pthread_mutex_unlock(&lock);
 
 	while(1)
 	{
 		struct name_message msg;
 
-		assert(mailbox_read(inbox, &msg) == 0);
+		assert(hal_mailbox_read(inbox, &msg, MAILBOX_MSG_SIZE)
+		                                  == MAILBOX_MSG_SIZE);
 
 		/* Handle name requests. */
 		switch (msg.op)
@@ -213,22 +214,23 @@ static void *name_server(void *args)
 				printf("Entering NAME_LOOKUP case... name provided:%s.\n"
 						                                     , msg.name);
 #endif
-				msg.core = _name_lookup(msg.name);
+				msg.nodeid = _name_lookup(msg.name);
 
 				/* Send response. */
-				int source = _mailbox_open(msg.source);
+				int source =hal_mailbox_open(msg.source);
 				assert(source >= 0);
-				assert(mailbox_write(source, &msg) == 0);
-				assert(mailbox_close(source) == 0);
+				assert(hal_mailbox_write(source, &msg, MAILBOX_MSG_SIZE)
+				                                    == MAILBOX_MSG_SIZE);
+				assert(hal_mailbox_close(source) == 0);
 				break;
 
 			/* Add name. */
 			case NAME_ADD:
 #ifdef DEBUG
-				printf("Entering NAME_ADD case... [CPU ID: %d, name: %s].\n",
-				                                          msg.core, msg.name);
+				printf("Entering NAME_ADD case... [nodeid ID: %d, name: %s].\n"
+				                                       , msg.nodeid, msg.name);
 #endif
-				assert(_name_link(msg.core, msg.name) > 0);
+				assert(_name_link(msg.nodeid, msg.name) > 0);
 				break;
 
 			/* Remove name. */
@@ -247,7 +249,7 @@ static void *name_server(void *args)
 
 	/* House keeping. */
 	pthread_mutex_lock(&lock);
-		mailbox_unlink(inbox);
+		hal_mailbox_unlink(inbox);
 	pthread_mutex_unlock(&lock);
 
 	return (NULL);
@@ -275,7 +277,7 @@ int main(int argc, char **argv)
 	((void) argv);
 
 #ifdef DEBUG
-	printf("[NAME] booting up server\n");
+	/* printf("[NAME] booting up server\n"); */
 #endif
 
 	/* Spawn name server thread. */
@@ -291,7 +293,7 @@ int main(int argc, char **argv)
 	barrier_wait(global_barrier);
 
 #ifdef DEBUG
-	printf("[NAME] server alive\n");
+	/* printf("[NAME] server alive\n"); */
 #endif
 
 	/* Wait for name server thread. */

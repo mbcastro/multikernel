@@ -40,11 +40,11 @@ static void kernel(int nmessages)
 	int outbox;
 	int clusterid;
 
-	clusterid = k1_get_cluster_id();
+	clusterid = hal_get_cluster_id();
 
 	/* Open mailboxes. */
-	inbox = _mailbox_create(clusterid);
-	outbox = _mailbox_open(IOCLUSTER0);
+	inbox = hal_mailbox_create(clusterid);
+	outbox =hal_mailbox_open(IOCLUSTER0);
 
 	/* Send messages. */
 	for (int i = 0; i < nmessages; i++)

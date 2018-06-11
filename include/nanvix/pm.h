@@ -37,8 +37,8 @@
  *=======================================================================*/
 
 	/* Forward definitions .*/
-	extern int _mailbox_create(int);
-	extern int _mailbox_open(int);
+	extern int hal_mailbox_create(int);
+	extern int hal_mailbox_open(int);
 	extern int mailbox_create(char *);
 	extern int mailbox_open(char *);
 	extern int mailbox_read(int, void *);

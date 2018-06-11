@@ -20,6 +20,8 @@
 #ifndef NANVIX_NAME_H_
 #define NANVIX_NAME_H_
 
+#include <stdint.h>
+
 	/**
 	 * @brief Maximum length of a process name (including the
 	 * terminating null character).
@@ -40,7 +42,7 @@
 	{
 		uint16_t source;                  /**< Source cluster. */
 		uint16_t op;                      /**< Operation.      */
-		int core;                         /**< CPU ID.     */
+		int nodeid;                       /**< NoC node ID.    */
 		char name[PROC_NAME_MAX];         /**< Portal name.    */
 	};
 

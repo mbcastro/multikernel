@@ -46,11 +46,11 @@ void meminit(void)
 		return;
 
 	/* Retrieve cluster information. */
-	clusterid = k1_get_cluster_id();
+	clusterid = hal_get_cluster_id();
 
 	/* Open underlying IPC connectors. */
 	_mem_inportal = _portal_create(clusterid);
-	_mem_outbox = _mailbox_open(IOCLUSTER1 + clusterid%NR_IOCLUSTER_DMA);
+	_mem_outbox =hal_mailbox_open(IOCLUSTER1 + clusterid%NR_IOCLUSTER_DMA);
 	_mem_outportal = _portal_open(clusterid%NR_IOCLUSTER_DMA);
 
 	initialized = 1;
