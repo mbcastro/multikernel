@@ -26,94 +26,50 @@
 #include <string.h>
 #include <assert.h>
 
+/**
+ * @brief name server CPU ID.
+ */
+#define SERVER IOCLUSTER0
+
+/**
+ * @brief name server message.
+ */
 static struct name_message msg;
 
 /*=======================================================================*
- * name_cluster_id()                                                     *
+ * name_lookup()                                                         *
  *=======================================================================*/
 
 /**
- * @brief Converts a pathname name into a cluster ID.
+ * @brief Converts a name into a CPU ID.
  *
- * @param name 		Target pathname name.
+ * @param name 		Target name.
  *
- * @returns Upon successful completion the cluster ID whose name is @p
+ * @returns Upon successful completion the CPU ID whose name is @p
  * name is returned. Upon failure, a negative error code is returned
  * instead.
  */
-int name_cluster_id(char *name)
+int name_lookup(char *name)
 {
 	int server;         /* Mailbox for small messages. */
 	int inbox;
 
 	/* Sanity check. */
-	assert((name != NULL) && (strlen(name) < (PROC_NAME_MAX - 1)));
+	assert((name != NULL) && (strlen(name) < (PROC_NAME_MAX - 1))
+	                                && (strcmp(name, "\0") != 0));
 
 	#ifdef DEBUG
-		printf("name_cluster_id(%s): Creating inbox of cluster %d...\n", name, k1_get_cluster_id());
+		printf("name_lookup(%s) called from cluster %d...\n", name,
+		                                      k1_get_cluster_id());
 	#endif
 
 	inbox = _mailbox_create(k1_get_cluster_id());
-	server = _mailbox_open(IOCLUSTER0);
+	server = _mailbox_open(SERVER);
 
 	/* Build operation header. */
 	msg.source = k1_get_cluster_id();
-	msg.op = NAME_QUERY;
-	msg.id = -1;
-	msg.dma = -1;
-	strcpy(msg.name, name);
-
-	/* Send name request. */
-	#ifdef DEBUG
-		printf("Sending request for name: %s...\n", name);
-	#endif
-
-	assert(mailbox_write(server, &msg) == 0);
-
-	while(msg.id == -1){
-		assert(mailbox_read(inbox, &msg) == 0);
-	}
-
-	/* House keeping. */
-	assert(mailbox_close(server) == 0);
-	assert(mailbox_close(inbox) == 0);
-
-	return (msg.id);
-}
-
-/*=======================================================================*
- * name_cluster_dma()                                                    *
- *=======================================================================*/
-
-/**
- * @brief Converts a pathnamel name into a DMA channel number.
- *
- * @param name 		Target pathnamel name.
- *
- * @returns Upon successful completion the DMA number whose name is @p
- * name is returned. Upon failure, a negative error code is returned
- * instead.
- */
-int name_cluster_dma(char *name)
-{
-	int server;         /* Mailbox for small messages. */
-	int inbox;
-
-	/* Sanity check. */
-	assert((name != NULL) && (strlen(name) < (PROC_NAME_MAX - 1)));
-
-	#ifdef DEBUG
-		printf("name_cluster_dma(%s): Creating inbox of cluster %d...\n", name, k1_get_cluster_id());
-	#endif
-
-	inbox = _mailbox_create(k1_get_cluster_id());
-	server = _mailbox_open(IOCLUSTER0);
-
-	/* Build operation header. */
-	msg.source = k1_get_cluster_id();
-	msg.op = NAME_QUERY;
-	msg.id = -1;
-	msg.dma = -1;
+	msg.op = NAME_LOOKUP;
+	msg.core = -1;
 	strcpy(msg.name, name);
 
 	/* Send name request. */
@@ -123,7 +79,7 @@ int name_cluster_dma(char *name)
 
 	assert(mailbox_write(server, &msg) == 0);
 
-	while(msg.id == -1){
+	while(msg.core == -1){
 		assert(mailbox_read(inbox, &msg) == 0);
 	}
 
@@ -131,69 +87,7 @@ int name_cluster_dma(char *name)
 	assert(mailbox_close(server) == 0);
 	assert(mailbox_close(inbox) == 0);
 
-	return (msg.dma);
-}
-
-/*=======================================================================*
- * name_lookup_pathname()                                                       *
- *=======================================================================*/
-
-/**
- * @brief Converts a cluster ID into a pathname.
- *
- * @param clusterid 	Target cluster ID.
- * @param name 			Address where the result will be written.
- *
- * @returns Upon successful completion 0 is returned. Upon failure, negative
- * error code is returned.
- */
-int name_lookup_pathname(int dma, char *name)
-{
-	int inbox; 			/* Mailbox for small messages. */
-	int server;
-
-	/* Sanity check. */
-	assert(dma >= 0);
-	assert((name != NULL) && (strlen(name) < (PROC_NAME_MAX - 1)));
-
-	#ifdef DEBUG
-		printf("name_lookup_pathname(%d): Creating inbox of cluster %d...\n", dma, k1_get_cluster_id());
-	#endif
-
-	inbox = _mailbox_create(k1_get_cluster_id());
-	server = _mailbox_open(IOCLUSTER0);
-
-	/* Build operation header. */
-	msg.source = k1_get_cluster_id();
-	msg.op = NAME_QUERY;
-	msg.id = -1;
-	msg.dma = dma;
-	strcpy(msg.name, "\0");
-
-	/* Send name request. */
-	#ifdef DEBUG
-		printf("Sending request for ID: %d...\n", dma);
-	#endif
-
-	assert(mailbox_write(server, &msg) == 0);
-
-	while(msg.id == -1){
-		assert(mailbox_read(inbox, &msg) == 0);
-	}
-
-	/* House keeping. */
-	assert(mailbox_close(server) == 0);
-	assert(mailbox_close(inbox) == 0);
-
-	if(!strcmp(msg.name, "\0"))
-	{
-		return (-ENOENT);
-	}
-	else
-	{
-		strcpy(name, msg.name);
-		return (0);
-	}
+	return (msg.core);
 }
 
 /*=======================================================================*
@@ -201,28 +95,29 @@ int name_lookup_pathname(int dma, char *name)
  *=======================================================================*/
 
 /**
- * @brief Register a process name
+ * @brief link a process name.
  *
- * @param dma       Target DMA channel.
- * @param name      Portal name.
+ * @param core      CPU ID of the process to register.
+ * @param name      Name of the process to register.
  */
-void name_link(int dma, const char *name)
+void name_link(int core, const char *name)
 {
-	int server;
+	int server;        /* Mailbox for small messages. */
 
 	/* Sanity check. */
-	assert(dma >= 0);
-	assert((name != NULL) && (strlen(name) < (PROC_NAME_MAX - 1)));
+	assert(core >= 0);
+	assert((name != NULL) && (strlen(name) < (PROC_NAME_MAX - 1))
+                                   && (strcmp(name, "\0") != 0));
 
-	server = _mailbox_open(IOCLUSTER0);
+	server = _mailbox_open(SERVER);
 
-	/* Build request message. */
+	/* Build operation header. */
 	msg.source = k1_get_cluster_id();
 	msg.op = NAME_ADD;
-	msg.dma = dma;
+	msg.core = core;
 	strcpy(msg.name, name);
 
-	/* Send name request. */
+	/* Send link request. */
 	assert(mailbox_write(server, &msg) == 0);
 
 	/* House keeping. */
@@ -234,28 +129,29 @@ void name_link(int dma, const char *name)
  *=======================================================================*/
 
 /**
- * @brief Remove a process name
+ * @brief Unlink a process name.
  *
- * @param name	Portal name.
+ * @param name	    Name of the process to unlink.
  */
 void name_unlink(char *name)
 {
 	int server;         /* Mailbox for small messages. */
 
 	/* Sanity check. */
-	assert((name != NULL) && (strlen(name) < (PROC_NAME_MAX - 1)));
+	assert((name != NULL) && (strlen(name) < (PROC_NAME_MAX - 1))
+								   && (strcmp(name, "\0") != 0));
 
 	#ifdef DEBUG
-		printf("name_unlink(%s): opening name server mailbox from cluster %d...\n", name, k1_get_cluster_id());
+		printf("name_unlink(%s): called from cluster %d...\n",
+		                           name, k1_get_cluster_id());
 	#endif
 
-	server = _mailbox_open(IOCLUSTER0);
+	server = _mailbox_open(SERVER);
 
 	/* Build operation header. */
 	msg.source = k1_get_cluster_id();
 	msg.op = NAME_REMOVE;
-	msg.id = -1;
-	msg.dma = -1;
+	msg.core = -1;
 	strcpy(msg.name, name);
 
 	/* Send name request. */

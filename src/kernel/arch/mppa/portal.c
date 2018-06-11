@@ -44,8 +44,8 @@
  */
 struct portal
 {
-	int dma_local;  /**< ID of local DMA.      */
-	int dma_remote; /**< Cluster ID of remote. */
+	int local;      /**< CPU ID of local.      */
+	int remote;     /**< CPU ID of remote.     */
 	int portal_fd;  /**< Portal NoC connector. */
 	int sync_fd;    /**< Sync connector.       */
 	int flags;      /**< Flags.                */
@@ -124,33 +124,22 @@ static int portal_noctag(int local)
 }
 
 /*=======================================================================*
- * portal_create()                                                       *
+ * _portal_create()                                                       *
  *=======================================================================*/
 
 /**
  * @brief Creates a portal.
  *
- * @param name Portal name.
+ * @param local     CPU ID of the local.
  *
  * @returns Upon successful completion, the ID of the new portal is
  * returned. Upon failure, a negative error code is returned instead.
  */
-int portal_create(char *name)
+int _portal_create(int local)
 {
-	int local;          /* ID of local cluster.  */
-	int dma_local;      /* ID of local DMA.      */
 	int portal_fd;      /* Portal NoC Connector. */
 	int portalid;       /* ID of mailbix.        */
 	char pathname[128]; /* NoC connector name.   */
-
-	/* Invalid portal name. */
-	if (name == NULL)
-		return (-EINVAL);
-
-	local = k1_get_cluster_id();
-
-	/* Invalid cluster name. */
-	assert(name_cluster_id(name) == local);
 
 	/* Allocate a portal. */
 	portalid = portal_alloc();
@@ -158,24 +147,44 @@ int portal_create(char *name)
 		return (-ENOENT);
 
 	/* Create underlying portal. */
-	dma_local = name_cluster_dma(name);
 	snprintf(pathname,
 			ARRAY_LENGTH(pathname),
 			"/mppa/portal/%d:%d",
-			dma_local,
-			portal_noctag(dma_local)
+			local,
+			portal_noctag(local)
 	);
-	//printf("cluster %3d: %s [portal create]\n", portals[portalid].dma_local, pathname);
+	//printf("cluster %3d: %s [portal create]\n", portals[portalid].local, pathname);
 	assert((portal_fd = mppa_open(pathname, O_RDONLY)) != -1);
 
 	/* Initialize portal. */
-	portals[portalid].dma_local = dma_local;
-	portals[portalid].dma_remote = -1;
+	portals[portalid].local = local;
+	portals[portalid].remote = -1;
 	portals[portalid].portal_fd = portal_fd;
 	portals[portalid].sync_fd = -1;
 	portals[portalid].flags &= ~(PORTAL_WRONLY);
 
 	return (portalid);
+}
+
+/*=======================================================================*
+ * portal_create()                                                       *
+ *=======================================================================*/
+
+/**
+* @brief Creates a portal.
+*
+* @param name Portal name.
+*
+* @returns Upon successful completion, the ID of the new portal is
+* returned. Upon failure, a negative error code is returned instead.
+*/
+int portal_create(char *name)
+{
+	int local;          /* CPU ID of local.      */
+
+	local = name_lookup(name);
+
+	return (_portal_create(local));
 }
 
 /*=======================================================================*
@@ -195,7 +204,7 @@ int portal_allow(int portalid, int remote)
 {
 	int local;          /* ID of local cluster. */
 	int sync_fd;        /* Sync NoC connector.  */
-	int dma_remote;     /* ID of remote DMA.    */
+	int coreid_remote;  /* CPU ID of remote.    */
 	char pathname[128]; /* Portal pathname.     */
 
 	/* Invalid portal ID.*/
@@ -221,58 +230,47 @@ int portal_allow(int portalid, int remote)
 		return (-EINVAL);
 
 	/* Create underlying sync. */
-	dma_remote = (k1_is_ccluster(remote)) ?
+	coreid_remote = (k1_is_ccluster(remote)) ?
 		remote : remote + local%NR_IOCLUSTER_DMA;
 	snprintf(pathname,
 			ARRAY_LENGTH(pathname),
 			"/mppa/sync/%d:%d",
-			dma_remote,
+			coreid_remote,
 			(k1_is_ccluster(remote) || k1_is_ccluster(local)) ?
-					portal_noctag(portals[portalid].dma_local) :
+					portal_noctag(portals[portalid].local) :
 					127
 	);
 	//printf("cluster %3d: %s [portal allow]\n", portals[portalid].dma_local, pathname);
 	assert((sync_fd = mppa_open(pathname, O_WRONLY)) != -1);
 
 	/* Initialize portal. */
-	portals[portalid].dma_remote = dma_remote;
+	portals[portalid].remote = coreid_remote;
 	portals[portalid].sync_fd = sync_fd;
 
 	return (0);
 }
 
 /*=======================================================================*
- * portal_open()                                                         *
+ * _portal_open()                                                         *
  *=======================================================================*/
 
 /**
  * @brief Opens a portal.
  *
- * @param name Portal name.
+ * @param remote     CPU ID of the target.
  *
  * @returns Upon successful completion, the ID of the target portal is
  * returned. Upon failure, a negative error code is returned instead.
  */
-int portal_open(char *name)
+int _portal_open(int remote)
 {
 	int local;          /* ID of local cluster.  */
-	int remote;         /* ID of remote cluster. */
-	int dma_remote;     /* ID of remote DMA.     */
-	int dma_local;      /* ID of local DMA.      */
 	int portal_fd;      /* Portal NoC Connector. */
 	int sync_fd;        /* Sync NoC connector.   */
 	int portalid;       /* ID of mailbix.        */
 	char pathname[128]; /* NoC connector name.   */
 
-	/* Invalid portal name. */
-	if (name == NULL)
-		return (-EINVAL);
-
 	local = k1_get_cluster_id();
-	remote = name_cluster_id(name);
-
-	/* Invalid cluster name. */
-	assert(remote != local);
 
 	/* Allocate a portal. */
 	portalid = portal_alloc();
@@ -280,38 +278,58 @@ int portal_open(char *name)
 		return (-ENOENT);
 
 	/* Create underlying portal. */
-	dma_remote = name_cluster_dma(name);
 	snprintf(pathname,
 			ARRAY_LENGTH(pathname),
 			"/mppa/portal/%d:%d",
-			dma_remote,
-			portal_noctag(dma_remote)
+			remote,
+			portal_noctag(remote)
 	);
 	//printf("cluster %d: %s [portal open]\n", local, pathname);
 	assert((portal_fd = mppa_open(pathname, O_WRONLY)) != -1);
 
 	/* Create underlying sync. */
-	dma_local = (k1_is_ccluster(local)) ?
+		local = (k1_is_ccluster(local)) ?
 		local : local + remote%NR_IOCLUSTER_DMA;
 	snprintf(pathname,
 			ARRAY_LENGTH(pathname),
 			"/mppa/sync/%d:%d",
-			dma_local,
+			local,
 			(k1_is_ccluster(remote) || k1_is_ccluster(local)) ?
-					portal_noctag(dma_remote) :
+					portal_noctag(remote) :
 					127
 	);
-	//printf("cluster %3d: %s [portal open] %d %d\n", local, pathname, remote, dma_remote);
+	//printf("cluster %3d: %s [portal open] %d\n", local, pathname, remote);
 	assert((sync_fd = mppa_open(pathname, O_RDONLY)) != -1);
 
 	/* Initialize portal. */
-	portals[portalid].dma_local = dma_local;
-	portals[portalid].dma_remote = dma_remote;
+	portals[portalid].local = local;
+	portals[portalid].remote = remote;
 	portals[portalid].portal_fd = portal_fd;
 	portals[portalid].sync_fd = sync_fd;
 	portals[portalid].flags |= PORTAL_WRONLY;
 
 	return (portalid);
+}
+
+/*=======================================================================*
+* portal_open()                                                         *
+*=======================================================================*/
+
+/**
+* @brief Opens a portal.
+*
+* @param name Portal name.
+*
+* @returns Upon successful completion, the ID of the target portal is
+* returned. Upon failure, a negative error code is returned instead.
+*/
+int portal_open(char *name)
+{
+	int remote;         /* CPU ID of remote cluster. */
+
+	remote = name_lookup(name);
+
+	return _portal_open(remote);
 }
 
 /*=======================================================================*
@@ -378,7 +396,7 @@ int portal_read(int portalid, void *buf, size_t n)
 	assert(mppa_aio_read(&aiocb) != -1);
 
 	/* Unblock remote. */
-	mask = portal_sync(portals[portalid].dma_local);
+	mask = portal_sync(portals[portalid].local);
 	assert(mppa_write(portals[portalid].sync_fd, &mask, sizeof(uint64_t)) != -1);
 
 	/* Wait read operation to complete. */
@@ -427,7 +445,7 @@ int portal_write(int portalid, const void *buf, size_t n)
 		return (-EINVAL);
 
 	/* Wait for remote to be ready. */
-	mask = portal_sync(portals[portalid].dma_remote);
+	mask = portal_sync(portals[portalid].remote);
 	assert(mppa_ioctl(portals[portalid].sync_fd, MPPA_RX_SET_MATCH, ~mask) != -1);
 	assert(mppa_read(portals[portalid].sync_fd, &mask, sizeof(uint64_t)) != -1);
 

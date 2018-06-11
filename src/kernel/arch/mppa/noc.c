@@ -37,6 +37,21 @@
 #define NOCTAG_SYNC_OFF   (NOCTAG_PORTAL_OFF + NR_DMA)  /**< Sync.    */
 /**@}*/
 
+/*============================================================================*
+ * noc_get_dma()                                                              *
+ *============================================================================*/
+
+/**
+ * @brief Gets the DMA channel of a NoC node.
+ *
+ * @param nodeid ID of the target NoC node.
+ */
+int noc_get_dma(int nodeid)
+{
+	return (k1_is_ccluster(nodeid) ?
+			nodeid%NR_CCLUSTER_DMA : nodeid%NR_IOCLUSTER_DMA);
+}
+
 /*=======================================================================*
  * noc_remotes()                                                         *
  *=======================================================================*/
