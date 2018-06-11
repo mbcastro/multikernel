@@ -23,7 +23,6 @@
 #include <mppa/osconfig.h>
 #include <mppaipc.h>
 
-#include <nanvix/arch/mppa.h>
 #include <nanvix/pm.h>
 #include <nanvix/hal.h>
 #include <nanvix/name.h>

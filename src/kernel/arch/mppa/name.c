@@ -41,33 +41,36 @@ static struct name_message msg;
 /**
  * @brief Mailboxes for small messages.
  */
+/**@{*/
 static int server;
 static int client;
+/**@}*/
 
 /**
  * @brief Is the name service initialized ?
  */
 static int initialized = 0;
 
-/*=======================================================================*
- * name_initialize()                                                     *
- *=======================================================================*/
+/*============================================================================*
+ * name_init()                                                                *
+ *============================================================================*/
 
 /**
- * @brief Initialize the name service.
+ * @brief Initializes the naming client.
  *
- * @returns Upon successful completion 0 is returned. Upon failure,
- * a negative error code is returned instead.
+ * @returns Upon successful completion, zero is returned. Upon
+ * failure, a negative error code is returned instead.
  */
-static int name_initialize(){
-
+static int name_init(void)
+{
+	/* Nothing to do. */
 	if (initialized)
 		return (0);
 
 	client = hal_mailbox_create(hal_get_cluster_id());
 	server = hal_mailbox_open(SERVER);
 
-	if (client >= 0 && server >= 0)
+	if ((client >= 0) && (server >= 0))
 	{
 		initialized = 1;
 		return (0);
@@ -76,15 +79,16 @@ static int name_initialize(){
 	return (-1);
 }
 
-/*=======================================================================*
- * name_clean()                                                          *
- *=======================================================================*/
+/*============================================================================*
+ * name_finalize()                                                            *
+ *============================================================================*/
 
 /**
- * @brief Close client and server mailboxes.
+ * @brief Closes the naming client.
  */
-void name_clean(){
-
+void name_finalize(void)
+{
+	/* Nothing to do. */
 	if (!initialized)
 		return;
 
@@ -94,9 +98,9 @@ void name_clean(){
 	initialized = 0;
 }
 
-/*=======================================================================*
- * name_lookup()                                                         *
- *=======================================================================*/
+/*============================================================================*
+ * name_lookup()                                                              *
+ *============================================================================*/
 
 /**
  * @brief Converts a name into a NoC node ID.
@@ -118,7 +122,7 @@ int name_lookup(char *name)
 		                                      hal_get_cluster_id());
 	#endif
 
-	assert(name_initialize() == 0);
+	assert(name_init() == 0);
 
 	/* Build operation header. */
 	msg.source = hal_get_cluster_id();
@@ -134,7 +138,8 @@ int name_lookup(char *name)
 	assert(hal_mailbox_write(server, &msg, MAILBOX_MSG_SIZE)
 	                                   == MAILBOX_MSG_SIZE);
 
-	while(msg.nodeid == -1){
+	while(msg.nodeid == -1)
+	{
 		assert(hal_mailbox_read(client, &msg, MAILBOX_MSG_SIZE)
 		                                 == MAILBOX_MSG_SIZE);
 	}
@@ -142,9 +147,9 @@ int name_lookup(char *name)
 	return (msg.nodeid);
 }
 
-/*=======================================================================*
- * name_link()                                                           *
- *=======================================================================*/
+/*============================================================================*
+ * name_link()                                                                *
+ *============================================================================*/
 
 /**
  * @brief link a process name.
@@ -159,7 +164,7 @@ void name_link(int nodeid, const char *name)
 	assert((name != NULL) && (strlen(name) < (PROC_NAME_MAX - 1))
                                    && (strcmp(name, "\0") != 0));
 
-	assert(name_initialize() == 0);
+	assert(name_init() == 0);
 
 	/* Build operation header. */
 	msg.source = hal_get_cluster_id();
@@ -172,16 +177,16 @@ void name_link(int nodeid, const char *name)
 	                                   == MAILBOX_MSG_SIZE);
 }
 
-/*=======================================================================*
- * name_unlink()                                                         *
- *=======================================================================*/
+/*============================================================================*
+ * name_unlink()                                                              *
+ *============================================================================*/
 
 /**
  * @brief Unlink a process name.
  *
  * @param name	    Name of the process to unlink.
  */
-void name_unlink(char *name)
+void name_unlink(const char *name)
 {
 	/* Sanity check. */
 	assert((name != NULL) && (strlen(name) < (PROC_NAME_MAX - 1))
@@ -192,7 +197,7 @@ void name_unlink(char *name)
 		                          name, hal_get_cluster_id());
 	#endif
 
-	assert(name_initialize() == 0);
+	assert(name_init() == 0);
 
 	/* Build operation header. */
 	msg.source = hal_get_cluster_id();

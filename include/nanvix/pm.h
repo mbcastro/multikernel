@@ -23,22 +23,10 @@
 	#include <stddef.h>
 
 /*=======================================================================*
- * Naming                                                                *
- *=======================================================================*/
-
-	/* Forward definitions. */
-	extern int name_lookup(char *);
-	extern void name_remotes(char *, int);
-	extern void name_link(int, const char *);
-	extern void name_unlink(char *);
-
-/*=======================================================================*
  * Mailbox                                                               *
  *=======================================================================*/
 
 	/* Forward definitions .*/
-	extern int hal_mailbox_create(int);
-	extern int hal_mailbox_open(int);
 	extern int mailbox_create(char *);
 	extern int mailbox_open(char *);
 	extern int mailbox_read(int, void *);

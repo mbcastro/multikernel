@@ -20,7 +20,7 @@
 #ifndef NANVIX_NAME_H_
 #define NANVIX_NAME_H_
 
-#include <stdint.h>
+	#include <stdint.h>
 
 	/**
 	 * @brief Maximum length of a process name (including the
@@ -45,5 +45,11 @@
 		int nodeid;                       /**< NoC node ID.    */
 		char name[PROC_NAME_MAX];         /**< Portal name.    */
 	};
+
+	/* Forward definitions. */
+	extern int name_lookup(char *);
+	extern void name_remotes(char *, int);
+	extern void name_link(int, const char *);
+	extern void name_unlink(const char *);
 
 #endif /* _NAME_H_ */
