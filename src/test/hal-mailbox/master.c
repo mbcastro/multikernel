@@ -55,14 +55,14 @@ static void *test_hal_mailbox_thread_create_unlink(void *args)
 {
 	int dma;
 	int inbox;
-	int coreid;
+	int nodeid;
 
 	dma = ((int *)args)[0];
 
-	coreid = hal_get_core_id();
+	nodeid = hal_get_cluster_id();
 
 	pthread_mutex_lock(&lock);
-	TEST_ASSERT((inbox = hal_mailbox_create(coreid + dma)) >= 0);
+	TEST_ASSERT((inbox = hal_mailbox_create(nodeid + dma)) >= 0);
 	pthread_mutex_unlock(&lock);
 
 	pthread_barrier_wait(&barrier);
@@ -112,21 +112,21 @@ static void *test_hal_mailbox_thread_open_close(void *args)
 	int dma;
 	int inbox;
 	int outbox;
-	int coreid;
+	int nodeid;
 
 	dma = ((int *)args)[0];
 
-	coreid = hal_get_core_id();
+	nodeid = hal_get_cluster_id();
 
 	pthread_mutex_lock(&lock);
-	TEST_ASSERT((inbox = hal_mailbox_create(coreid + dma)) >= 0);
+	TEST_ASSERT((inbox = hal_mailbox_create(nodeid + dma)) >= 0);
 	pthread_mutex_unlock(&lock);
 
 	pthread_barrier_wait(&barrier);
 
 	pthread_mutex_lock(&lock);
 	TEST_ASSERT((outbox = hal_mailbox_open(
-		coreid + (dma + 1)%NR_CORES)) >= 0
+		nodeid + (dma + 1)%NR_CORES)) >= 0
 	);
 	pthread_mutex_unlock(&lock);
 
@@ -182,21 +182,21 @@ static void *test_hal_mailbox_thread_read_write(void *args)
 	int inbox;
 	int outbox;
 	char buf[MAILBOX_MSG_SIZE];
-	int coreid;
+	int nodeid;
 
 	dma = ((int *)args)[0];
 
-	coreid = hal_get_core_id();
+	nodeid = hal_get_cluster_id();
 
 	pthread_mutex_lock(&lock);
-	TEST_ASSERT((inbox = hal_mailbox_create(coreid + dma)) >= 0);
+	TEST_ASSERT((inbox = hal_mailbox_create(nodeid + dma)) >= 0);
 	pthread_mutex_unlock(&lock);
 
 	pthread_barrier_wait(&barrier);
 
 	pthread_mutex_lock(&lock);
 	TEST_ASSERT((outbox = hal_mailbox_open(
-		coreid + (dma + 1)%NR_CORES)) >= 0
+		nodeid + (dma + 1)%NR_CORES)) >= 0
 	);
 	pthread_mutex_unlock(&lock);
 
@@ -289,14 +289,14 @@ static void test_hal_mailbox_bad_create(void)
 static void test_hal_mailbox_double_create(void)
 {
 	int inbox;
-	int coreid;
+	int nodeid;
 
 	printf("Fault Injection Test: Double Create\n");
 
-	coreid = hal_get_core_id();
+	nodeid = hal_get_cluster_id();
 
-	TEST_ASSERT((inbox = hal_mailbox_create(coreid)) >= 0);
-	TEST_ASSERT(hal_mailbox_create(coreid) < 0);
+	TEST_ASSERT((inbox = hal_mailbox_create(nodeid)) >= 0);
+	TEST_ASSERT(hal_mailbox_create(nodeid) < 0);
 
 	TEST_ASSERT(hal_mailbox_unlink(inbox) == 0);
 }
@@ -329,13 +329,13 @@ static void test_hal_mailbox_invalid_open(void)
 static void test_hal_mailbox_bad_open(void)
 {
 	int outbox;
-	int coreid;
+	int nodeid;
 
 	printf("Fault Injection Test: Bad Open\n");
 
-	coreid = hal_get_core_id();
+	nodeid = hal_get_cluster_id();
 
-	TEST_ASSERT((outbox = hal_mailbox_open(coreid)) < 0);
+	TEST_ASSERT((outbox = hal_mailbox_open(nodeid)) < 0);
 }
 
 #endif
@@ -350,14 +350,14 @@ static void test_hal_mailbox_bad_open(void)
 static void test_hal_mailbox_double_open(void)
 {
 	int outbox;
-	int coreid;
+	int nodeid;
 
 	printf("Fault Injection Test: Double Open\n");
 
-	coreid = hal_get_core_id();
+	nodeid = hal_get_cluster_id();
 
-	TEST_ASSERT((outbox = hal_mailbox_open(coreid + 1)) >= 0);
-	TEST_ASSERT(hal_mailbox_open(coreid + 1) < 0);
+	TEST_ASSERT((outbox = hal_mailbox_open(nodeid + 1)) >= 0);
+	TEST_ASSERT(hal_mailbox_open(nodeid + 1) < 0);
 
 	TEST_ASSERT(hal_mailbox_close(outbox) == 0);
 }
@@ -372,13 +372,13 @@ static void test_hal_mailbox_double_open(void)
 static void test_hal_mailbox_double_unlink(void)
 {
 	int inbox;
-	int coreid;
+	int nodeid;
 
 	printf("Fault Injection Test: Double Unlink\n");
 
-	coreid = hal_get_core_id();
+	nodeid = hal_get_cluster_id();
 
-	TEST_ASSERT((inbox = hal_mailbox_create(coreid)) >= 0);
+	TEST_ASSERT((inbox = hal_mailbox_create(nodeid)) >= 0);
 	TEST_ASSERT(hal_mailbox_unlink(inbox) == 0);
 	TEST_ASSERT(hal_mailbox_unlink(inbox) < 0);
 }
@@ -393,13 +393,13 @@ static void test_hal_mailbox_double_unlink(void)
 static void test_hal_mailbox_double_close(void)
 {
 	int outbox;
-	int coreid;
+	int nodeid;
 
 	printf("Fault Injection Test: Double Close\n");
 
-	coreid = hal_get_core_id();
+	nodeid = hal_get_cluster_id();
 
-	TEST_ASSERT((outbox = hal_mailbox_open(coreid + 1)) >= 0);
+	TEST_ASSERT((outbox = hal_mailbox_open(nodeid + 1)) >= 0);
 	TEST_ASSERT(hal_mailbox_close(outbox) == 0);
 	TEST_ASSERT(hal_mailbox_close(outbox) < 0);
 }
@@ -433,13 +433,13 @@ static void test_hal_mailbox_bad_write(void)
 {
 	int inbox;
 	char buf[MAILBOX_MSG_SIZE];
-	int coreid;
+	int nodeid;
 
 	printf("Fault Injection Test: Bad Write\n");
 
-	coreid = hal_get_core_id();
+	nodeid = hal_get_cluster_id();
 
-	TEST_ASSERT((inbox = hal_mailbox_create(coreid)) >= 0);
+	TEST_ASSERT((inbox = hal_mailbox_create(nodeid)) >= 0);
 
 	memset(buf, 1, MAILBOX_MSG_SIZE);
 	TEST_ASSERT(hal_mailbox_write(inbox, buf, 1) != MAILBOX_MSG_SIZE);
@@ -457,13 +457,13 @@ static void test_hal_mailbox_bad_write(void)
 static void test_hal_mailbox_null_write(void)
 {
 	int outbox;
-	int coreid;
+	int nodeid;
 
 	printf("Fault Injection Test: Null Write\n");
 
-	coreid = hal_get_core_id();
+	nodeid = hal_get_cluster_id();
 
-	TEST_ASSERT((outbox = hal_mailbox_open(coreid + 1)) >= 0);
+	TEST_ASSERT((outbox = hal_mailbox_open(nodeid + 1)) >= 0);
 	TEST_ASSERT(hal_mailbox_write(outbox, NULL, MAILBOX_MSG_SIZE) != MAILBOX_MSG_SIZE);
 	TEST_ASSERT(hal_mailbox_close(outbox) == 0);
 }
@@ -497,13 +497,13 @@ static void test_hal_mailbox_bad_read(void)
 {
 	int outbox;
 	char buf[MAILBOX_MSG_SIZE];
-	int coreid;
+	int nodeid;
 
 	printf("Fault Injection Test: Bad Read\n");
 
-	coreid = hal_get_core_id();
+	nodeid = hal_get_cluster_id();
 
-	TEST_ASSERT((outbox = hal_mailbox_open(coreid + 1)) >= 0);
+	TEST_ASSERT((outbox = hal_mailbox_open(nodeid + 1)) >= 0);
 
 	memset(buf, 1, MAILBOX_MSG_SIZE);
 	TEST_ASSERT(hal_mailbox_read(outbox, buf, 1) != MAILBOX_MSG_SIZE);
@@ -521,13 +521,13 @@ static void test_hal_mailbox_bad_read(void)
 static void test_hal_mailbox_null_read(void)
 {
 	int inbox;
-	int coreid;
+	int nodeid;
 
 	printf("Fault Injection Test: Null Read\n");
 
-	coreid = hal_get_core_id();
+	nodeid = hal_get_cluster_id();
 
-	TEST_ASSERT((inbox = hal_mailbox_create(coreid)) >= 0);
+	TEST_ASSERT((inbox = hal_mailbox_create(nodeid)) >= 0);
 	TEST_ASSERT(hal_mailbox_read(inbox, NULL, MAILBOX_MSG_SIZE) != MAILBOX_MSG_SIZE);
 	TEST_ASSERT(hal_mailbox_unlink(inbox) == 0);
 }
