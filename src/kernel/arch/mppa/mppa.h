@@ -100,7 +100,6 @@
 		(NR_CCLUSTER*NR_CCLUSTER_DMA + NR_IOCLUSTER*NR_IOCLUSTER_DMA)
 
 	/* Forward definitions. */
-	extern int noc_get_node_id(void);
 	extern int noctag_mailbox(int);
 	extern void noc_remotes(char *, int);
 	extern int noc_get_dma(int);

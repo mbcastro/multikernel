@@ -67,6 +67,9 @@
  *============================================================================*/
 
 	/* Forward definitions. */
+	extern int hal_get_node_id(void);
+
+	/* Forward definitions. */
 	extern int hal_mailbox_create(int);
 	extern int hal_mailbox_open(int);
 	extern int hal_mailbox_unlink(int);

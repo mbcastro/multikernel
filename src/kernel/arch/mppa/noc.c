@@ -41,7 +41,7 @@
 /**@}*/
 
 /*============================================================================*
- * noc_get_node_id()                                                          *
+ * hal_get_node_id()                                                          *
  *============================================================================*/
 
 /**
@@ -50,9 +50,9 @@
  * @returns The ID of the NoC node attached to the underlying core is
  * returned.
  */
-int noc_get_node_id(void)
+int hal_get_node_id(void)
 {
-	return (__k1_get_cluster_id());
+	return (__k1_get_cluster_id() + __k1_get_cpu_id());
 }
 
 /*============================================================================*

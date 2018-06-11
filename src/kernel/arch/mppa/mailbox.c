@@ -48,7 +48,7 @@ int hal_mailbox_create(int nodeid)
 
 #ifdef _HAS_NOC_GET_NODE_ID_
 	/* Invalid core ID. */
-	if (nodeid != noc_get_node_id())
+	if (nodeid != hal_get_node_id())
 		return (-EINVAL);
 #endif
 
@@ -100,7 +100,7 @@ int hal_mailbox_open(int nodeid)
 
 #ifdef _HAS_NOC_GET_NODE_ID_
 	/* Invalid core ID. */
-	if (nodeid == noc_get_node_id())
+	if (nodeid == hal_get_node_id())
 		return (-EINVAL);
 #endif
 
