@@ -17,28 +17,30 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <assert.h>
+#include <stdio.h>
+
 #include <mppa/osconfig.h>
 #include <mppaipc.h>
+
 #include <nanvix/arch/mppa.h>
-#include <nanvix/mm.h>
 #include <nanvix/pm.h>
 #include <nanvix/hal.h>
-#include <nanvix/klib.h>
 #include <nanvix/name.h>
-#include <assert.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 
 /**
  * @brief ID of slave processes.
  */
 static int pids[NR_CCLUSTER];
 
+/*===================================================================*
+ * API Test: Name Unlink                                             *
+ *===================================================================*/
+
 /**
- * @brief API Test: master name deletion.
+ * @brief API Test: Name Unlink 
  */
-static void test_name_remove(void)
+static void test_name_unlink(void)
 {
 	char pathname[PROC_NAME_MAX];
 
@@ -55,10 +57,14 @@ static void test_name_remove(void)
 	}
 }
 
+/*===================================================================*
+ * API Test: Name Link                                               *
+ *===================================================================*/
+
 /**
- * @brief API Test: master name registration.
+ * @brief API Test: Name Link
  */
-static void test_name_register(void)
+static void test_name_link(void)
 {
 	int clusterid;
 	char pathname[PROC_NAME_MAX];
@@ -76,6 +82,10 @@ static void test_name_register(void)
 		name_link(clusterid + i, pathname);
 	}
 }
+
+/*===================================================================*
+ * API Test: Name Lookup                                             *
+ *===================================================================*/
 
 /**
  * @brief API Test: master name lookup.
@@ -97,6 +107,10 @@ static void test_name_lookup(void)
 		assert(name_lookup(pathname) == clusterid + i);
 	}
 }
+
+/*===================================================================*
+ * API Test: Name Lookup                                             *
+ *===================================================================*/
 
 /**
  * @brief API Test: slave name registration.
@@ -122,11 +136,11 @@ void test_name_slave(int nclusters)
 }
 
 /*===================================================================*
- * Kernel                                                            *
+ * Name Service Test Driver                                          *
  *===================================================================*/
 
 /**
- * @brief Querying the name server.
+ * @brief Name Service Test Driver
  */
 int main(int argc, char **argv)
 {
@@ -142,9 +156,10 @@ int main(int argc, char **argv)
 	global_barrier = barrier_open(NR_IOCLUSTER);
 	barrier_wait(global_barrier);
 
-	test_name_register();
+	/* API tests. */
+	test_name_link();
 	test_name_lookup();
-	test_name_remove();
+	test_name_unlink();
 	test_name_slave(nclusters);
 
 	/* House keeping. */

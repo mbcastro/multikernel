@@ -533,11 +533,11 @@ static void test_hal_mailbox_null_read(void)
 }
 
 /*===================================================================*
- * API Test: Mailbox Driver                                          *
+ * Mailbox Test Driver                                               *
  *===================================================================*/
 
 /**
- * @brief Mailbox test driver.
+ * @brief Mailbox Test Driver
  */
 int main(int argc, const char **argv)
 {
