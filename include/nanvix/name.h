@@ -42,7 +42,7 @@
 	{
 		uint16_t source;                  /**< Source cluster. */
 		uint16_t op;                      /**< Operation.      */
-		int core;                         /**< CPU ID.     */
+		int nodeid;                       /**< NoC node ID.    */
 		char name[PROC_NAME_MAX];         /**< Portal name.    */
 	};
 

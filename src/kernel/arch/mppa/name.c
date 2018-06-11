@@ -29,7 +29,7 @@
 #include "mppa.h"
 
 /**
- * @brief name server CPU ID.
+ * @brief name server node ID.
  */
 #define SERVER IOCLUSTER0
 
@@ -43,11 +43,11 @@ static struct name_message msg;
  *=======================================================================*/
 
 /**
- * @brief Converts a name into a CPU ID.
+ * @brief Converts a name into a NoC node ID.
  *
  * @param name 		Target name.
  *
- * @returns Upon successful completion the CPU ID whose name is @p
+ * @returns Upon successful completion the NoC node ID whose name is @p
  * name is returned. Upon failure, a negative error code is returned
  * instead.
  */
@@ -71,7 +71,7 @@ int name_lookup(char *name)
 	/* Build operation header. */
 	msg.source = hal_get_cluster_id();
 	msg.op = NAME_LOOKUP;
-	msg.core = -1;
+	msg.nodeid = -1;
 	strcpy(msg.name, name);
 
 	/* Send name request. */
@@ -79,35 +79,37 @@ int name_lookup(char *name)
 		printf("Sending request for name: %s...\n", msg.name);
 	#endif
 
-	assert(hal_mailbox_write(server, &msg, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
+	assert(hal_mailbox_write(server, &msg, MAILBOX_MSG_SIZE)
+	                                   == MAILBOX_MSG_SIZE);
 
-	while(msg.core == -1){
-		assert(hal_mailbox_read(inbox, &msg, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
+	while(msg.nodeid == -1){
+		assert(hal_mailbox_read(inbox, &msg, MAILBOX_MSG_SIZE)
+		                                 == MAILBOX_MSG_SIZE);
 	}
 
 	/* House keeping. */
 	assert(hal_mailbox_close(server) == 0);
 	assert(hal_mailbox_close(inbox) == 0);
 
-	return (msg.core);
+	return (msg.nodeid);
 }
 
 /*=======================================================================*
- * name_link()                                                       *
+ * name_link()                                                           *
  *=======================================================================*/
 
 /**
  * @brief link a process name.
  *
- * @param core      CPU ID of the process to register.
- * @param name      Name of the process to register.
+ * @param nodeid    NoC node ID of the process to link.
+ * @param name      Name of the process to link.
  */
-void name_link(int core, const char *name)
+void name_link(int nodeid, const char *name)
 {
 	int server;        /* Mailbox for small messages. */
 
 	/* Sanity check. */
-	assert(core >= 0);
+	assert(nodeid >= 0);
 	assert((name != NULL) && (strlen(name) < (PROC_NAME_MAX - 1))
                                    && (strcmp(name, "\0") != 0));
 
@@ -116,18 +118,19 @@ void name_link(int core, const char *name)
 	/* Build operation header. */
 	msg.source = hal_get_cluster_id();
 	msg.op = NAME_ADD;
-	msg.core = core;
+	msg.nodeid = nodeid;
 	strcpy(msg.name, name);
 
 	/* Send link request. */
-	assert(hal_mailbox_write(server, &msg, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
+	assert(hal_mailbox_write(server, &msg, MAILBOX_MSG_SIZE)
+	                                   == MAILBOX_MSG_SIZE);
 
 	/* House keeping. */
 	assert(hal_mailbox_close(server) == 0);
 }
 
 /*=======================================================================*
- * name_unlink()                                                        *
+ * name_unlink()                                                         *
  *=======================================================================*/
 
 /**
@@ -145,7 +148,7 @@ void name_unlink(char *name)
 
 	#ifdef DEBUG
 		printf("name_unlink(%s): called from cluster %d...\n",
-		                           name, hal_get_cluster_id());
+		                          name, hal_get_cluster_id());
 	#endif
 
 	server =hal_mailbox_open(SERVER);
@@ -153,7 +156,7 @@ void name_unlink(char *name)
 	/* Build operation header. */
 	msg.source = hal_get_cluster_id();
 	msg.op = NAME_REMOVE;
-	msg.core = -1;
+	msg.nodeid = -1;
 	strcpy(msg.name, name);
 
 	/* Send name request. */
@@ -161,7 +164,8 @@ void name_unlink(char *name)
 		printf("Sending remove request for name: %s...\n", msg.name);
 	#endif
 
-	assert(hal_mailbox_write(server, &msg, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
+	assert(hal_mailbox_write(server, &msg, MAILBOX_MSG_SIZE)
+	                                    == MAILBOX_MSG_SIZE);
 
 	/* House keeping. */
 	assert(hal_mailbox_close(server) == 0);

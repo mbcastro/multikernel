@@ -44,8 +44,8 @@ static int nr_registration = 0;
  * @brief Lookup table of process names.
  */
 static struct {
-	int core;    						/**< CPU ID. */
-	char name[PROC_NAME_MAX];			/**< Portal name. */
+	int nodeid;    						/**< NoC node ID.  */
+	char name[PROC_NAME_MAX];			/**< Process name. */
 } names[HAL_NR_NOC_NODES] = {
 	{ CCLUSTER0,      "\0"  },
 	{ CCLUSTER1,      "\0"  },
@@ -74,15 +74,15 @@ static struct {
 };
 
 /*=======================================================================*
- * _name_lookup()                                                    *
+ * _name_lookup()                                                        *
  *=======================================================================*/
 
 /**
- * @brief Converts a name into a CPU ID.
+ * @brief Converts a name into a NoC node ID.
  *
  * @param name 		Target name.
  *
- * @returns Upon successful completion the CPU ID whose name is @p
+ * @returns Upon successful completion the NoC node ID whose name is @p
  * name is returned. Upon failure, a negative error code is returned
  * instead.
  */
@@ -93,7 +93,7 @@ static int _name_lookup(const char *name)
 	{
 		/* Found. */
 		if (!strcmp(name, names[i].name))
-			return (names[i].core);
+			return (names[i].nodeid);
 	}
 
 	return (-ENOENT);
@@ -106,13 +106,13 @@ static int _name_lookup(const char *name)
 /**
  * @brief Register a process name.
  *
- * @param core			CPU ID of the process to register.
+ * @param nodeid		NoC node ID of the process to register.
  * @param name			Name of the process to register.
  *
  * @returns Upon successful registration the number of name registered
  * is returned. Upon failure, a negative error code is returned instead.
  */
-static int _name_link(int core, char *name)
+static int _name_link(int nodeid, char *name)
 {
 	int index;          /* Index where the process will be stored. */
 
@@ -121,12 +121,12 @@ static int _name_link(int core, char *name)
 		return (-EINVAL);
 
 	/* Compute index registration */
-	if (core >= 0 && core < NR_CCLUSTER)
-		index = core;
-	else if (core >= IOCLUSTER0 && core <= IOCLUSTER0 + 3)
-	 	index = NR_CCLUSTER + core%IOCLUSTER0;
-	else if (core >= IOCLUSTER1 && core <= IOCLUSTER1 + 3)
-	 	index = NR_CCLUSTER + NR_IOCLUSTER_DMA + core%IOCLUSTER1;
+	if (nodeid >= 0 && nodeid < NR_CCLUSTER)
+		index = nodeid;
+	else if (nodeid >= IOCLUSTER0 && nodeid <= IOCLUSTER0 + 3)
+	 	index = NR_CCLUSTER + nodeid%IOCLUSTER0;
+	else if (nodeid >= IOCLUSTER1 && nodeid <= IOCLUSTER1 + 3)
+	 	index = NR_CCLUSTER + NR_IOCLUSTER_DMA + nodeid%IOCLUSTER1;
 	else
 		return (-EINVAL);
 
@@ -135,8 +135,8 @@ static int _name_link(int core, char *name)
 		return (-EINVAL);
 
 #ifdef DEBUG
-	printf("writing [CPU ID:%d name: %s] at index %d.\n", names[index].core,
-	                                                            name, index);
+	printf("writing [nodeid ID:%d name: %s] at index %d.\n",
+	                   names[index].nodeid, name, index);
 #endif
 
 	strcpy(names[index].name, name);
@@ -202,7 +202,8 @@ static void *name_server(void *args)
 	{
 		struct name_message msg;
 
-		assert(hal_mailbox_read(inbox, &msg, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
+		assert(hal_mailbox_read(inbox, &msg, MAILBOX_MSG_SIZE)
+		                                  == MAILBOX_MSG_SIZE);
 
 		/* Handle name requests. */
 		switch (msg.op)
@@ -213,22 +214,23 @@ static void *name_server(void *args)
 				printf("Entering NAME_LOOKUP case... name provided:%s.\n"
 						                                     , msg.name);
 #endif
-				msg.core = _name_lookup(msg.name);
+				msg.nodeid = _name_lookup(msg.name);
 
 				/* Send response. */
 				int source =hal_mailbox_open(msg.source);
 				assert(source >= 0);
-				assert(hal_mailbox_write(source, &msg, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
+				assert(hal_mailbox_write(source, &msg, MAILBOX_MSG_SIZE)
+				                                    == MAILBOX_MSG_SIZE);
 				assert(hal_mailbox_close(source) == 0);
 				break;
 
 			/* Add name. */
 			case NAME_ADD:
 #ifdef DEBUG
-				printf("Entering NAME_ADD case... [CPU ID: %d, name: %s].\n",
-				                                          msg.core, msg.name);
+				printf("Entering NAME_ADD case... [nodeid ID: %d, name: %s].\n"
+				                                       , msg.nodeid, msg.name);
 #endif
-				assert(_name_link(msg.core, msg.name) > 0);
+				assert(_name_link(msg.nodeid, msg.name) > 0);
 				break;
 
 			/* Remove name. */
