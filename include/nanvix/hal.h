@@ -46,11 +46,7 @@
 	extern int hal_is_ucore(int);
 	extern int hal_is_rcore(int);
 	extern int hal_is_score(int);
-	extern int hal_get_num_clusters(void);
 	extern int hal_get_num_cores(void);
-	extern int hal_get_num_ucores(void);
-	extern int hal_get_num_rcores(void);
-	extern int hal_get_num_scores(void);
 
 /*============================================================================*
  * Power Management                                                           *

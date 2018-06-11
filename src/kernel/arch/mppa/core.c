@@ -88,7 +88,7 @@ int hal_get_core_id(void)
  * hal_get_core_type()                                                        *
  *============================================================================*/
 
-#ifdef _TODO_
+#ifdef _HAS_GET_CORE_TYPE
 
 /**
  * @brief Gets the type of the underlying core.
@@ -99,9 +99,13 @@ int hal_get_core_type(void)
 {
 }
 
+#endif
+
 /*============================================================================*
  * hal_is_ucore()                                                             *
  *============================================================================*/
+
+#ifdef _HAS_IS_UCORE
 
 /**
  * @brief Asserts whether or not the target core is a user core.
@@ -114,9 +118,13 @@ int hal_is_ucore(int coreid)
 {
 }
 
+#endif
+
 /*============================================================================*
  * hal_is_rcore()                                                             *
  *============================================================================*/
+
+#ifdef _HAS_IS_RCORE
 
 /**
  * @brief Asserts whether or not the target core is a resource
@@ -131,9 +139,13 @@ int hal_is_rcore(int coreid)
 {
 }
 
+#endif
+
 /*============================================================================*
  * hal_is_score()                                                             *
  *============================================================================*/
+
+#ifdef _HAS_IS_SCORE
 
 /**
  * @brief Asserts whether or not the taget core is a system core.
@@ -147,18 +159,7 @@ int hal_is_score(int coreid)
 {
 }
 
-/*============================================================================*
- * hal_get_num_clusters()                                                     *
- *============================================================================*/
-
-/**
- * @brief Gets the number of clusters in the processor.
- *
- * @returns The number of clusters in the processor.
- */
-int hal_get_num_clusters(void)
-{
-}
+#endif
 
 /*============================================================================*
  * hal_get_num_cores()                                                        *
@@ -171,47 +172,10 @@ int hal_get_num_clusters(void)
  */
 int hal_get_num_cores(void)
 {
+	int clusterid;
+
+	clusterid = hal_get_cluster_id();
+
+	return (k1_is_ccluster(clusterid) ? 17 : 4);
 }
-
-/*============================================================================*
- * hal_get_num_ucores()                                                       *
- *============================================================================*/
-
-/**
- * @brief Gets the number of user cores in the processor.
- *
- * @returns The number of user cores in the processor.
- */
-int hal_get_num_ucores(void)
-{
-}
-
-/*============================================================================*
- * hal_get_num_rcores()                                                       *
- *============================================================================*/
-
-/**
- * @brief Gets the number of resource management cores in the
- * processor.
- *
- * @returns The number of resource management cores in the processor.
- */
-int hal_get_num_rcores(void)
-{
-}
-
-/*============================================================================*
- * hal_get_num_scores()                                                       *
- *============================================================================*/
-
-/**
- * @brief Gets the number of system cores in the processor.
- *
- * @returns The number of system cores in the processor.
- */
-int hal_get_num_scores(void)
-{
-}
-
-#endif
 

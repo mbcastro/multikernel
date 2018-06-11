@@ -24,6 +24,34 @@
 		#error "bad target"
 	#endif
 
+/*===========================================================================*
+ * Core Interface                                                            *
+ *===========================================================================*/
+
+	/**
+	 * @brief Number of user cores.
+	 */
+	#define HAL_NR_CORES_USER 256
+
+	/**
+	 * @brief Number of resource management cores.
+	 */
+	#define HAL_NR_CORES_RMAN 16
+
+	/**
+	 * @brief Number of system cores.
+	 */
+	#define HAL_NR_CORES_SYSTEM 16
+
+	/**
+	 * @brief Number of cluster in the paltform.
+	 */
+	#define HAL_NR_CLUSTERS 20
+
+/*===========================================================================*
+ * Mailbox Interface                                                         *
+ *===========================================================================*/
+
 	/**
 	 * @brief Number of mailboxes.
 	 */
