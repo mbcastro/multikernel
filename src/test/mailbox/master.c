@@ -73,7 +73,7 @@ static void *test_hal_mailbox_thread_create_unlink(void *args)
 /**
  * @brief API Test: Mailbox Create Unlink
  */
-static void test_hal_mailbox_create_unlink(void)
+static void test_ hal_mailbox_create_unlink(void)
 {
 	int dmas[NR_IOCLUSTER_DMA];
 	pthread_t tids[NR_IOCLUSTER_DMA];
@@ -292,7 +292,7 @@ static void test_hal_mailbox_double_create(void)
 	coreid = hal_get_core_id();
 
 	TEST_ASSERT((inbox = hal_mailbox_create(coreid)) >= 0);
-	TEST_ASSERT(hal_mailbox_create(coreid) < 0);
+	TEST_ASSERT( hal_mailbox_create(coreid) < 0);
 
 	TEST_ASSERT(hal_mailbox_unlink(inbox) == 0);
 }
@@ -604,7 +604,7 @@ int main(int argc, const char **argv)
 	pthread_barrier_init(&barrier, NULL, NR_IOCLUSTER_DMA);
 
 	/* API tests. */
-	test_hal_mailbox_create_unlink();
+	test_ hal_mailbox_create_unlink();
 	test_hal_mailbox_open_close();
 	test_hal_mailbox_read_write();
 

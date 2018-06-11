@@ -20,6 +20,8 @@
 #ifndef NANVIX_NAME_H_
 #define NANVIX_NAME_H_
 
+#include <stdint.h>
+
 	/**
 	 * @brief Maximum length of a process name (including the
 	 * terminating null character).

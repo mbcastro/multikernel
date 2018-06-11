@@ -46,7 +46,7 @@ static int nr_registration = 0;
 static struct {
 	int core;    						/**< CPU ID. */
 	char name[PROC_NAME_MAX];			/**< Portal name. */
-} names[NR_DMA] = {
+} names[HAL_NR_NOC_NODES] = {
 	{ CCLUSTER0,      "\0"  },
 	{ CCLUSTER1,      "\0"  },
 	{ CCLUSTER2,      "\0"  },
@@ -89,7 +89,7 @@ static struct {
 static int _name_lookup(const char *name)
 {
 	/* Search for portal name. */
-	for (int i = 0; i < NR_DMA; i++)
+	for (int i = 0; i < HAL_NR_NOC_NODES; i++)
 	{
 		/* Found. */
 		if (!strcmp(name, names[i].name))
@@ -117,7 +117,7 @@ static int _name_link(int core, char *name)
 	int index;          /* Index where the process will be stored. */
 
 	/* No entry available. */
-	if (nr_registration >= NR_DMA)
+	if (nr_registration >= HAL_NR_NOC_NODES)
 		return (-EINVAL);
 
 	/* Compute index registration */
@@ -161,12 +161,12 @@ static int _name_unlink(char *name)
 	/* Search for portal name. */
 	int i = 0;
 
-	while (i < NR_DMA && strcmp(name, names[i].name))
+	while (i < HAL_NR_NOC_NODES && strcmp(name, names[i].name))
 	{
 		i++;
 	}
 
-	if (i < NR_DMA)
+	if (i < HAL_NR_NOC_NODES)
 	{
 		strcpy(names[i].name, "\0");
 		return (--nr_registration);
@@ -195,14 +195,14 @@ static void *name_server(void *args)
 
 	/* Open server mailbox. */
 	pthread_mutex_lock(&lock);
-		inbox = _mailbox_create(IOCLUSTER0 + dma);
+		inbox = hal_mailbox_create(IOCLUSTER0 + dma);
 	pthread_mutex_unlock(&lock);
 
 	while(1)
 	{
 		struct name_message msg;
 
-		assert(mailbox_read(inbox, &msg) == 0);
+		assert(hal_mailbox_read(inbox, &msg, MAILBOX_MSG_SIZE) == 0);
 
 		/* Handle name requests. */
 		switch (msg.op)
@@ -216,10 +216,10 @@ static void *name_server(void *args)
 				msg.core = _name_lookup(msg.name);
 
 				/* Send response. */
-				int source = _mailbox_open(msg.source);
+				int source =hal_mailbox_open(msg.source);
 				assert(source >= 0);
-				assert(mailbox_write(source, &msg) == 0);
-				assert(mailbox_close(source) == 0);
+				assert(hal_mailbox_write(source, &msg, MAILBOX_MSG_SIZE) == 0);
+				assert(hal_mailbox_close(source) == 0);
 				break;
 
 			/* Add name. */
@@ -247,7 +247,7 @@ static void *name_server(void *args)
 
 	/* House keeping. */
 	pthread_mutex_lock(&lock);
-		mailbox_unlink(inbox);
+		hal_mailbox_unlink(inbox);
 	pthread_mutex_unlock(&lock);
 
 	return (NULL);

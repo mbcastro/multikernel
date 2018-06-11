@@ -31,6 +31,9 @@ export cflags += -Winit-self -Wswitch-default -Wfloat-equal -Wundef -Wshadow -Wu
 export cflags += -O3
 export cflags += -I $(INCDIR)
 export cflags += -D_KALRAY_MPPA256
+ifdef DEBUG
+export cflags += -DDEBUG
+endif
 # export cflags += -DDEBUG
 export lflags := -Wl,--defsym=_LIBNOC_DISABLE_FIFO_FULL_CHECK=0 -O=essai
 export O := $(OUTDIR)
@@ -39,43 +42,59 @@ export O := $(OUTDIR)
 # Servers
 #=============================================================================
 
-#export io-bin += name-server rmem-server
-#
-## Name Server
-#export name-server-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
-#                           $(SRCDIR)/kernel/arch/mppa/barrier.c \
-#                           $(SRCDIR)/kernel/arch/mppa/name.c \
-#                           $(SRCDIR)/kernel/arch/mppa/core.c    \
-#                           $(SRCDIR)/kernel/arch/mppa/noc.c    \
-#                           $(SRCDIR)/servers/name.c
-#
-#export name-server-system := rtems
-#export name-server-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
-#export name-server-lflags := -lmppaipc -pthread
-#
-## RMEM Server
-#export rmem-server-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
-#                           $(SRCDIR)/kernel/arch/mppa/portal.c  \
-#                           $(SRCDIR)/kernel/arch/mppa/barrier.c \
-#                           $(SRCDIR)/kernel/arch/mppa/name.c    \
-#                           $(SRCDIR)/kernel/arch/mppa/core.c    \
-#                           $(SRCDIR)/kernel/arch/mppa/noc.c    \
-#                           $(SRCDIR)/servers/rmem.c
-#
-#export rmem-server-system := rtems
-#export rmem-server-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
-#export rmem-server-lflags := -lmppaipc -pthread
+export io-bin += name-server rmem-server
+
+# Name Server
+export name-server-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
+							$(SRCDIR)/kernel/arch/mppa/barrier.c \
+							$(SRCDIR)/kernel/arch/mppa/name.c    \
+							$(SRCDIR)/kernel/arch/mppa/core.c    \
+							$(SRCDIR)/kernel/arch/mppa/noc.c     \
+							$(SRCDIR)/servers/name.c
+
+export name-server-system := rtems
+export name-server-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+export name-server-lflags := -lmppaipc -pthread
+
+# RMEM Server
+export rmem-server-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
+							$(SRCDIR)/kernel/arch/mppa/portal.c  \
+							$(SRCDIR)/kernel/arch/mppa/barrier.c \
+							$(SRCDIR)/kernel/arch/mppa/name.c    \
+							$(SRCDIR)/kernel/arch/mppa/core.c    \
+							$(SRCDIR)/kernel/arch/mppa/noc.c     \
+							$(SRCDIR)/servers/rmem.c
+
+export rmem-server-system := rtems
+export rmem-server-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+export rmem-server-lflags := -lmppaipc -pthread
 
 #=============================================================================
 
-all: hal-mailbox
+all: async hal-mailbox mailbox name portal rmem
+
+async:
+	cd $(CURDIR)/src/test/async/ && $(MAKE);
 
 hal-mailbox:
 	cd $(CURDIR)/src/test/hal-mailbox/ && $(MAKE);
 
+mailbox:
+	cd $(CURDIR)/src/test/mailbox/ && $(MAKE);
+
+name:
+	cd $(CURDIR)/src/test/name/ && $(MAKE);
+
+portal:
+	cd $(CURDIR)/src/test/portal/ && $(MAKE);
+
+rmem:
+	cd $(CURDIR)/src/test/rmem/ && $(MAKE);
+
 clean:
 	cd $(CURDIR)/src/test/async/; make clean;
+	cd $(CURDIR)/src/test/hal-mailbox/; make clean;
 	cd $(CURDIR)/src/test/mailbox/; make clean;
+	cd $(CURDIR)/src/test/name/; make clean;
 	cd $(CURDIR)/src/test/portal/; make clean;
 	cd $(CURDIR)/src/test/rmem/; make clean;
-	cd $(CURDIR)/src/test/name/; make clean;

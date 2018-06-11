@@ -203,7 +203,7 @@ static void *name_server(void *args)
 
 	/* Open server mailbox. */
 	pthread_mutex_lock(&lock);
-		inbox = _mailbox_create(IOCLUSTER0 + dma);
+		inbox = hal_mailbox_create(IOCLUSTER0 + dma);
 	pthread_mutex_unlock(&lock);
 
 	while(1)
@@ -224,7 +224,7 @@ static void *name_server(void *args)
 				msg.core = _name_lookup(msg.name);
 
 				/* Send response. */
-				int source = _mailbox_open(msg.source);
+				int source =hal_mailbox_open(msg.source);
 				assert(source >= 0);
 				assert(mailbox_write(source, &msg) == 0);
 				assert(mailbox_close(source) == 0);

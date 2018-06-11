@@ -21,12 +21,12 @@
 #=============================================================================
 
 cluster-bin += name-slave
-name-slave-srcs := $(SRCDIR)/kernel/arch/mppa/barrier.c          \
-							$(SRCDIR)/kernel/arch/mppa/core.c    \
-							$(SRCDIR)/kernel/arch/mppa/mailbox.c \
-							$(SRCDIR)/kernel/arch/mppa/noc.c     \
-							$(SRCDIR)/kernel/arch/mppa/name.c    \
-							$(SRCDIR)/test/name/slave.c
+name-slave-srcs := $(SRCDIR)/kernel/arch/mppa/barrier.c \
+					$(SRCDIR)/kernel/arch/mppa/core.c    \
+					$(SRCDIR)/kernel/arch/mppa/mailbox.c \
+					$(SRCDIR)/kernel/arch/mppa/noc.c     \
+					$(SRCDIR)/kernel/arch/mppa/name.c    \
+					$(SRCDIR)/test/name/slave.c
 
 # Toolchain Configuration
 name-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL

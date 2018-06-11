@@ -20,12 +20,13 @@
 #include <nanvix/name.h>
 #include <nanvix/pm.h>
 #include <nanvix/klib.h>
+#include <nanvix/hal.h>
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
 
-#include "mppa.h" 
+#include "mppa.h"
 
 /**
  * @brief name server CPU ID.
@@ -61,14 +62,14 @@ int name_lookup(char *name)
 
 	#ifdef DEBUG
 		printf("name_lookup(%s) called from cluster %d...\n", name,
-		                                      k1_get_cluster_id());
+		                                      hal_get_cluster_id());
 	#endif
 
-	inbox = _mailbox_create(k1_get_cluster_id());
-	server = _mailbox_open(SERVER);
+	inbox = hal_mailbox_create(hal_get_cluster_id());
+	server = hal_mailbox_open(SERVER);
 
 	/* Build operation header. */
-	msg.source = k1_get_cluster_id();
+	msg.source = hal_get_cluster_id();
 	msg.op = NAME_LOOKUP;
 	msg.core = -1;
 	strcpy(msg.name, name);
@@ -78,15 +79,15 @@ int name_lookup(char *name)
 		printf("Sending request for name: %s...\n", msg.name);
 	#endif
 
-	assert(mailbox_write(server, &msg) == 0);
+	assert(hal_mailbox_write(server, &msg, MAILBOX_MSG_SIZE) == 0);
 
 	while(msg.core == -1){
-		assert(mailbox_read(inbox, &msg) == 0);
+		assert(hal_mailbox_read(inbox, &msg, MAILBOX_MSG_SIZE) == 0);
 	}
 
 	/* House keeping. */
-	assert(mailbox_close(server) == 0);
-	assert(mailbox_close(inbox) == 0);
+	assert(hal_mailbox_close(server) == 0);
+	assert(hal_mailbox_close(inbox) == 0);
 
 	return (msg.core);
 }
@@ -110,19 +111,19 @@ void name_link(int core, const char *name)
 	assert((name != NULL) && (strlen(name) < (PROC_NAME_MAX - 1))
                                    && (strcmp(name, "\0") != 0));
 
-	server = _mailbox_open(SERVER);
+	server =hal_mailbox_open(SERVER);
 
 	/* Build operation header. */
-	msg.source = k1_get_cluster_id();
+	msg.source = hal_get_cluster_id();
 	msg.op = NAME_ADD;
 	msg.core = core;
 	strcpy(msg.name, name);
 
 	/* Send link request. */
-	assert(mailbox_write(server, &msg) == 0);
+	assert(hal_mailbox_write(server, &msg, MAILBOX_MSG_SIZE) == 0);
 
 	/* House keeping. */
-	assert(mailbox_close(server) == 0);
+	assert(hal_mailbox_close(server) == 0);
 }
 
 /*=======================================================================*
@@ -144,13 +145,13 @@ void name_unlink(char *name)
 
 	#ifdef DEBUG
 		printf("name_unlink(%s): called from cluster %d...\n",
-		                           name, k1_get_cluster_id());
+		                           name, hal_get_cluster_id());
 	#endif
 
-	server = _mailbox_open(SERVER);
+	server =hal_mailbox_open(SERVER);
 
 	/* Build operation header. */
-	msg.source = k1_get_cluster_id();
+	msg.source = hal_get_cluster_id();
 	msg.op = NAME_REMOVE;
 	msg.core = -1;
 	strcpy(msg.name, name);
@@ -160,8 +161,8 @@ void name_unlink(char *name)
 		printf("Sending remove request for name: %s...\n", msg.name);
 	#endif
 
-	assert(mailbox_write(server, &msg) == 0);
+	assert(hal_mailbox_write(server, &msg, MAILBOX_MSG_SIZE) == 0);
 
 	/* House keeping. */
-	assert(mailbox_close(server) == 0);
+	assert(hal_mailbox_close(server) == 0);
 }

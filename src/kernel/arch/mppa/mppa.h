@@ -72,7 +72,7 @@
 	#define IOCLUSTER1 192 /**< IO cluster 1.       */
 	
 	/* Forward definitions. */
-	extern int k1_get_cluster_id(void);
+	extern int hal_get_cluster_id(void);
 	extern int k1_is_ccluster(int);
 	extern int k1_is_iocluster(int);
 	extern int k1_is_iocpu(int);
