@@ -120,6 +120,14 @@ static int _name_link(int nodeid, char *name)
 	if (nr_registration >= HAL_NR_NOC_NODES)
 		return (-EINVAL);
 
+	/* Check that the name is not already used */
+	for (int i = 0; i < HAL_NR_NOC_NODES; i++){
+		if (strcmp(names[i].name, name) == 0)
+		{
+			return (-EINVAL);
+		}
+	}
+
 	/* Compute index registration */
 	if (nodeid >= 0 && nodeid < NR_CCLUSTER)
 		index = nodeid;
