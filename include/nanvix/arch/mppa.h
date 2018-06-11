@@ -114,6 +114,7 @@
 	#define MAILBOX_MSG_SIZE 64
 
 	/* Forward definitions. */
+	extern int noc_get_node_id(void);
 	extern int noctag_mailbox(int);
 	extern void noc_remotes(char *, int);
 	extern int noc_get_dma(int);

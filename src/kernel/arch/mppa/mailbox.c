@@ -98,7 +98,7 @@ int hal_mailbox_open(int coreid)
 		return (-EINVAL);
 
 #ifdef _HAS_GET_CORE_ID_	
-	/* Bad core ID. */
+	/* Invalid core ID. */
 	if (coreid == hal_get_core_id())
 		return (-EINVAL);
 #endif

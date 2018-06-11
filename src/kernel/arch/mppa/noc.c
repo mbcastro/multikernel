@@ -20,6 +20,8 @@
 #include <string.h>
 #include <stdio.h>
 
+#include <HAL/hal/core/mp.h>
+
 #include <nanvix/arch/mppa.h>
 #include <nanvix/klib.h>
 
@@ -36,6 +38,21 @@
 #define NOCTAG_PORTAL_OFF (NOCTAG_MAILBOX_OFF + NR_DMA) /**< Portal.  */
 #define NOCTAG_SYNC_OFF   (NOCTAG_PORTAL_OFF + NR_DMA)  /**< Sync.    */
 /**@}*/
+
+/*============================================================================*
+ * noc_get_node_id()                                                          *
+ *============================================================================*/
+
+/**
+ * @brief Gets the ID of the NoC node attached to the underlying core.
+ *
+ * @returns The ID of the NoC node attached to the underlying core is
+ * returned.
+ */
+int noc_get_node_id(void)
+{
+	return (__k1_get_cluster_id());
+}
 
 /*============================================================================*
  * noc_get_dma()                                                              *
