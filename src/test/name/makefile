@@ -44,7 +44,7 @@ name-master-srcs := $(SRCDIR)/kernel/arch/mppa/barrier.c \
 name-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
 name-master-lflags := -lmppaipc
 
-name-objs := name-server name-master name-slave
+name-objs := spawner-server name-master name-slave
 name-name := name.img
 
 #=============================================================================

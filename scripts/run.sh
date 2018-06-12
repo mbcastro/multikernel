@@ -82,7 +82,7 @@ then
 	echo "Testing MAILBOX"
 	run1 "hal-mailbox.img" "hal-mailbox-master" | grep "test"
 	echo "Testing NAME"
-	run2 "name.img" "name-server" "name-master" "$NCLUSTERS" | grep "test"
+	run2 "name.img" "spawner-server" "name-master" "$NCLUSTERS" | grep "test"
 #	echo "Testing PORTAL"
 #	run2 "portal.img" "name-server" "portal-master" "write $NCLUSTERS $SIZE"
 #	echo "Testing RMEM"

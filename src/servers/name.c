@@ -16,12 +16,11 @@
  * You should have received a copy of the GNU General Public License
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
+
 #include <assert.h>
 #include <pthread.h>
 #include <string.h>
 #include <errno.h>
-
-#include <mppa/osconfig.h>
 
 #include <nanvix/config.h>
 #include <nanvix/hal.h>
@@ -32,7 +31,8 @@
 #include <stdio.h>
 #endif
 
-static pthread_mutex_t lock;
+/* Import definitions. */
+extern pthread_mutex_t lock;
 
 /**
  * @brief Number of registration.
@@ -46,6 +46,25 @@ static struct {
 	int nodeid;               /**< NoC node ID.  */
 	char name[PROC_NAME_MAX]; /**< Process name. */
 } names[HAL_NR_NOC_NODES];
+
+/*===================================================================*
+ * name_init()                                                       *
+ *===================================================================*/
+
+/**
+ * @brief Initializes the name server.
+ */
+static void name_init(void)
+{
+	/* Initialize lookup table. */
+	for (int i = 0; i < HAL_NR_NOC_NODES; i++)
+	{
+		names[i].nodeid = hal_noc_nodes[i];
+		strcpy(names[i].name, "");
+	}
+
+	strcpy(names[hal_noc_nodes[NAME_SERVER_NODE]].name, "/io0");
+}
 
 /*=======================================================================*
  * _name_lookup()                                                        *
@@ -172,13 +191,15 @@ static int _name_unlink(char *name)
  *
  * @returns Always returns NULL.
  */
-static void *name_server(void *args)
+void *name_server(void *args)
 {
 	int inbox;   /* Mailbox for small messages. */
 	int source;  /* NoC node ID of the client   */
 	int tmp;
 
 	((void) args);
+
+	name_init();
 
 	/* Open server mailbox. */
 	pthread_mutex_lock(&lock);
@@ -220,13 +241,9 @@ static void *name_server(void *args)
 				tmp = nr_registration;
 
 				if (_name_link(msg.nodeid, msg.name) == (tmp + 1))
-				{
 					msg.op = NAME_SUCCESS;
-				}
 				else
-				{
 					msg.op = NAME_FAIL;
-				}
 
 				/* Send acknowledgement. */
 				source = hal_mailbox_open(msg.source);
@@ -276,68 +293,4 @@ static void *name_server(void *args)
 	pthread_mutex_unlock(&lock);
 
 	return (NULL);
-}
-
-/*===================================================================*
- * name_init()                                                       *
- *===================================================================*/
-
-/**
- * @brief Initializes the name server.
- */
-static void name_init(void)
-{
-	/* Initialize lookup table. */
-	for (int i = 0; i < HAL_NR_NOC_NODES; i++)
-	{
-		names[i].nodeid = hal_noc_nodes[i];
-		strcpy(names[i].name, "");
-	}
-
-	strcpy(names[hal_noc_nodes[NAME_SERVER_NODE]].name, "/io0");
-}
-
-/*===================================================================*
- * main()                                                            *
- *===================================================================*/
-
-/**
- * @brief Resolves process names.
- */
-int main(int argc, char **argv)
-{
-	int global_barrier; /* System barrier. */
-	pthread_t tid;      /* Thread ID.      */
-
-	((void) argc);
-	((void) argv);
-
-#ifdef DEBUG
-	/* printf("[NAME] booting up server\n"); */
-#endif
-
-	/* Spawn name server thread. */
-	assert((pthread_create(&tid,
-		NULL,
-		name_server,
-		NULL)) == 0
-	);
-
-	name_init();
-
-	/* Release master IO cluster. */
-	global_barrier = barrier_open(NR_IOCLUSTER);
-	barrier_wait(global_barrier);
-
-#ifdef DEBUG
-	/* printf("[NAME] server alive\n"); */
-#endif
-
-	/* Wait for name server thread. */
-	pthread_join(tid, NULL);
-
-	/* House keeping. */
-	barrier_close(global_barrier);
-
-	return (EXIT_SUCCESS);
 }

@@ -41,19 +41,20 @@ export O := $(OUTDIR)
 # Servers
 #=============================================================================
 
-export io-bin += name-server
+export io-bin += spawner-server
 
 # Name Server
-export name-server-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
-							$(SRCDIR)/kernel/arch/mppa/barrier.c \
-							$(SRCDIR)/kernel/arch/mppa/name.c    \
-							$(SRCDIR)/kernel/arch/mppa/core.c    \
-							$(SRCDIR)/kernel/arch/mppa/noc.c     \
-							$(SRCDIR)/servers/name.c
+export spawner-server-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
+							  $(SRCDIR)/kernel/arch/mppa/barrier.c \
+							  $(SRCDIR)/kernel/arch/mppa/name.c    \
+							  $(SRCDIR)/kernel/arch/mppa/core.c    \
+							  $(SRCDIR)/kernel/arch/mppa/noc.c     \
+							  $(SRCDIR)/servers/spawner.c          \
+							  $(SRCDIR)/servers/name.c
 
-export name-server-system := rtems
-export name-server-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
-export name-server-lflags := -lmppaipc -pthread
+export spawner-server-system := rtems
+export spawner-server-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+export spawner-server-lflags := -lmppaipc -pthread
 
 # RMEM Server
 export rmem-server-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
