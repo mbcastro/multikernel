@@ -23,9 +23,14 @@
 #include <mppa/osconfig.h>
 #include <mppaipc.h>
 
-#include <nanvix/pm.h>
 #include <nanvix/hal.h>
+#include <nanvix/pm.h>
 #include <nanvix/name.h>
+
+/**
+ * @brief Asserts a logic expression.
+ */
+#define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
 
 /**
  * @brief ID of slave processes.
@@ -51,8 +56,8 @@ static void test_name_unlink(void)
 		sprintf(pathname, "/name%d", i);
 
 		/* Remove name. */
-		assert(name_unlink(pathname) == 0);
-		assert(name_lookup(pathname) == (-ENOENT));
+		TEST_ASSERT(name_unlink(pathname) == 0);
+		TEST_ASSERT(name_lookup(pathname) < 0);
 	}
 }
 
@@ -65,12 +70,12 @@ static void test_name_unlink(void)
  */
 static void test_name_link(void)
 {
-	int clusterid;
+	int nodeid;
 	char pathname[PROC_NAME_MAX];
 
 	printf("[test][api] Name Link\n");
 
-	clusterid = hal_get_cluster_id();
+	nodeid = hal_get_cluster_id();
 
 	/* IO cluster registration test. */
 	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
@@ -78,7 +83,7 @@ static void test_name_link(void)
 		sprintf(pathname, "/name%d", i);
 
 		/* Register name. */
-		assert(name_link(clusterid + i, pathname) == 0);
+		TEST_ASSERT(name_link(nodeid + i, pathname) == 0);
 	}
 }
 
@@ -91,19 +96,19 @@ static void test_name_link(void)
  */
 static void test_name_lookup(void)
 {
-	int clusterid;
+	int nodeid;
 	char pathname[PROC_NAME_MAX];
 
 	printf("[test][api] Name Lookup\n");
 
-	clusterid = hal_get_cluster_id();
+	nodeid = hal_get_cluster_id();
 
 	/* IO cluster registration test. */
 	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
 	{
 		sprintf(pathname, "/name%d", i);
 
-		assert(name_lookup(pathname) == clusterid + i);
+		TEST_ASSERT(name_lookup(pathname) == nodeid + i);
 	}
 }
 
@@ -128,10 +133,10 @@ void test_name_slave(int nclusters)
 	sprintf(nclusters_str, "%d", nclusters);
 
 	for (int i = 0; i < nclusters; i++)
-		assert((pids[i] = mppa_spawn(i, NULL, args[0], args, NULL)) != -1);
+		TEST_ASSERT((pids[i] = mppa_spawn(i, NULL, args[0], args, NULL)) != -1);
 
 	for (int i = 0; i < nclusters; i++)
-		assert(mppa_waitpid(pids[i], NULL, 0) != -1);
+		TEST_ASSERT(mppa_waitpid(pids[i], NULL, 0) != -1);
 }
 
 /*===================================================================*
@@ -146,7 +151,7 @@ int main(int argc, char **argv)
 	int global_barrier;
 	int nclusters;
 
-	assert(argc == 2);
+	TEST_ASSERT(argc == 2);
 
 	/* Retrieve kernel parameters. */
 	nclusters = atoi(argv[1]);
