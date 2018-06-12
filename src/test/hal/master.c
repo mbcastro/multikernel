@@ -182,6 +182,54 @@ static void test_hal_get_core_type(void)
 }
 
 /*===================================================================*
+ * API Test: Query NoC Node ID                                         *
+ *===================================================================*/
+
+/**
+ * @brief API Test: Query NoC Node ID
+ */
+static void *test_thread_hal_get_node_id(void *args)
+{
+	int tid;
+
+	hal_setup();
+	pthread_barrier_wait(&barrier);
+
+	tid = ((int *)args)[0];
+
+	TEST_ASSERT(hal_get_node_id() == hal_noc_nodes[SPAWNER_SERVER_NODE + tid]);
+
+	hal_cleanup();
+	return (NULL);
+}
+
+/**
+ * @brief API Test: Query NoC Node ID
+ */
+static void test_hal_get_node_id(void)
+{
+	int args[ncores];
+	pthread_t threads[ncores];
+
+	printf("[test][api] Query NoC Node ID\n");
+
+	/* Spawn driver threads. */
+	for (int i = 1; i < ncores; i++)
+	{
+		args[i] = i;
+		assert((pthread_create(&threads[i],
+			NULL,
+			test_thread_hal_get_node_id,
+			&args[i])) == 0
+		);
+	}
+
+	/* Wait for driver threads. */
+	for (int i = 1; i < ncores; i++)
+		pthread_join(threads[i], NULL);
+}
+
+/*===================================================================*
  * HAL Test Driver                                                   *
  *===================================================================*/
 
@@ -207,6 +255,7 @@ int main(int argc, const char **argv)
 	test_hal_get_cluster_id();
 	test_hal_get_core_id();
 	test_hal_get_core_type();
+	test_hal_get_node_id();
 
 	hal_cleanup();
 	return (EXIT_SUCCESS);

@@ -83,7 +83,7 @@ const int hal_noc_nodes[HAL_NR_NOC_NODES] = {
  */
 int hal_get_node_id(void)
 {
-	return (__k1_get_cluster_id() + __k1_get_cpu_id());
+	return (__k1_get_cluster_id() + hal_get_core_id());
 }
 
 /*============================================================================*

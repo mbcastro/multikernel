@@ -57,9 +57,6 @@
 	 */
 	#define HAL_NR_NOC_NODES 24
 
-	/* Forward definitions. */
-	extern const int hal_noc_nodes[HAL_NR_NOC_NODES];
-
 /*===========================================================================*
  * Mailbox Interface                                                         *
  *===========================================================================*/

@@ -66,11 +66,18 @@
 	extern int hal_get_score_freq(void);
 
 /*============================================================================*
- * Communication                                                              *
+ * NoC Interface                                                              *
  *============================================================================*/
 
 	/* Forward definitions. */
+	extern const int hal_noc_nodes[HAL_NR_NOC_NODES];
+
+	/* Forward definitions. */
 	extern int hal_get_node_id(void);
+
+/*============================================================================*
+ * Mailbox Interface                                                          *
+ *============================================================================*/
 
 	/* Forward definitions. */
 	extern int hal_mailbox_create(int);
