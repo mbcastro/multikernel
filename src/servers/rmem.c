@@ -95,6 +95,8 @@ static void *rmem_server(void *args)
 	int inportal;      /* Portal for receiving data.  */
 	char pathname[16]; /* RMEM bank.                  */
 
+	hal_setup();
+
 	dma = ((int *)args)[0];
 
 	sprintf(pathname, "/rmem%d", dma);
@@ -136,6 +138,7 @@ static void *rmem_server(void *args)
 		mailbox_unlink(inbox);
 	pthread_mutex_unlock(&lock);
 
+	hal_cleanup();
 	return (NULL);
 }
 
@@ -155,6 +158,8 @@ int main(int argc, char **argv)
 
 	((void) argc);
 	((void) argv);
+
+	hal_setup();
 
 #ifdef DEBUG
 	printf("[RMEM] booting up server\n");
@@ -198,5 +203,6 @@ int main(int argc, char **argv)
 	/* House keeping. */
 	barrier_close(global_barrier);
 
+	hal_cleanup();
 	return (EXIT_SUCCESS);
 }

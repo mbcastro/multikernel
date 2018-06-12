@@ -199,6 +199,8 @@ void *name_server(void *args)
 
 	((void) args);
 
+	hal_setup();
+
 	name_init();
 
 	/* Open server mailbox. */
@@ -290,5 +292,6 @@ void *name_server(void *args)
 		hal_mailbox_unlink(inbox);
 	pthread_mutex_unlock(&lock);
 
+	hal_cleanup();
 	return (NULL);
 }
