@@ -138,11 +138,55 @@ static void test_hal_get_core_id(void)
 }
 
 /*===================================================================*
- * Mailbox Test Driver                                               *
+ * API Test: Query Core Type                                         *
  *===================================================================*/
 
 /**
- * @brief Mailbox Test Driver
+ * @brief API Test: Query Core Type
+ */
+static void *test_thread_hal_get_core_type(void *args)
+{
+	((void) args);
+
+	hal_setup();
+	pthread_barrier_wait(&barrier);
+
+	TEST_ASSERT(hal_get_core_type() == HAL_CORE_SYSTEM);
+
+	hal_cleanup();
+	return (NULL);
+}
+
+/**
+ * @brief API Test: Query Core Type
+ */
+static void test_hal_get_core_type(void)
+{
+	pthread_t threads[ncores];
+
+	printf("[test][api] Query Core Type\n");
+
+	/* Spawn driver threads. */
+	for (int i = 1; i < ncores; i++)
+	{
+		assert((pthread_create(&threads[i],
+			NULL,
+			test_thread_hal_get_core_type,
+			NULL)) == 0
+		);
+	}
+
+	/* Wait for driver threads. */
+	for (int i = 1; i < ncores; i++)
+		pthread_join(threads[i], NULL);
+}
+
+/*===================================================================*
+ * HAL Test Driver                                                   *
+ *===================================================================*/
+
+/**
+ * @brief HAL Test Driver
  */
 int main(int argc, const char **argv)
 {
@@ -159,9 +203,10 @@ int main(int argc, const char **argv)
 
 	pthread_barrier_init(&barrier, NULL, ncores - 1);
 
-	/* API tests. */
+	/* Core Interface API tests. */
 	test_hal_get_cluster_id();
 	test_hal_get_core_id();
+	test_hal_get_core_type();
 
 	hal_cleanup();
 	return (EXIT_SUCCESS);

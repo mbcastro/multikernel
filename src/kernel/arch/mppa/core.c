@@ -19,6 +19,8 @@
 
 #include <HAL/hal/core/mp.h>
 
+#include <nanvix/hal.h>
+
 #include "mppa.h" 
 
 /*============================================================================*
@@ -110,8 +112,6 @@ int hal_get_core_id(void)
  * hal_get_core_type()                                                        *
  *============================================================================*/
 
-#ifdef _HAS_GET_CORE_TYPE
-
 /**
  * @brief Gets the type of the underlying core.
  *
@@ -119,9 +119,12 @@ int hal_get_core_id(void)
  */
 int hal_get_core_type(void)
 {
-}
+	int clusterid;
 
-#endif
+	clusterid = hal_get_cluster_id();
+
+	return (k1_is_ccluster(clusterid) ? HAL_CORE_USER : HAL_CORE_SYSTEM);
+}
 
 /*============================================================================*
  * hal_is_ucore()                                                             *
