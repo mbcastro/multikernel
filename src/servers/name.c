@@ -22,17 +22,15 @@
 #include <errno.h>
 
 #include <mppa/osconfig.h>
+
+#include <nanvix/config.h>
 #include <nanvix/hal.h>
-#include <nanvix/mm.h>
 #include <nanvix/pm.h>
 #include <nanvix/name.h>
-#include <nanvix/klib.h>
 
 #ifdef DEBUG
 #include <stdio.h>
 #endif
-
-#define NAME_SERVER_NODE 0
 
 static pthread_mutex_t lock;
 
