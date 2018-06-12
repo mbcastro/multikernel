@@ -46,6 +46,7 @@ int hal_get_core_freq(void)
  */
 int hal_get_ucore_freq(void)
 {
+	return (__bsp_frequency);
 }
 
 /*============================================================================*
@@ -59,6 +60,7 @@ int hal_get_ucore_freq(void)
  */
 int hal_get_rcore_freq(void)
 {
+	return (__bsp_frequency);
 }
 
 /*============================================================================*
@@ -72,5 +74,6 @@ int hal_get_rcore_freq(void)
  */
 int hal_get_score_freq(void)
 {
+	return (__bsp_frequency);
 }
 
