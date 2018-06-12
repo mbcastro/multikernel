@@ -19,6 +19,7 @@
 
 #include <assert.h>
 #include <pthread.h>
+#include <stdlib.h>
 
 #include <mppa/osconfig.h>
 
@@ -53,15 +54,13 @@ pthread_mutex_t lock;
  */
 int main(int argc, char **argv)
 {
-	int global_barrier;         /* System barrier. */
-	pthread_t tids[NR_SERVERS]; /* Thread IDs.     */
+	int global_barrier;
+	pthread_t tids[NR_SERVERS];
 
 	((void) argc);
 	((void) argv);
 
-#ifdef DEBUG
-	/* printf("[NAME] booting up server\n"); */
-#endif
+	 printf("[SPAWNER] booting up server\n");
 
 	pthread_mutex_init(&lock, NULL);
 
@@ -76,19 +75,14 @@ int main(int argc, char **argv)
 	}
 
 	/* Release master IO cluster. */
-	global_barrier = barrier_open(NR_IOCLUSTER);
+	global_barrier = barrier_open(0);
 	barrier_wait(global_barrier);
 
-#ifdef DEBUG
-	/* printf("[NAME] server alive\n"); */
-#endif
+	printf("[SPAWNER] server alive\n");
 
 	/* Wait for name server thread. */
 	for (int i = 0; i < NR_SERVERS; i++)
 		pthread_join(tids[i], NULL);
-
-	/* House keeping. */
-	barrier_close(global_barrier);
 
 	return (EXIT_SUCCESS);
 }

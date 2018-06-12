@@ -28,6 +28,21 @@
 #include <nanvix/name.h>
 
 /**
+ * @brief Number of IO clusters.
+ */
+#define NR_IOCLUSTER 2
+
+/**
+ * @brief Number of compute clusters.
+ */
+#define NR_CCLUSTER 16
+
+/**
+ * @brief Number of DMAs per compute cluster.
+ */
+#define NR_IOCLUSTER_DMA 4
+
+/**
  * @brief Asserts a logic expression.
  */
 #define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }

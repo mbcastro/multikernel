@@ -65,26 +65,6 @@
  *===========================================================================*/
 
 	/**
-	 * @brief Number DMAs per compute cluster.
-	 */
-	#define NR_CCLUSTER_DMA 1
-
-	/**
-	 * @brief Number of DMAs per compute cluster.
-	 */
-	#define NR_IOCLUSTER_DMA 4
-
-	/**
-	 * @brief Number of compute clusters.
-	 */
-	#define NR_CCLUSTER 16
-
-	/**
-	 * @brief Number of IO clusters.
-	 */
-	#define NR_IOCLUSTER 2
-
-	/**
 	 * @brief Number of mailboxes.
 	 */
 	#ifdef _KALRAY_MPPA_CCLUSTER_
