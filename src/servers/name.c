@@ -245,6 +245,8 @@ void *name_server(void *args)
 				else
 					msg.op = NAME_FAIL;
 
+				assert(nr_registration >= 0);
+
 				/* Send acknowledgement. */
 				source = hal_mailbox_open(msg.source);
 				assert(source >= 0);
@@ -265,6 +267,8 @@ void *name_server(void *args)
 					msg.op = NAME_SUCCESS;
 				else
 					msg.op = NAME_FAIL;
+
+				assert(nr_registration >= 0);
 
 				/* Send acknowledgement. */
 				source = hal_mailbox_open(msg.source);
