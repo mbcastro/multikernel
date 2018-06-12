@@ -16,22 +16,23 @@
  * You should have received a copy of the GNU General Public License
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
+#include <assert.h>
+#include <pthread.h>
+#include <string.h>
+#include <errno.h>
 
 #include <mppa/osconfig.h>
 #include <nanvix/hal.h>
 #include <nanvix/mm.h>
 #include <nanvix/pm.h>
 #include <nanvix/name.h>
-#include <nanvix/arch/mppa.h>
 #include <nanvix/klib.h>
-#include <assert.h>
-#include <pthread.h>
-#include <string.h>
-#include <errno.h>
 
 #ifdef DEBUG
 #include <stdio.h>
 #endif
+
+#define NAME_SERVER_NODE 0
 
 static pthread_mutex_t lock;
 
@@ -44,34 +45,9 @@ static int nr_registration = 0;
  * @brief Lookup table of process names.
  */
 static struct {
-	int nodeid;    						/**< NoC node ID.  */
-	char name[PROC_NAME_MAX];			/**< Process name. */
-} names[HAL_NR_NOC_NODES] = {
-	{ CCLUSTER0,      "\0"  },
-	{ CCLUSTER1,      "\0"  },
-	{ CCLUSTER2,      "\0"  },
-	{ CCLUSTER3,      "\0"  },
-	{ CCLUSTER4,      "\0"  },
-	{ CCLUSTER5,      "\0"  },
-	{ CCLUSTER6,      "\0"  },
-	{ CCLUSTER7,      "\0"  },
-	{ CCLUSTER8,      "\0"  },
-	{ CCLUSTER9,      "\0"  },
-	{ CCLUSTER10,     "\0"  },
-	{ CCLUSTER11,     "\0"  },
-	{ CCLUSTER12,     "\0"  },
-	{ CCLUSTER13,     "\0"  },
-	{ CCLUSTER14,     "\0"  },
-	{ CCLUSTER15,     "\0"  },
-	{ IOCLUSTER0 + 0, "/io0"},
-	{ IOCLUSTER0 + 1, "\0"  },
-	{ IOCLUSTER0 + 2, "\0"  },
-	{ IOCLUSTER0 + 3, "\0"  },
-	{ IOCLUSTER1 + 0, "\0"  },
-	{ IOCLUSTER1 + 1, "\0"  },
-	{ IOCLUSTER1 + 2, "\0"  },
-	{ IOCLUSTER1 + 3, "\0"  }
-};
+	int nodeid;               /**< NoC node ID.  */
+	char name[PROC_NAME_MAX]; /**< Process name. */
+} names[HAL_NR_NOC_NODES];
 
 /*=======================================================================*
  * _name_lookup()                                                        *
@@ -121,25 +97,29 @@ static int _name_link(int nodeid, char *name)
 		return (-EINVAL);
 
 	/* Check that the name is not already used */
-	for (int i = 0; i < HAL_NR_NOC_NODES; i++){
+	for (int i = 0; i < HAL_NR_NOC_NODES; i++)
+	{
 		if (strcmp(names[i].name, name) == 0)
-		{
 			return (-EINVAL);
+	}
+
+	/* Find index. */
+	for (int i = 0; i < HAL_NR_NOC_NODES; i++)
+	{
+		/* Found. */
+		if (names[i].nodeid == nodeid)
+		{
+			index = i;
+			goto found;
 		}
 	}
 
-	/* Compute index registration */
-	if (nodeid >= 0 && nodeid < NR_CCLUSTER)
-		index = nodeid;
-	else if (nodeid >= IOCLUSTER0 && nodeid <= IOCLUSTER0 + 3)
-	 	index = NR_CCLUSTER + nodeid%IOCLUSTER0;
-	else if (nodeid >= IOCLUSTER1 && nodeid <= IOCLUSTER1 + 3)
-	 	index = NR_CCLUSTER + NR_IOCLUSTER_DMA + nodeid%IOCLUSTER1;
-	else
-		return (-EINVAL);
+	return (-EINVAL);
+
+found:
 
 	/* Entry not available */
-	if (strcmp(names[index].name, "\0"))
+	if (strcmp(names[index].name, ""))
 		return (-EINVAL);
 
 #ifdef DEBUG
@@ -196,16 +176,15 @@ static int _name_unlink(char *name)
  */
 static void *name_server(void *args)
 {
-	int dma;     /* DMA channel to use.         */
 	int inbox;   /* Mailbox for small messages. */
 	int source;  /* NoC node ID of the client   */
 	int tmp;
 
-	dma = ((int *)args)[0];
+	((void) args);
 
 	/* Open server mailbox. */
 	pthread_mutex_lock(&lock);
-		inbox = hal_mailbox_create(IOCLUSTER0 + dma);
+		inbox = hal_mailbox_create(hal_noc_nodes[NAME_SERVER_NODE]);
 	pthread_mutex_unlock(&lock);
 
 	while(1)
@@ -302,22 +281,35 @@ static void *name_server(void *args)
 }
 
 /*===================================================================*
- * main()                                                            *
+ * name_init()                                                       *
  *===================================================================*/
 
 /**
- * @brief DMA channel.
+ * @brief Initializes the name server.
  */
-#define NAME_DMA 0
+static void name_init(void)
+{
+	/* Initialize lookup table. */
+	for (int i = 0; i < HAL_NR_NOC_NODES; i++)
+	{
+		names[i].nodeid = hal_noc_nodes[i];
+		strcpy(names[i].name, "");
+	}
+
+	strcpy(names[hal_noc_nodes[NAME_SERVER_NODE]].name, "/io0");
+}
+
+/*===================================================================*
+ * main()                                                            *
+ *===================================================================*/
 
 /**
  * @brief Resolves process names.
  */
 int main(int argc, char **argv)
 {
-	int dma;            /* DMA_channel to use. */
-	int global_barrier; /* System barrier.     */
-	pthread_t tid;      /* Thread ID.          */
+	int global_barrier; /* System barrier. */
+	pthread_t tid;      /* Thread ID.      */
 
 	((void) argc);
 	((void) argv);
@@ -327,12 +319,13 @@ int main(int argc, char **argv)
 #endif
 
 	/* Spawn name server thread. */
-	dma = NAME_DMA;
 	assert((pthread_create(&tid,
 		NULL,
 		name_server,
-		&dma)) == 0
+		NULL)) == 0
 	);
+
+	name_init();
 
 	/* Release master IO cluster. */
 	global_barrier = barrier_open(NR_IOCLUSTER);

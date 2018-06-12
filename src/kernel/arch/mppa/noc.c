@@ -21,6 +21,7 @@
 #include <stdio.h>
 
 #include <HAL/hal/core/mp.h>
+#include <nanvix/hal.h>
 
 #include <nanvix/klib.h>
 
@@ -39,6 +40,36 @@
 #define NOCTAG_PORTAL_OFF (NOCTAG_MAILBOX_OFF + NR_DMA) /**< Portal.  */
 #define NOCTAG_SYNC_OFF   (NOCTAG_PORTAL_OFF + NR_DMA)  /**< Sync.    */
 /**@}*/
+
+/**
+ * @brief IDs of NoC nodes.
+ */
+const int hal_noc_nodes[HAL_NR_NOC_NODES] = {
+	IOCLUSTER0 + 0,
+	IOCLUSTER0 + 1,
+	IOCLUSTER0 + 2,
+	IOCLUSTER0 + 3,
+	IOCLUSTER1 + 0,
+	IOCLUSTER1 + 1,
+	IOCLUSTER1 + 2,
+	IOCLUSTER1 + 3,
+	CCLUSTER0,
+	CCLUSTER1,
+	CCLUSTER2,
+	CCLUSTER3,
+	CCLUSTER4,
+	CCLUSTER5,
+	CCLUSTER6,
+	CCLUSTER7,
+	CCLUSTER8,
+	CCLUSTER9,
+	CCLUSTER10,
+	CCLUSTER11,
+	CCLUSTER12,
+	CCLUSTER13,
+	CCLUSTER14,
+	CCLUSTER15
+};
 
 /*============================================================================*
  * hal_get_node_id()                                                          *
