@@ -96,15 +96,15 @@
 	 * @brief Number of mailboxes.
 	 */
 	#ifdef _KALRAY_MPPA_CCLUSTER_
-		#define NR_MAILBOX 24
+		#define HAL_NR_MAILBOX 24
 	#else
-		#define NR_MAILBOX (4*24)
+		#define HAL_NR_MAILBOX (4*24)
 	#endif
 
 	/**
 	 * @brief Size (in bytes) of a mailbox message.
 	 */
-	#define MAILBOX_MSG_SIZE 64
+	#define HAL_MAILBOX_MSG_SIZE 64
 
 	/**
 	 * @brief Overall number of Noc node ID.

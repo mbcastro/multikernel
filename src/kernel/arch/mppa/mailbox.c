@@ -62,7 +62,7 @@ int hal_mailbox_create(int nodeid)
 			noctag,
 			remotes,
 			noctag,
-			MAILBOX_MSG_SIZE
+			HAL_MAILBOX_MSG_SIZE
 	);
 
 	/* Open NoC connector. */
@@ -114,7 +114,7 @@ int hal_mailbox_open(int nodeid)
 			noctag,
 			remotes,
 			noctag,
-			MAILBOX_MSG_SIZE
+			HAL_MAILBOX_MSG_SIZE
 	);
 
 	/* Open NoC connector. */
@@ -211,7 +211,7 @@ size_t hal_mailbox_write(int mbxid, const void *buf, size_t n)
 		return (-EINVAL);
 
 	/* Invalid write size. */
-	if (n != MAILBOX_MSG_SIZE)
+	if (n != HAL_MAILBOX_MSG_SIZE)
 		return (-EINVAL);
 
 	nwrite = mppa_write(mbxid, buf, n);
@@ -249,7 +249,7 @@ size_t hal_mailbox_read(int mbxid, void *buf, size_t n)
 		return (-EINVAL);
 
 	/* Invalid read size. */
-	if (n != MAILBOX_MSG_SIZE)
+	if (n != HAL_MAILBOX_MSG_SIZE)
 		return (-EINVAL);
 
 	nread = mppa_read(mbxid, buf, n);

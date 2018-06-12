@@ -45,7 +45,7 @@ struct mailbox
 /**
  * @brief table of mailboxes.
  */
-static struct mailbox mailboxes[NR_MAILBOX];
+static struct mailbox mailboxes[HAL_NR_MAILBOX];
 
 /*============================================================================*
  * mailbox_is_valid()                                                         *
@@ -62,7 +62,7 @@ static struct mailbox mailboxes[NR_MAILBOX];
  */
 static inline int mailbox_is_valid(int mbxid)
 {
-	return ((mbxid >=0) && (mbxid < NR_MAILBOX));
+	return ((mbxid >=0) && (mbxid < HAL_NR_MAILBOX));
 }
 
 /*============================================================================*
@@ -164,7 +164,7 @@ static inline void mailbox_set_wronly(int mbxid)
 static int mailbox_alloc(void)
 {
 	/* Search for a free mailbox. */
-	for (int i = 0; i < NR_MAILBOX; i++)
+	for (int i = 0; i < HAL_NR_MAILBOX; i++)
 	{
 		/* Found. */
 		if (!mailbox_is_used(i))
@@ -341,7 +341,7 @@ int mailbox_read(int mbxid, void *buf)
 int mailbox_write(int mbxid, const void *buf)
 {
 	/* Invalid mailbox ID.*/
-	if ((mbxid < 0) || (mbxid >= NR_MAILBOX))
+	if ((mbxid < 0) || (mbxid >= HAL_NR_MAILBOX))
 		return (-EINVAL);
 
 	/*  Bad mailbox. */

@@ -48,7 +48,6 @@
 
 	/* Forward definitions. */
 	extern int name_lookup(char *);
-	extern void name_remotes(char *, int);
 	extern void name_link(int, const char *);
 	extern void name_unlink(const char *);
 

@@ -135,13 +135,13 @@ int name_lookup(char *name)
 		printf("Sending request for name: %s...\n", msg.name);
 	#endif
 
-	assert(hal_mailbox_write(server, &msg, MAILBOX_MSG_SIZE)
-	                                   == MAILBOX_MSG_SIZE);
+	assert(hal_mailbox_write(server, &msg, HAL_MAILBOX_MSG_SIZE)
+	                                   == HAL_MAILBOX_MSG_SIZE);
 
 	while(msg.nodeid == -1)
 	{
-		assert(hal_mailbox_read(client, &msg, MAILBOX_MSG_SIZE)
-		                                 == MAILBOX_MSG_SIZE);
+		assert(hal_mailbox_read(client, &msg, HAL_MAILBOX_MSG_SIZE)
+		                                 == HAL_MAILBOX_MSG_SIZE);
 	}
 
 	return (msg.nodeid);
@@ -173,8 +173,8 @@ void name_link(int nodeid, const char *name)
 	strcpy(msg.name, name);
 
 	/* Send link request. */
-	assert(hal_mailbox_write(server, &msg, MAILBOX_MSG_SIZE)
-	                                   == MAILBOX_MSG_SIZE);
+	assert(hal_mailbox_write(server, &msg, HAL_MAILBOX_MSG_SIZE)
+	                                   == HAL_MAILBOX_MSG_SIZE);
 }
 
 /*============================================================================*
@@ -210,6 +210,6 @@ void name_unlink(const char *name)
 		printf("Sending remove request for name: %s...\n", msg.name);
 	#endif
 
-	assert(hal_mailbox_write(server, &msg, MAILBOX_MSG_SIZE)
-	                                    == MAILBOX_MSG_SIZE);
+	assert(hal_mailbox_write(server, &msg, HAL_MAILBOX_MSG_SIZE)
+	                                    == HAL_MAILBOX_MSG_SIZE);
 }
