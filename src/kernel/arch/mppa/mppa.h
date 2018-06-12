@@ -29,6 +29,7 @@
 	#include <HAL/hal/core/diagnostic.h>
 #ifdef _KALRAY_MPPA_256_HIGH_LEVEL
 	#include <mppaipc.h>
+	#include <pthread.h>
 #endif
 #ifdef _KALRAY_MPPA_256_LOW_LEVEL
 	#include <mppa_power.h>
@@ -78,6 +79,9 @@
 	extern int k1_is_iocpu(int);
 	extern int k1_is_ccpu(int);
 	extern long k1_get_ccluster_freq(void);
+
+	/* Forward definitions. */
+	extern pthread_t __threads[4];
 
 /*=======================================================================*
  * NOC                                                                   *
