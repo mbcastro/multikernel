@@ -81,7 +81,7 @@ int hal_get_cluster_id(void)
  */
 int hal_get_core_id(void)
 {
-	return (__k1_get_cluster_id());
+	return (__k1_get_cpu_id());
 }
 
 /*============================================================================*
