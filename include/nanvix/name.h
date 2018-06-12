@@ -21,21 +21,18 @@
 #define NANVIX_NAME_H_
 
 	#include <stdint.h>
-
-	/**
-	 * @brief Maximum length of a process name (including the
-	 * terminating null character).
-	 */
-	#define PROC_NAME_MAX 50
+	#include <nanvix/limits.h>
 
 	/**
 	 * @brief Operation types for name server.
 	 */
-	#define NAME_LOOKUP 1  /**< lookup a name.            */
-	#define NAME_LINK    2  /**< Add a new name.           */
-	#define NAME_UNLINK 3  /**< Remove a name.            */
-	#define NAME_SUCCESS 4 /**< Success acknowledgement.  */
-	#define NAME_FAIL 5    /**< Failure acknowledgement.  */
+	/**@{*/
+	#define NAME_LOOKUP  1 /**< lookup a name.           */
+	#define NAME_LINK    2 /**< Add a new name.          */
+	#define NAME_UNLINK  3 /**< Remove a name.           */
+	#define NAME_SUCCESS 4 /**< Success acknowledgement. */
+	#define NAME_FAIL    5 /**< Failure acknowledgement. */
+	/**@}*/
 
 	/**
 	 * @brief Name server message.
