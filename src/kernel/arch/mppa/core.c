@@ -90,7 +90,7 @@ int hal_get_core_id(void)
 
 
 		pthread_mutex_lock(&hal_lock);
-		for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
+		for (int i = 0; i < NR_IOCLUSTER_CORES; i++)
 		{
 			if (__threads[i] == tid)
 			{

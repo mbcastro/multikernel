@@ -36,7 +36,7 @@ pthread_mutex_t hal_lock;
 /**
  * @brief Threads table.
  */
-pthread_t __threads[4] = { 0, };
+pthread_t __threads[NR_IOCLUSTER_CORES] = { 0, };
 
 /**
  * @brief Initializes platform-dependent structures.
@@ -57,7 +57,7 @@ void hal_setup(void)
 	pthread_mutex_lock(&hal_lock);
 		if (k1_is_iocluster(__k1_get_cluster_id()))
 		{
-			for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
+			for (int i = 0; i < NR_IOCLUSTER_CORES; i++)
 			{
 				if (__threads[i] == 0)
 				{
@@ -89,7 +89,7 @@ void hal_cleanup(void)
 	pthread_mutex_lock(&hal_lock);
 		if (k1_is_iocluster(__k1_get_cluster_id()))
 		{
-			for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
+			for (int i = 0; i < NR_IOCLUSTER_CORES; i++)
 			{
 				if (__threads[i] == tid)
 				{

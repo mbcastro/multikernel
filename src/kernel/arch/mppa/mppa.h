@@ -52,6 +52,11 @@
 	 */
 	#define NR_IOCLUSTER 2
 
+	/**
+	 * @brief Number of Cores in an IO CLUSTER.
+	 */
+	#define NR_IOCLUSTER_CORES 4
+
 	/* Cluster IDs. */
 	#define CCLUSTER0    0 /**< Compute cluster  0. */
 	#define CCLUSTER1    1 /**< Compute cluster  1. */

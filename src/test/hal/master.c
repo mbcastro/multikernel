@@ -27,8 +27,6 @@
 #include <nanvix/config.h>
 #include <nanvix/hal.h>
 
-#define NR_CORES 4
-
 /**
  * @brief Asserts a logic expression.
  */
@@ -37,6 +35,11 @@
  * @brief Global barrier for synchronization.
  */
 static pthread_barrier_t barrier;
+
+/**
+ * @brief Number of cores in the underlying cluster.
+ */
+static int ncores = 0;
 
 /*===================================================================*
  * API Test: Query Cluster ID                                        *
@@ -65,13 +68,13 @@ static void *test_thread_hal_get_cluster_id(void *args)
  */
 static void test_hal_get_cluster_id(void)
 {
-	int args[NR_CORES];
-	pthread_t threads[NR_CORES];
+	int args[ncores];
+	pthread_t threads[ncores];
 
 	printf("[test][api] Query Cluster ID\n");
 
 	/* Spawn driver threads. */
-	for (int i = 1; i < NR_CORES; i++)
+	for (int i = 1; i < ncores; i++)
 	{
 		args[i] = hal_noc_nodes[SPAWNER_SERVER_NODE];
 		assert((pthread_create(&threads[i],
@@ -82,7 +85,7 @@ static void test_hal_get_cluster_id(void)
 	}
 
 	/* Wait for driver threads. */
-	for (int i = 1; i < NR_CORES; i++)
+	for (int i = 1; i < ncores; i++)
 		pthread_join(threads[i], NULL);
 }
 
@@ -113,13 +116,13 @@ static void *test_thread_hal_get_core_id(void *args)
  */
 static void test_hal_get_core_id(void)
 {
-	int args[NR_CORES];
-	pthread_t threads[NR_CORES];
+	int args[ncores];
+	pthread_t threads[ncores];
 
 	printf("[test][api] Query Core ID\n");
 
 	/* Spawn driver threads. */
-	for (int i = 1; i < NR_CORES; i++)
+	for (int i = 1; i < ncores; i++)
 	{
 		args[i] = i;
 		assert((pthread_create(&threads[i],
@@ -130,7 +133,7 @@ static void test_hal_get_core_id(void)
 	}
 
 	/* Wait for driver threads. */
-	for (int i = 1; i < NR_CORES; i++)
+	for (int i = 1; i < ncores; i++)
 		pthread_join(threads[i], NULL);
 }
 
@@ -148,7 +151,13 @@ int main(int argc, const char **argv)
 
 	hal_setup();
 
-	pthread_barrier_init(&barrier, NULL, NR_CORES - 1);
+	/*
+	 * We hope that this is not buggy.
+	 */
+	ncores = hal_get_num_cores();
+	printf("[test][api] Number of Cores = %d\n", ncores);
+
+	pthread_barrier_init(&barrier, NULL, ncores - 1);
 
 	/* API tests. */
 	test_hal_get_cluster_id();
