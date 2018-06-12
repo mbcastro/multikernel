@@ -82,6 +82,7 @@
 
 	/* Forward definitions. */
 	extern pthread_t __threads[4];
+	extern pthread_mutex_t hal_lock;
 
 /*=======================================================================*
  * NOC                                                                   *

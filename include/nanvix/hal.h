@@ -31,6 +31,7 @@
 
 	/* Forward definitions. */
 	extern void hal_setup(void);
+	extern void hal_cleanup(void);
 
 /*============================================================================*
  * Processor Management                                                       *

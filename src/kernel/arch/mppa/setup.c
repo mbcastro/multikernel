@@ -21,6 +21,8 @@
 
 #include <nanvix/hal.h>
 
+#include "mppa.h"
+
 /**
  * @brief Number of running threads.
  */
@@ -29,12 +31,12 @@ static int nthreads = 0;
 /**
  * @brief Lock for critical region.
  */
-static pthread_spinlock_t lock;
+pthread_mutex_t hal_lock;
 
 /**
  * @brief Threads table.
  */
-pthread_t __threads[4];
+pthread_t __threads[4] = { 0, };
 
 /**
  * @brief Initializes platform-dependent structures.
@@ -48,13 +50,55 @@ void hal_setup(void)
 	 * because it means that we are sequential.
 	 */
 	if (nthreads == 0)
-		pthread_spin_init(&lock, PTHREAD_PROCESS_PRIVATE);
+		pthread_mutex_init(&hal_lock, NULL);
 
 	tid = pthread_self();
 
-	pthread_spin_lock(&lock);
-		__threads[nthreads] = tid;
-		nthreads++;
-	pthread_spin_unlock(&lock);
+	pthread_mutex_lock(&hal_lock);
+		if (k1_is_iocluster(__k1_get_cluster_id()))
+		{
+			for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
+			{
+				if (__threads[i] == 0)
+				{
+					__threads[i] = tid;
+					nthreads++;
+					break;
+				}
+			}
+		}
+	pthread_mutex_unlock(&hal_lock);
+}
+
+/**
+ * @brief Cleans platform-dependent structures.
+ */
+void hal_cleanup(void)
+{
+	pthread_t tid;
+
+	/*
+	 * Master thread initializes the lock. This is safe
+	 * because it means that we are sequential.
+	 */
+	if (nthreads == 1)
+		pthread_mutex_destroy(&hal_lock);
+
+	tid = pthread_self();
+
+	pthread_mutex_lock(&hal_lock);
+		if (k1_is_iocluster(__k1_get_cluster_id()))
+		{
+			for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
+			{
+				if (__threads[i] == tid)
+				{
+					__threads[i] = 0;
+					nthreads--;
+					break;
+				}
+			}
+		}
+	pthread_mutex_unlock(&hal_lock);
 }
 

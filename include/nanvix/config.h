@@ -23,6 +23,11 @@
 	/**
 	 * @brief Name server NoC node.
 	 */
+	#define SPAWNER_SERVER_NODE 0
+
+	/**
+	 * @brief Name server NoC node.
+	 */
 	#define NAME_SERVER_NODE 1
 
 #endif /* NANVIX_CONFIG_H_ */

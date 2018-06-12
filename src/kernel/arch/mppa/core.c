@@ -83,15 +83,24 @@ int hal_get_core_id(void)
 {
 	if (k1_is_iocluster(__k1_get_cluster_id()))
 	{
+		int coreid = 0;
 		pthread_t tid;
 
 		tid = pthread_self();
 
+
+		pthread_mutex_lock(&hal_lock);
 		for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
 		{
 			if (__threads[i] == tid)
-				return (i);
+			{
+				coreid = i;
+				break;
+			}
 		}
+		pthread_mutex_unlock(&hal_lock);
+
+		return (coreid);
 	}
 
 	return (__k1_get_cpu_id());
