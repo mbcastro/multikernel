@@ -173,7 +173,7 @@ static int _name_unlink(char *name)
 
 	if (i < HAL_NR_NOC_NODES)
 	{
-		strcpy(names[i].name, "\0");
+		strcpy(names[i].name, "");
 		return (--nr_registration);
 	}
 
@@ -245,6 +245,8 @@ void *name_server(void *args)
 				else
 					msg.op = NAME_FAIL;
 
+				assert(nr_registration >= 0);
+
 				/* Send acknowledgement. */
 				source = hal_mailbox_open(msg.source);
 				assert(source >= 0);
@@ -259,18 +261,14 @@ void *name_server(void *args)
 #ifdef DEBUG
 				printf("Entering NAME_UNLINK case... name: %s.\n", msg.name);
 #endif
-				assert(nr_registration > 0);
-
 				tmp = nr_registration;
 
-				if (_name_unlink(msg.name) == (tmp - 1))
-				{
+				if ((tmp > 0) && (_name_unlink(msg.name) == (tmp - 1)))
 					msg.op = NAME_SUCCESS;
-				}
 				else
-				{
 					msg.op = NAME_FAIL;
-				}
+
+				assert(nr_registration >= 0);
 
 				/* Send acknowledgement. */
 				source = hal_mailbox_open(msg.source);
