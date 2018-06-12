@@ -23,12 +23,14 @@
 
 #include <mppa/osconfig.h>
 
+#include <nanvix/config.h>
 #include <nanvix/hal.h>
 #include <nanvix/pm.h>
 
-#define NR_CORES 4
-
-#define CCLUSTER0 0
+/**
+ * @brief Number of cores in the underlying cluster.
+ */
+static int ncores = 0;
 
 /**
  * @brief Asserts a logic expression.
@@ -80,13 +82,13 @@ static void *test_hal_mailbox_thread_create_unlink(void *args)
  */
 static void test_hal_mailbox_create_unlink(void)
 {
-	int dmas[NR_CORES];
-	pthread_t tids[NR_CORES];
+	int dmas[ncores];
+	pthread_t tids[ncores];
 
 	printf("[test][api] Mailbox Create Unlink\n");
 
 	/* Spawn driver threads. */
-	for (int i = 0; i < NR_CORES; i++)
+	for (int i = 1; i < ncores; i++)
 	{
 		dmas[i] = i;
 		assert((pthread_create(&tids[i],
@@ -97,7 +99,7 @@ static void test_hal_mailbox_create_unlink(void)
 	}
 
 	/* Wait for driver threads. */
-	for (int i = 0; i < NR_CORES; i++)
+	for (int i = 1; i < ncores; i++)
 		pthread_join(tids[i], NULL);
 }
 
@@ -127,7 +129,7 @@ static void *test_hal_mailbox_thread_open_close(void *args)
 
 	pthread_mutex_lock(&lock);
 	TEST_ASSERT((outbox = hal_mailbox_open(
-		nodeid + (dma + 1)%NR_CORES)) >= 0
+		nodeid + 1 + (dma + 1)%(ncores - 1))) >= 0
 	);
 	pthread_mutex_unlock(&lock);
 
@@ -149,13 +151,13 @@ static void *test_hal_mailbox_thread_open_close(void *args)
  */
 static void test_hal_mailbox_open_close(void)
 {
-	int dmas[NR_CORES];
-	pthread_t tids[NR_CORES];
+	int dmas[ncores];
+	pthread_t tids[ncores];
 
 	printf("[test][api] Mailbox Open Close\n");
 
 	/* Spawn driver threads. */
-	for (int i = 0; i < NR_CORES; i++)
+	for (int i = 1; i < ncores; i++)
 	{
 		dmas[i] = i;
 		assert((pthread_create(&tids[i],
@@ -166,7 +168,7 @@ static void test_hal_mailbox_open_close(void)
 	}
 
 	/* Wait for driver threads. */
-	for (int i = 0; i < NR_CORES; i++)
+	for (int i = 1; i < ncores; i++)
 		pthread_join(tids[i], NULL);
 }
 
@@ -197,7 +199,7 @@ static void *test_hal_mailbox_thread_read_write(void *args)
 
 	pthread_mutex_lock(&lock);
 	TEST_ASSERT((outbox = hal_mailbox_open(
-		nodeid + (dma + 1)%NR_CORES)) >= 0
+		nodeid + 1 + (dma + 1)%(ncores - 1))) >= 0
 	);
 	pthread_mutex_unlock(&lock);
 
@@ -227,13 +229,13 @@ static void *test_hal_mailbox_thread_read_write(void *args)
  */
 static void test_hal_mailbox_read_write(void)
 {
-	int dmas[NR_CORES];
-	pthread_t tids[NR_CORES];
+	int dmas[ncores];
+	pthread_t tids[ncores];
 
 	printf("[test][api] Mailbox Read Write\n");
 
 	/* Spawn driver threads. */
-	for (int i = 0; i < NR_CORES; i++)
+	for (int i = 1; i < ncores; i++)
 	{
 		dmas[i] = i;
 		assert((pthread_create(&tids[i],
@@ -244,7 +246,7 @@ static void test_hal_mailbox_read_write(void)
 	}
 
 	/* Wait for driver threads. */
-	for (int i = 0; i < NR_CORES; i++)
+	for (int i = 1; i < ncores; i++)
 		pthread_join(tids[i], NULL);
 }
 
@@ -277,7 +279,7 @@ static void test_hal_mailbox_bad_create(void)
 
 	printf("[test][fault injection] Bad Create\n");
 
-	TEST_ASSERT((inbox = hal_mailbox_create(CCLUSTER0)) < 0);
+	TEST_ASSERT((inbox = hal_mailbox_create(NAME_SERVER_NODE)) < 0);
 }
 
 /*===================================================================*
@@ -545,8 +547,10 @@ int main(int argc, const char **argv)
 	((void) argc);
 	((void) argv);
 
+	ncores = hal_get_num_cores();
+
 	pthread_mutex_init(&lock, NULL);
-	pthread_barrier_init(&barrier, NULL, NR_CORES);
+	pthread_barrier_init(&barrier, NULL, ncores - 1);
 
 	/* API tests. */
 	test_hal_mailbox_create_unlink();
