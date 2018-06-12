@@ -17,14 +17,14 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <nanvix/name.h>
-#include <nanvix/pm.h>
-#include <nanvix/klib.h>
-#include <nanvix/hal.h>
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+
+#include <nanvix/name.h>
+#include <nanvix/pm.h>
+#include <nanvix/hal.h>
 
 #include "mppa.h"
 
