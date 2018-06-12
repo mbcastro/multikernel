@@ -22,16 +22,10 @@
 #include <string.h>
 #include <assert.h>
 
+#include <nanvix/config.h>
 #include <nanvix/name.h>
 #include <nanvix/pm.h>
 #include <nanvix/hal.h>
-
-#include "mppa.h"
-
-/**
- * @brief Name server node ID.
- */
-#define SERVER IOCLUSTER0
 
 /**
  * @brief Name server message.
@@ -68,7 +62,7 @@ static int name_init(void)
 		return (0);
 
 	client = hal_mailbox_create(hal_get_cluster_id());
-	server = hal_mailbox_open(SERVER);
+	server = hal_mailbox_open(hal_noc_nodes[NAME_SERVER_NODE]);
 
 	if ((client >= 0) && (server >= 0))
 	{
