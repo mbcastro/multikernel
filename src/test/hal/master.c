@@ -55,6 +55,8 @@ static void *test_thread_hal_get_core_id(void *args)
 	int tid;
 	int coreid;
 
+	hal_setup();
+
 	tid = ((int *)args)[0];
 
 	coreid = hal_get_core_id();
@@ -78,9 +80,9 @@ static void test_hal_get_core_id(void)
 	printf("[test][api] Query Core ID\n");
 
 	/* Spawn driver threads. */
-	for (int i = 0; i < NR_CORES; i++)
+	for (int i = 1; i < NR_CORES; i++)
 	{
-		tids[i] = i + 1;
+		tids[i] = i;
 		assert((pthread_create(&threads[i],
 			NULL,
 			test_thread_hal_get_core_id,
@@ -104,6 +106,8 @@ int main(int argc, const char **argv)
 {
 	((void) argc);
 	((void) argv);
+
+	hal_setup();
 
 	pthread_mutex_init(&lock, NULL);
 	pthread_barrier_init(&barrier, NULL, NR_CORES);
