@@ -156,8 +156,11 @@ int name_lookup(char *name)
  *
  * @param nodeid    NoC node ID of the process to link.
  * @param name      Name of the process to link.
+ *
+ * @returns Upon successful completion 0 is returned.
+ * Upon failure, a negative error code is returned instead.
  */
-void name_link(int nodeid, const char *name)
+int name_link(int nodeid, const char *name)
 {
 	/* Sanity check. */
 	assert(nodeid >= 0);
@@ -173,8 +176,22 @@ void name_link(int nodeid, const char *name)
 	strcpy(msg.name, name);
 
 	/* Send link request. */
-	assert(hal_mailbox_write(server, &msg, HAL_MAILBOX_MSG_SIZE)
-	                                   == HAL_MAILBOX_MSG_SIZE);
+	assert(hal_mailbox_write(server, &msg, MAILBOX_MSG_SIZE)
+	                                   == MAILBOX_MSG_SIZE);
+
+	/* Wait server response */
+	while(msg.op == NAME_ADD){
+		assert(hal_mailbox_read(client, &msg, MAILBOX_MSG_SIZE)
+	                                      == MAILBOX_MSG_SIZE);
+	}
+
+	assert((msg.op == NAME_SUCCESS) || (msg.op == NAME_FAIL));
+
+	if (msg.op == NAME_SUCCESS)
+	{
+		return (0);
+	}
+	return (-1);
 }
 
 /*============================================================================*
@@ -185,8 +202,11 @@ void name_link(int nodeid, const char *name)
  * @brief Unlink a process name.
  *
  * @param name	    Name of the process to unlink.
+ *
+ * @returns Upon successful completion 0 is returned.
+ * Upon failure, a negative error code is returned instead.
  */
-void name_unlink(const char *name)
+int name_unlink(const char *name)
 {
 	/* Sanity check. */
 	assert((name != NULL) && (strlen(name) < (PROC_NAME_MAX - 1))
@@ -210,6 +230,20 @@ void name_unlink(const char *name)
 		printf("Sending remove request for name: %s...\n", msg.name);
 	#endif
 
-	assert(hal_mailbox_write(server, &msg, HAL_MAILBOX_MSG_SIZE)
-	                                    == HAL_MAILBOX_MSG_SIZE);
+	assert(hal_mailbox_write(server, &msg, MAILBOX_MSG_SIZE)
+	                                    == MAILBOX_MSG_SIZE);
+
+	/* Wait server response */
+	while(msg.op == NAME_REMOVE){
+		assert(hal_mailbox_read(client, &msg, MAILBOX_MSG_SIZE)
+	                                      == MAILBOX_MSG_SIZE);
+	}
+
+	assert((msg.op == NAME_SUCCESS) || (msg.op == NAME_FAIL));
+
+	if (msg.op == NAME_SUCCESS)
+	{
+		return (0);
+	}
+	return (-1);
 }

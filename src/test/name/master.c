@@ -37,7 +37,7 @@ static int pids[NR_CCLUSTER];
  *===================================================================*/
 
 /**
- * @brief API Test: Name Unlink 
+ * @brief API Test: Name Unlink
  */
 static void test_name_unlink(void)
 {
@@ -51,7 +51,7 @@ static void test_name_unlink(void)
 		sprintf(pathname, "/name%d", i);
 
 		/* Remove name. */
-		name_unlink(pathname);
+		assert(name_unlink(pathname) == 0);
 		assert(name_lookup(pathname) == (-ENOENT));
 	}
 }
@@ -78,7 +78,7 @@ static void test_name_link(void)
 		sprintf(pathname, "/name%d", i);
 
 		/* Register name. */
-		name_link(clusterid + i, pathname);
+		assert(name_link(clusterid + i, pathname) == 0);
 	}
 }
 

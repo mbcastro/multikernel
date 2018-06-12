@@ -29,11 +29,13 @@
 	#define PROC_NAME_MAX 50
 
 	/**
-	 * @brief Types of requests for name server.
+	 * @brief Operation types for name server.
 	 */
-	#define NAME_LOOKUP 1 /**< lookup a name.  */
-	#define NAME_ADD    2 /**< Add a new name. */
-	#define NAME_REMOVE 3 /**< Remove a name.  */
+	#define NAME_LOOKUP 1  /**< lookup a name.            */
+	#define NAME_ADD    2  /**< Add a new name.           */
+	#define NAME_REMOVE 3  /**< Remove a name.            */
+	#define NAME_SUCCESS 4 /**< Success acknowledgement.  */
+	#define NAME_FAIL 5    /**< Failure acknowledgement.  */
 
 	/**
 	 * @brief Name server message.
@@ -48,7 +50,8 @@
 
 	/* Forward definitions. */
 	extern int name_lookup(char *);
-	extern void name_link(int, const char *);
-	extern void name_unlink(const char *);
+	extern void name_remotes(char *, int);
+	extern int name_link(int, const char *);
+	extern int name_unlink(const char *);
 
 #endif /* _NAME_H_ */

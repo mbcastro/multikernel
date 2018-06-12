@@ -120,6 +120,14 @@ static int _name_link(int nodeid, char *name)
 	if (nr_registration >= HAL_NR_NOC_NODES)
 		return (-EINVAL);
 
+	/* Check that the name is not already used */
+	for (int i = 0; i < HAL_NR_NOC_NODES; i++){
+		if (strcmp(names[i].name, name) == 0)
+		{
+			return (-EINVAL);
+		}
+	}
+
 	/* Compute index registration */
 	if (nodeid >= 0 && nodeid < NR_CCLUSTER)
 		index = nodeid;
@@ -188,8 +196,10 @@ static int _name_unlink(char *name)
  */
 static void *name_server(void *args)
 {
-	int dma;   /* DMA channel to use.         */
-	int inbox; /* Mailbox for small messages. */
+	int dma;     /* DMA channel to use.         */
+	int inbox;   /* Mailbox for small messages. */
+	int source;  /* NoC node ID of the client   */
+	int tmp;
 
 	dma = ((int *)args)[0];
 
@@ -217,10 +227,10 @@ static void *name_server(void *args)
 				msg.nodeid = _name_lookup(msg.name);
 
 				/* Send response. */
-				int source =hal_mailbox_open(msg.source);
+				source = hal_mailbox_open(msg.source);
 				assert(source >= 0);
-				assert(hal_mailbox_write(source, &msg, HAL_MAILBOX_MSG_SIZE)
-				                                    == HAL_MAILBOX_MSG_SIZE);
+				assert(hal_mailbox_write(source, &msg, MAILBOX_MSG_SIZE)
+				                                   == MAILBOX_MSG_SIZE);
 				assert(hal_mailbox_close(source) == 0);
 				break;
 
@@ -230,7 +240,24 @@ static void *name_server(void *args)
 				printf("Entering NAME_ADD case... [nodeid ID: %d, name: %s].\n"
 				                                       , msg.nodeid, msg.name);
 #endif
-				assert(_name_link(msg.nodeid, msg.name) > 0);
+				tmp = nr_registration;
+
+				if (_name_link(msg.nodeid, msg.name) == (tmp + 1))
+				{
+					msg.op = NAME_SUCCESS;
+				}
+				else
+				{
+					msg.op = NAME_FAIL;
+				}
+
+				/* Send acknowledgement. */
+				source = hal_mailbox_open(msg.source);
+				assert(source >= 0);
+				assert(hal_mailbox_write(source, &msg, MAILBOX_MSG_SIZE)
+				                                   == MAILBOX_MSG_SIZE);
+				assert(hal_mailbox_close(source) == 0);
+
 				break;
 
 			/* Remove name. */
@@ -238,7 +265,26 @@ static void *name_server(void *args)
 #ifdef DEBUG
 				printf("Entering NAME_REMOVE case... name: %s.\n", msg.name);
 #endif
-				assert(_name_unlink(msg.name) >= 0);
+				assert(nr_registration > 0);
+
+				tmp = nr_registration;
+
+				if (_name_unlink(msg.name) == (tmp - 1))
+				{
+					msg.op = NAME_SUCCESS;
+				}
+				else
+				{
+					msg.op = NAME_FAIL;
+				}
+
+				/* Send acknowledgement. */
+				source = hal_mailbox_open(msg.source);
+				assert(source >= 0);
+				assert(hal_mailbox_write(source, &msg, MAILBOX_MSG_SIZE)
+				                                   == MAILBOX_MSG_SIZE);
+				assert(hal_mailbox_close(source) == 0);
+
 				break;
 
 			/* Should not happen. */

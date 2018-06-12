@@ -64,19 +64,19 @@ int main(int argc, char **argv)
 	assert(name_lookup(pathname) == (-ENOENT));
 
 	/* Register this cluster. */
-	name_link(clusterid, pathname);
+	assert(name_link(clusterid, pathname) == 0);
 
 	/* Ask for a registered entry. */
 	assert(name_lookup(pathname) == clusterid);
 
 	/* Remove the entry. */
-	name_unlink(pathname);
+	assert(name_unlink(pathname) == 0);
 
 	/* Verify that the entry is removed. */
 	assert(name_lookup(pathname) == (-ENOENT));
 
 	// /* Register this cluster. */
-	// name_link(clusterid, pathname);
+	// assert(name_link(clusterid, pathname) == 0);
 	//
 	// /* Wait for others clusters. */
 	// barrier_wait(barrier);
