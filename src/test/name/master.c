@@ -65,7 +65,7 @@ static void test_name_unlink(void)
 
 	printf("[test][api] Name Unlink\n");
 
-	/* IO cluster registration test. */
+	/* IO cluster link test. */
 	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
 	{
 		sprintf(pathname, "/name%d", i);
@@ -92,7 +92,7 @@ static void test_name_link(void)
 
 	nodeid = hal_get_cluster_id();
 
-	/* IO cluster registration test. */
+	/* IO cluster link test. */
 	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
 	{
 		sprintf(pathname, "/name%d", i);
@@ -118,7 +118,7 @@ static void test_name_lookup(void)
 
 	nodeid = hal_get_cluster_id();
 
-	/* IO cluster registration test. */
+	/* IO cluster link test. */
 	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
 	{
 		sprintf(pathname, "/name%d", i);
@@ -128,14 +128,116 @@ static void test_name_lookup(void)
 }
 
 /*===================================================================*
- * API Test: Name Lookup                                             *
+* Fault Injection Test: duplicate name                               *
+*====================================================================*/
+
+/**
+* @brief Fault Injection Test: link the same name twice
+*/
+static void test_name_duplicate(void)
+{
+	int nodeid;
+	char pathname[PROC_NAME_MAX];
+
+	printf("[test][api] Fault Injection Test: Duplicate name\n");
+
+	nodeid = hal_get_cluster_id();
+
+	/* IO cluster link test. */
+	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
+	{
+		sprintf(pathname, "/name%d", i);
+
+		/* Link name. */
+		TEST_ASSERT(name_link(nodeid + i, pathname) == 0);
+		TEST_ASSERT(name_link(nodeid + i, pathname) < 0);
+		TEST_ASSERT(name_unlink(pathname) == 0);
+	}
+}
+
+/*===================================================================*
+* Fault Injection Test: invalid link                                 *
+*====================================================================*/
+
+/**
+* @brief Fault Injection Test: Link invalid names
+*/
+static void test_name_invalid_link(void)
+{
+	int nodeid;
+	char pathname[PROC_NAME_MAX + 1];
+
+	printf("[test][api] Fault Injection Test: Invalid link\n");
+
+	nodeid = hal_get_cluster_id();
+
+	memset(pathname, 1, PROC_NAME_MAX + 1);
+
+	/* IO cluster link test. */
+	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
+	{
+		/* Register invalid names. */
+		TEST_ASSERT(name_link(nodeid + i, pathname) < 0);
+		TEST_ASSERT(name_link(nodeid + i, NULL) < 0);
+		TEST_ASSERT(name_link(nodeid + i, "") < 0);
+	}
+}
+
+/*===================================================================*
+* Fault Injection Test: invalid unlink                                 *
+*====================================================================*/
+
+/**
+* @brief Fault Injection Test: Link invalid names
+*/
+static void test_name_invalid_unlink(void)
+{
+	char pathname[PROC_NAME_MAX + 1];
+
+	printf("[test][api] Fault Injection Test: Invalid unlink\n");
+
+	memset(pathname, 1, PROC_NAME_MAX + 1);
+
+	/* IO cluster unlink test. */
+	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
+	{
+		/* Unlink invalid names. */
+		TEST_ASSERT(name_unlink(pathname) < 0);
+		TEST_ASSERT(name_unlink(NULL) < 0);
+		TEST_ASSERT(name_unlink("") < 0);
+	}
+}
+
+/*===================================================================*
+* Fault Injection Test: bad unlink                                 *
+*====================================================================*/
+
+/**
+* @brief Fault Injection Test: Unlink bad name
+*/
+static void test_name_bad_unlink(void)
+{
+	printf("[test][api] Fault Injection Test: Bad unlink\n");
+
+	/* IO cluster unlink test. */
+	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
+	{
+		/* Unlink bad name. */
+		TEST_ASSERT(name_unlink("missing_name") < 0);
+	}
+}
+
+/*===================================================================*
+ * API Test: slave tests                                             *
  *===================================================================*/
 
 /**
- * @brief API Test: slave name registration.
+ * @brief API Test: slave tests.
  */
-void test_name_slave(int nclusters)
+static void test_name_slave(int nclusters)
 {
+	int status;
+
 	char nclusters_str[4];
 	const char *args[] = {
 		"name-slave",
@@ -151,7 +253,10 @@ void test_name_slave(int nclusters)
 		TEST_ASSERT((pids[i] = mppa_spawn(i, NULL, args[0], args, NULL)) != -1);
 
 	for (int i = 0; i < nclusters; i++)
-		TEST_ASSERT(mppa_waitpid(pids[i], NULL, 0) != -1);
+	{
+		TEST_ASSERT(mppa_waitpid(pids[i], &status, 0) != -1);
+		TEST_ASSERT(status == EXIT_SUCCESS);
+	}
 }
 
 /*===================================================================*
@@ -179,6 +284,10 @@ int main(int argc, char **argv)
 	test_name_link();
 	test_name_lookup();
 	test_name_unlink();
+	test_name_duplicate();
+	test_name_invalid_link();
+	test_name_invalid_unlink();
+	test_name_bad_unlink();
 	test_name_slave(nclusters);
 
 	/* House keeping. */

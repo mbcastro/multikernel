@@ -108,8 +108,9 @@ void name_finalize(void)
 int name_lookup(char *name)
 {
 	/* Sanity check. */
-	assert((name != NULL) && (strlen(name) < (PROC_NAME_MAX - 1))
-	                                && (strcmp(name, "\0") != 0));
+	if ((name == NULL) ||(strlen(name) >= (PROC_NAME_MAX - 1))
+	                               || (strcmp(name, "") == 0))
+		return (-EINVAL);
 
 	#ifdef DEBUG
 		printf("name_lookup(%s) called from cluster %d...\n", name,
@@ -157,9 +158,9 @@ int name_lookup(char *name)
 int name_link(int nodeid, const char *name)
 {
 	/* Sanity check. */
-	assert(nodeid >= 0);
-	assert((name != NULL) && (strlen(name) < (PROC_NAME_MAX - 1))
-                                   && (strcmp(name, "\0") != 0));
+	if ((name == NULL) || (strlen(name) >= (PROC_NAME_MAX - 1))
+	                || (nodeid < 0) || (strcmp(name, "") == 0))
+		return (-EINVAL);
 
 	assert(name_init() == 0);
 
@@ -203,8 +204,9 @@ int name_link(int nodeid, const char *name)
 int name_unlink(const char *name)
 {
 	/* Sanity check. */
-	assert((name != NULL) && (strlen(name) < (PROC_NAME_MAX - 1))
-								   && (strcmp(name, "\0") != 0));
+	if ((name == NULL) ||(strlen(name) >= (PROC_NAME_MAX - 1))
+	                               || (strcmp(name, "") == 0))
+		return (-EINVAL);
 
 	#ifdef DEBUG
 		printf("name_unlink(%s): called from cluster %d...\n",
