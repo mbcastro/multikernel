@@ -176,13 +176,13 @@ int name_link(int nodeid, const char *name)
 	strcpy(msg.name, name);
 
 	/* Send link request. */
-	assert(hal_mailbox_write(server, &msg, MAILBOX_MSG_SIZE)
-	                                   == MAILBOX_MSG_SIZE);
+	assert(hal_mailbox_write(server, &msg, HAL_MAILBOX_MSG_SIZE)
+	                                   == HAL_MAILBOX_MSG_SIZE);
 
 	/* Wait server response */
 	while(msg.op == NAME_ADD){
-		assert(hal_mailbox_read(client, &msg, MAILBOX_MSG_SIZE)
-	                                      == MAILBOX_MSG_SIZE);
+		assert(hal_mailbox_read(client, &msg, HAL_MAILBOX_MSG_SIZE)
+	                                      == HAL_MAILBOX_MSG_SIZE);
 	}
 
 	assert((msg.op == NAME_SUCCESS) || (msg.op == NAME_FAIL));
@@ -230,13 +230,13 @@ int name_unlink(const char *name)
 		printf("Sending remove request for name: %s...\n", msg.name);
 	#endif
 
-	assert(hal_mailbox_write(server, &msg, MAILBOX_MSG_SIZE)
-	                                    == MAILBOX_MSG_SIZE);
+	assert(hal_mailbox_write(server, &msg, HAL_MAILBOX_MSG_SIZE)
+	                                    == HAL_MAILBOX_MSG_SIZE);
 
 	/* Wait server response */
 	while(msg.op == NAME_REMOVE){
-		assert(hal_mailbox_read(client, &msg, MAILBOX_MSG_SIZE)
-	                                      == MAILBOX_MSG_SIZE);
+		assert(hal_mailbox_read(client, &msg, HAL_MAILBOX_MSG_SIZE)
+	                                      == HAL_MAILBOX_MSG_SIZE);
 	}
 
 	assert((msg.op == NAME_SUCCESS) || (msg.op == NAME_FAIL));

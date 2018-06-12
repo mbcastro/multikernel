@@ -229,8 +229,8 @@ static void *name_server(void *args)
 				/* Send response. */
 				source = hal_mailbox_open(msg.source);
 				assert(source >= 0);
-				assert(hal_mailbox_write(source, &msg, MAILBOX_MSG_SIZE)
-				                                   == MAILBOX_MSG_SIZE);
+				assert(hal_mailbox_write(source, &msg, HAL_MAILBOX_MSG_SIZE)
+				                                   == HAL_MAILBOX_MSG_SIZE);
 				assert(hal_mailbox_close(source) == 0);
 				break;
 
@@ -254,8 +254,8 @@ static void *name_server(void *args)
 				/* Send acknowledgement. */
 				source = hal_mailbox_open(msg.source);
 				assert(source >= 0);
-				assert(hal_mailbox_write(source, &msg, MAILBOX_MSG_SIZE)
-				                                   == MAILBOX_MSG_SIZE);
+				assert(hal_mailbox_write(source, &msg, HAL_MAILBOX_MSG_SIZE)
+				                                   == HAL_MAILBOX_MSG_SIZE);
 				assert(hal_mailbox_close(source) == 0);
 
 				break;
@@ -281,8 +281,8 @@ static void *name_server(void *args)
 				/* Send acknowledgement. */
 				source = hal_mailbox_open(msg.source);
 				assert(source >= 0);
-				assert(hal_mailbox_write(source, &msg, MAILBOX_MSG_SIZE)
-				                                   == MAILBOX_MSG_SIZE);
+				assert(hal_mailbox_write(source, &msg, HAL_MAILBOX_MSG_SIZE)
+				                                   == HAL_MAILBOX_MSG_SIZE);
 				assert(hal_mailbox_close(source) == 0);
 
 				break;
