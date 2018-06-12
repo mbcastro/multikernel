@@ -235,9 +235,9 @@ static void *name_server(void *args)
 				break;
 
 			/* Add name. */
-			case NAME_ADD:
+			case NAME_LINK:
 #ifdef DEBUG
-				printf("Entering NAME_ADD case... [nodeid ID: %d, name: %s].\n"
+				printf("Entering NAME_LINK case... [nodeid ID: %d, name: %s].\n"
 				                                       , msg.nodeid, msg.name);
 #endif
 				tmp = nr_registration;
@@ -261,9 +261,9 @@ static void *name_server(void *args)
 				break;
 
 			/* Remove name. */
-			case NAME_REMOVE:
+			case NAME_UNLINK:
 #ifdef DEBUG
-				printf("Entering NAME_REMOVE case... name: %s.\n", msg.name);
+				printf("Entering NAME_UNLINK case... name: %s.\n", msg.name);
 #endif
 				assert(nr_registration > 0);
 

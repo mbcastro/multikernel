@@ -171,7 +171,7 @@ int name_link(int nodeid, const char *name)
 
 	/* Build operation header. */
 	msg.source = hal_get_cluster_id();
-	msg.op = NAME_ADD;
+	msg.op = NAME_LINK;
 	msg.nodeid = nodeid;
 	strcpy(msg.name, name);
 
@@ -180,7 +180,7 @@ int name_link(int nodeid, const char *name)
 	                                   == HAL_MAILBOX_MSG_SIZE);
 
 	/* Wait server response */
-	while(msg.op == NAME_ADD){
+	while(msg.op == NAME_LINK){
 		assert(hal_mailbox_read(client, &msg, HAL_MAILBOX_MSG_SIZE)
 	                                      == HAL_MAILBOX_MSG_SIZE);
 	}
@@ -221,7 +221,7 @@ int name_unlink(const char *name)
 
 	/* Build operation header. */
 	msg.source = hal_get_cluster_id();
-	msg.op = NAME_REMOVE;
+	msg.op = NAME_UNLINK;
 	msg.nodeid = -1;
 	strcpy(msg.name, name);
 
@@ -234,7 +234,7 @@ int name_unlink(const char *name)
 	                                    == HAL_MAILBOX_MSG_SIZE);
 
 	/* Wait server response */
-	while(msg.op == NAME_REMOVE){
+	while(msg.op == NAME_UNLINK){
 		assert(hal_mailbox_read(client, &msg, HAL_MAILBOX_MSG_SIZE)
 	                                      == HAL_MAILBOX_MSG_SIZE);
 	}

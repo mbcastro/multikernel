@@ -32,8 +32,8 @@
 	 * @brief Operation types for name server.
 	 */
 	#define NAME_LOOKUP 1  /**< lookup a name.            */
-	#define NAME_ADD    2  /**< Add a new name.           */
-	#define NAME_REMOVE 3  /**< Remove a name.            */
+	#define NAME_LINK    2  /**< Add a new name.           */
+	#define NAME_UNLINK 3  /**< Remove a name.            */
 	#define NAME_SUCCESS 4 /**< Success acknowledgement.  */
 	#define NAME_FAIL 5    /**< Failure acknowledgement.  */
 
@@ -50,7 +50,6 @@
 
 	/* Forward definitions. */
 	extern int name_lookup(char *);
-	extern void name_remotes(char *, int);
 	extern int name_link(int, const char *);
 	extern int name_unlink(const char *);
 
