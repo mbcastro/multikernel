@@ -187,6 +187,25 @@ static void test_name_bad_lookup(void)
 	TEST_ASSERT(name_lookup("missing_name") < 0);
 }
 
+/*===================================================================*
+* Fault Injection Test: Invalid lookup                                 *
+*====================================================================*/
+
+/**
+* @brief Fault Injection Test: Lookup invalid names
+*/
+static void test_name_invalid_lookup(void)
+{
+	char pathname[PROC_NAME_MAX + 1];
+
+	memset(pathname, 1, PROC_NAME_MAX + 1);
+
+	/* Lookup invalid names. */
+	TEST_ASSERT(name_lookup(pathname) < 0);
+	TEST_ASSERT(name_lookup(NULL) < 0);
+	TEST_ASSERT(name_lookup("") < 0);
+}
+
 /*====================================================================*
  * main                                                               *
  *====================================================================*/
@@ -225,6 +244,7 @@ int main(int argc, char **argv)
 	test_name_invalid_unlink();
 	test_name_bad_unlink();
 	test_name_bad_lookup();
+	test_name_invalid_lookup();
 
 #if MSG_TEST
 	/* Register this cluster. */

@@ -247,6 +247,31 @@ static void test_name_bad_lookup(void)
 }
 
 /*===================================================================*
+* Fault Injection Test: Invalid lookup                                 *
+*====================================================================*/
+
+/**
+* @brief Fault Injection Test: Lookup invalid names
+*/
+static void test_name_invalid_lookup(void)
+{
+	char pathname[PROC_NAME_MAX + 1];
+
+	printf("[test][api] Fault Injection Test: Invalid lookup\n");
+
+	memset(pathname, 1, PROC_NAME_MAX + 1);
+
+	/* IO cluster lookup test. */
+	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
+	{
+		/* Lookup invalid names. */
+		TEST_ASSERT(name_lookup(pathname) < 0);
+		TEST_ASSERT(name_lookup(NULL) < 0);
+		TEST_ASSERT(name_lookup("") < 0);
+	}
+}
+
+/*===================================================================*
  * API Test: slave tests                                             *
  *===================================================================*/
 
@@ -308,6 +333,7 @@ int main(int argc, char **argv)
 	test_name_invalid_unlink();
 	test_name_bad_unlink();
 	test_name_bad_lookup();
+	test_name_invalid_lookup();
 	test_name_slave(nclusters);
 
 	/* House keeping. */
