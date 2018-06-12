@@ -228,6 +228,25 @@ static void test_name_bad_unlink(void)
 }
 
 /*===================================================================*
+* Fault Injection Test: Bad lookup                                 *
+*====================================================================*/
+
+/**
+* @brief Fault Injection Test: Lookup missing name
+*/
+static void test_name_bad_lookup(void)
+{
+	printf("[test][api] Fault Injection Test: Bad lookup\n");
+
+	/* IO cluster lookup test. */
+	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
+	{
+		/* Lookup missing name. */
+		TEST_ASSERT(name_lookup("missing_name") < 0);
+	}
+}
+
+/*===================================================================*
  * API Test: slave tests                                             *
  *===================================================================*/
 
@@ -288,6 +307,7 @@ int main(int argc, char **argv)
 	test_name_invalid_link();
 	test_name_invalid_unlink();
 	test_name_bad_unlink();
+	test_name_bad_lookup();
 	test_name_slave(nclusters);
 
 	/* House keeping. */

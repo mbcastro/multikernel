@@ -174,6 +174,19 @@ static void test_name_bad_unlink(void)
 	TEST_ASSERT(name_unlink("missing_name") < 0);
 }
 
+/*===================================================================*
+* Fault Injection Test: Bad lookup                                 *
+*====================================================================*/
+
+/**
+* @brief Fault Injection Test: Lookup missing name
+*/
+static void test_name_bad_lookup(void)
+{
+	/* Lookup missing name. */
+	TEST_ASSERT(name_lookup("missing_name") < 0);
+}
+
 /*====================================================================*
  * main                                                               *
  *====================================================================*/
@@ -211,6 +224,7 @@ int main(int argc, char **argv)
 	test_name_invalid_link();
 	test_name_invalid_unlink();
 	test_name_bad_unlink();
+	test_name_bad_lookup();
 
 #if MSG_TEST
 	/* Register this cluster. */
