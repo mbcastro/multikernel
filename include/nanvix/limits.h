@@ -17,35 +17,15 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <nanvix/hal.h>
-#include <nanvix/mm.h>
-#include <nanvix/pm.h>
-#include <stdio.h>
-#include <string.h>
-#include "mem.h"
+#ifndef NANVIX_LIMITS_H_
+#define NANVIX_LIMITS_H_
 
-/**
- * @brief Writes data to a remote memory.
- *
- * @param addr Remote address.
- * @param bug  Location where the data should be read from.
- * @param n    Number of bytes to write.
- */
-void memwrite(uint64_t addr, const void *buf, size_t n)
-{
-	struct rmem_message msg;
+	/**
+	 * @brief Maximum length of a process name.
+	 *
+	 * @note The null character is included.
+	 */
+	#define PROC_NAME_MAX 50
 
-	meminit();
+#endif /* NANVIX_LIMITS_H_ */
 
-	/* Build operation header. */
-	msg.source = hal_get_cluster_id();
-	msg.op = RMEM_WRITE;
-	msg.blknum = addr;
-	msg.size = n;
-
-	/* Send operation header. */
-	mailbox_write(_mem_outbox, &msg);
-
-	/* Send data. */
-	portal_write(_mem_outportal, buf, n);
-}

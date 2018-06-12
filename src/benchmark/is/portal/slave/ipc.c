@@ -23,7 +23,7 @@ void open_noc_connectors(void)
 {
 	char path[35];
 
-	sprintf(path, "/cpu%d", k1_get_cluster_id());
+	sprintf(path, "/cpu%d", hal_get_cluster_id());
 	infd = portal_create(path);
 
 	outfd = portal_open("/io0");

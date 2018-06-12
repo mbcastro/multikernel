@@ -16,22 +16,88 @@
 # along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
 #
 
-all: async mailbox portal rmem
+export K1_TOOLCHAIN_DIR=/usr/local/k1tools/
+
+# Directories.
+export BINDIR  = $(CURDIR)/bin
+export INCDIR  = $(CURDIR)/include
+export SRCDIR  = $(CURDIR)/src
+export OUTDIR  = $(CURDIR)/output
+
+# Toolchain configuration.
+export cflags := -ansi -std=c99
+export cflags += -Wall -Wextra -Werror
+export cflags += -Winit-self -Wswitch-default -Wfloat-equal -Wundef -Wshadow -Wuninitialized
+export cflags += -O3
+export cflags += -I $(INCDIR)
+export cflags += -D_KALRAY_MPPA256
+ifdef DEBUG
+export cflags += -DDEBUG
+endif
+export lflags := -Wl,--defsym=_LIBNOC_DISABLE_FIFO_FULL_CHECK=0 -O=essai
+export O := $(OUTDIR)
+
+#=============================================================================
+# Servers
+#=============================================================================
+
+export io-bin += spawner-server
+
+# Name Server
+export spawner-server-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
+							  $(SRCDIR)/kernel/arch/mppa/barrier.c \
+							  $(SRCDIR)/kernel/arch/mppa/name.c    \
+							  $(SRCDIR)/kernel/arch/mppa/core.c    \
+							  $(SRCDIR)/kernel/arch/mppa/noc.c     \
+							  $(SRCDIR)/servers/spawner.c          \
+							  $(SRCDIR)/servers/name.c
+
+export spawner-server-system := rtems
+export spawner-server-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+export spawner-server-lflags := -lmppaipc -pthread
+
+# RMEM Server
+export rmem-server-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
+							$(SRCDIR)/kernel/arch/mppa/portal.c  \
+							$(SRCDIR)/kernel/arch/mppa/barrier.c \
+							$(SRCDIR)/kernel/arch/mppa/name.c    \
+							$(SRCDIR)/kernel/arch/mppa/core.c    \
+							$(SRCDIR)/kernel/arch/mppa/noc.c     \
+							$(SRCDIR)/servers/rmem.c
+
+export rmem-server-system := rtems
+export rmem-server-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+export rmem-server-lflags := -lmppaipc -pthread
+
+#=============================================================================
+
+all: hal hal-mailbox name 
+
+hal:
+	cd $(CURDIR)/src/test/hal/ && $(MAKE);
 
 async:
-	cd $(CURDIR)/src/test/async/; make;
+	cd $(CURDIR)/src/test/async/ && $(MAKE);
+
+hal-mailbox:
+	cd $(CURDIR)/src/test/hal-mailbox/ && $(MAKE);
 
 mailbox:
-	cd $(CURDIR)/src/test/mailbox/; make;
+	cd $(CURDIR)/src/test/mailbox/ && $(MAKE);
+
+name:
+	cd $(CURDIR)/src/test/name/ && $(MAKE);
 
 portal:
-	cd $(CURDIR)/src/test/portal/; make;
+	cd $(CURDIR)/src/test/portal/ && $(MAKE);
 
 rmem:
-	cd $(CURDIR)/src/test/rmem/; make;
+	cd $(CURDIR)/src/test/rmem/ && $(MAKE);
 
 clean:
 	cd $(CURDIR)/src/test/async/; make clean;
+	cd $(CURDIR)/src/test/hal-mailbox/; make clean;
 	cd $(CURDIR)/src/test/mailbox/; make clean;
+	cd $(CURDIR)/src/test/name/; make clean;
 	cd $(CURDIR)/src/test/portal/; make clean;
 	cd $(CURDIR)/src/test/rmem/; make clean;

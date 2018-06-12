@@ -1,18 +1,18 @@
 /*
  * Copyright(C) 2011-2018 Pedro H. Penna <pedrohenriquepenna@gmail.com>
- * 
+ *
  * This file is part of Nanvix.
- * 
+ *
  * Nanvix is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * Nanvix is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
@@ -21,6 +21,8 @@
 #include <nanvix/arch/mppa.h>
 #include <nanvix/mm.h>
 #include <nanvix/pm.h>
+#include <nanvix/name.h>
+#include <nanvix/klib.h>
 #include <assert.h>
 #include <stdlib.h>
 #include "kernel.h"
@@ -35,15 +37,240 @@
 static int pids[NR_CCLUSTER];
 
 /**
- * @brief Spawns slave processes. 
+ * @brief ID of name server thread.
+ */
+static pthread_t tid_name_server;
+
+static pthread_mutex_t lock;
+
+/**
+ * @brief Number of registration.
+ */
+static int nr_registration = 0;
+
+/**
+ * @brief Lookup table of process names.
+ */
+static struct {
+	int core;    						/**< CPU ID. */
+	char name[PROC_NAME_MAX];			/**< Portal name. */
+} names[NR_DMA] = {
+	{ CCLUSTER0,      "\0"  },
+	{ CCLUSTER1,      "\0"  },
+	{ CCLUSTER2,      "\0"  },
+	{ CCLUSTER3,      "\0"  },
+	{ CCLUSTER4,      "\0"  },
+	{ CCLUSTER5,      "\0"  },
+	{ CCLUSTER6,      "\0"  },
+	{ CCLUSTER7,      "\0"  },
+	{ CCLUSTER8,      "\0"  },
+	{ CCLUSTER9,      "\0"  },
+	{ CCLUSTER10,     "\0"  },
+	{ CCLUSTER11,     "\0"  },
+	{ CCLUSTER12,     "\0"  },
+	{ CCLUSTER13,     "\0"  },
+	{ CCLUSTER14,     "\0"  },
+	{ CCLUSTER15,     "\0"  },
+	{ IOCLUSTER0 + 0, "/io0"},
+	{ IOCLUSTER0 + 1, "\0"  },
+	{ IOCLUSTER0 + 2, "\0"  },
+	{ IOCLUSTER0 + 3, "\0"  },
+	{ IOCLUSTER1 + 0, "\0"  },
+	{ IOCLUSTER1 + 1, "\0"  },
+	{ IOCLUSTER1 + 2, "\0"  },
+	{ IOCLUSTER1 + 3, "\0"  }
+};
+
+/*=======================================================================*
+ * _name_lookup()                                                    *
+ *=======================================================================*/
+
+/**
+ * @brief Converts a name into a CPU ID.
+ *
+ * @param name 		Target name.
+ *
+ * @returns Upon successful completion the CPU ID whose name is @p
+ * name is returned. Upon failure, a negative error code is returned
+ * instead.
+ */
+static int _name_lookup(const char *name)
+{
+	/* Search for portal name. */
+	for (int i = 0; i < NR_DMA; i++)
+	{
+		/* Found. */
+		if (!strcmp(name, names[i].name))
+			return (names[i].core);
+	}
+
+	return (-ENOENT);
+}
+
+/*=======================================================================*
+ * _name_link()                                                          *
+ *=======================================================================*/
+
+/**
+ * @brief Register a process name.
+ *
+ * @param core			CPU ID of the process to register.
+ * @param name			Name of the process to register.
+ *
+ * @returns Upon successful registration the number of name registered
+ * is returned. Upon failure, a negative error code is returned instead.
+ */
+static int _name_link(int core, char *name)
+{
+	int index;          /* Index where the process will be stored. */
+
+	/* No entry available. */
+	if (nr_registration >= NR_DMA)
+		return (-EINVAL);
+
+	/* Compute index registration */
+	if (core >= 0 && core < NR_CCLUSTER)
+		index = core;
+	else if (core >= IOCLUSTER0 && core <= IOCLUSTER0 + 3)
+	 	index = NR_CCLUSTER + core%IOCLUSTER0;
+	else if (core >= IOCLUSTER1 && core <= IOCLUSTER1 + 3)
+	 	index = NR_CCLUSTER + NR_IOCLUSTER_DMA + core%IOCLUSTER1;
+	else
+		return (-EINVAL);
+
+	/* Entry not available */
+	if (strcmp(names[index].name, "\0"))
+		return (-EINVAL);
+
+#ifdef DEBUG
+	printf("writing [CPU ID:%d name: %s] at index %d.\n", names[index].core,
+	                                                            name, index);
+#endif
+
+	strcpy(names[index].name, name);
+
+	return (++nr_registration);
+}
+
+/*=======================================================================*
+ *_name_unlink()                                                         *
+ *=======================================================================*/
+
+/**
+ * @brief Remove a name
+ *
+ * @param name			Name of the process to unlink.
+ *
+ * @returns Upon successful registration the new number of name registered
+ * is returned. Upon failure, a negative error code is returned instead.
+ */
+static int _name_unlink(char *name)
+{
+	/* Search for portal name. */
+	int i = 0;
+
+	while (i < NR_DMA && strcmp(name, names[i].name))
+	{
+		i++;
+	}
+
+	if (i < NR_DMA)
+	{
+		strcpy(names[i].name, "\0");
+		return (--nr_registration);
+	}
+
+	return (-ENOENT);
+}
+
+/*===================================================================*
+ * name_server()                                                     *
+ *===================================================================*/
+
+/**
+ * @brief Handles remote name requests.
+ *
+ * @param args Server arguments.
+ *
+ * @returns Always returns NULL.
+ */
+static void *name_server(void *args)
+{
+	int dma;   /* DMA channel to use.         */
+	int inbox; /* Mailbox for small messages. */
+
+	dma = ((int *)args)[0];
+
+	/* Open server mailbox. */
+	pthread_mutex_lock(&lock);
+		inbox = hal_mailbox_create(IOCLUSTER0 + dma);
+	pthread_mutex_unlock(&lock);
+
+	while(1)
+	{
+		struct name_message msg;
+
+		assert(mailbox_read(inbox, &msg) == 0);
+
+		/* Handle name requests. */
+		switch (msg.op)
+		{
+			/* Lookup. */
+			case NAME_LOOKUP:
+#ifdef DEBUG
+				printf("Entering NAME_LOOKUP case... name provided:%s.\n"
+						                                     , msg.name);
+#endif
+				msg.core = _name_lookup(msg.name);
+
+				/* Send response. */
+				int source =hal_mailbox_open(msg.source);
+				assert(source >= 0);
+				assert(mailbox_write(source, &msg) == 0);
+				assert(mailbox_close(source) == 0);
+				break;
+
+			/* Add name. */
+			case NAME_ADD:
+#ifdef DEBUG
+				printf("Entering NAME_ADD case... [CPU ID: %d, name: %s].\n",
+				                                          msg.core, msg.name);
+#endif
+				assert(_name_link(msg.core, msg.name) > 0);
+				break;
+
+			/* Remove name. */
+			case NAME_REMOVE:
+#ifdef DEBUG
+				printf("Entering NAME_REMOVE case... name: %s.\n", msg.name);
+#endif
+				assert(_name_unlink(msg.name) >= 0);
+				break;
+
+			/* Should not happen. */
+			default:
+				break;
+		}
+	}
+
+	/* House keeping. */
+	pthread_mutex_lock(&lock);
+		mailbox_unlink(inbox);
+	pthread_mutex_unlock(&lock);
+
+	return (NULL);
+}
+
+/**
+ * @brief Spawns slave processes.
  *
  * @param nclusters Number of clusters to spawn.
  * @param args      Cluster arguments.
  */
-static void spawn_slaves(int nclusters, char **args) 
+static void spawn_slaves(int nclusters, char **args)
 {
 	const char *argv[] = {
-		"rmem-slave", 
+		"rmem-slave",
 		args[1],
 		args[2],
 		args[3],
@@ -59,11 +286,11 @@ static void spawn_slaves(int nclusters, char **args)
  *
  * @param nclusters Number of slaves to wait.
  */
-static void join_slaves(int nclusters) 
+/*static void join_slaves(int nclusters)
 {
 	for (int i = 0; i < nclusters; i++)
 		assert(mppa_waitpid(pids[i], NULL, 0) != -1);
-}
+}*/
 
 /*===================================================================*
  * Kernel                                                            *
@@ -84,13 +311,31 @@ int main(int argc, char **argv)
 	nclusters = atoi(argv[2]);
 	assert((size = atoi(argv[3])) <= RMEM_BLOCK_SIZE);
 
+	/* Deploy name server. */
 #ifdef DEBUG
-	printf("[SPAWNER] server alive\n");
+	printf("[NAME_RESOLUTION] booting up server\n");
+#endif
+
+	/* Spawn name server thread. */
+	int dma = 0;
+	assert((pthread_create(&tid_name_server,
+		NULL,
+		name_server,
+		&dma)) == 0
+	);
+
+#ifdef DEBUG
+	printf("[NAME_RESOLUTION] server alive\n");
 #endif
 
 	/* Wait RMEM server. */
 	global_barrier = barrier_open(NR_IOCLUSTER);
 	barrier_wait(global_barrier);
+	barrier_close(global_barrier);
+
+#ifdef DEBUG
+	printf("[SPAWNER] server alive\n");
+#endif
 
 #ifdef DEBUG
 	printf("[SPAWNER] spawning kernels\n");
@@ -102,8 +347,15 @@ int main(int argc, char **argv)
 	printf("[SPAWNER] waiting kernels\n");
 #endif
 
+/* join_slaves(nclusters); */
+
+	/* Wait for slaves. */
+	global_barrier = barrier_open(nclusters);
+	barrier_wait(global_barrier);
+
+	printf("master crossed the barrier\n");
+
 	/* House keeping. */
-	join_slaves(nclusters);
 	barrier_close(global_barrier);
 
 	return (EXIT_SUCCESS);

@@ -19,11 +19,16 @@
 
 #include <assert.h>
 #include <pthread.h>
+#include <stdio.h>
 
 #include <mppa/osconfig.h>
 
 #include <nanvix/hal.h>
 #include <nanvix/pm.h>
+
+#define NR_CORES 4
+
+#define CCLUSTER0 0
 
 /**
  * @brief Asserts a logic expression.
@@ -51,14 +56,14 @@ static void *test_hal_mailbox_thread_create_unlink(void *args)
 {
 	int dma;
 	int inbox;
-	int coreid;
+	int nodeid;
 
 	dma = ((int *)args)[0];
 
-	coreid = hal_get_core_id();
+	nodeid = hal_get_cluster_id();
 
 	pthread_mutex_lock(&lock);
-	TEST_ASSERT((inbox = hal_mailbox_create(coreid + dma)) >= 0);
+	TEST_ASSERT((inbox = hal_mailbox_create(nodeid + dma)) >= 0);
 	pthread_mutex_unlock(&lock);
 
 	pthread_barrier_wait(&barrier);
@@ -73,15 +78,15 @@ static void *test_hal_mailbox_thread_create_unlink(void *args)
 /**
  * @brief API Test: Mailbox Create Unlink
  */
-static void test_ hal_mailbox_create_unlink(void)
+static void test_hal_mailbox_create_unlink(void)
 {
-	int dmas[NR_IOCLUSTER_DMA];
-	pthread_t tids[NR_IOCLUSTER_DMA];
+	int dmas[NR_CORES];
+	pthread_t tids[NR_CORES];
 
-	printf("API Test: Mailbox Create Unlink\n");
+	printf("[test][api] Mailbox Create Unlink\n");
 
 	/* Spawn driver threads. */
-	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
+	for (int i = 0; i < NR_CORES; i++)
 	{
 		dmas[i] = i;
 		assert((pthread_create(&tids[i],
@@ -92,7 +97,7 @@ static void test_ hal_mailbox_create_unlink(void)
 	}
 
 	/* Wait for driver threads. */
-	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
+	for (int i = 0; i < NR_CORES; i++)
 		pthread_join(tids[i], NULL);
 }
 
@@ -108,21 +113,21 @@ static void *test_hal_mailbox_thread_open_close(void *args)
 	int dma;
 	int inbox;
 	int outbox;
-	int coreid;
+	int nodeid;
 
 	dma = ((int *)args)[0];
 
-	coreid = hal_get_core_id();
+	nodeid = hal_get_cluster_id();
 
 	pthread_mutex_lock(&lock);
-	TEST_ASSERT((inbox = hal_mailbox_create(coreid + dma)) >= 0);
+	TEST_ASSERT((inbox = hal_mailbox_create(nodeid + dma)) >= 0);
 	pthread_mutex_unlock(&lock);
 
 	pthread_barrier_wait(&barrier);
 
 	pthread_mutex_lock(&lock);
 	TEST_ASSERT((outbox = hal_mailbox_open(
-		coreid + (dma + 1)%NR_IOCLUSTER_DMA)) >= 0
+		nodeid + (dma + 1)%NR_CORES)) >= 0
 	);
 	pthread_mutex_unlock(&lock);
 
@@ -144,13 +149,13 @@ static void *test_hal_mailbox_thread_open_close(void *args)
  */
 static void test_hal_mailbox_open_close(void)
 {
-	int dmas[NR_IOCLUSTER_DMA];
-	pthread_t tids[NR_IOCLUSTER_DMA];
+	int dmas[NR_CORES];
+	pthread_t tids[NR_CORES];
 
-	printf("API Test: Mailbox Open Close\n");
+	printf("[test][api] Mailbox Open Close\n");
 
 	/* Spawn driver threads. */
-	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
+	for (int i = 0; i < NR_CORES; i++)
 	{
 		dmas[i] = i;
 		assert((pthread_create(&tids[i],
@@ -161,7 +166,7 @@ static void test_hal_mailbox_open_close(void)
 	}
 
 	/* Wait for driver threads. */
-	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
+	for (int i = 0; i < NR_CORES; i++)
 		pthread_join(tids[i], NULL);
 }
 
@@ -177,33 +182,33 @@ static void *test_hal_mailbox_thread_read_write(void *args)
 	int dma;
 	int inbox;
 	int outbox;
-	char buf[MAILBOX_MSG_SIZE];
-	int coreid;
+	char buf[HAL_MAILBOX_MSG_SIZE];
+	int nodeid;
 
 	dma = ((int *)args)[0];
 
-	coreid = hal_get_core_id();
+	nodeid = hal_get_cluster_id();
 
 	pthread_mutex_lock(&lock);
-	TEST_ASSERT((inbox = hal_mailbox_create(coreid + dma)) >= 0);
+	TEST_ASSERT((inbox = hal_mailbox_create(nodeid + dma)) >= 0);
 	pthread_mutex_unlock(&lock);
 
 	pthread_barrier_wait(&barrier);
 
 	pthread_mutex_lock(&lock);
 	TEST_ASSERT((outbox = hal_mailbox_open(
-		coreid + (dma + 1)%NR_IOCLUSTER_DMA)) >= 0
+		nodeid + (dma + 1)%NR_CORES)) >= 0
 	);
 	pthread_mutex_unlock(&lock);
 
 	pthread_barrier_wait(&barrier);
 
-	memset(buf, 1, MAILBOX_MSG_SIZE);
-	TEST_ASSERT(hal_mailbox_write(outbox, buf, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
-	memset(buf, 0, MAILBOX_MSG_SIZE);
-	TEST_ASSERT(hal_mailbox_read(inbox, buf, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
+	memset(buf, 1, HAL_MAILBOX_MSG_SIZE);
+	TEST_ASSERT(hal_mailbox_write(outbox, buf, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
+	memset(buf, 0, HAL_MAILBOX_MSG_SIZE);
+	TEST_ASSERT(hal_mailbox_read(inbox, buf, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
 
-	for (int i = 0; i < MAILBOX_MSG_SIZE; i++)
+	for (int i = 0; i < HAL_MAILBOX_MSG_SIZE; i++)
 		TEST_ASSERT(buf[i] == 1);
 
 	pthread_mutex_lock(&lock);
@@ -222,13 +227,13 @@ static void *test_hal_mailbox_thread_read_write(void *args)
  */
 static void test_hal_mailbox_read_write(void)
 {
-	int dmas[NR_IOCLUSTER_DMA];
-	pthread_t tids[NR_IOCLUSTER_DMA];
+	int dmas[NR_CORES];
+	pthread_t tids[NR_CORES];
 
-	printf("API Test: Mailbox Read Write\n");
+	printf("[test][api] Mailbox Read Write\n");
 
 	/* Spawn driver threads. */
-	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
+	for (int i = 0; i < NR_CORES; i++)
 	{
 		dmas[i] = i;
 		assert((pthread_create(&tids[i],
@@ -239,7 +244,7 @@ static void test_hal_mailbox_read_write(void)
 	}
 
 	/* Wait for driver threads. */
-	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
+	for (int i = 0; i < NR_CORES; i++)
 		pthread_join(tids[i], NULL);
 }
 
@@ -254,7 +259,7 @@ static void test_hal_mailbox_invalid_create(void)
 {
 	int inbox;
 
-	printf("Fault Injection Test: Invalid Create\n");
+	printf("[test][fault injection] Invalid Create\n");
 
 	TEST_ASSERT((inbox = hal_mailbox_create(-1)) < 0);
 }
@@ -270,7 +275,7 @@ static void test_hal_mailbox_bad_create(void)
 {
 	int inbox;
 
-	printf("Fault Injection Test: Bad Create\n");
+	printf("[test][fault injection] Bad Create\n");
 
 	TEST_ASSERT((inbox = hal_mailbox_create(CCLUSTER0)) < 0);
 }
@@ -285,14 +290,14 @@ static void test_hal_mailbox_bad_create(void)
 static void test_hal_mailbox_double_create(void)
 {
 	int inbox;
-	int coreid;
+	int nodeid;
 
-	printf("Fault Injection Test: Double Create\n");
+	printf("[test][fault injection] Double Create\n");
 
-	coreid = hal_get_core_id();
+	nodeid = hal_get_cluster_id();
 
-	TEST_ASSERT((inbox = hal_mailbox_create(coreid)) >= 0);
-	TEST_ASSERT( hal_mailbox_create(coreid) < 0);
+	TEST_ASSERT((inbox = hal_mailbox_create(nodeid)) >= 0);
+	TEST_ASSERT(hal_mailbox_create(nodeid) < 0);
 
 	TEST_ASSERT(hal_mailbox_unlink(inbox) == 0);
 }
@@ -308,7 +313,7 @@ static void test_hal_mailbox_invalid_open(void)
 {
 	int outbox;
 
-	printf("Fault Injection Test: Invalid Open\n");
+	printf("[test][fault injection] Invalid Open\n");
 
 	TEST_ASSERT((outbox = hal_mailbox_open(-1)) < 0);
 }
@@ -325,13 +330,13 @@ static void test_hal_mailbox_invalid_open(void)
 static void test_hal_mailbox_bad_open(void)
 {
 	int outbox;
-	int coreid;
+	int nodeid;
 
-	printf("Fault Injection Test: Bad Open\n");
+	printf("[test][fault injection] Bad Open\n");
 
-	coreid = hal_get_core_id();
+	nodeid = hal_get_cluster_id();
 
-	TEST_ASSERT((outbox = hal_mailbox_open(coreid)) < 0);
+	TEST_ASSERT((outbox = hal_mailbox_open(nodeid)) < 0);
 }
 
 #endif
@@ -346,76 +351,16 @@ static void test_hal_mailbox_bad_open(void)
 static void test_hal_mailbox_double_open(void)
 {
 	int outbox;
-	int coreid;
+	int nodeid;
 
-	printf("Fault Injection Test: Double Open\n");
+	printf("[test][fault injection] Double Open\n");
 
-	coreid = hal_get_core_id();
+	nodeid = hal_get_cluster_id();
 
-	TEST_ASSERT((outbox = hal_mailbox_open(coreid + 1)) >= 0);
-	TEST_ASSERT(hal_mailbox_open(coreid + 1) < 0);
+	TEST_ASSERT((outbox = hal_mailbox_open(nodeid + 1)) >= 0);
+	TEST_ASSERT(hal_mailbox_open(nodeid + 1) < 0);
 
 	TEST_ASSERT(hal_mailbox_close(outbox) == 0);
-}
-
-/*===================================================================*
- * Fault Injection Test: Invalid Unlink                              *
- *===================================================================*/
-
-/**
- * @brief Fault Injection Test: Invalid Unlink
- */
-static void test_hal_mailbox_invalid_unlink(void)
-{
-	printf("Fault Injection Test: Invalid Unlink\n");
-
-	TEST_ASSERT(hal_mailbox_unlink(-1) < 0);
-	TEST_ASSERT(hal_mailbox_unlink(100000) < 0);
-}
-
-/*===================================================================*
- * Fault Injection Test: Bad Unlink                                  *
- *===================================================================*/
-
-/**
- * @brief Fault Injection Test: Bad Unlink
- */
-static void test_hal_mailbox_bad_unlink(void)
-{
-	printf("Fault Injection Test: Bad Unlink\n");
-
-	TEST_ASSERT(hal_mailbox_unlink(0) < 0);
-	TEST_ASSERT(hal_mailbox_unlink(1) < 0);
-}
-
-/*===================================================================*
- * Fault Injection Test: Invalid Close                              *
- *===================================================================*/
-
-/**
- * @brief Fault Injection Test: Invalid Close
- */
-static void test_hal_mailbox_invalid_close(void)
-{
-	printf("Fault Injection Test: Invalid Close\n");
-
-	TEST_ASSERT(hal_mailbox_close(-1) < 0);
-	TEST_ASSERT(hal_mailbox_close(100000) < 0);
-}
-
-/*===================================================================*
- * Fault Injection Test: Bad Close                                  *
- *===================================================================*/
-
-/**
- * @brief Fault Injection Test: Bad Close
- */
-static void test_hal_mailbox_bad_close(void)
-{
-	printf("Fault Injection Test: Bad Close\n");
-
-	TEST_ASSERT(hal_mailbox_close(0) < 0);
-	TEST_ASSERT(hal_mailbox_close(1) < 0);
 }
 
 /*===================================================================*
@@ -428,13 +373,13 @@ static void test_hal_mailbox_bad_close(void)
 static void test_hal_mailbox_double_unlink(void)
 {
 	int inbox;
-	int coreid;
+	int nodeid;
 
-	printf("Fault Injection Test: Double Unlink\n");
+	printf("[test][fault injection] Double Unlink\n");
 
-	coreid = hal_get_core_id();
+	nodeid = hal_get_cluster_id();
 
-	TEST_ASSERT((inbox = hal_mailbox_create(coreid)) >= 0);
+	TEST_ASSERT((inbox = hal_mailbox_create(nodeid)) >= 0);
 	TEST_ASSERT(hal_mailbox_unlink(inbox) == 0);
 	TEST_ASSERT(hal_mailbox_unlink(inbox) < 0);
 }
@@ -449,13 +394,13 @@ static void test_hal_mailbox_double_unlink(void)
 static void test_hal_mailbox_double_close(void)
 {
 	int outbox;
-	int coreid;
+	int nodeid;
 
-	printf("Fault Injection Test: Double Close\n");
+	printf("[test][fault injection] Double Close\n");
 
-	coreid = hal_get_core_id();
+	nodeid = hal_get_cluster_id();
 
-	TEST_ASSERT((outbox = hal_mailbox_open(coreid + 1)) >= 0);
+	TEST_ASSERT((outbox = hal_mailbox_open(nodeid + 1)) >= 0);
 	TEST_ASSERT(hal_mailbox_close(outbox) == 0);
 	TEST_ASSERT(hal_mailbox_close(outbox) < 0);
 }
@@ -469,13 +414,13 @@ static void test_hal_mailbox_double_close(void)
  */
 static void test_hal_mailbox_invalid_write(void)
 {
-	char buf[MAILBOX_MSG_SIZE];
+	char buf[HAL_MAILBOX_MSG_SIZE];
 
-	printf("Fault Injection Test: Invalid Write\n");
+	printf("[test][fault injection] Invalid Write\n");
 
-	memset(buf, 1, MAILBOX_MSG_SIZE);
-	TEST_ASSERT(hal_mailbox_write(-1, buf, MAILBOX_MSG_SIZE) != MAILBOX_MSG_SIZE);
-	TEST_ASSERT(hal_mailbox_write(100000, buf, MAILBOX_MSG_SIZE) != MAILBOX_MSG_SIZE);
+	memset(buf, 1, HAL_MAILBOX_MSG_SIZE);
+	TEST_ASSERT(hal_mailbox_write(-1, buf, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE);
+	TEST_ASSERT(hal_mailbox_write(100000, buf, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE);
 }
 
 /*===================================================================*
@@ -488,17 +433,17 @@ static void test_hal_mailbox_invalid_write(void)
 static void test_hal_mailbox_bad_write(void)
 {
 	int inbox;
-	char buf[MAILBOX_MSG_SIZE];
-	int coreid;
+	char buf[HAL_MAILBOX_MSG_SIZE];
+	int nodeid;
 
-	printf("Fault Injection Test: Bad Write\n");
+	printf("[test][fault injection] Bad Write\n");
 
-	coreid = hal_get_core_id();
+	nodeid = hal_get_cluster_id();
 
-	TEST_ASSERT((inbox = hal_mailbox_create(coreid)) >= 0);
+	TEST_ASSERT((inbox = hal_mailbox_create(nodeid)) >= 0);
 
-	memset(buf, 1, MAILBOX_MSG_SIZE);
-	TEST_ASSERT(hal_mailbox_write(inbox, buf, MAILBOX_MSG_SIZE) != MAILBOX_MSG_SIZE);
+	memset(buf, 1, HAL_MAILBOX_MSG_SIZE);
+	TEST_ASSERT(hal_mailbox_write(inbox, buf, 1) != HAL_MAILBOX_MSG_SIZE);
 
 	TEST_ASSERT(hal_mailbox_unlink(inbox) == 0);
 }
@@ -513,14 +458,14 @@ static void test_hal_mailbox_bad_write(void)
 static void test_hal_mailbox_null_write(void)
 {
 	int outbox;
-	int coreid;
+	int nodeid;
 
-	printf("Fault Injection Test: Null Write\n");
+	printf("[test][fault injection] Null Write\n");
 
-	coreid = hal_get_core_id();
+	nodeid = hal_get_cluster_id();
 
-	TEST_ASSERT((outbox = hal_mailbox_open(coreid + 1)) >= 0);
-	TEST_ASSERT(hal_mailbox_write(outbox, NULL, MAILBOX_MSG_SIZE) != MAILBOX_MSG_SIZE);
+	TEST_ASSERT((outbox = hal_mailbox_open(nodeid + 1)) >= 0);
+	TEST_ASSERT(hal_mailbox_write(outbox, NULL, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE);
 	TEST_ASSERT(hal_mailbox_close(outbox) == 0);
 }
 
@@ -533,13 +478,13 @@ static void test_hal_mailbox_null_write(void)
  */
 static void test_hal_mailbox_invalid_read(void)
 {
-	char buf[MAILBOX_MSG_SIZE];
+	char buf[HAL_MAILBOX_MSG_SIZE];
 
-	printf("Fault Injection Test: Invalid Read\n");
+	printf("[test][fault injection] Invalid Read\n");
 
-	memset(buf, 1, MAILBOX_MSG_SIZE);
-	TEST_ASSERT(hal_mailbox_read(-1, buf, MAILBOX_MSG_SIZE) != MAILBOX_MSG_SIZE);
-	TEST_ASSERT(hal_mailbox_read(100000, buf, MAILBOX_MSG_SIZE) != MAILBOX_MSG_SIZE);
+	memset(buf, 1, HAL_MAILBOX_MSG_SIZE);
+	TEST_ASSERT(hal_mailbox_read(-1, buf, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE);
+	TEST_ASSERT(hal_mailbox_read(100000, buf, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE);
 }
 
 /*===================================================================*
@@ -552,17 +497,17 @@ static void test_hal_mailbox_invalid_read(void)
 static void test_hal_mailbox_bad_read(void)
 {
 	int outbox;
-	char buf[MAILBOX_MSG_SIZE];
-	int coreid;
+	char buf[HAL_MAILBOX_MSG_SIZE];
+	int nodeid;
 
-	printf("Fault Injection Test: Bad Read\n");
+	printf("[test][fault injection] Bad Read\n");
 
-	coreid = hal_get_core_id();
+	nodeid = hal_get_cluster_id();
 
-	TEST_ASSERT((outbox = hal_mailbox_open(coreid + 1)) >= 0);
+	TEST_ASSERT((outbox = hal_mailbox_open(nodeid + 1)) >= 0);
 
-	memset(buf, 1, MAILBOX_MSG_SIZE);
-	TEST_ASSERT(hal_mailbox_read(outbox, buf, MAILBOX_MSG_SIZE) != MAILBOX_MSG_SIZE);
+	memset(buf, 1, HAL_MAILBOX_MSG_SIZE);
+	TEST_ASSERT(hal_mailbox_read(outbox, buf, 1) != HAL_MAILBOX_MSG_SIZE);
 
 	TEST_ASSERT(hal_mailbox_close(outbox) == 0);
 }
@@ -577,23 +522,23 @@ static void test_hal_mailbox_bad_read(void)
 static void test_hal_mailbox_null_read(void)
 {
 	int inbox;
-	int coreid;
+	int nodeid;
 
-	printf("Fault Injection Test: Null Read\n");
+	printf("[test][fault injection] Null Read\n");
 
-	coreid = hal_get_core_id();
+	nodeid = hal_get_cluster_id();
 
-	TEST_ASSERT((inbox = hal_mailbox_create(coreid)) >= 0);
-	TEST_ASSERT(hal_mailbox_read(inbox, NULL, MAILBOX_MSG_SIZE) != MAILBOX_MSG_SIZE);
+	TEST_ASSERT((inbox = hal_mailbox_create(nodeid)) >= 0);
+	TEST_ASSERT(hal_mailbox_read(inbox, NULL, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE);
 	TEST_ASSERT(hal_mailbox_unlink(inbox) == 0);
 }
 
 /*===================================================================*
- * API Test: Mailbox Driver                                          *
+ * Mailbox Test Driver                                               *
  *===================================================================*/
 
 /**
- * @brief Mailbox test driver.
+ * @brief Mailbox Test Driver
  */
 int main(int argc, const char **argv)
 {
@@ -601,10 +546,10 @@ int main(int argc, const char **argv)
 	((void) argv);
 
 	pthread_mutex_init(&lock, NULL);
-	pthread_barrier_init(&barrier, NULL, NR_IOCLUSTER_DMA);
+	pthread_barrier_init(&barrier, NULL, NR_CORES);
 
 	/* API tests. */
-	test_ hal_mailbox_create_unlink();
+	test_hal_mailbox_create_unlink();
 	test_hal_mailbox_open_close();
 	test_hal_mailbox_read_write();
 
@@ -617,10 +562,6 @@ int main(int argc, const char **argv)
 	test_hal_mailbox_bad_open();
 #endif
 	test_hal_mailbox_double_open();
-	test_hal_mailbox_invalid_unlink();
-	test_hal_mailbox_bad_unlink();
-	test_hal_mailbox_invalid_close();
-	test_hal_mailbox_bad_close();
 	test_hal_mailbox_double_unlink();
 	test_hal_mailbox_double_close();
 	test_hal_mailbox_invalid_write();

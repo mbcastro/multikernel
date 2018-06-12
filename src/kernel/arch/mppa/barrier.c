@@ -1,29 +1,30 @@
 /*
  * Copyright(C) 2011-2018 Pedro H. Penna <pedrohenriquepenna@gmail.com>
- * 
+ *
  * This file is part of Nanvix.
- * 
+ *
  * Nanvix is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * Nanvix is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <nanvix/arch/mppa.h>
 #include <nanvix/klib.h>
 #include <assert.h>
 #include <inttypes.h>
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
+
+#include "mppa.h"
 
 /**
  * @brief Number of barriers.
@@ -137,7 +138,7 @@ int barrier_open(int ncclusters)
 	uint64_t mask;
 	char pathname[128];
 
-	local = k1_get_cluster_id();
+	local = hal_get_cluster_id();
 
 	/* Allocate barrier. */
 	barrierid = barrier_alloc();
@@ -274,18 +275,18 @@ int barrier_wait(int barrierid)
 	if (!(barriers[barrierid].flags & BARRIER_USED))
 		return (-EINVAL);
 
-	local = k1_get_cluster_id();
+	local = hal_get_cluster_id();
 
 	/* IO 0 cluster barrier. */
 	if (local == IOCLUSTER0)
 	{
 		assert(mppa_read(barriers[barrierid].local, &mask, sizeof(uint64_t)) == sizeof(uint64_t));
-		mask = ~0;	
+		mask = ~0;
 		assert(mppa_write(barriers[barrierid].remote, &mask, sizeof(uint64_t)) == sizeof(uint64_t));
 	}
 	else if (local == IOCLUSTER1)
 	{
-		mask = ~0;	
+		mask = ~0;
 		assert(mppa_write(barriers[barrierid].remote, &mask, sizeof(uint64_t)) == sizeof(uint64_t));
 		assert(mppa_read(barriers[barrierid].local, &mask, sizeof(uint64_t)) == sizeof(uint64_t));
 	}
@@ -309,7 +310,7 @@ int barrier_wait(int barrierid)
 			assert(mppa_read(barriers[barrierid].local, &mask, sizeof(uint64_t)) == sizeof(uint64_t));
 		}
 	}
-	
+
 	return (0);
 }
 
@@ -335,4 +336,3 @@ int barrier_close(int barrierid)
 
 	return (0);
 }
-

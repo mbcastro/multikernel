@@ -16,36 +16,21 @@
 # along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
 #
 
-K1_TOOLCHAIN_DIR=/usr/local/k1tools/
-
-# Directories.
-BINDIR  = $(CURDIR)/../../../bin
-INCDIR  = $(CURDIR)/../../../include
-SRCDIR  = $(CURDIR)/../../
-
-# Toolchain Configuration
-cflags := -ansi -std=c99
-cflags += -Wall -Wextra -Werror
-cflags += -Winit-self -Wswitch-default -Wfloat-equal -Wundef -Wshadow -Wuninitialized
-cflags += -O3
-cflags += -I $(INCDIR)
-cflags += -D_KALRAY_MPPA256
-lflags := -Wl,--defsym=_LIBNOC_DISABLE_FIFO_FULL_CHECK=0
-O := $(SRCDIR)/../output
-
 #=============================================================================
 # Kmeans Benchmark Kernel
 #=============================================================================
 
 cluster-bin += km-portal-slave
 km-portal-slave-srcs := $(SRCDIR)/benchmark/km/portal/slave/slave.c     \
-					 $(SRCDIR)/benchmark/km/portal/slave/vector.c    \
-					 $(SRCDIR)/benchmark/km/portal/slave/ipc.c    \
-					 $(SRCDIR)/kernel/arch/mppa/portal.c  \
-					 $(SRCDIR)/kernel/arch/mppa/barrier.c \
-					 $(SRCDIR)/kernel/arch/mppa/name.c    \
-					 $(SRCDIR)/kernel/arch/mppa/timer.c   \
-					 $(SRCDIR)/kernel/arch/mppa/core.c
+					$(SRCDIR)/benchmark/km/portal/slave/vector.c    \
+					$(SRCDIR)/benchmark/km/portal/slave/ipc.c       \
+					$(SRCDIR)/kernel/arch/mppa/portal.c             \
+					$(SRCDIR)/kernel/arch/mppa/mailbox.c            \
+					$(SRCDIR)/kernel/arch/mppa/noc.c                \
+					$(SRCDIR)/kernel/arch/mppa/barrier.c            \
+					$(SRCDIR)/kernel/arch/mppa/name.c               \
+					$(SRCDIR)/kernel/arch/mppa/timer.c              \
+					$(SRCDIR)/kernel/arch/mppa/core.c
 
 # Toolchain Configuration
 km-portal-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
@@ -54,19 +39,21 @@ km-portal-slave-lflags := -lmppaipc -lm -lgomp
 
 io-bin += km-portal-master
 km-portal-master-srcs := $(SRCDIR)/benchmark/km/portal/master/main.c     \
-					  $(SRCDIR)/benchmark/km/portal/master/master.c   \
-					  $(SRCDIR)/benchmark/km/portal/master/vector.c   \
-					  $(SRCDIR)/benchmark/km/portal/master/util.c     \
-					  $(SRCDIR)/benchmark/km/portal/master/ipc.c      \
-					  $(SRCDIR)/kernel/arch/mppa/portal.c  \
-					  $(SRCDIR)/kernel/arch/mppa/name.c    \
-					  $(SRCDIR)/kernel/arch/mppa/core.c
+					$(SRCDIR)/benchmark/km/portal/master/master.c   \
+					$(SRCDIR)/benchmark/km/portal/master/vector.c   \
+					$(SRCDIR)/benchmark/km/portal/master/util.c     \
+					$(SRCDIR)/benchmark/km/portal/master/ipc.c      \
+					$(SRCDIR)/kernel/arch/mppa/portal.c             \
+					$(SRCDIR)/kernel/arch/mppa/mailbox.c            \
+					$(SRCDIR)/kernel/arch/mppa/noc.c                \
+					$(SRCDIR)/kernel/arch/mppa/name.c               \
+					$(SRCDIR)/kernel/arch/mppa/core.c
 
 # Toolchain Configuration
 km-portal-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
 km-portal-master-lflags := -lmppaipc -lm
 
-km-portal-objs := km-portal-master km-portal-slave
+km-portal-objs := km-portal-master km-portal-slave name-server
 km-portal-name := km-portal.img
 
 #=============================================================================
@@ -75,9 +62,11 @@ km-portal-name := km-portal.img
 
 io-bin += portal-master
 portal-master-srcs := $(SRCDIR)/test/portal/master.c  \
-					  $(SRCDIR)/kernel/arch/mppa/portal.c  \
-					  $(SRCDIR)/kernel/arch/mppa/name.c    \
-					  $(SRCDIR)/kernel/arch/mppa/core.c
+				$(SRCDIR)/kernel/arch/mppa/portal.c   \
+				$(SRCDIR)/kernel/arch/mppa/mailbox.c  \
+				$(SRCDIR)/kernel/arch/mppa/noc.c      \
+				$(SRCDIR)/kernel/arch/mppa/name.c     \
+				$(SRCDIR)/kernel/arch/mppa/core.c
 
 # Toolchain Configuration
 portal-master-system := rtems
@@ -86,18 +75,20 @@ portal-master-lflags := -lmppaipc
 
 cluster-bin += portal-slave
 portal-slave-srcs := $(SRCDIR)/test/portal/slave.c   \
-					 $(SRCDIR)/kernel/arch/mppa/portal.c  \
-					 $(SRCDIR)/kernel/arch/mppa/barrier.c \
-					 $(SRCDIR)/kernel/arch/mppa/name.c    \
-					 $(SRCDIR)/kernel/arch/mppa/timer.c   \
-					 $(SRCDIR)/kernel/arch/mppa/core.c
+					$(SRCDIR)/kernel/arch/mppa/portal.c  \
+					$(SRCDIR)/kernel/arch/mppa/mailbox.c \
+					$(SRCDIR)/kernel/arch/mppa/noc.c     \
+					$(SRCDIR)/kernel/arch/mppa/barrier.c \
+					$(SRCDIR)/kernel/arch/mppa/name.c    \
+					$(SRCDIR)/kernel/arch/mppa/timer.c   \
+					$(SRCDIR)/kernel/arch/mppa/core.c
 
 # Toolchain Configuration
 portal-slave-system := nodeos
 portal-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
 portal-slave-lflags := -lmppaipc
 
-portal-objs := portal-master portal-slave
+portal-objs := portal-master portal-slave name-server
 portal-name := portal.img
 
 #=============================================================================
@@ -106,12 +97,14 @@ portal-name := portal.img
 
 cluster-bin += is-portal-slave
 is-portal-slave-srcs := $(SRCDIR)/benchmark/is/portal/slave/slave.c    \
-					 $(SRCDIR)/benchmark/is/portal/slave/sort.c   \
-					 $(SRCDIR)/kernel/arch/mppa/timer.c  \
-					 $(SRCDIR)/kernel/arch/mppa/portal.c  \
-					 $(SRCDIR)/kernel/arch/mppa/name.c    \
-					 $(SRCDIR)/kernel/arch/mppa/core.c
-#$(SRCDIR)/benchmark/is/slave/ipc.c
+					$(SRCDIR)/benchmark/is/portal/slave/sort.c         \
+					$(SRCDIR)/kernel/arch/mppa/timer.c                 \
+					$(SRCDIR)/kernel/arch/mppa/portal.c                \
+					$(SRCDIR)/kernel/arch/mppa/mailbox.c               \
+					$(SRCDIR)/kernel/arch/mppa/noc.c                   \
+					$(SRCDIR)/kernel/arch/mppa/name.c                  \
+					$(SRCDIR)/kernel/arch/mppa/core.c
+					#$(SRCDIR)/benchmark/is/slave/ipc.c
 
 # Toolchain Configuration
 is-portal-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
@@ -120,16 +113,18 @@ is-portal-slave-lflags := -lmppaipc -lm -lgomp
 
 io-bin += is-portal-master
 is-portal-master-srcs := $(SRCDIR)/benchmark/is/portal/master/main.c    \
-					  $(SRCDIR)/benchmark/is/portal/master/bucketsort.c   \
-					  $(SRCDIR)/benchmark/is/portal/master/bucket.c \
-					  $(SRCDIR)/benchmark/is/portal/master/minibucket.c \
-					  $(SRCDIR)/benchmark/is/portal/master/ipc.c  \
-					  $(SRCDIR)/benchmark/is/portal/master/message.c \
-					  $(SRCDIR)/benchmark/is/portal/master/util.c    \
-					  $(SRCDIR)/kernel/arch/mppa/timer.c  \
-					  $(SRCDIR)/kernel/arch/mppa/portal.c  \
-					  $(SRCDIR)/kernel/arch/mppa/name.c    \
-					  $(SRCDIR)/kernel/arch/mppa/core.c
+					$(SRCDIR)/benchmark/is/portal/master/bucketsort.c   \
+					$(SRCDIR)/benchmark/is/portal/master/bucket.c       \
+					$(SRCDIR)/benchmark/is/portal/master/minibucket.c   \
+					$(SRCDIR)/benchmark/is/portal/master/ipc.c          \
+					$(SRCDIR)/benchmark/is/portal/master/message.c      \
+					$(SRCDIR)/benchmark/is/portal/master/util.c         \
+					$(SRCDIR)/kernel/arch/mppa/timer.c                  \
+					$(SRCDIR)/kernel/arch/mppa/portal.c                 \
+					$(SRCDIR)/kernel/arch/mppa/mailbox.c                \
+					$(SRCDIR)/kernel/arch/mppa/noc.c                    \
+					$(SRCDIR)/kernel/arch/mppa/name.c                   \
+					$(SRCDIR)/kernel/arch/mppa/core.c
 
 
 #$(SRCDIR)/benchmark/is/master/ipc.c
@@ -139,7 +134,7 @@ is-portal-master-system := rtems
 is-portal-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
 is-portal-master-lflags := -lmppaipc -pthread
 
-is-portal-objs := is-portal-master is-portal-slave
+is-portal-objs := is-portal-master is-portal-slave name-server
 is-portal-name := is-portal.img
 
 #=============================================================================
@@ -148,12 +143,14 @@ is-portal-name := is-portal.img
 
 cluster-bin += gf-portal-slave
 gf-portal-slave-srcs := $(SRCDIR)/benchmark/gf/portal/slave/slave.c \
-				        $(SRCDIR)/benchmark/gf/portal/slave/ipc.c   \
-						 		$(SRCDIR)/benchmark/gf/util.c               \
-				        $(SRCDIR)/kernel/arch/mppa/timer.c          \
-				        $(SRCDIR)/kernel/arch/mppa/portal.c         \
-				        $(SRCDIR)/kernel/arch/mppa/name.c           \
-				        $(SRCDIR)/kernel/arch/mppa/core.c
+					$(SRCDIR)/benchmark/gf/portal/slave/ipc.c   \
+					$(SRCDIR)/benchmark/gf/util.c               \
+					$(SRCDIR)/kernel/arch/mppa/timer.c          \
+					$(SRCDIR)/kernel/arch/mppa/portal.c         \
+					$(SRCDIR)/kernel/arch/mppa/mailbox.c        \
+					$(SRCDIR)/kernel/arch/mppa/noc.c            \
+					$(SRCDIR)/kernel/arch/mppa/name.c           \
+					$(SRCDIR)/kernel/arch/mppa/core.c
 
 # Toolchain Configuration
 gf-portal-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
@@ -161,20 +158,22 @@ gf-portal-slave-cflags += -fopenmp
 gf-portal-slave-lflags := -lmppaipc -lm -lgomp
 
 io-bin += gf-portal-master
-gf-portal-master-srcs := $(SRCDIR)/benchmark/gf/portal/master/main.c   \
-						 $(SRCDIR)/benchmark/gf/portal/master/master.c \
-						 $(SRCDIR)/benchmark/gf/portal/master/ipc.c    \
-						 $(SRCDIR)/benchmark/gf/util.c                 \
-						 $(SRCDIR)/kernel/arch/mppa/timer.c            \
-						 $(SRCDIR)/kernel/arch/mppa/portal.c           \
-						 $(SRCDIR)/kernel/arch/mppa/name.c             \
-						 $(SRCDIR)/kernel/arch/mppa/core.c
+gf-portal-master-srcs := $(SRCDIR)/benchmark/gf/portal/master/main.c  \
+						$(SRCDIR)/benchmark/gf/portal/master/master.c \
+						$(SRCDIR)/benchmark/gf/portal/master/ipc.c    \
+						$(SRCDIR)/benchmark/gf/util.c                 \
+						$(SRCDIR)/kernel/arch/mppa/timer.c            \
+						$(SRCDIR)/kernel/arch/mppa/portal.c           \
+						$(SRCDIR)/kernel/arch/mppa/mailbox.c          \
+						$(SRCDIR)/kernel/arch/mppa/name.c             \
+						$(SRCDIR)/kernel/arch/mppa/noc.c              \
+						$(SRCDIR)/kernel/arch/mppa/core.c
 
 # Toolchain Configuration
 gf-portal-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
 gf-portal-master-lflags := -lmppaipc -lm
 
-gf-portal-objs := gf-portal-master gf-portal-slave
+gf-portal-objs := gf-portal-master gf-portal-slave name-server
 gf-portal-name := gf-portal.img
 
 #=============================================================================

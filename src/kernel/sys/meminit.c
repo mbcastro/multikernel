@@ -1,18 +1,18 @@
 /*
  * Copyright(C) 2011-2018 Pedro H. Penna <pedrohenriquepenna@gmail.com>
- * 
+ *
  * This file is part of Nanvix.
- * 
+ *
  * Nanvix is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * Nanvix is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
@@ -20,7 +20,9 @@
 #include <nanvix/hal.h>
 #include <nanvix/mm.h>
 #include <nanvix/pm.h>
+#include <nanvix/name.h>
 #include <stdio.h>
+#include <assert.h>
 
 /**
  * @brief Underlying IPC connectors.
@@ -36,25 +38,20 @@ int _mem_outportal = -1; /* Portal used for large transfers.  */
  */
 void meminit(void)
 {
-	int clusterid;              /* Cluster ID of the calling process.   */
-	char pathname[128];         /* Name of underlying IPC connector.   */
-	const char *clustername;    /* Cluster name of the calling process. */
-	static int initialized = 0; /* IS RMA Engine initialized?           */
+	int clusterid;                   /* Cluster ID of the calling process.   */
+	static int initialized = 0;      /* IS RMA Engine initialized?           */
 
 	/* Already initialized.  */
 	if (initialized)
 		return;
 
 	/* Retrieve cluster information. */
-	clusterid = k1_get_cluster_id();
-	clustername = name_cluster_name(clusterid);
+	clusterid = hal_get_cluster_id();
 
 	/* Open underlying IPC connectors. */
-	sprintf(pathname, "/rmem%d", clusterid%NR_IOCLUSTER_DMA);
-	_mem_inportal = portal_create(clustername);
-	_mem_outbox = mailbox_open(pathname);
-	_mem_outportal = portal_open(pathname);
+	_mem_inportal = _portal_create(clusterid);
+	_mem_outbox =hal_mailbox_open(IOCLUSTER1 + clusterid%NR_IOCLUSTER_DMA);
+	_mem_outportal = _portal_open(clusterid%NR_IOCLUSTER_DMA);
 
 	initialized = 1;
 }
-

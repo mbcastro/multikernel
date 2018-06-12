@@ -1,17 +1,17 @@
 # Copyright(C) 2011-2018 Pedro H. Penna <pedrohenriquepenna@gmail.com>
-# 
+#
 # This file is part of Nanvix.
-# 
+#
 # Nanvix is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # Nanvix is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -42,6 +42,14 @@ function run1
 		--multibinary=$OUTDIR/$multibin \
 		--exec-multibin=IODDR0:$bin     \
 		-- $args
+
+	local ret=$?
+	if [ $ret == "0" ]
+	then
+		printf "[test] %-30s \e[32m%s\e[0m\n" "$multibin" "passed"
+	else
+		printf "[test] %-30s \e[91m%s\e[0m\n" "$multibin" "FAILED"
+	fi
 }
 
 #
@@ -59,28 +67,39 @@ function run2
 		--exec-multibin=IODDR0:$bin1    \
 		--exec-multibin=IODDR1:$bin2    \
 		-- $args
+
+	local ret=$?
+	if [ $ret == "0" ]
+	then
+		printf "[test] %-30s \e[32m%s\e[0m\n" "$multibin" "passed"
+	else
+		printf "[test] %-30s \e[91m%s\e[0m\n" "$multibin" "FAILED"
+	fi
 }
 
 if [[ $1 == "test" ]];
 then
-
-	echo "Testing ASYNC"
-	run1 "async.img" "master.elf" "$NCLUSTERS $SIZE"
-	echo "Testing PORTAL"
-	run1 "portal.img" "portal-master" "write $NCLUSTERS $SIZE"
 	echo "Testing MAILBOX"
-	run1 "mailbox.img" "mailbox-master" "$NCLUSTERS $NMESSAGES"
-	echo "Testing RMEM"
-	run2 "rmem.img" "rmem-master" "rmem-server" "write $NCLUSTERS $SIZE"
-	run2 "rmem.img" "rmem-master" "rmem-server" "read $NCLUSTERS $SIZE"
+	run1 "hal-mailbox.img" "hal-mailbox-master" | grep "test"
+	echo "Testing NAME"
+	run2 "name.img" "spawner-server" "name-master" "$NCLUSTERS" | grep "test"
+#	echo "Testing PORTAL"
+#	run2 "portal.img" "name-server" "portal-master" "write $NCLUSTERS $SIZE"
+#	echo "Testing RMEM"
+#	run2 "rmem.img" "rmem-master" "rmem-server" "write $NCLUSTERS $SIZE"
+#	run2 "rmem.img" "rmem-master" "rmem-server" "read $NCLUSTERS $SIZE"
 elif [[ $1 == "benchmark" ]];
 then
-	if [[ $2 == "km" ]];
+	if [[ $2 == "async" ]];
+	then
+		echo "Testing ASYNC"
+		run1 "async.img" "master.elf" "$NCLUSTERS $SIZE"
+	elif [[ $2 == "km" ]];
 	then
 		echo "Running KM PORTAL"
 		run1 "km-portal.img" "km-portal-master" "--nclusters $NCLUSTERS --class $CLASS"
 		echo "Running KM RMEM"
-		run2 "km-rmem.img" "km-rmem-master" "rmem-server" "--nclusters $NCLUSTERS --class $CLASS"	
+		run2 "km-rmem.img" "km-rmem-master" "rmem-server" "--nclusters $NCLUSTERS --class $CLASS"
 	elif [[ $2 == "gf" ]];
 	then
 		echo "Running GF PORTAL"
@@ -88,13 +107,13 @@ then
 		echo "Running GF RMEM"
 		run2 "gf-rmem.img" "gf-rmem-master" "rmem-server" "--nclusters $NCLUSTERS --class $CLASS"
 		echo "Running GF RMEM DENSE"
-		run2 "gf-dense-rmem.img" "gf-dense-rmem-master" "rmem-server" "--nclusters $NCLUSTERS --class $CLASS"	
+		run2 "gf-dense-rmem.img" "gf-dense-rmem-master" "rmem-server" "--nclusters $NCLUSTERS --class $CLASS"
 	elif [[ $2 == "is" ]];
 	then
 
 		echo "Running IS PORTAL"
 		run1 "is-portal.img" "is-portal-master" "--nclusters $NCLUSTERS --class $CLASS"
 		echo "Running IS RMEM"
-		run2 "is-rmem.img" "is-rmem-master" "rmem-server" "--nclusters $NCLUSTERS --class $CLASS"	
+		run2 "is-rmem.img" "is-rmem-master" "rmem-server" "--nclusters $NCLUSTERS --class $CLASS"
 	fi
 fi

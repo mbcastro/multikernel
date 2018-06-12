@@ -20,23 +20,21 @@
 # Mailbox Unit Test
 #=============================================================================
 
-io-bin += mailbox-master
-mailbox-master-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
-					   $(SRCDIR)/kernel/arch/mppa/core.c    \
-					   $(SRCDIR)/kernel/arch/mppa/noc.c     \
-					   $(SRCDIR)/test/mailbox/master.c
+io-bin += hal-master
+hal-master-srcs := $(SRCDIR)/kernel/arch/mppa/core.c \
+                   $(SRCDIR)/test/hal/master.c
 
 # Toolchain Configuration
-mailbox-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL -DDEBUG_MAILBOX
-mailbox-master-lflags := -lmppaipc
+hal-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+hal-master-lflags := -lmppaipc
 
-mailbox-objs := mailbox-master 
-mailbox-name := mailbox.img
+hal-objs := hal-master 
+hal-name := hal.img
 
 #=============================================================================
 # MPPA Binary
 #=============================================================================
 
-mppa-bin := mailbox
+mppa-bin := hal
 
 include $(K1_TOOLCHAIN_DIR)/share/make/Makefile.kalray

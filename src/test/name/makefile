@@ -17,26 +17,40 @@
 #
 
 #=============================================================================
-# Mailbox Unit Test
+# Name server test
 #=============================================================================
 
-io-bin += mailbox-master
-mailbox-master-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
-					   $(SRCDIR)/kernel/arch/mppa/core.c    \
-					   $(SRCDIR)/kernel/arch/mppa/noc.c     \
-					   $(SRCDIR)/test/mailbox/master.c
+cluster-bin += name-slave
+name-slave-srcs := $(SRCDIR)/kernel/arch/mppa/barrier.c \
+					$(SRCDIR)/kernel/arch/mppa/core.c    \
+					$(SRCDIR)/kernel/arch/mppa/mailbox.c \
+					$(SRCDIR)/kernel/arch/mppa/noc.c     \
+					$(SRCDIR)/kernel/arch/mppa/name.c    \
+					$(SRCDIR)/test/name/slave.c
 
 # Toolchain Configuration
-mailbox-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL -DDEBUG_MAILBOX
-mailbox-master-lflags := -lmppaipc
+name-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+name-slave-lflags := -lmppaipc -pthread
 
-mailbox-objs := mailbox-master 
-mailbox-name := mailbox.img
+io-bin += name-master
+name-master-srcs := $(SRCDIR)/kernel/arch/mppa/barrier.c \
+					$(SRCDIR)/kernel/arch/mppa/mailbox.c \
+					$(SRCDIR)/kernel/arch/mppa/noc.c     \
+					$(SRCDIR)/kernel/arch/mppa/name.c    \
+					$(SRCDIR)/kernel/arch/mppa/core.c    \
+					$(SRCDIR)/test/name/master.c
+
+# Toolchain Configuration
+name-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
+name-master-lflags := -lmppaipc
+
+name-objs := spawner-server name-master name-slave
+name-name := name.img
 
 #=============================================================================
 # MPPA Binary
 #=============================================================================
 
-mppa-bin := mailbox
+mppa-bin := name
 
 include $(K1_TOOLCHAIN_DIR)/share/make/Makefile.kalray
