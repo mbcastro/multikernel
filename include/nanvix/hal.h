@@ -93,5 +93,7 @@
 	extern int hal_sync_open(const int *, int);
 	extern int hal_sync_wait(int);
 	extern int hal_sync_signal(int, int);
+	extern int hal_sync_close(int);
+	extern int hal_sync_unlink(int);
 
 #endif /* NANVIX_HAL_H_ */

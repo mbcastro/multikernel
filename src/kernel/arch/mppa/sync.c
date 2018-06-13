@@ -80,6 +80,8 @@ error0:
  * @returns Upon successful completion, the ID of the newly created
  * synchronization point is returned. Upon failure, a negative error
  * code is returned instead.
+ *
+ * @note This function is @b NOT thread safe.
  */
 int hal_sync_create(const int *nodes, int nnodes, int type)
 {
@@ -159,6 +161,8 @@ error0:
  * synchronization point is returned. Upon failure, a negative error
  * code is returned instead.
  *
+ * @note This function is @b NOT thread safe.
+ *
  * @todo Check for Invalid Remote
  */
 int hal_sync_open(const int *nodes, int nnodes)
@@ -193,6 +197,8 @@ int hal_sync_open(const int *nodes, int nnodes)
  *
  * @returns Upon successful completion, zero is returned. Upon
  * failure, a negative error code is returned instead.
+ *
+ * @note This function is @b NOT thread safe.
  */
 int hal_sync_wait(int syncid)
 {
@@ -221,6 +227,8 @@ int hal_sync_wait(int syncid)
  *
  * @returns Upon successful completion, zero is returned. Upon
  * failure, a negative error code is returned instead.
+ *
+ * @note This function is @b NOT thread safe.
  */
 int hal_sync_signal(int syncid, int type)
 {
@@ -242,4 +250,50 @@ int hal_sync_signal(int syncid, int type)
 		return (-EAGAIN);
 
 	return (0);
+}
+
+/*============================================================================*
+ * hal_sync_close()                                                           *
+ *============================================================================*/
+
+/**
+ * @brief Closes a synchronization point.
+ *
+ * @param syncid ID of the target synchronization point.
+ *
+ * @returns Upon successful completion, zero is returned. Upon
+ * failure, a negative error code is returned instead.
+ *
+ * @note This function is @b NOT thread safe.
+ */
+int hal_sync_close(int syncid)
+{
+	/* Invalid sync. */
+	if (syncid < 0)
+		return (-EINVAL);
+
+	return (mppa_close(syncid));
+}
+
+/*============================================================================*
+ * hal_sync_unlink()                                                          *
+ *============================================================================*/
+
+/**
+ * @brief Destroys a synchronization point.
+ *
+ * @param syncid ID of the target synchronization point.
+ *
+ * @returns Upon successful completion, zero is returned. Upon
+ * failure, a negative error code is returned instead.
+ *
+ * @note This function is @b NOT thread safe.
+ */
+int hal_sync_unlink(int syncid)
+{
+	/* Invalid sync. */
+	if (syncid < 0)
+		return (-EINVAL);
+
+	return (mppa_close(syncid));
 }
