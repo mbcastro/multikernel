@@ -31,7 +31,7 @@
 /**
  * @brief Creates a mailbox.
  *
- * @param nodeid ID of the target NoC node.
+ * @param remote ID of the target remote NoC node.
  *
  * @returns Upon successful completion, the ID of the newly created
  * mailbox is returned. Upon failure, a negative error code is
@@ -39,7 +39,7 @@
  *
  * @note This function is @b NOT thread safe.
  */
-int hal_mailbox_create(int nodeid)
+int hal_mailbox_create(int remote)
 {
 	int fd;             /* NoC connector.              */
 	char remotes[128];  /* IDs of remote NoC nodes.    */
@@ -47,16 +47,16 @@ int hal_mailbox_create(int nodeid)
 	int noctag;         /* NoC tag used for transfers. */
 
 	/* Invalid core ID. */
-	if (nodeid != hal_get_node_id())
+	if (remote != hal_get_node_id())
 		return (-EINVAL);
 
-	noc_get_remotes(remotes, nodeid);
-	noctag = noctag_mailbox(nodeid);
+	noc_get_remotes(remotes, remote);
+	noctag = noctag_mailbox(remote);
 
 	/* Build pathname for NoC connector. */
 	sprintf(pathname,
 			"/mppa/rqueue/%d:%d/[%s]:%d/1.%d",
-			nodeid,
+			remote,
 			noctag,
 			remotes,
 			noctag,
