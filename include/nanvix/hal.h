@@ -76,4 +76,22 @@
 	extern size_t hal_mailbox_write(int, const void *, size_t);
 	extern size_t hal_mailbox_read(int, void *, size_t);
 
+/*============================================================================*
+ * Synchronization Point Interface                                            *
+ *============================================================================*/
+
+	/**
+	 * @brief Types of synchronization points.
+	 */
+	/**@{*/
+	#define HAL_SYNC_ONE_TO_ALL 0 /**< One to all. */
+	#define HAL_SYNC_ALL_TO_ONE 1 /**< All to one. */
+	/**@}*/
+
+	/* Forward definitions. */
+	extern int hal_sync_create(const int *, int, int);
+	extern int hal_sync_open(const int *, int);
+	extern int hal_sync_wait(int);
+	extern int hal_sync_signal(int, int);
+
 #endif /* NANVIX_HAL_H_ */

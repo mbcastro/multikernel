@@ -28,7 +28,7 @@
 #include "mppa.h"
 
 /**
- * @brief NoC tags offset.
+ * @brief NoC tags offsets.
  *
  * @detail All NoC connectors that are listed bellow support 1:N
  * single-direction communication. Therefore, we need NR_DMA NoC tags
@@ -97,12 +97,102 @@ int hal_get_node_id(void)
  */
 int noc_get_dma(int nodeid)
 {
-	return (k1_is_ccluster(nodeid) ?
+	return (noc_is_cnode(nodeid) ?
 			nodeid%NR_CCLUSTER_DMA : nodeid%NR_IOCLUSTER_DMA);
 }
 
+/*============================================================================*
+ * noc_is_ionode0()                                                            *
+ *============================================================================*/
+
+/**
+ * @brief Asserts whether a NoC node is attached to IO cluster 0.
+ *
+ * @param nodeid ID of the target NoC node.
+ *
+ * @returns One if the target NoC node is attached to IO cluster 0,
+ * and zero otherwise.
+ */
+int noc_is_ionode0(int nodeid)
+{
+	return ((nodeid >= IOCLUSTER0) && (nodeid < IOCLUSTER0 + 4));
+}
+
+/*============================================================================*
+ * noc_is_ionode1()                                                            *
+ *============================================================================*/
+
+/**
+ * @brief Asserts whether a NoC node is attached to IO cluster 1.
+ *
+ * @param nodeid ID of the target NoC node.
+ *
+ * @returns One if the target NoC node is attached to IO cluster 1,
+ * and zero otherwise.
+ */
+int noc_is_ionode1(int nodeid)
+{
+	return ((nodeid >= IOCLUSTER1) && (nodeid < IOCLUSTER1 + 4));
+}
+
+/*============================================================================*
+ * noc_is_ionode()                                                            *
+ *============================================================================*/
+
+/**
+ * @brief Asserts whether a NoC node is attached to an IO cluster.
+ *
+ * @param nodeid ID of the target NoC node.
+ *
+ * @returns One if the target NoC node is attached to an IO cluster,
+ * and zero otherwise.
+ */
+int noc_is_ionode(int nodeid)
+{
+	return (noc_is_ionode0(nodeid) || noc_is_ionode1(nodeid));
+}
+
+/*============================================================================*
+ * noc_is_cnode()                                                             *
+ *============================================================================*/
+
+/**
+ * @brief Asserts whether a NoC node is attached to a compute cluster.
+ *
+ * @param nodeid ID of the target NoC node.
+ *
+ * @returns One if the target NoC node is attached to a compute
+ * cluster, and zero otherwise.
+ */
+int noc_is_cnode(int nodeid)
+{
+	return ((nodeid >= CCLUSTER0) && (nodeid <= CCLUSTER15));
+}
+
 /*=======================================================================*
- * noc_get_remotes()                                                         *
+ * noc_get_names()                                                       *
+ *=======================================================================*/
+
+/**
+ * @brief Gets the name of NoC nodes.
+ *
+ * @param names Place where the names should be stored.
+ * @param nodes  List of of NoC node IDs.
+ * @param nnodes Number of NoC nodes in the list.
+ */
+void noc_get_names(char *names, const int *nodes, int nnodes)
+{
+	char tmp[5];
+
+	for (int i = 0; i < nnodes; i++)
+	{
+		sprintf(tmp, "%d", nodes[i]);
+		strcat(names, tmp);
+	}
+}
+
+/*=======================================================================*
+ * noc_get_remotes()                                                     *
  *=======================================================================*/
 
 /**
@@ -154,20 +244,35 @@ void noc_get_remotes(char *remotes, int local)
  *=======================================================================*/
 
 /**
- * @brief Returns the mailbox NoC tag for a target CPU ID.
+ * @brief Returns the mailbox NoC tag for a target NoC node ID.
  *
- * @param cpuid ID of the target CPU.
+ * @param nodeid ID of the target NoC node.
  */
-int noctag_mailbox(int cpuid)
+int noctag_mailbox(int nodeid)
 {
-	if ((cpuid >= IOCLUSTER0) && (cpuid < (IOCLUSTER0 + NR_IOCLUSTER_DMA)))
-	{
-		return (NOCTAG_MAILBOX_OFF + cpuid%NR_IOCLUSTER_DMA);
-	}
-	else if ((cpuid >= IOCLUSTER1) && (cpuid < (IOCLUSTER1 + NR_IOCLUSTER_DMA)))
-	{
-		return (NOCTAG_MAILBOX_OFF + NR_IOCLUSTER_DMA + cpuid%NR_IOCLUSTER_DMA);
-	}
+	if (noc_is_ionode0(nodeid))
+		return (NOCTAG_MAILBOX_OFF + nodeid%NR_IOCLUSTER_DMA);
+	else if (noc_is_ionode1(nodeid))
+		return (NOCTAG_MAILBOX_OFF + NR_IOCLUSTER_DMA + nodeid%NR_IOCLUSTER_DMA);
 
-	return (NOCTAG_MAILBOX_OFF + NR_IOCLUSTER_DMA + NR_IOCLUSTER_DMA + cpuid);
+	return (NOCTAG_MAILBOX_OFF + NR_IOCLUSTER_DMA + NR_IOCLUSTER_DMA + nodeid);
+}
+
+/*=======================================================================*
+ * noctag_sync()                                                         *
+ *=======================================================================*/
+
+/**
+ * @brief Returns the synchronization NoC tag for a target NoC node ID.
+ *
+ * @param nodeid ID of the target NoC node.
+ */
+int noctag_sync(int nodeid)
+{
+	if (noc_is_ionode0(nodeid))
+		return (NOCTAG_SYNC_OFF + nodeid%NR_IOCLUSTER_DMA);
+	else if (noc_is_ionode1(nodeid))
+		return (NOCTAG_SYNC_OFF + NR_IOCLUSTER_DMA + nodeid%NR_IOCLUSTER_DMA);
+
+	return (NOCTAG_SYNC_OFF + NR_IOCLUSTER_DMA + NR_IOCLUSTER_DMA + nodeid);
 }

@@ -81,8 +81,8 @@
 	extern int hal_get_cluster_id(void);
 	extern int k1_is_ccluster(int);
 	extern int k1_is_iocluster(int);
-	extern int k1_is_iocpu(int);
-	extern int k1_is_ccpu(int);
+	extern int k1_is_ionode(int);
+	extern int k1_is_cnode(int);
 	extern long k1_get_ccluster_freq(void);
 
 	/* Forward definitions. */
@@ -111,8 +111,14 @@
 
 	/* Forward definitions. */
 	extern int noctag_mailbox(int);
+	extern int noctag_sync(int);
 	extern void noc_get_remotes(char *, int);
+	extern void noc_get_names(char *, const int *, int);
 	extern int noc_get_dma(int);
+	extern int noc_is_ionode(int);
+	extern int noc_is_ionode0(int);
+	extern int noc_is_ionode1(int);
+	extern int noc_is_cnode(int);
 
 /*=======================================================================*
  *                                                                       *

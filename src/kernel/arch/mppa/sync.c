@@ -17,6 +17,29 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <errno.h>
+#include <stdio.h>
+
+#include <nanvix/hal.h>
+
+#include "mppa.h"
+
+/**
+ * @brief Gets the sync mask of a NoC node ID.
+ *
+ * @param nodeid ID of target NoC node.
+ *
+ * @returns The sync mask of the target NoC node ID.
+ */
+static int sync_mask(int nodeid)
+{
+	if (noc_is_cnode(nodeid))
+		return (nodeid);
+	else if (noc_is_ionode0(nodeid))
+		return (NR_CCLUSTER*NR_CCLUSTER_DMA + noc_get_dma(nodeid));
+	return (NR_CCLUSTER*NR_CCLUSTER_DMA + NR_IOCLUSTER_DMA + noc_get_dma(nodeid));
+}
+
 /*============================================================================*
  * hal_sync_create()                                                          *
  *============================================================================*/
@@ -24,7 +47,7 @@
 /**
  * @see hal_sync_create()
  */
-static int _hal_sync_create(const int *nodes, int nnodes)
+static int _hal_sync_create(const int *nodes, int nnodes, int type)
 {
 	int fd;             /* NoC connector.           */
 	uint64_t mask;      /* Sync mask.               */
@@ -32,20 +55,30 @@ static int _hal_sync_create(const int *nodes, int nnodes)
 	char pathname[128]; /* NoC connector name.      */
 
 	/* Build pathname for NoC connector. */
-	noc_node_names(remotes, nodes, nnodes);
+	noc_get_names(remotes, &nodes[1], nnodes - 1);
 	sprintf(pathname,
 		"/mppa/sync/[%s]:%d",
 		remotes,
-		barrier_noctag(nodes[0])
+		noctag_sync(nodes[1])
 	);
 
 	/* Open NoC connector. */
 	if ((fd = mppa_open(pathname, O_RDONLY)) == -1)
 		goto error0;
 
-	mask = ~((1 << (nnodes - 1)) - 1);
-	if (mppa_ioctl(fd, MPPA_RX_SET_MATCH, mask) != 0)
+	/* Build sync mask. */
+	mask = -1;
+	if (type == HAL_SYNC_ALL_TO_ONE)
+	{
+		for (int i = 0; i < nnodes; i++)
+			mask |= 1 << sync_mask(nodes[i]);
+	}
+	
+	/* Setup sync mask. */
+	if (mppa_ioctl(fd, MPPA_RX_SET_MATCH, ~mask) != 0)
 		goto error1;
+
+	return (fd);
 
 error1:
 	mppa_close(fd);
@@ -58,12 +91,13 @@ error0:
  *
  * @param nodes  IDs of target NoC nodes.
  * @param nnodes Number of target NoC nodes. 
+ * @param type   Type of synchronization point.
  *
  * @returns Upon successful completion, the ID of the newly created
  * synchronization point is returned. Upon failure, a negative error
  * code is returned instead.
  */
-int hal_sync_create(const int *nodes, int nnodes)
+int hal_sync_create(const int *nodes, int nnodes, int type)
 {
 	int nodeid;
 
@@ -72,13 +106,17 @@ int hal_sync_create(const int *nodes, int nnodes)
 		return (-EINVAL);
 
 	/* Invalid number of nodes. */
-	if ((nnodes < 0) || (nnodes >= HAL_NR_NOC_NODES))
+	if ((nnodes < 2) || (nnodes >= HAL_NR_NOC_NODES))
+		return (-EINVAL);
+
+	/* Invalid type. */
+	if ((type != HAL_SYNC_ONE_TO_ALL) || (type != HAL_SYNC_ALL_TO_ONE))
 		return (-EINVAL);
 
 	nodeid = hal_get_node_id();
 
 	/* Underlying NoC node SHOULD be here. */
-	for (int i = 0; i < nnodes; i++)
+	for (int i = 1; i < nnodes; i++)
 	{
 		if (nodeid == nodes[i])
 			goto found;
@@ -88,7 +126,7 @@ int hal_sync_create(const int *nodes, int nnodes)
 
 found:
 
-	return (_hal_sync_create(nodes, nnodes));
+	return (_hal_sync_create(nodes, nnodes, type));
 }
 
 /*============================================================================*
@@ -98,19 +136,18 @@ found:
 /**
  * @see hal_sync_open()
  */
-static int _hal_sync_open(int *nodes, int nnodes)
+static int _hal_sync_open(const int *nodes, int nnodes)
 {
 	int fd;             /* NoC connector.           */
-	uint64_t mask;      /* Sync mask.               */
 	char remotes[128];  /* IDs of remote NoC nodes. */
 	char pathname[128]; /* NoC connector name.      */
 
 	/* Build pathname for NoC connector. */
-	noc_node_names(remotes, nodes, nnodes);
+	noc_get_names(remotes, nodes, nnodes);
 	sprintf(pathname,
 		"/mppa/sync/[%s]:%d",
 		remotes,
-		barrier_noctag(nodes[0])
+		noctag_sync(nodes[0])
 	);
 
 	/* Open NoC connector. */
@@ -155,11 +192,8 @@ int hal_sync_open(const int *nodes, int nnodes)
 	nodeid = hal_get_node_id();
 
 	/* Underlying NoC node SHOULD NOT be here. */
-	for (int i = 0; i < nnodes; i++)
-	{
-		if (nodeid != nodes[i])
-			return (-EINVAL);
-	}
+	if (nodeid != nodes[0])
+		return (-EINVAL);
 
 	return (_hal_sync_open(nodes, nnodes));
 }
@@ -186,6 +220,41 @@ int hal_sync_wait(int syncid)
 
 	/* Wait. */
 	if (mppa_read(syncid, &mask, sizeof(uint64_t)) != sizeof(uint64_t))
+		return (-EAGAIN);
+
+	return (0);
+}
+
+/*============================================================================*
+ * hal_sync_signal()                                                            *
+ *============================================================================*/
+
+/**
+ * @brief Signals Waits on a synchronization point.
+ *
+ * @param syncid ID of the target synchronization point.
+ * @param type   Type of synchronization point.
+ *
+ * @returns Upon successful completion, zero is returned. Upon
+ * failure, a negative error code is returned instead.
+ */
+int hal_sync_signal(int syncid, int type)
+{
+	int nodeid;
+	uint64_t mask;
+
+	/* Invalid synchronization point. */
+	if (syncid < 0)
+		return (-EINVAL);
+
+	/* Invalid type. */
+	if ((type != HAL_SYNC_ONE_TO_ALL) || (type != HAL_SYNC_ALL_TO_ONE))
+		return (-EINVAL);
+
+	/* Signal. */
+	mask = (type == HAL_SYNC_ALL_TO_ONE) ? 
+		1 << sync_mask(nodeid) : ~0;
+	if (mppa_write(syncid, &mask, sizeof(uint64_t)) != sizeof(uint64_t))
 		return (-EAGAIN);
 
 	return (0);

@@ -24,7 +24,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "mppa.h"
+#include "../arch/mppa/mppa.h"
 
 /**
  * @brief Number of barriers.
