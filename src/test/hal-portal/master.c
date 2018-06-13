@@ -99,6 +99,73 @@ static void test_hal_portal_create_unlink(void)
 }
 
 /*===================================================================*
+ * API Test: Open Close                                              *
+ *===================================================================*/
+
+/**
+ * @brief API Test: Portal Open Close
+ */
+static void *test_hal_portal_thread_open_close(void *args)
+{
+	int dma;
+	int inportal;
+	portal_t outportal;
+	int nodeid;
+
+	dma = ((int *)args)[0];
+
+	nodeid = hal_get_cluster_id();
+
+	pthread_mutex_lock(&lock);
+	TEST_ASSERT((inportal = hal_portal_create(nodeid + dma)) >= 0);
+	pthread_mutex_unlock(&lock);
+
+	pthread_barrier_wait(&barrier);
+
+	pthread_mutex_lock(&lock);
+	TEST_ASSERT(hal_portal_open(nodeid + (dma + 1)%NR_CORES, &outportal) == 0);
+	pthread_mutex_unlock(&lock);
+
+	pthread_barrier_wait(&barrier);
+
+	pthread_mutex_lock(&lock);
+	TEST_ASSERT(hal_portal_close(&outportal) == 0);
+	pthread_mutex_unlock(&lock);
+
+	pthread_mutex_lock(&lock);
+	TEST_ASSERT(hal_portal_unlink(inportal) == 0);
+	pthread_mutex_unlock(&lock);
+
+	return (NULL);
+}
+
+/**
+ * @brief API Test: Portal Open Close
+ */
+static void test_hal_portal_open_close(void)
+{
+	int dmas[NR_CORES];
+	pthread_t tids[NR_CORES];
+
+	printf("[test][api] Portal Open Close\n");
+
+	/* Spawn driver threads. */
+	for (int i = 0; i < NR_CORES; i++)
+	{
+		dmas[i] = i;
+		assert((pthread_create(&tids[i],
+			NULL,
+			test_hal_portal_thread_open_close,
+			&dmas[i])) == 0
+		);
+	}
+
+	/* Wait for driver threads. */
+	for (int i = 0; i < NR_CORES; i++)
+		pthread_join(tids[i], NULL);
+}
+
+/*===================================================================*
  * HAL Portal Test Driver                                               *
  *===================================================================*/
 
@@ -108,6 +175,7 @@ static void test_hal_portal_create_unlink(void)
 int main()
 {
 	test_hal_portal_create_unlink();
+	test_hal_portal_open_close();
 
 	return (EXIT_SUCCESS);
 }
