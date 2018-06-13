@@ -21,7 +21,7 @@
 #=============================================================================
 
 cluster-bin += name-slave
-name-slave-srcs := $(SRCDIR)/kernel/arch/mppa/barrier.c \
+name-slave-srcs := $(SRCDIR)/kernel/ipc/barrier.c \
                    $(SRCDIR)/kernel/arch/mppa/setup.c   \
 					$(SRCDIR)/kernel/arch/mppa/core.c    \
 					$(SRCDIR)/kernel/arch/mppa/mailbox.c \
@@ -34,7 +34,7 @@ name-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
 name-slave-lflags := -lmppaipc -pthread
 
 io-bin += name-master
-name-master-srcs := $(SRCDIR)/kernel/arch/mppa/barrier.c \
+name-master-srcs := $(SRCDIR)/kernel/ipc/barrier.c \
                     $(SRCDIR)/kernel/arch/mppa/setup.c   \
 					$(SRCDIR)/kernel/arch/mppa/mailbox.c \
 					$(SRCDIR)/kernel/arch/mppa/noc.c     \
