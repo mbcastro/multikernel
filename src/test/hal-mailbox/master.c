@@ -56,16 +56,17 @@ static pthread_mutex_t lock;
  */
 static void *test_hal_mailbox_thread_create_unlink(void *args)
 {
-	int dma;
 	int inbox;
 	int nodeid;
 
-	dma = ((int *)args)[0];
+	((void)args);
 
-	nodeid = hal_get_cluster_id();
+	hal_setup();
+
+	nodeid = hal_get_node_id();
 
 	pthread_mutex_lock(&lock);
-	TEST_ASSERT((inbox = hal_mailbox_create(nodeid + dma)) >= 0);
+	TEST_ASSERT((inbox = hal_mailbox_create(nodeid)) >= 0);
 	pthread_mutex_unlock(&lock);
 
 	pthread_barrier_wait(&barrier);
@@ -74,6 +75,7 @@ static void *test_hal_mailbox_thread_create_unlink(void *args)
 	TEST_ASSERT(hal_mailbox_unlink(inbox) == 0);
 	pthread_mutex_unlock(&lock);
 
+	hal_cleanup();
 	return (NULL);
 }
 
@@ -82,7 +84,6 @@ static void *test_hal_mailbox_thread_create_unlink(void *args)
  */
 static void test_hal_mailbox_create_unlink(void)
 {
-	int dmas[ncores];
 	pthread_t tids[ncores];
 
 	printf("[test][api] Mailbox Create Unlink\n");
@@ -90,11 +91,10 @@ static void test_hal_mailbox_create_unlink(void)
 	/* Spawn driver threads. */
 	for (int i = 1; i < ncores; i++)
 	{
-		dmas[i] = i;
 		assert((pthread_create(&tids[i],
 			NULL,
 			test_hal_mailbox_thread_create_unlink,
-			&dmas[i])) == 0
+			NULL)) == 0
 		);
 	}
 
@@ -112,24 +112,28 @@ static void test_hal_mailbox_create_unlink(void)
  */
 static void *test_hal_mailbox_thread_open_close(void *args)
 {
-	int dma;
+	int tid;
 	int inbox;
 	int outbox;
 	int nodeid;
 
-	dma = ((int *)args)[0];
+	hal_setup();
 
-	nodeid = hal_get_cluster_id();
+	tid = ((int *)args)[0];
+
+	nodeid = hal_get_node_id();
 
 	pthread_mutex_lock(&lock);
-	TEST_ASSERT((inbox = hal_mailbox_create(nodeid + dma)) >= 0);
+	TEST_ASSERT((inbox = hal_mailbox_create(nodeid)) >= 0);
 	pthread_mutex_unlock(&lock);
 
 	pthread_barrier_wait(&barrier);
 
 	pthread_mutex_lock(&lock);
 	TEST_ASSERT((outbox = hal_mailbox_open(
-		nodeid + 1 + (dma + 1)%(ncores - 1))) >= 0
+		((tid + 1) == ncores) ?
+			nodeid + 1 - ncores + 1:
+			nodeid + 1)) >= 0
 	);
 	pthread_mutex_unlock(&lock);
 
@@ -143,6 +147,7 @@ static void *test_hal_mailbox_thread_open_close(void *args)
 	TEST_ASSERT(hal_mailbox_unlink(inbox) == 0);
 	pthread_mutex_unlock(&lock);
 
+	hal_cleanup();
 	return (NULL);
 }
 
@@ -151,25 +156,25 @@ static void *test_hal_mailbox_thread_open_close(void *args)
  */
 static void test_hal_mailbox_open_close(void)
 {
-	int dmas[ncores];
-	pthread_t tids[ncores];
+	int tids[ncores];
+	pthread_t threads[ncores];
 
 	printf("[test][api] Mailbox Open Close\n");
 
 	/* Spawn driver threads. */
 	for (int i = 1; i < ncores; i++)
 	{
-		dmas[i] = i;
-		assert((pthread_create(&tids[i],
+		tids[i] = i;
+		assert((pthread_create(&threads[i],
 			NULL,
 			test_hal_mailbox_thread_open_close,
-			&dmas[i])) == 0
+			&tids[i])) == 0
 		);
 	}
 
 	/* Wait for driver threads. */
 	for (int i = 1; i < ncores; i++)
-		pthread_join(tids[i], NULL);
+		pthread_join(threads[i], NULL);
 }
 
 /*===================================================================*
@@ -181,25 +186,29 @@ static void test_hal_mailbox_open_close(void)
  */
 static void *test_hal_mailbox_thread_read_write(void *args)
 {
-	int dma;
+	int tid;
 	int inbox;
 	int outbox;
 	char buf[HAL_MAILBOX_MSG_SIZE];
 	int nodeid;
 
-	dma = ((int *)args)[0];
+	hal_setup();
 
-	nodeid = hal_get_cluster_id();
+	tid = ((int *)args)[0];
+
+	nodeid = hal_get_node_id();
 
 	pthread_mutex_lock(&lock);
-	TEST_ASSERT((inbox = hal_mailbox_create(nodeid + dma)) >= 0);
+	TEST_ASSERT((inbox = hal_mailbox_create(nodeid)) >= 0);
 	pthread_mutex_unlock(&lock);
 
 	pthread_barrier_wait(&barrier);
 
 	pthread_mutex_lock(&lock);
 	TEST_ASSERT((outbox = hal_mailbox_open(
-		nodeid + 1 + (dma + 1)%(ncores - 1))) >= 0
+		((tid + 1) == ncores) ?
+			nodeid + 1 - ncores + 1:
+			nodeid + 1)) >= 0
 	);
 	pthread_mutex_unlock(&lock);
 
@@ -221,6 +230,7 @@ static void *test_hal_mailbox_thread_read_write(void *args)
 	TEST_ASSERT(hal_mailbox_unlink(inbox) == 0);
 	pthread_mutex_unlock(&lock);
 
+	hal_cleanup();
 	return (NULL);
 }
 
@@ -229,25 +239,25 @@ static void *test_hal_mailbox_thread_read_write(void *args)
  */
 static void test_hal_mailbox_read_write(void)
 {
-	int dmas[ncores];
-	pthread_t tids[ncores];
+	int tids[ncores];
+	pthread_t threads[ncores];
 
 	printf("[test][api] Mailbox Read Write\n");
 
 	/* Spawn driver threads. */
 	for (int i = 1; i < ncores; i++)
 	{
-		dmas[i] = i;
-		assert((pthread_create(&tids[i],
+		tids[i] = i;
+		assert((pthread_create(&threads[i],
 			NULL,
 			test_hal_mailbox_thread_read_write,
-			&dmas[i])) == 0
+			&tids[i])) == 0
 		);
 	}
 
 	/* Wait for driver threads. */
 	for (int i = 1; i < ncores; i++)
-		pthread_join(tids[i], NULL);
+		pthread_join(threads[i], NULL);
 }
 
 /*===================================================================*
@@ -547,6 +557,8 @@ int main(int argc, const char **argv)
 	((void) argc);
 	((void) argv);
 
+	hal_setup();
+
 	ncores = hal_get_num_cores();
 
 	pthread_mutex_init(&lock, NULL);
@@ -575,5 +587,6 @@ int main(int argc, const char **argv)
 	test_hal_mailbox_bad_read();
 	test_hal_mailbox_null_read();
 
+	hal_cleanup();
 	return (EXIT_SUCCESS);
 }
