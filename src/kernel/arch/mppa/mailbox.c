@@ -118,7 +118,7 @@ int hal_mailbox_open(int nodeid)
 		goto error0;
 
 	/* Set DMA interface for IO cluster. */
-	if (k1_is_iocluster(nodeid))
+	if (noc_is_ionode(nodeid))
 	{
 		if (mppa_ioctl(fd, MPPA_TX_SET_INTERFACE, noc_get_dma(nodeid)) == -1)
 			goto error0;

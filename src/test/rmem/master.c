@@ -18,7 +18,7 @@
  */
 
 #include <mppa/osconfig.h>
-#include <nanvix/arch/mppa.h>
+#include <nanvix/hal.h>
 #include <nanvix/mm.h>
 #include <nanvix/pm.h>
 #include <nanvix/name.h>
@@ -54,7 +54,7 @@ static int nr_registration = 0;
 static struct {
 	int core;                        /**< CPU ID.      */
 	char name[NANVIX_PROC_NAME_MAX]; /**< Portal name. */
-} names[NR_DMA] = {
+} names[HAL_NR_NOC_NODES] = {
 	{ CCLUSTER0,      "\0"  },
 	{ CCLUSTER1,      "\0"  },
 	{ CCLUSTER2,      "\0"  },
@@ -97,7 +97,7 @@ static struct {
 static int _name_lookup(const char *name)
 {
 	/* Search for portal name. */
-	for (int i = 0; i < NR_DMA; i++)
+	for (int i = 0; i < HAL_NR_NOC_NODES; i++)
 	{
 		/* Found. */
 		if (!strcmp(name, names[i].name))
@@ -125,7 +125,7 @@ static int _name_link(int core, char *name)
 	int index;          /* Index where the process will be stored. */
 
 	/* No entry available. */
-	if (nr_registration >= NR_DMA)
+	if (nr_registration >= HAL_NR_NOC_NODES)
 		return (-EINVAL);
 
 	/* Compute index registration */
@@ -169,12 +169,12 @@ static int _name_unlink(char *name)
 	/* Search for portal name. */
 	int i = 0;
 
-	while (i < NR_DMA && strcmp(name, names[i].name))
+	while (i < HAL_NR_NOC_NODES && strcmp(name, names[i].name))
 	{
 		i++;
 	}
 
-	if (i < NR_DMA)
+	if (i < HAL_NR_NOC_NODES)
 	{
 		strcpy(names[i].name, "\0");
 		return (--nr_registration);

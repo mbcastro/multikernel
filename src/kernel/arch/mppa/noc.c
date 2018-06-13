@@ -31,14 +31,14 @@
  * @brief NoC tags offsets.
  *
  * @detail All NoC connectors that are listed bellow support 1:N
- * single-direction communication. Therefore, we need NR_DMA NoC tags
- * for each. The first two tags are used by the hardware and thus are
- * skipped.
+ * single-direction communication. Therefore, we need HAL_NR_NOC_NODES
+ * NoC tags for each. The first two tags are used by the hardware and
+ * thus are skipped.
  */
 /**@{*/
-#define NOCTAG_MAILBOX_OFF 5                            /**< Mailbox. */
-#define NOCTAG_PORTAL_OFF (NOCTAG_MAILBOX_OFF + NR_DMA) /**< Portal.  */
-#define NOCTAG_SYNC_OFF   (NOCTAG_PORTAL_OFF + NR_DMA)  /**< Sync.    */
+#define NOCTAG_MAILBOX_OFF 5                                      /**< Mailbox. */
+#define NOCTAG_PORTAL_OFF (NOCTAG_MAILBOX_OFF + HAL_NR_NOC_NODES) /**< Portal.  */
+#define NOCTAG_SYNC_OFF   (NOCTAG_PORTAL_OFF + HAL_NR_NOC_NODES)  /**< Sync.    */
 /**@}*/
 
 /**
@@ -84,6 +84,30 @@ const int hal_noc_nodes[HAL_NR_NOC_NODES] = {
 int hal_get_node_id(void)
 {
 	return (__k1_get_cluster_id() + hal_get_core_id());
+}
+
+/*============================================================================*
+ * hal_get_node_num()                                                          *
+ *============================================================================*/
+
+/**
+ * @brief Gets the logic number of a NoC node.
+ *
+ * @param nodeid ID of the target NoC node.
+ *
+ * @returns The logic number of the target NoC node.
+ */
+int noc_get_node_num(int nodeid)
+{
+	/* Lookup table of NoC node IDs. */
+	for (int i = 1; i < HAL_NR_NOC_NODES; i++)
+	{
+		/* Found. */
+		if (nodeid == hal_noc_nodes[i])
+			return (i);
+	}
+
+	return (0);
 }
 
 /*============================================================================*

@@ -24,22 +24,6 @@
 
 #include "mppa.h"
 
-/**
- * @brief Gets the sync mask of a NoC node ID.
- *
- * @param nodeid ID of target NoC node.
- *
- * @returns The sync mask of the target NoC node ID.
- */
-static int sync_mask(int nodeid)
-{
-	if (noc_is_cnode(nodeid))
-		return (nodeid);
-	else if (noc_is_ionode0(nodeid))
-		return (NR_CCLUSTER*NR_CCLUSTER_DMA + noc_get_dma(nodeid));
-	return (NR_CCLUSTER*NR_CCLUSTER_DMA + NR_IOCLUSTER_DMA + noc_get_dma(nodeid));
-}
-
 /*============================================================================*
  * hal_sync_create()                                                          *
  *============================================================================*/
@@ -71,7 +55,7 @@ static int _hal_sync_create(const int *nodes, int nnodes, int type)
 	if (type == HAL_SYNC_ALL_TO_ONE)
 	{
 		for (int i = 0; i < nnodes; i++)
-			mask |= 1 << sync_mask(nodes[i]);
+			mask |= 1 << noc_get_node_num(nodes[i]);
 	}
 	
 	/* Setup sync mask. */
@@ -253,7 +237,7 @@ int hal_sync_signal(int syncid, int type)
 
 	/* Signal. */
 	mask = (type == HAL_SYNC_ALL_TO_ONE) ? 
-		1 << sync_mask(nodeid) : ~0;
+		1 << noc_get_node_num(nodeid) : ~0;
 	if (mppa_write(syncid, &mask, sizeof(uint64_t)) != sizeof(uint64_t))
 		return (-EAGAIN);
 

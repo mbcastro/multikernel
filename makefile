@@ -44,30 +44,30 @@ export O := $(OUTDIR)
 export io-bin += spawner-server
 
 # Name Server
-export spawner-server-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
-                              $(SRCDIR)/kernel/arch/mppa/sync.c    \
-							  $(SRCDIR)/kernel/arch/mppa/name.c    \
-							  $(SRCDIR)/kernel/arch/mppa/core.c    \
+export spawner-server-srcs := $(SRCDIR)/servers/spawner.c          \
                               $(SRCDIR)/kernel/arch/mppa/setup.c   \
-							  $(SRCDIR)/kernel/arch/mppa/noc.c     \
-i                             $(SRCDIR)/kernel/ipc/barrier.c       \
-							  $(SRCDIR)/servers/spawner.c          \
-							  $(SRCDIR)/servers/name.c
+                              $(SRCDIR)/kernel/arch/mppa/core.c    \
+                              $(SRCDIR)/kernel/arch/mppa/mailbox.c \
+                              $(SRCDIR)/kernel/arch/mppa/sync.c    \
+                              $(SRCDIR)/kernel/arch/mppa/noc.c     \
+                              $(SRCDIR)/kernel/ipc/name.c          \
+                              $(SRCDIR)/kernel/ipc/barrier.c       \
+                              $(SRCDIR)/servers/name.c
 
 export spawner-server-system := rtems
 export spawner-server-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
 export spawner-server-lflags := -lmppaipc -pthread
 
 # RMEM Server
-export rmem-server-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
-							$(SRCDIR)/kernel/arch/mppa/portal.c  \
+export rmem-server-srcs := $(SRCDIR)/servers/rmem.c             \
+                           $(SRCDIR)/kernel/arch/mppa/setup.c   \
+                           $(SRCDIR)/kernel/arch/mppa/core.c    \
+                           $(SRCDIR)/kernel/arch/mppa/mailbox.c \
                            $(SRCDIR)/kernel/arch/mppa/sync.c    \
-							$(SRCDIR)/kernel/arch/mppa/name.c    \
-							$(SRCDIR)/kernel/arch/mppa/core.c    \
-                            $(SRCDIR)/kernel/arch/mppa/setup.c   \
-							$(SRCDIR)/kernel/arch/mppa/noc.c     \
-                            $(SRCDIR)/kernel/ipc/barrier.c       \
-							$(SRCDIR)/servers/rmem.c
+                           $(SRCDIR)/kernel/arch/mppa/noc.c     \
+                           $(SRCDIR)/kernel/ipc/name.c          \
+                           $(SRCDIR)/kernel/ipc/barrier.c       \
+                           $(SRCDIR)/servers/name.c
 
 export rmem-server-system := rtems
 export rmem-server-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
