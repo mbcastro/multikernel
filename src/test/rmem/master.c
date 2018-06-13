@@ -52,8 +52,8 @@ static int nr_registration = 0;
  * @brief Lookup table of process names.
  */
 static struct {
-	int core;    						/**< CPU ID. */
-	char name[PROC_NAME_MAX];			/**< Portal name. */
+	int core;                        /**< CPU ID.      */
+	char name[NANVIX_PROC_NAME_MAX]; /**< Portal name. */
 } names[NR_DMA] = {
 	{ CCLUSTER0,      "\0"  },
 	{ CCLUSTER1,      "\0"  },

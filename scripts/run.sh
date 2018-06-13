@@ -80,7 +80,7 @@ function run2
 if [[ $1 == "test" ]];
 then
 	echo "Testing HAL"
-	run1 "hal.img" "hal-master"
+	run1 "hal.img" "hal-master" | grep "test"
 	echo "Testing MAILBOX"
 	run1 "hal-mailbox.img" "hal-mailbox-master" | grep "test"
 	echo "Testing NAME"

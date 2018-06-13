@@ -44,7 +44,7 @@
 	#define HAL_NR_CORES_SYSTEM 16
 
 	/**
-	 * @brief Number of cluster in the paltform.
+	 * @brief Number of cluster in the platform.
 	 */
 	#define HAL_NR_CLUSTERS 20
 

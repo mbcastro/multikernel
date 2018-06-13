@@ -26,11 +26,7 @@
 #include <nanvix/hal.h>
 #include <nanvix/pm.h>
 #include <nanvix/name.h>
-
-/**
- * @brief Number of compute clusters.
- */
-#define NR_CCLUSTER 16
+#include <nanvix/limits.h>
 
 /**
  * @brief Asserts a logic expression.
@@ -45,7 +41,7 @@ static int ncores = 0;
 /**
  * @brief ID of slave processes.
  */
-static int pids[NR_CCLUSTER];
+static int pids[NANVIX_PROC_MAX];
 
 /*===================================================================*
  * API Test: Name Link                                               *
@@ -57,7 +53,7 @@ static int pids[NR_CCLUSTER];
 static void test_name_link_unlink(void)
 {
 	int nodeid;
-	char pathname[PROC_NAME_MAX];
+	char pathname[NANVIX_PROC_NAME_MAX];
 
 	printf("[test][api] Name Link Unlink\n");
 
@@ -79,7 +75,7 @@ static void test_name_link_unlink(void)
 static void test_name_lookup(void)
 {
 	int nodeid;
-	char pathname[PROC_NAME_MAX];
+	char pathname[NANVIX_PROC_NAME_MAX];
 
 	printf("[test][api] Name Lookup\n");
 
@@ -102,7 +98,7 @@ static void test_name_lookup(void)
 static void test_name_duplicate(void)
 {
 	int nodeid;
-	char pathname[PROC_NAME_MAX];
+	char pathname[NANVIX_PROC_NAME_MAX];
 
 	printf("[test][fault injection] Duplicate Name\n");
 
@@ -125,13 +121,13 @@ static void test_name_duplicate(void)
 static void test_name_invalid_link(void)
 {
 	int nodeid;
-	char pathname[PROC_NAME_MAX + 1];
+	char pathname[NANVIX_PROC_NAME_MAX + 1];
 
 	printf("[test][fault injection] Invalid Link\n");
 
 	nodeid = hal_get_cluster_id();
 
-	memset(pathname, 1, PROC_NAME_MAX + 1);
+	memset(pathname, 1, NANVIX_PROC_NAME_MAX + 1);
 
 	/* Link invalid names. */
 	TEST_ASSERT(name_link(nodeid, pathname) < 0);
@@ -148,11 +144,11 @@ static void test_name_invalid_link(void)
 */
 static void test_name_invalid_unlink(void)
 {
-	char pathname[PROC_NAME_MAX + 1];
+	char pathname[NANVIX_PROC_NAME_MAX + 1];
 
 	printf("[test][fault onjection] Invalid Unlink\n");
 
-	memset(pathname, 1, PROC_NAME_MAX + 1);
+	memset(pathname, 1, NANVIX_PROC_NAME_MAX + 1);
 
 	/* Unlink invalid names. */
 	TEST_ASSERT(name_unlink(pathname) < 0);
@@ -199,11 +195,11 @@ static void test_name_bad_lookup(void)
 */
 static void test_name_invalid_lookup(void)
 {
-	char pathname[PROC_NAME_MAX + 1];
+	char pathname[NANVIX_PROC_NAME_MAX + 1];
 
 	printf("[test][fault injection] Invalid Lookup\n");
 
-	memset(pathname, 1, PROC_NAME_MAX + 1);
+	memset(pathname, 1, NANVIX_PROC_NAME_MAX + 1);
 
 	/* Lookup invalid names. */
 	TEST_ASSERT(name_lookup(pathname) < 0);
