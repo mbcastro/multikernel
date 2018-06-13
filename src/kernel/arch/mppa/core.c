@@ -127,66 +127,6 @@ int hal_get_core_type(void)
 }
 
 /*============================================================================*
- * hal_is_ucore()                                                             *
- *============================================================================*/
-
-#ifdef _HAS_IS_UCORE
-
-/**
- * @brief Asserts whether or not the target core is a user core.
- *
- * @param coreid ID of the target core.
- *
- * @returns One if the target core is a user core, and zero otherwise.
- */
-int hal_is_ucore(int coreid)
-{
-}
-
-#endif
-
-/*============================================================================*
- * hal_is_rcore()                                                             *
- *============================================================================*/
-
-#ifdef _HAS_IS_RCORE
-
-/**
- * @brief Asserts whether or not the target core is a resource
- * management core.
- *
- * @param coreid ID of the target core.
- *
- * @returns One if the target core is a resource management core, and
- * zero otherwise.
- */
-int hal_is_rcore(int coreid)
-{
-}
-
-#endif
-
-/*============================================================================*
- * hal_is_score()                                                             *
- *============================================================================*/
-
-#ifdef _HAS_IS_SCORE
-
-/**
- * @brief Asserts whether or not the taget core is a system core.
- *
- * @param coreid ID of the target core.
- *
- * @returns One if the target core is a system core, and zero
- * otherwise.
- */
-int hal_is_score(int coreid)
-{
-}
-
-#endif
-
-/*============================================================================*
  * hal_get_num_cores()                                                        *
  *============================================================================*/
 
@@ -204,3 +144,16 @@ int hal_get_num_cores(void)
 	return (k1_is_ccluster(clusterid) ? 17 : 4);
 }
 
+/*============================================================================*
+ * hal_get_core_freq()                                                        *
+ *============================================================================*/
+
+/**
+ * @brief Gets the frequency of the underlying core.
+ *
+ * @returns The frequency of the underlying core.
+ */
+int hal_get_core_freq(void)
+{
+	return (__bsp_frequency);
+}

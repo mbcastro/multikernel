@@ -50,7 +50,7 @@ int hal_mailbox_create(int nodeid)
 	if (nodeid != hal_get_node_id())
 		return (-EINVAL);
 
-	noc_remotes(remotes, nodeid);
+	noc_get_remotes(remotes, nodeid);
 	noctag = noctag_mailbox(nodeid);
 
 	/* Build pathname for NoC connector. */
@@ -100,7 +100,7 @@ int hal_mailbox_open(int nodeid)
 	if (nodeid == hal_get_node_id())
 		return (-EINVAL);
 
-	noc_remotes(remotes, nodeid);
+	noc_get_remotes(remotes, nodeid);
 	noctag = noctag_mailbox(nodeid);
 
 	/* Build pathname for NoC connector. */

@@ -102,7 +102,7 @@ int noc_get_dma(int nodeid)
 }
 
 /*=======================================================================*
- * noc_remotes()                                                         *
+ * noc_get_remotes()                                                         *
  *=======================================================================*/
 
 /**
@@ -111,7 +111,7 @@ int noc_get_dma(int nodeid)
  * @param remotes   Place where the list should be stored.
  * @param clusterid ID of local cluster.
  */
-void noc_remotes(char *remotes, int local)
+void noc_get_remotes(char *remotes, int local)
 {
 	char tmp[5];
 

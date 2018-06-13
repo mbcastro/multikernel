@@ -25,6 +25,7 @@
 	#ifdef _KALRAY_MPPA256
 		#include <nanvix/arch/mppa.h>
 	#endif
+
 /*============================================================================*
  * Misc                                                                       *
  *============================================================================*/
@@ -50,20 +51,8 @@
 	extern int hal_get_cluster_id(void);
 	extern int hal_get_core_id(void);
 	extern int hal_get_core_type(void);
-	extern int hal_is_ucore(int);
-	extern int hal_is_rcore(int);
-	extern int hal_is_score(int);
 	extern int hal_get_num_cores(void);
-
-/*============================================================================*
- * Power Management                                                           *
- *============================================================================*/
-
-	/* Forward definitions. */
 	extern int hal_get_core_freq(void);
-	extern int hal_get_ucore_freq(void);
-	extern int hal_get_rcore_freq(void);
-	extern int hal_get_score_freq(void);
 
 /*============================================================================*
  * NoC Interface                                                              *
