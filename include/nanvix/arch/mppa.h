@@ -90,6 +90,6 @@
 		int portal_fd;  /* Portal NoC connector.     */
 		int sync_fd;    /* Sync NoC connector.       */
 		int remote;     /* NoC node ID of the remote */
-	} *portal_t;
+	} portal_t;
 
 #endif /* NANVIX_ARCH_MPPA256 */

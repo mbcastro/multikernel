@@ -77,13 +77,13 @@ int hal_portal_create(int local)
 /**
  * @brief Enables read operations from a remote.
  *
- * @param portal    Target portal.
+ * @param portal    Adress of the target portal.
  * @param remote    Cluster ID of target remote.
  *
  * @returns Upons successful completion zero is returned. Upon failure,
  * a negative error code is returned instead.
  */
-int hal_portal_allow(portal_t portal, int remote)
+int hal_portal_allow(portal_t *portal, int remote)
 {
 	int local;          /* Local NoC node ID    */
 	int sync_fd;        /* Sync NoC connector.  */
@@ -138,7 +138,7 @@ int hal_portal_allow(portal_t portal, int remote)
  * @returns Upon successful completion 0 is returned.
  * Upon failure, a negative error code is returned instead.
  */
-int hal_portal_open(int remote, portal_t portal)
+int hal_portal_open(int remote, portal_t *portal)
 {
 	int local;          /* ID of local NoC node.  */
 	int portal_fd;      /* Portal NoC Connector.  */
@@ -222,14 +222,14 @@ static inline uint64_t portal_sync(int dma)
 /**
  * @brief Reads data from a portal.
  *
- * @param portal  Targeted portal.
+ * @param portal  Targeted adress portal.
  * @param buf     Location from where data should be written.
  * @param n       Number of bytes to read.
  *
  * @returns Upon successful completion zero is returned. Upon failure, a
  * negative error code is returned instead.
  */
-int hal_portal_read(portal_t portal, void *buf, size_t n)
+int hal_portal_read(portal_t *portal, void *buf, size_t n)
 {
 	uint64_t mask;
 	mppa_aiocb_t aiocb;
@@ -271,14 +271,14 @@ int hal_portal_read(portal_t portal, void *buf, size_t n)
 /**
  * @brief Writes data to a portal.
  *
- * @param portal  Targeted portal.
+ * @param portal  Targeted adress portal.
  * @param buf     Location from where data should be read.
  * @param n       Number of bytes to write.
  *
  * @returns Upon successful completion zero is returned. Upon failure, a
  * negative error code is returned instead.
  */
-int hal_portal_write(portal_t portal, const void *buf, size_t n)
+int hal_portal_write(portal_t *portal, const void *buf, size_t n)
 {
 	uint64_t mask;
 
@@ -312,12 +312,12 @@ int hal_portal_write(portal_t portal, const void *buf, size_t n)
 /**
  * @brief Closes a portal.
  *
- * @param portalid ID of the target portal.
+ * @param portal     Adress of the target portal.
  *
  * @returns Upon successful completion zero is returned. Upon failure, a
  * negative error code is returned instead.
  */
-int hal_portal_close(portal_t portal)
+int hal_portal_close(portal_t *portal)
 {
 	/* Invalid portal.*/
 	if (portal == NULL)
