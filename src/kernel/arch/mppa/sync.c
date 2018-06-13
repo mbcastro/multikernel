@@ -164,4 +164,29 @@ int hal_sync_open(const int *nodes, int nnodes)
 	return (_hal_sync_open(nodes, nnodes));
 }
 
+/*============================================================================*
+ * hal_sync_wait()                                                            *
+ *============================================================================*/
 
+/**
+ * @brief Waits on a synchronization point.
+ *
+ * @param syncid ID of the target synchronization point.
+ *
+ * @returns Upon successful completion, zero is returned. Upon
+ * failure, a negative error code is returned instead.
+ */
+int hal_sync_wait(int syncid)
+{
+	uint64_t mask;
+
+	/* Invalid synchronization point. */
+	if (syncid < 0)
+		return (-EINVAL);
+
+	/* Wait. */
+	if (mppa_read(syncid, &mask, sizeof(uint64_t)) != sizeof(uint64_t))
+		return (-EAGAIN);
+
+	return (0);
+}
