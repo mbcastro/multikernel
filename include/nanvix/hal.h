@@ -27,6 +27,14 @@
 	#endif
 
 /*============================================================================*
+ * Misc                                                                       *
+ *============================================================================*/
+
+	/* Forward definitions. */
+	extern void hal_setup(void);
+	extern void hal_cleanup(void);
+
+/*============================================================================*
  * Processor Management                                                       *
  *============================================================================*/
 
@@ -43,27 +51,22 @@
 	extern int hal_get_cluster_id(void);
 	extern int hal_get_core_id(void);
 	extern int hal_get_core_type(void);
-	extern int hal_is_ucore(int);
-	extern int hal_is_rcore(int);
-	extern int hal_is_score(int);
 	extern int hal_get_num_cores(void);
+	extern int hal_get_core_freq(void);
 
 /*============================================================================*
- * Power Management                                                           *
+ * NoC Interface                                                              *
  *============================================================================*/
 
 	/* Forward definitions. */
-	extern int hal_get_core_freq(void);
-	extern int hal_get_ucore_freq(void);
-	extern int hal_get_rcore_freq(void);
-	extern int hal_get_score_freq(void);
-
-/*============================================================================*
- * Communication                                                              *
- *============================================================================*/
+	extern const int hal_noc_nodes[HAL_NR_NOC_NODES];
 
 	/* Forward definitions. */
 	extern int hal_get_node_id(void);
+
+/*============================================================================*
+ * Mailbox Interface                                                          *
+ *============================================================================*/
 
 	/* Forward definitions. */
 	extern int hal_mailbox_create(int);

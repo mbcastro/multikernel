@@ -23,6 +23,7 @@
 io-bin += hal-mailbox-master
 hal-mailbox-master-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
                            $(SRCDIR)/kernel/arch/mppa/core.c    \
+                           $(SRCDIR)/kernel/arch/mppa/setup.c   \
                            $(SRCDIR)/kernel/arch/mppa/noc.c     \
                            $(SRCDIR)/test/hal-mailbox/master.c
 

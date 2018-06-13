@@ -139,7 +139,7 @@ int main(int argc, char **argv)
 	int size;
 	int nclusters;
 	int clusterid;
-	char pathname[PROC_NAME_MAX];
+	char pathname[NANVIX_PROC_NAME_MAX];
 
 	clusterid = hal_get_cluster_id();
 

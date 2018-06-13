@@ -83,7 +83,7 @@ const int hal_noc_nodes[HAL_NR_NOC_NODES] = {
  */
 int hal_get_node_id(void)
 {
-	return (__k1_get_cluster_id() + __k1_get_cpu_id());
+	return (__k1_get_cluster_id() + hal_get_core_id());
 }
 
 /*============================================================================*
@@ -102,7 +102,7 @@ int noc_get_dma(int nodeid)
 }
 
 /*=======================================================================*
- * noc_remotes()                                                         *
+ * noc_get_remotes()                                                         *
  *=======================================================================*/
 
 /**
@@ -111,7 +111,7 @@ int noc_get_dma(int nodeid)
  * @param remotes   Place where the list should be stored.
  * @param clusterid ID of local cluster.
  */
-void noc_remotes(char *remotes, int local)
+void noc_get_remotes(char *remotes, int local)
 {
 	char tmp[5];
 

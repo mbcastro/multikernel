@@ -39,10 +39,10 @@
 	 */
 	struct name_message
 	{
-		uint16_t source;                  /**< Source cluster. */
-		uint16_t op;                      /**< Operation.      */
-		int nodeid;                       /**< NoC node ID.    */
-		char name[PROC_NAME_MAX];         /**< Portal name.    */
+		uint16_t source;                 /**< Source cluster. */
+		uint16_t op;                     /**< Operation.      */
+		int nodeid;                      /**< NoC node ID.    */
+		char name[NANVIX_PROC_NAME_MAX]; /**< Portal name.    */
 	};
 
 	/* Forward definitions. */

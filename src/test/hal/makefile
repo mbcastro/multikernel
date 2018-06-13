@@ -21,7 +21,9 @@
 #=============================================================================
 
 io-bin += hal-master
-hal-master-srcs := $(SRCDIR)/kernel/arch/mppa/core.c \
+hal-master-srcs := $(SRCDIR)/kernel/arch/mppa/core.c  \
+                   $(SRCDIR)/kernel/arch/mppa/noc.c   \
+                   $(SRCDIR)/kernel/arch/mppa/setup.c \
                    $(SRCDIR)/test/hal/master.c
 
 # Toolchain Configuration

@@ -46,13 +46,11 @@ int hal_mailbox_create(int nodeid)
 	char pathname[128]; /* NoC connector name.         */
 	int noctag;         /* NoC tag used for transfers. */
 
-#ifdef _HAS_NOC_GET_NODE_ID_
 	/* Invalid core ID. */
 	if (nodeid != hal_get_node_id())
 		return (-EINVAL);
-#endif
 
-	noc_remotes(remotes, nodeid);
+	noc_get_remotes(remotes, nodeid);
 	noctag = noctag_mailbox(nodeid);
 
 	/* Build pathname for NoC connector. */
@@ -98,13 +96,11 @@ int hal_mailbox_open(int nodeid)
 	if (nodeid < 0)
 		return (-EINVAL);
 
-#ifdef _HAS_NOC_GET_NODE_ID_
 	/* Invalid core ID. */
 	if (nodeid == hal_get_node_id())
 		return (-EINVAL);
-#endif
 
-	noc_remotes(remotes, nodeid);
+	noc_get_remotes(remotes, nodeid);
 	noctag = noctag_mailbox(nodeid);
 
 	/* Build pathname for NoC connector. */
