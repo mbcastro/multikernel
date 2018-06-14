@@ -29,8 +29,9 @@
  * @brief Synchronization point flags.
  */
 /**@{*/
-#define SYNC_FLAGS_USED      (1 << 0) /**< Used synchronization point?       */
-#define SYNC_FLAGS_BROADCAST (1 << 1) /**< Broadcast synchronization point?  */
+#define SYNC_FLAGS_USED      (1 << 0) /**< Used synchronization point?      */
+#define SYNC_FLAGS_BROADCAST (1 << 1) /**< Broadcast synchronization point? */
+#define SYNC_FLAGS_WRONLY    (1 << 2) /**< Write only mode?                 */
 /**@}*/
 
 /**
@@ -89,14 +90,33 @@ static int sync_is_used(int syncid)
  *
  * @param syncid ID of the target synchronization point.
  *
- * @returns One if the target synchronization point is used, and
- * false otherwise.
+ * @returns One if the target synchronization point is a broadcast
+ * one, and false otherwise.
  *
  * @note This function is @b NOT thread safe.
  */
 static int sync_is_broadcast(int syncid)
 {
 	return (synctab[syncid].flags & SYNC_FLAGS_BROADCAST);
+}
+
+/*============================================================================*
+ * sync_is_wronly()                                                           *
+ *============================================================================*/
+
+/**
+ * @brief Asserts whether of not a synchronization point is a write-only.
+ *
+ * @param syncid ID of the target synchronization point.
+ *
+ * @returns One if the target synchronization point is write-only, and
+ * false otherwise.
+ *
+ * @note This function is @b NOT thread safe.
+ */
+static int sync_is_wronly(int syncid)
+{
+	return (synctab[syncid].flags & SYNC_FLAGS_WRONLY);
 }
 
 /*============================================================================*
@@ -129,6 +149,22 @@ static void sync_set_used(int syncid)
 static void sync_set_broadcast(int syncid)
 {
 	synctab[syncid].flags |= SYNC_FLAGS_BROADCAST;
+}
+
+/*============================================================================*
+ * sync_set_wronly()                                                       *
+ *============================================================================*/
+
+/**
+ * @brief Sets a synchronization point as a write-only.
+ *
+ * @param syncid ID of the target synchronization point.
+ *
+ * @note This function is @b NOT thread safe.
+ */
+static void sync_set_wronly(int syncid)
+{
+	synctab[syncid].flags |= SYNC_FLAGS_WRONLY;
 }
 
 /*============================================================================*
@@ -436,6 +472,7 @@ static int _hal_sync_open(const int *nodes, int nnodes, int type)
 	synctab[syncid].fd = fd;
 	if (type == HAL_SYNC_ONE_TO_ALL)
 		sync_set_broadcast(syncid);
+	sync_set_wronly(syncid);
 
 	return (syncid);
 
@@ -599,6 +636,14 @@ int hal_sync_close(int syncid)
 	if (!sync_is_valid(syncid))
 		return (-EINVAL);
 
+	/* Bad sync. */
+	if (!sync_is_used(syncid))
+		return (-EINVAL);
+
+	/* Bad sync. */
+	if (!sync_is_wronly(syncid))
+		return (-EINVAL);
+
 	if (mppa_close(synctab[syncid].fd) < 0)
 		return (-EAGAIN);
 
@@ -625,6 +670,14 @@ int hal_sync_unlink(int syncid)
 {
 	/* Invalid sync. */
 	if (!sync_is_valid(syncid))
+		return (-EINVAL);
+
+	/* Bad sync. */
+	if (!sync_is_used(syncid))
+		return (-EINVAL);
+
+	/* Bad sync. */
+	if (sync_is_wronly(syncid))
 		return (-EINVAL);
 
 	if (mppa_close(synctab[syncid].fd) < 0)

@@ -555,6 +555,22 @@ static void test_hal_sync_invalid_unlink(void)
 }
 
 /*===================================================================*
+ * Fault Injection Test: Invalid Close                               *
+ *===================================================================*/
+
+/**
+ * @brief Fault Injection Test: Synchronization Point Invalid Close
+ */
+static void test_hal_sync_invalid_close(void)
+{
+	printf("[test][fault injection] Invalid Close\n");
+
+	TEST_ASSERT(hal_sync_close(-1) < 0);
+	TEST_ASSERT(hal_sync_close(HAL_NR_SYNC) < 0);
+	TEST_ASSERT(hal_sync_close(HAL_NR_SYNC + 1) < 0);
+}
+
+/*===================================================================*
  * Synchronization Point Test Driver                                 *
  *===================================================================*/
 
@@ -585,6 +601,7 @@ int main(int argc, const char **argv)
 	test_hal_sync_invalid_open();
 	test_hal_sync_bad_open();
 	test_hal_sync_invalid_unlink();
+	test_hal_sync_invalid_close();
 
 	hal_cleanup();
 	return (EXIT_SUCCESS);
