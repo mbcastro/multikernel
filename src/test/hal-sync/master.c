@@ -555,6 +555,27 @@ static void test_hal_sync_invalid_unlink(void)
 }
 
 /*===================================================================*
+ * Fault Injection Test: Bad Unlink                                  *
+ *===================================================================*/
+
+/**
+ * @brief Fault Injection Test: Synchronization Point Bad Unlink
+ */
+static void test_hal_sync_bad_unlink(void)
+{
+	int syncid;
+	int nodes[ncores];
+
+	for (int i = 0; i < ncores; i++)
+		nodes[i] = hal_get_node_id() + i;
+
+	TEST_ASSERT((syncid = hal_sync_open(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) >= 0);
+
+	TEST_ASSERT(hal_sync_unlink(syncid) < 0);
+	TEST_ASSERT(hal_sync_close(syncid) == 0);
+}
+
+/*===================================================================*
  * Fault Injection Test: Invalid Close                               *
  *===================================================================*/
 
@@ -601,6 +622,7 @@ int main(int argc, const char **argv)
 	test_hal_sync_invalid_open();
 	test_hal_sync_bad_open();
 	test_hal_sync_invalid_unlink();
+	test_hal_sync_bad_unlink();
 	test_hal_sync_invalid_close();
 
 	hal_cleanup();
