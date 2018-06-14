@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 2011-2017 Pedro H. Penna <pedrohenriquepenna@gmail.com>
+ * Copyright(C) 2011-2018 Pedro H. Penna <pedrohenriquepenna@gmail.com>
  * 
  * This file is part of Nanvix.
  * 
@@ -14,7 +14,7 @@
  * GNU General Public License for more details.
  * 
  * You should have received a copy of the GNU General Public License
- * auint64_t with Nanvix. If not, see <http://www.gnu.org/licenses/>.
+ * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #ifndef _MPPA256_H_
@@ -39,7 +39,7 @@
 #endif
 
 /*=======================================================================*
- * Core                                                                  *
+ * Core Interface                                                        *
  *=======================================================================*/
 
 	/**
@@ -81,13 +81,13 @@
 	extern int hal_get_cluster_id(void);
 	extern int k1_is_ccluster(int);
 	extern int k1_is_iocluster(int);
-	extern int k1_is_iocpu(int);
-	extern int k1_is_ccpu(int);
+	extern int k1_is_ionode(int);
+	extern int k1_is_cnode(int);
 	extern long k1_get_ccluster_freq(void);
 
 	/* Forward definitions. */
 	extern pthread_t __threads[4];
-	extern pthread_mutex_t hal_lock;
+	extern pthread_mutex_t core_lock;
 
 /*=======================================================================*
  * NOC                                                                   *
@@ -103,16 +103,17 @@
 	 */
 	#define NR_IOCLUSTER_DMA 4
 
-	/**
-	 * @brief Overall number of DMAs
-	 */
-	#define NR_DMA \
-		(NR_CCLUSTER*NR_CCLUSTER_DMA + NR_IOCLUSTER*NR_IOCLUSTER_DMA)
-
 	/* Forward definitions. */
 	extern int noctag_mailbox(int);
+	extern int noctag_sync(int);
+	extern int noc_get_node_num(int);
 	extern void noc_get_remotes(char *, int);
+	extern void noc_get_names(char *, const int *, int);
 	extern int noc_get_dma(int);
+	extern int noc_is_ionode(int);
+	extern int noc_is_ionode0(int);
+	extern int noc_is_ionode1(int);
+	extern int noc_is_cnode(int);
 
 /*=======================================================================*
  *                                                                       *

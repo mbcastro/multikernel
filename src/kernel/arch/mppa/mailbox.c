@@ -31,7 +31,7 @@
 /**
  * @brief Creates a mailbox.
  *
- * @param nodeid ID of the target NoC node.
+ * @param remote ID of the target remote NoC node.
  *
  * @returns Upon successful completion, the ID of the newly created
  * mailbox is returned. Upon failure, a negative error code is
@@ -39,24 +39,24 @@
  *
  * @note This function is @b NOT thread safe.
  */
-int hal_mailbox_create(int nodeid)
+int hal_mailbox_create(int remote)
 {
 	int fd;             /* NoC connector.              */
 	char remotes[128];  /* IDs of remote NoC nodes.    */
 	char pathname[128]; /* NoC connector name.         */
 	int noctag;         /* NoC tag used for transfers. */
 
-	/* Invalid core ID. */
-	if (nodeid != hal_get_node_id())
+	/* Invalid NoC node ID. */
+	if (remote != hal_get_node_id())
 		return (-EINVAL);
 
-	noc_get_remotes(remotes, nodeid);
-	noctag = noctag_mailbox(nodeid);
+	noc_get_remotes(remotes, remote);
+	noctag = noctag_mailbox(remote);
 
 	/* Build pathname for NoC connector. */
 	sprintf(pathname,
 			"/mppa/rqueue/%d:%d/[%s]:%d/1.%d",
-			nodeid,
+			remote,
 			noctag,
 			remotes,
 			noctag,
@@ -92,11 +92,11 @@ int hal_mailbox_open(int nodeid)
 	char pathname[128]; /* NoC connector name.         */
 	int noctag;         /* NoC tag used for transfers. */
 
-	/* Invalid core ID. */
+	/* Invalid NoC node ID. */
 	if (nodeid < 0)
 		return (-EINVAL);
 
-	/* Invalid core ID. */
+	/* Invalid NoC node ID. */
 	if (nodeid == hal_get_node_id())
 		return (-EINVAL);
 
@@ -118,7 +118,7 @@ int hal_mailbox_open(int nodeid)
 		goto error0;
 
 	/* Set DMA interface for IO cluster. */
-	if (k1_is_iocluster(nodeid))
+	if (noc_is_ionode(nodeid))
 	{
 		if (mppa_ioctl(fd, MPPA_TX_SET_INTERFACE, noc_get_dma(nodeid)) == -1)
 			goto error0;

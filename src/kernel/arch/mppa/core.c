@@ -23,6 +23,16 @@
 
 #include "mppa.h" 
 
+/**
+ * @brief Threads table.
+ */
+pthread_t __threads[NR_IOCLUSTER_CORES] = { 0, };
+
+/**
+ * @brief Lock for critical region.
+ */
+pthread_mutex_t core_lock;
+
 /*============================================================================*
  * k1_is_ccluster()                                                           *
  *============================================================================*/
@@ -91,7 +101,7 @@ int hal_get_core_id(void)
 		tid = pthread_self();
 
 
-		pthread_mutex_lock(&hal_lock);
+		pthread_mutex_lock(&core_lock);
 		for (int i = 0; i < NR_IOCLUSTER_CORES; i++)
 		{
 			if (__threads[i] == tid)
@@ -100,7 +110,7 @@ int hal_get_core_id(void)
 				break;
 			}
 		}
-		pthread_mutex_unlock(&hal_lock);
+		pthread_mutex_unlock(&core_lock);
 
 		return (coreid);
 	}

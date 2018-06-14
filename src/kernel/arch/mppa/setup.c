@@ -29,16 +29,6 @@
 static int nthreads = 0;
 
 /**
- * @brief Lock for critical region.
- */
-pthread_mutex_t hal_lock;
-
-/**
- * @brief Threads table.
- */
-pthread_t __threads[NR_IOCLUSTER_CORES] = { 0, };
-
-/**
  * @brief Initializes platform-dependent structures.
  */
 void hal_setup(void)
@@ -50,11 +40,11 @@ void hal_setup(void)
 	 * because it means that we are sequential.
 	 */
 	if (nthreads == 0)
-		pthread_mutex_init(&hal_lock, NULL);
+		pthread_mutex_init(&core_lock, NULL);
 
 	tid = pthread_self();
 
-	pthread_mutex_lock(&hal_lock);
+	pthread_mutex_lock(&core_lock);
 		if (k1_is_iocluster(__k1_get_cluster_id()))
 		{
 			for (int i = 0; i < NR_IOCLUSTER_CORES; i++)
@@ -67,7 +57,7 @@ void hal_setup(void)
 				}
 			}
 		}
-	pthread_mutex_unlock(&hal_lock);
+	pthread_mutex_unlock(&core_lock);
 }
 
 /**
@@ -82,11 +72,11 @@ void hal_cleanup(void)
 	 * because it means that we are sequential.
 	 */
 	if (nthreads == 1)
-		pthread_mutex_destroy(&hal_lock);
+		pthread_mutex_destroy(&core_lock);
 
 	tid = pthread_self();
 
-	pthread_mutex_lock(&hal_lock);
+	pthread_mutex_lock(&core_lock);
 		if (k1_is_iocluster(__k1_get_cluster_id()))
 		{
 			for (int i = 0; i < NR_IOCLUSTER_CORES; i++)
@@ -99,6 +89,6 @@ void hal_cleanup(void)
 				}
 			}
 		}
-	pthread_mutex_unlock(&hal_lock);
+	pthread_mutex_unlock(&core_lock);
 }
 

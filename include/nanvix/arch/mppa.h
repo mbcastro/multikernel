@@ -67,12 +67,25 @@
 	#ifdef _KALRAY_MPPA_CCLUSTER_
 		#define HAL_NR_MAILBOX HAL_NR_NOC_NODES
 	#else
-		#define HAL_NR_MAILBOX (4*HAL*NR_NOC_NODES)
+		#define HAL_NR_MAILBOX (4*HAL_NR_NOC_NODES)
 	#endif
 
 	/**
 	 * @brief Size (in bytes) of a mailbox message.
 	 */
 	#define HAL_MAILBOX_MSG_SIZE 64
+
+/*===========================================================================*
+ * Synchronization Interface                                                         *
+ *===========================================================================*/
+
+	/**
+	 * @brief Number of mailboxes.
+	 */
+	#ifdef _KALRAY_MPPA_CCLUSTER_
+		#define HAL_NR_SYNC HAL_NR_NOC_NODES
+	#else
+		#define HAL_NR_SYNC (4*HAL_NR_NOC_NODES)
+	#endif
 
 #endif /* NANVIX_ARCH_MPPA256 */
