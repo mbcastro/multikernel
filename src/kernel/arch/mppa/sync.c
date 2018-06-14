@@ -320,7 +320,7 @@ int hal_sync_create(const int *nodes, int nnodes, int type)
 		return (-EINVAL);
 
 	/* Invalid number of nodes. */
-	if ((nnodes < 2) || (nnodes >= HAL_NR_NOC_NODES))
+	if ((nnodes < 2) || (nnodes > HAL_NR_NOC_NODES))
 		return (-EINVAL);
 
 	/* Invalid type. */
@@ -471,7 +471,11 @@ int hal_sync_open(const int *nodes, int nnodes, int type)
 		return (-EINVAL);
 
 	/* Invalid number of nodes. */
-	if ((nnodes < 0) || (nnodes >= HAL_NR_NOC_NODES))
+	if ((nnodes < 2) || (nnodes > HAL_NR_NOC_NODES))
+		return (-EINVAL);
+
+	/* Invalid type. */
+	if ((type != HAL_SYNC_ONE_TO_ALL) && (type != HAL_SYNC_ALL_TO_ONE))
 		return (-EINVAL);
 
 	nodeid = hal_get_node_id();

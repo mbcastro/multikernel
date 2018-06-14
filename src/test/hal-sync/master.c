@@ -373,8 +373,7 @@ static void test_hal_sync_invalid_create(void)
 	TEST_ASSERT((hal_sync_create(nodes, -1, HAL_SYNC_ONE_TO_ALL)) < 0);
 	TEST_ASSERT((hal_sync_create(nodes, 0, HAL_SYNC_ONE_TO_ALL)) < 0);
 	TEST_ASSERT((hal_sync_create(nodes, 1, HAL_SYNC_ONE_TO_ALL)) < 0);
-	TEST_ASSERT((hal_sync_create(nodes, HAL_NR_NOC_NODES, HAL_SYNC_ONE_TO_ALL)) < 0);
-	TEST_ASSERT((hal_sync_create(nodes, 2*HAL_NR_NOC_NODES, HAL_SYNC_ONE_TO_ALL)) < 0);
+	TEST_ASSERT((hal_sync_create(nodes, HAL_NR_NOC_NODES + 1, HAL_SYNC_ONE_TO_ALL)) < 0);
 	TEST_ASSERT((hal_sync_create(nodes, ncores, -1)) < 0);
 }
 
@@ -448,6 +447,32 @@ static void test_hal_sync_bad_create(void)
 }
 
 /*===================================================================*
+ * Fault Injection Test: Invalid Open                                *
+ *===================================================================*/
+
+/**
+ * @brief Fault Injection Test: Synchronization Invalid Open 
+ */
+static void test_hal_sync_invalid_open(void)
+{
+	int nodes[ncores];
+
+	printf("[test][fault injection] Invalid Open\n");
+
+	/* Build nodes list. */
+	for (int i = 0; i < ncores; i++)
+		nodes[i] = hal_get_node_id() + i;
+
+	TEST_ASSERT((hal_sync_open(NULL, ncores, HAL_SYNC_ONE_TO_ALL)) < 0);
+	TEST_ASSERT((hal_sync_open(nodes, -1, HAL_SYNC_ONE_TO_ALL)) < 0);
+	TEST_ASSERT((hal_sync_open(nodes, 0, HAL_SYNC_ONE_TO_ALL)) < 0);
+	TEST_ASSERT((hal_sync_open(nodes, 1, HAL_SYNC_ONE_TO_ALL)) < 0);
+	TEST_ASSERT((hal_sync_open(nodes, HAL_NR_NOC_NODES + 1, HAL_SYNC_ONE_TO_ALL)) < 0);
+	TEST_ASSERT((hal_sync_open(nodes, ncores, -1)) < 0);
+}
+
+
+/*===================================================================*
  * Synchronization Point Test Driver                                 *
  *===================================================================*/
 
@@ -475,6 +500,7 @@ int main(int argc, const char **argv)
 	/* Fault injection tests. */
 	test_hal_sync_invalid_create();
 	test_hal_sync_bad_create();
+	test_hal_sync_invalid_open();
 
 	hal_cleanup();
 	return (EXIT_SUCCESS);
