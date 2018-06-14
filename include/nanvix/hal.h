@@ -74,12 +74,12 @@
 	extern size_t hal_mailbox_read(int, void *, size_t);
 
 	/* Forward definitions .*/
-	extern int hal_portal_allow(portal_t *, int);
-	extern int hal_portal_create(int);
-	extern int hal_portal_open(int, portal_t *);
+	extern int hal_portal_allow(portal_t *, int, int);
+	extern int hal_portal_create(portal_t *, int);
+	extern int hal_portal_open(portal_t *, int, int);
 	extern int hal_portal_read(portal_t *, void *, size_t);
 	extern int hal_portal_write(portal_t *, const void *, size_t);
 	extern int hal_portal_close(portal_t *);
-	extern int hal_portal_unlink(int);
+	extern int hal_portal_unlink(portal_t *);
 
 #endif /* NANVIX_HAL_H_ */

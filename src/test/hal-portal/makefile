@@ -29,7 +29,6 @@ hal-portal-master-srcs := $(SRCDIR)/test/hal-portal/master.c  \
 					$(SRCDIR)/kernel/arch/mppa/core.c
 
 # Toolchain Configuration
-hal-portal-master-system := rtems
 hal-portal-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
 hal-portal-master-lflags := -lmppaipc
 
