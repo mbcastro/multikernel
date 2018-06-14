@@ -592,6 +592,29 @@ static void test_hal_sync_invalid_close(void)
 }
 
 /*===================================================================*
+ * Fault Injection Test: Bad Close                                  *
+ *===================================================================*/
+
+/**
+ * @brief Fault Injection Test: Synchronization Point Bad Close
+ */
+static void test_hal_sync_bad_close(void)
+{
+	int syncid;
+	int nodes[ncores];
+
+	printf("[test][fault injection] Bad Close\n");
+
+	for (int i = 0; i < ncores; i++)
+		nodes[i] = hal_get_node_id() + i;
+
+	TEST_ASSERT((syncid = hal_sync_create(nodes, ncores, HAL_SYNC_ALL_TO_ONE)) >= 0);
+
+	TEST_ASSERT(hal_sync_close(syncid) < 0);
+	TEST_ASSERT(hal_sync_unlink(syncid) == 0);
+}
+
+/*===================================================================*
  * Synchronization Point Test Driver                                 *
  *===================================================================*/
 
@@ -624,6 +647,7 @@ int main(int argc, const char **argv)
 	test_hal_sync_invalid_unlink();
 	test_hal_sync_bad_unlink();
 	test_hal_sync_invalid_close();
+	test_hal_sync_bad_close();
 
 	hal_cleanup();
 	return (EXIT_SUCCESS);
