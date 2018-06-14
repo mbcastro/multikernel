@@ -357,7 +357,7 @@ static void test_hal_sync_signal_wait(void)
  *===================================================================*/
 
 /**
- * @brief API Test: Synchronization Point Signal Wait
+ * @brief Fault Injection Test: Synchronization Invalid Create 
  */
 static void test_hal_sync_invalid_create(void)
 {
@@ -376,6 +376,75 @@ static void test_hal_sync_invalid_create(void)
 	TEST_ASSERT((hal_sync_create(nodes, HAL_NR_NOC_NODES, HAL_SYNC_ONE_TO_ALL)) < 0);
 	TEST_ASSERT((hal_sync_create(nodes, 2*HAL_NR_NOC_NODES, HAL_SYNC_ONE_TO_ALL)) < 0);
 	TEST_ASSERT((hal_sync_create(nodes, ncores, -1)) < 0);
+}
+
+/*===================================================================*
+ * Fault Injection Test: Bad Create                                  *
+ *===================================================================*/
+
+/**
+ * @brief Fault Injection Test: Synchronization Bad Create 
+ */
+static void test_hal_sync_bad_create1(void)
+{
+	int nodes[ncores];
+
+	/* Invalid list of NoC nodes. */
+	for (int i = ncores - 1; i >= 0; i--)
+		nodes[i] = -1;
+	TEST_ASSERT((hal_sync_create(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) < 0);
+
+	/* Underlying NoC node is the sender. */
+	for (int i = 0; i < ncores; i++)
+		nodes[i] = hal_get_node_id() + i;
+	TEST_ASSERT((hal_sync_create(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) < 0);
+
+	/* Underlying NoC node is not listed. */
+	for (int i = ncores - 1; i >=0; i--)
+		nodes[i] = hal_get_node_id() + i - ncores + 1;
+	TEST_ASSERT((hal_sync_create(nodes, ncores - 1, HAL_SYNC_ONE_TO_ALL)) < 0);
+
+	/* Underlying NoC node appears twice in the list. */
+	nodes[ncores - 1] = hal_get_node_id();
+	nodes[ncores - 2] = hal_get_node_id();
+	TEST_ASSERT((hal_sync_create(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) < 0);
+}
+
+/**
+ * @brief Fault Injection Test: Synchronization Bad Create 
+ */
+static void test_hal_sync_bad_create2(void)
+{
+	int nodes[ncores];
+
+	/* Invalid list of NoC nodes. */
+	for (int i = ncores - 1; i >= 0; i--)
+		nodes[i] = -1;
+	TEST_ASSERT((hal_sync_create(nodes, ncores, HAL_SYNC_ALL_TO_ONE)) < 0);
+
+	/* Underlying NoC node is not the receiver. */
+	for (int i = ncores - 1; i >=0; i--)
+		nodes[i] = hal_get_node_id() + i - ncores + 1;
+	TEST_ASSERT((hal_sync_create(nodes, ncores, HAL_SYNC_ALL_TO_ONE)) < 0);
+
+	/* Underlying NoC node is not listed. */
+	TEST_ASSERT((hal_sync_create(nodes, ncores - 1, HAL_SYNC_ALL_TO_ONE)) < 0);
+
+	/* Underlying NoC node appears twice in the list. */
+	nodes[ncores - 1] = hal_get_node_id();
+	nodes[ncores - 2] = hal_get_node_id();
+	TEST_ASSERT((hal_sync_create(nodes, ncores, HAL_SYNC_ALL_TO_ONE)) < 0);
+}
+
+/**
+ * @brief Fault Injection Test: Synchronization Bad Create 
+ */
+static void test_hal_sync_bad_create(void)
+{
+	printf("[test][fault injection] Bad Create\n");
+
+	test_hal_sync_bad_create1();
+	test_hal_sync_bad_create2();
 }
 
 /*===================================================================*
@@ -405,6 +474,7 @@ int main(int argc, const char **argv)
 
 	/* Fault injection tests. */
 	test_hal_sync_invalid_create();
+	test_hal_sync_bad_create();
 
 	hal_cleanup();
 	return (EXIT_SUCCESS);

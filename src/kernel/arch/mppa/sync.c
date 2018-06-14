@@ -331,17 +331,36 @@ int hal_sync_create(const int *nodes, int nnodes, int type)
 
 	if (type == HAL_SYNC_ONE_TO_ALL)
 	{
+		int found = 0;
+
+		/* Underlying NoC node SHOULD NOT be here. */
+		if (nodeid == nodes[0])
+			return (-EINVAL);
+
 		/* Underlying NoC node SHOULD be here. */
 		for (int i = 1; i < nnodes; i++)
 		{
 			if (nodeid == nodes[i])
-				goto found;
+				found++;
 		}
 
-		return (-EINVAL);
+		if (found != 1)
+			return (-EINVAL);
 	}
 
-found:
+	else
+	{
+		/* Underlying NoC node SHOULD be here. */
+		if (nodeid != nodes[0])
+			return (-EINVAL);
+
+		/* Underlying NoC node SHOULD be here. */
+		for (int i = 1; i < nnodes; i++)
+		{
+			if (nodeid == nodes[i])
+				return (-EINVAL);
+		}
+	}
 
 	if (type == HAL_SYNC_ONE_TO_ALL)
 		sync_ranks(ranks, nodes, nnodes);
@@ -459,7 +478,7 @@ int hal_sync_open(const int *nodes, int nnodes, int type)
 
 	if (type == HAL_SYNC_ONE_TO_ALL)
 	{
-		/* Underlying NoC node SHOULD NOT be here. */
+		/* Underlying NoC node SHOULD be here. */
 		if (nodeid != nodes[0])
 			return (-EINVAL);
 	}
