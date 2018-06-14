@@ -571,8 +571,16 @@ int hal_sync_wait(int syncid)
 {
 	uint64_t mask;
 
-	/* Invalid synchronization point. */
-	if (syncid < 0)
+	/* Invalid sync. */
+	if (!sync_is_valid(syncid))
+		return (-EINVAL);
+
+	/* Bad sync. */
+	if (!sync_is_used(syncid))
+		return (-EINVAL);
+
+	/* Bad sync. */
+	if (sync_is_wronly(syncid))
 		return (-EINVAL);
 
 	/* Wait. */
@@ -601,8 +609,16 @@ int hal_sync_signal(int syncid)
 	int nodeid;
 	uint64_t mask;
 
-	/* Invalid synchronization point. */
+	/* Invalid sync. */
 	if (!sync_is_valid(syncid))
+		return (-EINVAL);
+
+	/* Bad sync. */
+	if (!sync_is_used(syncid))
+		return (-EINVAL);
+
+	/* Bad sync. */
+	if (!sync_is_wronly(syncid))
 		return (-EINVAL);
 
 	nodeid = hal_get_node_id();

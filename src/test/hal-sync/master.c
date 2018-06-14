@@ -663,6 +663,40 @@ static void test_hal_sync_double_close(void)
 }
 
 /*===================================================================*
+ * Fault Injection Test: Invalid Signal                              *
+ *===================================================================*/
+
+/**
+ * @brief Fault Injection Test: Synchronization Point Invalid Signal
+ */
+static void test_hal_sync_invalid_signal(void)
+{
+	printf("[test][fault injection] Invalid Signal\n");
+
+	TEST_ASSERT(hal_sync_signal(-1) < 0);
+	TEST_ASSERT(hal_sync_signal(1) < 0);
+	TEST_ASSERT(hal_sync_signal(HAL_NR_SYNC) < 0);
+	TEST_ASSERT(hal_sync_signal(HAL_NR_SYNC + 1) < 0);
+}
+
+/*===================================================================*
+ * Fault Injection Test: Invalid Wait                                *
+ *===================================================================*/
+
+/**
+ * @brief Fault Injection Test: Synchronization Point Invalid Wait
+ */
+static void test_hal_sync_invalid_wait(void)
+{
+	printf("[test][fault injection] Invalid Wait\n");
+
+	TEST_ASSERT(hal_sync_wait(-1) < 0);
+	TEST_ASSERT(hal_sync_wait(1) < 0);
+	TEST_ASSERT(hal_sync_wait(HAL_NR_SYNC) < 0);
+	TEST_ASSERT(hal_sync_wait(HAL_NR_SYNC + 1) < 0);
+}
+
+/*===================================================================*
  * Synchronization Point Test Driver                                 *
  *===================================================================*/
 
@@ -698,6 +732,8 @@ int main(int argc, const char **argv)
 	test_hal_sync_invalid_close();
 	test_hal_sync_bad_close();
 	test_hal_sync_double_close();
+	test_hal_sync_invalid_signal();
+	test_hal_sync_invalid_wait();
 
 	hal_cleanup();
 	return (EXIT_SUCCESS);
