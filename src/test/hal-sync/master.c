@@ -66,6 +66,8 @@ static void *test_hal_sync_thread_create_unlink(void *args)
 	TEST_ASSERT((syncid = hal_sync_create(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) >= 0);
 	pthread_mutex_unlock(&lock);
 
+	pthread_barrier_wait(&barrier);
+
 	pthread_mutex_lock(&lock);
 	TEST_ASSERT(hal_sync_unlink(syncid) == 0);
 	pthread_mutex_unlock(&lock);
@@ -125,6 +127,8 @@ static void *test_hal_sync_thread_open_close(void *args)
 	TEST_ASSERT((syncid = hal_sync_create(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) >= 0);
 	pthread_mutex_unlock(&lock);
 
+	pthread_barrier_wait(&barrier);
+
 	pthread_mutex_lock(&lock);
 	TEST_ASSERT(hal_sync_unlink(syncid) == 0);
 	pthread_mutex_unlock(&lock);
@@ -183,6 +187,89 @@ static void test_hal_sync_open_close(void)
 }
 
 /*===================================================================*
+ * API Test: Wait Signal                                             *
+ *===================================================================*/
+
+/**
+ * @brief API Test: Synchronization Point Wait Signal
+ */
+static void *test_hal_sync_thread_wait_signal(void *args)
+{
+	int syncid;
+	int *nodes;
+
+	hal_setup();
+
+	nodes = ((int *)args);
+
+	pthread_mutex_lock(&lock);
+	TEST_ASSERT((syncid = hal_sync_create(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) >= 0);
+	pthread_mutex_unlock(&lock);
+
+	pthread_barrier_wait(&barrier);
+
+	TEST_ASSERT(hal_sync_wait(syncid) == 0);
+
+	pthread_mutex_lock(&lock);
+	TEST_ASSERT(hal_sync_unlink(syncid) == 0);
+	pthread_mutex_unlock(&lock);
+
+	pthread_barrier_wait(&barrier);
+
+	hal_cleanup();
+	return (NULL);
+}
+
+/**
+ * @brief API Test: Synchronization Point Wait Signal
+ */
+static void test_hal_sync_master_wait_signal(const int *nodes)
+{
+	int syncid;
+
+	pthread_mutex_lock(&lock);
+	TEST_ASSERT((syncid = hal_sync_open(nodes, ncores)) >= 0);
+	pthread_mutex_unlock(&lock);
+
+	TEST_ASSERT(hal_sync_signal(syncid, HAL_SYNC_ONE_TO_ALL) == 0);
+
+	pthread_mutex_lock(&lock);
+	TEST_ASSERT(hal_sync_close(syncid) == 0);
+	pthread_mutex_unlock(&lock);
+}
+
+/**
+ * @brief API Test: Synchronization Point Wait Signal
+ */
+static void test_hal_sync_wait_signal(void)
+{
+	int nodes[ncores];
+	pthread_t tids[ncores];
+
+	printf("[test][api] Sync Wait Signal\n");
+
+	/* Build nodes list. */
+	for (int i = 0; i < ncores; i++)
+		nodes[i] = hal_get_node_id() + i;
+
+	/* Spawn driver threads. */
+	for (int i = 1; i < ncores; i++)
+	{
+		assert((pthread_create(&tids[i],
+			NULL,
+			test_hal_sync_thread_wait_signal,
+			nodes)) == 0
+		);
+	}
+
+	test_hal_sync_master_wait_signal(nodes);
+
+	/* Wait for driver threads. */
+	for (int i = 1; i < ncores; i++)
+		pthread_join(tids[i], NULL);
+}
+
+/*===================================================================*
  * Synchronization Point Test Driver                                 *
  *===================================================================*/
 
@@ -204,6 +291,7 @@ int main(int argc, const char **argv)
 	/* API tests. */
 	test_hal_sync_create_unlink();
 	test_hal_sync_open_close();
+	test_hal_sync_wait_signal();
 
 	hal_cleanup();
 	return (EXIT_SUCCESS);

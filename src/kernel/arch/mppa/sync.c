@@ -119,6 +119,7 @@ error0:
 int hal_sync_create(const int *nodes, int nnodes, int type)
 {
 	int nodeid;
+	int ranks[nnodes];
 
 	/* Invalid list of nodes. */
 	if (nodes == NULL)
@@ -145,7 +146,9 @@ int hal_sync_create(const int *nodes, int nnodes, int type)
 
 found:
 
-	return (_hal_sync_create(nodes, nnodes, type));
+	sync_ranks(ranks, nodes, nnodes);
+
+	return (_hal_sync_create(ranks, nnodes, type));
 }
 
 /*============================================================================*
@@ -206,7 +209,6 @@ error0:
 int hal_sync_open(const int *nodes, int nnodes)
 {
 	int nodeid;
-	int ranks[nnodes];
 
 	/* Invalid list of nodes. */
 	if (nodes == NULL)
@@ -221,8 +223,6 @@ int hal_sync_open(const int *nodes, int nnodes)
 	/* Underlying NoC node SHOULD NOT be here. */
 	if (nodeid != nodes[0])
 		return (-EINVAL);
-
-	sync_ranks(ranks, nodes, nnodes);
 
 	return (_hal_sync_open(nodes, nnodes));
 }
