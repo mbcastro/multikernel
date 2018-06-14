@@ -680,6 +680,29 @@ static void test_hal_sync_invalid_signal(void)
 }
 
 /*===================================================================*
+ * Fault Injection Test: Bad Signal                                  *
+ *===================================================================*/
+
+/**
+ * @brief Fault Injection Test: Synchronization Point Bad Signal
+ */
+static void test_hal_sync_bad_signal(void)
+{
+	int syncid;
+	int nodes[ncores];
+
+	printf("[test][fault injection] Bad Signal\n");
+
+	for (int i = 0; i < ncores; i++)
+		nodes[i] = hal_get_node_id() + i;
+
+	TEST_ASSERT((syncid = hal_sync_create(nodes, ncores, HAL_SYNC_ALL_TO_ONE)) >= 0);
+
+	TEST_ASSERT(hal_sync_signal(syncid) < 0);
+	TEST_ASSERT(hal_sync_unlink(syncid) == 0);
+}
+
+/*===================================================================*
  * Fault Injection Test: Invalid Wait                                *
  *===================================================================*/
 
@@ -694,6 +717,29 @@ static void test_hal_sync_invalid_wait(void)
 	TEST_ASSERT(hal_sync_wait(1) < 0);
 	TEST_ASSERT(hal_sync_wait(HAL_NR_SYNC) < 0);
 	TEST_ASSERT(hal_sync_wait(HAL_NR_SYNC + 1) < 0);
+}
+
+/*===================================================================*
+ * Fault Injection Test: Bad Wait                                    *
+ *===================================================================*/
+
+/**
+ * @brief Fault Injection Test: Synchronization Point Bad Wait
+ */
+static void test_hal_sync_bad_wait(void)
+{
+	int syncid;
+	int nodes[ncores];
+
+	printf("[test][fault injection] Bad Wait\n");
+
+	for (int i = 0; i < ncores; i++)
+		nodes[i] = hal_get_node_id() + i;
+
+	TEST_ASSERT((syncid = hal_sync_open(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) >= 0);
+
+	TEST_ASSERT(hal_sync_wait(syncid) < 0);
+	TEST_ASSERT(hal_sync_close(syncid) == 0);
 }
 
 /*===================================================================*
@@ -733,7 +779,9 @@ int main(int argc, const char **argv)
 	test_hal_sync_bad_close();
 	test_hal_sync_double_close();
 	test_hal_sync_invalid_signal();
+	test_hal_sync_bad_signal();
 	test_hal_sync_invalid_wait();
+	test_hal_sync_bad_wait();
 
 	hal_cleanup();
 	return (EXIT_SUCCESS);
