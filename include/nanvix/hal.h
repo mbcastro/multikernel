@@ -74,7 +74,7 @@
 	extern size_t hal_mailbox_read(int, void *, size_t);
 
 	/* Forward definitions .*/
-	extern int hal_portal_allow(portal_t *, int, int);
+	extern int hal_portal_allow(portal_t *, int);
 	extern int hal_portal_create(portal_t *, int);
 	extern int hal_portal_open(portal_t *, int, int);
 	extern int hal_portal_read(portal_t *, void *, size_t);

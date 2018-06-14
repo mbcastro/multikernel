@@ -186,7 +186,7 @@ static void *test_hal_portal_thread_read(void *args)
 		if (d == dma)
 			continue;
 
-		assert(hal_portal_allow(&inportal, nodeid + d, nodeid + dma) == 0);
+		assert(hal_portal_allow(&inportal, nodeid + d) == 0);
 
 		memset(buf, 0, DATA_SIZE);
 

@@ -92,9 +92,9 @@ int hal_portal_create(portal_t *portal, int local)
  * @returns Upons successful completion zero is returned. Upon failure,
  * a negative error code is returned instead.
  */
-int hal_portal_allow(portal_t *portal, int remote, int local)
+int hal_portal_allow(portal_t *portal, int remote)
 {
-	// int local;          /* Local NoC node ID.   */
+	int local;          /* Local NoC node ID.   */
 	int sync_fd;        /* Sync NoC connector.  */
 	char pathname[128]; /* Portal pathname.     */
 
@@ -102,13 +102,12 @@ int hal_portal_allow(portal_t *portal, int remote, int local)
 	if (portal == NULL)
 		return (-EINVAL);
 
-	#ifdef _HAS_NOC_GET_NODE_ID_
-		/* Invalid remote. */
-		if (remote != hal_get_node_id())
-			return (-EINVAL);
-	#endif
+	local = hal_get_node_id();
 
-	// local = hal_get_cluster_id();
+	/* Invalid remote. */
+	if (remote == local)
+		return (-EINVAL);
+
 
 	/* Create underlying sync. */
 	snprintf(pathname,
