@@ -357,7 +357,7 @@ static void test_hal_sync_signal_wait(void)
  *===================================================================*/
 
 /**
- * @brief Fault Injection Test: Synchronization Invalid Create 
+ * @brief Fault Injection Test: Synchronization Point Invalid Create 
  */
 static void test_hal_sync_invalid_create(void)
 {
@@ -382,7 +382,7 @@ static void test_hal_sync_invalid_create(void)
  *===================================================================*/
 
 /**
- * @brief Fault Injection Test: Synchronization Bad Create 
+ * @brief Fault Injection Test: Synchronization Point Bad Create 
  */
 static void test_hal_sync_bad_create1(void)
 {
@@ -410,7 +410,7 @@ static void test_hal_sync_bad_create1(void)
 }
 
 /**
- * @brief Fault Injection Test: Synchronization Bad Create 
+ * @brief Fault Injection Test: Synchronization Point Bad Create 
  */
 static void test_hal_sync_bad_create2(void)
 {
@@ -436,7 +436,7 @@ static void test_hal_sync_bad_create2(void)
 }
 
 /**
- * @brief Fault Injection Test: Synchronization Bad Create 
+ * @brief Fault Injection Test: Synchronization Point Bad Create 
  */
 static void test_hal_sync_bad_create(void)
 {
@@ -451,7 +451,7 @@ static void test_hal_sync_bad_create(void)
  *===================================================================*/
 
 /**
- * @brief Fault Injection Test: Synchronization Invalid Open 
+ * @brief Fault Injection Test: Synchronization Point Invalid Open 
  */
 static void test_hal_sync_invalid_open(void)
 {
@@ -472,11 +472,11 @@ static void test_hal_sync_invalid_open(void)
 }
 
 /*===================================================================*
- * Fault Injection Test: Bad Open                                  *
+ * Fault Injection Test: Bad Open                                    *
  *===================================================================*/
 
 /**
- * @brief Fault Injection Test: Synchronization Bad Open 
+ * @brief Fault Injection Test: Synchronization Point Bad Open 
  */
 static void test_hal_sync_bad_open1(void)
 {
@@ -502,7 +502,7 @@ static void test_hal_sync_bad_open1(void)
 }
 
 /**
- * @brief Fault Injection Test: Synchronization Bad Open 
+ * @brief Fault Injection Test: Synchronization Point Bad Open 
  */
 static void test_hal_sync_bad_open2(void)
 {
@@ -528,7 +528,7 @@ static void test_hal_sync_bad_open2(void)
 }
 
 /**
- * @brief Fault Injection Test: Synchronization Bad Open 
+ * @brief Fault Injection Test: Synchronization Point Bad Open 
  */
 static void test_hal_sync_bad_open(void)
 {
@@ -536,6 +536,22 @@ static void test_hal_sync_bad_open(void)
 
 	test_hal_sync_bad_open1();
 	test_hal_sync_bad_open2();
+}
+
+/*===================================================================*
+ * Fault Injection Test: Invalid Unlink                              *
+ *===================================================================*/
+
+/**
+ * @brief Fault Injection Test: Synchronization Point Invalid Unlink
+ */
+static void test_hal_sync_invalid_unlink(void)
+{
+	printf("[test][fault injection] Invalid Unlink\n");
+
+	TEST_ASSERT(hal_sync_unlink(-1) < 0);
+	TEST_ASSERT(hal_sync_unlink(HAL_NR_SYNC) < 0);
+	TEST_ASSERT(hal_sync_unlink(HAL_NR_SYNC + 1) < 0);
 }
 
 /*===================================================================*
@@ -568,6 +584,7 @@ int main(int argc, const char **argv)
 	test_hal_sync_bad_create();
 	test_hal_sync_invalid_open();
 	test_hal_sync_bad_open();
+	test_hal_sync_invalid_unlink();
 
 	hal_cleanup();
 	return (EXIT_SUCCESS);
