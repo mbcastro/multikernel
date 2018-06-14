@@ -208,11 +208,15 @@ void noc_get_names(char *names, const int *nodes, int nnodes)
 {
 	char tmp[5];
 
+	names[0] = '\0';
+
 	for (int i = 0; i < nnodes; i++)
 	{
-		sprintf(tmp, "%d", nodes[i]);
+		sprintf(tmp, "%d,", nodes[i]);
 		strcat(names, tmp);
 	}
+
+	names[strlen(names) - 1] = '\0';
 }
 
 /*=======================================================================*

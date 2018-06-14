@@ -25,6 +25,39 @@
 #include "mppa.h"
 
 /*============================================================================*
+ * sync_ranks()                                                               *
+ *============================================================================*/
+
+/**
+ * @brief Builds the list of RX NoC nodes.
+ *
+ * @param ranks Target list of RX NoC nodes.
+ * @param nodes  IDs of target NoC nodes.
+ * @param nnodes Number of target NoC nodes. 
+ */
+static void sync_ranks(int *ranks, const int *nodes, int nnodes)
+{
+	int j, tmp;
+	int nodeid;
+
+	j = 1;
+	nodeid = hal_get_node_id();
+
+	/* Build list of RX NoC nodes. */
+	for (int i = 0; i < nnodes; i++)
+	{
+		if (nodes[i] == nodeid)
+			j = i;
+
+		ranks[i] = nodes[i];
+	}
+
+	tmp = ranks[1];
+	ranks[1] = ranks[j];
+	ranks[j] = tmp;
+}
+
+/*============================================================================*
  * hal_sync_create()                                                          *
  *============================================================================*/
 
@@ -43,7 +76,7 @@ static int _hal_sync_create(const int *nodes, int nnodes, int type)
 	sprintf(pathname,
 		"/mppa/sync/[%s]:%d",
 		remotes,
-		noctag_sync(nodes[1])
+		noctag_sync(nodes[0])
 	);
 
 	/* Open NoC connector. */
@@ -51,7 +84,7 @@ static int _hal_sync_create(const int *nodes, int nnodes, int type)
 		goto error0;
 
 	/* Build sync mask. */
-	mask = -1;
+	mask = ~0;
 	if (type == HAL_SYNC_ALL_TO_ONE)
 	{
 		for (int i = 0; i < nnodes; i++)
@@ -96,7 +129,7 @@ int hal_sync_create(const int *nodes, int nnodes, int type)
 		return (-EINVAL);
 
 	/* Invalid type. */
-	if ((type != HAL_SYNC_ONE_TO_ALL) || (type != HAL_SYNC_ALL_TO_ONE))
+	if ((type != HAL_SYNC_ONE_TO_ALL) && (type != HAL_SYNC_ALL_TO_ONE))
 		return (-EINVAL);
 
 	nodeid = hal_get_node_id();
@@ -124,12 +157,13 @@ found:
  */
 static int _hal_sync_open(const int *nodes, int nnodes)
 {
-	int fd;             /* NoC connector.           */
-	char remotes[128];  /* IDs of remote NoC nodes. */
-	char pathname[128]; /* NoC connector name.      */
+	int fd;                /* NoC connector.           */
+	char remotes[128];     /* IDs of remote NoC nodes. */
+	char pathname[128];    /* NoC connector name.      */
+	int ranks[nnodes - 1]; /* Offset to RX NoC nodes.  */
 
 	/* Build pathname for NoC connector. */
-	noc_get_names(remotes, nodes, nnodes);
+	noc_get_names(remotes, &nodes[1], nnodes - 1);
 	sprintf(pathname,
 		"/mppa/sync/[%s]:%d",
 		remotes,
@@ -140,7 +174,11 @@ static int _hal_sync_open(const int *nodes, int nnodes)
 	if ((fd = mppa_open(pathname, O_WRONLY)) == -1)
 		goto error0;
 
-	if (mppa_ioctl(fd, MPPA_TX_SET_RX_RANKS, nnodes, nodes) != 0)
+	/* Build list of RX NoC nodes. */
+	for (int i = 0; i < nnodes - 1; i++)
+		ranks[i] = i;
+
+	if (mppa_ioctl(fd, MPPA_TX_SET_RX_RANKS, nnodes - 1, ranks) != 0)
 		goto error1;
 
 	return (fd);
@@ -168,6 +206,7 @@ error0:
 int hal_sync_open(const int *nodes, int nnodes)
 {
 	int nodeid;
+	int ranks[nnodes];
 
 	/* Invalid list of nodes. */
 	if (nodes == NULL)
@@ -182,6 +221,8 @@ int hal_sync_open(const int *nodes, int nnodes)
 	/* Underlying NoC node SHOULD NOT be here. */
 	if (nodeid != nodes[0])
 		return (-EINVAL);
+
+	sync_ranks(ranks, nodes, nnodes);
 
 	return (_hal_sync_open(nodes, nnodes));
 }
@@ -240,8 +281,10 @@ int hal_sync_signal(int syncid, int type)
 		return (-EINVAL);
 
 	/* Invalid type. */
-	if ((type != HAL_SYNC_ONE_TO_ALL) || (type != HAL_SYNC_ALL_TO_ONE))
+	if ((type != HAL_SYNC_ONE_TO_ALL) && (type != HAL_SYNC_ALL_TO_ONE))
 		return (-EINVAL);
+
+	nodeid = hal_get_node_id();
 
 	/* Signal. */
 	mask = (type == HAL_SYNC_ALL_TO_ONE) ? 

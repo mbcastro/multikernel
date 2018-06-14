@@ -75,7 +75,7 @@ export rmem-server-lflags := -lmppaipc -pthread
 
 #=============================================================================
 
-all: hal hal-mailbox name 
+all: hal hal-mailbox hal-sync name 
 
 hal:
 	cd $(CURDIR)/src/test/hal/ && $(MAKE);
@@ -85,6 +85,9 @@ async:
 
 hal-mailbox:
 	cd $(CURDIR)/src/test/hal-mailbox/ && $(MAKE);
+
+hal-sync:
+	cd $(CURDIR)/src/test/hal-sync/ && $(MAKE);
 
 mailbox:
 	cd $(CURDIR)/src/test/mailbox/ && $(MAKE);
