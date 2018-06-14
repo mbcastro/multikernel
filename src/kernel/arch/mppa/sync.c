@@ -485,6 +485,32 @@ int hal_sync_open(const int *nodes, int nnodes, int type)
 		/* Underlying NoC node SHOULD be here. */
 		if (nodeid != nodes[0])
 			return (-EINVAL);
+
+		/* Underlying NoC node SHOULD be here. */
+		for (int i = 1; i < nnodes; i++)
+		{
+			if (nodeid == nodes[i])
+				return (-EINVAL);
+		}
+	}
+
+	else
+	{
+		int found = 0;
+
+		/* Underlying NoC node SHOULD NOT be here. */
+		if (nodeid == nodes[0])
+			return (-EINVAL);
+
+		/* Underlying NoC node SHOULD be here. */
+		for (int i = 1; i < nnodes; i++)
+		{
+			if (nodeid == nodes[i])
+				found++;
+		}
+
+		if (found != 1)
+			return (-EINVAL);
 	}
 
 	return (_hal_sync_open(nodes, nnodes, type));

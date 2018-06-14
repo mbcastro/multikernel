@@ -471,6 +471,72 @@ static void test_hal_sync_invalid_open(void)
 	TEST_ASSERT((hal_sync_open(nodes, ncores, -1)) < 0);
 }
 
+/*===================================================================*
+ * Fault Injection Test: Bad Open                                  *
+ *===================================================================*/
+
+/**
+ * @brief Fault Injection Test: Synchronization Bad Open 
+ */
+static void test_hal_sync_bad_open1(void)
+{
+	int nodes[ncores];
+
+	/* Invalid list of NoC nodes. */
+	for (int i = ncores - 1; i >= 0; i--)
+		nodes[i] = -1;
+	TEST_ASSERT((hal_sync_open(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) < 0);
+
+	/* Underlying NoC node is not the sender. */
+	for (int i = ncores - 1; i >=0; i--)
+		nodes[i] = hal_get_node_id() + i - ncores + 1;
+	TEST_ASSERT((hal_sync_open(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) < 0);
+
+	/* Underlying NoC node is not listed. */
+	TEST_ASSERT((hal_sync_open(nodes, ncores - 1, HAL_SYNC_ONE_TO_ALL)) < 0);
+
+	/* Underlying NoC node appears twice in the list. */
+	nodes[ncores - 1] = hal_get_node_id();
+	nodes[ncores - 2] = hal_get_node_id();
+	TEST_ASSERT((hal_sync_open(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) < 0);
+}
+
+/**
+ * @brief Fault Injection Test: Synchronization Bad Open 
+ */
+static void test_hal_sync_bad_open2(void)
+{
+	int nodes[ncores];
+
+	/* Invalid list of NoC nodes. */
+	for (int i = ncores - 1; i >= 0; i--)
+		nodes[i] = -1;
+	TEST_ASSERT((hal_sync_open(nodes, ncores, HAL_SYNC_ALL_TO_ONE)) < 0);
+
+	/* Underlying NoC node is not the sender. */
+	for (int i = 0; i < ncores; i++)
+		nodes[i] = hal_get_node_id() + i;
+	TEST_ASSERT((hal_sync_open(nodes, ncores, HAL_SYNC_ALL_TO_ONE)) < 0);
+
+	/* Underlying NoC node is not listed. */
+	TEST_ASSERT((hal_sync_open(&nodes[1], ncores - 1, HAL_SYNC_ALL_TO_ONE)) < 0);
+
+	/* Underlying NoC node appears twice in the list. */
+	nodes[ncores - 1] = hal_get_node_id();
+	nodes[ncores - 2] = hal_get_node_id();
+	TEST_ASSERT((hal_sync_open(&nodes[1], ncores, HAL_SYNC_ALL_TO_ONE)) < 0);
+}
+
+/**
+ * @brief Fault Injection Test: Synchronization Bad Open 
+ */
+static void test_hal_sync_bad_open(void)
+{
+	printf("[test][fault injection] Bad Open\n");
+
+	test_hal_sync_bad_open1();
+	test_hal_sync_bad_open2();
+}
 
 /*===================================================================*
  * Synchronization Point Test Driver                                 *
@@ -501,6 +567,7 @@ int main(int argc, const char **argv)
 	test_hal_sync_invalid_create();
 	test_hal_sync_bad_create();
 	test_hal_sync_invalid_open();
+	test_hal_sync_bad_open();
 
 	hal_cleanup();
 	return (EXIT_SUCCESS);
