@@ -19,10 +19,178 @@
 
 #include <errno.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <nanvix/hal.h>
 
 #include "mppa.h"
+
+/**
+ * @brief Synchronization point flags.
+ */
+/**@{*/
+#define SYNC_FLAGS_USED      (1 << 0) /**< Used synchronization point?       */
+#define SYNC_FLAGS_BROADCAST (1 << 1) /**< Broadcast synchronization point?  */
+/**@}*/
+
+/**
+ * @brief Table of synchronization point.
+ */
+static struct 
+{
+	int fd;    /*< Underlying file descriptor.   */
+	int flags; /*< Flags.                        */
+} synctab[HAL_NR_SYNC];
+
+/*============================================================================*
+ * sync_is_valid()                                                            *
+ *============================================================================*/
+
+/**
+ * @brief Asserts whether or not a synchronization point is valid.
+ *
+ * @param syncid ID of the target synchronization point.
+ *
+ * @returns One if the target synchronization point is valid, and false
+ * otherwise.
+ *
+ * @note This function is @b NOT thread safe.
+ */
+static int sync_is_valid(int syncid)
+{
+	return ((syncid >= 0) || (syncid < HAL_NR_SYNC));
+}
+
+/*============================================================================*
+ * sync_is_used()                                                             *
+ *============================================================================*/
+
+/**
+ * @brief Asserts whether or not a synchronization point is used.
+ *
+ * @param syncid ID of the target synchronization point.
+ *
+ * @returns One if the target synchronization point is used, and false
+ * otherwise.
+ *
+ * @note This function is @b NOT thread safe.
+ */
+static int sync_is_used(int syncid)
+{
+	return (synctab[syncid].flags & SYNC_FLAGS_USED);
+}
+
+/*============================================================================*
+ * sync_is_broadcast()                                                        *
+ *============================================================================*/
+
+/**
+ * @brief Asserts whether of not a synchronization point is a broadcast one.
+ *
+ * @param syncid ID of the target synchronization point.
+ *
+ * @returns One if the target synchronization point is used, and
+ * false otherwise.
+ *
+ * @note This function is @b NOT thread safe.
+ */
+static int sync_is_broadcast(int syncid)
+{
+	return (synctab[syncid].flags & SYNC_FLAGS_BROADCAST);
+}
+
+/*============================================================================*
+ * sync_set_used()                                                            *
+ *============================================================================*/
+
+/**
+ * @brief Sets a synchronization point as used.
+ *
+ * @param syncid ID of the target synchronization point.
+ *
+ * @note This function is @b NOT thread safe.
+ */
+static void sync_set_used(int syncid)
+{
+	synctab[syncid].flags |= SYNC_FLAGS_USED;
+}
+
+/*============================================================================*
+ * sync_set_broadcast()                                                       *
+ *============================================================================*/
+
+/**
+ * @brief Sets a synchronization point as a broadcast one.
+ *
+ * @param syncid ID of the target synchronization point.
+ *
+ * @note This function is @b NOT thread safe.
+ */
+static void sync_set_broadcast(int syncid)
+{
+	synctab[syncid].flags |= SYNC_FLAGS_BROADCAST;
+}
+
+/*============================================================================*
+ * sync_clear_flags()                                                         *
+ *============================================================================*/
+
+/**
+ * @brief Clears the flags of a synchronization point.
+ *
+ * @param syncid ID of the target synchronization point.
+ *
+ * @note This function is @b NOT thread safe.
+ */
+static void sync_clear_flags(int syncid)
+{
+	synctab[syncid].flags = 0;
+}
+
+/*============================================================================*
+ * sync_alloc()                                                               *
+ *============================================================================*/
+
+/**
+ * @brief Allocates a synchronization point.
+ *
+ * @returns Upon successful completion, the ID of a newly allocated
+ * synchronization point is returned. Upon failure, -1 is returned
+ * instead.
+ *
+ * @note This function is @b NOT thread safe.
+ */
+static int sync_alloc(void)
+{
+	/* Search for a free syncrhonization point. */
+	for (int i = 0; i < HAL_NR_SYNC; i++)
+	{
+		/* Found. */
+		if (!sync_is_used(i))
+		{
+			sync_set_used(i);
+			return (i);
+		}
+	}
+
+	return (-1);
+}
+
+/*============================================================================*
+ * sync_free()                                                                *
+ *============================================================================*/
+
+/**
+ * @brief Frees a synchronization point.
+ *
+ * @param syncid ID of the target synchronization point.
+ *
+ * @note This function is @b NOT thread safe.
+ */
+static void sync_free(int syncid)
+{
+	sync_clear_flags(syncid);
+}
 
 /*============================================================================*
  * sync_ranks()                                                               *
@@ -67,38 +235,64 @@ static void sync_ranks(int *ranks, const int *nodes, int nnodes)
 static int _hal_sync_create(const int *nodes, int nnodes, int type)
 {
 	int fd;             /* NoC connector.           */
+	int syncid;         /* Synchronization point.   */
 	uint64_t mask;      /* Sync mask.               */
 	char remotes[128];  /* IDs of remote NoC nodes. */
 	char pathname[128]; /* NoC connector name.      */
 
-	/* Build pathname for NoC connector. */
-	noc_get_names(remotes, &nodes[1], nnodes - 1);
-	sprintf(pathname,
-		"/mppa/sync/[%s]:%d",
-		remotes,
-		noctag_sync(nodes[0])
-	);
+	/* Allocate a synchronization point. */
+	if ((syncid = sync_alloc()) < 0)
+		goto error0;
+
+	mask = ~0;
+
+	/* Broadcast. */
+	if (type == HAL_SYNC_ONE_TO_ALL)
+	{
+		/* Build pathname for NoC connector. */
+		noc_get_names(remotes, &nodes[1], nnodes - 1);
+		sprintf(pathname,
+			"/mppa/sync/[%s]:%d",
+			remotes,
+			noctag_sync(nodes[0])
+		);
+	}
+
+	/* Gather. */
+	else
+	{
+		/* Build pathname for NoC connector. */
+		sprintf(pathname,
+			"/mppa/sync/%d:%d",
+			nodes[0],
+			noctag_sync(nodes[0])
+		);
+
+		/* Build sync mask. */
+		mask = 0;
+		for (int i = 1; i < nnodes; i++)
+			mask |= 1 << noc_get_node_num(nodes[i]);
+	}
 
 	/* Open NoC connector. */
 	if ((fd = mppa_open(pathname, O_RDONLY)) == -1)
-		goto error0;
-
-	/* Build sync mask. */
-	mask = ~0;
-	if (type == HAL_SYNC_ALL_TO_ONE)
-	{
-		for (int i = 0; i < nnodes; i++)
-			mask |= 1 << noc_get_node_num(nodes[i]);
-	}
-	
-	/* Setup sync mask. */
-	if (mppa_ioctl(fd, MPPA_RX_SET_MATCH, ~mask) != 0)
 		goto error1;
 
-	return (fd);
+	/* Setup sync mask. */
+	if (mppa_ioctl(fd, MPPA_RX_SET_MATCH, ~mask) != 0)
+		goto error2;
 
-error1:
+	/* Initialize synchronization point. */
+	synctab[syncid].fd = fd;
+	if (type == HAL_SYNC_ONE_TO_ALL)
+		sync_set_broadcast(syncid);
+
+	return (syncid);
+
+error2:
 	mppa_close(fd);
+error1:
+	sync_free(syncid);
 error0:
 	return (-EAGAIN);
 }
@@ -135,18 +329,24 @@ int hal_sync_create(const int *nodes, int nnodes, int type)
 
 	nodeid = hal_get_node_id();
 
-	/* Underlying NoC node SHOULD be here. */
-	for (int i = 1; i < nnodes; i++)
+	if (type == HAL_SYNC_ONE_TO_ALL)
 	{
-		if (nodeid == nodes[i])
-			goto found;
-	}
+		/* Underlying NoC node SHOULD be here. */
+		for (int i = 1; i < nnodes; i++)
+		{
+			if (nodeid == nodes[i])
+				goto found;
+		}
 
-	return (-EINVAL);
+		return (-EINVAL);
+	}
 
 found:
 
-	sync_ranks(ranks, nodes, nnodes);
+	if (type == HAL_SYNC_ONE_TO_ALL)
+		sync_ranks(ranks, nodes, nnodes);
+	else
+		memcpy(ranks, nodes, nnodes*sizeof(int));
 
 	return (_hal_sync_create(ranks, nnodes, type));
 }
@@ -158,36 +358,72 @@ found:
 /**
  * @see hal_sync_open()
  */
-static int _hal_sync_open(const int *nodes, int nnodes)
+static int _hal_sync_open(const int *nodes, int nnodes, int type)
 {
 	int fd;                /* NoC connector.           */
+	int syncid;            /* Synchronization point.   */
 	char remotes[128];     /* IDs of remote NoC nodes. */
 	char pathname[128];    /* NoC connector name.      */
 	int ranks[nnodes - 1]; /* Offset to RX NoC nodes.  */
 
-	/* Build pathname for NoC connector. */
-	noc_get_names(remotes, &nodes[1], nnodes - 1);
-	sprintf(pathname,
-		"/mppa/sync/[%s]:%d",
-		remotes,
-		noctag_sync(nodes[0])
-	);
+	/* Allocate a synchronization point. */
+	if ((syncid = sync_alloc()) < 0)
+		goto error0;
+
+	/* Broadcast. */
+	if (type == HAL_SYNC_ONE_TO_ALL)
+	{
+		/* Build pathname for NoC connector. */
+		noc_get_names(remotes, &nodes[1], nnodes - 1);
+		sprintf(pathname,
+			"/mppa/sync/[%s]:%d",
+			remotes,
+			noctag_sync(nodes[0])
+		);
+	}
+
+	/* Gather. */
+	else
+	{
+		/* Build pathname for NoC connector. */
+		noc_get_names(remotes, &nodes[1], nnodes - 1);
+		sprintf(pathname,
+			"/mppa/sync/%d:%d",
+			nodes[0],
+			noctag_sync(nodes[0])
+		);
+
+		nnodes = 2;
+	}
 
 	/* Open NoC connector. */
 	if ((fd = mppa_open(pathname, O_WRONLY)) == -1)
-		goto error0;
-
-	/* Build list of RX NoC nodes. */
-	for (int i = 0; i < nnodes - 1; i++)
-		ranks[i] = i;
-
-	if (mppa_ioctl(fd, MPPA_TX_SET_RX_RANKS, nnodes - 1, ranks) != 0)
 		goto error1;
 
-	return (fd);
+	if (mppa_ioctl(fd, MPPA_TX_SET_INTERFACE, noc_get_dma(hal_get_node_id())) == -1)
+		goto error2;
 
-error1:
+	if (type == HAL_SYNC_ONE_TO_ALL)
+	{
+		/* Build list of RX NoC nodes. */
+		for (int i = 0; i < nnodes - 1; i++)
+			ranks[i] = i;
+
+		if (mppa_ioctl(fd, MPPA_TX_SET_RX_RANKS, nnodes - 1, ranks) != 0)
+			goto error2;
+	}
+
+	/* Initialize synchronization point. */
+	synctab[syncid].fd = fd;
+	if (type == HAL_SYNC_ONE_TO_ALL)
+		sync_set_broadcast(syncid);
+
+	return (syncid);
+
+error2:
 	mppa_close(fd);
+error1:
+	sync_free(syncid);
 error0:
 	return (-EAGAIN);
 }
@@ -197,6 +433,7 @@ error0:
  *
  * @param nodes  IDs of target NoC nodes.
  * @param nnodes Number of target NoC nodes. 
+ * @param type   Type of synchronization point.
  *
  * @returns Upon successful completion, the ID of the target
  * synchronization point is returned. Upon failure, a negative error
@@ -206,7 +443,7 @@ error0:
  *
  * @todo Check for Invalid Remote
  */
-int hal_sync_open(const int *nodes, int nnodes)
+int hal_sync_open(const int *nodes, int nnodes, int type)
 {
 	int nodeid;
 
@@ -220,11 +457,14 @@ int hal_sync_open(const int *nodes, int nnodes)
 
 	nodeid = hal_get_node_id();
 
-	/* Underlying NoC node SHOULD NOT be here. */
-	if (nodeid != nodes[0])
-		return (-EINVAL);
+	if (type == HAL_SYNC_ONE_TO_ALL)
+	{
+		/* Underlying NoC node SHOULD NOT be here. */
+		if (nodeid != nodes[0])
+			return (-EINVAL);
+	}
 
-	return (_hal_sync_open(nodes, nnodes));
+	return (_hal_sync_open(nodes, nnodes, type));
 }
 
 /*============================================================================*
@@ -250,7 +490,7 @@ int hal_sync_wait(int syncid)
 		return (-EINVAL);
 
 	/* Wait. */
-	if (mppa_read(syncid, &mask, sizeof(uint64_t)) != sizeof(uint64_t))
+	if (mppa_read(synctab[syncid].fd, &mask, sizeof(uint64_t)) != sizeof(uint64_t))
 		return (-EAGAIN);
 
 	return (0);
@@ -264,32 +504,27 @@ int hal_sync_wait(int syncid)
  * @brief Signals Waits on a synchronization point.
  *
  * @param syncid ID of the target synchronization point.
- * @param type   Type of synchronization point.
  *
  * @returns Upon successful completion, zero is returned. Upon
  * failure, a negative error code is returned instead.
  *
  * @note This function is @b NOT thread safe.
  */
-int hal_sync_signal(int syncid, int type)
+int hal_sync_signal(int syncid)
 {
 	int nodeid;
 	uint64_t mask;
 
 	/* Invalid synchronization point. */
-	if (syncid < 0)
-		return (-EINVAL);
-
-	/* Invalid type. */
-	if ((type != HAL_SYNC_ONE_TO_ALL) && (type != HAL_SYNC_ALL_TO_ONE))
+	if (!sync_is_valid(syncid))
 		return (-EINVAL);
 
 	nodeid = hal_get_node_id();
 
 	/* Signal. */
-	mask = (type == HAL_SYNC_ALL_TO_ONE) ? 
+	mask = (!sync_is_broadcast(syncid)) ? 
 		1 << noc_get_node_num(nodeid) : ~0;
-	if (mppa_write(syncid, &mask, sizeof(uint64_t)) != sizeof(uint64_t))
+	if (mppa_write(synctab[syncid].fd, &mask, sizeof(uint64_t)) != sizeof(uint64_t))
 		return (-EAGAIN);
 
 	return (0);
@@ -312,10 +547,15 @@ int hal_sync_signal(int syncid, int type)
 int hal_sync_close(int syncid)
 {
 	/* Invalid sync. */
-	if (syncid < 0)
+	if (!sync_is_valid(syncid))
 		return (-EINVAL);
 
-	return (mppa_close(syncid));
+	if (mppa_close(synctab[syncid].fd) < 0)
+		return (-EAGAIN);
+
+	sync_free(syncid);
+
+	return (0);
 }
 
 /*============================================================================*
@@ -335,8 +575,13 @@ int hal_sync_close(int syncid)
 int hal_sync_unlink(int syncid)
 {
 	/* Invalid sync. */
-	if (syncid < 0)
+	if (!sync_is_valid(syncid))
 		return (-EINVAL);
 
-	return (mppa_close(syncid));
+	if (mppa_close(synctab[syncid].fd) < 0)
+		return (-EAGAIN);
+
+	sync_free(syncid);
+
+	return (0);
 }
