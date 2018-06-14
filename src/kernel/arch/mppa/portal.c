@@ -80,7 +80,7 @@ int hal_portal_create(portal_t *portal, int local)
 }
 
 /*=======================================================================*
- * hal_portal_allow()                                                        *
+ * hal_portal_allow()                                                    *
  *=======================================================================*/
 
 /**
@@ -115,7 +115,7 @@ int hal_portal_allow(portal_t *portal, int remote)
 			"/mppa/sync/%d:%d",
 			remote,
 			(k1_is_ccluster(remote) || k1_is_ccluster(local)) ?
-			               noctag_portal(portal->local) : 127
+							 noctag_portal(portal->local) : 127
 			);
 
 	if ((sync_fd = mppa_open(pathname, O_WRONLY)) == -1)
@@ -129,7 +129,7 @@ int hal_portal_allow(portal_t *portal, int remote)
 }
 
 /*=======================================================================*
- * hal_portal_open()                                                         *
+ * hal_portal_open()                                                     *
  *=======================================================================*/
 
 /**
@@ -141,9 +141,9 @@ int hal_portal_allow(portal_t *portal, int remote)
  * @returns Upon successful completion 0 is returned.
  * Upon failure, a negative error code is returned instead.
  */
-int hal_portal_open(portal_t *portal, int remote, int local)
+int hal_portal_open(portal_t *portal, int remote)
 {
-	// int local;          /* ID of local NoC node.  */
+	int local;          /* ID of local NoC node.  */
 	int portal_fd;      /* Portal NoC Connector.  */
 	int sync_fd;        /* Sync NoC connector.    */
 	char pathname[128]; /* NoC connector name.    */
@@ -156,13 +156,11 @@ int hal_portal_open(portal_t *portal, int remote, int local)
 	if (remote < 0)
 		return (-EINVAL);
 
-#ifdef _HAS_NOC_GET_NODE_ID_
-	/* Invalid node ID. */
-	if (remote == hal_get_node_id())
-		return (-EINVAL);
-#endif
+	local = hal_get_node_id();
 
-	// local = hal_get_cluster_id();
+	/* Invalid remote. */
+	if (remote == local)
+		return (-EINVAL);
 
 	/* Build pathname for NoC connector. */
 	snprintf(pathname,
@@ -182,7 +180,7 @@ int hal_portal_open(portal_t *portal, int remote, int local)
 			"/mppa/sync/%d:%d",
 			local,
 			(k1_is_ccluster(remote) || k1_is_ccluster(local)) ?
-			                        noctag_portal(remote) : 127
+									noctag_portal(remote) : 127
 	);
 
 	/* Open NoC connector. */
@@ -218,7 +216,7 @@ static inline uint64_t portal_sync(int nodeid)
 }
 
 /*=======================================================================*
- * hal_portal_read()                                                         *
+ * hal_portal_read()                                                     *
  *=======================================================================*/
 
 /**
@@ -265,7 +263,7 @@ int hal_portal_read(portal_t *portal, void *buf, size_t n)
 }
 
 /*=======================================================================*
- * hal_portal_write()                                                        *
+ * hal_portal_write()                                                    *
  *=======================================================================*/
 
 /**
@@ -308,7 +306,7 @@ int hal_portal_write(portal_t *portal, const void *buf, size_t n)
 }
 
 /*=======================================================================*
- * hal_portal_close()                                                        *
+ * hal_portal_close()                                                    *
  *=======================================================================*/
 
 /**

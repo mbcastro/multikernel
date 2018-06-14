@@ -121,7 +121,7 @@ static void *test_hal_portal_thread_open_close(void *args)
 
 	pthread_mutex_lock(&lock);
 
-	TEST_ASSERT(hal_portal_open(&outportal, nodeid + (dma + 1)%NR_CORES, nodeid + dma) == 0);
+	TEST_ASSERT(hal_portal_open(&outportal, nodeid + (dma + 1)%NR_CORES) == 0);
 	pthread_mutex_unlock(&lock);
 
 	pthread_barrier_wait(&barrier);
@@ -223,8 +223,7 @@ static void *test_hal_portal_thread_write(void *args)
 	nodeid = hal_get_cluster_id();
 
 	pthread_mutex_lock(&lock);
-	TEST_ASSERT(hal_portal_open(&outportal, nodeid + DMA_READ, nodeid + dma)
-																	  == 0);
+	TEST_ASSERT(hal_portal_open(&outportal, nodeid + DMA_READ) == 0);
 	pthread_mutex_unlock(&lock);
 
 	memset(buf, 1, DATA_SIZE);
