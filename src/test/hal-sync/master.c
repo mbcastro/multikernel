@@ -86,7 +86,7 @@ static void test_hal_sync_create_unlink(void)
 	int nodes[ncores];
 	pthread_t tids[ncores];
 
-	printf("[test][api] Sync Create Unlink\n");
+	printf("[test][api] Create Unlink\n");
 
 	/* Build nodes list. */
 	for (int i = 0; i < ncores; i++)
@@ -163,7 +163,7 @@ static void test_hal_sync_open_close(void)
 	int nodes[ncores];
 	pthread_t tids[ncores];
 
-	printf("[test][api] Sync Open Close\n");
+	printf("[test][api] Open Close\n");
 
 	/* Build nodes list. */
 	for (int i = 0; i < ncores; i++)
@@ -246,7 +246,7 @@ static void test_hal_sync_wait_signal(void)
 	int nodes[ncores];
 	pthread_t tids[ncores];
 
-	printf("[test][api] Sync Wait Signal\n");
+	printf("[test][api] Wait Signal\n");
 
 	/* Build nodes list. */
 	for (int i = 0; i < ncores; i++)
@@ -329,7 +329,7 @@ static void test_hal_sync_signal_wait(void)
 	int nodes[ncores];
 	pthread_t tids[ncores];
 
-	printf("[test][api] Sync Signal Wait\n");
+	printf("[test][api] Signal Wait\n");
 
 	/* Build nodes list. */
 	for (int i = 0; i < ncores; i++)
@@ -350,6 +350,32 @@ static void test_hal_sync_signal_wait(void)
 	/* Wait for driver threads. */
 	for (int i = 1; i < ncores; i++)
 		pthread_join(tids[i], NULL);
+}
+
+/*===================================================================*
+ * Fault Injection Test: Invalid Create                              *
+ *===================================================================*/
+
+/**
+ * @brief API Test: Synchronization Point Signal Wait
+ */
+static void test_hal_sync_invalid_create(void)
+{
+	int nodes[ncores];
+
+	printf("[test][fault injection] Invalid Create\n");
+
+	/* Build nodes list. */
+	for (int i = 0; i < ncores; i++)
+		nodes[i] = hal_get_node_id() + i;
+
+	TEST_ASSERT((hal_sync_create(NULL, ncores, HAL_SYNC_ONE_TO_ALL)) < 0);
+	TEST_ASSERT((hal_sync_create(nodes, -1, HAL_SYNC_ONE_TO_ALL)) < 0);
+	TEST_ASSERT((hal_sync_create(nodes, 0, HAL_SYNC_ONE_TO_ALL)) < 0);
+	TEST_ASSERT((hal_sync_create(nodes, 1, HAL_SYNC_ONE_TO_ALL)) < 0);
+	TEST_ASSERT((hal_sync_create(nodes, HAL_NR_NOC_NODES, HAL_SYNC_ONE_TO_ALL)) < 0);
+	TEST_ASSERT((hal_sync_create(nodes, 2*HAL_NR_NOC_NODES, HAL_SYNC_ONE_TO_ALL)) < 0);
+	TEST_ASSERT((hal_sync_create(nodes, ncores, -1)) < 0);
 }
 
 /*===================================================================*
@@ -376,6 +402,9 @@ int main(int argc, const char **argv)
 	test_hal_sync_open_close();
 	test_hal_sync_wait_signal();
 	test_hal_sync_signal_wait();
+
+	/* Fault injection tests. */
+	test_hal_sync_invalid_create();
 
 	hal_cleanup();
 	return (EXIT_SUCCESS);
