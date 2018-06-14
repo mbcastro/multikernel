@@ -106,6 +106,83 @@ static void test_hal_sync_create_unlink(void)
 }
 
 /*===================================================================*
+ * API Test: Open Close                                              *
+ *===================================================================*/
+
+/**
+ * @brief API Test: Synchronization Point Open Close
+ */
+static void *test_hal_sync_thread_open_close(void *args)
+{
+	int syncid;
+	int *nodes;
+
+	hal_setup();
+
+	nodes = ((int *)args);
+
+	pthread_mutex_lock(&lock);
+	TEST_ASSERT((syncid = hal_sync_create(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) >= 0);
+	pthread_mutex_unlock(&lock);
+
+	pthread_mutex_lock(&lock);
+	TEST_ASSERT(hal_sync_unlink(syncid) == 0);
+	pthread_mutex_unlock(&lock);
+
+	pthread_barrier_wait(&barrier);
+
+	hal_cleanup();
+	return (NULL);
+}
+
+/**
+ * @brief API Test: Synchronization Point Open Close
+ */
+static void test_hal_sync_master_open_close(const int *nodes)
+{
+	int syncid;
+
+	pthread_mutex_lock(&lock);
+	TEST_ASSERT((syncid = hal_sync_open(nodes, ncores)) >= 0);
+	pthread_mutex_unlock(&lock);
+
+	pthread_mutex_lock(&lock);
+	TEST_ASSERT(hal_sync_close(syncid) == 0);
+	pthread_mutex_unlock(&lock);
+}
+
+/**
+ * @brief API Test: Synchronization Point Open Close
+ */
+static void test_hal_sync_open_close(void)
+{
+	int nodes[ncores];
+	pthread_t tids[ncores];
+
+	printf("[test][api] Sync Open Close\n");
+
+	/* Build nodes list. */
+	for (int i = 0; i < ncores; i++)
+		nodes[i] = hal_get_node_id() + i;
+
+	/* Spawn driver threads. */
+	for (int i = 1; i < ncores; i++)
+	{
+		assert((pthread_create(&tids[i],
+			NULL,
+			test_hal_sync_thread_open_close,
+			nodes)) == 0
+		);
+	}
+
+	test_hal_sync_master_open_close(nodes);
+
+	/* Wait for driver threads. */
+	for (int i = 1; i < ncores; i++)
+		pthread_join(tids[i], NULL);
+}
+
+/*===================================================================*
  * Synchronization Point Test Driver                                 *
  *===================================================================*/
 
@@ -126,6 +203,7 @@ int main(int argc, const char **argv)
 
 	/* API tests. */
 	test_hal_sync_create_unlink();
+	test_hal_sync_open_close();
 
 	hal_cleanup();
 	return (EXIT_SUCCESS);
