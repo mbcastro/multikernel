@@ -1,3 +1,4 @@
+#
 # Copyright(C) 2011-2018 Pedro H. Penna <pedrohenriquepenna@gmail.com>
 #
 # This file is part of Nanvix.
@@ -17,12 +18,21 @@
 #
 
 export K1_TOOLCHAIN_DIR=/usr/local/k1tools/
+export TOOLCHAIN=$(K1_TOOLCHAIN_DIR)
 
 # Directories.
 export BINDIR  = $(CURDIR)/bin
 export INCDIR  = $(CURDIR)/include
+export LIBDIR  = $(CURDIR)/lib
 export SRCDIR  = $(CURDIR)/src
 export OUTDIR  = $(CURDIR)/output
+
+export LIBNAME = libkernel.a
+
+# Toolchain.
+export CC = $(TOOLCHAIN)/bin/k1-gcc
+export LD = $(TOOLCHAIN)/bin/k1-ld
+export AR = $(TOOLCHAIN)/bin/k1-ar
 
 # Toolchain configuration.
 export cflags := -ansi -std=c99
@@ -36,38 +46,35 @@ export cflags += -DDEBUG
 endif
 export lflags := -Wl,--defsym=_LIBNOC_DISABLE_FIFO_FULL_CHECK=0 -O=essai
 export O := $(OUTDIR)
+export CFLAGS = -D_KALRAY_MPPA_256_HIGH_LEVEL $(cflags)
+export ARFLAGS = rcs
 
 #=============================================================================
 # Servers
 #=============================================================================
 
+# C source files.
+SRC = $(wildcard $(SRCDIR)/kernel/arch/mppa/*.c) \
+      $(wildcard $(SRCDIR)/kernel/ipc/*.c)
+
+# Object files.
+OBJ = $(SRC:.c=.o)
+
 export io-bin += spawner-server
 
 # Name Server
-export spawner-server-srcs := $(SRCDIR)/servers/spawner.c          \
-                              $(SRCDIR)/kernel/arch/mppa/setup.c   \
-                              $(SRCDIR)/kernel/arch/mppa/core.c    \
-                              $(SRCDIR)/kernel/arch/mppa/mailbox.c \
-                              $(SRCDIR)/kernel/arch/mppa/sync.c    \
-                              $(SRCDIR)/kernel/arch/mppa/noc.c     \
-                              $(SRCDIR)/kernel/ipc/name.c          \
-                              $(SRCDIR)/kernel/ipc/barrier.c       \
-                              $(SRCDIR)/servers/name.c
+export spawner-server-srcs := $(SRCDIR)/servers/spawner.c \
+                              $(SRCDIR)/servers/name.c    \
+                              $(SRC)
 
 export spawner-server-system := rtems
 export spawner-server-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
 export spawner-server-lflags := -lmppaipc -pthread
 
 # RMEM Server
-export rmem-server-srcs := $(SRCDIR)/servers/rmem.c             \
-                           $(SRCDIR)/kernel/arch/mppa/setup.c   \
-                           $(SRCDIR)/kernel/arch/mppa/core.c    \
-                           $(SRCDIR)/kernel/arch/mppa/mailbox.c \
-                           $(SRCDIR)/kernel/arch/mppa/sync.c    \
-                           $(SRCDIR)/kernel/arch/mppa/noc.c     \
-                           $(SRCDIR)/kernel/ipc/name.c          \
-                           $(SRCDIR)/kernel/ipc/barrier.c       \
-                           $(SRCDIR)/servers/name.c
+export rmem-server-srcs := $(SRCDIR)/servers/rmem.c \
+                           $(SRCDIR)/servers/name.c \
+                           $(SRC)
 
 export rmem-server-system := rtems
 export rmem-server-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
@@ -75,36 +82,17 @@ export rmem-server-lflags := -lmppaipc -pthread
 
 #=============================================================================
 
-all: hal hal-mailbox hal-sync name 
+# Builds everything.
+all: kernel test
 
-hal:
-	cd $(CURDIR)/src/test/hal/ && $(MAKE);
+# Builds the kernel.
+kernel:
+	cd $(SRCDIR) && $(MAKE) kernel
 
-async:
-	cd $(CURDIR)/src/test/async/ && $(MAKE);
+# Builds testing system.
+test: kernel
+	cd $(SRCDIR) && $(MAKE) test
 
-hal-mailbox:
-	cd $(CURDIR)/src/test/hal-mailbox/ && $(MAKE);
-
-hal-sync:
-	cd $(CURDIR)/src/test/hal-sync/ && $(MAKE);
-
-mailbox:
-	cd $(CURDIR)/src/test/mailbox/ && $(MAKE);
-
-name:
-	cd $(CURDIR)/src/test/name/ && $(MAKE);
-
-portal:
-	cd $(CURDIR)/src/test/portal/ && $(MAKE);
-
-rmem:
-	cd $(CURDIR)/src/test/rmem/ && $(MAKE);
-
+# Cleans compilation files.
 clean:
-	cd $(CURDIR)/src/test/async/; make clean;
-	cd $(CURDIR)/src/test/hal-mailbox/; make clean;
-	cd $(CURDIR)/src/test/mailbox/; make clean;
-	cd $(CURDIR)/src/test/name/; make clean;
-	cd $(CURDIR)/src/test/portal/; make clean;
-	cd $(CURDIR)/src/test/rmem/; make clean;
+	cd $(SRCDIR) && $(MAKE) clean

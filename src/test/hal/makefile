@@ -39,4 +39,21 @@ hal-name := hal.img
 
 mppa-bin := hal
 
-include $(K1_TOOLCHAIN_DIR)/share/make/Makefile.kalray
+# C source files.
+SRC = $(wildcard *.c)
+
+# Object files.
+OBJ = $(SRC:.c=.o)
+
+# Builds the kernel.
+all: $(OBJ)
+	mkdir -p $(BINDIR)
+	$(CC) $(OJB) -o $(BINDIR)/hal-master.elf $(LIBDIR)/$(LIBNAME) $(TOOLCHAIN)/k1-rtems/lib/libmppaipc.a
+
+# Builds object file.
+%.o: %.c
+	$(CC) -mos=rtems $< $(CFLAGS) -c -o $@
+
+# Cleans compilation files.
+clean:
+	rm -rf $(OBJ) $(LIBDIR)/$(LIBNAME)

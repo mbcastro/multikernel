@@ -17,6 +17,8 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <nanvix/name.h>
+
 #include <nanvix/klib.h>
 #include <nanvix/pm.h>
 #include <assert.h>
