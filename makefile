@@ -75,7 +75,7 @@ export rmem-server-lflags := -lmppaipc -pthread
 
 #=============================================================================
 
-all: hal hal-mailbox hal-sync name 
+all: hal hal-mailbox hal-sync hal-portal name 
 
 hal:
 	cd $(CURDIR)/src/test/hal/ && $(MAKE);
@@ -95,8 +95,8 @@ mailbox:
 name:
 	cd $(CURDIR)/src/test/name/ && $(MAKE);
 
-portal:
-	cd $(CURDIR)/src/test/portal/ && $(MAKE);
+hal-portal:
+	cd $(CURDIR)/src/test/hal-portal/ && $(MAKE);
 
 rmem:
 	cd $(CURDIR)/src/test/rmem/ && $(MAKE);
@@ -106,5 +106,5 @@ clean:
 	cd $(CURDIR)/src/test/hal-mailbox/; make clean;
 	cd $(CURDIR)/src/test/mailbox/; make clean;
 	cd $(CURDIR)/src/test/name/; make clean;
-	cd $(CURDIR)/src/test/portal/; make clean;
+	cd $(CURDIR)/src/test/hal-portal/; make clean;
 	cd $(CURDIR)/src/test/rmem/; make clean;

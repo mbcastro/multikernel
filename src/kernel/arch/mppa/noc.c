@@ -36,7 +36,7 @@
  * thus are skipped.
  */
 /**@{*/
-#define NOCTAG_MAILBOX_OFF 5                                      /**< Mailbox. */
+#define NOCTAG_MAILBOX_OFF 2                                      /**< Mailbox. */
 #define NOCTAG_PORTAL_OFF (NOCTAG_MAILBOX_OFF + HAL_NR_NOC_NODES) /**< Portal.  */
 #define NOCTAG_SYNC_OFF   (NOCTAG_PORTAL_OFF + HAL_NR_NOC_NODES)  /**< Sync.    */
 /**@}*/
@@ -275,15 +275,48 @@ void noc_get_remotes(char *remotes, int local)
  * @brief Returns the mailbox NoC tag for a target NoC node ID.
  *
  * @param nodeid ID of the target NoC node.
+ *
+ * @returns The NoC tag attached to the underlying node ID is
+ * returned.
  */
 int noctag_mailbox(int nodeid)
 {
 	if (noc_is_ionode0(nodeid))
+	{
 		return (NOCTAG_MAILBOX_OFF + nodeid%NR_IOCLUSTER_DMA);
+	}
 	else if (noc_is_ionode1(nodeid))
+	{
 		return (NOCTAG_MAILBOX_OFF + NR_IOCLUSTER_DMA + nodeid%NR_IOCLUSTER_DMA);
+	}
 
 	return (NOCTAG_MAILBOX_OFF + NR_IOCLUSTER_DMA + NR_IOCLUSTER_DMA + nodeid);
+}
+
+/*=======================================================================*
+ * noctag_portal()                                                       *
+ *=======================================================================*/
+
+/**
+ * @brief Returns the portal NoC tag for a target NoC node ID.
+ *
+ * @param nodeid     ID of the target NoC node.
+ *
+ * @returns The NoC tag attached to the underlying node ID is
+ * returned.
+ */
+int noctag_portal(int nodeid)
+{
+	if ((nodeid >= IOCLUSTER0) && (nodeid < (IOCLUSTER0 + NR_IOCLUSTER_DMA)))
+	{
+		return (NOCTAG_PORTAL_OFF + nodeid%NR_IOCLUSTER_DMA);
+	}
+	else if ((nodeid >= IOCLUSTER1) && (nodeid < (IOCLUSTER1 + NR_IOCLUSTER_DMA)))
+	{
+		return (NOCTAG_PORTAL_OFF + NR_IOCLUSTER_DMA + nodeid%NR_IOCLUSTER_DMA);
+	}
+
+	return (NOCTAG_PORTAL_OFF + NR_IOCLUSTER_DMA + NR_IOCLUSTER_DMA + nodeid);
 }
 
 /*=======================================================================*
