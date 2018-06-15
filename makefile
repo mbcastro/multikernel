@@ -59,26 +59,35 @@ export LDFLAGS = -Wl,--defsym=_LIBNOC_DISABLE_FIFO_FULL_CHECK=0 -O=essai
 export ARFLAGS = rcs
 
 #===============================================================================
-# Libraries
+# Binaries & Libraries
 #===============================================================================
 
 # MPPA IPC
-export LIBMPPAIPC = $(TOOLCHAIN)/k1-rtems/lib/libmppaipc.a
+export LIBMPPAIPC_K1BDP = $(TOOLCHAIN)/k1-nodeos/lib/mOS/libmppaipc.a
+export LIBMPPAIPC_K1BIO = $(TOOLCHAIN)/k1-rtems/lib/libmppaipc.a
 
 # Kernel
-export LIBKERNEL = $(LIBDIR)/libkernel.a
+export LIBKERNEL_K1BDP = $(LIBDIR)/libkernel-k1bdp.a
+export LIBKERNEL_K1BIO = $(LIBDIR)/libkernel-k1bio.a
+
+# System Services
+export SERVERSBIN = $(BINDIR)/servers
 
 #===============================================================================
 
 # Builds everything.
-all: kernel test
+all: kernel test servers
 
 # Builds the kernel.
 kernel:
 	cd $(SRCDIR) && $(MAKE) kernel
 
+# Builds system servers
+servers: kernel
+	cd $(SRCDIR) && $(MAKE) servers
+
 # Builds testing system.
-test: kernel
+test: kernel servers
 	cd $(SRCDIR) && $(MAKE) test
 
 # Cleans compilation files.

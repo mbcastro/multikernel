@@ -19,11 +19,16 @@
 
 # Conflicts.
 .PHONY: kernel
+.PHONY: servers
 .PHONY: test
 
 # Builds the kernel.
 kernel:
 	cd kernel && $(MAKE) all
+
+# Builds system servers
+servers:
+	cd servers && $(MAKE) all
 
 # Builds testing system.
 test:
@@ -32,4 +37,5 @@ test:
 # Cleans compilation files.
 clean:
 	cd kernel && $(MAKE) clean
+	cd servers && $(MAKE) clean
 	cd test && $(MAKE) clean

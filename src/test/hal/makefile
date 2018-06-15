@@ -38,7 +38,7 @@ MULTIBIN = $(BINDIR)/hal.img
 # Builds the kernel.
 all: $(OBJ)
 	mkdir -p $(BINDIR)
-	$(CC) $(LDFLAGS) $(OBJ) -o $(ELFBIN) $(LIBKERNEL) $(LIBMPPAIPC)
+	$(CC) $(LDFLAGS) $(OBJ) -o $(ELFBIN) $(LIBKERNEL_K1BIO) $(LIBMPPAIPC_K1BIO)
 	$(TOOLCHAIN)/bin/k1-create-multibinary --remove-prefix $(BINDIR) --boot $(ELFBIN) -T $(MULTIBIN)
 
 # Builds object files.

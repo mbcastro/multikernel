@@ -220,7 +220,7 @@ static void test_name_slave(int nclusters)
 
 	char nclusters_str[4];
 	const char *args[] = {
-		"name-slave",
+		"/name-slave",
 		nclusters_str,
 		NULL
 	};

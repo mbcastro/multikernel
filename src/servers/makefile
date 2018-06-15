@@ -17,40 +17,30 @@
 # along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
 #
 
+# Additional Compiler Options
+CFLAGS += -march=k1b -mos=rtems -mcluster=ioddr 
+
+# Additional Linker Options
+LDFLAGS += -march=k1b -mos=rtems -mcluster=ioddr 
+
 # C source Files
-SRC = $(wildcard arch/mppa/*.c) \
-      $(wildcard ipc/*.c)
+SRC = name.c spawner.c
 
 # Object Files
-OBJ_K1BDP = $(SRC:.c=.node.o)
-OBJ_K1BIO = $(SRC:.c=.ioddr.o)
+OBJ = $(SRC:.c=.o)
 
 #===============================================================================
 
-# Builds everything.
-all: kernel-k1bdp kernel-k1bio
-
-# Builds the kernel (node).
-kernel-k1bdp: $(OBJ_K1BDP)
-	mkdir -p $(LIBDIR)
-	$(AR) $(ARFLAGS) $(LIBKERNEL_K1BDP) $(OBJ_K1BDP)
-
-# Builds the kernel (ioddr).
-kernel-k1bio: $(OBJ_K1BIO)
-	mkdir -p $(LIBDIR)
-	$(AR) $(ARFLAGS) $(LIBKERNEL_K1BIO) $(OBJ_K1BIO)
+# Builds the kernel.
+all: $(OBJ)
+	mkdir -p $(BINDIR)
+	$(CC) $(LDFLAGS) $(OBJ) -o $(SERVERSBIN) $(LIBKERNEL_K1BIO) $(LIBMPPAIPC_K1BIO)
 
 # Builds object files.
-%.ioddr.o: %.c
-	$(CC) -march=k1b -mos=rtems -mcluster=ioddr $(CFLAGS) $<  -c -o $@
-
-# Builds object files.
-%.node.o: %.c
-	$(CC) -march=k1b -mos=nodeos -mcluster=node $(CFLAGS) $<  -c -o $@
+%.o: %.c
+	$(CC) $(CFLAGS) $<  -c -o $@
 
 # Cleans compilation files.
 clean:
-	rm -rf $(OBJ_K1BDP)
-	rm -rf $(OBJ_K1BIO)
-	rm -rf $(LIBKERNEL_K1BDP)
-	rm -rf $(LIBKERNEL_K1BIO)
+	rm -rf $(OBJ)
+	rm -rf $(SERVERSBIN)

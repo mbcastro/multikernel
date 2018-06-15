@@ -1,3 +1,4 @@
+#
 # Copyright(C) 2011-2018 Pedro H. Penna <pedrohenriquepenna@gmail.com>
 #
 # This file is part of Nanvix.
@@ -16,46 +17,27 @@
 # along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
 #
 
-#=============================================================================
-# Name server test
-#=============================================================================
+# Conflicts.
+.PHONY: master
+.PHONY: slave
 
-cluster-bin += name-slave
-name-slave-srcs := $(SRCDIR)/test/name/slave.c          \
-                   $(SRCDIR)/kernel/arch/mppa/setup.c   \
-                   $(SRCDIR)/kernel/arch/mppa/core.c    \
-                   $(SRCDIR)/kernel/arch/mppa/mailbox.c \
-                   $(SRCDIR)/kernel/arch/mppa/sync.c    \
-                   $(SRCDIR)/kernel/arch/mppa/noc.c     \
-                   $(SRCDIR)/kernel/ipc/name.c          \
-                   $(SRCDIR)/kernel/ipc/barrier.c
+# Binary Files
+export ELFBIN_MASTER = $(BINDIR)/name-master
+export ELFBIN_SLAVE = $(BINDIR)/name-slave
+export MULTIBIN = $(BINDIR)/name.img
 
-# Toolchain Configuration
-name-slave-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
-name-slave-lflags := -lmppaipc -pthread
+all: master slave
+	$(TOOLCHAIN)/bin/k1-create-multibinary --remove-prefix $(BINDIR) --boot $(SERVERSBIN) --ios $(ELFBIN_MASTER)  --clusters $(ELFBIN_SLAVE) -T $(MULTIBIN)
 
-io-bin += name-master
-name-master-srcs := $(SRCDIR)/test/name/master.c         \
-                    $(SRCDIR)/kernel/arch/mppa/setup.c   \
-                    $(SRCDIR)/kernel/arch/mppa/core.c    \
-                    $(SRCDIR)/kernel/arch/mppa/mailbox.c \
-                    $(SRCDIR)/kernel/arch/mppa/sync.c    \
-                    $(SRCDIR)/kernel/arch/mppa/noc.c     \
-                    $(SRCDIR)/kernel/ipc/name.c          \
-                    $(SRCDIR)/kernel/ipc/barrier.c
-					
+# Builds master binary.
+master:
+	cd master && $(MAKE) all
 
-# Toolchain Configuration
-name-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
-name-master-lflags := -lmppaipc
+# Builds slave binary.
+slave:
+	cd slave && $(MAKE) all
 
-name-objs := spawner-server name-master name-slave
-name-name := name.img
+# Cleans compilation files.
+clean:
+	cd master && $(MAKE) clean
 
-#=============================================================================
-# MPPA Binary
-#=============================================================================
-
-mppa-bin := name
-
-include $(K1_TOOLCHAIN_DIR)/share/make/Makefile.kalray
