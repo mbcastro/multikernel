@@ -102,6 +102,10 @@ int hal_portal_allow(portal_t *portal, int remote)
 	if (portal == NULL)
 		return (-EINVAL);
 
+	/* Invalid remote. */
+	if (!(noc_is_ionode(remote) || noc_is_cnode(remote)))
+		return (-EINVAL);
+
 	local = hal_get_node_id();
 
 	/* Invalid remote. */
