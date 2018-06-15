@@ -40,4 +40,5 @@ all: $(OBJ)
 
 # Cleans compilation files.
 clean:
-	rm -rf $(OBJ) $(LIBDIR)/$(LIBNAME)
+	rm -rf $(OBJ)
+	rm -rf $(LIBKERNEL)

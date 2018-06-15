@@ -47,6 +47,6 @@ all: $(OBJ)
 
 # Cleans compilation files.
 clean:
-	rm -rf $(OBJ) $(BINDIR)/hal-master
-	rm -rf $(OBJ) $(BINDIR)/hal.img
-	rm -rf $(OBJ) $(LIBDIR)/$(LIBNAME)
+	rm -rf $(OBJ)
+	rm -rf $(ELFBIN)
+	rm -rf $(MULTIBIN)

@@ -81,8 +81,8 @@ if [[ $1 == "test" ]];
 then
 	echo "Testing HAL"
 	run1 "hal.img" "/hal-master" | grep "test"
-#	echo "Testing MAILBOX"
-#	run1 "hal-mailbox.img" "hal-mailbox-master" | grep "test"
+	echo "Testing MAILBOX"
+	run1 "hal-mailbox.img" "/hal-mailbox-master" | grep "test"
 #	echo "Testing SYNC"
 #	run1 "hal-sync.img" "hal-sync-master" | grep "test"
 #	echo "Testing NAME"
