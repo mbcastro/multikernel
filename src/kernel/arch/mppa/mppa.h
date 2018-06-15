@@ -1,6 +1,6 @@
 /*
  * Copyright(C) 2011-2018 Pedro H. Penna <pedrohenriquepenna@gmail.com>
- *
+ * 
  * This file is part of Nanvix.
  *
  * Nanvix is free software; you can redistribute it and/or modify

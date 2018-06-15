@@ -281,11 +281,11 @@ void noc_get_remotes(char *remotes, int local)
  */
 int noctag_mailbox(int nodeid)
 {
-	if ((nodeid >= IOCLUSTER0) && (nodeid < (IOCLUSTER0 + NR_IOCLUSTER_DMA)))
+	if (noc_is_ionode0(nodeid))
 	{
 		return (NOCTAG_MAILBOX_OFF + nodeid%NR_IOCLUSTER_DMA);
 	}
-	else if ((nodeid >= IOCLUSTER1) && (nodeid < (IOCLUSTER1 + NR_IOCLUSTER_DMA)))
+	else if (noc_is_ionode1(nodeid))
 	{
 		return (NOCTAG_MAILBOX_OFF + NR_IOCLUSTER_DMA + nodeid%NR_IOCLUSTER_DMA);
 	}
