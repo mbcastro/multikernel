@@ -40,8 +40,6 @@
 
 	/* Forward definitions .*/
 	extern int portal_allow(int, int);
-	extern int _portal_create(int);
-	extern int _portal_open(int);
 	extern int portal_create(char *);
 	extern int portal_open(char *);
 	extern int portal_read(int, void *, size_t);

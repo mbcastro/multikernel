@@ -20,8 +20,8 @@
 #include <nanvix/name.h>
 
 #include <nanvix/klib.h>
-#include <nanvix/pm.h>
-#include <assert.h>
+#include <nanvix/hal.h>
+#include <nanvix/arch/mppa.h>
 #include <errno.h>
 #include <inttypes.h>
 #include <string.h>
@@ -29,310 +29,175 @@
 
 #include "mppa.h"
 
-/**
- * @brief Number of portals.
- */
-#define NR_PORTAL 256
-
-/**
- * @brief Portal flags.
- */
-/**@{*/
-#define PORTAL_USED   (1 << 0)
-#define PORTAL_WRONLY (1 << 1)
-/**@}*/
-
-/**
- * @brief Portal.
- */
-struct portal
-{
-	int local;      /**< CPU ID of local.      */
-	int remote;     /**< CPU ID of remote.     */
-	int portal_fd;  /**< Portal NoC connector. */
-	int sync_fd;    /**< Sync connector.       */
-	int flags;      /**< Flags.                */
-};
-
-/**
- * @brief table of portals.
- */
-static struct portal portals[NR_PORTAL];
-
 /*=======================================================================*
- * portal_alloc()                                                        *
- *=======================================================================*/
-
-/**
- * @brief Allocates a portal.
- *
- * @return Upon successful completion the ID of the newly allocated
- * portal is returned. Upon failure, a negative error code is returned
- * instead.
- */
-static int portal_alloc(void)
-{
-	/* Search for a free portal. */
-	for (int i = 0; i < NR_PORTAL; i++)
-	{
-		/* Found. */
-		if (!(portals[i].flags & PORTAL_USED))
-		{
-			portals[i].flags |= PORTAL_USED;
-			return (i);
-		}
-	}
-
-	return (-ENOENT);
-}
-
-/*=======================================================================*
- * portal_free()                                                         *
- *=======================================================================*/
-
-/**
- * @brief Frees a portal.
- *
- * @param portalid ID of the target portal.
- */
-static void portal_free(int portalid)
-{
-	/* Sanity check. */
-	assert((portalid >= 0) && (portalid < NR_PORTAL));
-	assert(portals[portalid].flags & PORTAL_USED);
-
-	portals[portalid].flags = 0;
-	mppa_close(portals[portalid].portal_fd);
-}
-
-/*=======================================================================*
- * portal_noctag()                                                       *
- *=======================================================================*/
-
-/**
- * @brief Computes the portal NoC tag for a cluster.
- *
- * @param local Id of target cluster.
- */
-static int portal_noctag(int local)
-{
-	if ((local >= CCLUSTER0) && (local <= CCLUSTER15))
-		return (64 + local);
-	else if ((local >= IOCLUSTER0) && (local < (IOCLUSTER0 + NR_IOCLUSTER_DMA)))
-		return (64 + 16 + local%NR_IOCLUSTER_DMA);
-	else if ((local >= IOCLUSTER1) && (local < (IOCLUSTER1 + NR_IOCLUSTER_DMA)))
-		return (64 + 16 + NR_IOCLUSTER_DMA + local%NR_IOCLUSTER_DMA);
-
-	return (0);
-}
-
-/*=======================================================================*
- * _portal_create()                                                       *
+ * hal_portal_create()                                                   *
  *=======================================================================*/
 
 /**
  * @brief Creates a portal.
  *
- * @param local     CPU ID of the local.
+ * @param portal    Adress where the portal will be stored.
+ * @param local     ID of the local NoC node.
  *
- * @returns Upon successful completion, the ID of the new portal is
- * returned. Upon failure, a negative error code is returned instead.
+ * @returns Upon successful completion, zero is returned.
+ * Upon failure, a negative error code is returned instead.
  */
-int _portal_create(int local)
+int hal_portal_create(portal_t *portal, int local)
 {
-	int portal_fd;      /* Portal NoC Connector. */
-	int portalid;       /* ID of mailbix.        */
-	char pathname[128]; /* NoC connector name.   */
+	int fd;               /* Portal NoC Connector.       */
+	char pathname[128];   /* NoC connector name.         */
+	int noctag;           /* NoC tag used for transfers. */
+	int remote;           /* ID of the remote NoC node.  */
 
-	/* Allocate a portal. */
-	portalid = portal_alloc();
-	if (portalid < 0)
-		return (-ENOENT);
+	/* Invalid portal adress */
+	if (portal == NULL)
+		return (-EINVAL);
 
-	/* Create underlying portal. */
+	remote = hal_get_node_id();
+
+	/* Invalid node ID. */
+	if (local != remote)
+		return (-EINVAL);
+
+	noctag = noctag_portal(local);
+
+	/* Build pathname for NoC connector. */
 	snprintf(pathname,
 			ARRAY_LENGTH(pathname),
 			"/mppa/portal/%d:%d",
 			local,
-			portal_noctag(local)
+			noctag
 	);
-	//printf("cluster %3d: %s [portal create]\n", portals[portalid].local, pathname);
-	assert((portal_fd = mppa_open(pathname, O_RDONLY)) != -1);
 
-	/* Initialize portal. */
-	portals[portalid].local = local;
-	portals[portalid].remote = -1;
-	portals[portalid].portal_fd = portal_fd;
-	portals[portalid].sync_fd = -1;
-	portals[portalid].flags &= ~(PORTAL_WRONLY);
+	/* Open NoC connector. */
+	if ((fd = mppa_open(pathname, O_RDONLY)) == -1)
+		return (-EAGAIN);
 
-	return (portalid);
+	portal->portal_fd = fd;
+	portal->sync_fd = -1;
+	portal->remote = -1;
+	portal->local = local;
+
+	return (0);
 }
 
 /*=======================================================================*
- * portal_create()                                                       *
- *=======================================================================*/
-
-/**
-* @brief Creates a portal.
-*
-* @param name Portal name.
-*
-* @returns Upon successful completion, the ID of the new portal is
-* returned. Upon failure, a negative error code is returned instead.
-*/
-int portal_create(char *name)
-{
-	int local;          /* CPU ID of local.      */
-
-	local = name_lookup(name);
-
-	return (_portal_create(local));
-}
-
-/*=======================================================================*
- * portal_allow()                                                        *
+ * hal_portal_allow()                                                    *
  *=======================================================================*/
 
 /**
  * @brief Enables read operations from a remote.
  *
- * @param portalid  Target portal.
- * @param remote    Cluster ID of target remote.
+ * @param portal    Adress of the target portal.
+ * @param remote    NoC node ID of target remote.
  *
  * @returns Upons successful completion zero is returned. Upon failure,
  * a negative error code is returned instead.
  */
-int portal_allow(int portalid, int remote)
+int hal_portal_allow(portal_t *portal, int remote)
 {
-	int local;          /* ID of local cluster. */
+	int local;          /* Local NoC node ID.   */
 	int sync_fd;        /* Sync NoC connector.  */
-	int coreid_remote;  /* CPU ID of remote.    */
 	char pathname[128]; /* Portal pathname.     */
 
-	/* Invalid portal ID.*/
-	if ((portalid < 0) || (portalid >= NR_PORTAL))
-		return (-EINVAL);
-
-	/*  Invalid portal. */
-	if (!(portals[portalid].flags & PORTAL_USED))
-		return (-EINVAL);
-
-	/* Invalid portal. */
-	if (portals[portalid].flags & PORTAL_WRONLY)
+	/* Invalid portal.*/
+	if (portal == NULL)
 		return (-EINVAL);
 
 	/* Invalid remote. */
-	if (!(k1_is_iocluster(remote) || k1_is_ccluster(remote)))
+	if (!(noc_is_ionode(remote) || noc_is_cnode(remote)))
 		return (-EINVAL);
 
-	local = hal_get_cluster_id();
+	local = hal_get_node_id();
 
 	/* Invalid remote. */
 	if (remote == local)
 		return (-EINVAL);
 
 	/* Create underlying sync. */
-	coreid_remote = (k1_is_ccluster(remote)) ?
-		remote : remote + local%NR_IOCLUSTER_DMA;
 	snprintf(pathname,
 			ARRAY_LENGTH(pathname),
 			"/mppa/sync/%d:%d",
-			coreid_remote,
+			remote,
 			(k1_is_ccluster(remote) || k1_is_ccluster(local)) ?
-					portal_noctag(portals[portalid].local) :
-					127
+							 noctag_portal(portal->local) : 127
 	);
-	//printf("cluster %3d: %s [portal allow]\n", portals[portalid].dma_local, pathname);
-	assert((sync_fd = mppa_open(pathname, O_WRONLY)) != -1);
+
+	if ((sync_fd = mppa_open(pathname, O_WRONLY)) == -1)
+		return (-EAGAIN);
 
 	/* Initialize portal. */
-	portals[portalid].remote = coreid_remote;
-	portals[portalid].sync_fd = sync_fd;
+	portal->remote = remote;
+	portal->sync_fd = sync_fd;
 
 	return (0);
 }
 
 /*=======================================================================*
- * _portal_open()                                                         *
+ * hal_portal_open()                                                     *
  *=======================================================================*/
 
 /**
  * @brief Opens a portal.
  *
- * @param remote     CPU ID of the target.
+ * @param portal     Adress where the portal will be stored
+ * @param remote     ID of the target NoC node.
  *
- * @returns Upon successful completion, the ID of the target portal is
- * returned. Upon failure, a negative error code is returned instead.
+ * @returns Upon successful completion zero is returned.
+ * Upon failure, a negative error code is returned instead.
  */
-int _portal_open(int remote)
+int hal_portal_open(portal_t *portal, int remote)
 {
-	int local;          /* ID of local cluster.  */
-	int portal_fd;      /* Portal NoC Connector. */
-	int sync_fd;        /* Sync NoC connector.   */
-	int portalid;       /* ID of mailbix.        */
-	char pathname[128]; /* NoC connector name.   */
+	int local;          /* ID of local NoC node.  */
+	int portal_fd;      /* Portal NoC Connector.  */
+	int sync_fd;        /* Sync NoC connector.    */
+	char pathname[128]; /* NoC connector name.    */
 
-	local = hal_get_cluster_id();
+	/* Invalid portal. */
+	if (portal == NULL)
+		return (-EINVAL);
 
-	/* Allocate a portal. */
-	portalid = portal_alloc();
-	if (portalid < 0)
-		return (-ENOENT);
+	/* Invalid node ID. */
+	if (remote < 0)
+		return (-EINVAL);
 
-	/* Create underlying portal. */
+	local = hal_get_node_id();
+
+	/* Invalid remote. */
+	if (remote == local)
+		return (-EINVAL);
+
+	/* Build pathname for NoC connector. */
 	snprintf(pathname,
 			ARRAY_LENGTH(pathname),
 			"/mppa/portal/%d:%d",
 			remote,
-			portal_noctag(remote)
+			noctag_portal(remote)
 	);
-	//printf("cluster %d: %s [portal open]\n", local, pathname);
-	assert((portal_fd = mppa_open(pathname, O_WRONLY)) != -1);
 
-	/* Create underlying sync. */
-		local = (k1_is_ccluster(local)) ?
-		local : local + remote%NR_IOCLUSTER_DMA;
+	/* Open NoC connector. */
+	if ((portal_fd = mppa_open(pathname, O_WRONLY)) == -1)
+		return (-EAGAIN);
+
+	/* Build pathname for NoC connector. */
 	snprintf(pathname,
 			ARRAY_LENGTH(pathname),
 			"/mppa/sync/%d:%d",
 			local,
 			(k1_is_ccluster(remote) || k1_is_ccluster(local)) ?
-					portal_noctag(remote) :
-					127
+									noctag_portal(remote) : 127
 	);
-	//printf("cluster %3d: %s [portal open] %d\n", local, pathname, remote);
-	assert((sync_fd = mppa_open(pathname, O_RDONLY)) != -1);
 
-	/* Initialize portal. */
-	portals[portalid].local = local;
-	portals[portalid].remote = remote;
-	portals[portalid].portal_fd = portal_fd;
-	portals[portalid].sync_fd = sync_fd;
-	portals[portalid].flags |= PORTAL_WRONLY;
+	/* Open NoC connector. */
+	if ((sync_fd = mppa_open(pathname, O_RDONLY)) == -1)
+		return (-EAGAIN);
 
-	return (portalid);
-}
+	portal->portal_fd = portal_fd;
+	portal->sync_fd = sync_fd;
+	portal->remote = remote;
+	portal->local = local;
 
-/*=======================================================================*
-* portal_open()                                                         *
-*=======================================================================*/
-
-/**
-* @brief Opens a portal.
-*
-* @param name Portal name.
-*
-* @returns Upon successful completion, the ID of the target portal is
-* returned. Upon failure, a negative error code is returned instead.
-*/
-int portal_open(char *name)
-{
-	int remote;         /* CPU ID of remote cluster. */
-
-	remote = name_lookup(name);
-
-	return _portal_open(remote);
+	return (0);
 }
 
 /*=======================================================================*
@@ -340,51 +205,45 @@ int portal_open(char *name)
  *=======================================================================*/
 
 /**
- * @brief Builds sync mask for a dma.
+ * @brief Builds sync mask for a nodeid.
  *
- * @param dma Target dma.
+ * @param nodeid Target nodeid.
  *
  * @return Sync mask.
  */
-static inline uint64_t portal_sync(int dma)
+static inline uint64_t portal_sync(int nodeid)
 {
-	if ((dma >= IOCLUSTER0) && (dma < IOCLUSTER0 + NR_IOCLUSTER_DMA))
-		return (1 << (CCLUSTER15 + 1 + dma%NR_IOCLUSTER_DMA));
-	else if ((dma >= IOCLUSTER1) && (dma < IOCLUSTER1 + NR_IOCLUSTER_DMA))
-		return (1 << (CCLUSTER15 + 1 + NR_IOCLUSTER_DMA + dma%NR_IOCLUSTER_DMA));
-	return (1 << dma);
+	if ((nodeid >= IOCLUSTER0) && (nodeid < IOCLUSTER0 + NR_IOCLUSTER_DMA))
+		return (1 << (CCLUSTER15 + 1 + nodeid%NR_IOCLUSTER_DMA));
+	else if ((nodeid >= IOCLUSTER1) && (nodeid < IOCLUSTER1 + NR_IOCLUSTER_DMA))
+		return (1 << (CCLUSTER15 + 1 + NR_IOCLUSTER_DMA +
+								nodeid%NR_IOCLUSTER_DMA));
+	return (1 << nodeid);
 }
 
 /*=======================================================================*
- * portal_read()                                                         *
+ * hal_portal_read()                                                     *
  *=======================================================================*/
 
 /**
  * @brief Reads data from a portal.
  *
- * @param portalid ID of the target portal.
- * @param buf   Location from where data should be written.
- * @param n     Number of bytes to read.
+ * @param portal  Targeted adress portal.
+ * @param buf     Location from where data should be written.
+ * @param n       Number of bytes to read.
  *
  * @returns Upon successful completion zero is returned. Upon failure, a
  * negative error code is returned instead.
  */
-int portal_read(int portalid, void *buf, size_t n)
+int hal_portal_read(portal_t *portal, void *buf, size_t n)
 {
 	uint64_t mask;
 	mppa_aiocb_t aiocb;
+	size_t nread;
 
 	/* Invalid portal ID.*/
-	if ((portalid < 0) || (portalid >= NR_PORTAL))
+	if (portal == NULL)
 		return (-EINVAL);
-
-	/*  Invalid portal. */
-	if (!(portals[portalid].flags & PORTAL_USED))
-		return (-EINVAL);
-
-	/* Operation no supported. */
-	if (portals[portalid].flags & PORTAL_WRONLY)
-		return (-ENOTSUP);
 
 	/* Invalid buffer. */
 	if (buf == NULL)
@@ -395,49 +254,44 @@ int portal_read(int portalid, void *buf, size_t n)
 		return (-EINVAL);
 
 	/* Setup read operation. */
-	mppa_aiocb_ctor(&aiocb, portals[portalid].portal_fd, buf, n);
-	assert(mppa_aio_read(&aiocb) != -1);
+	mppa_aiocb_ctor(&aiocb, portal->portal_fd, buf, n);
+	if (mppa_aio_read(&aiocb) == -1)
+		return (-EINVAL);
 
 	/* Unblock remote. */
-	mask = portal_sync(portals[portalid].local);
-	assert(mppa_write(portals[portalid].sync_fd, &mask, sizeof(uint64_t)) != -1);
+	mask = portal_sync(portal->local);
+	if (mppa_write(portal->sync_fd, &mask, sizeof(uint64_t)) == -1)
+		return (-EAGAIN);
 
 	/* Wait read operation to complete. */
-	assert(mppa_aio_wait(&aiocb) == n);
-	mppa_close(portals[portalid].sync_fd);
+	nread = mppa_aio_wait(&aiocb);
+	mppa_close(portal->sync_fd);
 
-	return (0);
+	return (nread);
 }
 
 /*=======================================================================*
- * portal_write()                                                        *
+ * hal_portal_write()                                                    *
  *=======================================================================*/
 
 /**
  * @brief Writes data to a portal.
  *
- * @param portalid ID of the target portal.
- * @param buf   Location from where data should be read.
- * @param n     Number of bytes to write.
+ * @param portal  Targeted adress portal.
+ * @param buf     Location from where data should be read.
+ * @param n       Number of bytes to write.
  *
- * @returns Upon successful completion zero is returned. Upon failure, a
- * negative error code is returned instead.
+ * @returns Upon successful the number of bytes wrote is returned.
+ * Upon failure, a negative error code is returned instead.
  */
-int portal_write(int portalid, const void *buf, size_t n)
+int hal_portal_write(portal_t *portal, const void *buf, size_t n)
 {
 	uint64_t mask;
+	size_t nwrite;
 
-	/* Invalid portal ID.*/
-	if ((portalid < 0) || (portalid >= NR_PORTAL))
+	/* Invalid portal.*/
+	if (portal == NULL)
 		return (-EINVAL);
-
-	/*  Invalid portal. */
-	if (!(portals[portalid].flags & PORTAL_USED))
-		return (-EINVAL);
-
-	/* Operation no supported. */
-	if (!(portals[portalid].flags & PORTAL_WRONLY))
-		return (-ENOTSUP);
 
 	/* Invalid buffer. */
 	if (buf == NULL)
@@ -448,44 +302,45 @@ int portal_write(int portalid, const void *buf, size_t n)
 		return (-EINVAL);
 
 	/* Wait for remote to be ready. */
-	mask = portal_sync(portals[portalid].remote);
-	assert(mppa_ioctl(portals[portalid].sync_fd, MPPA_RX_SET_MATCH, ~mask) != -1);
-	assert(mppa_read(portals[portalid].sync_fd, &mask, sizeof(uint64_t)) != -1);
+	mask = portal_sync(portal->remote);
+	if (mppa_ioctl(portal->sync_fd, MPPA_RX_SET_MATCH, ~mask) == -1)
+		return (-EINVAL);
+
+	if (mppa_read(portal->sync_fd, &mask, sizeof(uint64_t)) == -1)
+		return (-EAGAIN);
 
 	/* Write. */
-	assert(mppa_pwrite(portals[portalid].portal_fd, buf, n, 0) == n);
+	nwrite = mppa_pwrite(portal->portal_fd, buf, n, 0);
 
-	return (0);
+	return (nwrite);
 }
 
 /*=======================================================================*
- * portal_close()                                                        *
+ * hal_portal_close()                                                    *
  *=======================================================================*/
 
 /**
  * @brief Closes a portal.
  *
- * @param portalid ID of the target portal.
+ * @param portal     Adress of the target portal.
  *
  * @returns Upon successful completion zero is returned. Upon failure, a
  * negative error code is returned instead.
  */
-int portal_close(int portalid)
+int hal_portal_close(portal_t *portal)
 {
-	/* Invalid portal ID.*/
-	if ((portalid < 0) || (portalid >= NR_PORTAL))
+	/* Invalid portal.*/
+	if (portal == NULL)
 		return (-EINVAL);
 
-	/*  Invalid portal. */
-	if (!(portals[portalid].flags & PORTAL_USED))
-		return (-EINVAL);
+	if (portal->portal_fd != -1)
+		mppa_close(portal->portal_fd);
 
-	/* Invalid portal. */
-	if (!(portals[portalid].flags & PORTAL_WRONLY))
-		return (-EINVAL);
+	if (portal->sync_fd != -1)
+		mppa_close(portal->sync_fd);
 
-	portal_free(portalid);
-	mppa_close(portals[portalid].sync_fd);
+	portal->remote = -1;
+	portal->local = -1;
 
 	return (0);
 }
@@ -502,21 +357,18 @@ int portal_close(int portalid)
  * @returns Upon successful completion zero is returned. Upon failure, a
  * negative error code is returned instead.
  */
-int portal_unlink(int portalid)
+int hal_portal_unlink(portal_t *portal)
 {
-	/* Invalid portal ID.*/
-	if ((portalid < 0) || (portalid >= NR_PORTAL))
-		return (-EINVAL);
-
 	/*  Invalid portal. */
-	if (!(portals[portalid].flags & PORTAL_USED))
+	if (portal == NULL)
 		return (-EINVAL);
 
-	/* Invalid portal. */
-	if (portals[portalid].flags & PORTAL_WRONLY)
-		return (-EINVAL);
+	if (portal->portal_fd != -1)
+		mppa_close(portal->portal_fd);
 
-	portal_free(portalid);
+	portal->sync_fd = -1;
+	portal->remote = -1;
+	portal->local = -1;
 
 	return (0);
 }

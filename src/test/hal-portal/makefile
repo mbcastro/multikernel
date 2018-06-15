@@ -17,29 +17,37 @@
 # along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
 #
 
-# Conflicts.
-.PHONY: master
-.PHONY: slave
+# Additional Compiler Options
+CFLAGS += -march=k1b -mos=rtems -mcluster=ioddr 
+
+# Additional Linker Options
+LDFLAGS += -march=k1b -mos=rtems -mcluster=ioddr 
+
+# C source Files
+SRC = $(wildcard *.c)
+
+# Object Files
+OBJ = $(SRC:.c=.o)
 
 # Binary Files
-export ELFBIN_MASTER = $(BINDIR)/name-master
-export ELFBIN_SLAVE = $(BINDIR)/name-slave
-export MULTIBIN = $(BINDIR)/name.img
+ELFBIN = $(BINDIR)/hal-portal-master
+MULTIBIN = $(BINDIR)/hal-portal.img
 
-all: master slave
-	$(TOOLCHAIN)/bin/k1-create-multibinary --remove-prefix $(BINDIR) --boot $(SERVERSBIN) --ios $(ELFBIN_MASTER)  --clusters $(ELFBIN_SLAVE) -T $(MULTIBIN)
+#===============================================================================
 
-# Builds master binary.
-master:
-	cd master && $(MAKE) all
+# Builds the kernel.
+all: $(OBJ)
+	mkdir -p $(BINDIR)
+	$(CC) $(LDFLAGS) $(OBJ) -o $(ELFBIN) $(LIBKERNEL_K1BIO) $(LIBMPPAIPC_K1BIO)
+	$(TOOLCHAIN)/bin/k1-create-multibinary --remove-prefix $(BINDIR) --boot $(ELFBIN) -T $(MULTIBIN)
 
-# Builds slave binary.
-slave:
-	cd slave && $(MAKE) all
+# Builds object files.
+%.o: %.c
+	$(CC) $(CFLAGS) $< -c -o $@
 
 # Cleans compilation files.
 clean:
+	rm -rf $(OBJ)
+	rm -rf $(ELFBIN)
 	rm -rf $(MULTIBIN)
-	cd master && $(MAKE) clean
-	cd slave && $(MAKE) clean
 

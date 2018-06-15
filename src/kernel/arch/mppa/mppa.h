@@ -2,17 +2,17 @@
  * Copyright(C) 2011-2018 Pedro H. Penna <pedrohenriquepenna@gmail.com>
  * 
  * This file is part of Nanvix.
- * 
+ *
  * Nanvix is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * Nanvix is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
@@ -76,7 +76,7 @@
 	#define CCLUSTER15  15 /**< Compute cluster 15. */
 	#define IOCLUSTER0 128 /**< IO cluster 0.       */
 	#define IOCLUSTER1 192 /**< IO cluster 1.       */
-	
+
 	/* Forward definitions. */
 	extern int hal_get_cluster_id(void);
 	extern int k1_is_ccluster(int);
@@ -106,6 +106,7 @@
 	/* Forward definitions. */
 	extern int noctag_mailbox(int);
 	extern int noctag_sync(int);
+	extern int noctag_portal(int);
 	extern int noc_get_node_num(int);
 	extern void noc_get_remotes(char *, int);
 	extern void noc_get_names(char *, const int *, int);

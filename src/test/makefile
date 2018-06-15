@@ -21,10 +21,11 @@
 .PHONY: hal
 .PHONY: hal-sync
 .PHONY: hal-mailbox
+.PHONY: hal-portal
 .PHONY: name
 
 # Builds everything.
-all: hal hal-sync hal-mailbox name
+all: hal hal-sync hal-mailbox hal-portal name
 
 # Builds HAL testing unit. 
 hal:
@@ -38,6 +39,10 @@ hal-sync:
 hal-mailbox:
 	cd hal-mailbox && $(MAKE) all
 
+# Builds HAL Portal testing unit. 
+hal-portal:
+	cd hal-portal && $(MAKE) all
+
 # Builds Naming Service testing unit
 name:
 	cd name && $(MAKE) all
@@ -47,5 +52,6 @@ clean:
 	cd hal && $(MAKE) clean
 	cd hal-sync && $(MAKE) clean
 	cd hal-mailbox && $(MAKE) clean
+	cd hal-portal && $(MAKE) clean
 	cd name && $(MAKE) clean
 
