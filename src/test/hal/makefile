@@ -48,12 +48,15 @@ OBJ = $(SRC:.c=.o)
 # Builds the kernel.
 all: $(OBJ)
 	mkdir -p $(BINDIR)
-	$(CC) $(OJB) -o $(BINDIR)/hal-master.elf $(LIBDIR)/$(LIBNAME) $(TOOLCHAIN)/k1-rtems/lib/libmppaipc.a
+	$(CC) -march=k1b -mos=rtems -mcluster=ioddr $(OBJ) -o $(BINDIR)/hal-master $(LIBDIR)/$(LIBNAME) $(TOOLCHAIN)/k1-rtems/lib/libmppaipc.a
+	$(TOOLCHAIN)/bin/k1-create-multibinary --remove-prefix $(BINDIR) --boot $(BINDIR)/hal-master -T $(BINDIR)/hal.img
 
 # Builds object file.
 %.o: %.c
-	$(CC) -mos=rtems $< $(CFLAGS) -c -o $@
+	$(CC) -march=k1b -mos=rtems -mcluster=ioddr $< $(CFLAGS) -c -o $@
 
 # Cleans compilation files.
 clean:
+	rm -rf $(OBJ) $(BINDIR)/hal-master
+	rm -rf $(OBJ) $(BINDIR)/hal.img
 	rm -rf $(OBJ) $(LIBDIR)/$(LIBNAME)

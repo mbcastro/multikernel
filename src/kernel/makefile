@@ -22,8 +22,7 @@ SRC = $(wildcard arch/mppa/*.c) \
       $(wildcard ipc/*.c)
 
 # Object files.
-OBJ = $(SRC:.c=.node.o) \
-      $(SRC:.c=.ioddr.o)
+OBJ = $(SRC:.c=.o)
 
 # Builds the kernel.
 all: $(OBJ)
@@ -31,12 +30,8 @@ all: $(OBJ)
 	$(AR) $(ARFLAGS) $(LIBDIR)/$(LIBNAME) $(OBJ)
 
 # Builds object file.
-%.node.o: %.c
-	$(CC) -mos=nodeos $< $(CFLAGS) -c -o $@
-
-# Builds object file.
-%.ioddr.o: %.c
-	$(CC) -mos=rtems $< $(CFLAGS) -c -o $@
+%.o: %.c
+	$(CC) -march=k1b -mos=rtems -mcluster=ioddr $< $(CFLAGS) -c -o $@
 
 # Cleans compilation files.
 clean:
