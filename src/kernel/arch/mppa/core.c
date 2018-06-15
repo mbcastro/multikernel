@@ -19,6 +19,8 @@
 
 #include <HAL/hal/core/mp.h>
 
+#include <nanvix/hal.h>
+
 #include "mppa.h" 
 
 /*============================================================================*
@@ -81,14 +83,34 @@ int hal_get_cluster_id(void)
  */
 int hal_get_core_id(void)
 {
+	if (k1_is_iocluster(__k1_get_cluster_id()))
+	{
+		int coreid = 0;
+		pthread_t tid;
+
+		tid = pthread_self();
+
+
+		pthread_mutex_lock(&hal_lock);
+		for (int i = 0; i < NR_IOCLUSTER_CORES; i++)
+		{
+			if (__threads[i] == tid)
+			{
+				coreid = i;
+				break;
+			}
+		}
+		pthread_mutex_unlock(&hal_lock);
+
+		return (coreid);
+	}
+
 	return (__k1_get_cpu_id());
 }
 
 /*============================================================================*
  * hal_get_core_type()                                                        *
  *============================================================================*/
-
-#ifdef _HAS_GET_CORE_TYPE
 
 /**
  * @brief Gets the type of the underlying core.
@@ -97,69 +119,12 @@ int hal_get_core_id(void)
  */
 int hal_get_core_type(void)
 {
+	int clusterid;
+
+	clusterid = hal_get_cluster_id();
+
+	return (k1_is_ccluster(clusterid) ? HAL_CORE_USER : HAL_CORE_SYSTEM);
 }
-
-#endif
-
-/*============================================================================*
- * hal_is_ucore()                                                             *
- *============================================================================*/
-
-#ifdef _HAS_IS_UCORE
-
-/**
- * @brief Asserts whether or not the target core is a user core.
- *
- * @param coreid ID of the target core.
- *
- * @returns One if the target core is a user core, and zero otherwise.
- */
-int hal_is_ucore(int coreid)
-{
-}
-
-#endif
-
-/*============================================================================*
- * hal_is_rcore()                                                             *
- *============================================================================*/
-
-#ifdef _HAS_IS_RCORE
-
-/**
- * @brief Asserts whether or not the target core is a resource
- * management core.
- *
- * @param coreid ID of the target core.
- *
- * @returns One if the target core is a resource management core, and
- * zero otherwise.
- */
-int hal_is_rcore(int coreid)
-{
-}
-
-#endif
-
-/*============================================================================*
- * hal_is_score()                                                             *
- *============================================================================*/
-
-#ifdef _HAS_IS_SCORE
-
-/**
- * @brief Asserts whether or not the taget core is a system core.
- *
- * @param coreid ID of the target core.
- *
- * @returns One if the target core is a system core, and zero
- * otherwise.
- */
-int hal_is_score(int coreid)
-{
-}
-
-#endif
 
 /*============================================================================*
  * hal_get_num_cores()                                                        *
@@ -179,3 +144,16 @@ int hal_get_num_cores(void)
 	return (k1_is_ccluster(clusterid) ? 17 : 4);
 }
 
+/*============================================================================*
+ * hal_get_core_freq()                                                        *
+ *============================================================================*/
+
+/**
+ * @brief Gets the frequency of the underlying core.
+ *
+ * @returns The frequency of the underlying core.
+ */
+int hal_get_core_freq(void)
+{
+	return (__bsp_frequency);
+}

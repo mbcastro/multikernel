@@ -29,6 +29,7 @@
 	#include <HAL/hal/core/diagnostic.h>
 #ifdef _KALRAY_MPPA_256_HIGH_LEVEL
 	#include <mppaipc.h>
+	#include <pthread.h>
 #endif
 #ifdef _KALRAY_MPPA_256_LOW_LEVEL
 	#include <mppa_power.h>
@@ -50,6 +51,11 @@
 	 * @brief Number of IO clusters.
 	 */
 	#define NR_IOCLUSTER 2
+
+	/**
+	 * @brief Number of Cores in an IO CLUSTER.
+	 */
+	#define NR_IOCLUSTER_CORES 4
 
 	/* Cluster IDs. */
 	#define CCLUSTER0    0 /**< Compute cluster  0. */
@@ -79,6 +85,10 @@
 	extern int k1_is_ccpu(int);
 	extern long k1_get_ccluster_freq(void);
 
+	/* Forward definitions. */
+	extern pthread_t __threads[4];
+	extern pthread_mutex_t hal_lock;
+
 /*=======================================================================*
  * NOC                                                                   *
  *=======================================================================*/
@@ -102,7 +112,7 @@
 	/* Forward definitions. */
 	extern int noctag_mailbox(int);
 	extern int noctag_portal(int);
-	extern void noc_remotes(char *, int);
+	extern void noc_get_remotes(char *, int);
 	extern int noc_get_dma(int);
 
 /*=======================================================================*

@@ -60,7 +60,9 @@ int main(int argc, char **argv)
 	((void) argc);
 	((void) argv);
 
-	 printf("[SPAWNER] booting up server\n");
+	hal_setup();
+
+	printf("[SPAWNER] booting up server\n");
 
 	pthread_mutex_init(&lock, NULL);
 
@@ -84,5 +86,6 @@ int main(int argc, char **argv)
 	for (int i = 0; i < NR_SERVERS; i++)
 		pthread_join(tids[i], NULL);
 
+	hal_cleanup();
 	return (EXIT_SUCCESS);
 }

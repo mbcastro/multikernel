@@ -44,7 +44,7 @@
 	#define HAL_NR_CORES_SYSTEM 16
 
 	/**
-	 * @brief Number of cluster in the paltform.
+	 * @brief Number of cluster in the platform.
 	 */
 	#define HAL_NR_CLUSTERS 20
 
@@ -56,9 +56,6 @@
 	 * @brief Number of NoC nodes.
 	 */
 	#define HAL_NR_NOC_NODES 24
-
-	/* Forward definitions. */
-	extern const int hal_noc_nodes[HAL_NR_NOC_NODES];
 
 /*===========================================================================*
  * Mailbox Interface                                                         *

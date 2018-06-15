@@ -26,21 +26,7 @@
 #include <nanvix/hal.h>
 #include <nanvix/pm.h>
 #include <nanvix/name.h>
-
-/**
- * @brief Number of IO clusters.
- */
-#define NR_IOCLUSTER 2
-
-/**
- * @brief Number of compute clusters.
- */
-#define NR_CCLUSTER 16
-
-/**
- * @brief Number of DMAs per compute cluster.
- */
-#define NR_IOCLUSTER_DMA 4
+#include <nanvix/limits.h>
 
 /**
  * @brief Asserts a logic expression.
@@ -48,58 +34,35 @@
 #define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
 
 /**
- * @brief ID of slave processes.
+ * @brief Number of cores in the underlying cluster.
  */
-static int pids[NR_CCLUSTER];
-
-/*===================================================================*
- * API Test: Name Unlink                                             *
- *===================================================================*/
+static int ncores = 0;
 
 /**
- * @brief API Test: Name Unlink
+ * @brief ID of slave processes.
  */
-static void test_name_unlink(void)
-{
-	char pathname[PROC_NAME_MAX];
-
-	printf("[test][api] Name Unlink\n");
-
-	/* IO cluster link test. */
-	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
-	{
-		sprintf(pathname, "/name%d", i);
-
-		/* Remove name. */
-		TEST_ASSERT(name_unlink(pathname) == 0);
-		TEST_ASSERT(name_lookup(pathname) < 0);
-	}
-}
+static int pids[NANVIX_PROC_MAX];
 
 /*===================================================================*
  * API Test: Name Link                                               *
  *===================================================================*/
 
 /**
- * @brief API Test: Name Link
+ * @brief API Test: Name Link Unlink
  */
-static void test_name_link(void)
+static void test_name_link_unlink(void)
 {
 	int nodeid;
-	char pathname[PROC_NAME_MAX];
+	char pathname[NANVIX_PROC_NAME_MAX];
 
-	printf("[test][api] Name Link\n");
+	printf("[test][api] Name Link Unlink\n");
 
 	nodeid = hal_get_cluster_id();
 
-	/* IO cluster link test. */
-	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
-	{
-		sprintf(pathname, "/name%d", i);
-
-		/* Register name. */
-		TEST_ASSERT(name_link(nodeid + i, pathname) == 0);
-	}
+	/* Link and unlink name. */
+	sprintf(pathname, "cool-name");
+	TEST_ASSERT(name_link(nodeid, pathname) == 0);
+	TEST_ASSERT(name_unlink(pathname) == 0);
 }
 
 /*===================================================================*
@@ -112,163 +75,136 @@ static void test_name_link(void)
 static void test_name_lookup(void)
 {
 	int nodeid;
-	char pathname[PROC_NAME_MAX];
+	char pathname[NANVIX_PROC_NAME_MAX];
 
 	printf("[test][api] Name Lookup\n");
 
 	nodeid = hal_get_cluster_id();
 
-	/* IO cluster link test. */
-	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
-	{
-		sprintf(pathname, "/name%d", i);
-
-		TEST_ASSERT(name_lookup(pathname) == nodeid + i);
-	}
+	/* Lookup name. */
+	sprintf(pathname, "cool-name");
+	TEST_ASSERT(name_link(nodeid, pathname) == 0);
+	TEST_ASSERT(name_lookup(pathname) == nodeid);
+	TEST_ASSERT(name_unlink(pathname) == 0);
 }
 
 /*===================================================================*
-* Fault Injection Test: duplicate name                               *
+* Fault Injection Test: Duplicate Name                               *
 *====================================================================*/
 
 /**
-* @brief Fault Injection Test: link the same name twice
+* @brief Fault Injection Test: Link the Same Name Twice
 */
 static void test_name_duplicate(void)
 {
 	int nodeid;
-	char pathname[PROC_NAME_MAX];
+	char pathname[NANVIX_PROC_NAME_MAX];
 
-	printf("[test][api] Fault Injection Test: Duplicate name\n");
+	printf("[test][fault injection] Duplicate Name\n");
 
 	nodeid = hal_get_cluster_id();
 
-	/* IO cluster link test. */
-	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
-	{
-		sprintf(pathname, "/name%d", i);
-
-		/* Link name. */
-		TEST_ASSERT(name_link(nodeid + i, pathname) == 0);
-		TEST_ASSERT(name_link(nodeid + i, pathname) < 0);
-		TEST_ASSERT(name_unlink(pathname) == 0);
-	}
+	/* Link name. */
+	sprintf(pathname, "cool-name");
+	TEST_ASSERT(name_link(nodeid, pathname) == 0);
+	TEST_ASSERT(name_link(nodeid, pathname) < 0);
+	TEST_ASSERT(name_unlink(pathname) == 0);
 }
 
 /*===================================================================*
-* Fault Injection Test: invalid link                                 *
+* Fault Injection Test: Invalid Link                                 *
 *====================================================================*/
 
 /**
-* @brief Fault Injection Test: Link invalid names
+* @brief Fault Injection Test: Link Invalid Names
 */
 static void test_name_invalid_link(void)
 {
 	int nodeid;
-	char pathname[PROC_NAME_MAX + 1];
+	char pathname[NANVIX_PROC_NAME_MAX + 1];
 
-	printf("[test][api] Fault Injection Test: Invalid link\n");
+	printf("[test][fault injection] Invalid Link\n");
 
 	nodeid = hal_get_cluster_id();
 
-	memset(pathname, 1, PROC_NAME_MAX + 1);
+	memset(pathname, 1, NANVIX_PROC_NAME_MAX + 1);
 
-	/* IO cluster link test. */
-	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
-	{
-		/* Register invalid names. */
-		TEST_ASSERT(name_link(nodeid + i, pathname) < 0);
-		TEST_ASSERT(name_link(nodeid + i, NULL) < 0);
-		TEST_ASSERT(name_link(nodeid + i, "") < 0);
-	}
+	/* Link invalid names. */
+	TEST_ASSERT(name_link(nodeid, pathname) < 0);
+	TEST_ASSERT(name_link(nodeid, NULL) < 0);
+	TEST_ASSERT(name_link(nodeid, "") < 0);
 }
 
 /*===================================================================*
-* Fault Injection Test: invalid unlink                                 *
+* Fault Injection Test: Invalid Unlink                               *
 *====================================================================*/
 
 /**
-* @brief Fault Injection Test: Link invalid names
+* @brief Fault Injection Test: Unlink Invalid Name
 */
 static void test_name_invalid_unlink(void)
 {
-	char pathname[PROC_NAME_MAX + 1];
+	char pathname[NANVIX_PROC_NAME_MAX + 1];
 
-	printf("[test][api] Fault Injection Test: Invalid unlink\n");
+	printf("[test][fault onjection] Invalid Unlink\n");
 
-	memset(pathname, 1, PROC_NAME_MAX + 1);
+	memset(pathname, 1, NANVIX_PROC_NAME_MAX + 1);
 
-	/* IO cluster unlink test. */
-	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
-	{
-		/* Unlink invalid names. */
-		TEST_ASSERT(name_unlink(pathname) < 0);
-		TEST_ASSERT(name_unlink(NULL) < 0);
-		TEST_ASSERT(name_unlink("") < 0);
-	}
+	/* Unlink invalid names. */
+	TEST_ASSERT(name_unlink(pathname) < 0);
+	TEST_ASSERT(name_unlink(NULL) < 0);
+	TEST_ASSERT(name_unlink("") < 0);
 }
 
 /*===================================================================*
-* Fault Injection Test: bad unlink                                 *
+* Fault Injection Test: Bad Unlink                                   *
 *====================================================================*/
 
 /**
-* @brief Fault Injection Test: Unlink bad name
+* @brief Fault Injection Test: Unlink Bad Name
 */
 static void test_name_bad_unlink(void)
 {
-	printf("[test][api] Fault Injection Test: Bad unlink\n");
+	printf("[test][fault injection] Bad Unlink\n");
 
-	/* IO cluster unlink test. */
-	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
-	{
-		/* Unlink bad name. */
-		TEST_ASSERT(name_unlink("missing_name") < 0);
-	}
+	/* Unlink missing name. */
+	TEST_ASSERT(name_unlink("missing_name") < 0);
 }
 
 /*===================================================================*
-* Fault Injection Test: Bad lookup                                 *
+* Fault Injection Test: Bad Lookup                                   *
 *====================================================================*/
 
 /**
-* @brief Fault Injection Test: Lookup missing name
+* @brief Fault Injection Test: Lookup Missing Name
 */
 static void test_name_bad_lookup(void)
 {
-	printf("[test][api] Fault Injection Test: Bad lookup\n");
+	printf("[test][fault injection] Bad Lookup\n");
 
-	/* IO cluster lookup test. */
-	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
-	{
-		/* Lookup missing name. */
-		TEST_ASSERT(name_lookup("missing_name") < 0);
-	}
+	/* Lookup missing name. */
+	TEST_ASSERT(name_lookup("missing_name") < 0);
 }
 
 /*===================================================================*
-* Fault Injection Test: Invalid lookup                                 *
+* Fault Injection Test: Invalid Lookup                               *
 *====================================================================*/
 
 /**
-* @brief Fault Injection Test: Lookup invalid names
+* @brief Fault Injection Test: Lookup Invalid Name
 */
 static void test_name_invalid_lookup(void)
 {
-	char pathname[PROC_NAME_MAX + 1];
+	char pathname[NANVIX_PROC_NAME_MAX + 1];
 
-	printf("[test][api] Fault Injection Test: Invalid lookup\n");
+	printf("[test][fault injection] Invalid Lookup\n");
 
-	memset(pathname, 1, PROC_NAME_MAX + 1);
+	memset(pathname, 1, NANVIX_PROC_NAME_MAX + 1);
 
-	/* IO cluster lookup test. */
-	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
-	{
-		/* Lookup invalid names. */
-		TEST_ASSERT(name_lookup(pathname) < 0);
-		TEST_ASSERT(name_lookup(NULL) < 0);
-		TEST_ASSERT(name_lookup("") < 0);
-	}
+	/* Lookup invalid names. */
+	TEST_ASSERT(name_lookup(pathname) < 0);
+	TEST_ASSERT(name_lookup(NULL) < 0);
+	TEST_ASSERT(name_lookup("") < 0);
 }
 
 /*===================================================================*
@@ -276,7 +212,7 @@ static void test_name_invalid_lookup(void)
  *===================================================================*/
 
 /**
- * @brief API Test: slave tests.
+ * @brief API Test: Slave Tests
  */
 static void test_name_slave(int nclusters)
 {
@@ -315,19 +251,24 @@ int main(int argc, char **argv)
 	int global_barrier;
 	int nclusters;
 
+	hal_setup();
+
+	ncores = hal_get_num_cores();
+
 	TEST_ASSERT(argc == 2);
 
 	/* Retrieve kernel parameters. */
 	nclusters = atoi(argv[1]);
 
 	/* Wait name server. */
-	global_barrier = barrier_open(NR_IOCLUSTER);
+	global_barrier = barrier_open(0);
 	barrier_wait(global_barrier);
 
 	/* API tests. */
-	test_name_link();
+	test_name_link_unlink();
 	test_name_lookup();
-	test_name_unlink();
+
+	/* Fault injection tests. */
 	test_name_duplicate();
 	test_name_invalid_link();
 	test_name_invalid_unlink();
@@ -339,5 +280,6 @@ int main(int argc, char **argv)
 	/* House keeping. */
 	barrier_close(global_barrier);
 
+	hal_cleanup();
 	return (EXIT_SUCCESS);
 }

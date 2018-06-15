@@ -20,12 +20,19 @@
 #ifndef NANVIX_LIMITS_H_
 #define NANVIX_LIMITS_H_
 
+	#include <nanvix/hal.h>
+
 	/**
 	 * @brief Maximum length of a process name.
 	 *
 	 * @note The null character is included.
 	 */
-	#define PROC_NAME_MAX 50
+	#define NANVIX_PROC_NAME_MAX 50
+
+	/**
+	 * @brief Maximum number of processes.
+	 */
+	#define NANVIX_PROC_MAX HAL_NR_CLUSTERS
 
 #endif /* NANVIX_LIMITS_H_ */
 

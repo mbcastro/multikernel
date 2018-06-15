@@ -50,7 +50,7 @@ static int msg;
 static void test_name_unlink(void)
 {
 	int nodeid;
-	char pathname[PROC_NAME_MAX];
+	char pathname[NANVIX_PROC_NAME_MAX];
 
 	nodeid = hal_get_cluster_id();
 	sprintf(pathname, "/cpu%d", nodeid);
@@ -69,7 +69,7 @@ static void test_name_unlink(void)
 static void test_name_link(void)
 {
 	int nodeid;
-	char pathname[PROC_NAME_MAX];
+	char pathname[NANVIX_PROC_NAME_MAX];
 
 	nodeid = hal_get_cluster_id();
 	sprintf(pathname, "/cpu%d", nodeid);
@@ -88,7 +88,7 @@ static void test_name_link(void)
 static void test_name_lookup(void)
 {
 	int nodeid;
-	char pathname[PROC_NAME_MAX];
+	char pathname[NANVIX_PROC_NAME_MAX];
 
 	nodeid = hal_get_cluster_id();
 
@@ -107,7 +107,7 @@ static void test_name_lookup(void)
 static void test_name_duplicate(void)
 {
 	int nodeid;
-	char pathname[PROC_NAME_MAX];
+	char pathname[NANVIX_PROC_NAME_MAX];
 
 	nodeid = hal_get_cluster_id();
 
@@ -130,11 +130,11 @@ static void test_name_duplicate(void)
 static void test_name_invalid_link(void)
 {
 	int nodeid;
-	char pathname[PROC_NAME_MAX + 1];
+	char pathname[NANVIX_PROC_NAME_MAX + 1];
 
 	nodeid = hal_get_cluster_id();
 
-	memset(pathname, 1, PROC_NAME_MAX + 1);
+	memset(pathname, 1, NANVIX_PROC_NAME_MAX + 1);
 
 	/* Link invalid names. */
 	TEST_ASSERT(name_link(nodeid, pathname) < 0);
@@ -151,9 +151,9 @@ static void test_name_invalid_link(void)
 */
 static void test_name_invalid_unlink(void)
 {
-	char pathname[PROC_NAME_MAX + 1];
+	char pathname[NANVIX_PROC_NAME_MAX + 1];
 
-	memset(pathname, 1, PROC_NAME_MAX + 1);
+	memset(pathname, 1, NANVIX_PROC_NAME_MAX + 1);
 
 	/* Unlink invalid names. */
 	TEST_ASSERT(name_unlink(pathname) < 0);
@@ -196,9 +196,9 @@ static void test_name_bad_lookup(void)
 */
 static void test_name_invalid_lookup(void)
 {
-	char pathname[PROC_NAME_MAX + 1];
+	char pathname[NANVIX_PROC_NAME_MAX + 1];
 
-	memset(pathname, 1, PROC_NAME_MAX + 1);
+	memset(pathname, 1, NANVIX_PROC_NAME_MAX + 1);
 
 	/* Lookup invalid names. */
 	TEST_ASSERT(name_lookup(pathname) < 0);
@@ -218,8 +218,8 @@ int main(int argc, char **argv)
 	int nclusters;
 
 #if MSG_TEST
-	char pathname[PROC_NAME_MAX];
-	char out_pathname[PROC_NAME_MAX];
+	char pathname[NANVIX_PROC_NAME_MAX];
+	char out_pathname[NANVIX_PROC_NAME_MAX];
 	int nodeid;
 	int barrier;
 	int inbox;

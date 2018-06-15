@@ -43,8 +43,8 @@ static int nr_registration = 0;
  * @brief Lookup table of process names.
  */
 static struct {
-	int nodeid;               /**< NoC node ID.  */
-	char name[PROC_NAME_MAX]; /**< Process name. */
+	int nodeid;                      /**< NoC node ID.  */
+	char name[NANVIX_PROC_NAME_MAX]; /**< Process name. */
 } names[HAL_NR_NOC_NODES];
 
 /*===================================================================*
@@ -199,6 +199,8 @@ void *name_server(void *args)
 
 	((void) args);
 
+	hal_setup();
+
 	name_init();
 
 	/* Open server mailbox. */
@@ -290,5 +292,6 @@ void *name_server(void *args)
 		hal_mailbox_unlink(inbox);
 	pthread_mutex_unlock(&lock);
 
+	hal_cleanup();
 	return (NULL);
 }

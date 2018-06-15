@@ -38,7 +38,7 @@
  * @param portal    Adress where the portal will be stored.
  * @param local     ID of the local NoC node.
  *
- * @returns Upon successful completion, 0 is returned.
+ * @returns Upon successful completion, zero is returned.
  * Upon failure, a negative error code is returned instead.
  */
 int hal_portal_create(portal_t *portal, int local)
@@ -46,16 +46,17 @@ int hal_portal_create(portal_t *portal, int local)
 	int fd;               /* Portal NoC Connector.       */
 	char pathname[128];   /* NoC connector name.         */
 	int noctag;           /* NoC tag used for transfers. */
+	int remote;           /* ID of the remote NoC node.  */
 
 	/* Invalid portal adress */
 	if (portal == NULL)
 		return (-EINVAL);
 
-#ifdef _HAS_NOC_GET_NODE_ID_
+	remote = hal_get_node_id();
+
 	/* Invalid node ID. */
-	if (local != hal_get_node_id())
+	if (local != remote)
 		return (-EINVAL);
-#endif
 
 	noctag = noctag_portal(local);
 
@@ -108,7 +109,6 @@ int hal_portal_allow(portal_t *portal, int remote)
 	if (remote == local)
 		return (-EINVAL);
 
-
 	/* Create underlying sync. */
 	snprintf(pathname,
 			ARRAY_LENGTH(pathname),
@@ -116,7 +116,7 @@ int hal_portal_allow(portal_t *portal, int remote)
 			remote,
 			(k1_is_ccluster(remote) || k1_is_ccluster(local)) ?
 							 noctag_portal(portal->local) : 127
-			);
+	);
 
 	if ((sync_fd = mppa_open(pathname, O_WRONLY)) == -1)
 		return (-EAGAIN);
@@ -138,7 +138,7 @@ int hal_portal_allow(portal_t *portal, int remote)
  * @param portal     Adress where the portal will be stored
  * @param remote     ID of the target NoC node.
  *
- * @returns Upon successful completion 0 is returned.
+ * @returns Upon successful completion zero is returned.
  * Upon failure, a negative error code is returned instead.
  */
 int hal_portal_open(portal_t *portal, int remote)
@@ -211,7 +211,8 @@ static inline uint64_t portal_sync(int nodeid)
 	if ((nodeid >= IOCLUSTER0) && (nodeid < IOCLUSTER0 + NR_IOCLUSTER_DMA))
 		return (1 << (CCLUSTER15 + 1 + nodeid%NR_IOCLUSTER_DMA));
 	else if ((nodeid >= IOCLUSTER1) && (nodeid < IOCLUSTER1 + NR_IOCLUSTER_DMA))
-		return (1 << (CCLUSTER15 + 1 + NR_IOCLUSTER_DMA + nodeid%NR_IOCLUSTER_DMA));
+		return (1 << (CCLUSTER15 + 1 + NR_IOCLUSTER_DMA +
+								nodeid%NR_IOCLUSTER_DMA));
 	return (1 << nodeid);
 }
 

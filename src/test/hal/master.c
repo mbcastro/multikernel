@@ -24,24 +24,70 @@
 
 #include <mppa/osconfig.h>
 
+#include <nanvix/config.h>
 #include <nanvix/hal.h>
-
-#define NR_CORES 4
 
 /**
  * @brief Asserts a logic expression.
  */
 #define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
-
 /**
  * @brief Global barrier for synchronization.
  */
 static pthread_barrier_t barrier;
 
 /**
- * @brief Lock for critical sections.
+ * @brief Number of cores in the underlying cluster.
  */
-static pthread_mutex_t lock;
+static int ncores = 0;
+
+/*===================================================================*
+ * API Test: Query Cluster ID                                        *
+ *===================================================================*/
+
+/**
+ * @brief API Test: Query Cluster ID
+ */
+static void *test_thread_hal_get_cluster_id(void *args)
+{
+	int arg;
+
+	hal_setup();
+	pthread_barrier_wait(&barrier);
+
+	arg = ((int *)args)[0];
+
+	TEST_ASSERT(arg == hal_get_cluster_id());
+
+	hal_cleanup();
+	return (NULL);
+}
+
+/**
+ * @brief API Test: Query Cluster ID.
+ */
+static void test_hal_get_cluster_id(void)
+{
+	int args[ncores];
+	pthread_t threads[ncores];
+
+	printf("[test][api] Query Cluster ID\n");
+
+	/* Spawn driver threads. */
+	for (int i = 1; i < ncores; i++)
+	{
+		args[i] = hal_noc_nodes[SPAWNER_SERVER_NODE];
+		assert((pthread_create(&threads[i],
+			NULL,
+			test_thread_hal_get_cluster_id,
+			&args[i])) == 0
+		);
+	}
+
+	/* Wait for driver threads. */
+	for (int i = 1; i < ncores; i++)
+		pthread_join(threads[i], NULL);
+}
 
 /*===================================================================*
  * API Test: Query Core ID                                           *
@@ -53,17 +99,15 @@ static pthread_mutex_t lock;
 static void *test_thread_hal_get_core_id(void *args)
 {
 	int tid;
-	int coreid;
+
+	hal_setup();
+	pthread_barrier_wait(&barrier);
 
 	tid = ((int *)args)[0];
 
-	coreid = hal_get_core_id();
+	TEST_ASSERT(tid == hal_get_core_id());
 
-	pthread_mutex_lock(&lock);
-	printf("coreid = %d %d\n", coreid, tid);
-	assert (tid == coreid);
-	pthread_mutex_unlock(&lock);
-
+	hal_cleanup();
 	return (NULL);
 }
 
@@ -72,44 +116,147 @@ static void *test_thread_hal_get_core_id(void *args)
  */
 static void test_hal_get_core_id(void)
 {
-	int tids[NR_CORES];
-	pthread_t threads[NR_CORES];
+	int args[ncores];
+	pthread_t threads[ncores];
 
 	printf("[test][api] Query Core ID\n");
 
 	/* Spawn driver threads. */
-	for (int i = 0; i < NR_CORES; i++)
+	for (int i = 1; i < ncores; i++)
 	{
-		tids[i] = i + 1;
+		args[i] = i;
 		assert((pthread_create(&threads[i],
 			NULL,
 			test_thread_hal_get_core_id,
-			&tids[i])) == 0
+			&args[i])) == 0
 		);
 	}
 
 	/* Wait for driver threads. */
-	for (int i = 0; i < NR_CORES; i++)
+	for (int i = 1; i < ncores; i++)
 		pthread_join(threads[i], NULL);
 }
 
 /*===================================================================*
- * Mailbox Test Driver                                               *
+ * API Test: Query Core Type                                         *
  *===================================================================*/
 
 /**
- * @brief Mailbox Test Driver
+ * @brief API Test: Query Core Type
+ */
+static void *test_thread_hal_get_core_type(void *args)
+{
+	((void) args);
+
+	hal_setup();
+	pthread_barrier_wait(&barrier);
+
+	TEST_ASSERT(hal_get_core_type() == HAL_CORE_SYSTEM);
+
+	hal_cleanup();
+	return (NULL);
+}
+
+/**
+ * @brief API Test: Query Core Type
+ */
+static void test_hal_get_core_type(void)
+{
+	pthread_t threads[ncores];
+
+	printf("[test][api] Query Core Type\n");
+
+	/* Spawn driver threads. */
+	for (int i = 1; i < ncores; i++)
+	{
+		assert((pthread_create(&threads[i],
+			NULL,
+			test_thread_hal_get_core_type,
+			NULL)) == 0
+		);
+	}
+
+	/* Wait for driver threads. */
+	for (int i = 1; i < ncores; i++)
+		pthread_join(threads[i], NULL);
+}
+
+/*===================================================================*
+ * API Test: Query NoC Node ID                                         *
+ *===================================================================*/
+
+/**
+ * @brief API Test: Query NoC Node ID
+ */
+static void *test_thread_hal_get_node_id(void *args)
+{
+	int tid;
+
+	hal_setup();
+	pthread_barrier_wait(&barrier);
+
+	tid = ((int *)args)[0];
+
+	TEST_ASSERT(hal_get_node_id() == hal_noc_nodes[SPAWNER_SERVER_NODE + tid]);
+
+	hal_cleanup();
+	return (NULL);
+}
+
+/**
+ * @brief API Test: Query NoC Node ID
+ */
+static void test_hal_get_node_id(void)
+{
+	int args[ncores];
+	pthread_t threads[ncores];
+
+	printf("[test][api] Query NoC Node ID\n");
+
+	/* Spawn driver threads. */
+	for (int i = 1; i < ncores; i++)
+	{
+		args[i] = i;
+		assert((pthread_create(&threads[i],
+			NULL,
+			test_thread_hal_get_node_id,
+			&args[i])) == 0
+		);
+	}
+
+	/* Wait for driver threads. */
+	for (int i = 1; i < ncores; i++)
+		pthread_join(threads[i], NULL);
+}
+
+/*===================================================================*
+ * HAL Test Driver                                                   *
+ *===================================================================*/
+
+/**
+ * @brief HAL Test Driver
  */
 int main(int argc, const char **argv)
 {
 	((void) argc);
 	((void) argv);
 
-	pthread_mutex_init(&lock, NULL);
-	pthread_barrier_init(&barrier, NULL, NR_CORES);
+	hal_setup();
 
-	/* API tests. */
+	/*
+	 * We hope that this is not buggy.
+	 */
+	ncores = hal_get_num_cores();
+	printf("[test][api] Number of Cores = %d\n", ncores);
+
+	pthread_barrier_init(&barrier, NULL, ncores - 1);
+
+	/* Core Interface API tests. */
+	test_hal_get_cluster_id();
 	test_hal_get_core_id();
+	test_hal_get_core_type();
+	test_hal_get_node_id();
 
+	hal_cleanup();
 	return (EXIT_SUCCESS);
 }
