@@ -19,14 +19,19 @@
 
 # Conflicts.
 .PHONY: hal
+.PHONY: hal-sync
 .PHONY: hal-mailbox
 
 # Builds everything.
-all: hal hal-mailbox
+all: hal hal-sync hal-mailbox
 
 # Builds HAL testing unit. 
 hal:
 	cd hal && $(MAKE) all
+
+# Builds HAL Sync testing unit. 
+hal-sync:
+	cd hal-sync && $(MAKE) all
 
 # Builds HAL Mailbox testing unit. 
 hal-mailbox:
@@ -35,5 +40,6 @@ hal-mailbox:
 # Cleans compilation files.
 clean:
 	cd hal && $(MAKE) clean
+	cd hal-sync && $(MAKE) clean
 	cd hal-mailbox && $(MAKE) clean
 
