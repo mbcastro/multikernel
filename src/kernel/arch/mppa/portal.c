@@ -20,7 +20,6 @@
 #include <nanvix/klib.h>
 #include <nanvix/hal.h>
 #include <nanvix/arch/mppa.h>
-#include <assert.h>
 #include <errno.h>
 #include <inttypes.h>
 #include <string.h>
@@ -250,11 +249,13 @@ int hal_portal_read(portal_t *portal, void *buf, size_t n)
 
 	/* Setup read operation. */
 	mppa_aiocb_ctor(&aiocb, portal->portal_fd, buf, n);
-	assert(mppa_aio_read(&aiocb) != -1);
+	if (mppa_aio_read(&aiocb) == -1)
+		return (-EINVAL);
 
 	/* Unblock remote. */
 	mask = portal_sync(portal->local);
-	assert(mppa_write(portal->sync_fd, &mask, sizeof(uint64_t)) != -1);
+	if (mppa_write(portal->sync_fd, &mask, sizeof(uint64_t)) == -1)
+		return (-EAGAIN);
 
 	/* Wait read operation to complete. */
 	nread = mppa_aio_wait(&aiocb);
@@ -296,9 +297,11 @@ int hal_portal_write(portal_t *portal, const void *buf, size_t n)
 
 	/* Wait for remote to be ready. */
 	mask = portal_sync(portal->remote);
-	assert(mppa_ioctl(portal->sync_fd, MPPA_RX_SET_MATCH, ~mask) != -1);
+	if (mppa_ioctl(portal->sync_fd, MPPA_RX_SET_MATCH, ~mask) == -1)
+		return (-EINVAL);
 
-	assert(mppa_read(portal->sync_fd, &mask, sizeof(uint64_t)) != -1);
+	if (mppa_read(portal->sync_fd, &mask, sizeof(uint64_t)) == -1)
+		return (-EAGAIN);
 
 	/* Write. */
 	nwrite = mppa_pwrite(portal->portal_fd, buf, n, 0);
