@@ -26,49 +26,31 @@ export BINDIR  = $(CURDIR)/bin
 export INCDIR  = $(CURDIR)/include
 export LIBDIR  = $(CURDIR)/lib
 export SRCDIR  = $(CURDIR)/src
-export OUTDIR  = $(CURDIR)/output
-
-export LIBNAME = libkernel.a
 
 #===============================================================================
 # Toolchain
 #===============================================================================
-
-# Toochain Location
-export TOOLCHAIN=/usr/local/k1tools
-
-# Toolchain
-export CC = $(TOOLCHAIN)/bin/k1-gcc
-export LD = $(TOOLCHAIN)/bin/k1-ld
-export AR = $(TOOLCHAIN)/bin/k1-ar
 
 # Compiler Options
-export CFLAGS = -ansi -std=c99
+export CFLAGS += -ansi -std=c99
 export CFLAGS += -Wall -Wextra -Werror
 export CFLAGS += -Winit-self -Wswitch-default -Wfloat-equal
 export CFLAGS += -Wundef -Wshadow -Wuninitialized
 export CFLAGS += -O3
 export CFLAGS += -I $(INCDIR)
-export CFLAGS += -D_KALRAY_MPPA256 -D_KALRAY_MPPA_256_HIGH_LEVEL
 ifdef DEBUG
 export CFLAGS += -DDEBUG
 endif
 
 # Linker Options
-export LDFLAGS = -Wl,--defsym=_LIBNOC_DISABLE_FIFO_FULL_CHECK=0 -O=essai
+export LDFLAGS += 
 export ARFLAGS = rcs
 
 #===============================================================================
 # Binaries & Libraries
 #===============================================================================
 
-# MPPA IPC
-export LIBMPPAIPC_K1BDP = $(TOOLCHAIN)/k1-nodeos/lib/mOS/libmppaipc.a
-export LIBMPPAIPC_K1BIO = $(TOOLCHAIN)/k1-rtems/lib/libmppaipc.a
-
-# Kernel
-export LIBKERNEL_K1BDP = $(LIBDIR)/libkernel-k1bdp.a
-export LIBKERNEL_K1BIO = $(LIBDIR)/libkernel-k1bio.a
+include $(CURDIR)/build/makefile.mppa256
 
 # System Services
 export SERVERSBIN = $(BINDIR)/servers
@@ -89,6 +71,10 @@ servers: kernel
 # Builds testing system.
 test: kernel servers
 	cd $(SRCDIR) && $(MAKE) test
+
+# Builds system image.
+image:
+	cd $(SRCDIR) && $(MAKE) image
 
 # Cleans compilation files.
 clean:

@@ -47,6 +47,14 @@ hal-portal:
 name:
 	cd name && $(MAKE) all
 
+# Builds system image.
+image:
+	cd hal && $(MAKE) image
+	cd hal-sync && $(MAKE) image
+	cd hal-mailbox && $(MAKE) image
+	cd hal-portal && $(MAKE) image
+	cd name && $(MAKE) image
+
 # Cleans compilation files.
 clean:
 	cd hal && $(MAKE) clean

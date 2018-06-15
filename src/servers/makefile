@@ -17,12 +17,6 @@
 # along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
 #
 
-# Additional Compiler Options
-CFLAGS += -march=k1b -mos=rtems -mcluster=ioddr 
-
-# Additional Linker Options
-LDFLAGS += -march=k1b -mos=rtems -mcluster=ioddr 
-
 # C source Files
 SRC = name.c spawner.c
 
@@ -31,14 +25,16 @@ OBJ = $(SRC:.c=.o)
 
 #===============================================================================
 
-# Builds the kernel.
+# Builds everything.
 all: $(OBJ)
 	mkdir -p $(BINDIR)
-	$(CC) $(LDFLAGS) $(OBJ) -o $(SERVERSBIN) $(LIBKERNEL_K1BIO) $(LIBMPPAIPC_K1BIO)
+ifeq ($(TARGET),k1bio)
+	$(CC) $(LDFLAGS) $(OBJ) -o $(SERVERSBIN) $(LIBKERNEL) $(LIBMPPAIPC)
+endif
 
 # Builds object files.
 %.o: %.c
-	$(CC) $(CFLAGS) $<  -c -o $@
+	$(CC) $(CFLAGS) $< -c -o $@
 
 # Cleans compilation files.
 clean:

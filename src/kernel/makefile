@@ -22,35 +22,21 @@ SRC = $(wildcard arch/mppa/*.c) \
       $(wildcard ipc/*.c)
 
 # Object Files
-OBJ_K1BDP = $(SRC:.c=.node.o)
-OBJ_K1BIO = $(SRC:.c=.ioddr.o)
+OBJ = $(SRC:.c=.o)
 
 #===============================================================================
 
 # Builds everything.
-all: kernel-k1bdp kernel-k1bio
-
-# Builds the kernel (node).
-kernel-k1bdp: $(OBJ_K1BDP)
+all: $(OBJ)
 	mkdir -p $(LIBDIR)
-	$(AR) $(ARFLAGS) $(LIBKERNEL_K1BDP) $(OBJ_K1BDP)
-
-# Builds the kernel (ioddr).
-kernel-k1bio: $(OBJ_K1BIO)
-	mkdir -p $(LIBDIR)
-	$(AR) $(ARFLAGS) $(LIBKERNEL_K1BIO) $(OBJ_K1BIO)
+	$(AR) $(ARFLAGS) $(LIBKERNEL) $(OBJ)
 
 # Builds object files.
-%.ioddr.o: %.c
-	$(CC) -march=k1b -mos=rtems -mcluster=ioddr $(CFLAGS) $<  -c -o $@
-
-# Builds object files.
-%.node.o: %.c
-	$(CC) -march=k1b -mos=nodeos -mcluster=node $(CFLAGS) $<  -c -o $@
+%.o: %.c
+	$(CC) $(CFLAGS) $<  -c -o $@
 
 # Cleans compilation files.
 clean:
-	rm -rf $(OBJ_K1BDP)
-	rm -rf $(OBJ_K1BIO)
-	rm -rf $(LIBKERNEL_K1BDP)
-	rm -rf $(LIBKERNEL_K1BIO)
+	rm -rf $(OBJ)
+#	rm -rf $(LIBKERNEL)
+

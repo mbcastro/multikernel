@@ -17,12 +17,6 @@
 # along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
 #
 
-# Additional Compiler Options
-CFLAGS += -march=k1b -mos=rtems -mcluster=ioddr 
-
-# Additional Linker Options
-LDFLAGS += -march=k1b -mos=rtems -mcluster=ioddr 
-
 # C source Files
 SRC = $(wildcard *.c)
 
@@ -35,11 +29,16 @@ MULTIBIN = $(BINDIR)/hal-mailbox.img
 
 #===============================================================================
 
-# Builds the kernel.
+# Builds binaries.
 all: $(OBJ)
 	mkdir -p $(BINDIR)
-	$(CC) $(LDFLAGS) $(OBJ) -o $(ELFBIN) $(LIBKERNEL_K1BIO) $(LIBMPPAIPC_K1BIO)
-	$(TOOLCHAIN)/bin/k1-create-multibinary --remove-prefix $(BINDIR) --boot $(ELFBIN) -T $(MULTIBIN)
+ifeq ($(TARGET),k1bio)
+	$(CC) $(LDFLAGS) $(OBJ) -o $(ELFBIN) $(LIBKERNEL) $(LIBMPPAIPC)
+endif
+
+# Builds image.
+image: $(ELFBIN)
+	$(TOOLCHAIN)/bin/k1-create-multibinary -f --remove-prefix $(BINDIR) --boot $(ELFBIN) -T $(MULTIBIN)
 
 # Builds object files.
 %.o: %.c
@@ -48,6 +47,6 @@ all: $(OBJ)
 # Cleans compilation files.
 clean:
 	rm -rf $(OBJ)
-	rm -rf $(ELFBIN)
-	rm -rf $(MULTIBIN)
+#	rm -rf $(ELFBIN)
+#	rm -rf $(MULTIBIN)
 

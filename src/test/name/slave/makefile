@@ -17,12 +17,6 @@
 # along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
 #
 
-# Additional Compiler Options
-CFLAGS += -march=k1b -mos=nodeos -mcluster=node
-
-# Additional Linker Options
-LDFLAGS += -march=k1b -mos=nodeos -mcluster=node
-
 # C source Files
 SRC = $(wildcard *.c)
 
@@ -34,7 +28,9 @@ OBJ = $(SRC:.c=.o)
 # Builds the kernel.
 all: $(OBJ)
 	mkdir -p $(BINDIR)
-	$(CC) $(LDFLAGS) $(OBJ) -o $(ELFBIN_SLAVE) $(LIBKERNEL_K1BDP) $(LIBMPPAIPC_K1BDP)
+ifeq ($(TARGET),k1bdp)
+	$(CC) $(LDFLAGS) $(OBJ) -o $(ELFBIN_SLAVE) $(LIBKERNEL) $(LIBMPPAIPC)
+endif
 
 # Builds object files.
 %.o: %.c
@@ -43,5 +39,5 @@ all: $(OBJ)
 # Cleans compilation files.
 clean:
 	rm -rf $(OBJ)
-	rm -rf $(ELFBIN_SLAVE)
+#	rm -rf $(ELFBIN_SLAVE)
 

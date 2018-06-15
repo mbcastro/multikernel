@@ -17,12 +17,15 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <assert.h>
+#include <pthread.h>
+#include <stdio.h>
+#include <string.h>
+
 #include <mppa/osconfig.h>
+
 #include <nanvix/arch/mppa.h>
 #include <nanvix/hal.h>
-#include <stdio.h>
-#include <pthread.h>
-#include <assert.h>
 
 #define DATA_SIZE 1024
 #define TID_READ 0

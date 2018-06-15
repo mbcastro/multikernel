@@ -24,10 +24,16 @@
 # Binary Files
 export ELFBIN_MASTER = $(BINDIR)/name-master
 export ELFBIN_SLAVE = $(BINDIR)/name-slave
-export MULTIBIN = $(BINDIR)/name.img
+ifeq ($(TARGET),$(filter $(TARGET),k1bdp k1bio))
+	export MULTIBIN = $(BINDIR)/name.img
+endif
 
+# Builds binaries.
 all: master slave
-	$(TOOLCHAIN)/bin/k1-create-multibinary --remove-prefix $(BINDIR) --boot $(SERVERSBIN) --ios $(ELFBIN_MASTER)  --clusters $(ELFBIN_SLAVE) -T $(MULTIBIN)
+
+# Builds image.
+image: $(ELFBIN_MASTER) $(ELFBIN_SLAVE)
+	$(TOOLCHAIN)/bin/k1-create-multibinary -f --remove-prefix $(BINDIR) --boot $(SERVERSBIN) --ios $(ELFBIN_MASTER)  --clusters $(ELFBIN_SLAVE) -T $(MULTIBIN)
 
 # Builds master binary.
 master:

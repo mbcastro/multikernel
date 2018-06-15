@@ -1,0 +1,51 @@
+#
+# Copyright(C) 2011-2018 Pedro H. Penna <pedrohenriquepenna@gmail.com>
+#
+# This file is part of Nanvix.
+#
+# Nanvix is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Nanvix is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
+#
+
+# Toolchain
+export CC = $(TOOLCHAIN)/bin/k1-gcc
+export LD = $(TOOLCHAIN)/bin/k1-ld
+export AR = $(TOOLCHAIN)/bin/k1-ar
+
+# Toochain Location
+export TOOLCHAIN=/usr/local/k1tools
+
+# Compiler Options
+export CFLAGS += -D_KALRAY_MPPA256 -D_KALRAY_MPPA_256_HIGH_LEVEL
+ifeq ($(TARGET),k1bdp)
+	export CFLAGS += -march=k1b -mos=nodeos -mcluster=node 
+else
+	export CFLAGS += -march=k1b -mos=rtems -mcluster=ioddr 
+endif
+
+# Linker Options
+export LDFLAGS += -Wl,--defsym=_LIBNOC_DISABLE_FIFO_FULL_CHECK=0 -O=essai
+ifeq ($(TARGET),k1bdp)
+	export LDFLAGS += -march=k1b -mos=nodeos -mcluster=node 
+else
+	export LDFLAGS += -march=k1b -mos=rtems -mcluster=ioddr 
+endif
+
+# Binaries & Libraries
+ifeq ($(TARGET),k1bdp)
+	export LIBMPPAIPC = $(TOOLCHAIN)/k1-nodeos/lib/mOS/libmppaipc.a
+	export LIBKERNEL = $(LIBDIR)/libkernel-k1bdp.a
+else
+	export LIBMPPAIPC = $(TOOLCHAIN)/k1-rtems/lib/libmppaipc.a
+	export LIBKERNEL = $(LIBDIR)/libkernel-k1bio.a
+endif

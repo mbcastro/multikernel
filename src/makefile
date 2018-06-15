@@ -28,11 +28,17 @@ kernel:
 
 # Builds system servers
 servers:
+ifeq ($(TARGET),k1bio)
 	cd servers && $(MAKE) all
+endif
 
 # Builds testing system.
 test:
 	cd test && $(MAKE) all
+
+# Builds system image.
+image:
+	cd test && $(MAKE) image
 
 # Cleans compilation files.
 clean:
