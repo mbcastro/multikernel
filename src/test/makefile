@@ -23,7 +23,7 @@
 # Builds everything.
 all: hal
 
-# HAL testing unit. 
+# Builds HAL testing unit. 
 hal:
 	cd hal && $(MAKE) all
 

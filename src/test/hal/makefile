@@ -1,3 +1,4 @@
+#
 # Copyright(C) 2011-2018 Pedro H. Penna <pedrohenriquepenna@gmail.com>
 #
 # This file is part of Nanvix.
@@ -16,44 +17,33 @@
 # along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
 #
 
-#=============================================================================
-# Mailbox Unit Test
-#=============================================================================
+# Additional Compiler Options
+CFLAGS += -march=k1b -mos=rtems -mcluster=ioddr 
 
-io-bin += hal-master
-hal-master-srcs := $(SRCDIR)/kernel/arch/mppa/core.c  \
-                   $(SRCDIR)/kernel/arch/mppa/noc.c   \
-                   $(SRCDIR)/kernel/arch/mppa/setup.c \
-                   $(SRCDIR)/test/hal/master.c
+# Additional Linker Options
+LDFLAGS += -march=k1b -mos=rtems -mcluster=ioddr 
 
-# Toolchain Configuration
-hal-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
-hal-master-lflags := -lmppaipc
-
-hal-objs := hal-master 
-hal-name := hal.img
-
-#=============================================================================
-# MPPA Binary
-#=============================================================================
-
-mppa-bin := hal
-
-# C source files.
+# C source Files
 SRC = $(wildcard *.c)
 
-# Object files.
+# Object Files
 OBJ = $(SRC:.c=.o)
+
+# Binary Files
+ELFBIN = $(BINDIR)/hal-master
+MULTIBIN = $(BINDIR)/hal.img
+
+#===============================================================================
 
 # Builds the kernel.
 all: $(OBJ)
 	mkdir -p $(BINDIR)
-	$(CC) -march=k1b -mos=rtems -mcluster=ioddr $(OBJ) -o $(BINDIR)/hal-master $(LIBDIR)/$(LIBNAME) $(TOOLCHAIN)/k1-rtems/lib/libmppaipc.a
-	$(TOOLCHAIN)/bin/k1-create-multibinary --remove-prefix $(BINDIR) --boot $(BINDIR)/hal-master -T $(BINDIR)/hal.img
+	$(CC) $(LDFLAGS) $(OBJ) -o $(ELFBIN) $(LIBKERNEL) $(LIBMPPAIPC)
+	$(TOOLCHAIN)/bin/k1-create-multibinary --remove-prefix $(BINDIR) --boot $(ELFBIN) -T $(MULTIBIN)
 
-# Builds object file.
+# Builds object files.
 %.o: %.c
-	$(CC) -march=k1b -mos=rtems -mcluster=ioddr $< $(CFLAGS) -c -o $@
+	$(CC) $(CFLAGS) $< -c -o $@
 
 # Cleans compilation files.
 clean:

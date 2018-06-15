@@ -17,8 +17,9 @@
 # along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
 #
 
-export K1_TOOLCHAIN_DIR=/usr/local/k1tools/
-export TOOLCHAIN=$(K1_TOOLCHAIN_DIR)
+#===============================================================================
+# Directories
+#===============================================================================
 
 # Directories.
 export BINDIR  = $(CURDIR)/bin
@@ -29,58 +30,45 @@ export OUTDIR  = $(CURDIR)/output
 
 export LIBNAME = libkernel.a
 
-# Toolchain.
+#===============================================================================
+# Toolchain
+#===============================================================================
+
+# Toochain Location
+export TOOLCHAIN=/usr/local/k1tools
+
+# Toolchain
 export CC = $(TOOLCHAIN)/bin/k1-gcc
 export LD = $(TOOLCHAIN)/bin/k1-ld
 export AR = $(TOOLCHAIN)/bin/k1-ar
 
-# Toolchain configuration.
-export cflags := -ansi -std=c99
-export cflags += -Wall -Wextra -Werror
-export cflags += -Winit-self -Wswitch-default -Wfloat-equal -Wundef -Wshadow -Wuninitialized
-export cflags += -O3
-export cflags += -I $(INCDIR)
-export cflags += -D_KALRAY_MPPA256
+# Compiler Options
+export CFLAGS = -ansi -std=c99
+export CFLAGS += -Wall -Wextra -Werror
+export CFLAGS += -Winit-self -Wswitch-default -Wfloat-equal
+export CFLAGS += -Wundef -Wshadow -Wuninitialized
+export CFLAGS += -O3
+export CFLAGS += -I $(INCDIR)
+export CFLAGS += -D_KALRAY_MPPA256 -D_KALRAY_MPPA_256_HIGH_LEVEL
 ifdef DEBUG
-export cflags += -DDEBUG
+export CFLAGS += -DDEBUG
 endif
-export lflags := -Wl,--defsym=_LIBNOC_DISABLE_FIFO_FULL_CHECK=0 -O=essai
-export O := $(OUTDIR)
-export CFLAGS = -D_KALRAY_MPPA_256_HIGH_LEVEL $(cflags)
+
+# Linker Options
+export LDFLAGS = -Wl,--defsym=_LIBNOC_DISABLE_FIFO_FULL_CHECK=0 -O=essai
 export ARFLAGS = rcs
 
-#=============================================================================
-# Servers
-#=============================================================================
+#===============================================================================
+# Libraries
+#===============================================================================
 
-# C source files.
-SRC = $(wildcard $(SRCDIR)/kernel/arch/mppa/*.c) \
-      $(wildcard $(SRCDIR)/kernel/ipc/*.c)
+# MPPA IPC
+export LIBMPPAIPC = $(TOOLCHAIN)/k1-rtems/lib/libmppaipc.a
 
-# Object files.
-OBJ = $(SRC:.c=.o)
+# Kernel
+export LIBKERNEL = $(LIBDIR)/libkernel.a
 
-export io-bin += spawner-server
-
-# Name Server
-export spawner-server-srcs := $(SRCDIR)/servers/spawner.c \
-                              $(SRCDIR)/servers/name.c    \
-                              $(SRC)
-
-export spawner-server-system := rtems
-export spawner-server-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
-export spawner-server-lflags := -lmppaipc -pthread
-
-# RMEM Server
-export rmem-server-srcs := $(SRCDIR)/servers/rmem.c \
-                           $(SRCDIR)/servers/name.c \
-                           $(SRC)
-
-export rmem-server-system := rtems
-export rmem-server-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
-export rmem-server-lflags := -lmppaipc -pthread
-
-#=============================================================================
+#===============================================================================
 
 # Builds everything.
 all: kernel test

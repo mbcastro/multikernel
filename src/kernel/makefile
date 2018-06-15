@@ -17,21 +17,26 @@
 # along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
 #
 
-# C source files.
+# Additional Compiler Opitions
+CFLAGS += -march=k1b -mos=rtems -mcluster=ioddr 
+
+# C source Files
 SRC = $(wildcard arch/mppa/*.c) \
       $(wildcard ipc/*.c)
 
-# Object files.
+# Object Files
 OBJ = $(SRC:.c=.o)
+
+#===============================================================================
 
 # Builds the kernel.
 all: $(OBJ)
 	mkdir -p $(LIBDIR)
-	$(AR) $(ARFLAGS) $(LIBDIR)/$(LIBNAME) $(OBJ)
+	$(AR) $(ARFLAGS) $(LIBKERNEL) $(OBJ)
 
-# Builds object file.
+# Builds object files.
 %.o: %.c
-	$(CC) -march=k1b -mos=rtems -mcluster=ioddr $< $(CFLAGS) -c -o $@
+	$(CC) $(CFLAGS) $<  -c -o $@
 
 # Cleans compilation files.
 clean:
