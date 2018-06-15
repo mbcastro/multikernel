@@ -19,15 +19,13 @@
 
 #include <mppa/osconfig.h>
 #include <nanvix/arch/mppa.h>
-#include <nanvix/pm.h>
 #include <nanvix/hal.h>
-#include <assert.h>
 #include <stdio.h>
-#include <string.h>
+#include <pthread.h>
+#include <assert.h>
 
-#define NR_CORES 4
 #define DATA_SIZE 1024
-#define DMA_READ 0
+#define TID_READ 0
 
 /**
  * @brief Asserts a logic expression.
@@ -38,6 +36,11 @@
  * @brief Global barrier for synchronization.
  */
 static pthread_barrier_t barrier;
+
+/**
+ * @brief Number of cores in the underlying cluster.
+ */
+static int ncores = 0;
 
 /**
  * @brief Lock for critical sections.
@@ -53,16 +56,19 @@ static pthread_mutex_t lock;
  */
 static void *test_hal_portal_thread_create_unlink(void *args)
 {
-	int dma;
 	portal_t inportal;
 	int nodeid;
 
-	dma = ((int *)args)[0];
+	hal_setup();
 
-	nodeid = hal_get_cluster_id();
+	pthread_barrier_wait(&barrier);
+
+	((void) args);
+
+	nodeid = hal_get_node_id();
 
 	pthread_mutex_lock(&lock);
-	TEST_ASSERT((hal_portal_create(&inportal, nodeid + dma)) == 0);
+	TEST_ASSERT((hal_portal_create(&inportal, nodeid) == 0));
 	pthread_mutex_unlock(&lock);
 
 	pthread_barrier_wait(&barrier);
@@ -71,6 +77,7 @@ static void *test_hal_portal_thread_create_unlink(void *args)
 	TEST_ASSERT(hal_portal_unlink(&inportal) == 0);
 	pthread_mutex_unlock(&lock);
 
+	hal_cleanup();
 	return (NULL);
 }
 
@@ -79,25 +86,25 @@ static void *test_hal_portal_thread_create_unlink(void *args)
  */
 static void test_hal_portal_create_unlink(void)
 {
-	int dmas[NR_CORES];
-	pthread_t tids[NR_CORES];
+	int tids[ncores];
+	pthread_t threads[ncores];
 
 	printf("[test][api] Portal Create Unlink\n");
 
 	/* Spawn driver threads. */
-	for (int i = 0; i < NR_CORES; i++)
+	for (int i = 0; i < ncores; i++)
 	{
-		dmas[i] = i;
-		assert((pthread_create(&tids[i],
+		tids[i] = i;
+		assert((pthread_create(&threads[i],
 			NULL,
 			test_hal_portal_thread_create_unlink,
-			&dmas[i])) == 0
+			&tids[i])) == 0
 		);
 	}
 
 	/* Wait for driver threads. */
-	for (int i = 0; i < NR_CORES; i++)
-		pthread_join(tids[i], NULL);
+	for (int i = 0; i < ncores; i++)
+		pthread_join(threads[i], NULL);
 }
 
 /*===================================================================*
@@ -109,19 +116,24 @@ static void test_hal_portal_create_unlink(void)
  */
 static void *test_hal_portal_thread_open_close(void *args)
 {
-	int dma;
 	portal_t outportal;
+	int tid;
 	int nodeid;
 
-	dma = ((int *)args)[0];
+	hal_setup();
 
-	nodeid = hal_get_cluster_id();
+	pthread_barrier_wait(&barrier);
+
+	tid = ((int *)args)[0];
+
+	nodeid = hal_get_node_id();
 
 	pthread_barrier_wait(&barrier);
 
 	pthread_mutex_lock(&lock);
-
-	TEST_ASSERT(hal_portal_open(&outportal, nodeid + (dma + 1)%NR_CORES) == 0);
+	TEST_ASSERT((hal_portal_open(&outportal, ((tid + 1) == ncores) ?
+		nodeid + 1 - ncores + 1:
+		nodeid + 1)) == 0);
 	pthread_mutex_unlock(&lock);
 
 	pthread_barrier_wait(&barrier);
@@ -130,6 +142,7 @@ static void *test_hal_portal_thread_open_close(void *args)
 	TEST_ASSERT(hal_portal_close(&outportal) == 0);
 	pthread_mutex_unlock(&lock);
 
+	hal_cleanup();
 	return (NULL);
 }
 
@@ -138,102 +151,94 @@ static void *test_hal_portal_thread_open_close(void *args)
  */
 static void test_hal_portal_open_close(void)
 {
-	int dmas[NR_CORES];
-	pthread_t tids[NR_CORES];
+	int tids[ncores];
+	pthread_t threads[ncores];
 
 	printf("[test][api] Portal Open Close\n");
 
 	/* Spawn driver threads. */
-	for (int i = 0; i < NR_CORES; i++)
+	for (int i = 0; i < ncores; i++)
 	{
-		dmas[i] = i;
-		assert((pthread_create(&tids[i],
+		tids[i] = i;
+		assert((pthread_create(&threads[i],
 			NULL,
 			test_hal_portal_thread_open_close,
-			&dmas[i])) == 0
+			&tids[i])) == 0
 		);
 	}
 
 	/* Wait for driver threads. */
-	for (int i = 0; i < NR_CORES; i++)
-		pthread_join(tids[i], NULL);
+	for (int i = 0; i < ncores; i++)
+		pthread_join(threads[i], NULL);
 }
 
 /*===================================================================*
- * API Test: Read                                                    *
+ * API Test: Read Write                                              *
  *===================================================================*/
 
 /**
- * @brief API Test: Portal Read thread
+ * @brief API Test: Portal Read Write thread
  */
-static void *test_hal_portal_thread_read(void *args)
+static void *test_hal_portal_thread_read_write(void *args)
 {
-	int dma;
+	portal_t outportal;
 	portal_t inportal;
 	char buf[DATA_SIZE];
 	int nodeid;
+	int clusterid;
 
-	dma = ((int *)args)[0];
+	hal_setup();
 
-	nodeid = hal_get_cluster_id();
+	pthread_barrier_wait(&barrier);
 
-	pthread_mutex_lock(&lock);
-	TEST_ASSERT((hal_portal_create(&inportal, nodeid + dma)) == 0);
-	pthread_mutex_unlock(&lock);
+	((void) args);
 
-	for (int d = 0; d < NR_CORES; d++)
+	nodeid = hal_get_node_id();
+	clusterid = hal_get_cluster_id();
+
+	/* Reader thread */
+	if (nodeid == clusterid + TID_READ)
 	{
-		if (d == dma)
-			continue;
+		pthread_mutex_lock(&lock);
+		TEST_ASSERT((hal_portal_create(&inportal, nodeid)) == 0);
+		pthread_mutex_unlock(&lock);
 
-		assert(hal_portal_allow(&inportal, nodeid + d) == 0);
+		for (int dma = 0; dma < ncores; dma++)
+		{
+			if (clusterid + dma == nodeid)
+				continue;
 
-		memset(buf, 0, DATA_SIZE);
+			/* Enables read operations. */
+			TEST_ASSERT(hal_portal_allow(&inportal, clusterid + dma) == 0);
 
-		TEST_ASSERT(hal_portal_read(&inportal, buf, DATA_SIZE)
-												== DATA_SIZE);
+			memset(buf, 0, DATA_SIZE);
+			TEST_ASSERT(hal_portal_read(&inportal, buf, DATA_SIZE)
+													== DATA_SIZE);
 
-		for (int i = 0; i < DATA_SIZE; i++)
-		TEST_ASSERT(buf[i] == 1);
+			for (int i = 0; i < DATA_SIZE; i++)
+				TEST_ASSERT(buf[i] == 1);
+		}
+
+		pthread_mutex_lock(&lock);
+		TEST_ASSERT(hal_portal_unlink(&inportal) == 0);
+		pthread_mutex_unlock(&lock);
+	}
+	else
+	{
+		pthread_mutex_lock(&lock);
+		TEST_ASSERT(hal_portal_open(&outportal, clusterid + TID_READ) == 0);
+		pthread_mutex_unlock(&lock);
+
+		memset(buf, 1, DATA_SIZE);
+		TEST_ASSERT(hal_portal_write(&outportal, buf, DATA_SIZE)
+												  == DATA_SIZE);
+
+		pthread_mutex_lock(&lock);
+		TEST_ASSERT(hal_portal_close(&outportal) == 0);
+		pthread_mutex_unlock(&lock);
 	}
 
-
-	pthread_mutex_lock(&lock);
-	TEST_ASSERT(hal_portal_unlink(&inportal) == 0);
-	pthread_mutex_unlock(&lock);
-
-	return (NULL);
-}
-
-/*===================================================================*
- * API Test: Write                                                   *
- *===================================================================*/
-
-/**
- * @brief API Test: Portal Write thread
- */
-static void *test_hal_portal_thread_write(void *args)
-{
-	portal_t outportal;
-	char buf[DATA_SIZE];
-	int nodeid;
-
-	int dma = ((int *)args)[0];
-
-	nodeid = hal_get_cluster_id();
-
-	pthread_mutex_lock(&lock);
-	TEST_ASSERT(hal_portal_open(&outportal, nodeid + DMA_READ) == 0);
-	pthread_mutex_unlock(&lock);
-
-	memset(buf, 1, DATA_SIZE);
-	TEST_ASSERT(hal_portal_write(&outportal, buf, DATA_SIZE)
-											  == DATA_SIZE);
-
-	pthread_mutex_lock(&lock);
-	TEST_ASSERT(hal_portal_close(&outportal) == 0);
-	pthread_mutex_unlock(&lock);
-
+	hal_cleanup();
 	return (NULL);
 }
 
@@ -242,37 +247,26 @@ static void *test_hal_portal_thread_write(void *args)
  */
 static void test_hal_portal_read_write(void)
 {
-	int dmas[NR_CORES];
-	pthread_t tids[NR_CORES];
+	int tids[ncores];
+	pthread_t threads[ncores];
 
 	printf("[test][api] Portal Read Write\n");
 
 	/* Spawn driver threads. */
-	for (int i = 0; i < NR_CORES; i++)
+	for (int i = 0; i < ncores; i++)
 	{
-		dmas[i] = i;
+		tids[i] = i;
 
-		if(i == DMA_READ)
-		{
-			assert((pthread_create(&tids[i],
-				NULL,
-				test_hal_portal_thread_read,
-				&dmas[i])) == 0
-			);
-		}
-		else
-		{
-			assert((pthread_create(&tids[i],
-				NULL,
-				test_hal_portal_thread_write,
-				&dmas[i])) == 0
-			);
-		}
+		assert((pthread_create(&threads[i],
+			NULL,
+			test_hal_portal_thread_read_write,
+			&tids[i])) == 0
+		);
 	}
 
 	/* Wait for driver threads. */
-	for (int i = 0; i < NR_CORES; i++)
-		pthread_join(tids[i], NULL);
+	for (int i = 0; i < ncores; i++)
+		pthread_join(threads[i], NULL);
 }
 
 /*===================================================================*
@@ -287,12 +281,17 @@ int main(int argc, const char **argv)
 	((void) argc);
 	((void) argv);
 
+	hal_setup();
+
+	ncores = hal_get_num_cores();
+
 	pthread_mutex_init(&lock, NULL);
-	pthread_barrier_init(&barrier, NULL, NR_CORES);
+	pthread_barrier_init(&barrier, NULL, ncores);
 
 	test_hal_portal_create_unlink();
 	test_hal_portal_open_close();
 	test_hal_portal_read_write();
 
+	hal_cleanup();
 	return (EXIT_SUCCESS);
 }

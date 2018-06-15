@@ -22,11 +22,10 @@
 
 io-bin += hal-portal-master
 hal-portal-master-srcs := $(SRCDIR)/test/hal-portal/master.c  \
-					$(SRCDIR)/kernel/arch/mppa/portal.c   \
-					$(SRCDIR)/kernel/arch/mppa/mailbox.c  \
-					$(SRCDIR)/kernel/arch/mppa/noc.c      \
-					$(SRCDIR)/kernel/arch/mppa/name.c     \
-					$(SRCDIR)/kernel/arch/mppa/core.c
+						$(SRCDIR)/kernel/arch/mppa/portal.c   \
+						$(SRCDIR)/kernel/arch/mppa/setup.c    \
+						$(SRCDIR)/kernel/arch/mppa/noc.c      \
+						$(SRCDIR)/kernel/arch/mppa/core.c
 
 # Toolchain Configuration
 hal-portal-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
