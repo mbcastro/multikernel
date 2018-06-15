@@ -18,28 +18,40 @@
 #
 
 # Conflicts.
-.PHONY: master
-.PHONY: slave
+.PHONY: hal
+.PHONY: hal-sync
+.PHONY: hal-mailbox
+.PHONY: hal-portal
+.PHONY: name
 
-# Binary Files
-export ELFBIN_MASTER = $(BINDIR)/name-master
-export ELFBIN_SLAVE = $(BINDIR)/name-slave
-export MULTIBIN = $(BINDIR)/name.img
+# Builds everything.
+all: hal hal-sync hal-mailbox hal-portal name
 
-all: master slave
-	$(TOOLCHAIN)/bin/k1-create-multibinary --remove-prefix $(BINDIR) --boot $(SERVERSBIN) --ios $(ELFBIN_MASTER)  --clusters $(ELFBIN_SLAVE) -T $(MULTIBIN)
+# Builds HAL testing unit. 
+hal:
+	cd hal && $(MAKE) all
 
-# Builds master binary.
-master:
-	cd master && $(MAKE) all
+# Builds HAL Sync testing unit. 
+hal-sync:
+	cd hal-sync && $(MAKE) all
 
-# Builds slave binary.
-slave:
-	cd slave && $(MAKE) all
+# Builds HAL Mailbox testing unit. 
+hal-mailbox:
+	cd hal-mailbox && $(MAKE) all
+
+# Builds HAL Portal testing unit. 
+hal-portal:
+	cd hal-portal && $(MAKE) all
+
+# Builds Naming Service testing unit
+name:
+	cd name && $(MAKE) all
 
 # Cleans compilation files.
 clean:
-	rm -rf $(MULTIBIN)
-	cd master && $(MAKE) clean
-	cd slave && $(MAKE) clean
+	cd hal && $(MAKE) clean
+	cd hal-sync && $(MAKE) clean
+	cd hal-mailbox && $(MAKE) clean
+	cd hal-portal && $(MAKE) clean
+	cd name && $(MAKE) clean
 

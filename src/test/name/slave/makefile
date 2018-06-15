@@ -17,29 +17,31 @@
 # along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
 #
 
-# Conflicts.
-.PHONY: master
-.PHONY: slave
+# Additional Compiler Options
+CFLAGS += -march=k1b -mos=nodeos -mcluster=node
 
-# Binary Files
-export ELFBIN_MASTER = $(BINDIR)/name-master
-export ELFBIN_SLAVE = $(BINDIR)/name-slave
-export MULTIBIN = $(BINDIR)/name.img
+# Additional Linker Options
+LDFLAGS += -march=k1b -mos=nodeos -mcluster=node
 
-all: master slave
-	$(TOOLCHAIN)/bin/k1-create-multibinary --remove-prefix $(BINDIR) --boot $(SERVERSBIN) --ios $(ELFBIN_MASTER)  --clusters $(ELFBIN_SLAVE) -T $(MULTIBIN)
+# C source Files
+SRC = $(wildcard *.c)
 
-# Builds master binary.
-master:
-	cd master && $(MAKE) all
+# Object Files
+OBJ = $(SRC:.c=.o)
 
-# Builds slave binary.
-slave:
-	cd slave && $(MAKE) all
+#===============================================================================
+
+# Builds the kernel.
+all: $(OBJ)
+	mkdir -p $(BINDIR)
+	$(CC) $(LDFLAGS) $(OBJ) -o $(ELFBIN_SLAVE) $(LIBKERNEL_K1BDP) $(LIBMPPAIPC_K1BDP)
+
+# Builds object files.
+%.o: %.c
+	$(CC) $(CFLAGS) $< -c -o $@
 
 # Cleans compilation files.
 clean:
-	rm -rf $(MULTIBIN)
-	cd master && $(MAKE) clean
-	cd slave && $(MAKE) clean
+	rm -rf $(OBJ)
+	rm -rf $(ELFBIN_SLAVE)
 

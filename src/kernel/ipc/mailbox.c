@@ -225,25 +225,24 @@ int mailbox_create(char *name)
 	if ((mbxid = mailbox_alloc()) < 0)
 		return (-EAGAIN);
 
+	coreid = hal_get_node_id();
+
 	/* Link name. */
 	name_link(coreid, name);
 
 	/* Create underlying HW channel. */
 	if ((fd = hal_mailbox_create(hal_get_cluster_id())) == -1)
-		goto error1;
+		goto error0;
 
 	/* Initialize mailbox. */
 	mailboxes[mbxid].fd = fd;
 
 	return (mbxid);
 
-error1:
-	name_unlink(name);
-/*
 error0:
+	name_unlink(name);
 	mailbox_free(mbxid);
 	return (-EAGAIN);
-*/
 }
 
 /*============================================================================*
@@ -322,7 +321,7 @@ int mailbox_read(int mbxid, void *buf)
 	if (buf == NULL)
 		return (-EINVAL);
 
-	return (hal_mailbox_read(mailboxes[mbxid].fd, buf, MAILBOX_MSG_SIZE));
+	return (hal_mailbox_read(mailboxes[mbxid].fd, buf, HAL_MAILBOX_MSG_SIZE));
 }
 
 /*============================================================================*

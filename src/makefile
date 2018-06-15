@@ -18,28 +18,24 @@
 #
 
 # Conflicts.
-.PHONY: master
-.PHONY: slave
+.PHONY: kernel
+.PHONY: servers
+.PHONY: test
 
-# Binary Files
-export ELFBIN_MASTER = $(BINDIR)/name-master
-export ELFBIN_SLAVE = $(BINDIR)/name-slave
-export MULTIBIN = $(BINDIR)/name.img
+# Builds the kernel.
+kernel:
+	cd kernel && $(MAKE) all
 
-all: master slave
-	$(TOOLCHAIN)/bin/k1-create-multibinary --remove-prefix $(BINDIR) --boot $(SERVERSBIN) --ios $(ELFBIN_MASTER)  --clusters $(ELFBIN_SLAVE) -T $(MULTIBIN)
+# Builds system servers
+servers:
+	cd servers && $(MAKE) all
 
-# Builds master binary.
-master:
-	cd master && $(MAKE) all
-
-# Builds slave binary.
-slave:
-	cd slave && $(MAKE) all
+# Builds testing system.
+test:
+	cd test && $(MAKE) all
 
 # Cleans compilation files.
 clean:
-	rm -rf $(MULTIBIN)
-	cd master && $(MAKE) clean
-	cd slave && $(MAKE) clean
-
+	cd kernel && $(MAKE) clean
+	cd servers && $(MAKE) clean
+	cd test && $(MAKE) clean

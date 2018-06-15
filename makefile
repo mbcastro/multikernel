@@ -1,3 +1,4 @@
+#
 # Copyright(C) 2011-2018 Pedro H. Penna <pedrohenriquepenna@gmail.com>
 #
 # This file is part of Nanvix.
@@ -16,95 +17,79 @@
 # along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
 #
 
-export K1_TOOLCHAIN_DIR=/usr/local/k1tools/
+#===============================================================================
+# Directories
+#===============================================================================
 
 # Directories.
 export BINDIR  = $(CURDIR)/bin
 export INCDIR  = $(CURDIR)/include
+export LIBDIR  = $(CURDIR)/lib
 export SRCDIR  = $(CURDIR)/src
 export OUTDIR  = $(CURDIR)/output
 
-# Toolchain configuration.
-export cflags := -ansi -std=c99
-export cflags += -Wall -Wextra -Werror
-export cflags += -Winit-self -Wswitch-default -Wfloat-equal -Wundef -Wshadow -Wuninitialized
-export cflags += -O3
-export cflags += -I $(INCDIR)
-export cflags += -D_KALRAY_MPPA256
+export LIBNAME = libkernel.a
+
+#===============================================================================
+# Toolchain
+#===============================================================================
+
+# Toochain Location
+export TOOLCHAIN=/usr/local/k1tools
+
+# Toolchain
+export CC = $(TOOLCHAIN)/bin/k1-gcc
+export LD = $(TOOLCHAIN)/bin/k1-ld
+export AR = $(TOOLCHAIN)/bin/k1-ar
+
+# Compiler Options
+export CFLAGS = -ansi -std=c99
+export CFLAGS += -Wall -Wextra -Werror
+export CFLAGS += -Winit-self -Wswitch-default -Wfloat-equal
+export CFLAGS += -Wundef -Wshadow -Wuninitialized
+export CFLAGS += -O3
+export CFLAGS += -I $(INCDIR)
+export CFLAGS += -D_KALRAY_MPPA256 -D_KALRAY_MPPA_256_HIGH_LEVEL
 ifdef DEBUG
-export cflags += -DDEBUG
+export CFLAGS += -DDEBUG
 endif
-export lflags := -Wl,--defsym=_LIBNOC_DISABLE_FIFO_FULL_CHECK=0 -O=essai
-export O := $(OUTDIR)
 
-#=============================================================================
-# Servers
-#=============================================================================
+# Linker Options
+export LDFLAGS = -Wl,--defsym=_LIBNOC_DISABLE_FIFO_FULL_CHECK=0 -O=essai
+export ARFLAGS = rcs
 
-export io-bin += spawner-server
+#===============================================================================
+# Binaries & Libraries
+#===============================================================================
 
-# Name Server
-export spawner-server-srcs := $(SRCDIR)/servers/spawner.c          \
-                              $(SRCDIR)/kernel/arch/mppa/setup.c   \
-                              $(SRCDIR)/kernel/arch/mppa/core.c    \
-                              $(SRCDIR)/kernel/arch/mppa/mailbox.c \
-                              $(SRCDIR)/kernel/arch/mppa/sync.c    \
-                              $(SRCDIR)/kernel/arch/mppa/noc.c     \
-                              $(SRCDIR)/kernel/ipc/name.c          \
-                              $(SRCDIR)/kernel/ipc/barrier.c       \
-                              $(SRCDIR)/servers/name.c
+# MPPA IPC
+export LIBMPPAIPC_K1BDP = $(TOOLCHAIN)/k1-nodeos/lib/mOS/libmppaipc.a
+export LIBMPPAIPC_K1BIO = $(TOOLCHAIN)/k1-rtems/lib/libmppaipc.a
 
-export spawner-server-system := rtems
-export spawner-server-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
-export spawner-server-lflags := -lmppaipc -pthread
+# Kernel
+export LIBKERNEL_K1BDP = $(LIBDIR)/libkernel-k1bdp.a
+export LIBKERNEL_K1BIO = $(LIBDIR)/libkernel-k1bio.a
 
-# RMEM Server
-export rmem-server-srcs := $(SRCDIR)/servers/rmem.c             \
-                           $(SRCDIR)/kernel/arch/mppa/setup.c   \
-                           $(SRCDIR)/kernel/arch/mppa/core.c    \
-                           $(SRCDIR)/kernel/arch/mppa/mailbox.c \
-                           $(SRCDIR)/kernel/arch/mppa/sync.c    \
-                           $(SRCDIR)/kernel/arch/mppa/noc.c     \
-                           $(SRCDIR)/kernel/ipc/name.c          \
-                           $(SRCDIR)/kernel/ipc/barrier.c       \
-                           $(SRCDIR)/servers/name.c
+# System Services
+export SERVERSBIN = $(BINDIR)/servers
 
-export rmem-server-system := rtems
-export rmem-server-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL
-export rmem-server-lflags := -lmppaipc -pthread
+#===============================================================================
 
-#=============================================================================
+# Builds everything.
+all: kernel test servers
 
-all: hal hal-mailbox hal-sync hal-portal name 
+# Builds the kernel.
+kernel:
+	cd $(SRCDIR) && $(MAKE) kernel
 
-hal:
-	cd $(CURDIR)/src/test/hal/ && $(MAKE);
+# Builds system servers
+servers: kernel
+	cd $(SRCDIR) && $(MAKE) servers
 
-async:
-	cd $(CURDIR)/src/test/async/ && $(MAKE);
+# Builds testing system.
+test: kernel servers
+	cd $(SRCDIR) && $(MAKE) test
 
-hal-mailbox:
-	cd $(CURDIR)/src/test/hal-mailbox/ && $(MAKE);
-
-hal-sync:
-	cd $(CURDIR)/src/test/hal-sync/ && $(MAKE);
-
-mailbox:
-	cd $(CURDIR)/src/test/mailbox/ && $(MAKE);
-
-name:
-	cd $(CURDIR)/src/test/name/ && $(MAKE);
-
-hal-portal:
-	cd $(CURDIR)/src/test/hal-portal/ && $(MAKE);
-
-rmem:
-	cd $(CURDIR)/src/test/rmem/ && $(MAKE);
-
+# Cleans compilation files.
 clean:
-	cd $(CURDIR)/src/test/async/; make clean;
-	cd $(CURDIR)/src/test/hal-mailbox/; make clean;
-	cd $(CURDIR)/src/test/mailbox/; make clean;
-	cd $(CURDIR)/src/test/name/; make clean;
-	cd $(CURDIR)/src/test/hal-portal/; make clean;
-	cd $(CURDIR)/src/test/rmem/; make clean;
+	cd $(SRCDIR) && $(MAKE) clean

@@ -1,3 +1,4 @@
+#
 # Copyright(C) 2011-2018 Pedro H. Penna <pedrohenriquepenna@gmail.com>
 #
 # This file is part of Nanvix.
@@ -16,29 +17,37 @@
 # along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
 #
 
-#=============================================================================
-# Synchronization Point Unit Test
-#=============================================================================
+# Additional Compiler Options
+CFLAGS += -march=k1b -mos=rtems -mcluster=ioddr 
 
-io-bin += hal-sync-master
-hal-sync-master-srcs := $(SRCDIR)/test/hal-sync/master.c     \
-                        $(SRCDIR)/kernel/arch/mppa/setup.c   \
-                        $(SRCDIR)/kernel/arch/mppa/core.c    \
-                        $(SRCDIR)/kernel/arch/mppa/mailbox.c \
-                        $(SRCDIR)/kernel/arch/mppa/sync.c    \
-                        $(SRCDIR)/kernel/arch/mppa/noc.c
+# Additional Linker Options
+LDFLAGS += -march=k1b -mos=rtems -mcluster=ioddr 
 
-# Toolchain Configuration
-hal-sync-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL -DDEBUG_MAILBOX
-hal-sync-master-lflags := -lmppaipc
+# C source Files
+SRC = $(wildcard *.c)
 
-hal-sync-objs := hal-sync-master 
-hal-sync-name := hal-sync.img
+# Object Files
+OBJ = $(SRC:.c=.o)
 
-#=============================================================================
-# MPPA Binary
-#=============================================================================
+# Binary Files
+ELFBIN = $(BINDIR)/hal-sync-master
+MULTIBIN = $(BINDIR)/hal-sync.img
 
-mppa-bin := hal-sync
+#===============================================================================
 
-include $(K1_TOOLCHAIN_DIR)/share/make/Makefile.kalray
+# Builds the kernel.
+all: $(OBJ)
+	mkdir -p $(BINDIR)
+	$(CC) $(LDFLAGS) $(OBJ) -o $(ELFBIN) $(LIBKERNEL_K1BIO) $(LIBMPPAIPC_K1BIO)
+	$(TOOLCHAIN)/bin/k1-create-multibinary --remove-prefix $(BINDIR) --boot $(ELFBIN) -T $(MULTIBIN)
+
+# Builds object files.
+%.o: %.c
+	$(CC) $(CFLAGS) $< -c -o $@
+
+# Cleans compilation files.
+clean:
+	rm -rf $(OBJ)
+	rm -rf $(ELFBIN)
+	rm -rf $(MULTIBIN)
+
