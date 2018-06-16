@@ -24,36 +24,36 @@
 .PHONY: hal-portal
 .PHONY: name
 
+# Change binaries directory.
+export BINDIR := $(BINDIR)/test
+
 # Builds everything.
 all: hal hal-sync hal-mailbox hal-portal name
 
 # Builds HAL testing unit. 
 hal:
+	mkdir -p $(BINDIR)
 	cd hal && $(MAKE) all
 
 # Builds HAL Sync testing unit. 
 hal-sync:
+	mkdir -p $(BINDIR)
 	cd hal-sync && $(MAKE) all
 
 # Builds HAL Mailbox testing unit. 
 hal-mailbox:
+	mkdir -p $(BINDIR)
 	cd hal-mailbox && $(MAKE) all
 
 # Builds HAL Portal testing unit. 
 hal-portal:
+	mkdir -p $(BINDIR)
 	cd hal-portal && $(MAKE) all
 
 # Builds Naming Service testing unit
 name:
+	mkdir -p $(BINDIR)
 	cd name && $(MAKE) all
-
-# Builds system image.
-image:
-	cd hal && $(MAKE) image
-	cd hal-sync && $(MAKE) image
-	cd hal-mailbox && $(MAKE) image
-	cd hal-portal && $(MAKE) image
-	cd name && $(MAKE) image
 
 # Cleans compilation files.
 clean:

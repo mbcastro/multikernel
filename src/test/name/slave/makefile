@@ -17,18 +17,21 @@
 # along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
 #
 
-# C source Files
+# C Source Files
 SRC = $(wildcard *.c)
 
 # Object Files
 OBJ = $(SRC:.c=.o)
+
+# Binary Files
+export ELFBIN = $(BINDIR)/name-slave
 
 #===============================================================================
 
 # Builds the kernel.
 all: $(OBJ)
 	mkdir -p $(BINDIR)
-	$(CC) $(LDFLAGS) $(OBJ) -o $(ELFBIN_SLAVE) $(LIBKERNEL) $(LIBS)
+	$(CC) $(LDFLAGS) $(OBJ) -o $(ELFBIN) $(LIBKERNEL) $(LIBS)
 
 # Builds object files.
 %.o: %.c
@@ -40,5 +43,5 @@ clean:
 
 # Cleans everything.
 distclean: clean
-	rm -rf $(ELFBIN_SLAVE)
+	rm -rf $(ELFBIN)
 

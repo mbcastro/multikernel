@@ -17,26 +17,64 @@
 # along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
 #
 
+# Import Platform-Dependent Stuff
+ifeq ($(ARCH),$(filter $(ARCH),k1bdp k1bio))
+	include $(MAKEDIR)/makefile.mppa256
+endif
+
+#===============================================================================
+# Toolchain
+#===============================================================================
+
+# Compiler Options
+export CFLAGS += -ansi -std=c99
+export CFLAGS += -Wall -Wextra -Werror
+export CFLAGS += -Winit-self -Wswitch-default -Wfloat-equal
+export CFLAGS += -Wundef -Wshadow -Wuninitialized
+export CFLAGS += -O3
+export CFLAGS += -I $(INCDIR)
+ifdef DEBUG
+export CFLAGS += -DDEBUG
+endif
+
+# Linker Options
+export LDFLAGS += 
+export ARFLAGS = rcs
+
+#===============================================================================
+# Binaries & Libraries
+#===============================================================================
+
+# System Services
+export SERVERSBIN = $(BINDIR)/servers
+
+#===============================================================================
+
 # Conflicts.
 .PHONY: kernel
 .PHONY: servers
 .PHONY: test
 
+# Builds everything.
+all: kernel tests servers
+
 # Builds the kernel.
-kernel:
+kernel: clean
+ifeq ($(BUILD_KERNEL),true)
 	cd kernel && $(MAKE) all
+endif
 
 # Builds system servers
-servers:
+servers: kernel
+ifeq ($(BUILD_SERVERS),true)
 	cd servers && $(MAKE) all
+endif
 
 # Builds testing system.
-test:
+tests: kernel servers
+ifeq ($(BUILD_TESTS),true)
 	cd test && $(MAKE) all
-
-# Builds system image.
-image:
-	cd test && $(MAKE) image
+endif
 
 # Cleans compilation files.
 clean:

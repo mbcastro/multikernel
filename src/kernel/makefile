@@ -17,8 +17,8 @@
 # along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
 #
 
-# C source Files
-SRC = $(wildcard arch/mppa/*.c) \
+# C Source Files
+SRC = $(wildcard arch/$(TARGET)/*.c) \
       $(wildcard ipc/*.c)
 
 # Object Files
@@ -33,6 +33,7 @@ all: $(OBJ)
 
 # Builds object files.
 %.o: %.c
+	echo $(TARGET)
 	$(CC) $(CFLAGS) $<  -c -o $@
 
 # Cleans compilation files.

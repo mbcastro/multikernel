@@ -17,7 +17,7 @@
 # along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
 #
 
-# C source Files
+# C Source Files
 SRC = name.c spawner.c
 
 # Object Files

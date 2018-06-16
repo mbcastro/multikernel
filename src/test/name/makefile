@@ -21,32 +21,19 @@
 .PHONY: master
 .PHONY: slave
 
-# Binary Files
-export ELFBIN_MASTER = $(BINDIR)/name-master
-export ELFBIN_SLAVE = $(BINDIR)/name-slave
-ifeq ($(TARGET),$(filter $(TARGET),k1bdp k1bio))
-	export MULTIBIN = $(BINDIR)/name.img
-endif
-
 # Builds binaries.
 all: master slave
 
 # Builds master binary.
 master:
-ifeq ($(TARGET),k1bio)
+ifeq ($(BUILD_SERVERS),true)
 	cd master && $(MAKE) all
 endif
 
 # Builds slave binary.
 slave:
-ifeq ($(TARGET),k1bdp)
+ifeq ($(BUILD_SERVERS),false)
 	cd slave && $(MAKE) all
-endif
-
-# Builds image.
-image: $(ELFBIN_MASTER) $(ELFBIN_SLAVE)
-ifeq ($(TARGET),$(filter $(TARGET),k1bdp k1bio))
-	$(TOOLCHAIN)/bin/k1-create-multibinary -f --remove-prefix $(BINDIR) --boot $(SERVERSBIN) --ios $(ELFBIN_MASTER)  --clusters $(ELFBIN_SLAVE) -T $(MULTIBIN)
 endif
 
 # Cleans compilation files.
@@ -56,7 +43,6 @@ clean:
 
 # Cleans everything.
 distclean: clean
-	rm -rf $(MULTIBIN)
 	cd master && $(MAKE) distclean
 	cd slave && $(MAKE) distclean
 

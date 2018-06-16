@@ -17,7 +17,7 @@
 #
 
 export K1TOOLS_DIR="/usr/local/k1tools"
-export OUTDIR=bin
+export OUTDIR=.
 
 # Global parameters.
 NCLUSTERS=16
@@ -80,15 +80,15 @@ function run2
 if [[ $1 == "test" ]];
 then
 	echo "Testing HAL"
-	run1 "hal.img" "/hal-master" | grep "test"
+	run1 "test-hal.img" "/test/hal-master" | grep "test"
 	echo "Testing SYNC"
-	run1 "hal-sync.img" "/hal-sync-master" | grep "test"
+	run1 "test-hal-sync.img" "/test/hal-sync-master" | grep "test"
 	echo "Testing MAILBOX"
-	run1 "hal-mailbox.img" "/hal-mailbox-master" | grep "test"
+	run1 "test-hal-mailbox.img" "/test/hal-mailbox-master" | grep "test"
 	echo "Testing PORTAL"
-	run1 "hal-portal.img" "/hal-portal-master" | grep "test"
+	run1 "test-hal-portal.img" "/test/hal-portal-master" | grep "test"
 	echo "Testing NAME"
-	run2 "name.img" "/servers" "/name-master" "$NCLUSTERS" | grep "test"
+	run2 "test-name.img" "/servers" "/test/name-master" "$NCLUSTERS" | grep "test"
 #	echo "Testing RMEM"
 #	run2 "rmem.img" "rmem-master" "rmem-server" "write $NCLUSTERS $SIZE"
 #	run2 "rmem.img" "rmem-master" "rmem-server" "read $NCLUSTERS $SIZE"

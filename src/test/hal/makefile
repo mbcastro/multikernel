@@ -21,12 +21,6 @@
 .PHONY: master
 .PHONY: slave
 
-# Binary Files
-export ELFBIN_MASTER = $(BINDIR)/hal-master
-ifeq ($(TARGET),k1bio)
-	MULTIBIN = $(BINDIR)/hal.img
-endif
-
 #===============================================================================
 
 # Builds binaries.
@@ -34,14 +28,8 @@ all: master
 
 # Builds master binary.
 master:
-ifeq ($(TARGET),k1bio)
+ifeq ($(BUILD_SERVERS),true)
 	cd master && $(MAKE) all
-endif
-
-# Builds image.
-image: $(ELFBIN_MASTER)
-ifeq ($(TARGET),k1bio)
-	$(TOOLCHAIN)/bin/k1-create-multibinary -f --remove-prefix $(BINDIR) --boot $(ELFBIN_MASTER) -T $(MULTIBIN)
 endif
 
 # Cleans compilation files.
@@ -50,6 +38,5 @@ clean:
 
 # Cleans everything.
 distclean: clean
-	rm -rf $(MULTIBIN)
 	cd master && $(MAKE) distclean
 
