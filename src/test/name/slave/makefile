@@ -28,9 +28,7 @@ OBJ = $(SRC:.c=.o)
 # Builds the kernel.
 all: $(OBJ)
 	mkdir -p $(BINDIR)
-ifeq ($(TARGET),k1bdp)
-	$(CC) $(LDFLAGS) $(OBJ) -o $(ELFBIN_SLAVE) $(LIBKERNEL) $(LIBMPPAIPC)
-endif
+	$(CC) $(LDFLAGS) $(OBJ) -o $(ELFBIN_SLAVE) $(LIBKERNEL) $(LIBS)
 
 # Builds object files.
 %.o: %.c
@@ -39,5 +37,8 @@ endif
 # Cleans compilation files.
 clean:
 	rm -rf $(OBJ)
-#	rm -rf $(ELFBIN_SLAVE)
+
+# Cleans everything.
+distclean: clean
+	rm -rf $(ELFBIN_SLAVE)
 

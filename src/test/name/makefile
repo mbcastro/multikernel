@@ -31,21 +31,32 @@ endif
 # Builds binaries.
 all: master slave
 
-# Builds image.
-image: $(ELFBIN_MASTER) $(ELFBIN_SLAVE)
-	$(TOOLCHAIN)/bin/k1-create-multibinary -f --remove-prefix $(BINDIR) --boot $(SERVERSBIN) --ios $(ELFBIN_MASTER)  --clusters $(ELFBIN_SLAVE) -T $(MULTIBIN)
-
 # Builds master binary.
 master:
+ifeq ($(TARGET),k1bio)
 	cd master && $(MAKE) all
+endif
 
 # Builds slave binary.
 slave:
+ifeq ($(TARGET),k1bdp)
 	cd slave && $(MAKE) all
+endif
+
+# Builds image.
+image: $(ELFBIN_MASTER) $(ELFBIN_SLAVE)
+ifeq ($(TARGET),$(filter $(TARGET),k1bdp k1bio))
+	$(TOOLCHAIN)/bin/k1-create-multibinary -f --remove-prefix $(BINDIR) --boot $(SERVERSBIN) --ios $(ELFBIN_MASTER)  --clusters $(ELFBIN_SLAVE) -T $(MULTIBIN)
+endif
 
 # Cleans compilation files.
 clean:
-	rm -rf $(MULTIBIN)
 	cd master && $(MAKE) clean
 	cd slave && $(MAKE) clean
+
+# Cleans everything.
+distclean: clean
+	rm -rf $(MULTIBIN)
+	cd master && $(MAKE) distclean
+	cd slave && $(MAKE) distclean
 

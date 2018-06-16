@@ -17,6 +17,12 @@
 # along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
 #
 
+export BUILD_TESTS=true
+export BUILD_KERNEL=true
+ifeq ($(TARGET),k1bio)
+	export BUILD_SERVERS=true
+endif
+
 # Toolchain
 export CC = $(TOOLCHAIN)/bin/k1-gcc
 export LD = $(TOOLCHAIN)/bin/k1-ld
@@ -43,9 +49,9 @@ endif
 
 # Binaries & Libraries
 ifeq ($(TARGET),k1bdp)
-	export LIBMPPAIPC = $(TOOLCHAIN)/k1-nodeos/lib/mOS/libmppaipc.a
+	export LIBS = $(TOOLCHAIN)/k1-nodeos/lib/mOS/libmppaipc.a
 	export LIBKERNEL = $(LIBDIR)/libkernel-k1bdp.a
 else
-	export LIBMPPAIPC = $(TOOLCHAIN)/k1-rtems/lib/libmppaipc.a
+	export LIBS = $(TOOLCHAIN)/k1-rtems/lib/libmppaipc.a
 	export LIBKERNEL = $(LIBDIR)/libkernel-k1bio.a
 endif

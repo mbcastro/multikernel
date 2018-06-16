@@ -38,5 +38,8 @@ all: $(OBJ)
 # Cleans compilation files.
 clean:
 	rm -rf $(OBJ)
-#	rm -rf $(LIBKERNEL)
+
+# Cleans everything.
+distclean: clean
+	rm -rf $(LIBKERNEL)
 

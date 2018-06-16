@@ -28,9 +28,7 @@ OBJ = $(SRC:.c=.o)
 # Builds everything.
 all: $(OBJ)
 	mkdir -p $(BINDIR)
-ifeq ($(TARGET),k1bio)
-	$(CC) $(LDFLAGS) $(OBJ) -o $(SERVERSBIN) $(LIBKERNEL) $(LIBMPPAIPC)
-endif
+	$(CC) $(LDFLAGS) $(OBJ) -o $(SERVERSBIN) $(LIBKERNEL) $(LIBS)
 
 # Builds object files.
 %.o: %.c
@@ -39,4 +37,7 @@ endif
 # Cleans compilation files.
 clean:
 	rm -rf $(OBJ)
+
+# Cleans everything.
+distclean: clean
 	rm -rf $(SERVERSBIN)

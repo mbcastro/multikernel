@@ -17,6 +17,11 @@
 # along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
 #
 
+# Import Platform-Dependent Stuff
+ifeq ($(TARGET),$(filter $(TARGET),k1bdp k1bio))
+	include $(CURDIR)/build/makefile.mppa256
+endif
+
 #===============================================================================
 # Directories
 #===============================================================================
@@ -50,27 +55,31 @@ export ARFLAGS = rcs
 # Binaries & Libraries
 #===============================================================================
 
-include $(CURDIR)/build/makefile.mppa256
-
 # System Services
 export SERVERSBIN = $(BINDIR)/servers
 
 #===============================================================================
 
 # Builds everything.
-all: kernel test servers
+all: kernel tests servers
 
 # Builds the kernel.
-kernel:
+kernel: clean
+ifeq ($(BUILD_KERNEL),true)
 	cd $(SRCDIR) && $(MAKE) kernel
+endif
 
 # Builds system servers
 servers: kernel
+ifeq ($(BUILD_SERVERS),true)
 	cd $(SRCDIR) && $(MAKE) servers
+endif
 
 # Builds testing system.
-test: kernel servers
+tests: kernel servers
+ifeq ($(BUILD_TESTS),true)
 	cd $(SRCDIR) && $(MAKE) test
+endif
 
 # Builds system image.
 image:
@@ -79,3 +88,8 @@ image:
 # Cleans compilation files.
 clean:
 	cd $(SRCDIR) && $(MAKE) clean
+
+# Cleans everything.
+distclean:
+	cd $(SRCDIR) && $(MAKE) distclean
+

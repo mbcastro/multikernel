@@ -17,36 +17,39 @@
 # along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
 #
 
-# C source Files
-SRC = $(wildcard *.c)
-
-# Object Files
-OBJ = $(SRC:.c=.o)
+# Conflicts.
+.PHONY: master
+.PHONY: slave
 
 # Binary Files
-ELFBIN = $(BINDIR)/hal-portal-master
-MULTIBIN = $(BINDIR)/hal-portal.img
+export ELFBIN_MASTER = $(BINDIR)/hal-portal-master
+ifeq ($(TARGET),k1bio)
+	MULTIBIN = $(BINDIR)/hal-portal.img
+endif
 
 #===============================================================================
 
 # Builds binaries.
-all: $(OBJ)
-	mkdir -p $(BINDIR)
+all: master
+
+# Builds master binary.
+master:
 ifeq ($(TARGET),k1bio)
-	$(CC) $(LDFLAGS) $(OBJ) -o $(ELFBIN) $(LIBKERNEL) $(LIBMPPAIPC)
+	cd master && $(MAKE) all
 endif
 
 # Builds image.
-image: $(ELFBIN)
-	$(TOOLCHAIN)/bin/k1-create-multibinary -f --remove-prefix $(BINDIR) --boot $(ELFBIN) -T $(MULTIBIN)
-
-# Builds object files.
-%.o: %.c
-	$(CC) $(CFLAGS) $< -c -o $@
+image: $(ELFBIN_MASTER)
+ifeq ($(TARGET),k1bio)
+	$(TOOLCHAIN)/bin/k1-create-multibinary -f --remove-prefix $(BINDIR) --boot $(ELFBIN_MASTER) -T $(MULTIBIN)
+endif
 
 # Cleans compilation files.
 clean:
-	rm -rf $(OBJ)
-#	rm -rf $(ELFBIN)
-#	rm -rf $(MULTIBIN)
+	cd master && $(MAKE) clean
+
+# Cleans everything.
+distclean: clean
+	rm -rf $(MULTIBIN)
+	cd master && $(MAKE) distclean
 

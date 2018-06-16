@@ -28,9 +28,7 @@ kernel:
 
 # Builds system servers
 servers:
-ifeq ($(TARGET),k1bio)
 	cd servers && $(MAKE) all
-endif
 
 # Builds testing system.
 test:
@@ -45,3 +43,10 @@ clean:
 	cd kernel && $(MAKE) clean
 	cd servers && $(MAKE) clean
 	cd test && $(MAKE) clean
+
+# Cleans everything.
+distclean:
+	cd kernel && $(MAKE) distclean
+	cd servers && $(MAKE) distclean
+	cd test && $(MAKE) distclean
+

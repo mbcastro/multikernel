@@ -63,3 +63,11 @@ clean:
 	cd hal-portal && $(MAKE) clean
 	cd name && $(MAKE) clean
 
+# Cleans everything.
+distclean:
+	cd hal && $(MAKE) distclean
+	cd hal-sync && $(MAKE) distclean
+	cd hal-mailbox && $(MAKE) distclean
+	cd hal-portal && $(MAKE) distclean
+	cd name && $(MAKE) distclean
+
