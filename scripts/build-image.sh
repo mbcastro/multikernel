@@ -42,7 +42,7 @@ function build1
 		--remove-prefix $BINDIR             \
 		--boot $bootbin                     \
 		--ios $iobin                        \
-		-T $multibin 
+		-T $multibin
 }
 
 function build2
@@ -57,13 +57,12 @@ function build2
 		--boot $bootbin                     \
 		--ios $iobin                        \
 		--clusters $nodebin                 \
-		-T $multibin 
+		-T $multibin
 }
 
 build1 $BINDIR/servers $BINDIR/test/hal-master         test-hal.img
 build1 $BINDIR/servers $BINDIR/test/hal-sync-master    test-hal-sync.img
-build1 $BINDIR/servers $BINDIR/test/hal-mailbox-master test-hal-mailbox.img
 build1 $BINDIR/servers $BINDIR/test/hal-portal-master  test-hal-portal.img
 
+build1 $BINDIR/test/hal-mailbox-master0        $BINDIR/test/hal-mailbox-master1 test-hal-mailbox.img
 build2 $BINDIR/servers $BINDIR/test/name-master        $BINDIR/test/name-slave test-name.img
-
