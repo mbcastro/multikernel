@@ -31,6 +31,8 @@
 #include <nanvix/hal.h>
 #include <nanvix/pm.h>
 
+#define OTHER_IOCLUSTER 192
+
 /**
  * @brief Number of cores in the underlying cluster.
  */
@@ -45,6 +47,7 @@ static int ncores = 0;
  * @brief Global barrier for synchronization.
  */
 static pthread_barrier_t barrier;
+static int global_barrier;
 
 /**
  * @brief Lock for critical sections.
@@ -179,6 +182,41 @@ static void test_hal_mailbox_open_close(void)
 	/* Wait for driver threads. */
 	for (int i = 1; i < ncores; i++)
 		pthread_join(threads[i], NULL);
+}
+
+/*===================================================================*
+ * API Test: Open Close between IO Clusters                          *
+ *===================================================================*/
+
+/**
+ * @brief API Test: Open Close between IO Clusters
+ */
+static void test_hal_mailbox_open_close_io(void)
+{
+	int inbox;
+	int outbox;
+	int nodeid;
+
+	printf("[test][api] Mailbox Open Close IO Clusters\n");
+
+	nodeid = hal_get_node_id();
+
+	printf("[test][api] hal_mailbox_create(%d)...\n", nodeid);
+	TEST_ASSERT((inbox = hal_mailbox_create(nodeid)) >= 0);
+	printf("[test][api] hal_mailbox_create(%d) = %d OK\n", nodeid, inbox);
+
+	TEST_ASSERT(barrier_wait(global_barrier) >= 0);
+
+	printf("[test][api] hal_mailbox_open(%d)...\n", OTHER_IOCLUSTER);
+	TEST_ASSERT((outbox = hal_mailbox_open(OTHER_IOCLUSTER)) >= 0);
+
+	TEST_ASSERT(barrier_wait(global_barrier) >= 0);
+
+	printf("[test][api] hal_mailbox_close(%d)...\n", outbox);
+	TEST_ASSERT(hal_mailbox_close(outbox) == 0);
+
+	printf("[test][api] hal_mailbox_unlink(%d)...\n", inbox);
+	TEST_ASSERT(hal_mailbox_unlink(inbox) == 0);
 }
 
 /*===================================================================*
@@ -578,7 +616,7 @@ int main(int argc, const char **argv)
 	test_hal_mailbox_bad_create();
 	test_hal_mailbox_double_create();
 	test_hal_mailbox_invalid_open();
-#ifdef _TEST_MAILBOX_BAD_TEST	
+#ifdef _TEST_MAILBOX_BAD_TEST
 	test_hal_mailbox_bad_open();
 #endif
 	test_hal_mailbox_double_open();
@@ -590,6 +628,17 @@ int main(int argc, const char **argv)
 	test_hal_mailbox_invalid_read();
 	test_hal_mailbox_bad_read();
 	test_hal_mailbox_null_read();
+
+	/* Tests using both IO clusters. */
+
+	/* Wait for other IO cluster. */
+	TEST_ASSERT((global_barrier = barrier_open(OTHER_IOCLUSTER)) >= 0);
+	TEST_ASSERT(barrier_wait(global_barrier) >= 0);
+
+	test_hal_mailbox_open_close_io();
+
+	/* House keeping. */
+	TEST_ASSERT(barrier_close(global_barrier) >= 0);
 
 	hal_cleanup();
 	return (EXIT_SUCCESS);
