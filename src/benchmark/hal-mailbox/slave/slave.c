@@ -39,15 +39,12 @@
 /**
  * @brief HAL Mailbox Microbenchmark Kernel
  */
-static void kernel(int inbox, int outbox)
+static void kernel(int inbox)
 {
 	char buffer[HAL_MAILBOX_MSG_SIZE];
 
 	for (int i = 0; i < NITERATIONS; i++)
-	{
 		assert(hal_mailbox_read(inbox, buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
-		assert(hal_mailbox_write(outbox, buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
-	}
 }
 
 /*============================================================================*
@@ -79,7 +76,6 @@ static void sync_master(int nremotes)
 int main(int argc, const char **argv)
 {
 	int inbox;
-	int outbox;
 	int nremotes;
 
 	hal_setup();
@@ -90,20 +86,16 @@ int main(int argc, const char **argv)
 
 	int nodeid = hal_get_node_id();
 
-		printf("node %d: message sent %d\n", nodeid, HAL_MAILBOX_MSG_SIZE);
-
-
 	/* Open mailboxes. */
 	assert((inbox = hal_mailbox_create(nodeid)) >= 0);
-	assert((outbox = hal_mailbox_open(128)) >= 0);
 
 	sync_master(nremotes);
+	printf("node %d: alive\n", nodeid);
 
 	/* Run kernel. */
-	kernel(inbox, outbox);
+	kernel(inbox);
 
 	/* House keeping. */
-	assert(hal_mailbox_close(outbox) == 0);
 	assert((hal_mailbox_unlink(inbox)) == 0);
 
 	hal_cleanup();

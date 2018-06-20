@@ -106,23 +106,17 @@ static void sync_remotes(int nremotes)
  */
 static void kernel(int nlocals, int nremotes, const char *pattern)
 {
-	int inbox;
 	uint64_t t1, t2;
 	int outboxes[nremotes];
 	char buffer[HAL_MAILBOX_MSG_SIZE];
 
 	((void) nlocals);
 
-	/* Create inbox. */
-	assert((inbox = hal_mailbox_create(hal_get_node_id())) >= 0);
-
 	/* Open outboxes. */
 	for (int i = 0; i < nremotes; i++)
 		assert(outboxes[i] = hal_mailbox_open(i));
 
 	memset(buffer, 1, HAL_MAILBOX_MSG_SIZE);
-
-	sync_remotes(nremotes);
 
 	hal_timer_init();
 
@@ -132,10 +126,7 @@ static void kernel(int nlocals, int nremotes, const char *pattern)
 		{			
 			t1 = hal_timer_get();
 			for (int i = 0; i < nremotes; i++)
-			{
 				assert(hal_mailbox_write(outboxes[i], buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
-				assert(hal_mailbox_read(inbox, buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
-			}
 
 			t2 = hal_timer_get();
 
@@ -145,18 +136,12 @@ static void kernel(int nlocals, int nremotes, const char *pattern)
 	else
 	{
 		for (int i = 0; i < nremotes; i++)
-		{
 			assert(hal_mailbox_write(outboxes[i], buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
-			assert(hal_mailbox_read(inbox, buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
-		}
 	}
 
 	/* Close outboxes. */
 	for (int i = 0; i < nremotes; i++)
 		assert(hal_mailbox_close(outboxes[i]) == 0);
-
-	/* House keeping. */
-	assert(hal_mailbox_unlink(inbox) == 0);
 }
 
 /*============================================================================*
@@ -183,9 +168,9 @@ int main(int argc, const char **argv)
 
 	/* Run kernel. */
 	spawn_remotes(nremotes);
+	sync_remotes(nremotes);
 	kernel(nlocals, nremotes, pattern);
 	join_remotes(nremotes);
-
 	
 	hal_cleanup();
 	return (EXIT_SUCCESS);

@@ -103,7 +103,6 @@ int hal_get_core_id(void)
 
 		tid = pthread_self();
 
-
 		pthread_mutex_lock(&core_lock);
 		for (int i = 0; i < NR_IOCLUSTER_CORES; i++)
 		{
