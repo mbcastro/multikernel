@@ -380,8 +380,8 @@ static void test_hal_sync_double_signal_wait(void)
 	TEST_ASSERT((syncid_local = hal_sync_create(nodes_local, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
 	TEST_ASSERT((syncid = hal_sync_open(nodes, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
 
-	TEST_ASSERT(hal_sync_signal(syncid) == 0);
 	TEST_ASSERT(hal_sync_wait(syncid_local) == 0);
+	TEST_ASSERT(hal_sync_signal(syncid) == 0);
 
 	/* House keeping. */
 	TEST_ASSERT(hal_sync_unlink(syncid_local) == 0);
@@ -393,7 +393,7 @@ static void test_hal_sync_double_signal_wait(void)
  *===================================================================*/
 
 /**
- * @brief Fault Injection Test: Synchronization Point Invalid Create 
+ * @brief Fault Injection Test: Synchronization Point Invalid Create
  */
 static void test_hal_sync_invalid_create(void)
 {
@@ -418,7 +418,7 @@ static void test_hal_sync_invalid_create(void)
  *===================================================================*/
 
 /**
- * @brief Fault Injection Test: Synchronization Point Bad Create 
+ * @brief Fault Injection Test: Synchronization Point Bad Create
  */
 static void test_hal_sync_bad_create1(void)
 {
@@ -446,7 +446,7 @@ static void test_hal_sync_bad_create1(void)
 }
 
 /**
- * @brief Fault Injection Test: Synchronization Point Bad Create 
+ * @brief Fault Injection Test: Synchronization Point Bad Create
  */
 static void test_hal_sync_bad_create2(void)
 {
@@ -472,7 +472,7 @@ static void test_hal_sync_bad_create2(void)
 }
 
 /**
- * @brief Fault Injection Test: Synchronization Point Bad Create 
+ * @brief Fault Injection Test: Synchronization Point Bad Create
  */
 static void test_hal_sync_bad_create(void)
 {
@@ -487,7 +487,7 @@ static void test_hal_sync_bad_create(void)
  *===================================================================*/
 
 /**
- * @brief Fault Injection Test: Synchronization Point Invalid Open 
+ * @brief Fault Injection Test: Synchronization Point Invalid Open
  */
 static void test_hal_sync_invalid_open(void)
 {
@@ -512,7 +512,7 @@ static void test_hal_sync_invalid_open(void)
  *===================================================================*/
 
 /**
- * @brief Fault Injection Test: Synchronization Point Bad Open 
+ * @brief Fault Injection Test: Synchronization Point Bad Open
  */
 static void test_hal_sync_bad_open1(void)
 {
@@ -538,7 +538,7 @@ static void test_hal_sync_bad_open1(void)
 }
 
 /**
- * @brief Fault Injection Test: Synchronization Point Bad Open 
+ * @brief Fault Injection Test: Synchronization Point Bad Open
  */
 static void test_hal_sync_bad_open2(void)
 {
@@ -564,7 +564,7 @@ static void test_hal_sync_bad_open2(void)
 }
 
 /**
- * @brief Fault Injection Test: Synchronization Point Bad Open 
+ * @brief Fault Injection Test: Synchronization Point Bad Open
  */
 static void test_hal_sync_bad_open(void)
 {
