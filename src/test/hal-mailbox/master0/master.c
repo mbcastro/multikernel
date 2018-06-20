@@ -206,22 +206,16 @@ static void test_hal_mailbox_open_close_io(void)
 
 	nodeid = hal_get_node_id();
 
-	printf("[test][api] hal_mailbox_create(%d)...\n", nodeid);
 	TEST_ASSERT((inbox = hal_mailbox_create(nodeid)) >= 0);
-	printf("[test][api] hal_mailbox_create(%d) = %d OK\n", nodeid, inbox);
 
 	TEST_ASSERT(hal_sync_signal(syncid) == 0);
 
-	printf("[test][api] hal_mailbox_open(%d)...\n", OTHER_IOCLUSTER);
 	TEST_ASSERT((outbox = hal_mailbox_open(OTHER_IOCLUSTER)) >= 0);
-	printf("[test][api] hal_mailbox_open(%d) = %d OK\n", OTHER_IOCLUSTER, outbox);
 
-	printf("[test][api] hal_mailbox_close(%d)...\n", outbox);
 	TEST_ASSERT(hal_mailbox_close(outbox) == 0);
 
 	TEST_ASSERT(hal_sync_signal(syncid) == 0);
 
-	printf("[test][api] hal_mailbox_unlink(%d)...\n", inbox);
 	TEST_ASSERT(hal_mailbox_unlink(inbox) == 0);
 }
 
@@ -644,10 +638,7 @@ int main(int argc, const char **argv)
 
 	TEST_ASSERT((syncid = hal_sync_open(nodes, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
 
-	printf("test: sync signal from %d...\n", hal_get_node_id());
 	TEST_ASSERT(hal_sync_signal(syncid) == 0);
-
-	printf("test: %d passed sync point...\n", hal_get_node_id());
 
 	test_hal_mailbox_open_close_io();
 
