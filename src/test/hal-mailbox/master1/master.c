@@ -53,6 +53,9 @@
  */
 // static pthread_mutex_t lock;
 
+int syncid;
+int nodes[2];
+
 // /*===================================================================*
 //  * API Test: Create Unlink                                           *
 //  *===================================================================*/
@@ -192,19 +195,19 @@
  */
 static void test_hal_mailbox_open_close_io(void)
 {
-	// int inbox;
+	int inbox;
 	int outbox;
-	// int nodeid;
+	int nodeid;
 
-	// printf("[test][api] Mailbox Open Close IO Clusters\n");
+	printf("[test][api] Mailbox Open Close IO Clusters\n");
 
-	// nodeid = hal_get_node_id();
+	nodeid = hal_get_node_id();
 
-	// printf("[test][api] hal_mailbox_create(%d)...\n", nodeid);
-	// TEST_ASSERT((inbox = hal_mailbox_create(nodeid)) >= 0);
-	// printf("[test][api] hal_mailbox_create(%d) = %d OK\n", nodeid, inbox);
+	printf("[test][api] hal_mailbox_create(%d)...\n", nodeid);
+	TEST_ASSERT((inbox = hal_mailbox_create(nodeid)) >= 0);
+	printf("[test][api] hal_mailbox_create(%d) = %d OK\n", nodeid, inbox);
 
-	// TEST_ASSERT(barrier_wait(global_barrier) >= 0);
+	TEST_ASSERT(hal_sync_signal(syncid) == 0);
 
 	printf("[test][api] hal_mailbox_open(%d)...\n", OTHER_IOCLUSTER);
 	TEST_ASSERT((outbox = hal_mailbox_open(OTHER_IOCLUSTER)) >= 0);
@@ -213,10 +216,10 @@ static void test_hal_mailbox_open_close_io(void)
 	printf("[test][api] hal_mailbox_close(%d)...\n", outbox);
 	TEST_ASSERT(hal_mailbox_close(outbox) == 0);
 
-	// TEST_ASSERT(barrier_wait(global_barrier) >= 0);
+	TEST_ASSERT(hal_sync_signal(syncid) == 0);
 
-	// printf("[test][api] hal_mailbox_unlink(%d)...\n", inbox);
-	// TEST_ASSERT(hal_mailbox_unlink(inbox) == 0);
+	printf("[test][api] hal_mailbox_unlink(%d)...\n", inbox);
+	TEST_ASSERT(hal_mailbox_unlink(inbox) == 0);
 }
 
 // /*===================================================================*
@@ -632,16 +635,14 @@ int main(int argc, const char **argv)
 	/* Tests using both IO clusters. */
 
 	/* Wait for other IO cluster. */
-	int syncid_remote;
-	int nodes[2];
 
 	nodes[0] = hal_get_node_id();
 	nodes[1] = OTHER_IOCLUSTER;
 
-	TEST_ASSERT((syncid_remote = hal_sync_open(nodes, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
+	TEST_ASSERT((syncid = hal_sync_open(nodes, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
 
 	printf("test: sync signal from %d...\n", hal_get_node_id());
-	TEST_ASSERT(hal_sync_signal(syncid_remote) == 0);
+	TEST_ASSERT(hal_sync_signal(syncid) == 0);
 
 	printf("test: %d passed sync point...\n", hal_get_node_id());
 
