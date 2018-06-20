@@ -98,6 +98,8 @@ then
 #	run2 "rmem.img" "rmem-master" "rmem-server" "read $NCLUSTERS $SIZE"
 elif [[ $1 == "benchmark" ]];
 then
+	echo "Benchmarking HAL Mailbox"
+	run1 "benchmark-hal-mailbox.img" "/benchmark/hal-mailbox-master" "1 16 row"
 	if [[ $2 == "async" ]];
 	then
 		echo "Testing ASYNC"

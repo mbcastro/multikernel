@@ -34,7 +34,7 @@ static uint64_t timer_error = 0;
  *
  * @returns The current timer value;
  */
-uint64_t k1_timer_get(void)
+uint64_t hal_timer_get(void)
 {
 	return (__k1_read_dsu_timestamp());
 }
@@ -47,7 +47,7 @@ uint64_t k1_timer_get(void)
  *
  * @returns The difference between the two timers (t2 - t1).
  */
-uint64_t k1_timer_diff(uint64_t t1, uint64_t t2)
+uint64_t hal_timer_diff(uint64_t t1, uint64_t t2)
 {
 	return (((t2 - t1) <= timer_error) ? timer_error : t2 - t1 - timer_error);
 }
@@ -55,12 +55,12 @@ uint64_t k1_timer_diff(uint64_t t1, uint64_t t2)
 /**
  * @brief Calibrates the timer.
  */
-void k1_timer_init(void)
+void hal_timer_init(void)
 {
 	uint64_t start, end;
 
-	start = k1_timer_get();
-	end = k1_timer_get();
+	start = hal_timer_get();
+	end = hal_timer_get();
 
 	timer_error = (end - start);
 }

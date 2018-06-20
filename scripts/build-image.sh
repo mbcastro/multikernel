@@ -65,5 +65,7 @@ build1 $BINDIR/servers $BINDIR/test/hal-sync-master    test-hal-sync.img
 build1 $BINDIR/servers $BINDIR/test/hal-mailbox-master test-hal-mailbox.img
 build1 $BINDIR/servers $BINDIR/test/hal-portal-master  test-hal-portal.img
 
-build2 $BINDIR/servers $BINDIR/test/name-master        $BINDIR/test/name-slave test-name.img
+build2 $BINDIR/servers $BINDIR/test/name-master             $BINDIR/test/name-slave              test-name.img
+
+build2 $BINDIR/servers $BINDIR/benchmark/hal-mailbox-master $BINDIR/benchmark/hal-mailbox-slave  benchmark-hal-mailbox.img
 

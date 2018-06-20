@@ -24,6 +24,7 @@
 #define NANVIX_HAL_H_
 
 	#include <stddef.h>
+	#include <inttypes.h>
 
 	#ifdef _KALRAY_MPPA256
 		#include <nanvix/arch/mppa.h>
@@ -36,6 +37,15 @@
 	/* Forward definitions. */
 	extern void hal_setup(void);
 	extern void hal_cleanup(void);
+
+/*============================================================================*
+ * Performance Monitoring                                                     *
+ *============================================================================*/
+
+	/* Forward definitions. */
+	extern uint64_t hal_timer_get(void);
+	extern uint64_t hal_timer_diff(uint64_t, uint64_t);
+	extern void hal_timer_init(void);
 
 /*============================================================================*
  * Processor Management                                                       *

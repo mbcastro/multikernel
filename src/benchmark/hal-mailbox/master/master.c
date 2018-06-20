@@ -21,15 +21,17 @@
  */
 
 #include <assert.h>
-#include <pthread.h>
 #include <stdio.h>
 #include <string.h>
 
 #include <mppa/osconfig.h>
+#include <mppaipc.h>
 
 #include <nanvix/config.h>
 #include <nanvix/hal.h>
 #include <nanvix/limits.h>
+
+#include "../kernel.h"
 
 /**
  * @brief ID of slave processes.
@@ -37,7 +39,7 @@
 static int pids[NANVIX_PROC_MAX];
 
 /*============================================================================*
- * Kernel                                                                     *
+ * Utility                                                                    *
  *============================================================================*/
 
 /**
@@ -47,11 +49,14 @@ static int pids[NANVIX_PROC_MAX];
  */
 static void spawn_remotes(int nremotes)
 {
+	char tmp[4];
 	const char *argv[] = {
-		"mailbox-slave",
+		"/benchmark/hal-mailbox-slave",
+		tmp,
 		NULL
 	};
 
+	sprintf(tmp, "%d", nremotes);
 	for (int i = 0; i < nremotes; i++)
 		assert((pids[i] = mppa_spawn(i, NULL, argv[0], argv, NULL)) != -1);
 }
@@ -67,6 +72,27 @@ static void join_remotes(int nremotes)
 		assert(mppa_waitpid(pids[i], NULL, 0) != -1);
 }
 
+/**
+ * @brief Syncs with remotes.
+ *
+ * @param nremotes Number of remote processes to sync.
+ */
+static void sync_remotes(int nremotes)
+{
+	int syncid;
+	int nodes[nremotes + 1];
+
+	/* Build nodes list. */
+	nodes[0] = hal_get_node_id();
+	for (int i = 0; i < nremotes; i++)
+		nodes[i + 1] = i;
+
+	/* Sync. */
+	assert((syncid = hal_sync_create(nodes, nremotes + 1, HAL_SYNC_ALL_TO_ONE)) >= 0);
+	assert(hal_sync_wait(syncid) == 0);
+	assert(hal_sync_unlink(syncid) == 0);
+}
+
 /*============================================================================*
  * Kernel                                                                     *
  *============================================================================*/
@@ -80,18 +106,57 @@ static void join_remotes(int nremotes)
  */
 static void kernel(int nlocals, int nremotes, const char *pattern)
 {
-	int int outboxes[nremotes].
+	int inbox;
+	uint64_t t1, t2;
+	int outboxes[nremotes];
+	char buffer[HAL_MAILBOX_MSG_SIZE];
 
 	((void) nlocals);
 
+	/* Create inbox. */
+	assert((inbox = hal_mailbox_create(hal_get_node_id())) >= 0);
+
 	/* Open outboxes. */
 	for (int i = 0; i < nremotes; i++)
-		assert(outboxes[i] = mailbox_open(i));
+		assert(outboxes[i] = hal_mailbox_open(i));
 
+	memset(buffer, 1, HAL_MAILBOX_MSG_SIZE);
+
+	sync_remotes(nremotes);
+
+	hal_timer_init();
+
+	if (!strcmp(pattern, "row"))
+	{
+		for (int j = 0; j < NITERATIONS; j++)
+		{			
+			t1 = hal_timer_get();
+			for (int i = 0; i < nremotes; i++)
+			{
+				assert(hal_mailbox_write(outboxes[i], buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
+				assert(hal_mailbox_read(inbox, buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
+			}
+
+			t2 = hal_timer_get();
+
+			printf("time: %" PRIu64 "\n", hal_timer_diff(t1, t2));
+		}
+	}
+	else
+	{
+		for (int i = 0; i < nremotes; i++)
+		{
+			assert(hal_mailbox_write(outboxes[i], buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
+			assert(hal_mailbox_read(inbox, buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
+		}
+	}
 
 	/* Close outboxes. */
 	for (int i = 0; i < nremotes; i++)
-		assert(mailbox_close(outboxes[i]));
+		assert(hal_mailbox_close(outboxes[i]) == 0);
+
+	/* House keeping. */
+	assert(hal_mailbox_unlink(inbox) == 0);
 }
 
 /*============================================================================*
@@ -103,9 +168,11 @@ static void kernel(int nlocals, int nremotes, const char *pattern)
  */
 int main(int argc, const char **argv)
 {
-	int nlocals;  /* Number of local peers.   */
-	int nremotes; /* Number of remotes peers. */
-	int pattern;  /* Transfer pattern.        */
+	int nlocals;         /* Number of local peers.   */
+	int nremotes;        /* Number of remotes peers. */
+	const char *pattern; /* Transfer pattern.        */
+	
+	hal_setup();
 
 	assert(argc == 4);
 
@@ -115,9 +182,11 @@ int main(int argc, const char **argv)
 	pattern = argv[3];
 
 	/* Run kernel. */
-	spawn_remotes(nremotes, argv);
+	spawn_remotes(nremotes);
 	kernel(nlocals, nremotes, pattern);
 	join_remotes(nremotes);
 
+	
+	hal_cleanup();
 	return (EXIT_SUCCESS);
 }
