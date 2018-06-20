@@ -356,6 +356,39 @@ static void test_hal_sync_signal_wait(void)
 }
 
 /*===================================================================*
+ * API Test: Double Signal Wait                                      *
+ *===================================================================*/
+
+/**
+ * @brief API Test: Double Signal Wait
+ */
+static void test_hal_sync_double_signal_wait(void)
+{
+	int syncid;
+	int syncid_local;
+	int nodes[2];
+	int nodes_local[2];
+
+	printf("[test][api] Double Signal Wait\n");
+
+	nodes[0] = 128;
+	nodes[1] = 192;
+
+	nodes_local[0] = 192;
+	nodes_local[1] = 128;
+
+	TEST_ASSERT((syncid_local = hal_sync_create(nodes_local, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
+	TEST_ASSERT((syncid = hal_sync_open(nodes, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
+
+	TEST_ASSERT(hal_sync_signal(syncid) == 0);
+	TEST_ASSERT(hal_sync_wait(syncid_local) == 0);
+
+	/* House keeping. */
+	TEST_ASSERT(hal_sync_unlink(syncid_local) == 0);
+	TEST_ASSERT(hal_sync_close(syncid) == 0);
+}
+
+/*===================================================================*
  * Fault Injection Test: Invalid Create                              *
  *===================================================================*/
 
@@ -769,6 +802,7 @@ int main(int argc, const char **argv)
 	test_hal_sync_open_close();
 	test_hal_sync_wait_signal();
 	test_hal_sync_signal_wait();
+	test_hal_sync_double_signal_wait();
 
 	/* Fault injection tests. */
 	test_hal_sync_invalid_create();
