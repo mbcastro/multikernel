@@ -52,7 +52,10 @@ static pthread_barrier_t barrier;
  * @brief Synchronization point.
  */
 static int syncid;
+static int syncid_local;
+
 static int nodes[2];
+static int nodes_local[2];
 
 /**
  * @brief Lock for critical sections.
@@ -208,13 +211,19 @@ static void test_hal_mailbox_open_close_io(void)
 
 	TEST_ASSERT((inbox = hal_mailbox_create(nodeid)) >= 0);
 
+	TEST_ASSERT(hal_sync_wait(syncid_local) == 0);
 	TEST_ASSERT(hal_sync_signal(syncid) == 0);
+	printf("barrier1 passed\n");
+
 
 	TEST_ASSERT((outbox = hal_mailbox_open(OTHER_IOCLUSTER)) >= 0);
 
 	TEST_ASSERT(hal_mailbox_close(outbox) == 0);
 
+	TEST_ASSERT(hal_sync_wait(syncid_local) == 0);
 	TEST_ASSERT(hal_sync_signal(syncid) == 0);
+	printf("barrier2 passed\n");
+
 
 	TEST_ASSERT(hal_mailbox_unlink(inbox) == 0);
 }
@@ -603,6 +612,8 @@ int main(int argc, const char **argv)
 
 	ncores = hal_get_num_cores();
 
+	goto test;
+
 	pthread_mutex_init(&lock, NULL);
 	pthread_barrier_init(&barrier, NULL, ncores - 1);
 
@@ -629,6 +640,7 @@ int main(int argc, const char **argv)
 	test_hal_mailbox_bad_read();
 	test_hal_mailbox_null_read();
 
+test:
 	/* Tests using both IO clusters. */
 
 	/* Wait for other IO cluster. */
@@ -636,11 +648,20 @@ int main(int argc, const char **argv)
 	nodes[0] = hal_get_node_id();
 	nodes[1] = OTHER_IOCLUSTER;
 
+	nodes_local[0] = OTHER_IOCLUSTER;
+	nodes_local[1] = hal_get_node_id();
+
+	TEST_ASSERT((syncid_local = hal_sync_create(nodes_local, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
 	TEST_ASSERT((syncid = hal_sync_open(nodes, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
 
+	TEST_ASSERT(hal_sync_wait(syncid_local) == 0);
 	TEST_ASSERT(hal_sync_signal(syncid) == 0);
 
 	test_hal_mailbox_open_close_io();
+
+	/* House keeping. */
+	TEST_ASSERT(hal_sync_unlink(syncid_local) == 0);
+	TEST_ASSERT(hal_sync_close(syncid) == 0)
 
 	hal_cleanup();
 	return (EXIT_SUCCESS);
