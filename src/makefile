@@ -54,12 +54,13 @@ export SERVERSBIN = $(BINDIR)/servers
 #===============================================================================
 
 # Conflicts.
+.PHONY: benchmark
 .PHONY: kernel
 .PHONY: servers
 .PHONY: test
 
 # Builds everything.
-all: kernel tests servers
+all: benchmarks kernel tests servers
 
 # Builds the kernel.
 kernel: clean
@@ -79,14 +80,22 @@ ifeq ($(BUILD_TESTS),true)
 	cd test && $(MAKE) all
 endif
 
+# Builds benchmarks.
+benchmarks: kernel servers
+ifeq ($(BUILD_BENCHMARKS),true)
+	cd benchmark && $(MAKE) all
+endif
+
 # Cleans compilation files.
 clean:
+	cd benchmark && $(MAKE) clean
 	cd kernel && $(MAKE) clean
 	cd servers && $(MAKE) clean
 	cd test && $(MAKE) clean
 
 # Cleans everything.
 distclean:
+	cd benchmark && $(MAKE) distclean
 	cd kernel && $(MAKE) distclean
 	cd servers && $(MAKE) distclean
 	cd test && $(MAKE) distclean
