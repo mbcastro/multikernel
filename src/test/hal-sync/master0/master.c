@@ -404,18 +404,80 @@ static void test_hal_sync_create_unlink_cc(int nclusters)
 	int pids[nclusters];
 
 	char nclusters_str[4];
+	char test_str[4];
 	const char *args[] = {
 		"/test/sync-slave",
 		nclusters_str,
+		test_str,
 		NULL
 	};
 
 	printf("[test][api] Compute Clusters tests\n");
 
 	sprintf(nclusters_str, "%d", nclusters);
+	sprintf(test_str, "%d", 0);
 
 	for (int i = 0; i < nclusters; i++)
 		TEST_ASSERT((pids[i] = mppa_spawn(i, NULL, args[0], args, NULL)) != -1);
+
+	for (int i = 0; i < nclusters; i++)
+	{
+		TEST_ASSERT(mppa_waitpid(pids[i], &status, 0) != -1);
+		TEST_ASSERT(status == EXIT_SUCCESS);
+	}
+}
+
+/*===================================================================*
+ * API Test: Wait Signal IO-Compute cluster                          *
+ *===================================================================*/
+
+/**
+ * @brief API Test: Synchronization Point Wait Signal
+ */
+static void test_hal_sync_master_wait_signal_cc(const int *nodes, int nclusters)
+{
+	int syncid;
+
+	TEST_ASSERT((syncid = hal_sync_open(nodes, nclusters + 1, HAL_SYNC_ONE_TO_ALL)) >= 0);
+
+	TEST_ASSERT(hal_sync_signal(syncid) == 0);
+
+	TEST_ASSERT(hal_sync_close(syncid) == 0);
+}
+
+/**
+ * @brief API Test: Synchronization Point Wait Signal
+ */
+static void test_hal_sync_wait_signal_cc(int nclusters)
+{
+	int nodes[nclusters + 1];
+	int pids[nclusters];
+	int status;
+
+	printf("[test][api] Wait Signal IO / compute cluster\n");
+
+	char nclusters_str[4];
+	char test_str[4];
+	const char *args[] = {
+		"/test/sync-slave",
+		nclusters_str,
+		test_str,
+		NULL
+	};
+
+	/* Build nodes list. */
+	nodes[0] = hal_get_node_id();
+
+	for (int i = 0; i < nclusters; i++)
+		nodes[i + 1] = i;
+
+	sprintf(nclusters_str, "%d", nclusters);
+	sprintf(test_str, "%d", 1);
+
+	for (int i = 0; i < nclusters; i++)
+		TEST_ASSERT((pids[i] = mppa_spawn(i, NULL, args[0], args, NULL)) != -1);
+
+	test_hal_sync_master_wait_signal_cc(nodes, nclusters);
 
 	for (int i = 0; i < nclusters; i++)
 	{
@@ -844,6 +906,7 @@ int main(int argc, const char **argv)
 	test_hal_sync_signal_wait();
 	test_hal_sync_double_signal_wait();
 	test_hal_sync_create_unlink_cc(nclusters);
+	test_hal_sync_wait_signal_cc(nclusters);
 
 	/* Fault injection tests. */
 	test_hal_sync_invalid_create();
@@ -860,6 +923,7 @@ int main(int argc, const char **argv)
 	test_hal_sync_bad_signal();
 	test_hal_sync_invalid_wait();
 	test_hal_sync_bad_wait();
+
 
 	hal_cleanup();
 	return (EXIT_SUCCESS);
