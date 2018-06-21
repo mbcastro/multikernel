@@ -103,7 +103,7 @@ static void test_hal_sync_master_open_close(int nclusters)
 	);
 
 	/* Wait for other clusters. */
-	sleep(10);
+	sleep(1);
 
 	/* Build nodes list. */
 	for (int i = 0; i < nclusters; i++)
@@ -172,8 +172,13 @@ static void test_hal_sync_thread_signal_wait(int nclusters)
 	for (int i = 0; i < nclusters; i++)
 		nodes[i + 1] = i;
 
-	TEST_ASSERT((syncid = hal_sync_open(nodes, nclusters + 1, HAL_SYNC_ALL_TO_ONE)) >= 0);
+	TEST_ASSERT((syncid = hal_sync_open(nodes,
+		nclusters + 1,
+		HAL_SYNC_ALL_TO_ONE)) >= 0
+	);
 
+	while (hal_get_node_id() == 15);
+	printf("node %d signal\n", hal_get_node_id());
 	TEST_ASSERT(hal_sync_signal(syncid) == 0);
 
 	TEST_ASSERT(hal_sync_close(syncid) == 0);
@@ -207,6 +212,8 @@ int main(int argc, char **argv)
 		test_hal_sync_thread_wait_signal(nclusters);
 	else if(test == 2)
 		test_hal_sync_thread_signal_wait(nclusters);
+	else
+		exit(EXIT_FAILURE);
 
 	hal_cleanup();
 	return (EXIT_SUCCESS);

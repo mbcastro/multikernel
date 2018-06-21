@@ -499,11 +499,16 @@ static void test_hal_sync_master_signal_wait_cc(const int *nodes, int nclusters)
 {
 	int syncid;
 
-	TEST_ASSERT((syncid = hal_sync_create(nodes, nclusters + 1, HAL_SYNC_ONE_TO_ALL)) >= 0);
+	TEST_ASSERT((syncid = hal_sync_create(nodes,
+		nclusters + 1,
+		HAL_SYNC_ALL_TO_ONE)) >= 0
+	);
 
-	TEST_ASSERT(hal_sync_signal(syncid) == 0);
+	printf("master blocking\n");
+	TEST_ASSERT(hal_sync_wait(syncid) == 0);
+	printf("master UNBLOCKING\n");
 
-	TEST_ASSERT(hal_sync_close(syncid) == 0);
+	TEST_ASSERT(hal_sync_unlink(syncid) == 0);
 }
 
 /**
