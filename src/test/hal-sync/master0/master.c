@@ -358,21 +358,21 @@ static void test_hal_sync_signal_wait(void)
 		pthread_join(tids[i], NULL);
 }
 
-/*===================================================================*
- * API Test: Double Signal Wait                                      *
- *===================================================================*/
+/*============================================================================*
+ * API Test: Barrier Mode                                                     *
+ *============================================================================*/
 
 /**
- * @brief API Test: Double Signal Wait
+ * @brief API Test: Barrier Mode
  */
-static void test_hal_sync_double_signal_wait(void)
+static void test_hal_sync_barrier(void)
 {
 	int syncid;
 	int syncid_local;
 	int nodes[2];
 	int nodes_local[2];
 
-	printf("[test][api] Double Signal Wait\n");
+	printf("[test][api] Barrier Mode\n");
 
 	nodes[0] = 128;
 	nodes[1] = 192;
@@ -380,6 +380,7 @@ static void test_hal_sync_double_signal_wait(void)
 	nodes_local[0] = 192;
 	nodes_local[1] = 128;
 
+	/* Open synchronization points. */
 	TEST_ASSERT((syncid_local = hal_sync_create(nodes_local, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
 	TEST_ASSERT((syncid = hal_sync_open(nodes, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
 
@@ -410,7 +411,7 @@ static void test_hal_sync_create_unlink_cc(int nclusters)
 		NULL
 	};
 
-	printf("[test][api] Compute Clusters tests\n");
+	printf("[test][api] Compute Clusters Tests\n");
 
 	sprintf(nclusters_str, "%d", nclusters);
 
@@ -842,7 +843,7 @@ int main(int argc, const char **argv)
 	test_hal_sync_open_close();
 	test_hal_sync_wait_signal();
 	test_hal_sync_signal_wait();
-	test_hal_sync_double_signal_wait();
+	test_hal_sync_barrier();
 	test_hal_sync_create_unlink_cc(nclusters);
 
 	/* Fault injection tests. */

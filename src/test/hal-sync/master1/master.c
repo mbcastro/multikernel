@@ -21,12 +21,10 @@
  */
 
 #include <assert.h>
-#include <stdio.h>
-#include <string.h>
+#include <stdlib.h>
 
 #include <mppa/osconfig.h>
 
-#include <nanvix/config.h>
 #include <nanvix/hal.h>
 #include <nanvix/pm.h>
 
@@ -36,13 +34,13 @@
 #define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
 
 /*============================================================================*
- * API Test: Double Signal Wait                                               *
+ * API Test: Barrier Mode                                                     *
  *============================================================================*/
 
 /**
- * @brief API Test: Double Signal Wait
+ * @brief API Test: Barrier
  */
-static void test_hal_sync_double_signal_wait(void)
+static void test_hal_sync_barrier(void)
 {
 	int syncid;
 	int syncid_local;
@@ -55,6 +53,7 @@ static void test_hal_sync_double_signal_wait(void)
 	nodes_local[0] = 128;
 	nodes_local[1] = 192;
 
+	/* Open syncrhonization points. */
 	TEST_ASSERT((syncid_local = hal_sync_create(nodes_local, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
 	TEST_ASSERT((syncid = hal_sync_open(nodes, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
 
@@ -71,7 +70,7 @@ static void test_hal_sync_double_signal_wait(void)
  *============================================================================*/
 
 /**
- * @brief Mailbox Test Driver
+ * @brief HAL Sync Test Driver
  */
 int main(int argc, const char **argv)
 {
@@ -80,7 +79,8 @@ int main(int argc, const char **argv)
 
 	hal_setup();
 
-	test_hal_sync_double_signal_wait();
+	/* API tests. */
+	test_hal_sync_barrier();
 
 	hal_cleanup();
 	return (EXIT_SUCCESS);
