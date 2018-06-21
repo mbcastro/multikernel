@@ -156,10 +156,7 @@ int main(int argc, char **argv)
 		test_hal_sync_master_open_close(nclusters);
 	}
 	else if(test == 1)
-	{
 		test_hal_sync_thread_wait_signal(nclusters);
-	}
-
 
 	hal_cleanup();
 	return (EXIT_SUCCESS);

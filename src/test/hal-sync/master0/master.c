@@ -925,7 +925,6 @@ int main(int argc, const char **argv)
 	test_hal_sync_invalid_wait();
 	test_hal_sync_bad_wait();
 
-
 	hal_cleanup();
 	return (EXIT_SUCCESS);
 }

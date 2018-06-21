@@ -83,5 +83,7 @@ int main(int argc, const char **argv)
 	test_hal_sync_barrier();
 
 	hal_cleanup();
+
+	while(1);
 	return (EXIT_SUCCESS);
 }
