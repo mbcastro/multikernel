@@ -36,6 +36,10 @@
  */
 #define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
 
+/*============================================================================*
+ * API Test: Create Unlink                                                    *
+ *============================================================================*/
+
 /**
  * @brief API Test: Synchronization Point Create Unlink
  */
@@ -59,6 +63,10 @@ static void test_hal_sync_create_unlink(int nclusters)
 
 	TEST_ASSERT(hal_sync_unlink(syncid) == 0);
 }
+
+/*============================================================================*
+ * API Test: Open Close                                                       *
+ *============================================================================*/
 
 /**
  * @brief API Test: Synchronization Point Open Close
