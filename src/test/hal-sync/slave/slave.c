@@ -45,13 +45,14 @@
  */
 static void test_hal_sync_create_unlink(int nclusters)
 {
-	int nodes[nclusters];
 	int syncid;
+	int nodes[nclusters];
 
 	/* Build nodes list. */
 	for (int i = 0; i < nclusters; i++)
 		nodes[i] = i;
 
+	/* Fix nodes list. */
 	if (nodes[0] == hal_get_node_id())
 	{
 		nodes[0] += nodes[1];
@@ -59,7 +60,10 @@ static void test_hal_sync_create_unlink(int nclusters)
 		nodes[0] -= nodes[1];
 	}
 
-	TEST_ASSERT((syncid = hal_sync_create(nodes, nclusters, HAL_SYNC_ONE_TO_ALL)) >= 0);
+	TEST_ASSERT((syncid = hal_sync_create(nodes,
+		nclusters,
+		HAL_SYNC_ONE_TO_ALL)) >= 0
+	);
 
 	TEST_ASSERT(hal_sync_unlink(syncid) == 0);
 }
@@ -73,24 +77,30 @@ static void test_hal_sync_create_unlink(int nclusters)
  */
 static void test_hal_sync_master_open_close(int nclusters)
 {
-	int nodes_local[nclusters];
-	int nodes[nclusters];
-	int syncid_local;
+	int nodeid;
 	int syncid;
+	int syncid_local;
+	int nodes[nclusters];
+	int nodes_local[nclusters];
 
 	/* Build local nodes list. */
 	for (int i = 0; i < nclusters; i++)
 		nodes_local[i] = i;
 
-	if (nodes_local[0] == hal_get_node_id())
+	nodeid = hal_get_node_id();
+
+	if (nodes_local[0] == nodeid)
 	{
 		nodes_local[0] += nodes_local[1];
 		nodes_local[1] -= nodes_local[1];
 		nodes_local[0] -= nodes_local[1];
 	}
 
-	TEST_ASSERT((syncid_local = hal_sync_create(nodes_local, nclusters,
-											HAL_SYNC_ONE_TO_ALL)) == 0);
+	TEST_ASSERT((syncid_local = hal_sync_create(
+		nodes_local,
+		nclusters,
+		HAL_SYNC_ONE_TO_ALL)) == 0
+	);
 
 	/* Wait for other clusters. */
 	sleep(10);
@@ -99,18 +109,24 @@ static void test_hal_sync_master_open_close(int nclusters)
 	for (int i = 0; i < nclusters; i++)
 		nodes[i] = i;
 
-	if(nodes[0] != hal_get_node_id())
+	/* Fix nodes list. */
+	if (nodes[0] != nodeid)
 	{
 		for (int i = 1; i < nclusters; i++)
-			if(nodes[i] == hal_get_node_id())
+		{
+			if (nodes[i] == nodeid)
 			{
 				nodes[i] = nodes[0];
-				nodes[0] = hal_get_node_id();
+				nodes[0] = nodeid;
 			}
+		}
 	}
 
-	TEST_ASSERT((syncid = hal_sync_open(nodes, nclusters,
-							 HAL_SYNC_ONE_TO_ALL)) >= 0);
+	TEST_ASSERT((syncid = hal_sync_open(
+		nodes,
+		nclusters,
+		HAL_SYNC_ONE_TO_ALL)) >= 0
+	);
 
 	TEST_ASSERT(hal_sync_close(syncid) == 0);
 
@@ -131,7 +147,11 @@ static void test_hal_sync_thread_wait_signal(int nclusters)
 	for (int i = 0; i < nclusters; i++)
 		nodes[i + 1] = i;
 
-	TEST_ASSERT((syncid = hal_sync_create(nodes, nclusters + 1, HAL_SYNC_ONE_TO_ALL)) >= 0);
+	TEST_ASSERT((syncid = hal_sync_create(
+		nodes,
+		nclusters + 1,
+		HAL_SYNC_ONE_TO_ALL)) >= 0
+	);
 
 	TEST_ASSERT(hal_sync_wait(syncid) == 0);
 
@@ -139,22 +159,21 @@ static void test_hal_sync_thread_wait_signal(int nclusters)
 }
 
 /*====================================================================*
- * main                                                               *
+ * HAL Sync Test Driver                                               *
  *====================================================================*/
 
 /**
- * @brief Remote sync unit test.
+ * @brief HAL Sync Test Driver
  */
 int main(int argc, char **argv)
 {
-	int nclusters;
 	int test;
+	int nclusters;
 
 	hal_setup();
 
-	TEST_ASSERT(argc == 3);
-
 	/* Retrieve kernel parameters. */
+	TEST_ASSERT(argc == 3);
 	nclusters = atoi(argv[1]);
 	test = atoi(argv[2]);
 
@@ -165,6 +184,8 @@ int main(int argc, char **argv)
 	}
 	else if(test == 1)
 		test_hal_sync_thread_wait_signal(nclusters);
+	else
+		exit(EXIT_FAILURE);
 
 	hal_cleanup();
 	return (EXIT_SUCCESS);
