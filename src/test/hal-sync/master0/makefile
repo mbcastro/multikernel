@@ -47,4 +47,3 @@ clean:
 # Cleans everything.
 distclean: clean
 	rm -rf $(ELFBIN)
-

@@ -27,7 +27,7 @@ SRC = $(wildcard *.c)
 OBJ = $(SRC:.c=.o)
 
 # Binary Files
-export ELFBIN = $(BINDIR)/hal-mailbox-master1
+export ELFBIN = $(BINDIR)/sync-slave
 
 #===============================================================================
 

@@ -27,7 +27,7 @@ SRC = $(wildcard *.c)
 OBJ = $(SRC:.c=.o)
 
 # Binary Files
-export ELFBIN = $(BINDIR)/hal-mailbox-master0
+export ELFBIN = $(BINDIR)/hal-mailbox-master
 
 #===============================================================================
 
@@ -47,3 +47,4 @@ clean:
 # Cleans everything.
 distclean: clean
 	rm -rf $(ELFBIN)
+

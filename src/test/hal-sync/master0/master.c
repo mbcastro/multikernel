@@ -23,11 +23,14 @@
 #include <assert.h>
 #include <pthread.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <mppa/osconfig.h>
+#include <mppaipc.h>
 
 #include <nanvix/config.h>
 #include <nanvix/hal.h>
+#include <nanvix/pm.h>
 
 /**
  * @brief Number of cores in the underlying cluster.
@@ -386,6 +389,39 @@ static void test_hal_sync_double_signal_wait(void)
 	/* House keeping. */
 	TEST_ASSERT(hal_sync_unlink(syncid_local) == 0);
 	TEST_ASSERT(hal_sync_close(syncid) == 0);
+}
+
+/*===================================================================*
+ * API Test: Compute Clusters tests                                  *
+ *===================================================================*/
+
+/**
+ * @brief API Test: Compute Clusters tests
+ */
+static void test_hal_sync_create_unlink_cc(int nclusters)
+{
+	int status;
+	int pids[nclusters];
+
+	char nclusters_str[4];
+	const char *args[] = {
+		"/test/sync-slave",
+		nclusters_str,
+		NULL
+	};
+
+	printf("[test][api] Compute Clusters tests\n");
+
+	sprintf(nclusters_str, "%d", nclusters);
+
+	for (int i = 0; i < nclusters; i++)
+		TEST_ASSERT((pids[i] = mppa_spawn(i, NULL, args[0], args, NULL)) != -1);
+
+	for (int i = 0; i < nclusters; i++)
+	{
+		TEST_ASSERT(mppa_waitpid(pids[i], &status, 0) != -1);
+		TEST_ASSERT(status == EXIT_SUCCESS);
+	}
 }
 
 /*===================================================================*
@@ -787,10 +823,14 @@ static void test_hal_sync_bad_wait(void)
  */
 int main(int argc, const char **argv)
 {
-	((void) argc);
-	((void) argv);
+	int nclusters;
 
 	hal_setup();
+
+	TEST_ASSERT(argc == 2);
+
+	/* Retrieve kernel parameters. */
+	nclusters = atoi(argv[1]);
 
 	ncores = hal_get_num_cores();
 
@@ -803,6 +843,7 @@ int main(int argc, const char **argv)
 	test_hal_sync_wait_signal();
 	test_hal_sync_signal_wait();
 	test_hal_sync_double_signal_wait();
+	test_hal_sync_create_unlink_cc(nclusters);
 
 	/* Fault injection tests. */
 	test_hal_sync_invalid_create();

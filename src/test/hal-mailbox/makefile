@@ -21,32 +21,25 @@
 #
 
 # Conflicts.
-.PHONY: master0
-.PHONY: master1
+.PHONY: master
+.PHONY: slave
 
 #===============================================================================
 
 # Builds binaries.
-all: master0 master1
+all: master
 
 # Builds master binary.
-master0:
+master:
 ifeq ($(BUILD_SERVERS),true)
-	cd master0 && $(MAKE) all
-endif
-
-# Builds master binary.
-master1:
-ifeq ($(BUILD_SERVERS),true)
-	cd master1 && $(MAKE) all
+	cd master && $(MAKE) all
 endif
 
 # Cleans compilation files.
 clean:
-	cd master0 && $(MAKE) clean
-	cd master1 && $(MAKE) clean
+	cd master && $(MAKE) clean
 
 # Cleans everything.
 distclean: clean
-	cd master0 && $(MAKE) distclean
-	cd master1 && $(MAKE) distclean
+	cd master && $(MAKE) distclean
+
