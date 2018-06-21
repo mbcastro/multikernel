@@ -109,6 +109,27 @@ static void test_hal_sync_master_open_close(int nclusters)
 	TEST_ASSERT(hal_sync_unlink(syncid_local) == 0);
 }
 
+/**
+ * @brief API Test: Synchronization Point Wait Signal
+ */
+static void test_hal_sync_thread_wait_signal(int nclusters)
+{
+	int syncid;
+	int nodes[nclusters + 1];
+
+	/* Build nodes list. */
+	nodes[0] = 128;
+
+	for (int i = 0; i < nclusters; i++)
+		nodes[i + 1] = i;
+
+	TEST_ASSERT((syncid = hal_sync_create(nodes, nclusters + 1, HAL_SYNC_ONE_TO_ALL)) >= 0);
+
+	TEST_ASSERT(hal_sync_wait(syncid) == 0);
+
+	TEST_ASSERT(hal_sync_unlink(syncid) == 0);
+}
+
 /*====================================================================*
  * main                                                               *
  *====================================================================*/
@@ -119,16 +140,26 @@ static void test_hal_sync_master_open_close(int nclusters)
 int main(int argc, char **argv)
 {
 	int nclusters;
+	int test;
 
 	hal_setup();
 
-	TEST_ASSERT(argc == 2);
+	TEST_ASSERT(argc == 3);
 
 	/* Retrieve kernel parameters. */
 	nclusters = atoi(argv[1]);
+	test = atoi(argv[2]);
 
-	test_hal_sync_create_unlink(nclusters);
-	test_hal_sync_master_open_close(nclusters);
+	if(test == 0)
+	{
+		test_hal_sync_create_unlink(nclusters);
+		test_hal_sync_master_open_close(nclusters);
+	}
+	else if(test == 1)
+	{
+		test_hal_sync_thread_wait_signal(nclusters);
+	}
+
 
 	hal_cleanup();
 	return (EXIT_SUCCESS);
