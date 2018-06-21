@@ -158,6 +158,27 @@ static void test_hal_sync_thread_wait_signal(int nclusters)
 	TEST_ASSERT(hal_sync_unlink(syncid) == 0);
 }
 
+/**
+ * @brief API Test: Synchronization Point Signal Wait
+ */
+static void test_hal_sync_thread_signal_wait(int nclusters)
+{
+	int syncid;
+	int nodes[nclusters + 1];
+
+	/* Build nodes list. */
+	nodes[0] = 128;
+
+	for (int i = 0; i < nclusters; i++)
+		nodes[i + 1] = i;
+
+	TEST_ASSERT((syncid = hal_sync_open(nodes, nclusters + 1, HAL_SYNC_ALL_TO_ONE)) >= 0);
+
+	TEST_ASSERT(hal_sync_signal(syncid) == 0);
+
+	TEST_ASSERT(hal_sync_close(syncid) == 0);
+}
+
 /*====================================================================*
  * HAL Sync Test Driver                                               *
  *====================================================================*/
@@ -184,8 +205,8 @@ int main(int argc, char **argv)
 	}
 	else if(test == 1)
 		test_hal_sync_thread_wait_signal(nclusters);
-	else
-		exit(EXIT_FAILURE);
+	else if(test == 2)
+		test_hal_sync_thread_signal_wait(nclusters);
 
 	hal_cleanup();
 	return (EXIT_SUCCESS);
