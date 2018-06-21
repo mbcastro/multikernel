@@ -211,19 +211,15 @@ static void test_hal_mailbox_open_close_io(void)
 
 	TEST_ASSERT((inbox = hal_mailbox_create(nodeid)) >= 0);
 
-	TEST_ASSERT(hal_sync_wait(syncid_local) == 0);
 	TEST_ASSERT(hal_sync_signal(syncid) == 0);
-	printf("barrier1 passed\n");
-
+	TEST_ASSERT(hal_sync_wait(syncid_local) == 0);
 
 	TEST_ASSERT((outbox = hal_mailbox_open(OTHER_IOCLUSTER)) >= 0);
 
 	TEST_ASSERT(hal_mailbox_close(outbox) == 0);
 
-	TEST_ASSERT(hal_sync_wait(syncid_local) == 0);
 	TEST_ASSERT(hal_sync_signal(syncid) == 0);
-	printf("barrier2 passed\n");
-
+	TEST_ASSERT(hal_sync_wait(syncid_local) == 0);
 
 	TEST_ASSERT(hal_mailbox_unlink(inbox) == 0);
 }
@@ -654,8 +650,8 @@ test:
 	TEST_ASSERT((syncid_local = hal_sync_create(nodes_local, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
 	TEST_ASSERT((syncid = hal_sync_open(nodes, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
 
-	TEST_ASSERT(hal_sync_wait(syncid_local) == 0);
 	TEST_ASSERT(hal_sync_signal(syncid) == 0);
+	TEST_ASSERT(hal_sync_wait(syncid_local) == 0);
 
 	test_hal_mailbox_open_close_io();
 

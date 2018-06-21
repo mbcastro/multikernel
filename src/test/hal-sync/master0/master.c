@@ -380,8 +380,8 @@ static void test_hal_sync_double_signal_wait(void)
 	TEST_ASSERT((syncid_local = hal_sync_create(nodes_local, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
 	TEST_ASSERT((syncid = hal_sync_open(nodes, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
 
-	TEST_ASSERT(hal_sync_wait(syncid_local) == 0);
 	TEST_ASSERT(hal_sync_signal(syncid) == 0);
+	TEST_ASSERT(hal_sync_wait(syncid_local) == 0);
 
 	/* House keeping. */
 	TEST_ASSERT(hal_sync_unlink(syncid_local) == 0);
