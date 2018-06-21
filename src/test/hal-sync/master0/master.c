@@ -413,7 +413,7 @@ static void test_hal_sync_create_unlink_cc(int nclusters)
 		NULL
 	};
 
-	printf("[test][api] Compute Clusters Tests\n");
+	printf("[test][api] Compute Clusters Create and Unlink\n");
 
 	sprintf(nclusters_str, "%d", nclusters);
 	sprintf(test_str, "%d", 0);
