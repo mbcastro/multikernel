@@ -444,7 +444,6 @@ static int _hal_sync_open(const int *nodes, int nnodes, int type)
 	else
 	{
 		/* Build pathname for NoC connector. */
-		noc_get_names(remotes, &nodes[1], nnodes - 1);
 		sprintf(pathname,
 			"/mppa/sync/%d:%d",
 			nodes[0],
