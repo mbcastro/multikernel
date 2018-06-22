@@ -318,7 +318,6 @@ static int _hal_sync_create(const int *nodes, int nnodes, int type)
 		goto error1;
 
 	/* Setup sync mask. */
-	if (mppa_ioctl(fd, MPPA_RX_SET_MATCH, ~mask) != 0)
 	if (mppa_ioctl(fd, MPPA_RX_SET_MATCH, ~mask) == -1)
 		goto error2;
 
@@ -419,11 +418,12 @@ int hal_sync_create(const int *nodes, int nnodes, int type)
  */
 static int _hal_sync_open(const int *nodes, int nnodes, int type)
 {
-	int fd;                /* NoC connector.           */
-	int syncid;            /* Synchronization point.   */
-	char remotes[128];     /* IDs of remote NoC nodes. */
-	char pathname[128];    /* NoC connector name.      */
-	int ranks[nnodes - 1]; /* Offset to RX NoC nodes.  */
+	int fd;                /* NoC connector.             */
+	int syncid;            /* Synchronization point.     */
+	char remotes[128];     /* IDs of remote NoC nodes.   */
+	char pathname[128];    /* NoC connector name.        */
+	int ranks[nnodes - 1]; /* Offset to RX NoC nodes.    */
+	int nodeid;            /* ID of underlying NoC node. */
 
 	/* Allocate a synchronization point. */
 	if ((syncid = sync_alloc()) < 0)
@@ -458,8 +458,13 @@ static int _hal_sync_open(const int *nodes, int nnodes, int type)
 	if ((fd = mppa_open(pathname, O_WRONLY)) == -1)
 		goto error1;
 
-	if (mppa_ioctl(fd, MPPA_TX_SET_INTERFACE, noc_get_dma(hal_get_node_id())) == -1)
-		goto error2;
+	/* Set DMA interface for IO cluster. */
+	nodeid = hal_get_node_id();
+	if (noc_is_ionode(nodeid))
+	{
+		if (mppa_ioctl(fd, MPPA_TX_SET_INTERFACE, noc_get_dma(nodeid)) == -1)
+			goto error2;
+	}
 
 	if (type == HAL_SYNC_ONE_TO_ALL)
 	{
@@ -467,7 +472,6 @@ static int _hal_sync_open(const int *nodes, int nnodes, int type)
 		for (int i = 0; i < nnodes - 1; i++)
 			ranks[i] = i;
 
-		if (mppa_ioctl(fd, MPPA_TX_SET_RX_RANKS, nnodes - 1, ranks) != 0)
 		if (mppa_ioctl(fd, MPPA_TX_SET_RX_RANKS, nnodes - 1, ranks) == -1)
 			goto error2;
 	}
