@@ -23,15 +23,36 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+#include <pthread.h>
 
 #include <mppa/osconfig.h>
 #include <mppaipc.h>
 
-#include <nanvix/config.h>
 #include <nanvix/hal.h>
 #include <nanvix/limits.h>
 
 #include "../kernel.h"
+
+/**
+ * @brief Benchmark parameters.
+ */
+/**@{*/
+static const char *pattern; /**< Transfer pattern             */
+static int nlocals;         /**< Number of local peers.       */
+static int ntotalremotes;   /**< Number of remotes peers.     */
+static int nremotes;        /**< Number of remotes per local. */
+static int ncols;           /**< Number of remotes in a row.  */
+/**@}*/
+
+/**
+ * @brief Global barrier for synchronization.
+ */
+static pthread_barrier_t barrier;
+
+/**
+ * @brief Global lock for critical sections.
+ */
+static pthread_mutex_t lock;
 
 /**
  * @brief ID of slave processes.
@@ -45,52 +66,60 @@ static int pids[NANVIX_PROC_MAX];
 /**
  * @brief Spawns remote processes.
  *
- * @param nremotes Number of remote processes to spawn.
+ * @param tnum Number of the calling thread.
  */
-static void spawn_remotes(int nremotes)
+static void spawn_remotes(int tnum)
 {
-	char tmp[4];
+	const int off = tnum*nremotes;
+	int syncid;
+	int nodeid;
+	char master_node[4];
+	char first_remote[4];
+	char last_remote[4];
+	int nodes[nremotes + 1];
 	const char *argv[] = {
 		"/benchmark/hal-mailbox-slave",
-		tmp,
+		master_node,
+		first_remote,
+		last_remote,
 		NULL
 	};
 
-	sprintf(tmp, "%d", nremotes);
+	nodeid = hal_get_node_id();
+
+	/* Build nodes list. */
+	nodes[0] = nodeid;
 	for (int i = 0; i < nremotes; i++)
-		assert((pids[i] = mppa_spawn(i, NULL, argv[0], argv, NULL)) != -1);
+		nodes[i + 1] = off + i;
+
+	/* Create synchronization point. */
+	assert((syncid = hal_sync_create(nodes, nremotes + 1, HAL_SYNC_ALL_TO_ONE)) >= 0);
+
+	/* Spawn remotes. */
+	sprintf(master_node, "%d", nodeid);
+	sprintf(first_remote, "%d", off);
+	sprintf(last_remote, "%d", off + nremotes);
+	for (int i = 0; i < nremotes; i++)
+		assert((pids[off + i] = mppa_spawn(off + i, NULL, argv[0], argv, NULL)) != -1);
+
+	/* Sync. */
+	assert(hal_sync_wait(syncid) == 0);
+
+	/* House keeping. */
+	assert(hal_sync_unlink(syncid) == 0);
 }
 
 /**
  * @brief Wait for remote processes.
  *
- * @param nremotes Number of remote processes to wait.
+ * @param tnum Number of the calling thread.
  */
-static void join_remotes(int nremotes)
+static void join_remotes(int tnum)
 {
+	const int off = tnum*nremotes;
+
 	for (int i = 0; i < nremotes; i++)
-		assert(mppa_waitpid(pids[i], NULL, 0) != -1);
-}
-
-/**
- * @brief Syncs with remotes.
- *
- * @param nremotes Number of remote processes to sync.
- */
-static void sync_remotes(int nremotes)
-{
-	int syncid;
-	int nodes[nremotes + 1];
-
-	/* Build nodes list. */
-	nodes[0] = hal_get_node_id();
-	for (int i = 0; i < nremotes; i++)
-		nodes[i + 1] = i;
-
-	/* Sync. */
-	assert((syncid = hal_sync_create(nodes, nremotes + 1, HAL_SYNC_ALL_TO_ONE)) >= 0);
-	assert(hal_sync_wait(syncid) == 0);
-	assert(hal_sync_unlink(syncid) == 0);
+		assert(mppa_waitpid(pids[off + i], NULL, 0) != -1);
 }
 
 /*============================================================================*
@@ -98,50 +127,118 @@ static void sync_remotes(int nremotes)
  *============================================================================*/
 
 /**
- * @brief HAL Mailbox Microbenchmark Kernel
- *
- * @param nlocals  Number of local peers.
- * @param nremotes Number of remote peers.
- * @param pattern  Transfer pattern.
+ * @brief Benchmark kernel.
  */
-static void kernel(int nlocals, int nremotes, const char *pattern)
+static void *kernel(void *args)
 {
+	int tnum;
+	int inbox;
+	int nodeid;
 	uint64_t t1, t2;
 	int outboxes[nremotes];
 	char buffer[HAL_MAILBOX_MSG_SIZE];
 
-	((void) nlocals);
+	/* Initialization. */
+	hal_setup();
+	nodeid = hal_get_node_id();
+	assert((inbox = hal_mailbox_create(nodeid)) >= 0);
 
-	/* Open outboxes. */
-	for (int i = 0; i < nremotes; i++)
-		assert(outboxes[i] = hal_mailbox_open(i));
+	tnum = ((int *) args)[0];
 
 	memset(buffer, 1, HAL_MAILBOX_MSG_SIZE);
 
-	hal_timer_init();
+	spawn_remotes(tnum);
 
-	if (!strcmp(pattern, "row"))
+	/* Open output mailboxes. */
+	for (int i = 0; i < nremotes; i++)
+		assert((outboxes[i] = hal_mailbox_open(i)) >= 0);
+
+	for (int k = 0; k < NITERATIONS; k++)
 	{
-		for (int j = 0; j < NITERATIONS; j++)
-		{			
+		pthread_barrier_wait(&barrier);
+
+		if (!strcmp(pattern, "row"))
+		{
 			t1 = hal_timer_get();
-			for (int i = 0; i < nremotes; i++)
-				assert(hal_mailbox_write(outboxes[i], buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
-
+			for (int i = 0; i < nremotes/ncols; i++)
+			{
+				for (int  j = 0; j < ncols/nlocals; j++)
+				{
+					assert(hal_mailbox_write(outboxes[i*ncols + tnum*nlocals + j], buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
+					assert(hal_mailbox_read(inbox, buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
+				}
+			}
 			t2 = hal_timer_get();
-
-			printf("time: %" PRIu64 "\n", hal_timer_diff(t1, t2));
 		}
-	}
-	else
-	{
-		for (int i = 0; i < nremotes; i++)
-			assert(hal_mailbox_write(outboxes[i], buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
-	}
+		else
+		{
+			t1 = hal_timer_get();
+			for (int  j = 0; j < ncols/nlocals; j++)
+			{
+				for (int i = 0; i < nremotes/ncols; i++)
+				{
+					assert(hal_mailbox_write(outboxes[i*ncols + tnum*nlocals + j], buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
+					assert(hal_mailbox_read(inbox, buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
+				}
+			}
+			t2 = hal_timer_get();
+		}
 
-	/* Close outboxes. */
+		pthread_mutex_lock(&lock);
+		printf("time: %.2lf\n", ((double)hal_timer_diff(t1, t2))/nremotes);
+		pthread_mutex_unlock(&lock);
+	}
+	
+	/* Close output mailboxes. */
 	for (int i = 0; i < nremotes; i++)
 		assert(hal_mailbox_close(outboxes[i]) == 0);
+
+	join_remotes(tnum);
+	
+	/* House keeping. */
+	assert(hal_mailbox_unlink(inbox) == 0);
+	hal_cleanup();
+
+	return (NULL);
+}
+
+/**
+ * @brief HAL Mailbox microbenchmark.
+ */
+static void benchmark(void)
+{
+	int args[nlocals];
+	pthread_t tnums[nlocals];
+
+	hal_timer_init();
+
+	/*
+	 * Spawn benchmark threads.
+	 *
+	 * Do not change the loop order, otherwise
+	 * a deadlock will occur.
+	 */
+	for (int i = nlocals - 1; i >= 0; i--)
+	{
+		args[i] = i;
+
+		/* Master thread is already running. */
+		if (i == 0)
+		{
+			kernel(&args[i]);
+			break;
+		}
+
+		assert((pthread_create(&tnums[i],
+			NULL,
+			kernel,
+			&args[i])) == 0
+		);
+	}
+
+	/* Wait for driver threads. */
+	for (int i = 1; i < nlocals; i++)
+		pthread_join(tnums[i], NULL);
 }
 
 /*============================================================================*
@@ -153,25 +250,29 @@ static void kernel(int nlocals, int nremotes, const char *pattern)
  */
 int main(int argc, const char **argv)
 {
-	int nlocals;         /* Number of local peers.   */
-	int nremotes;        /* Number of remotes peers. */
-	const char *pattern; /* Transfer pattern.        */
-	
-	hal_setup();
-
-	assert(argc == 4);
+	assert(argc == 5);
 
 	/* Retrieve kernel parameters. */
 	nlocals = atoi(argv[1]);
-	nremotes = atoi(argv[2]);
+	ntotalremotes = atoi(argv[2]);
 	pattern = argv[3];
+	ncols = atoi(argv[4]);
+	nremotes = ntotalremotes/nlocals;
 
-	/* Run kernel. */
-	spawn_remotes(nremotes);
-	sync_remotes(nremotes);
-	kernel(nlocals, nremotes, pattern);
-	join_remotes(nremotes);
-	
-	hal_cleanup();
+	/* Parameter checking. */
+	assert((ntotalremotes%ncols) == 0);
+	assert((ntotalremotes%nlocals) == 0);
+	assert((ncols%nlocals) == 0);
+	if (!strcmp(pattern, "row"))
+		assert((ntotalremotes%ncols) == 0);
+
+	pthread_mutex_init(&lock, NULL);
+	pthread_barrier_init(&barrier, NULL, nlocals);
+
+	benchmark();
+
+	pthread_mutex_destroy(&lock);
+	pthread_barrier_destroy(&barrier);
+
 	return (EXIT_SUCCESS);
 }

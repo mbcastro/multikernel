@@ -30,7 +30,20 @@
 
 #include "../kernel.h"
 
-#define MASTER_NODE 128
+/**
+ * @brief Master node NoC ID.
+ */
+static int master_node;
+
+/**
+ * @brief Inbox for receiving messages.
+ */
+static int inbox;
+
+/**
+ * @brief Underlying NoC node ID.
+ */
+static int nodeid;
 
 /*============================================================================*
  * Kernel                                                                     *
@@ -39,12 +52,23 @@
 /**
  * @brief HAL Mailbox Microbenchmark Kernel
  */
-static void kernel(int inbox)
+static void kernel(void)
 {
+	int outbox;
 	char buffer[HAL_MAILBOX_MSG_SIZE];
 
-	for (int i = 0; i < NITERATIONS; i++)
+	/* Open outbox. */
+	assert((outbox = hal_mailbox_open(master_node)) >= 0);
+
+	/* Benchmark. */
+	for (int k = 0; k < NITERATIONS; k++)
+	{
 		assert(hal_mailbox_read(inbox, buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
+		assert(hal_mailbox_write(outbox, buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
+	}
+
+	/* House keeping. */
+	assert(hal_mailbox_close(outbox) == 0);
 }
 
 /*============================================================================*
@@ -53,16 +77,20 @@ static void kernel(int inbox)
 
 /**
  * @brief Syncs with remote master.
+ *
+ * @param first_remote First remote in the nodes list.
+ * @param last_remote  Last remote in the nodes list.
  */
-static void sync_master(int nremotes)
+static void sync_master(int first_remote, int last_remote)
 {
+	const int nremotes = last_remote - first_remote;
 	int syncid;
 	int nodes[nremotes + 1];
 
 	/* Build nodes list. */
-	nodes[0] = MASTER_NODE;
+	nodes[0] = master_node;
 	for (int i = 0; i < nremotes; i++)
-		nodes[i + 1] = i;
+		nodes[i + 1] = first_remote + i;
 
 	/* Sync. */
 	assert((syncid = hal_sync_open(nodes, nremotes + 1, HAL_SYNC_ALL_TO_ONE)) >= 0);
@@ -75,29 +103,28 @@ static void sync_master(int nremotes)
  */
 int main(int argc, const char **argv)
 {
-	int inbox;
-	int nremotes;
-
+	int first_remote;
+	int last_remote;
+	
+	/* Initialization. */
 	hal_setup();
-
-	/* Retrieve kernel parameters. */
-	assert(argc == 2);
-	nremotes = atoi(argv[1]);
-
-	int nodeid = hal_get_node_id();
-
-	/* Open mailboxes. */
+	nodeid = hal_get_node_id();
 	assert((inbox = hal_mailbox_create(nodeid)) >= 0);
 
-	sync_master(nremotes);
-	printf("node %d: alive\n", nodeid);
+	/* Retrieve kernel parameters. */
+	assert(argc == 4);
+	master_node = atoi(argv[1]);
+	first_remote = atoi(argv[2]);
+	last_remote = atoi(argv[3]);
+
+	sync_master(first_remote, last_remote);
 
 	/* Run kernel. */
-	kernel(inbox);
+	kernel();
 
 	/* House keeping. */
-	assert((hal_mailbox_unlink(inbox)) == 0);
-
+	assert(hal_mailbox_unlink(inbox) == 0);
 	hal_cleanup();
+
 	return (EXIT_SUCCESS);
 }

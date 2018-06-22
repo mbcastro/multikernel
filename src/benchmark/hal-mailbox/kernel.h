@@ -26,7 +26,7 @@
 	/**
 	 * @brief Number of kernel iterations.
 	 */
-	#define NITERATIONS 30
+	#define NITERATIONS 100
 
 #endif /* _KERNEL_H_ */
 

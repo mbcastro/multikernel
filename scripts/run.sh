@@ -81,12 +81,41 @@ function run2
 	fi
 }
 
+#
+# Benchmarks HAL Mailbox
+#
+function benchmark_mailbox
+{
+	echo "Benchmarking HAL Mailbox"
+	
+	echo "  nlocals=1 nremotes=1 (baseline)"
+	run1 "benchmark-hal-mailbox.img" "/benchmark/hal-mailbox-master" "1 1 row 4" \
+		| head -n -1                                                             \
+		| cut -d" " -f 5                                                         \
+		> hal-mailbox-1-1-row.benchmark
+	for nremotes in 4 8 12 16;
+	do
+		echo "  nlocals=1 nremotes=$nremotes"
+		run1 "benchmark-hal-mailbox.img" "/benchmark/hal-mailbox-master" "1 $nremotes row 4" \
+			| head -n -1                                                                     \
+			| cut -d" " -f 5                                                                 \
+			> hal-mailbox-1-$nremotes-row.benchmark
+		run1 "benchmark-hal-mailbox.img" "/benchmark/hal-mailbox-master" "1 $nremotes col 4" \
+			| head -n -1                                                                     \
+			| cut -d" " -f 5                                                                 \
+			> hal-mailbox-1-$nremotes-col.benchmark
+	done
+
+	tar -cjvf benchmark-hal-sync.tar.bz2 *.benchmark
+	rm -rf *.benchmark
+}
+
 if [[ $1 == "test" ]];
 then
-	# echo "Testing HAL"
-	# run1 "test-hal.img" "/test/hal-master" | grep "test"
+	echo "Testing HAL"
+	run1 "test-hal.img" "/test/hal-master" | grep "test"
 	echo "Testing SYNC"
-	run2 "test-hal-sync.img" "/test/hal-sync-master0" "/test/hal-sync-master1" "$NCLUSTERS"
+	run2 "test-hal-sync.img" "/test/hal-sync-master0" "/test/hal-sync-master1" "$NCLUSTERS" | grep "test"
 	# echo "Testing MAILBOX"
 	# run2 "test-hal-mailbox.img" "/test/hal-mailbox-master"
 	# echo "Testing PORTAL"
@@ -98,9 +127,10 @@ then
 #	run2 "rmem.img" "rmem-master" "rmem-server" "read $NCLUSTERS $SIZE"
 elif [[ $1 == "benchmark" ]];
 then
-	echo "Benchmarking HAL Mailbox"
-	run1 "benchmark-hal-mailbox.img" "/benchmark/hal-mailbox-master" "1 16 row"
-	if [[ $2 == "async" ]];
+	if [[ $2 == "mailbox" ]];
+	then
+		benchmark_mailbox
+	elif [[ $2 == "async" ]];
 	then
 		echo "Testing ASYNC"
 		run1 "async.img" "master.elf" "$NCLUSTERS $SIZE"
