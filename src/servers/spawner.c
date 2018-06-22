@@ -57,7 +57,8 @@ pthread_mutex_t lock;
  */
 int main(int argc, char **argv)
 {
-	int global_barrier;
+	int syncid;
+	int nodes[2];
 	pthread_t tids[NR_SERVERS];
 
 	((void) argc);
@@ -80,8 +81,13 @@ int main(int argc, char **argv)
 	}
 
 	/* Release master IO cluster. */
-	global_barrier = barrier_open(0);
-	barrier_wait(global_barrier);
+	nodes[0] = hal_get_node_id();
+	nodes[1] = 192;
+
+	// assert((syncid = hal_sync_open(nodes, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
+	// assert(hal_sync_signal(syncid) == 0);
+	printf("sync open spawner: %d\n", (syncid = hal_sync_open(nodes, 2, HAL_SYNC_ONE_TO_ALL)));
+	printf("sync signal spawner: %d\n", hal_sync_signal(syncid));
 
 	printf("[SPAWNER] server alive\n");
 

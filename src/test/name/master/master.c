@@ -316,7 +316,8 @@ static void test_name_link_unlink(void)
  */
 int main(int argc, char **argv)
 {
-	int global_barrier;
+	int syncid;
+	int nodes[2];
 	// int nclusters;
 
 	((void) argv);
@@ -333,9 +334,14 @@ int main(int argc, char **argv)
 	/* Retrieve kernel parameters. */
 	// nclusters = atoi(argv[1]);
 
-	/* Wait name server. */
-	global_barrier = barrier_open(0);
-	barrier_wait(global_barrier);
+	/* Wait spawner server. */
+	nodes[0] = 128;
+	nodes[1] = hal_get_node_id();
+
+	// TEST_ASSERT((syncid = hal_sync_create(nodes, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
+	// TEST_ASSERT(hal_sync_wait(syncid) == 0);
+	printf("sync create name test: %d\n", (syncid = hal_sync_create(nodes, 2, HAL_SYNC_ONE_TO_ALL)));
+	printf("sync wait name test: %d\n", (hal_sync_wait(syncid)));
 
 	/* API tests. */
 	test_name_link_unlink();
@@ -351,7 +357,7 @@ int main(int argc, char **argv)
 	// test_name_slave(nclusters);
 
 	/* House keeping. */
-	barrier_close(global_barrier);
+	TEST_ASSERT(hal_sync_close(syncid) == 0);
 
 	hal_cleanup();
 	return (EXIT_SUCCESS);
