@@ -492,36 +492,15 @@ static void test_hal_sync_wait_signal_cc(int nclusters)
  * API Test: Signal Wait IO-Compute cluster                          *
  *===================================================================*/
 
-/**
- * @brief API Test: Synchronization Point Signal Wait
- */
-static void test_hal_sync_master_signal_wait_cc(const int *nodes, int nclusters)
-{
-	int syncid;
-
-	TEST_ASSERT((syncid = hal_sync_create(nodes,
-		nclusters + 1,
-		HAL_SYNC_ALL_TO_ONE)) >= 0
-	);
-
-	printf("master blocking\n");
-	TEST_ASSERT(hal_sync_wait(syncid) == 0);
-	printf("master UNBLOCKING\n");
-
-	TEST_ASSERT(hal_sync_unlink(syncid) == 0);
-}
 
 /**
  * @brief API Test: Synchronization Point Wait Signal
  */
 static void test_hal_sync_signal_wait_cc(int nclusters)
 {
+	int syncid;
 	int nodes[nclusters + 1];
 	int pids[nclusters];
-	int status;
-
-	printf("[test][api] Signal Wait IO / compute cluster\n");
-
 	char nclusters_str[4];
 	char test_str[4];
 	const char *args[] = {
@@ -531,25 +510,40 @@ static void test_hal_sync_signal_wait_cc(int nclusters)
 		NULL
 	};
 
+	printf("[test][api] Signal Wait IO / compute cluster\n");
+
 	/* Build nodes list. */
 	nodes[0] = hal_get_node_id();
 
 	for (int i = 0; i < nclusters; i++)
 		nodes[i + 1] = i;
 
+	/* Create synchronization point. */
+	TEST_ASSERT((syncid = hal_sync_create(nodes,
+		nclusters + 1,
+		HAL_SYNC_ALL_TO_ONE)) >= 0
+	);
+
+	/* Spawn slaves. */
 	sprintf(nclusters_str, "%d", nclusters);
 	sprintf(test_str, "%d", 2);
-
 	for (int i = 0; i < nclusters; i++)
 		TEST_ASSERT((pids[i] = mppa_spawn(i, NULL, args[0], args, NULL)) != -1);
 
-	test_hal_sync_master_signal_wait_cc(nodes, nclusters);
+	/* Wait. */
+	TEST_ASSERT(hal_sync_wait(syncid) == 0);
 
+	/* Join. */
 	for (int i = 0; i < nclusters; i++)
 	{
+		int status;
+
 		TEST_ASSERT(mppa_waitpid(pids[i], &status, 0) != -1);
 		TEST_ASSERT(status == EXIT_SUCCESS);
 	}
+
+	/* House keeping. */
+	TEST_ASSERT(hal_sync_unlink(syncid) == 0);
 }
 
 /*===================================================================*

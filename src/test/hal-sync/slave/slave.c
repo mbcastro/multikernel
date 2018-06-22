@@ -177,8 +177,6 @@ static void test_hal_sync_thread_signal_wait(int nclusters)
 		HAL_SYNC_ALL_TO_ONE)) >= 0
 	);
 
-	while (hal_get_node_id() == 15);
-	printf("node %d signal\n", hal_get_node_id());
 	TEST_ASSERT(hal_sync_signal(syncid) == 0);
 
 	TEST_ASSERT(hal_sync_close(syncid) == 0);
