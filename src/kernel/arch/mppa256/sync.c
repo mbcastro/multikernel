@@ -319,6 +319,7 @@ static int _hal_sync_create(const int *nodes, int nnodes, int type)
 
 	/* Setup sync mask. */
 	if (mppa_ioctl(fd, MPPA_RX_SET_MATCH, ~mask) != 0)
+	if (mppa_ioctl(fd, MPPA_RX_SET_MATCH, ~mask) == -1)
 		goto error2;
 
 	/* Initialize synchronization point. */
@@ -467,6 +468,7 @@ static int _hal_sync_open(const int *nodes, int nnodes, int type)
 			ranks[i] = i;
 
 		if (mppa_ioctl(fd, MPPA_TX_SET_RX_RANKS, nnodes - 1, ranks) != 0)
+		if (mppa_ioctl(fd, MPPA_TX_SET_RX_RANKS, nnodes - 1, ranks) == -1)
 			goto error2;
 	}
 
