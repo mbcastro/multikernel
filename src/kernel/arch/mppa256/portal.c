@@ -21,10 +21,9 @@
  */
 
 #include <nanvix/name.h>
-
 #include <nanvix/klib.h>
 #include <nanvix/hal.h>
-#include <nanvix/arch/mppa.h>
+
 #include <errno.h>
 #include <inttypes.h>
 #include <string.h>
@@ -39,8 +38,8 @@
 /**
  * @brief Creates a portal.
  *
- * @param portal    Adress where the portal will be stored.
- * @param local     ID of the local NoC node.
+ * @param portal Adress where the portal will be stored.
+ * @param local  ID of the local NoC node.
  *
  * @returns Upon successful completion, zero is returned.
  * Upon failure, a negative error code is returned instead.
@@ -91,17 +90,17 @@ int hal_portal_create(portal_t *portal, int local)
 /**
  * @brief Enables read operations from a remote.
  *
- * @param portal    Adress of the target portal.
- * @param remote    NoC node ID of target remote.
+ * @param portal Adress of the target portal.
+ * @param remote NoC node ID of target remote.
  *
  * @returns Upons successful completion zero is returned. Upon failure,
  * a negative error code is returned instead.
  */
 int hal_portal_allow(portal_t *portal, int remote)
 {
-	int local;          /* Local NoC node ID.   */
-	int sync_fd;        /* Sync NoC connector.  */
-	char pathname[128]; /* Portal pathname.     */
+	int local;          /* Local NoC node ID.  */
+	int sync_fd;        /* Sync NoC connector. */
+	char pathname[128]; /* Portal pathname.    */
 
 	/* Invalid portal.*/
 	if (portal == NULL)
@@ -143,18 +142,18 @@ int hal_portal_allow(portal_t *portal, int remote)
 /**
  * @brief Opens a portal.
  *
- * @param portal     Adress where the portal will be stored
- * @param remote     ID of the target NoC node.
+ * @param portal Adress where the portal will be stored
+ * @param remote ID of the target NoC node.
  *
  * @returns Upon successful completion zero is returned.
  * Upon failure, a negative error code is returned instead.
  */
 int hal_portal_open(portal_t *portal, int remote)
 {
-	int local;          /* ID of local NoC node.  */
-	int portal_fd;      /* Portal NoC Connector.  */
-	int sync_fd;        /* Sync NoC connector.    */
-	char pathname[128]; /* NoC connector name.    */
+	int local;          /* ID of local NoC node. */
+	int portal_fd;      /* Portal NoC Connector. */
+	int sync_fd;        /* Sync NoC connector.   */
+	char pathname[128]; /* NoC connector name.   */
 
 	/* Invalid portal. */
 	if (portal == NULL)
@@ -204,36 +203,15 @@ int hal_portal_open(portal_t *portal, int remote)
 }
 
 /*=======================================================================*
- * portal_sync()                                                         *
- *=======================================================================*/
-
-/**
- * @brief Builds sync mask for a nodeid.
- *
- * @param nodeid Target nodeid.
- *
- * @return Sync mask.
- */
-static inline uint64_t portal_sync(int nodeid)
-{
-	if ((nodeid >= IOCLUSTER0) && (nodeid < IOCLUSTER0 + NR_IOCLUSTER_DMA))
-		return (1 << (CCLUSTER15 + 1 + nodeid%NR_IOCLUSTER_DMA));
-	else if ((nodeid >= IOCLUSTER1) && (nodeid < IOCLUSTER1 + NR_IOCLUSTER_DMA))
-		return (1 << (CCLUSTER15 + 1 + NR_IOCLUSTER_DMA +
-								nodeid%NR_IOCLUSTER_DMA));
-	return (1 << nodeid);
-}
-
-/*=======================================================================*
  * hal_portal_read()                                                     *
  *=======================================================================*/
 
 /**
  * @brief Reads data from a portal.
  *
- * @param portal  Targeted adress portal.
- * @param buf     Location from where data should be written.
- * @param n       Number of bytes to read.
+ * @param portal Targeted adress portal.
+ * @param buf    Location from where data should be written.
+ * @param n      Number of bytes to read.
  *
  * @returns Upon successful completion zero is returned. Upon failure, a
  * negative error code is returned instead.
@@ -262,7 +240,7 @@ int hal_portal_read(portal_t *portal, void *buf, size_t n)
 		return (-EINVAL);
 
 	/* Unblock remote. */
-	mask = portal_sync(portal->local);
+	mask = 1 << noc_get_node_num(portal->local);
 	if (mppa_write(portal->sync_fd, &mask, sizeof(uint64_t)) == -1)
 		return (-EAGAIN);
 
@@ -280,9 +258,9 @@ int hal_portal_read(portal_t *portal, void *buf, size_t n)
 /**
  * @brief Writes data to a portal.
  *
- * @param portal  Targeted adress portal.
- * @param buf     Location from where data should be read.
- * @param n       Number of bytes to write.
+ * @param portal Targeted adress portal.
+ * @param buf    Location from where data should be read.
+ * @param n      Number of bytes to write.
  *
  * @returns Upon successful the number of bytes wrote is returned.
  * Upon failure, a negative error code is returned instead.
@@ -305,7 +283,7 @@ int hal_portal_write(portal_t *portal, const void *buf, size_t n)
 		return (-EINVAL);
 
 	/* Wait for remote to be ready. */
-	mask = portal_sync(portal->remote);
+	mask = 1 << noc_get_node_num(portal->remote);
 	if (mppa_ioctl(portal->sync_fd, MPPA_RX_SET_MATCH, ~mask) == -1)
 		return (-EINVAL);
 
