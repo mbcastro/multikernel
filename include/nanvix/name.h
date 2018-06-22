@@ -52,5 +52,6 @@
 	extern int name_lookup(char *);
 	extern int name_link(int, const char *);
 	extern int name_unlink(const char *);
+	extern int name_get_inbox(void);
 
 #endif /* _NAME_H_ */

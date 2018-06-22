@@ -83,16 +83,16 @@ function run2
 
 if [[ $1 == "test" ]];
 then
-	echo "Testing HAL"
-	run1 "test-hal.img" "/test/hal-master" | grep "test"
-	echo "Testing SYNC"
-	run2 "test-hal-sync.img" "/test/hal-sync-master0" "/test/hal-sync-master1" "$NCLUSTERS"
+	# echo "Testing HAL"
+	# run1 "test-hal.img" "/test/hal-master" | grep "test"
+	# echo "Testing SYNC"
+	# run2 "test-hal-sync.img" "/test/hal-sync-master0" "/test/hal-sync-master1" "$NCLUSTERS"
 	echo "Testing MAILBOX"
-	run2 "test-hal-mailbox.img" "/test/hal-mailbox-master0" "/test/hal-mailbox-master1" | grep "test"
+	run2 "test-hal-mailbox.img" "/test/hal-mailbox-master0" "/test/hal-mailbox-master1"
 	# echo "Testing PORTAL"
 	# run1 "test-hal-portal.img" "/test/hal-portal-master" | grep "test"
-	# echo "Testing NAME"
-	# run2 "test-name.img" "/servers" "/test/name-master" "$NCLUSTERS" | grep "test"
+	echo "Testing NAME"
+	run2 "test-name.img" "/servers" "/test/name-master" "$NCLUSTERS"
 #	echo "Testing RMEM"
 #	run2 "rmem.img" "rmem-master" "rmem-server" "write $NCLUSTERS $SIZE"
 #	run2 "rmem.img" "rmem-master" "rmem-server" "read $NCLUSTERS $SIZE"

@@ -45,28 +45,84 @@ static int ncores = 0;
 /**
  * @brief ID of slave processes.
  */
-static int pids[NANVIX_PROC_MAX];
+// static int pids[NANVIX_PROC_MAX];
+
+/**
+ * @brief Global barrier for synchronization.
+ */
+static pthread_barrier_t barrier;
+
+/**
+ * @brief Lock for critical sections.
+ */
+static pthread_mutex_t lock;
 
 /*===================================================================*
- * API Test: Name Link                                               *
+ * API Test: Name Link Unlink                                        *
  *===================================================================*/
+
+/**
+ * @brief API Test: Name Link Unlink
+ */
+static void *test_name_thread_link_unlink(void *args)
+{
+	char pathname[NANVIX_PROC_NAME_MAX];
+	int tid;
+	int nodeid;
+
+	hal_setup();
+
+	pthread_barrier_wait(&barrier);
+
+	((void) args);
+
+	tid = ((int *)args)[0];
+
+	nodeid = hal_get_node_id();
+
+	/* Link and unlink name. */
+	sprintf(pathname, "cool-name%d", tid);
+	pthread_mutex_lock(&lock);
+	printf("test: link %s nodeid: %d...\n", pathname, nodeid);
+	TEST_ASSERT(name_link(nodeid, pathname) == 0);
+	printf("test: link %s nodeid: %d OK\n", pathname, nodeid);
+	pthread_mutex_unlock(&lock);
+
+	pthread_barrier_wait(&barrier);
+	printf("test: %d passed barrier\n", nodeid);
+
+	pthread_mutex_lock(&lock);
+	TEST_ASSERT(name_unlink(pathname) == 0);
+	pthread_mutex_unlock(&lock);
+
+	hal_cleanup();
+	return(NULL);
+}
 
 /**
  * @brief API Test: Name Link Unlink
  */
 static void test_name_link_unlink(void)
 {
-	int nodeid;
-	char pathname[NANVIX_PROC_NAME_MAX];
+	int dmas[ncores];
+	pthread_t tids[ncores];
 
 	printf("[test][api] Name Link Unlink\n");
 
-	nodeid = hal_get_cluster_id();
+	/* Spawn driver threads. */
+	for (int i = 1; i < ncores; i++)
+	{
+		dmas[i] = i;
+		assert((pthread_create(&tids[i],
+			NULL,
+			test_name_thread_link_unlink,
+			&dmas[i])) == 0
+		);
+	}
 
-	/* Link and unlink name. */
-	sprintf(pathname, "cool-name");
-	TEST_ASSERT(name_link(nodeid, pathname) == 0);
-	TEST_ASSERT(name_unlink(pathname) == 0);
+	/* Wait for driver threads. */
+	for (int i = 1; i < ncores; i++)
+		pthread_join(tids[i], NULL);
 }
 
 /*===================================================================*
@@ -76,172 +132,180 @@ static void test_name_link_unlink(void)
 /**
  * @brief API Test: master name lookup.
  */
-static void test_name_lookup(void)
-{
-	int nodeid;
-	char pathname[NANVIX_PROC_NAME_MAX];
-
-	printf("[test][api] Name Lookup\n");
-
-	nodeid = hal_get_cluster_id();
-
-	/* Lookup name. */
-	sprintf(pathname, "cool-name");
-	TEST_ASSERT(name_link(nodeid, pathname) == 0);
-	TEST_ASSERT(name_lookup(pathname) == nodeid);
-	TEST_ASSERT(name_unlink(pathname) == 0);
-}
-
-/*===================================================================*
-* Fault Injection Test: Duplicate Name                               *
-*====================================================================*/
-
-/**
-* @brief Fault Injection Test: Link the Same Name Twice
-*/
-static void test_name_duplicate(void)
-{
-	int nodeid;
-	char pathname[NANVIX_PROC_NAME_MAX];
-
-	printf("[test][fault injection] Duplicate Name\n");
-
-	nodeid = hal_get_cluster_id();
-
-	/* Link name. */
-	sprintf(pathname, "cool-name");
-	TEST_ASSERT(name_link(nodeid, pathname) == 0);
-	TEST_ASSERT(name_link(nodeid, pathname) < 0);
-	TEST_ASSERT(name_unlink(pathname) == 0);
-}
-
-/*===================================================================*
-* Fault Injection Test: Invalid Link                                 *
-*====================================================================*/
-
-/**
-* @brief Fault Injection Test: Link Invalid Names
-*/
-static void test_name_invalid_link(void)
-{
-	int nodeid;
-	char pathname[NANVIX_PROC_NAME_MAX + 1];
-
-	printf("[test][fault injection] Invalid Link\n");
-
-	nodeid = hal_get_cluster_id();
-
-	memset(pathname, 1, NANVIX_PROC_NAME_MAX + 1);
-
-	/* Link invalid names. */
-	TEST_ASSERT(name_link(nodeid, pathname) < 0);
-	TEST_ASSERT(name_link(nodeid, NULL) < 0);
-	TEST_ASSERT(name_link(nodeid, "") < 0);
-}
-
-/*===================================================================*
-* Fault Injection Test: Invalid Unlink                               *
-*====================================================================*/
-
-/**
-* @brief Fault Injection Test: Unlink Invalid Name
-*/
-static void test_name_invalid_unlink(void)
-{
-	char pathname[NANVIX_PROC_NAME_MAX + 1];
-
-	printf("[test][fault onjection] Invalid Unlink\n");
-
-	memset(pathname, 1, NANVIX_PROC_NAME_MAX + 1);
-
-	/* Unlink invalid names. */
-	TEST_ASSERT(name_unlink(pathname) < 0);
-	TEST_ASSERT(name_unlink(NULL) < 0);
-	TEST_ASSERT(name_unlink("") < 0);
-}
-
-/*===================================================================*
-* Fault Injection Test: Bad Unlink                                   *
-*====================================================================*/
-
-/**
-* @brief Fault Injection Test: Unlink Bad Name
-*/
-static void test_name_bad_unlink(void)
-{
-	printf("[test][fault injection] Bad Unlink\n");
-
-	/* Unlink missing name. */
-	TEST_ASSERT(name_unlink("missing_name") < 0);
-}
-
-/*===================================================================*
-* Fault Injection Test: Bad Lookup                                   *
-*====================================================================*/
-
-/**
-* @brief Fault Injection Test: Lookup Missing Name
-*/
-static void test_name_bad_lookup(void)
-{
-	printf("[test][fault injection] Bad Lookup\n");
-
-	/* Lookup missing name. */
-	TEST_ASSERT(name_lookup("missing_name") < 0);
-}
-
-/*===================================================================*
-* Fault Injection Test: Invalid Lookup                               *
-*====================================================================*/
-
-/**
-* @brief Fault Injection Test: Lookup Invalid Name
-*/
-static void test_name_invalid_lookup(void)
-{
-	char pathname[NANVIX_PROC_NAME_MAX + 1];
-
-	printf("[test][fault injection] Invalid Lookup\n");
-
-	memset(pathname, 1, NANVIX_PROC_NAME_MAX + 1);
-
-	/* Lookup invalid names. */
-	TEST_ASSERT(name_lookup(pathname) < 0);
-	TEST_ASSERT(name_lookup(NULL) < 0);
-	TEST_ASSERT(name_lookup("") < 0);
-}
-
-/*===================================================================*
- * API Test: slave tests                                             *
- *===================================================================*/
-
-/**
- * @brief API Test: Slave Tests
- */
-static void test_name_slave(int nclusters)
-{
-	int status;
-
-	char nclusters_str[4];
-	const char *args[] = {
-		"/test/name-slave",
-		nclusters_str,
-		NULL
-	};
-
-	printf("[test][api] Name Slaves\n");
-
-	sprintf(nclusters_str, "%d", nclusters);
-
-	for (int i = 0; i < nclusters; i++)
-		TEST_ASSERT((pids[i] = mppa_spawn(i, NULL, args[0], args, NULL)) != -1);
-
-	for (int i = 0; i < nclusters; i++)
-	{
-		TEST_ASSERT(mppa_waitpid(pids[i], &status, 0) != -1);
-		TEST_ASSERT(status == EXIT_SUCCESS);
-	}
-}
+// static void test_name_lookup(void)
+// {
+// 	char pathname[NANVIX_PROC_NAME_MAX];
+// 	int nodeid;
+//
+// 	printf("[test][api] Name Lookup\n");
+//
+// 	nodeid = hal_get_node_id();
+//
+// 	/* Lookup name. */
+// 	sprintf(pathname, "cool-name");
+// 	pthread_mutex_lock(&lock);
+// 	TEST_ASSERT(name_link(nodeid, pathname) == 0);
+// 	pthread_mutex_unlock(&lock);
+//
+// 	pthread_mutex_lock(&lock);
+// 	TEST_ASSERT(name_lookup(pathname) == nodeid);
+// 	pthread_mutex_unlock(&lock);
+//
+// 	pthread_mutex_lock(&lock);
+// 	TEST_ASSERT(name_unlink(pathname) == 0);
+// 	pthread_mutex_unlock(&lock);
+// }
+//
+// /*===================================================================*
+// * Fault Injection Test: Duplicate Name                               *
+// *====================================================================*/
+//
+// /**
+// * @brief Fault Injection Test: Link the Same Name Twice
+// */
+// static void test_name_duplicate(void)
+// {
+// 	int nodeid;
+// 	char pathname[NANVIX_PROC_NAME_MAX];
+//
+// 	printf("[test][fault injection] Duplicate Name\n");
+//
+// 	nodeid = hal_get_node_id();
+//
+// 	/* Link name. */
+// 	sprintf(pathname, "cool-name");
+// 	TEST_ASSERT(name_link(nodeid, pathname) == 0);
+// 	TEST_ASSERT(name_link(nodeid, pathname) < 0);
+// 	TEST_ASSERT(name_unlink(pathname) == 0);
+// }
+//
+// /*===================================================================*
+// * Fault Injection Test: Invalid Link                                 *
+// *====================================================================*/
+//
+// /**
+// * @brief Fault Injection Test: Link Invalid Names
+// */
+// static void test_name_invalid_link(void)
+// {
+// 	int nodeid;
+// 	char pathname[NANVIX_PROC_NAME_MAX + 1];
+//
+// 	printf("[test][fault injection] Invalid Link\n");
+//
+// 	nodeid = hal_get_node_id();
+//
+// 	memset(pathname, 1, NANVIX_PROC_NAME_MAX + 1);
+//
+// 	/* Link invalid names. */
+// 	TEST_ASSERT(name_link(nodeid, pathname) < 0);
+// 	TEST_ASSERT(name_link(nodeid, NULL) < 0);
+// 	TEST_ASSERT(name_link(nodeid, "") < 0);
+// }
+//
+// /*===================================================================*
+// * Fault Injection Test: Invalid Unlink                               *
+// *====================================================================*/
+//
+// /**
+// * @brief Fault Injection Test: Unlink Invalid Name
+// */
+// static void test_name_invalid_unlink(void)
+// {
+// 	char pathname[NANVIX_PROC_NAME_MAX + 1];
+//
+// 	printf("[test][fault onjection] Invalid Unlink\n");
+//
+// 	memset(pathname, 1, NANVIX_PROC_NAME_MAX + 1);
+//
+// 	/* Unlink invalid names. */
+// 	TEST_ASSERT(name_unlink(pathname) < 0);
+// 	TEST_ASSERT(name_unlink(NULL) < 0);
+// 	TEST_ASSERT(name_unlink("") < 0);
+// }
+//
+// /*===================================================================*
+// * Fault Injection Test: Bad Unlink                                   *
+// *====================================================================*/
+//
+// /**
+// * @brief Fault Injection Test: Unlink Bad Name
+// */
+// static void test_name_bad_unlink(void)
+// {
+// 	printf("[test][fault injection] Bad Unlink\n");
+//
+// 	/* Unlink missing name. */
+// 	TEST_ASSERT(name_unlink("missing_name") < 0);
+// }
+//
+// /*===================================================================*
+// * Fault Injection Test: Bad Lookup                                   *
+// *====================================================================*/
+//
+// /**
+// * @brief Fault Injection Test: Lookup Missing Name
+// */
+// static void test_name_bad_lookup(void)
+// {
+// 	printf("[test][fault injection] Bad Lookup\n");
+//
+// 	/* Lookup missing name. */
+// 	TEST_ASSERT(name_lookup("missing_name") < 0);
+// }
+//
+// /*===================================================================*
+// * Fault Injection Test: Invalid Lookup                               *
+// *====================================================================*/
+//
+// /**
+// * @brief Fault Injection Test: Lookup Invalid Name
+// */
+// static void test_name_invalid_lookup(void)
+// {
+// 	char pathname[NANVIX_PROC_NAME_MAX + 1];
+//
+// 	printf("[test][fault injection] Invalid Lookup\n");
+//
+// 	memset(pathname, 1, NANVIX_PROC_NAME_MAX + 1);
+//
+// 	/* Lookup invalid names. */
+// 	TEST_ASSERT(name_lookup(pathname) < 0);
+// 	TEST_ASSERT(name_lookup(NULL) < 0);
+// 	TEST_ASSERT(name_lookup("") < 0);
+// }
+//
+// /*===================================================================*
+//  * API Test: slave tests                                             *
+//  *===================================================================*/
+//
+// /**
+//  * @brief API Test: Slave Tests
+//  */
+// static void test_name_slave(int nclusters)
+// {
+// 	int status;
+//
+// 	char nclusters_str[4];
+// 	const char *args[] = {
+// 		"name-slave",
+// 		nclusters_str,
+// 		NULL
+// 	};
+//
+// 	printf("[test][api] Name Slaves\n");
+//
+// 	sprintf(nclusters_str, "%d", nclusters);
+//
+// 	for (int i = 0; i < nclusters; i++)
+// 		TEST_ASSERT((pids[i] = mppa_spawn(i, NULL, args[0], args, NULL)) != -1);
+//
+// 	for (int i = 0; i < nclusters; i++)
+// 	{
+// 		TEST_ASSERT(mppa_waitpid(pids[i], &status, 0) != -1);
+// 		TEST_ASSERT(status == EXIT_SUCCESS);
+// 	}
+// }
 
 /*===================================================================*
  * Name Service Test Driver                                          *
@@ -253,16 +317,21 @@ static void test_name_slave(int nclusters)
 int main(int argc, char **argv)
 {
 	int global_barrier;
-	int nclusters;
+	// int nclusters;
+
+	((void) argv);
 
 	hal_setup();
 
 	ncores = hal_get_num_cores();
 
+	pthread_mutex_init(&lock, NULL);
+	pthread_barrier_init(&barrier, NULL, ncores - 1);
+
 	TEST_ASSERT(argc == 2);
 
 	/* Retrieve kernel parameters. */
-	nclusters = atoi(argv[1]);
+	// nclusters = atoi(argv[1]);
 
 	/* Wait name server. */
 	global_barrier = barrier_open(0);
@@ -270,16 +339,16 @@ int main(int argc, char **argv)
 
 	/* API tests. */
 	test_name_link_unlink();
-	test_name_lookup();
-
-	/* Fault injection tests. */
-	test_name_duplicate();
-	test_name_invalid_link();
-	test_name_invalid_unlink();
-	test_name_bad_unlink();
-	test_name_bad_lookup();
-	test_name_invalid_lookup();
-	test_name_slave(nclusters);
+	// test_name_lookup();
+	//
+	// /* Fault injection tests. */
+	// test_name_duplicate();
+	// test_name_invalid_link();
+	// test_name_invalid_unlink();
+	// test_name_bad_unlink();
+	// test_name_bad_lookup();
+	// test_name_invalid_lookup();
+	// test_name_slave(nclusters);
 
 	/* House keeping. */
 	barrier_close(global_barrier);

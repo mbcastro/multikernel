@@ -27,6 +27,7 @@
 #include <nanvix/hal.h>
 #include <nanvix/name.h>
 #include <nanvix/pm.h>
+#include <nanvix/arch/mppa.h>
 
 /**
  * @brief Mailbox flags.
@@ -41,8 +42,9 @@
  */
 struct mailbox
 {
-	int fd;    /**< NoC connector. */
-	int flags; /**< Flags.         */
+	int fd;     /**< NoC connector. */
+	int flags;  /**< Flags.         */
+	int nodeid; /**< NoC node ID.   */
 };
 
 /**
@@ -217,7 +219,7 @@ static void mailbox_free(int mbxid)
 int mailbox_create(char *name)
 {
 	int fd;     /* NoC connector. */
-	int coreid; /* Core ID.       */
+	int nodeid; /* NoC node ID.   */
 	int mbxid;  /* ID of mailbix. */
 
 	/* Invalid name. */
@@ -228,19 +230,28 @@ int mailbox_create(char *name)
 	if ((mbxid = mailbox_alloc()) < 0)
 		return (-EAGAIN);
 
-	coreid = hal_get_node_id();
-
-	/* Link name. */
-	name_link(coreid, name);
-
-	/* Create underlying HW channel. */
-	if ((fd = hal_mailbox_create(hal_get_cluster_id())) == -1)
+	nodeid = hal_get_node_id();
+	printf("test - before name_link node %d\n", nodeid);
+	/* Create underlying HW channel and link name. */
+	if (name_link(nodeid, name) != 0)
 		goto error0;
+	printf("test - after name_link node %d\n", nodeid);
 
+	/* Get NoC connector. */
+	fd = name_get_inbox();
+
+	/* Invalid NoC connector. */
+	if (fd < 0)
+		goto error1;
+
+	printf("test - created nodeid:%d client: %d\n", nodeid, fd);
 	/* Initialize mailbox. */
 	mailboxes[mbxid].fd = fd;
 
 	return (mbxid);
+
+error1:
+	name_unlink(name);
 
 error0:
 	name_unlink(name);
@@ -412,21 +423,26 @@ int mailbox_close(int mbxid)
  */
 int mailbox_unlink(int mbxid)
 {
+	int r;	/* Return value */
+
 	/* Invalid mailbox ID.*/
 	if (!mailbox_is_valid(mbxid))
 		return (-EINVAL);
+		printf("test 1- unlink \n");
 
 	/* Bad mailbox. */
 	if (!mailbox_is_used(mbxid))
 		return (-EINVAL);
+		printf("test 2- unlink \n" );
 
 	/*  Invalid mailbox. */
-	if (!mailbox_is_wronly(mbxid))
+	if (mailbox_is_wronly(mbxid))
 		return (-EINVAL);
+		printf("test 3- unlink \n" );
 
-	hal_mailbox_unlink(mailboxes[mbxid].fd);
-
+	r = hal_mailbox_unlink(mailboxes[mbxid].fd);
+	printf("test 4- unlink mailbox: %d fd: %d return: %d\n", mbxid, mailboxes[mbxid].fd, r);
 	mailbox_free(mbxid);
 
-	return (0);
+	return (r);
 }
