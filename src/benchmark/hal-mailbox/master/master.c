@@ -151,7 +151,7 @@ static void *kernel(void *args)
 
 	/* Open output mailboxes. */
 	for (int i = 0; i < nremotes; i++)
-		assert((outboxes[i] = hal_mailbox_open(i)) >= 0);
+		assert((outboxes[i] = hal_mailbox_open(tnum*nremotes + i)) >= 0);
 
 	for (int k = 0; k < NITERATIONS; k++)
 	{
@@ -212,22 +212,14 @@ static void benchmark(void)
 
 	hal_timer_init();
 
-	/*
-	 * Spawn benchmark threads.
-	 *
-	 * Do not change the loop order, otherwise
-	 * a deadlock will occur.
-	 */
-	for (int i = nlocals - 1; i >= 0; i--)
+	/* Spawn benchmark threads. */
+	for (int i = 0; i < nlocals; i++)
 	{
 		args[i] = i;
 
 		/* Master thread is already running. */
 		if (i == 0)
-		{
-			kernel(&args[i]);
-			break;
-		}
+			continue;
 
 		assert((pthread_create(&tnums[i],
 			NULL,
@@ -235,6 +227,8 @@ static void benchmark(void)
 			&args[i])) == 0
 		);
 	}
+
+	kernel(&args[0]);
 
 	/* Wait for driver threads. */
 	for (int i = 1; i < nlocals; i++)
