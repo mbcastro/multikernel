@@ -20,49 +20,31 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-BINDIR=$1
-TOOLCHAIN=/usr/local/k1tools
+# C Source Files
+SRC = $(wildcard *.c)
 
-#
-# Missing arguments.
-#
-if [ -z $BINDIR ] ;
-then
-	echo "missing argument: binary directory"
-	exit 1
-fi
+# Object Files
+OBJ = $(SRC:.c=.o)
 
-function build1
-{
-	bootbin=$1
-	iobin=$2
-	multibin=$3
+# Binary Files
+export ELFBIN = $(BINDIR)/hal-sync-master1
 
-	$TOOLCHAIN/bin/k1-create-multibinary -f \
-		--remove-prefix $BINDIR             \
-		--boot $bootbin                     \
-		--ios $iobin                        \
-		-T $multibin
-}
+#===============================================================================
 
-function build2
-{
-	bootbin=$1
-	iobin=$2
-	nodebin=$3
-	multibin=$4
+# Builds the kernel.
+all: $(OBJ)
+	mkdir -p $(BINDIR)
+	$(CC) $(LDFLAGS) $(OBJ) -o $(ELFBIN) $(LIBKERNEL) $(LIBS)
 
-	$TOOLCHAIN/bin/k1-create-multibinary -f \
-		--remove-prefix $BINDIR             \
-		--boot $bootbin                     \
-		--ios $iobin                        \
-		--clusters $nodebin                 \
-		-T $multibin
-}
+# Builds object files.
+%.o: %.c
+	$(CC) $(CFLAGS) $< -c -o $@
 
-build1 $BINDIR/servers $BINDIR/test/hal-master         test-hal.img
-build1 $BINDIR/servers $BINDIR/test/hal-mailbox-master test-hal-mailbox.img
-build1 $BINDIR/servers $BINDIR/test/hal-portal-master  test-hal-portal.img
+# Cleans compilation files.
+clean:
+	rm -rf $(OBJ)
 
-build2 $BINDIR/test/hal-sync-master0 $BINDIR/test/hal-sync-master1 $BINDIR/test/sync-slave test-hal-sync.img
-build2 $BINDIR/servers               $BINDIR/test/name-master      $BINDIR/test/name-slave test-name.img
+# Cleans everything.
+distclean: clean
+	rm -rf $(ELFBIN)
+
