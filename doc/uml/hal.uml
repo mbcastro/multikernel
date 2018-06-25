@@ -6,7 +6,7 @@ enum CoreTypes {
 	+ const int HAL_CORE_SYSTEM
 }
 
-interface CoreInterface {
+interface HAL.CoreInterface {
 	+ const int HAL_NR_CORES_USER
 	+ const int HAL_NR_CORES_RMAN
 	+ const int HAL_NR_CORES_SYSTEM
@@ -18,7 +18,7 @@ interface CoreInterface {
 	+ int hal_get_core_freq(void)
 }
 
-interface MailboxInterface {
+interface HAL.MailboxInterface {
 	+ const int HAL_NR_MAILBOX
 	+ const int HAL_MAILBOX_MSG_SIZE
 	+ int hal_mailbox_create(int)
@@ -29,7 +29,7 @@ interface MailboxInterface {
 	+ size_t hal_mailbox_read(int, void *, size_t)
 }
 
-interface SyncInterface {
+interface HAL.SyncInterface {
 	+ const int HAL_NR_SYNC
 	+ const int HAL_SYNC_ONE_TO_ALL
 	+ const int HAL_SYNC_ALL_TO_ONE
@@ -41,7 +41,7 @@ interface SyncInterface {
 	+ int hal_sync_unlink(int)
 }
 
-interface PortalInterface {
+interface HAL.PortalInterface {
 	class portal_t
 	+ int hal_portal_allow(portal_t *, int)
 	+ int hal_portal_create(portal_t *, int)
@@ -52,17 +52,17 @@ interface PortalInterface {
 	+ int hal_portal_unlink(portal_t *)
 }
 
-interface NoCInterface {
+interface HAL.NoCInterface {
 	+ const int HAL_NR_NOC_NODES
 	+ const int hal_noc_nodes[HAL_NR_NOC_NODES]
 	+ int hal_get_node_id(void)
 }
 
-interface SetupInterface {
+interface HAL.SetupInterface {
 	+ void hal_setup(void)
 	+ void hal_cleanup(void)
 }
 
-CoreInterface ..> CoreTypes : <<use>>
+HAL.CoreInterface ..> HAL.CoreTypes : <<use>>
 
 @enduml
