@@ -51,7 +51,11 @@ int hal_mailbox_create(int remote)
 
 	/* Invalid NoC node ID. */
 	if (remote != hal_get_node_id())
+	{
+		printf("F1\n");
 		return (-EINVAL);
+	}
+
 
 	noc_get_remotes(remotes, remote);
 	noctag = noctag_mailbox(remote);
@@ -68,7 +72,10 @@ int hal_mailbox_create(int remote)
 
 	/* Open NoC connector. */
 	if ((fd = mppa_open(pathname, O_RDONLY)) == -1)
+	{
+		printf("F2\n");
 		return (-EAGAIN);
+	}
 
 	return (fd);
 }

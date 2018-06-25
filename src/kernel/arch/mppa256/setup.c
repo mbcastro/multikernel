@@ -34,17 +34,13 @@
 static int nthreads = 0;
 
 /**
- * @brief Lock for critical sections.
- */
-static pthread_mutex_t lock;
-
-/**
  * @brief Input HAL mailbox.
  */
 static int inbox[NR_IOCLUSTER_CORES];
 
 /**
- * @brief Is inboxes initialized ?
+ *
+ * @brief Is mailboxes initialized ?
  */
 static int initialized = 0;
 
@@ -55,7 +51,11 @@ int kernel_setup(void)
 {
 	int index;
 
-	pthread_mutex_init(&lock, NULL);
+	pthread_mutex_init(&core_lock, NULL);
+
+	pthread_mutex_lock(&core_lock);
+
+	hal_setup();
 
 	if (!initialized)
 	{
@@ -65,13 +65,22 @@ int kernel_setup(void)
 		initialized = 1;
 	}
 
-	hal_setup();
-
 	index = (hal_get_node_id() - __k1_get_cluster_id());
 
-	pthread_mutex_lock(&lock);
-	inbox[index] = hal_mailbox_create(hal_get_node_id());
-	pthread_mutex_unlock(&lock);
+	if ((index < 0) || (index >= NR_IOCLUSTER_CORES))
+		printf("BAD INDEX");
+
+	/* Nothing to do. */
+	if (inbox[index] != -1)
+	{
+		pthread_mutex_unlock(&core_lock);
+		return 0;
+	}
+
+	int mailbox = hal_mailbox_create(hal_get_node_id());
+	inbox[index] = mailbox;
+
+	pthread_mutex_unlock(&core_lock);
 
 	if(inbox[index] < 0)
 		return (-EAGAIN);
@@ -80,22 +89,32 @@ int kernel_setup(void)
 }
 
 /**
- * @brief Clean kernel.
+ * @brief Cleans kernel.
  */
 int kernel_cleanup(void)
 {
-	int mailbox;
+	int index;
 
-	for (int i = 0; i < NR_IOCLUSTER_CORES; i++)
+	pthread_mutex_init(&core_lock, NULL);
+
+	pthread_mutex_lock(&core_lock);
+
+	index = (hal_get_node_id() - __k1_get_cluster_id());
+
+	if (inbox[index] != -1)
 	{
-		mailbox = inbox[i];
+		if (hal_mailbox_unlink(inbox[index]) != 0)
+		{
+			pthread_mutex_unlock(&core_lock);
+			return (-EAGAIN);
+		}
 
-		if (mailbox >= 0)
-			if (hal_mailbox_close(mailbox) != 0)
-				return (-EAGAIN);
+		inbox[index] = -1;
 	}
 
 	hal_cleanup();
+
+	pthread_mutex_unlock(&core_lock);
 
 	return 0;
 }
@@ -107,7 +126,13 @@ int get_inbox(void)
 {
 	int index;
 
+	pthread_mutex_init(&core_lock, NULL);
+
+	pthread_mutex_lock(&core_lock);
+
 	index = (hal_get_node_id() - __k1_get_cluster_id());
+
+	pthread_mutex_unlock(&core_lock);
 
 	return inbox[index];
 }

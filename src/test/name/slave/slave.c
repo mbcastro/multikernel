@@ -233,7 +233,9 @@ int main(int argc, char **argv)
 	assert(argc == 2);
 	assert((nclusters = atoi(argv[1])) > 0);
 
+	printf("before setup\n");
 	TEST_ASSERT(kernel_setup() == 0);
+	printf("after setup\n");
 
 #if MSG_TEST
 	nodeid = hal_get_cluster_id();

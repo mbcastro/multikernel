@@ -90,7 +90,7 @@ static void *test_name_thread_link_unlink(void *args)
 	TEST_ASSERT(name_unlink(pathname) == 0);
 	pthread_mutex_unlock(&lock);
 
-	hal_cleanup();
+	TEST_ASSERT(kernel_cleanup() == 0);
 	return(NULL);
 }
 
@@ -125,22 +125,29 @@ static void test_name_link_unlink(void)
  *===================================================================*/
 
 /**
- * @brief API Test: master name lookup.
+ * @brief API Test: Master name lookup.
  */
-static void test_name_lookup(void)
+static void *test_name_thread_lookup(void *args)
 {
 	char pathname[NANVIX_PROC_NAME_MAX];
+	int tid;
 	int nodeid;
 
-	printf("[test][api] Name Lookup\n");
+	TEST_ASSERT(kernel_setup() == 0);
+
+	pthread_barrier_wait(&barrier);
+
+	tid = ((int *)args)[0];
 
 	nodeid = hal_get_node_id();
 
-	/* Lookup name. */
-	sprintf(pathname, "cool-name");
+	/* Link and unlink name. */
+	sprintf(pathname, "cool-name%d", tid);
 	pthread_mutex_lock(&lock);
 	TEST_ASSERT(name_link(nodeid, pathname) == 0);
 	pthread_mutex_unlock(&lock);
+
+	pthread_barrier_wait(&barrier);
 
 	pthread_mutex_lock(&lock);
 	TEST_ASSERT(name_lookup(pathname) == nodeid);
@@ -149,6 +156,35 @@ static void test_name_lookup(void)
 	pthread_mutex_lock(&lock);
 	TEST_ASSERT(name_unlink(pathname) == 0);
 	pthread_mutex_unlock(&lock);
+
+	TEST_ASSERT(kernel_cleanup() == 0);
+	return(NULL);
+}
+
+/**
+ * @brief API Test: Master name lookup.
+ */
+static void test_name_lookup(void)
+{
+	int dmas[ncores];
+	pthread_t tids[ncores];
+
+	printf("[test][api] Name Lookup\n");
+
+	/* Spawn driver threads. */
+	for (int i = 1; i < ncores; i++)
+	{
+		dmas[i] = i;
+		assert((pthread_create(&tids[i],
+			NULL,
+			test_name_thread_lookup,
+			&dmas[i])) == 0
+		);
+	}
+
+	/* Wait for driver threads. */
+	for (int i = 1; i < ncores; i++)
+		pthread_join(tids[i], NULL);
 }
 
 /*===================================================================*
@@ -352,6 +388,6 @@ int main(int argc, char **argv)
 	/* House keeping. */
 	TEST_ASSERT(hal_sync_unlink(syncid) == 0);
 
-	hal_cleanup();
+	TEST_ASSERT(kernel_cleanup() == 0);
 	return (EXIT_SUCCESS);
 }
