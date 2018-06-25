@@ -233,6 +233,8 @@ int main(int argc, char **argv)
 	assert(argc == 2);
 	assert((nclusters = atoi(argv[1])) > 0);
 
+	TEST_ASSERT(kernel_setup() == 0);
+
 #if MSG_TEST
 	nodeid = hal_get_cluster_id();
 	sprintf(pathname, "/cpu%d", nodeid);
@@ -289,5 +291,6 @@ int main(int argc, char **argv)
 	barrier_close(barrier);
 #endif
 
+	TEST_ASSERT(kernel_cleanup() == 0);
 	return (EXIT_SUCCESS);
 }

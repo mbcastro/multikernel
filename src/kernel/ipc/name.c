@@ -37,12 +37,9 @@
 static struct name_message msg;
 
 /**
- * @brief Mailboxes for small messages.
+ * @brief Mailboxe for small messages.
  */
-/**@{*/
 static int server;
-static int client;
-/**@}*/
 
 /**
  * @brief Lock for critical sections.
@@ -53,24 +50,6 @@ static pthread_mutex_t lock;
  * @brief Is the name service initialized ?
  */
 static int initialized = 0;
-
-/*============================================================================*
- * name_get_inbox()                                                                *
- *============================================================================*/
-
-/**
- * @brief Get the input mailbox NoC connector of the client.
- *
- * @returns Upon successful completion, the input mailbox
- * is returned. Upon failure, a negative error code is returned instead.
- */
-int name_get_inbox(void)
-{
-	if (initialized)
-		return (client);
-	else
-		return (-EAGAIN);
-}
 
 /*============================================================================*
  * name_init()                                                                *
@@ -87,10 +66,13 @@ static int name_init(void)
 	/* Nothing to do. */
 	if (initialized)
 		return (0);
-	client = hal_mailbox_create(hal_get_node_id());
-	server = hal_mailbox_open(hal_noc_nodes[NAME_SERVER_NODE]);
 
-	if ((client >= 0) && (server >= 0))
+
+	pthread_mutex_lock(&lock);
+	server = hal_mailbox_open(hal_noc_nodes[NAME_SERVER_NODE]);
+	pthread_mutex_unlock(&lock);
+
+	if (server >= 0)
 	{
 		initialized = 1;
 		return (0);
@@ -112,8 +94,9 @@ void name_finalize(void)
 	if (!initialized)
 		return;
 
+	pthread_mutex_lock(&lock);
 	assert(hal_mailbox_close(server) == 0);
-	assert(hal_mailbox_close(client) == 0);
+	pthread_mutex_unlock(&lock);
 
 	initialized = 0;
 }
@@ -156,13 +139,17 @@ int name_lookup(char *name)
 		printf("Sending request for name: %s...\n", msg.name);
 	#endif
 
+	pthread_mutex_lock(&lock);
 	assert(hal_mailbox_write(server, &msg, HAL_MAILBOX_MSG_SIZE)
 	                                   == HAL_MAILBOX_MSG_SIZE);
+	pthread_mutex_unlock(&lock);
 
 	while(msg.nodeid == -1)
 	{
-		assert(hal_mailbox_read(client, &msg, HAL_MAILBOX_MSG_SIZE)
+		pthread_mutex_lock(&lock);
+		assert(hal_mailbox_read(get_inbox(), &msg, HAL_MAILBOX_MSG_SIZE)
 		                                 == HAL_MAILBOX_MSG_SIZE);
+		pthread_mutex_unlock(&lock);
 	}
 
 	return (msg.nodeid);
@@ -183,8 +170,6 @@ int name_lookup(char *name)
  */
 int name_link(int nodeid, const char *name)
 {
-	struct name_message msg_link;
-
 	/* Sanity check. */
 	if ((name == NULL) || (strlen(name) >= (NANVIX_PROC_NAME_MAX - 1))
 	                || (nodeid < 0) || (strcmp(name, "") == 0))
@@ -194,29 +179,31 @@ int name_link(int nodeid, const char *name)
 		return (-EAGAIN);
 
 	/* Build operation header. */
-	msg_link.source = hal_get_node_id();
-	msg_link.op = NAME_LINK;
-	msg_link.nodeid = nodeid;
-	strcpy(msg_link.name, name);
+	msg.source = hal_get_node_id();
+	msg.op = NAME_LINK;
+	msg.nodeid = nodeid;
+	strcpy(msg.name, name);
 	printf("send %d\n", hal_get_node_id());
 	/* Send link request. */
-	if (hal_mailbox_write(server, &msg_link, HAL_MAILBOX_MSG_SIZE)
+	pthread_mutex_lock(&lock);
+	if (hal_mailbox_write(server, &msg, HAL_MAILBOX_MSG_SIZE)
 	                                 != HAL_MAILBOX_MSG_SIZE)
 		return (-EAGAIN);
+	pthread_mutex_unlock(&lock);
 
 	/* Wait server response */
-	while(msg_link.op == NAME_LINK){
+	while(msg.op == NAME_LINK){
 		pthread_mutex_lock(&lock);
-		printf("read: %d\n", hal_mailbox_read(client, &msg_link, HAL_MAILBOX_MSG_SIZE));
+		printf("read: %d\n", hal_mailbox_read(get_inbox(), &msg, HAL_MAILBOX_MSG_SIZE));
 		pthread_mutex_unlock(&lock);
 	}
-	printf("receive %d from %d\n", msg_link.op, hal_get_node_id());
+	printf("receive %d from %d\n", msg.op, hal_get_node_id());
 
-	if ((msg_link.op != NAME_SUCCESS) && (msg_link.op != NAME_FAIL))
+	if ((msg.op != NAME_SUCCESS) && (msg.op != NAME_FAIL))
 		return (-EAGAIN);
 
 
-	if (msg_link.op == NAME_SUCCESS)
+	if (msg.op == NAME_SUCCESS)
 	{
 		return (0);
 	}
@@ -260,13 +247,17 @@ int name_unlink(const char *name)
 		printf("Sending remove request for name: %s...\n", msg.name);
 	#endif
 
+	pthread_mutex_lock(&lock);
 	assert(hal_mailbox_write(server, &msg, HAL_MAILBOX_MSG_SIZE)
 	                                    == HAL_MAILBOX_MSG_SIZE);
+	pthread_mutex_unlock(&lock);
 
 	/* Wait server response */
 	while(msg.op == NAME_UNLINK){
-		assert(hal_mailbox_read(client, &msg, HAL_MAILBOX_MSG_SIZE)
+		pthread_mutex_lock(&lock);
+		assert(hal_mailbox_read(get_inbox(), &msg, HAL_MAILBOX_MSG_SIZE)
 	                                      == HAL_MAILBOX_MSG_SIZE);
+		pthread_mutex_unlock(&lock);
 	}
 
 	assert((msg.op == NAME_SUCCESS) || (msg.op == NAME_FAIL));

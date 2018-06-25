@@ -21,6 +21,8 @@
  */
 
 #include <pthread.h>
+#include <errno.h>
+#include <stdio.h>
 
 #include <nanvix/hal.h>
 
@@ -30,6 +32,85 @@
  * @brief Number of running threads.
  */
 static int nthreads = 0;
+
+/**
+ * @brief Lock for critical sections.
+ */
+static pthread_mutex_t lock;
+
+/**
+ * @brief Input HAL mailbox.
+ */
+static int inbox[NR_IOCLUSTER_CORES];
+
+/**
+ * @brief Is inboxes initialized ?
+ */
+static int initialized = 0;
+
+/**
+ * @brief Initializes kernel.
+ */
+int kernel_setup(void)
+{
+	int index;
+
+	pthread_mutex_init(&lock, NULL);
+
+	if (!initialized)
+	{
+		for (int i = 0; i < NR_IOCLUSTER_CORES; i++)
+			inbox[i] = -1;
+
+		initialized = 1;
+	}
+
+	hal_setup();
+
+	index = (hal_get_node_id() - __k1_get_cluster_id());
+
+	pthread_mutex_lock(&lock);
+	inbox[index] = hal_mailbox_create(hal_get_node_id());
+	pthread_mutex_unlock(&lock);
+
+	if(inbox[index] < 0)
+		return (-EAGAIN);
+
+	return 0;
+}
+
+/**
+ * @brief Clean kernel.
+ */
+int kernel_cleanup(void)
+{
+	int mailbox;
+
+	for (int i = 0; i < NR_IOCLUSTER_CORES; i++)
+	{
+		mailbox = inbox[i];
+
+		if (mailbox >= 0)
+			if (hal_mailbox_close(mailbox) != 0)
+				return (-EAGAIN);
+	}
+
+	hal_cleanup();
+
+	return 0;
+}
+
+/**
+ * @brief Get input mailbox.
+ */
+int get_inbox(void)
+{
+	int index;
+
+	index = (hal_get_node_id() - __k1_get_cluster_id());
+
+	return inbox[index];
+}
 
 /**
  * @brief Initializes platform-dependent structures.
@@ -94,4 +175,3 @@ void hal_cleanup(void)
 		}
 	pthread_mutex_unlock(&core_lock);
 }
-

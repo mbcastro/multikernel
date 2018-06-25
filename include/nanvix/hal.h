@@ -34,6 +34,9 @@
  *============================================================================*/
 
 	/* Forward definitions. */
+	extern int kernel_setup(void);
+	extern int kernel_cleanup(void);
+	extern int get_inbox(void);
 	extern void hal_setup(void);
 	extern void hal_cleanup(void);
 

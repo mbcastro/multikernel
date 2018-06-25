@@ -238,7 +238,7 @@ int mailbox_create(char *name)
 	printf("test - after name_link node %d\n", nodeid);
 
 	/* Get NoC connector. */
-	fd = name_get_inbox();
+	fd = get_inbox();
 
 	/* Invalid NoC connector. */
 	if (fd < 0)

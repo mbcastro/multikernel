@@ -48,9 +48,14 @@ static struct
 };
 
 /**
- * @brie Servers lock.
+ * @brief Servers lock.
  */
 pthread_mutex_t lock;
+
+/**
+ * @brief Barrier for synchronization.
+ */
+pthread_barrier_t barrier;
 
 /**
  * @brief Resolves process names.
@@ -69,6 +74,7 @@ int main(int argc, char **argv)
 	printf("[SPAWNER] booting up server\n");
 
 	pthread_mutex_init(&lock, NULL);
+	pthread_barrier_init(&barrier, NULL, NR_SERVERS + 1);
 
 	/* Spawn servers. */
 	for (int i = 0; i < NR_SERVERS; i++)
@@ -78,16 +84,16 @@ int main(int argc, char **argv)
 			servers[i].main,
 			NULL)) == 0
 		);
+
+		pthread_barrier_wait(&barrier);
 	}
 
 	/* Release master IO cluster. */
 	nodes[0] = hal_get_node_id();
 	nodes[1] = 192;
 
-	// assert((syncid = hal_sync_open(nodes, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
-	// assert(hal_sync_signal(syncid) == 0);
-	printf("sync open spawner: %d\n", (syncid = hal_sync_open(nodes, 2, HAL_SYNC_ONE_TO_ALL)));
-	printf("sync signal spawner: %d\n", hal_sync_signal(syncid));
+	assert((syncid = hal_sync_open(nodes, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
+	assert(hal_sync_signal(syncid) == 0);
 
 	printf("[SPAWNER] server alive\n");
 
