@@ -24,18 +24,9 @@
 #define _KERNEL_H_
 
 	/**
-	 * @brief Magic number for messages.
+	 * @brief Number of kernel iterations.
 	 */
-	#define MESSAGE_MAGIC 0xdeadbeef
-
-	/**
-	 * @brief Message.
-	 */
-	struct message
-	{
-		uint32_t magic;      /**< Magic number. */
-		uint32_t unused[15]; /**< Not used.     */
-	};
+	#define NITERATIONS 100
 
 #endif /* _KERNEL_H_ */
 
