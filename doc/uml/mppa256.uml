@@ -86,9 +86,6 @@ namespace mppa256 {
 		~ pthread_mutex_t core_lock
 		~ int k1_is_ccluster(int)
 		~ int k1_is_iocluster(int)
-		~ int k1_is_ionode(int)
-		~ int k1_is_cnode(int)
-		~ long k1_get_ccluster_freq(void)
 	}
 
 	class NoC {

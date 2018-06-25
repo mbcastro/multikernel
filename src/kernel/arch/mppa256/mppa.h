@@ -81,12 +81,8 @@
 	#define IOCLUSTER1 192 /**< IO cluster 1.       */
 
 	/* Forward definitions. */
-	extern int hal_get_cluster_id(void);
 	extern int k1_is_ccluster(int);
 	extern int k1_is_iocluster(int);
-	extern int k1_is_ionode(int);
-	extern int k1_is_cnode(int);
-	extern long k1_get_ccluster_freq(void);
 
 	/* Forward definitions. */
 	extern pthread_t __threads[4];
