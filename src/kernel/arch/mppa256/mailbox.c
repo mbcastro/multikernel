@@ -25,7 +25,7 @@
 
 #include <nanvix/hal.h>
 
-#include "mppa.h"
+#include "noc.h"
 
 /*============================================================================*
  * hal_mailbox_create()                                                       *

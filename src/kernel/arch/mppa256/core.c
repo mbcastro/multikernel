@@ -24,7 +24,7 @@
 
 #include <nanvix/hal.h>
 
-#include "mppa.h" 
+#include "core.h" 
 
 /**
  * @brief Threads table.

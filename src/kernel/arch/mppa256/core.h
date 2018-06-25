@@ -20,8 +20,8 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef _MPPA256_H_
-#define _MPPA256_H_
+#ifndef _MPPA256_CORE_H_
+#define _MPPA256_CORE_H_
 
 	#ifndef _KALRAY_MPPA256
 		#error "bad target"
@@ -41,9 +41,47 @@
 	#include <utask.h>
 #endif
 
-	/* Forward defnitions. */
-	extern uint64_t k1_timer_get(void);
-	extern uint64_t k1_timer_diff(uint64_t, uint64_t);
-	extern void k1_timer_init(void);
+	/**
+	 * @brief Number of compute clusters.
+	 */
+	#define NR_CCLUSTER 16
 
-#endif /* _MPPA256_ */
+	/**
+	 * @brief Number of IO clusters.
+	 */
+	#define NR_IOCLUSTER 2
+
+	/**
+	 * @brief Number of Cores in an IO CLUSTER.
+	 */
+	#define NR_IOCLUSTER_CORES 4
+
+	/* Cluster IDs. */
+	#define CCLUSTER0    0 /**< Compute cluster  0. */
+	#define CCLUSTER1    1 /**< Compute cluster  1. */
+	#define CCLUSTER2    2 /**< Compute cluster  2. */
+	#define CCLUSTER3    3 /**< Compute cluster  3. */
+	#define CCLUSTER4    4 /**< Compute cluster  4. */
+	#define CCLUSTER5    5 /**< Compute cluster  5. */
+	#define CCLUSTER6    6 /**< Compute cluster  6. */
+	#define CCLUSTER7    7 /**< Compute cluster  7. */
+	#define CCLUSTER8    8 /**< Compute cluster  8. */
+	#define CCLUSTER9    9 /**< Compute cluster  9. */
+	#define CCLUSTER10  10 /**< Compute cluster 10. */
+	#define CCLUSTER11  11 /**< Compute cluster 11. */
+	#define CCLUSTER12  12 /**< Compute cluster 12. */
+	#define CCLUSTER13  13 /**< Compute cluster 13. */
+	#define CCLUSTER14  14 /**< Compute cluster 14. */
+	#define CCLUSTER15  15 /**< Compute cluster 15. */
+	#define IOCLUSTER0 128 /**< IO cluster 0.       */
+	#define IOCLUSTER1 192 /**< IO cluster 1.       */
+
+	/* Forward definitions. */
+	extern int k1_is_ccluster(int);
+	extern int k1_is_iocluster(int);
+
+	/* Forward definitions. */
+	extern pthread_t __threads[4];
+	extern pthread_mutex_t core_lock;
+
+#endif /* _MPPA256_CORE_H_ */

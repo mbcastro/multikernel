@@ -29,7 +29,8 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "mppa.h"
+#include "core.h"
+#include "noc.h"
 
 /*=======================================================================*
  * hal_portal_create()                                                   *

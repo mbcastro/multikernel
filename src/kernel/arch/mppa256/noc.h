@@ -20,8 +20,8 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef _MPPA256_H_
-#define _MPPA256_H_
+#ifndef _MPPA256_NOC_H_
+#define _MPPA256_NOC_H_
 
 	#ifndef _KALRAY_MPPA256
 		#error "bad target"
@@ -41,9 +41,27 @@
 	#include <utask.h>
 #endif
 
-	/* Forward defnitions. */
-	extern uint64_t k1_timer_get(void);
-	extern uint64_t k1_timer_diff(uint64_t, uint64_t);
-	extern void k1_timer_init(void);
+	/**
+	 * @brief Number DMAs per compute cluster.
+	 */
+	#define NR_CCLUSTER_DMA 1
 
-#endif /* _MPPA256_ */
+	/**
+	 * @brief Number of DMAs per compute cluster.
+	 */
+	#define NR_IOCLUSTER_DMA 4
+
+	/* Forward definitions. */
+	extern int noctag_mailbox(int);
+	extern int noctag_sync(int);
+	extern int noctag_portal(int);
+	extern int noc_get_node_num(int);
+	extern void noc_get_remotes(char *, int);
+	extern void noc_get_names(char *, const int *, int);
+	extern int noc_get_dma(int);
+	extern int noc_is_ionode(int);
+	extern int noc_is_ionode0(int);
+	extern int noc_is_ionode1(int);
+	extern int noc_is_cnode(int);
+
+#endif /* _MPPA256_NOC_H_ */

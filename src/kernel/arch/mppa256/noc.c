@@ -28,7 +28,8 @@
 
 #include <nanvix/klib.h>
 
-#include "mppa.h"
+#include "core.h"
+#include "noc.h"
 
 /**
  * @brief NoC tags offsets.

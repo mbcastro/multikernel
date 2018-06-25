@@ -26,7 +26,7 @@
 
 #include <nanvix/hal.h>
 
-#include "mppa.h"
+#include "noc.h"
 
 /**
  * @brief Synchronization point flags.
