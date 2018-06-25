@@ -31,7 +31,7 @@
 	#endif
 
 /*============================================================================*
- * Misc                                                                       *
+ * Machine Setup                                                              *
  *============================================================================*/
 
 	/* Forward definitions. */
@@ -39,7 +39,7 @@
 	extern void hal_cleanup(void);
 
 /*============================================================================*
- * Performance Monitoring                                                     *
+ * Performance Monitoring Interface                                           *
  *============================================================================*/
 
 	/* Forward definitions. */
@@ -48,8 +48,28 @@
 	extern void hal_timer_init(void);
 
 /*============================================================================*
- * Processor Management                                                       *
+ * Core Interface                                                             *
  *============================================================================*/
+
+	/* Sanity check. */
+	#ifndef HAL_NR_CORES_USER
+		#error "undefined symbol: HAL_NR_CORES_USER"
+	#endif
+
+	/* Sanity check. */
+	#ifndef HAL_NR_CORES_RMAN
+		#error "undefined symbol: HAL_NR_CORES_RMAN"
+	#endif
+	
+	/* Sanity check. */
+	#ifndef HAL_NR_CORES_SYSTEM
+		#error "undefined symbol: HAL_NR_CORES_SYSTEM"
+	#endif
+
+	/* Sanity check. */
+	#ifndef HAL_NR_CLUSTERS
+		#error "undefined symbol: HAL_NR_CLUSTERS"
+	#endif
 
 	/**
 	 * @brief Type of cores.
@@ -71,6 +91,11 @@
  * NoC Interface                                                              *
  *============================================================================*/
 
+	/* Sanity check. */
+	#ifndef HAL_NR_NOC_NODES
+		#error "undefined symbol: HAL_NR_NOC_NODES"
+	#endif
+
 	/* Forward definitions. */
 	extern const int hal_noc_nodes[HAL_NR_NOC_NODES];
 
@@ -80,6 +105,16 @@
 /*============================================================================*
  * Mailbox Interface                                                          *
  *============================================================================*/
+
+	/* Sanity check. */
+	#ifndef HAL_NR_MAILBOX
+		#error "undefined symbol: HAL_NR_MAILBOX"
+	#endif
+
+	/* Sanity check. */
+	#ifndef HAL_MAILBOX_MSG_SIZE
+		#error "undefined symbol: HAL_MAILBOX_MSG_SIZE"
+	#endif
 
 	/* Forward definitions. */
 	extern int hal_mailbox_create(int);
@@ -105,6 +140,11 @@
 /*============================================================================*
  * Synchronization Point Interface                                            *
  *============================================================================*/
+
+	/* Sanity check. */
+	#ifndef HAL_NR_SYNC
+		#error "undefined symbol: HAL_NR_SYNC"
+	#endif
 
 	/**
 	 * @brief Types of synchronization points.

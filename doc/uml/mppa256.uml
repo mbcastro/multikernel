@@ -1,12 +1,6 @@
 @startuml
 
 namespace HAL {
-	interface HAL.NoCInterface {
-		+ const int HAL_NR_NOC_NODES
-		+ const int hal_noc_nodes[]
-		+ int hal_get_node_id(void)
-	}
-
 	interface HAL.CoreInterface {
 		+ const int HAL_NR_CORES_USER
 		+ const int HAL_NR_CORES_RMAN
@@ -17,6 +11,17 @@ namespace HAL {
 		+ int hal_get_core_type(void)
 		+ int hal_get_num_cores(void)
 		+ int hal_get_core_freq(void)
+	}
+
+	interface HAL.MailboxInterface {
+		+ const int HAL_NR_MAILBOX
+		+ const int HAL_MAILBOX_MSG_SIZE
+		+ int hal_mailbox_create(int)
+		+ int hal_mailbox_open(int)
+		+ int hal_mailbox_unlink(int)
+		+ int hal_mailbox_close(int)
+		+ size_t hal_mailbox_write(int, const void *, size_t)
+		+ size_t hal_mailbox_read(int, void *, size_t)
 	}
 
 	interface HAL.SyncInterface {
@@ -31,17 +36,6 @@ namespace HAL {
 		+ int hal_sync_unlink(int)
 	}
 
-	interface HAL.MailboxInterface {
-		+ const int HAL_NR_MAILBOX
-		+ const int HAL_MAILBOX_MSG_SIZE
-		+ int hal_mailbox_create(int)
-		+ int hal_mailbox_open(int)
-		+ int hal_mailbox_unlink(int)
-		+ int hal_mailbox_close(int)
-		+ size_t hal_mailbox_write(int, const void *, size_t)
-		+ size_t hal_mailbox_read(int, void *, size_t)
-	}
-
 	interface HAL.PortalInterface {
 		class portal_t
 		+ int hal_portal_allow(portal_t *, int)
@@ -51,6 +45,12 @@ namespace HAL {
 		+ int hal_portal_write(portal_t *, const void *, size_t)
 		+ int hal_portal_close(portal_t *)
 		+ int hal_portal_unlink(portal_t *)
+	}
+
+	interface HAL.NoCInterface {
+		+ const int HAL_NR_NOC_NODES
+		+ const int hal_noc_nodes[HAL_NR_NOC_NODES]
+		+ int hal_get_node_id(void)
 	}
 
 	interface HAL.SetupInterface {

@@ -54,7 +54,7 @@ interface PortalInterface {
 
 interface NoCInterface {
 	+ const int HAL_NR_NOC_NODES
-	+ const int hal_noc_nodes[]
+	+ const int hal_noc_nodes[HAL_NR_NOC_NODES]
 	+ int hal_get_node_id(void)
 }
 
