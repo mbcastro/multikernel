@@ -109,7 +109,6 @@ namespace mppa256 {
 	Portal  ..> NoC  : <<use>>
 	NoC     ..> Core : <<use>>
 	Setup   ..> Core : <<use>>
-	Portal  ..> Core : <<use>>
 }
 
 HAL.SetupInterface    <|.. mppa256.Setup   : <<implements>>

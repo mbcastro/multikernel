@@ -29,7 +29,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "core.h"
 #include "noc.h"
 
 /*=======================================================================*
@@ -122,7 +121,7 @@ int hal_portal_allow(portal_t *portal, int remote)
 			ARRAY_LENGTH(pathname),
 			"/mppa/sync/%d:%d",
 			remote,
-			(k1_is_ccluster(remote) || k1_is_ccluster(local)) ?
+			(noc_is_cnode(remote) || noc_is_cnode(local)) ?
 							 noctag_portal(portal->local) : 127
 	);
 
@@ -187,7 +186,7 @@ int hal_portal_open(portal_t *portal, int remote)
 			ARRAY_LENGTH(pathname),
 			"/mppa/sync/%d:%d",
 			local,
-			(k1_is_ccluster(remote) || k1_is_ccluster(local)) ?
+			(noc_is_cnode(remote) || noc_is_cnode(local)) ?
 									noctag_portal(remote) : 127
 	);
 
