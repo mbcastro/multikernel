@@ -150,39 +150,44 @@ static void *kernel(void *args)
 	spawn_remotes(tnum);
 
 	/* Open output mailboxes. */
-	for (int i = 0; i < nremotes; i++)
-		assert((outboxes[i] = hal_mailbox_open(tnum*nremotes + i)) >= 0);
+	if (!strcmp(pattern, "row"))
+	{
+		for (int i = 0, k = 0; i < ntotalremotes/ncols; i++)
+		{
+			for (int  j = 0; j < ncols/nlocals; j++)
+			{
+				int remoteid;
+			   
+				remoteid = i*ncols + tnum*(ncols/nlocals) + j;
+				assert((outboxes[k++] = hal_mailbox_open(remoteid)) >= 0);
+			}
+		}
+	}
+	else
+	{
+		for (int  j = 0, k = 0; j < ncols/nlocals; j++)
+		{
+			for (int i = 0; i < ntotalremotes/ncols; i++)
+			{
+				int remoteid;
+			   
+				remoteid = i*ncols + tnum*(ncols/nlocals) + j;
+				assert((outboxes[k++] = hal_mailbox_open(remoteid)) >= 0);
+			}
+		}
+	}
 
 	for (int k = 0; k < NITERATIONS; k++)
 	{
 		pthread_barrier_wait(&barrier);
 
-		if (!strcmp(pattern, "row"))
+		t1 = hal_timer_get();
+		for (int i = 0; i < nremotes; i++)
 		{
-			t1 = hal_timer_get();
-			for (int i = 0; i < nremotes/ncols; i++)
-			{
-				for (int  j = 0; j < ncols/nlocals; j++)
-				{
-					assert(hal_mailbox_write(outboxes[i*ncols + tnum*nlocals + j], buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
-					assert(hal_mailbox_read(inbox, buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
-				}
-			}
-			t2 = hal_timer_get();
+			assert(hal_mailbox_write(outboxes[i], buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
+			assert(hal_mailbox_read(inbox, buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
 		}
-		else
-		{
-			t1 = hal_timer_get();
-			for (int  j = 0; j < ncols/nlocals; j++)
-			{
-				for (int i = 0; i < nremotes/ncols; i++)
-				{
-					assert(hal_mailbox_write(outboxes[i*ncols + tnum*nlocals + j], buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
-					assert(hal_mailbox_read(inbox, buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
-				}
-			}
-			t2 = hal_timer_get();
-		}
+		t2 = hal_timer_get();
 
 		pthread_mutex_lock(&lock);
 		printf("time: %.2lf\n", ((double)hal_timer_diff(t1, t2))/nremotes);
@@ -190,8 +195,8 @@ static void *kernel(void *args)
 	}
 	
 	/* Close output mailboxes. */
-	for (int i = 0; i < nremotes; i++)
-		assert(hal_mailbox_close(outboxes[i]) == 0);
+	for (int k = 0; k < nremotes; k++)
+		assert((hal_mailbox_close(outboxes[k])) == 0);
 
 	join_remotes(tnum);
 	

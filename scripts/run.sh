@@ -89,21 +89,25 @@ function benchmark_mailbox
 	echo "Benchmarking HAL Mailbox"
 	
 	echo "  nlocals=1 nremotes=1 (baseline)"
-	run1 "benchmark-hal-mailbox.img" "/benchmark/hal-mailbox-master" "1 1 row 4" \
+	run1 "benchmark-hal-mailbox.img" "/benchmark/hal-mailbox-master" "1 1 row 1" \
 		| head -n -1                                                             \
 		| cut -d" " -f 5                                                         \
 		> hal-mailbox-1-1-row.benchmark
-	for nremotes in 4 8 12 16;
+	
+	for nlocals in 1 2 4;
 	do
-		echo "  nlocals=1 nremotes=$nremotes"
-		run1 "benchmark-hal-mailbox.img" "/benchmark/hal-mailbox-master" "1 $nremotes row 4" \
-			| head -n -1                                                                     \
-			| cut -d" " -f 5                                                                 \
-			> hal-mailbox-1-$nremotes-row.benchmark
-		run1 "benchmark-hal-mailbox.img" "/benchmark/hal-mailbox-master" "1 $nremotes col 4" \
-			| head -n -1                                                                     \
-			| cut -d" " -f 5                                                                 \
-			> hal-mailbox-1-$nremotes-col.benchmark
+		for nremotes in 4 8 12 16;
+		do
+			echo "  nlocals=$nlocals nremotes=$nremotes"
+			run1 "benchmark-hal-mailbox.img" "/benchmark/hal-mailbox-master" "$nlocals $nremotes row 4" \
+				| head -n -1                                                                            \
+				| cut -d" " -f 5                                                                        \
+				> hal-mailbox-1-$nremotes-row.benchmark
+			run1 "benchmark-hal-mailbox.img" "/benchmark/hal-mailbox-master" "$nlocals $nremotes col 4" \
+				| head -n -1                                                                            \
+				| cut -d" " -f 5                                                                        \
+				> hal-mailbox-1-$nremotes-col.benchmark
+		done
 	done
 
 	tar -cjvf benchmark-hal-sync.tar.bz2 *.benchmark
