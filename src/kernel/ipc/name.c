@@ -22,7 +22,6 @@
 
 #include <errno.h>
 #include <string.h>
-#include <pthread.h>
 
 #define __NEED_HAL_CORE_
 #define __NEED_HAL_NOC_
@@ -32,9 +31,6 @@
 #include <nanvix/name.h>
 #include <nanvix/pm.h>
 #include <nanvix/hal.h>
-
-/* Forward definitions. */
-extern pthread_mutex_t kernel_lock;
 
 /**
  * @brief Mailboxe for small messages.
@@ -96,9 +92,15 @@ void name_finalize(void)
  *============================================================================*/
 
 /**
- * @brief Internal name_lookup()
+ * @brief Converts a name into a NoC node ID.
+ *
+ * @param name Target name.
+ *
+ * @returns Upon successful completion the NoC node ID whose name is @p
+ * name is returned. Upon failure, a negative error code is returned
+ * instead.
  */
-static int _name_lookup(char *name)
+int sys_name_lookup(char *name)
 {
 	struct name_message msg;
 
@@ -129,34 +131,20 @@ static int _name_lookup(char *name)
 	return (msg.nodeid);
 }
 
-/**
- * @brief Converts a name into a NoC node ID.
- *
- * @param name Target name.
- *
- * @returns Upon successful completion the NoC node ID whose name is @p
- * name is returned. Upon failure, a negative error code is returned
- * instead.
- */
-int name_lookup(char *name)
-{
-	int ret;
-
-	pthread_mutex_lock(&kernel_lock);
-		ret = _name_lookup(name);
-	pthread_mutex_unlock(&kernel_lock);
-
-	return (ret);
-}
-
 /*============================================================================*
  * name_link()                                                                *
  *============================================================================*/
 
 /**
- * @brief Internal name_link()
+ * @brief link a process name.
+ *
+ * @param nodeid NoC node ID of the process to link.
+ * @param name   Name of the process to link.
+ *
+ * @returns Upon successful completion 0 is returned.
+ * Upon failure, a negative error code is returned instead.
  */
-static int _name_link(int nodeid, const char *name)
+int sys_name_link(int nodeid, const char *name)
 {
 	struct name_message msg;
 
@@ -199,34 +187,19 @@ static int _name_link(int nodeid, const char *name)
 	return (-1);
 }
 
-/**
- * @brief link a process name.
- *
- * @param nodeid NoC node ID of the process to link.
- * @param name   Name of the process to link.
- *
- * @returns Upon successful completion 0 is returned.
- * Upon failure, a negative error code is returned instead.
- */
-int name_link(int nodeid, const char *name)
-{
-	int ret;
-
-	pthread_mutex_lock(&kernel_lock);
-		ret = _name_link(nodeid, name);
-	pthread_mutex_unlock(&kernel_lock);
-
-	return (ret);
-}
-
 /*============================================================================*
  * name_unlink()                                                              *
  *============================================================================*/
 
 /**
- * @brief Internal name_unlink()
+ * @brief Unlink a process name.
+ *
+ * @param name	    Name of the process to unlink.
+ *
+ * @returns Upon successful completion 0 is returned.
+ * Upon failure, a negative error code is returned instead.
  */
-static int _name_unlink(const char *name)
+int sys_name_unlink(const char *name)
 {
 	struct name_message msg;
 
@@ -264,21 +237,3 @@ static int _name_unlink(const char *name)
 	return (-1);
 }
 
-/**
- * @brief Unlink a process name.
- *
- * @param name	    Name of the process to unlink.
- *
- * @returns Upon successful completion 0 is returned.
- * Upon failure, a negative error code is returned instead.
- */
-int name_unlink(const char *name)
-{
-	int ret;
-
-	pthread_mutex_lock(&kernel_lock);
-		ret = _name_unlink(name);
-	pthread_mutex_unlock(&kernel_lock);
-
-	return (ret);
-}
