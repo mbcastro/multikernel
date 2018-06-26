@@ -56,11 +56,12 @@ export SERVERSBIN = $(BINDIR)/servers
 # Conflicts.
 .PHONY: benchmark
 .PHONY: kernel
+.PHONY: lib
 .PHONY: servers
 .PHONY: test
 
 # Builds everything.
-all: benchmarks kernel tests servers
+all: benchmarks kernel libs tests servers
 
 # Builds the kernel.
 kernel: clean
@@ -75,21 +76,28 @@ ifeq ($(BUILD_SERVERS),true)
 endif
 
 # Builds testing system.
-tests: kernel servers
+tests: kernel servers libs
 ifeq ($(BUILD_TESTS),true)
 	cd test && $(MAKE) all
 endif
 
 # Builds benchmarks.
-benchmarks: kernel servers
+benchmarks: kernel servers libs
 ifeq ($(BUILD_BENCHMARKS),true)
 	cd benchmark && $(MAKE) all
+endif
+
+# Builds user-level libraries.
+libs: kernel
+ifeq ($(BUILD_LIBS),true)
+	cd lib && $(MAKE) all
 endif
 
 # Cleans compilation files.
 clean:
 	cd benchmark && $(MAKE) clean
 	cd kernel && $(MAKE) clean
+	cd lib && $(MAKE) clean
 	cd servers && $(MAKE) clean
 	cd test && $(MAKE) clean
 
@@ -97,6 +105,7 @@ clean:
 distclean:
 	cd benchmark && $(MAKE) distclean
 	cd kernel && $(MAKE) distclean
+	cd lib && $(MAKE) distclean
 	cd servers && $(MAKE) distclean
 	cd test && $(MAKE) distclean
 

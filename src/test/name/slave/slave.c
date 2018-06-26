@@ -29,7 +29,6 @@
 #define __NEED_HAL_NOC_
 #define __NEED_HAL_SYNC_
 #include <nanvix/hal.h>
-#include <nanvix/init.h>
 #include <nanvix/name.h>
 #include <nanvix/pm.h>
 
@@ -211,15 +210,13 @@ static void test_name_invalid_lookup(void)
 /**
  * @brief Remote name unit test.
  */
-int main(int argc, char **argv)
+int main2(int argc, char **argv)
 {
 	int nclusters;
 
 	/* Retrieve parameters. */
 	TEST_ASSERT(argc == 2);
 	TEST_ASSERT((nclusters = atoi(argv[1])) > 0);
-
-	TEST_ASSERT(kernel_setup() == 0);
 
 	test_name_link();
 	test_name_lookup();
@@ -231,6 +228,5 @@ int main(int argc, char **argv)
 	test_name_bad_lookup();
 	test_name_invalid_lookup();
 
-	TEST_ASSERT(kernel_cleanup() == 0);
 	return (EXIT_SUCCESS);
 }
