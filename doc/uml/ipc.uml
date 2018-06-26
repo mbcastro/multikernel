@@ -1,0 +1,64 @@
+@startuml
+
+namespace HAL {
+
+	interface HAL.MailboxInterface {
+		+ const int HAL_NR_MAILBOX
+		+ const int HAL_MAILBOX_MSG_SIZE
+		+ int hal_mailbox_create(int)
+		+ int hal_mailbox_open(int)
+		+ int hal_mailbox_unlink(int)
+		+ int hal_mailbox_close(int)
+		+ size_t hal_mailbox_write(int, const void *, size_t)
+		+ size_t hal_mailbox_read(int, void *, size_t)
+	}
+
+	interface HAL.NoCInterface {
+		+ const int HAL_NR_NOC_IONODES
+		+ const int HAL_NR_NOC_CNODES
+		+ const int HAL_NR_NOC_NODES
+		+ const int hal_noc_nodes[HAL_NR_NOC_NODES]
+		+ int hal_get_node_id(void)
+	}
+}
+
+class Unknown {
+	+ int get_inbox()
+}
+
+namespace IPC {
+	class NameClient {
+		+ int sys_name_link(int nodeid, const char *name)
+		+ int sys_name_unlink(const char *name)
+		+ int sys_name_lookup(char *name)
+		+ void name_finalize(void)
+		- int name_init(void)
+		- int initialized = 0;
+		- int server;
+	}
+
+	class NameMessage {
+		+ uint16_t source
+		+ uint16_t op
+		+ int32_t nodeid
+		+ char name[NANVIX_PROC_NAME_MAX]
+	}
+
+	enum NameMessageTypes {
+		+ const int NAME_LOOKUP
+		+ const int NAME_LINK
+		+ const int NAME_UNLINK
+		+ const int NAME_SUCCESS
+		+ const int NAME_FAIL
+	}
+
+	IPC.NameMessage  .> IPC.NameMessageTypes : <<use>>
+	IPC.NameClient   .> IPC.NameMessage      : <<use>>
+	IPC.NameClient  ..> HAL.NoCInterface     : <<use>>
+	IPC.NameClient  ..> HAL.MailboxInterface : <<use>>
+}
+
+Unknown <. IPC.NameClient : <<use>>
+
+@enduml
+
