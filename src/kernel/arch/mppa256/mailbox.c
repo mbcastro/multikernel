@@ -23,6 +23,8 @@
 #include <errno.h>
 #include <stdio.h>
 
+#define __NEED_HAL_NOC_
+#define __NEED_HAL_MAILBOX_
 #include <nanvix/hal.h>
 
 #include "noc.h"

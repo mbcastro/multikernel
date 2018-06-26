@@ -34,9 +34,13 @@
  * Machine Setup                                                              *
  *============================================================================*/
 
+#ifdef __NEED_HAL_SETUP_
+
 	/* Forward definitions. */
 	extern void hal_setup(void);
 	extern void hal_cleanup(void);
+
+#endif /* __NEED_HAL_SETUP */
 
 /*============================================================================*
  * Performance Monitoring Interface                                           *
@@ -50,6 +54,8 @@
 /*============================================================================*
  * Core Interface                                                             *
  *============================================================================*/
+
+#ifdef __NEED_HAL_CORE_
 
 	/* Sanity check. */
 	#ifndef HAL_NR_CORES_USER
@@ -87,9 +93,13 @@
 	extern int hal_get_num_cores(void);
 	extern int hal_get_core_freq(void);
 
+#endif /* __NEED_HAL_CORE_ */
+
 /*============================================================================*
  * NoC Interface                                                              *
  *============================================================================*/
+
+#ifdef __NEED_HAL_NOC_
 
 	/* Sanity check. */
 	#ifndef HAL_NR_NOC_NODES
@@ -102,9 +112,13 @@
 	/* Forward definitions. */
 	extern int hal_get_node_id(void);
 
+#endif /* __NEED_HAL_NOC_ */
+
 /*============================================================================*
  * Mailbox Interface                                                          *
  *============================================================================*/
+
+#ifdef __NEED_HAL_MAILBOX_
 
 	/* Sanity check. */
 	#ifndef HAL_NR_MAILBOX
@@ -124,9 +138,13 @@
 	extern size_t hal_mailbox_write(int, const void *, size_t);
 	extern size_t hal_mailbox_read(int, void *, size_t);
 
+#endif /* __NEED_HAL_MAILBOX_ */
+
 /*============================================================================*
  * Portal Interface                                                           *
  *============================================================================*/
+
+#ifdef __NEED_HAL_PORTAL_
 
 	/* Forward definitions .*/
 	extern int hal_portal_allow(portal_t *, int);
@@ -137,9 +155,13 @@
 	extern int hal_portal_close(portal_t *);
 	extern int hal_portal_unlink(portal_t *);
 
+#endif /* __NEED_HAL_PORTAL_ */
+
 /*============================================================================*
  * Synchronization Point Interface                                            *
  *============================================================================*/
+
+#ifdef __NEED_HAL_SYNC_
 
 	/* Sanity check. */
 	#ifndef HAL_NR_SYNC
@@ -161,5 +183,7 @@
 	extern int hal_sync_signal(int);
 	extern int hal_sync_close(int);
 	extern int hal_sync_unlink(int);
+
+#endif /* __NEED_HAL_SYNC_ */
 
 #endif /* NANVIX_HAL_H_ */

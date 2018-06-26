@@ -27,8 +27,13 @@
 #include <mppa/osconfig.h>
 #include <mppaipc.h>
 
-#include <nanvix/hal.h>
+#define __NEED_HAL_CORE_
+#define __NEED_HAL_NOC_
+#define __NEED_HAL_SETUP_
+#define __NEED_HAL_SYNC_
+#include <nanvix/arch/mppa.h>
 #include <nanvix/pm.h>
+#include <nanvix/hal.h>
 #include <nanvix/name.h>
 #include <nanvix/limits.h>
 

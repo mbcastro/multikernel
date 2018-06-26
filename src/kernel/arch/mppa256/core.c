@@ -22,6 +22,7 @@
 
 #include <HAL/hal/core/mp.h>
 
+#define __NEED_HAL_CORE_
 #include <nanvix/hal.h>
 
 #include "core.h" 

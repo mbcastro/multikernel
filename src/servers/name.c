@@ -25,6 +25,10 @@
 #include <string.h>
 #include <errno.h>
 
+#define __NEED_HAL_CORE_
+#define __NEED_HAL_NOC_
+#define __NEED_HAL_SETUP_
+#define __NEED_HAL_MAILBOX_
 #include <nanvix/config.h>
 #include <nanvix/hal.h>
 #include <nanvix/pm.h>

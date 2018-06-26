@@ -26,6 +26,9 @@
 
 #include <mppa/osconfig.h>
 
+#define __NEED_HAL_CORE_
+#define __NEED_HAL_NOC_
+#define __NEED_HAL_SETUP_
 #include <nanvix/hal.h>
 #include <nanvix/pm.h>
 

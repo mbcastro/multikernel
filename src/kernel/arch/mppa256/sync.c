@@ -24,6 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#define __NEED_HAL_NOC_
+#define __NEED_HAL_SYNC_
 #include <nanvix/hal.h>
 
 #include "noc.h"

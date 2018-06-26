@@ -25,6 +25,9 @@
 #include <string.h>
 #include <assert.h>
 
+#define __NEED_HAL_CORE_
+#define __NEED_HAL_NOC_
+#define __NEED_HAL_MAILBOX_
 #include <nanvix/config.h>
 #include <nanvix/name.h>
 #include <nanvix/pm.h>

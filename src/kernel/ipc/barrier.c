@@ -26,6 +26,7 @@
 #include <string.h>
 #include <stdio.h>
 
+#define __NEED_HAL_CORE_
 #include <nanvix/klib.h>
 #include <nanvix/hal.h>
 

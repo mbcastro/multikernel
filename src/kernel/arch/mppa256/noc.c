@@ -24,8 +24,10 @@
 #include <stdio.h>
 
 #include <HAL/hal/core/mp.h>
-#include <nanvix/hal.h>
 
+#define __NEED_HAL_CORE_
+#define __NEED_HAL_NOC_
+#include <nanvix/hal.h>
 #include <nanvix/klib.h>
 
 #include "core.h"

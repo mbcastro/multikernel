@@ -20,14 +20,16 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <nanvix/name.h>
-#include <nanvix/klib.h>
-#include <nanvix/hal.h>
-
 #include <errno.h>
 #include <inttypes.h>
 #include <string.h>
 #include <stdio.h>
+
+#define __NEED_HAL_NOC_
+#define __NEED_HAL_PORTAL_
+#include <nanvix/name.h>
+#include <nanvix/klib.h>
+#include <nanvix/hal.h>
 
 #include "noc.h"
 
