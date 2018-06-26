@@ -34,6 +34,9 @@
 #include <nanvix/pm.h>
 #include <nanvix/hal.h>
 
+/* Forward definitions. */
+extern pthread_mutex_t kernel_lock;
+
 /**
  * @brief Name server message.
  */
@@ -43,11 +46,6 @@ static struct name_message msg;
  * @brief Mailboxe for small messages.
  */
 static int server;
-
-/**
- * @brief Lock for critical sections.
- */
-static pthread_mutex_t lock;
 
 /**
  * @brief Is the name service initialized ?
@@ -70,11 +68,7 @@ static int name_init(void)
 	if (initialized)
 		return (0);
 
-	pthread_mutex_init(&lock, NULL);
-
-	pthread_mutex_lock(&lock);
 	server = hal_mailbox_open(hal_noc_nodes[NAME_SERVER_NODE]);
-	pthread_mutex_unlock(&lock);
 
 	if (server >= 0)
 	{
@@ -98,11 +92,7 @@ void name_finalize(void)
 	if (!initialized)
 		return;
 
-	pthread_mutex_init(&lock, NULL);
-
-	pthread_mutex_lock(&lock);
 	hal_mailbox_close(server);
-	pthread_mutex_unlock(&lock);
 
 	initialized = 0;
 }
@@ -112,19 +102,12 @@ void name_finalize(void)
  *============================================================================*/
 
 /**
- * @brief Converts a name into a NoC node ID.
- *
- * @param name 		Target name.
- *
- * @returns Upon successful completion the NoC node ID whose name is @p
- * name is returned. Upon failure, a negative error code is returned
- * instead.
+ * @brief Internal name_lookup()
  */
-int name_lookup(char *name)
+static int _name_lookup(char *name)
 {
 	/* Sanity check. */
-	if ((name == NULL) ||(strlen(name) >= (NANVIX_PROC_NAME_MAX - 1))
-										  || (strcmp(name, "") == 0))
+	if ((name == NULL) ||(strlen(name) >= (NANVIX_PROC_NAME_MAX - 1)) || (strcmp(name, "") == 0))
 		return (-EINVAL);
 
 	#ifdef DEBUG
@@ -134,10 +117,6 @@ int name_lookup(char *name)
 
 	if (name_init() != 0)
 		return (-EAGAIN);
-
-	pthread_mutex_init(&lock, NULL);
-
-	pthread_mutex_lock(&lock);
 
 	/* Build operation header. */
 	msg.source = hal_get_node_id();
@@ -150,27 +129,37 @@ int name_lookup(char *name)
 		printf("Sending request for name: %s...\n", msg.name);
 	#endif
 
-
 	if (hal_mailbox_write(server, &msg, HAL_MAILBOX_MSG_SIZE)
 									 != HAL_MAILBOX_MSG_SIZE)
-	{
-		pthread_mutex_unlock(&lock);
 		return (-EAGAIN);
-	}
 
 	while(msg.nodeid == -1)
 	{
-		if (hal_mailbox_read(get_inbox(), &msg, HAL_MAILBOX_MSG_SIZE)
-											 != HAL_MAILBOX_MSG_SIZE)
-		{
-			pthread_mutex_unlock(&lock);
+		if (hal_mailbox_read(get_inbox(), &msg, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE)
 			return (-EAGAIN);
-		}
 	}
 
-	pthread_mutex_unlock(&lock);
-
 	return (msg.nodeid);
+}
+
+/**
+ * @brief Converts a name into a NoC node ID.
+ *
+ * @param name Target name.
+ *
+ * @returns Upon successful completion the NoC node ID whose name is @p
+ * name is returned. Upon failure, a negative error code is returned
+ * instead.
+ */
+int name_lookup(char *name)
+{
+	int ret;
+
+	pthread_mutex_lock(&kernel_lock);
+		ret = _name_lookup(name);
+	pthread_mutex_unlock(&kernel_lock);
+
+	return (ret);
 }
 
 /*============================================================================*
@@ -178,27 +167,16 @@ int name_lookup(char *name)
  *============================================================================*/
 
 /**
- * @brief link a process name.
- *
- * @param nodeid    NoC node ID of the process to link.
- * @param name      Name of the process to link.
- *
- * @returns Upon successful completion 0 is returned.
- * Upon failure, a negative error code is returned instead.
+ * @brief Internal name_link()
  */
-int name_link(int nodeid, const char *name)
+static int _name_link(int nodeid, const char *name)
 {
 	/* Sanity check. */
-	if ((name == NULL) || (strlen(name) >= (NANVIX_PROC_NAME_MAX - 1))
-						   || (nodeid < 0) || (strcmp(name, "") == 0))
+	if ((name == NULL) || (strlen(name) >= (NANVIX_PROC_NAME_MAX - 1)) || (nodeid < 0) || (strcmp(name, "") == 0))
 		return (-EINVAL);
 
 	if (name_init() != 0)
 		return (-EAGAIN);
-
-	pthread_mutex_init(&lock, NULL);
-
-	pthread_mutex_lock(&lock);
 
 	/* Build operation header. */
 	msg.source = hal_get_node_id();
@@ -207,22 +185,15 @@ int name_link(int nodeid, const char *name)
 	strcpy(msg.name, name);
 
 	/* Send link request. */
-	if (hal_mailbox_write(server, &msg, HAL_MAILBOX_MSG_SIZE)
-									 != HAL_MAILBOX_MSG_SIZE)
+	if (hal_mailbox_write(server, &msg, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE)
 		return (-EAGAIN);
 
 	/* Wait server response */
 	while (msg.op == NAME_LINK)
 	{
-		if (hal_mailbox_read(get_inbox(), &msg, HAL_MAILBOX_MSG_SIZE) !=
-												   HAL_MAILBOX_MSG_SIZE)
-		{
-			pthread_mutex_unlock(&lock);
+		if (hal_mailbox_read(get_inbox(), &msg, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE)
 			return (-EAGAIN);
-		}
 	}
-
-	pthread_mutex_unlock(&lock);
 
 	if ((msg.op != NAME_SUCCESS) && (msg.op != NAME_FAIL))
 		return (-EAGAIN);
@@ -233,25 +204,37 @@ int name_link(int nodeid, const char *name)
 	return (-1);
 }
 
+/**
+ * @brief link a process name.
+ *
+ * @param nodeid NoC node ID of the process to link.
+ * @param name   Name of the process to link.
+ *
+ * @returns Upon successful completion 0 is returned.
+ * Upon failure, a negative error code is returned instead.
+ */
+int name_link(int nodeid, const char *name)
+{
+	int ret;
+
+	pthread_mutex_lock(&kernel_lock);
+		ret = _name_link(nodeid, name);
+	pthread_mutex_unlock(&kernel_lock);
+
+	return (ret);
+}
+
 /*============================================================================*
  * name_unlink()                                                              *
  *============================================================================*/
 
 /**
- * @brief Unlink a process name.
- *
- * @param name	    Name of the process to unlink.
- *
- * @returns Upon successful completion 0 is returned.
- * Upon failure, a negative error code is returned instead.
+ * @brief Internal name_unlink()
  */
-int name_unlink(const char *name)
+static int _name_unlink(const char *name)
 {
-	pthread_mutex_init(&lock, NULL);
-
 	/* Sanity check. */
-	if ((name == NULL) ||(strlen(name) >= (NANVIX_PROC_NAME_MAX - 1))
-										  || (strcmp(name, "") == 0))
+	if ((name == NULL) ||(strlen(name) >= (NANVIX_PROC_NAME_MAX - 1)) || (strcmp(name, "") == 0))
 		return (-EINVAL);
 
 	#ifdef DEBUG
@@ -261,8 +244,6 @@ int name_unlink(const char *name)
 
 	if (name_init() != 0)
 		return (-EAGAIN);
-
-	pthread_mutex_lock(&lock);
 
 	/* Build operation header. */
 	msg.source = hal_get_node_id();
@@ -275,25 +256,15 @@ int name_unlink(const char *name)
 		printf("Sending remove request for name: %s...\n", msg.name);
 	#endif
 
-	if (hal_mailbox_write(server, &msg, HAL_MAILBOX_MSG_SIZE)
-									 != HAL_MAILBOX_MSG_SIZE)
-	{
-		pthread_mutex_unlock(&lock);
+	if (hal_mailbox_write(server, &msg, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE)
 		return (-EAGAIN);
-	}
 
 	/* Wait server response */
 	while(msg.op == NAME_UNLINK)
 	{
-		if (hal_mailbox_read(get_inbox(), &msg, HAL_MAILBOX_MSG_SIZE)
-											 != HAL_MAILBOX_MSG_SIZE)
-		{
-			pthread_mutex_unlock(&lock);
+		if (hal_mailbox_read(get_inbox(), &msg, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE)
 			return (-EAGAIN);
-		}
 	}
-
-	pthread_mutex_unlock(&lock);
 
 	if ((msg.op != NAME_SUCCESS) && (msg.op != NAME_FAIL))
 		return (-EAGAIN);
@@ -302,4 +273,23 @@ int name_unlink(const char *name)
 		return (0);
 
 	return (-1);
+}
+
+/**
+ * @brief Unlink a process name.
+ *
+ * @param name	    Name of the process to unlink.
+ *
+ * @returns Upon successful completion 0 is returned.
+ * Upon failure, a negative error code is returned instead.
+ */
+int name_unlink(const char *name)
+{
+	int ret;
+
+	pthread_mutex_lock(&kernel_lock);
+		ret = _name_unlink(name);
+	pthread_mutex_unlock(&kernel_lock);
+
+	return (ret);
 }

@@ -33,7 +33,7 @@
 /**
  * @brief Global kernel lock.
  */
-static pthread_mutex_t kernel_lock;
+pthread_mutex_t kernel_lock;
 
 /**
  * @brief Input HAL mailbox.
