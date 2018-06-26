@@ -402,7 +402,7 @@ static void test_hal_mailbox_double_create(void)
 
 	printf("[test][fault injection] Double Create\n");
 
-	nodeid = hal_get_cluster_id();
+	nodeid = hal_get_node_id();
 
 	TEST_ASSERT((inbox = hal_mailbox_create(nodeid)) >= 0);
 	TEST_ASSERT(hal_mailbox_create(nodeid) < 0);
@@ -442,7 +442,7 @@ static void test_hal_mailbox_bad_open(void)
 
 	printf("[test][fault injection] Bad Open\n");
 
-	nodeid = hal_get_cluster_id();
+	nodeid = hal_get_node_id();
 
 	TEST_ASSERT((outbox = hal_mailbox_open(nodeid)) < 0);
 }
@@ -463,7 +463,7 @@ static void test_hal_mailbox_double_open(void)
 
 	printf("[test][fault injection] Double Open\n");
 
-	nodeid = hal_get_cluster_id();
+	nodeid = hal_get_node_id();
 
 	TEST_ASSERT((outbox = hal_mailbox_open(nodeid + 1)) >= 0);
 	TEST_ASSERT(hal_mailbox_open(nodeid + 1) < 0);
@@ -485,7 +485,7 @@ static void test_hal_mailbox_double_unlink(void)
 
 	printf("[test][fault injection] Double Unlink\n");
 
-	nodeid = hal_get_cluster_id();
+	nodeid = hal_get_node_id();
 
 	TEST_ASSERT((inbox = hal_mailbox_create(nodeid)) >= 0);
 	TEST_ASSERT(hal_mailbox_unlink(inbox) == 0);
@@ -506,7 +506,7 @@ static void test_hal_mailbox_double_close(void)
 
 	printf("[test][fault injection] Double Close\n");
 
-	nodeid = hal_get_cluster_id();
+	nodeid = hal_get_node_id();
 
 	TEST_ASSERT((outbox = hal_mailbox_open(nodeid + 1)) >= 0);
 	TEST_ASSERT(hal_mailbox_close(outbox) == 0);
@@ -546,7 +546,7 @@ static void test_hal_mailbox_bad_write(void)
 
 	printf("[test][fault injection] Bad Write\n");
 
-	nodeid = hal_get_cluster_id();
+	nodeid = hal_get_node_id();
 
 	TEST_ASSERT((inbox = hal_mailbox_create(nodeid)) >= 0);
 
@@ -570,7 +570,7 @@ static void test_hal_mailbox_null_write(void)
 
 	printf("[test][fault injection] Null Write\n");
 
-	nodeid = hal_get_cluster_id();
+	nodeid = hal_get_node_id();
 
 	TEST_ASSERT((outbox = hal_mailbox_open(nodeid + 1)) >= 0);
 	TEST_ASSERT(hal_mailbox_write(outbox, NULL, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE);
@@ -610,7 +610,7 @@ static void test_hal_mailbox_bad_read(void)
 
 	printf("[test][fault injection] Bad Read\n");
 
-	nodeid = hal_get_cluster_id();
+	nodeid = hal_get_node_id();
 
 	TEST_ASSERT((outbox = hal_mailbox_open(nodeid + 1)) >= 0);
 
@@ -634,7 +634,7 @@ static void test_hal_mailbox_null_read(void)
 
 	printf("[test][fault injection] Null Read\n");
 
-	nodeid = hal_get_cluster_id();
+	nodeid = hal_get_node_id();
 
 	TEST_ASSERT((inbox = hal_mailbox_create(nodeid)) >= 0);
 	TEST_ASSERT(hal_mailbox_read(inbox, NULL, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE);
