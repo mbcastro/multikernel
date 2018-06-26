@@ -56,7 +56,7 @@ int kernel_setup(void)
 
 	hal_setup();
 
-	nodeid = hal_get_node_id();	
+	nodeid = hal_get_node_id();
 	index = nodeid - hal_get_cluster_id();
 
 	/*
@@ -98,13 +98,13 @@ int kernel_cleanup(void)
 
 	/* Kernel was not initialized. */
 	if (!initialized[index])
-		goto error0;
+		goto end;
 
 	pthread_mutex_lock(&kernel_lock);
 
 		/* Destroy underlying input mailbox. */
 		if (hal_mailbox_unlink(inboxes[index]) != 0)
-			goto error1;
+			goto error;
 
 	pthread_mutex_unlock(&kernel_lock);
 
@@ -116,11 +116,12 @@ int kernel_cleanup(void)
 
 	hal_cleanup();
 
+end:
+	pthread_mutex_unlock(&kernel_lock);
 	return (0);
 
-error1:
+error:
 	pthread_mutex_unlock(&kernel_lock);
-error0:
 	return (-EAGAIN);
 }
 
@@ -140,3 +141,14 @@ int get_inbox(void)
 	return (inboxes[index]);
 }
 
+/**
+ * @brief Unset initialized flag.
+ */
+void unset_inbox()
+{
+	int index;
+
+	index = hal_get_node_id() - hal_get_cluster_id();
+
+	initialized[index] = 0;
+}

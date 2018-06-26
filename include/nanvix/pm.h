@@ -30,6 +30,7 @@
  *=======================================================================*/
 
 	/* Forward definitions .*/
+	extern void unset_inbox(void);
 	extern int get_inbox(void);
 	extern int mailbox_create(char *);
 	extern int mailbox_open(char *);
