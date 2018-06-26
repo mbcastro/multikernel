@@ -220,7 +220,7 @@ static void mailbox_free(int mbxid)
 int mailbox_create(char *name)
 {
 	int fd;     /* NoC connector. */
-	int coreid; /* Core ID.       */
+	int nodeid; /* NoC node ID.   */
 	int mbxid;  /* ID of mailbix. */
 
 	/* Invalid name. */
@@ -231,13 +231,14 @@ int mailbox_create(char *name)
 	if ((mbxid = mailbox_alloc()) < 0)
 		return (-EAGAIN);
 
-	coreid = hal_get_node_id();
+	nodeid = hal_get_node_id();
 
 	/* Link name. */
-	name_link(coreid, name);
+	if (name_link(nodeid, name) != 0)
+		return (-EAGAIN);
 
-	/* Create underlying HW channel. */
-	if ((fd = hal_mailbox_create(hal_get_cluster_id())) == -1)
+	/* Get the client inbox. */
+	if ((fd = get_inbox()) < 0)
 		goto error0;
 
 	/* Initialize mailbox. */
@@ -415,6 +416,8 @@ int mailbox_close(int mbxid)
  */
 int mailbox_unlink(int mbxid)
 {
+	int r;		/* Return value. */
+
 	/* Invalid mailbox ID.*/
 	if (!mailbox_is_valid(mbxid))
 		return (-EINVAL);
@@ -424,10 +427,11 @@ int mailbox_unlink(int mbxid)
 		return (-EINVAL);
 
 	/*  Invalid mailbox. */
-	if (!mailbox_is_wronly(mbxid))
+	if (mailbox_is_wronly(mbxid))
 		return (-EINVAL);
 
-	hal_mailbox_unlink(mailboxes[mbxid].fd);
+	if ((r = hal_mailbox_unlink(mailboxes[mbxid].fd)) != 0)
+		return r;
 
 	mailbox_free(mbxid);
 
