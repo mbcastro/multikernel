@@ -120,10 +120,10 @@ static int _name_lookup(char *name)
 	msg.nodeid = -1;
 	strcpy(msg.name, name);
 
-	if (hal_mailbox_write(server, &msg, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE)
+	if (hal_mailbox_write(server, &msg, sizeof(struct name_message)) != sizeof(struct name_message))
 		return (-EAGAIN);
 
-	if (hal_mailbox_read(get_inbox(), &msg, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE)
+	if (hal_mailbox_read(get_inbox(), &msg, sizeof(struct name_message)) != sizeof(struct name_message))
 		return (-EAGAIN);
 
 	return (msg.nodeid);
@@ -183,11 +183,11 @@ static int _name_link(int nodeid, const char *name)
 	strcpy(msg.name, name);
 
 	/* Send link request. */
-	if (hal_mailbox_write(server, &msg, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE)
+	if (hal_mailbox_write(server, &msg, sizeof(struct name_message)) != sizeof(struct name_message))
 		return (-EAGAIN);
 
 	/* Wait server response */
-	if (hal_mailbox_read(get_inbox(), &msg, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE)
+	if (hal_mailbox_read(get_inbox(), &msg, sizeof(struct name_message)) != sizeof(struct name_message))
 		return (-EAGAIN);
 
 	if ((msg.op != NAME_SUCCESS) && (msg.op != NAME_FAIL))
@@ -248,11 +248,11 @@ static int _name_unlink(const char *name)
 	msg.nodeid = -1;
 	strcpy(msg.name, name);
 
-	if (hal_mailbox_write(server, &msg, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE)
+	if (hal_mailbox_write(server, &msg, sizeof(struct name_message)) != sizeof(struct name_message))
 		return (-EAGAIN);
 
 	/* Wait server response */
-	if (hal_mailbox_read(get_inbox(), &msg, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE)
+	if (hal_mailbox_read(get_inbox(), &msg, sizeof(struct name_message)) != sizeof(struct name_message))
 		return (-EAGAIN);
 
 	if ((msg.op != NAME_SUCCESS) && (msg.op != NAME_FAIL))
