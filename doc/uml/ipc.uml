@@ -24,6 +24,7 @@ namespace HAL {
 
 class Unknown {
 	+ int get_inbox()
+	+ void unset_inbox()
 }
 
 namespace IPC {
@@ -53,6 +54,7 @@ namespace IPC {
 	}
 
 	class Mailbox {
+		+ char name[NANVIX_PROC_NAME_MAX]
 		+ int fd
 		+ int flags
 	}
@@ -65,8 +67,8 @@ namespace IPC {
 		- void mailbox_free(int mbxid)
 		+ int mailbox_create(char *name)
 		+ int mailbox_open(char *name)
-		+ int mailbox_read(int mbxid, void *buf)
-		+ int mailbox_write(int mbxid, const void *buf)
+		+ int mailbox_read(int mbxid, void *buf, size_t)
+		+ int mailbox_write(int mbxid, const void *buf, size_t)
 		+ int mailbox_close(int mbxid)
 		+ int mailbox_unlink(int mbxid)
 	}
@@ -84,5 +86,6 @@ namespace IPC {
 
 Unknown <. IPC.NameClient           : <<use>>
 Unknown <. IPC.MailboxInterface     : <<use>>
+Unknown <. HAL.MailboxInterface     : <<use>>
 
 @enduml
