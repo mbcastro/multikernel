@@ -1,12 +1,26 @@
 @startuml
 
-!include hal.uml
+namespace HAL {
 
-remove HAL.CoreTypes
-remove HAL.CoreInterface
-remove HAL.SetupInterface
-remove HAL.SyncInterface
-remove HAL.PortalInterface
+	interface HAL.MailboxInterface {
+		+ const int HAL_NR_MAILBOX
+		+ const int HAL_MAILBOX_MSG_SIZE
+		+ int hal_mailbox_create(int)
+		+ int hal_mailbox_open(int)
+		+ int hal_mailbox_unlink(int)
+		+ int hal_mailbox_close(int)
+		+ size_t hal_mailbox_write(int, const void *, size_t)
+		+ size_t hal_mailbox_read(int, void *, size_t)
+	}
+
+	interface HAL.NoCInterface {
+		+ const int HAL_NR_NOC_IONODES
+		+ const int HAL_NR_NOC_CNODES
+		+ const int HAL_NR_NOC_NODES
+		+ const int hal_noc_nodes[HAL_NR_NOC_NODES]
+		+ int hal_get_node_id(void)
+	}
+}
 
 class Unknown {
 	+ int get_inbox()
@@ -38,13 +52,37 @@ namespace IPC {
 		+ const int NAME_FAIL
 	}
 
+	class Mailbox {
+		+ int fd
+		+ int flags
+	}
+
+	class MailboxInterface {
+		- const int MAILBOX_USED
+		- const int MAILBOX_WRONLY
+		- struct mailbox mailboxes[HAL_NR_MAILBOX]
+		- int mailbox_alloc(void)
+		- void mailbox_free(int mbxid)
+		+ int mailbox_create(char *name)
+		+ int mailbox_open(char *name)
+		+ int mailbox_read(int mbxid, void *buf)
+		+ int mailbox_write(int mbxid, const void *buf)
+		+ int mailbox_close(int mbxid)
+		+ int mailbox_unlink(int mbxid)
+	}
+
 	IPC.NameMessage  .> IPC.NameMessageTypes : <<use>>
 	IPC.NameClient   .> IPC.NameMessage      : <<use>>
 	IPC.NameClient  ..> HAL.NoCInterface     : <<use>>
 	IPC.NameClient  ..> HAL.MailboxInterface : <<use>>
+
+	IPC.MailboxInterface   .> IPC.Mailbox           : <<use>>
+	IPC.MailboxInterface   .> HAL.MailboxInterface  : <<use>>
+	IPC.MailboxInterface   .> HAL.NoCInterface      : <<use>>
+	IPC.MailboxInterface   .> NameClient            : <<use>>
 }
 
-Unknown <. IPC.NameClient : <<use>>
+Unknown <. IPC.NameClient           : <<use>>
+Unknown <. IPC.MailboxInterface     : <<use>>
 
 @enduml
-
