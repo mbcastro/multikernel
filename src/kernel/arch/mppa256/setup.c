@@ -45,6 +45,20 @@ static int inbox[NR_IOCLUSTER_CORES];
 static int initialized = 0;
 
 /**
+ * @brief Initializes inboxes.
+ */
+static void inbox_init(void)
+{
+	if (!initialized)
+	{
+		for (int i = 0; i < NR_IOCLUSTER_CORES; i++)
+			inbox[i] = -1;
+
+		initialized = 1;
+	}
+}
+
+/**
  * @brief Initializes kernel.
  */
 int kernel_setup(void)
@@ -57,16 +71,11 @@ int kernel_setup(void)
 
 	pthread_mutex_lock(&core_lock);
 
-	if (!initialized)
-	{
-		for (int i = 0; i < NR_IOCLUSTER_CORES; i++)
-			inbox[i] = -1;
-
-		initialized = 1;
-	}
+	inbox_init();
 
 	index = (hal_get_node_id() - __k1_get_cluster_id());
 
+	/* Bad index. */
 	if ((index < 0) || (index >= NR_IOCLUSTER_CORES))
 	{
 		pthread_mutex_unlock(&core_lock);
@@ -80,8 +89,8 @@ int kernel_setup(void)
 		return 0;
 	}
 
-	int mailbox = hal_mailbox_create(hal_get_node_id());
-	inbox[index] = mailbox;
+	/* Create inbox. */
+	inbox[index] = hal_mailbox_create(hal_get_node_id());
 
 	pthread_mutex_unlock(&core_lock);
 
@@ -137,7 +146,7 @@ int get_inbox(void)
 
 	pthread_mutex_unlock(&core_lock);
 
-	return inbox[index];
+	return (inbox[index]);
 }
 
 /**

@@ -149,13 +149,19 @@ int name_lookup(char *name)
 
 	if (hal_mailbox_write(server, &msg, HAL_MAILBOX_MSG_SIZE)
 									 != HAL_MAILBOX_MSG_SIZE)
+	{
+		pthread_mutex_unlock(&lock);
 		return (-EAGAIN);
+	}
 
 	while(msg.nodeid == -1)
 	{
 		if (hal_mailbox_read(get_inbox(), &msg, HAL_MAILBOX_MSG_SIZE)
 											 != HAL_MAILBOX_MSG_SIZE)
+		{
+			pthread_mutex_unlock(&lock);
 			return (-EAGAIN);
+		}
 	}
 
 	pthread_mutex_unlock(&lock);
@@ -206,7 +212,10 @@ int name_link(int nodeid, const char *name)
 	{
 		if (hal_mailbox_read(get_inbox(), &msg, HAL_MAILBOX_MSG_SIZE) !=
 												   HAL_MAILBOX_MSG_SIZE)
+		{
+			pthread_mutex_unlock(&lock);
 			return (-EAGAIN);
+		}
 	}
 
 	pthread_mutex_unlock(&lock);
@@ -264,14 +273,20 @@ int name_unlink(const char *name)
 
 	if (hal_mailbox_write(server, &msg, HAL_MAILBOX_MSG_SIZE)
 									 != HAL_MAILBOX_MSG_SIZE)
+	{
+		pthread_mutex_unlock(&lock);
 		return (-EAGAIN);
+	}
 
 	/* Wait server response */
 	while(msg.op == NAME_UNLINK)
 	{
 		if (hal_mailbox_read(get_inbox(), &msg, HAL_MAILBOX_MSG_SIZE)
 											 != HAL_MAILBOX_MSG_SIZE)
+		{
+			pthread_mutex_unlock(&lock);
 			return (-EAGAIN);
+		}
 	}
 
 	pthread_mutex_unlock(&lock);
