@@ -20,21 +20,18 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
-#include <errno.h>
 
 #define __NEED_HAL_CORE_
 #define __NEED_HAL_NOC_
-#define __NEED_HAL_SETUP_
 #define __NEED_HAL_SYNC_
-#include <nanvix/arch/mppa.h>
-#include <nanvix/pm.h>
-#include <nanvix/name.h>
 #include <nanvix/hal.h>
+#include <nanvix/init.h>
+#include <nanvix/name.h>
+#include <nanvix/pm.h>
 
 /**
  * @brief Asserts a logic expression.

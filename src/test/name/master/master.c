@@ -23,19 +23,19 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include <mppa/osconfig.h>
 #include <mppaipc.h>
 
 #define __NEED_HAL_CORE_
 #define __NEED_HAL_NOC_
-#define __NEED_HAL_SETUP_
 #define __NEED_HAL_SYNC_
-#include <nanvix/arch/mppa.h>
-#include <nanvix/pm.h>
 #include <nanvix/hal.h>
+#include <nanvix/init.h>
 #include <nanvix/name.h>
 #include <nanvix/limits.h>
+#include <nanvix/pm.h>
 
 /**
  * @brief Asserts a logic expression.
