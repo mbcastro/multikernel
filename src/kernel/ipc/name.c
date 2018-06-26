@@ -37,11 +37,6 @@
 extern pthread_mutex_t kernel_lock;
 
 /**
- * @brief Name server message.
- */
-static struct name_message msg;
-
-/**
  * @brief Mailboxe for small messages.
  */
 static int server;
@@ -105,6 +100,8 @@ void name_finalize(void)
  */
 static int _name_lookup(char *name)
 {
+	struct name_message msg;
+
 	/* Invalid name. */
 	if (name == NULL)
 		return (-EINVAL);
@@ -161,6 +158,8 @@ int name_lookup(char *name)
  */
 static int _name_link(int nodeid, const char *name)
 {
+	struct name_message msg;
+
 	/* Invalid NoC node ID. */
 	if (nodeid < 0)
 		return (-EINVAL);
@@ -229,6 +228,8 @@ int name_link(int nodeid, const char *name)
  */
 static int _name_unlink(const char *name)
 {
+	struct name_message msg;
+
 	/* Invalid name. */
 	if (name == NULL)
 		return (-EINVAL);
