@@ -102,6 +102,16 @@
 #ifdef __NEED_HAL_NOC_
 
 	/* Sanity check. */
+	#ifndef HAL_NR_NOC_IONODES
+		#error "undefined symbol: HAL_NR_NOC_IONODES"
+	#endif
+
+	/* Sanity check. */
+	#ifndef HAL_NR_NOC_CNODES
+		#error "undefined symbol: HAL_NR_NOC_CNODES"
+	#endif
+
+	/* Sanity check. */
 	#ifndef HAL_NR_NOC_NODES
 		#error "undefined symbol: HAL_NR_NOC_NODES"
 	#endif
