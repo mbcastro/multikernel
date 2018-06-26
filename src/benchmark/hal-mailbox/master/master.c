@@ -64,6 +64,11 @@ static pthread_mutex_t lock;
  */
 static int pids[NANVIX_PROC_MAX];
 
+/**
+ * @brief Elapsed time.
+ */
+static uint64_t etime[NANVIX_PROC_MAX];
+
 /*============================================================================*
  * Utility                                                                    *
  *============================================================================*/
@@ -194,9 +199,20 @@ static void *kernel(void *args)
 		}
 		t2 = hal_timer_get();
 
-		pthread_mutex_lock(&lock);
-		printf("time: %.2lf\n", ((double)hal_timer_diff(t1, t2))/nremotes);
-		pthread_mutex_unlock(&lock);
+		etime[tnum] = hal_timer_diff(t1, t2);
+
+		pthread_barrier_wait(&barrier);
+
+		/* Reduction. */
+		if (tnum == 0)
+		{
+			uint64_t total;
+
+			total = 0;
+			for (int i = 0; i < nlocals; i++)
+				total += etime[i];
+			printf("time: %.2lf\n", ((double)total)/nremotes);
+		}
 	}
 	
 	/* Close output mailboxes. */
