@@ -31,6 +31,7 @@
  #define __NEED_HAL_CORE_
  #define __NEED_HAL_NOC_
  #define __NEED_HAL_SYNC_
+ #define __NEED_HAL_MAILBOX_
  #include <nanvix/hal.h>
  #include <nanvix/init.h>
  #include <nanvix/name.h>
@@ -119,6 +120,171 @@ static void test_mailbox_create_unlink(void)
 }
 
 /*===================================================================*
+ * API Test: Open Close                                              *
+ *===================================================================*/
+
+/**
+ * @brief API Test: Mailbox Open Close
+ */
+static void *test_mailbox_thread_open_close(void *args)
+{
+	char pathname_local[NANVIX_PROC_NAME_MAX];
+	char pathname_remote[NANVIX_PROC_NAME_MAX];
+	int tid;
+	int inbox;
+	int outbox;
+
+	TEST_ASSERT(kernel_setup() == 0);
+
+	pthread_barrier_wait(&barrier);
+
+	tid = ((int *)args)[0];
+
+	sprintf(pathname_local, "cool-name%d", tid);
+
+	pthread_mutex_lock(&lock);
+	TEST_ASSERT((inbox = mailbox_create(pathname_local)) >= 0);
+	pthread_mutex_unlock(&lock);
+
+	pthread_barrier_wait(&barrier);
+
+	sprintf(pathname_remote, "cool-name%d",
+		((tid + 1) == ncores) ?
+		1:tid + 1
+	);
+
+	pthread_mutex_lock(&lock);
+	TEST_ASSERT((outbox = mailbox_open(pathname_remote)) >= 0);
+	pthread_mutex_unlock(&lock);
+
+	pthread_barrier_wait(&barrier);
+
+	pthread_mutex_lock(&lock);
+	TEST_ASSERT(mailbox_close(outbox) == 0);
+	pthread_mutex_unlock(&lock);
+
+	pthread_mutex_lock(&lock);
+	TEST_ASSERT(mailbox_unlink(inbox) == 0);
+	pthread_mutex_unlock(&lock);
+
+	TEST_ASSERT(kernel_cleanup() == 0);
+	return (NULL);
+}
+
+/**
+ * @brief API Test: Mailbox Open Close
+ */
+static void test_mailbox_open_close(void)
+{
+	int tids[ncores];
+	pthread_t threads[ncores];
+
+	printf("[test][api] Mailbox Open Close\n");
+
+	/* Spawn driver threads. */
+	for (int i = 1; i < ncores; i++)
+	{
+		tids[i] = i;
+		assert((pthread_create(&threads[i],
+			NULL,
+			test_mailbox_thread_open_close,
+			&tids[i])) == 0
+		);
+	}
+
+	/* Wait for driver threads. */
+	for (int i = 1; i < ncores; i++)
+		pthread_join(threads[i], NULL);
+}
+
+/*===================================================================*
+ * API Test: Read Write                                              *
+ *===================================================================*/
+
+/**
+ * @brief API Test: Mailbox Read Write
+ */
+static void *test_mailbox_thread_read_write(void *args)
+{
+	char pathname_local[NANVIX_PROC_NAME_MAX];
+	char pathname_remote[NANVIX_PROC_NAME_MAX];
+	char buf[HAL_MAILBOX_MSG_SIZE];
+	int tid;
+	int inbox;
+	int outbox;
+
+	TEST_ASSERT(kernel_setup() == 0);
+
+	pthread_barrier_wait(&barrier);
+
+	tid = ((int *)args)[0];
+
+	sprintf(pathname_local, "cool-name%d", tid);
+
+	pthread_mutex_lock(&lock);
+	TEST_ASSERT((inbox = mailbox_create(pathname_local)) >= 0);
+	pthread_mutex_unlock(&lock);
+
+	pthread_barrier_wait(&barrier);
+
+	sprintf(pathname_remote, "cool-name%d",
+		((tid + 1) == ncores) ?
+		1:tid + 1
+	);
+
+	pthread_mutex_lock(&lock);
+	TEST_ASSERT((outbox = mailbox_open(pathname_remote)) >= 0);
+	pthread_mutex_unlock(&lock);
+
+	pthread_barrier_wait(&barrier);
+
+	memset(buf, 1, HAL_MAILBOX_MSG_SIZE);
+	TEST_ASSERT(mailbox_write(outbox, buf, sizeof(buf)) == 0);
+	memset(buf, 0, HAL_MAILBOX_MSG_SIZE);
+	TEST_ASSERT(mailbox_read(inbox, buf, sizeof(buf)) == 0);
+
+	for (int i = 0; i < HAL_MAILBOX_MSG_SIZE; i++)
+		TEST_ASSERT(buf[i] == 1);
+
+	pthread_mutex_lock(&lock);
+	TEST_ASSERT(mailbox_close(outbox) == 0);
+	pthread_mutex_unlock(&lock);
+
+	pthread_mutex_lock(&lock);
+	TEST_ASSERT(mailbox_unlink(inbox) == 0);
+	pthread_mutex_unlock(&lock);
+
+	TEST_ASSERT(kernel_cleanup() == 0);
+	return (NULL);
+}
+
+/**
+ * @brief API Test: Mailbox Read Write
+ */
+static void test_mailbox_read_write(void)
+{
+	int tids[ncores];
+	pthread_t threads[ncores];
+
+	printf("[test][api] Mailbox Read Write\n");
+
+	/* Spawn driver threads. */
+	for (int i = 1; i < ncores; i++)
+	{
+		tids[i] = i;
+		assert((pthread_create(&threads[i],
+			NULL,
+			test_mailbox_thread_read_write,
+			&tids[i])) == 0
+		);
+	}
+
+	/* Wait for driver threads. */
+	for (int i = 1; i < ncores; i++)
+		pthread_join(threads[i], NULL);
+}
+
+/*===================================================================*
  * API Test: Mailbox Driver                                          *
  *===================================================================*/
 
@@ -149,6 +315,8 @@ int main(int argc, const char **argv)
 
 	/* API tests. */
 	test_mailbox_create_unlink();
+	test_mailbox_open_close();
+	test_mailbox_read_write();
 
 	TEST_ASSERT(kernel_cleanup() == 0);
 	return (EXIT_SUCCESS);

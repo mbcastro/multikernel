@@ -23,6 +23,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <stdio.h>
+#include <string.h>
 
 #define __NEED_HAL_CORE_
 #define __NEED_HAL_NOC_
@@ -44,8 +45,9 @@
  */
 struct mailbox
 {
-	int fd;    /**< NoC connector. */
-	int flags; /**< Flags.         */
+	char name[NANVIX_PROC_NAME_MAX];  /* Name.          */
+	int fd;                           /* NoC connector. */
+	int flags;                        /* Flags.         */
 };
 
 /**
@@ -199,8 +201,11 @@ static int mailbox_alloc(void)
 static void mailbox_free(int mbxid)
 {
 	/* Sanity check. */
-	assert(mailbox_is_valid(mbxid));
-	assert(mailbox_is_used(mbxid));
+	if (!mailbox_is_valid(mbxid))
+		return;
+
+	if (!mailbox_is_used(mbxid))
+		return;
 
 	mailbox_clear_flags(mbxid);
 }
@@ -243,6 +248,7 @@ int mailbox_create(char *name)
 
 	/* Initialize mailbox. */
 	mailboxes[mbxid].fd = fd;
+	strcpy(mailboxes[mbxid].name, name);
 
 	return (mbxid);
 
@@ -267,7 +273,7 @@ error0:
 int mailbox_open(char *name)
 {
 	int fd;     /* NoC connector. */
-	int coreid; /* Core ID.       */
+	int nodeid; /* NoC node ID.   */
 	int mbxid;  /* ID of mailbix. */
 
 	/* Invalid name. */
@@ -275,7 +281,7 @@ int mailbox_open(char *name)
 		return (-EINVAL);
 
 	/* Resolve name, */
-	if ((coreid = name_lookup(name)) < 0)
+	if ((nodeid = name_lookup(name)) < 0)
 		return (-EAGAIN);
 
 	/* Allocate a mailbox. */
@@ -283,7 +289,7 @@ int mailbox_open(char *name)
 		return (-EAGAIN);
 
 	/* Open underlying HW channel. */
-	if ((fd = hal_mailbox_open(coreid)) == -1)
+	if ((fd = hal_mailbox_open(nodeid)) < 0)
 		goto error0;
 
 	/* Initialize mailbox. */
@@ -306,14 +312,15 @@ error0:
  *
  * @param mbxid ID of the target mailbox.
  * @param buf   Location from where data should be written.
+ * @param n     Number of bytes to write.
  *
- * @returns Upon successful completion zero is returned. Upon failure, a
- * negative error code is returned instead.
+ * @returns Upon successful completion zero is returned. Upon failure,
+ * a negative error code is returned instead.
  */
-int mailbox_read(int mbxid, void *buf)
+int mailbox_read(int mbxid, void *buf, size_t n)
 {
 	/* Invalid mailbox ID.*/
-	if (mailbox_is_valid(mbxid))
+	if (!mailbox_is_valid(mbxid))
 		return (-EINVAL);
 
 	/*  Bad mailbox. */
@@ -328,7 +335,10 @@ int mailbox_read(int mbxid, void *buf)
 	if (buf == NULL)
 		return (-EINVAL);
 
-	return (hal_mailbox_read(mailboxes[mbxid].fd, buf, HAL_MAILBOX_MSG_SIZE));
+	if (hal_mailbox_read(mailboxes[mbxid].fd, buf, n) == n)
+		return (0);
+
+	return (-EAGAIN);
 }
 
 /*============================================================================*
@@ -340,29 +350,33 @@ int mailbox_read(int mbxid, void *buf)
  *
  * @param mbxid ID of the target mailbox.
  * @param buf   Location from where data should be read.
+ * @param n     Number of bytes to write.
  *
  * @returns Upon successful completion zero is returned. Upon failure, a
  * negative error code is returned instead.
  */
-int mailbox_write(int mbxid, const void *buf)
+int mailbox_write(int mbxid, const void *buf, size_t n)
 {
 	/* Invalid mailbox ID.*/
-	if ((mbxid < 0) || (mbxid >= HAL_NR_MAILBOX))
+	if (!mailbox_is_valid(mbxid))
 		return (-EINVAL);
 
-	/*  Bad mailbox. */
-	if (!(mailboxes[mbxid].flags & MAILBOX_USED))
+	/* Bad mailbox. */
+	if (!mailbox_is_used(mbxid))
 		return (-EINVAL);
 
-	/* Operation no supported. */
-	if (!(mailboxes[mbxid].flags & MAILBOX_WRONLY))
-		return (-ENOTSUP);
+	/*  Invalid mailbox. */
+	if (!mailbox_is_wronly(mbxid))
+		return (-EINVAL);
 
 	/* Invalid buffer. */
 	if (buf == NULL)
 		return (-EINVAL);
 
-	return (0);
+	if (hal_mailbox_write(mailboxes[mbxid].fd, buf, n) == n)
+		return (0);
+
+	return (-EAGAIN);
 }
 
 /*============================================================================*
@@ -381,6 +395,8 @@ int mailbox_write(int mbxid, const void *buf)
  */
 int mailbox_close(int mbxid)
 {
+	int r;		/* Return value. */
+
 	/* Invalid mailbox ID.*/
 	if (!mailbox_is_valid(mbxid))
 		return (-EINVAL);
@@ -390,10 +406,11 @@ int mailbox_close(int mbxid)
 		return (-EINVAL);
 
 	/*  Invalid mailbox. */
-	if (mailbox_is_wronly(mbxid))
+	if (!mailbox_is_wronly(mbxid))
 		return (-EINVAL);
 
-	hal_mailbox_close(mailboxes[mbxid].fd);
+	if ((r = hal_mailbox_close(mailboxes[mbxid].fd)) != 0)
+		return (r);
 
 	mailbox_free(mbxid);
 
@@ -430,8 +447,12 @@ int mailbox_unlink(int mbxid)
 	if (mailbox_is_wronly(mbxid))
 		return (-EINVAL);
 
+	/* Unlink name. */
+	if (name_unlink(mailboxes[mbxid].name) != 0)
+		return (-EAGAIN);
+
 	if ((r = hal_mailbox_unlink(mailboxes[mbxid].fd)) != 0)
-		return r;
+		return (r);
 
 	mailbox_free(mbxid);
 
