@@ -1,0 +1,71 @@
+@startuml
+
+namespace HAL {
+	interface HAL.MailboxInterface {
+		+ const int HAL_NR_MAILBOX
+		+ const int HAL_MAILBOX_MSG_SIZE
+		+ int hal_mailbox_create(int)
+		+ int hal_mailbox_open(int)
+		+ int hal_mailbox_unlink(int)
+		+ int hal_mailbox_close(int)
+		+ size_t hal_mailbox_write(int, const void *, size_t)
+		+ size_t hal_mailbox_read(int, void *, size_t)
+	}
+
+	interface HAL.NoCInterface {
+		+ const int HAL_NR_NOC_IONODES
+		+ const int HAL_NR_NOC_CNODES
+		+ const int HAL_NR_NOC_NODES
+		+ const int hal_noc_nodes[HAL_NR_NOC_NODES]
+		+ int hal_get_node_id(void)
+	}
+
+	interface HAL.SetupInterface {
+		+ void hal_setup(void)
+		+ void hal_cleanup(void)
+	}
+}
+
+namespace IPC {
+	class NameMessage {
+		+ uint16_t source
+		+ uint16_t op
+		+ int32_t nodeid
+		+ char name[NANVIX_PROC_NAME_MAX]
+	}
+
+	enum NameMessageTypes {
+		+ const int NAME_LOOKUP
+		+ const int NAME_LINK
+		+ const int NAME_UNLINK
+		+ const int NAME_SUCCESS
+		+ const int NAME_FAIL
+	}
+
+	IPC.NameMessage  .> IPC.NameMessageTypes : <<use>>
+}
+
+namespace NameServer {
+	class NameTable {
+		~ int nodeid
+		~ int name[NANVIX_PROC_NAME_MAX]
+	}
+
+	class NameServer {
+		- void name_init(void)
+		- int _name_lookup(const char *name)
+		- int _name_link(int nodeid, char *name)
+		- int _name_unlink(char *name)
+		~ void *name_server(void *args)
+	}
+
+	NameServer.NameServer "1" *-- "HAL_NR_NOC_NODES" NameServer.NameTable : names
+
+	NameServer.NameServer ..> IPC.NameMessage      : <<uses>>
+	NameServer.NameServer ..> HAL.MailboxInterface : <<uses>>
+	NameServer.NameServer ..> HAL.NoCInterface     : <<uses>>
+	NameServer.NameServer ..> HAL.SetupInterface   : <<uses>>
+}
+
+@enduml
+
