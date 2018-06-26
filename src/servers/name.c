@@ -40,6 +40,7 @@
 
 /* Import definitions. */
 extern pthread_mutex_t lock;
+extern pthread_mutex_t barrier;
 
 /**
  * @brief Number of registration.
@@ -215,12 +216,16 @@ void *name_server(void *args)
 		inbox = hal_mailbox_create(hal_noc_nodes[NAME_SERVER_NODE]);
 	pthread_mutex_unlock(&lock);
 
+	pthread_barrier_wait(&barrier);
+
 	while(1)
 	{
 		struct name_message msg;
 
+		pthread_mutex_lock(&lock);
 		assert(hal_mailbox_read(inbox, &msg, HAL_MAILBOX_MSG_SIZE)
-		                                  == HAL_MAILBOX_MSG_SIZE);
+										 == HAL_MAILBOX_MSG_SIZE);
+		pthread_mutex_unlock(&lock);
 
 		/* Handle name requests. */
 		switch (msg.op)
@@ -234,18 +239,28 @@ void *name_server(void *args)
 				msg.nodeid = _name_lookup(msg.name);
 
 				/* Send response. */
+				pthread_mutex_lock(&lock);
 				source = hal_mailbox_open(msg.source);
+				pthread_mutex_unlock(&lock);
+
 				assert(source >= 0);
+
+				pthread_mutex_lock(&lock);
 				assert(hal_mailbox_write(source, &msg, HAL_MAILBOX_MSG_SIZE)
-				                                   == HAL_MAILBOX_MSG_SIZE);
+												   == HAL_MAILBOX_MSG_SIZE);
+				pthread_mutex_unlock(&lock);
+
+				pthread_mutex_lock(&lock);
 				assert(hal_mailbox_close(source) == 0);
+				pthread_mutex_unlock(&lock);
+
 				break;
 
 			/* Add name. */
 			case NAME_LINK:
 #ifdef DEBUG
 				printf("Entering NAME_LINK case... [nodeid ID: %d, name: %s].\n"
-				                                       , msg.nodeid, msg.name);
+														  msg.nodeid, msg.name);
 #endif
 				tmp = nr_registration;
 
@@ -257,11 +272,20 @@ void *name_server(void *args)
 				assert(nr_registration >= 0);
 
 				/* Send acknowledgement. */
+				pthread_mutex_lock(&lock);
 				source = hal_mailbox_open(msg.source);
+				pthread_mutex_unlock(&lock);
+
 				assert(source >= 0);
+
+				pthread_mutex_lock(&lock);
 				assert(hal_mailbox_write(source, &msg, HAL_MAILBOX_MSG_SIZE)
-				                                   == HAL_MAILBOX_MSG_SIZE);
+												   == HAL_MAILBOX_MSG_SIZE);
+				pthread_mutex_unlock(&lock);
+
+				pthread_mutex_lock(&lock);
 				assert(hal_mailbox_close(source) == 0);
+				pthread_mutex_unlock(&lock);
 
 				break;
 
@@ -280,11 +304,20 @@ void *name_server(void *args)
 				assert(nr_registration >= 0);
 
 				/* Send acknowledgement. */
+				pthread_mutex_lock(&lock);
 				source = hal_mailbox_open(msg.source);
+				pthread_mutex_unlock(&lock);
+
 				assert(source >= 0);
+
+				pthread_mutex_lock(&lock);
 				assert(hal_mailbox_write(source, &msg, HAL_MAILBOX_MSG_SIZE)
-				                                   == HAL_MAILBOX_MSG_SIZE);
+												   == HAL_MAILBOX_MSG_SIZE);
+				pthread_mutex_unlock(&lock);
+
+				pthread_mutex_lock(&lock);
 				assert(hal_mailbox_close(source) == 0);
+				pthread_mutex_unlock(&lock);
 
 				break;
 

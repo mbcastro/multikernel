@@ -52,26 +52,77 @@ static int ncores = 0;
  */
 static int pids[NANVIX_PROC_MAX];
 
+/**
+ * @brief Global barrier for synchronization.
+ */
+static pthread_barrier_t barrier;
+
+/**
+ * @brief Lock for critical sections.
+ */
+static pthread_mutex_t lock;
+
 /*===================================================================*
- * API Test: Name Link                                               *
+ * API Test: Name Link Unlink                                        *
  *===================================================================*/
+
+/**
+ * @brief API Test: Name Link Unlink
+ */
+static void *test_name_thread_link_unlink(void *args)
+{
+	char pathname[NANVIX_PROC_NAME_MAX];
+	int tid;
+	int nodeid;
+
+	TEST_ASSERT(kernel_setup() == 0);
+
+	pthread_barrier_wait(&barrier);
+
+	tid = ((int *)args)[0];
+
+	nodeid = hal_get_node_id();
+
+	/* Link and unlink name. */
+	sprintf(pathname, "cool-name%d", tid);
+	pthread_mutex_lock(&lock);
+	TEST_ASSERT(name_link(nodeid, pathname) == 0);
+	pthread_mutex_unlock(&lock);
+
+	pthread_barrier_wait(&barrier);
+
+	pthread_mutex_lock(&lock);
+	TEST_ASSERT(name_unlink(pathname) == 0);
+	pthread_mutex_unlock(&lock);
+
+	TEST_ASSERT(kernel_cleanup() == 0);
+	return(NULL);
+}
 
 /**
  * @brief API Test: Name Link Unlink
  */
 static void test_name_link_unlink(void)
 {
-	int nodeid;
-	char pathname[NANVIX_PROC_NAME_MAX];
+	int dmas[ncores];
+	pthread_t tids[ncores];
 
 	printf("[test][api] Name Link Unlink\n");
 
-	nodeid = hal_get_cluster_id();
+	/* Spawn driver threads. */
+	for (int i = 1; i < ncores; i++)
+	{
+		dmas[i] = i;
+		assert((pthread_create(&tids[i],
+			NULL,
+			test_name_thread_link_unlink,
+			&dmas[i])) == 0
+		);
+	}
 
-	/* Link and unlink name. */
-	sprintf(pathname, "cool-name");
-	TEST_ASSERT(name_link(nodeid, pathname) == 0);
-	TEST_ASSERT(name_unlink(pathname) == 0);
+	/* Wait for driver threads. */
+	for (int i = 1; i < ncores; i++)
+		pthread_join(tids[i], NULL);
 }
 
 /*===================================================================*
@@ -79,22 +130,66 @@ static void test_name_link_unlink(void)
  *===================================================================*/
 
 /**
- * @brief API Test: master name lookup.
+ * @brief API Test: Master name lookup.
+ */
+static void *test_name_thread_lookup(void *args)
+{
+	char pathname[NANVIX_PROC_NAME_MAX];
+	int tid;
+	int nodeid;
+
+	TEST_ASSERT(kernel_setup() == 0);
+
+	pthread_barrier_wait(&barrier);
+
+	tid = ((int *)args)[0];
+
+	nodeid = hal_get_node_id();
+
+	/* Link and unlink name. */
+	sprintf(pathname, "cool-name%d", tid);
+	pthread_mutex_lock(&lock);
+	TEST_ASSERT(name_link(nodeid, pathname) == 0);
+	pthread_mutex_unlock(&lock);
+
+	pthread_barrier_wait(&barrier);
+
+	pthread_mutex_lock(&lock);
+	TEST_ASSERT(name_lookup(pathname) == nodeid);
+	pthread_mutex_unlock(&lock);
+
+	pthread_mutex_lock(&lock);
+	TEST_ASSERT(name_unlink(pathname) == 0);
+	pthread_mutex_unlock(&lock);
+
+	TEST_ASSERT(kernel_cleanup() == 0);
+	return(NULL);
+}
+
+/**
+ * @brief API Test: Master name lookup.
  */
 static void test_name_lookup(void)
 {
-	int nodeid;
-	char pathname[NANVIX_PROC_NAME_MAX];
+	int dmas[ncores];
+	pthread_t tids[ncores];
 
 	printf("[test][api] Name Lookup\n");
 
-	nodeid = hal_get_cluster_id();
+	/* Spawn driver threads. */
+	for (int i = 1; i < ncores; i++)
+	{
+		dmas[i] = i;
+		assert((pthread_create(&tids[i],
+			NULL,
+			test_name_thread_lookup,
+			&dmas[i])) == 0
+		);
+	}
 
-	/* Lookup name. */
-	sprintf(pathname, "cool-name");
-	TEST_ASSERT(name_link(nodeid, pathname) == 0);
-	TEST_ASSERT(name_lookup(pathname) == nodeid);
-	TEST_ASSERT(name_unlink(pathname) == 0);
+	/* Wait for driver threads. */
+	for (int i = 1; i < ncores; i++)
+		pthread_join(tids[i], NULL);
 }
 
 /*===================================================================*
@@ -111,7 +206,7 @@ static void test_name_duplicate(void)
 
 	printf("[test][fault injection] Duplicate Name\n");
 
-	nodeid = hal_get_cluster_id();
+	nodeid = hal_get_node_id();
 
 	/* Link name. */
 	sprintf(pathname, "cool-name");
@@ -134,7 +229,7 @@ static void test_name_invalid_link(void)
 
 	printf("[test][fault injection] Invalid Link\n");
 
-	nodeid = hal_get_cluster_id();
+	nodeid = hal_get_node_id();
 
 	memset(pathname, 1, NANVIX_PROC_NAME_MAX + 1);
 
@@ -257,21 +352,28 @@ static void test_name_slave(int nclusters)
  */
 int main(int argc, char **argv)
 {
-	int global_barrier;
+	int syncid;
+	int nodes[2];
 	int nclusters;
 
-	hal_setup();
+	TEST_ASSERT(kernel_setup() == 0);
 
 	ncores = hal_get_num_cores();
+
+	pthread_mutex_init(&lock, NULL);
+	pthread_barrier_init(&barrier, NULL, ncores - 1);
 
 	TEST_ASSERT(argc == 2);
 
 	/* Retrieve kernel parameters. */
 	nclusters = atoi(argv[1]);
 
-	/* Wait name server. */
-	global_barrier = barrier_open(0);
-	barrier_wait(global_barrier);
+	/* Wait spawner server. */
+	nodes[0] = 128;
+	nodes[1] = hal_get_node_id();
+
+	TEST_ASSERT((syncid = hal_sync_create(nodes, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
+	TEST_ASSERT(hal_sync_wait(syncid) == 0);
 
 	/* API tests. */
 	test_name_link_unlink();
@@ -287,8 +389,8 @@ int main(int argc, char **argv)
 	test_name_slave(nclusters);
 
 	/* House keeping. */
-	barrier_close(global_barrier);
+	TEST_ASSERT(hal_sync_unlink(syncid) == 0);
 
-	hal_cleanup();
+	TEST_ASSERT(kernel_cleanup() == 0);
 	return (EXIT_SUCCESS);
 }
