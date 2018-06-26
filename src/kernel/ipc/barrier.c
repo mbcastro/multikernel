@@ -20,14 +20,16 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <nanvix/klib.h>
 #include <assert.h>
 #include <inttypes.h>
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
 
-#include "../arch/mppa256/mppa.h"
+#include <nanvix/klib.h>
+#include <nanvix/hal.h>
+
+#include "../arch/mppa256/core.h"
 
 /**
  * @brief Number of barriers.

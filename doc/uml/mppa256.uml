@@ -1,0 +1,122 @@
+@startuml
+
+namespace HAL {
+	interface HAL.CoreInterface {
+		+ const int HAL_NR_CORES_USER
+		+ const int HAL_NR_CORES_RMAN
+		+ const int HAL_NR_CORES_SYSTEM
+		+ const int HAL_NR_CLUSTERS
+		+ int hal_get_cluster_id(void)
+		+ int hal_get_core_id(void)
+		+ int hal_get_core_type(void)
+		+ int hal_get_num_cores(void)
+		+ int hal_get_core_freq(void)
+	}
+
+	interface HAL.MailboxInterface {
+		+ const int HAL_NR_MAILBOX
+		+ const int HAL_MAILBOX_MSG_SIZE
+		+ int hal_mailbox_create(int)
+		+ int hal_mailbox_open(int)
+		+ int hal_mailbox_unlink(int)
+		+ int hal_mailbox_close(int)
+		+ size_t hal_mailbox_write(int, const void *, size_t)
+		+ size_t hal_mailbox_read(int, void *, size_t)
+	}
+
+	interface HAL.SyncInterface {
+		+ const int HAL_NR_SYNC
+		+ const int HAL_SYNC_ONE_TO_ALL
+		+ const int HAL_SYNC_ALL_TO_ONE
+		+ int hal_sync_create(const int *, int, int)
+		+ int hal_sync_open(const int *, int, int)
+		+ int hal_sync_wait(int)
+		+ int hal_sync_signal(int)
+		+ int hal_sync_close(int)
+		+ int hal_sync_unlink(int)
+	}
+
+	interface HAL.PortalInterface {
+		class portal_t
+		+ int hal_portal_allow(portal_t *, int)
+		+ int hal_portal_create(portal_t *, int)
+		+ int hal_portal_open(portal_t *, int)
+		+ int hal_portal_read(portal_t *, void *, size_t)
+		+ int hal_portal_write(portal_t *, const void *, size_t)
+		+ int hal_portal_close(portal_t *)
+		+ int hal_portal_unlink(portal_t *)
+	}
+
+	interface HAL.NoCInterface {
+		+ const int HAL_NR_NOC_NODES
+		+ const int hal_noc_nodes[HAL_NR_NOC_NODES]
+		+ int hal_get_node_id(void)
+	}
+
+	interface HAL.SetupInterface {
+		+ void hal_setup(void)
+		+ void hal_cleanup(void)
+	}
+}
+
+namespace mppa256 {
+	class Core {
+		~ const int NR_CCLUSTER
+		~ const int NR_IOCLUSTER
+		~ const int NR_IOCLUSTER_CORES
+		~ const int CCLUSTER0
+		~ const int CCLUSTER1
+		~ const int CCLUSTER2
+		~ const int CCLUSTER3
+		~ const int CCLUSTER4
+		~ const int CCLUSTER5
+		~ const int CCLUSTER6
+		~ const int CCLUSTER7
+		~ const int CCLUSTER8
+		~ const int CCLUSTER9
+		~ const int CCLUSTER10
+		~ const int CCLUSTER11
+		~ const int CCLUSTER12
+		~ const int CCLUSTER13
+		~ const int CCLUSTER14
+		~ const int CCLUSTER15
+		~ const int IOCLUSTER0
+		~ const int IOCLUSTER1
+		~ pthread_t __threads[]
+		~ pthread_mutex_t core_lock
+		~ int k1_is_ccluster(int)
+		~ int k1_is_iocluster(int)
+	}
+
+	class NoC {
+		~ const int NR_CCLUSTER_DMA
+		~ const int NR_IOCLUSTER_DMA
+		~ int noctag_mailbox(int)
+		~ int noctag_sync(int)
+		~ int noctag_portal(int)
+		~ int noc_get_node_num(int)
+		~ void noc_get_remotes(char *, int)
+		~ void noc_get_names(char *, const int *, int)
+		~ int noc_get_dma(int)
+		~ int noc_is_ionode(int)
+		~ int noc_is_ionode0(int)
+		~ int noc_is_ionode1(int)
+		~ int noc_is_cnode(int)
+	}
+
+	Sync    ..> NoC  : <<use>>
+	Mailbox ..> NoC  : <<use>>
+	Portal  ..> NoC  : <<use>>
+	NoC     ..> Core : <<use>>
+	Setup   ..> Core : <<use>>
+}
+
+HAL.SetupInterface    <|.. mppa256.Setup   : <<implements>>
+HAL.NoCInterface      <|.. mppa256.NoC     : <<implements>>
+HAL.CoreInterface     <|.. mppa256.Core    : <<implements>>
+HAL.MailboxInterface  <|.. mppa256.Mailbox : <<implements>>
+HAL.SyncInterface     <|.. mppa256.Sync    : <<implements>>
+HAL.PortalInterface   <|.. mppa256.Portal  : <<implements>>
+
+@enduml
+

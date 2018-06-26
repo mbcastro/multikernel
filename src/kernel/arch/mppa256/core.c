@@ -24,7 +24,7 @@
 
 #include <nanvix/hal.h>
 
-#include "mppa.h" 
+#include "core.h" 
 
 /**
  * @brief Threads table.
@@ -102,7 +102,6 @@ int hal_get_core_id(void)
 		pthread_t tid;
 
 		tid = pthread_self();
-
 
 		pthread_mutex_lock(&core_lock);
 		for (int i = 0; i < NR_IOCLUSTER_CORES; i++)

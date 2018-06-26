@@ -26,7 +26,7 @@
 
 #include <nanvix/hal.h>
 
-#include "mppa.h"
+#include "core.h"
 
 /**
  * @brief Number of running threads.

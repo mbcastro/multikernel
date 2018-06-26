@@ -20,47 +20,48 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <nanvix/arch/mppa.h>
+#ifndef _MPPA256_NOC_H_
+#define _MPPA256_NOC_H_
 
-#include "mppa.h" 
+	#ifndef _KALRAY_MPPA256
+		#error "bad target"
+	#endif
 
-/**
- * @brief Timer error.
- */
-static uint64_t timer_error = 0;
+	#include <inttypes.h>
+	#include <HAL/hal/core/timer.h>
+	#include <HAL/hal/core/diagnostic.h>
+#ifdef _KALRAY_MPPA_256_HIGH_LEVEL
+	#include <mppaipc.h>
+	#include <pthread.h>
+#endif
+#ifdef _KALRAY_MPPA_256_LOW_LEVEL
+	#include <mppa_power.h>
+	#include <mppa_rpc.h>
+	#include <mppa_async.h>
+	#include <utask.h>
+#endif
 
-/**
- * @brief Gets the current timer value.
- *
- * @returns The current timer value;
- */
-uint64_t hal_timer_get(void)
-{
-	return (__k1_read_dsu_timestamp());
-}
+	/**
+	 * @brief Number DMAs per compute cluster.
+	 */
+	#define NR_CCLUSTER_DMA 1
 
-/**
- * @brief Computes the difference between two timer values.
- *
- * @param t1 Start time.
- * @param t2 End time.
- *
- * @returns The difference between the two timers (t2 - t1).
- */
-uint64_t hal_timer_diff(uint64_t t1, uint64_t t2)
-{
-	return (((t2 - t1) <= timer_error) ? timer_error : t2 - t1 - timer_error);
-}
+	/**
+	 * @brief Number of DMAs per compute cluster.
+	 */
+	#define NR_IOCLUSTER_DMA 4
 
-/**
- * @brief Calibrates the timer.
- */
-void hal_timer_init(void)
-{
-	uint64_t start, end;
+	/* Forward definitions. */
+	extern int noctag_mailbox(int);
+	extern int noctag_sync(int);
+	extern int noctag_portal(int);
+	extern int noc_get_node_num(int);
+	extern void noc_get_remotes(char *, int);
+	extern void noc_get_names(char *, const int *, int);
+	extern int noc_get_dma(int);
+	extern int noc_is_ionode(int);
+	extern int noc_is_ionode0(int);
+	extern int noc_is_ionode1(int);
+	extern int noc_is_cnode(int);
 
-	start = hal_timer_get();
-	end = hal_timer_get();
-
-	timer_error = (end - start);
-}
+#endif /* _MPPA256_NOC_H_ */

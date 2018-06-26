@@ -20,44 +20,31 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-export BUILD_BENCHMARKS=true
-export BUILD_TESTS=true
-export BUILD_KERNEL=true
-ifeq ($(ARCH),k1bdp)
-	export BUILD_SERVERS=false
-else
-	export BUILD_SERVERS=true
-endif
+# C Source Files
+SRC = $(wildcard *.c)
 
-# Toolchain
-export CC = $(TOOLCHAIN)/bin/k1-gcc
-export LD = $(TOOLCHAIN)/bin/k1-ld
-export AR = $(TOOLCHAIN)/bin/k1-ar
+# Object Files
+OBJ = $(SRC:.c=.o)
 
-# Toochain Location
-export TOOLCHAIN=/usr/local/k1tools
+# Binary Files
+export ELFBIN = $(BINDIR)/hal-mailbox-slave
 
-# Compiler Options
-export CFLAGS += -D_KALRAY_MPPA256 -D_KALRAY_MPPA_256_HIGH_LEVEL
-ifeq ($(ARCH),k1bdp)
-	export CFLAGS += -march=k1b -mos=nodeos -mcluster=node 
-else
-	export CFLAGS += -march=k1b -mos=rtems -mcluster=ioddr 
-endif
+#===============================================================================
 
-# Linker Options
-export LDFLAGS += -Wl,--defsym=_LIBNOC_DISABLE_FIFO_FULL_CHECK=0 -O=essai
-ifeq ($(ARCH),k1bdp)
-	export LDFLAGS += -march=k1b -mos=nodeos -mcluster=node 
-else
-	export LDFLAGS += -march=k1b -mos=rtems -mcluster=ioddr 
-endif
+# Builds the kernel.
+all: $(OBJ)
+	mkdir -p $(BINDIR)
+	$(CC) $(LDFLAGS) $(OBJ) -o $(ELFBIN) $(LIBKERNEL) $(LIBS)
 
-# Binaries & Libraries
-ifeq ($(ARCH),k1bdp)
-	export LIBS = $(TOOLCHAIN)/k1-nodeos/lib/mOS/libmppaipc.a
-	export LIBKERNEL = $(LIBDIR)/libkernel-k1bdp.a
-else
-	export LIBS = $(TOOLCHAIN)/k1-rtems/lib/libmppaipc.a
-	export LIBKERNEL = $(LIBDIR)/libkernel-k1bio.a
-endif
+# Builds object files.
+%.o: %.c
+	$(CC) $(CFLAGS) $< -c -o $@
+
+# Cleans compilation files.
+clean:
+	rm -rf $(OBJ)
+
+# Cleans everything.
+distclean: clean
+	rm -rf $(ELFBIN)
+
