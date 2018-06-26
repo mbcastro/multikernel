@@ -62,9 +62,19 @@
 #ifdef __NEED_HAL_NOC_
 
 	/**
+	 * @brief Number of NoC nodes attached to an IO device.
+	 */
+	#define HAL_NR_NOC_IONODES 8
+
+	/**
+	 * @define Number of NoC nodes not attached to an IO device.
+	 */
+	#define HAL_NR_NOC_CNODES 16
+
+	/**
 	 * @brief Number of NoC nodes.
 	 */
-	#define HAL_NR_NOC_NODES 24
+	#define HAL_NR_NOC_NODES (HAL_NR_NOC_IONODES + HAL_NR_NOC_CNODES)
 
 #endif /* __NEED_HAL_NOC_ */
 
