@@ -430,8 +430,6 @@ static void test_hal_mailbox_invalid_open(void)
  * Fault Injection Test: Bad Open                                    *
  *===================================================================*/
 
-#ifdef _TEST_MAILBOX_BAD_TEST_
-
 /**
  * @brief Fault Injection Test: Bad Open
  */
@@ -446,8 +444,6 @@ static void test_hal_mailbox_bad_open(void)
 
 	TEST_ASSERT((outbox = hal_mailbox_open(nodeid)) < 0);
 }
-
-#endif
 
 /*===================================================================*
  * Fault Injection Test: Double Open                                 *
@@ -670,9 +666,7 @@ int main(int argc, const char **argv)
 	test_hal_mailbox_bad_create();
 	test_hal_mailbox_double_create();
 	test_hal_mailbox_invalid_open();
-#ifdef _TEST_MAILBOX_BAD_TEST
 	test_hal_mailbox_bad_open();
-#endif
 	test_hal_mailbox_double_open();
 	test_hal_mailbox_double_unlink();
 	test_hal_mailbox_double_close();
