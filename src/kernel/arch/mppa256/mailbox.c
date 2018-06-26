@@ -53,7 +53,6 @@ int hal_mailbox_create(int remote)
 	if (remote != hal_get_node_id())
 		return (-EINVAL);
 
-
 	noc_get_remotes(remotes, remote);
 	noctag = noctag_mailbox(remote);
 
