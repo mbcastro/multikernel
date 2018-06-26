@@ -21,7 +21,6 @@
  */
 
 #include <errno.h>
-#include <stdio.h>
 #include <string.h>
 #include <pthread.h>
 
@@ -106,15 +105,15 @@ void name_finalize(void)
  */
 static int _name_lookup(char *name)
 {
-	/* Sanity check. */
-	if ((name == NULL) ||(strlen(name) >= (NANVIX_PROC_NAME_MAX - 1)) || (strcmp(name, "") == 0))
+	/* Invalid name. */
+	if (name == NULL)
 		return (-EINVAL);
 
-	#ifdef DEBUG
-		printf("name_lookup(%s) called from node %d...\n", name,
-											 hal_get_node_id());
-	#endif
+	/* Bad name. */
+	if ((strlen(name) >= (NANVIX_PROC_NAME_MAX - 1)) || (!strcmp(name, "")))
+		return (-EINVAL);
 
+	/* Initilize name client. */
 	if (name_init() != 0)
 		return (-EAGAIN);
 
@@ -124,16 +123,10 @@ static int _name_lookup(char *name)
 	msg.nodeid = -1;
 	strcpy(msg.name, name);
 
-	/* Send name request. */
-	#ifdef DEBUG
-		printf("Sending request for name: %s...\n", msg.name);
-	#endif
-
-	if (hal_mailbox_write(server, &msg, HAL_MAILBOX_MSG_SIZE)
-									 != HAL_MAILBOX_MSG_SIZE)
+	if (hal_mailbox_write(server, &msg, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE)
 		return (-EAGAIN);
 
-	while(msg.nodeid == -1)
+	while (msg.nodeid == -1)
 	{
 		if (hal_mailbox_read(get_inbox(), &msg, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE)
 			return (-EAGAIN);
@@ -171,12 +164,17 @@ int name_lookup(char *name)
  */
 static int _name_link(int nodeid, const char *name)
 {
-	/* Sanity check. */
-	if ((name == NULL) || (strlen(name) >= (NANVIX_PROC_NAME_MAX - 1)) || (nodeid < 0) || (strcmp(name, "") == 0))
+	/* Invalid NoC node ID. */
+	if (nodeid < 0)
 		return (-EINVAL);
 
-	if (name_init() != 0)
-		return (-EAGAIN);
+	/* Invalid name. */
+	if (name == NULL)
+		return (-EINVAL);
+
+	/* Bad name. */
+	if ((strlen(name) >= (NANVIX_PROC_NAME_MAX - 1)) || (!strcmp(name, "")))
+		return (-EINVAL);
 
 	/* Build operation header. */
 	msg.source = hal_get_node_id();
@@ -233,14 +231,13 @@ int name_link(int nodeid, const char *name)
  */
 static int _name_unlink(const char *name)
 {
-	/* Sanity check. */
-	if ((name == NULL) ||(strlen(name) >= (NANVIX_PROC_NAME_MAX - 1)) || (strcmp(name, "") == 0))
+	/* Invalid name. */
+	if (name == NULL)
 		return (-EINVAL);
 
-	#ifdef DEBUG
-		printf("name_unlink(%s): called from node %d...\n",
-								  name, hal_get_node_id());
-	#endif
+	/* Bad name. */
+	if ((strlen(name) >= (NANVIX_PROC_NAME_MAX - 1)) || (!strcmp(name, "")))
+		return (-EINVAL);
 
 	if (name_init() != 0)
 		return (-EAGAIN);
@@ -250,11 +247,6 @@ static int _name_unlink(const char *name)
 	msg.op = NAME_UNLINK;
 	msg.nodeid = -1;
 	strcpy(msg.name, name);
-
-	/* Send name request. */
-	#ifdef DEBUG
-		printf("Sending remove request for name: %s...\n", msg.name);
-	#endif
 
 	if (hal_mailbox_write(server, &msg, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE)
 		return (-EAGAIN);
