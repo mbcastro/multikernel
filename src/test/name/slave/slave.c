@@ -25,7 +25,6 @@
 #include <nanvix/pm.h>
 #include <nanvix/name.h>
 #include <nanvix/hal.h>
-#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,12 +35,6 @@
  * @brief Asserts a logic expression.
  */
 #define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
-
-#define MSG_TEST 0
-
-#if MSG_TEST
-static int msg;
-#endif
 
 /*===================================================================*
  * API Test: Name Unlink                                             *
@@ -55,7 +48,7 @@ static void test_name_unlink(void)
 	int nodeid;
 	char pathname[NANVIX_PROC_NAME_MAX];
 
-	nodeid = hal_get_cluster_id();
+	nodeid = hal_get_node_id();
 	sprintf(pathname, "/cpu%d", nodeid);
 
 	/* Unregister this cluster. */
@@ -74,7 +67,7 @@ static void test_name_link(void)
 	int nodeid;
 	char pathname[NANVIX_PROC_NAME_MAX];
 
-	nodeid = hal_get_cluster_id();
+	nodeid = hal_get_node_id();
 	sprintf(pathname, "/cpu%d", nodeid);
 
 	/* Register this cluster. */
@@ -93,7 +86,7 @@ static void test_name_lookup(void)
 	int nodeid;
 	char pathname[NANVIX_PROC_NAME_MAX];
 
-	nodeid = hal_get_cluster_id();
+	nodeid = hal_get_node_id();
 
 	sprintf(pathname, "/cpu%d", nodeid);
 
@@ -112,7 +105,7 @@ static void test_name_duplicate(void)
 	int nodeid;
 	char pathname[NANVIX_PROC_NAME_MAX];
 
-	nodeid = hal_get_cluster_id();
+	nodeid = hal_get_node_id();
 
 	sprintf(pathname, "/cpu%d", nodeid);
 
@@ -135,7 +128,7 @@ static void test_name_invalid_link(void)
 	int nodeid;
 	char pathname[NANVIX_PROC_NAME_MAX + 1];
 
-	nodeid = hal_get_cluster_id();
+	nodeid = hal_get_node_id();
 
 	memset(pathname, 1, NANVIX_PROC_NAME_MAX + 1);
 
@@ -220,28 +213,11 @@ int main(int argc, char **argv)
 {
 	int nclusters;
 
-#if MSG_TEST
-	char pathname[NANVIX_PROC_NAME_MAX];
-	char out_pathname[NANVIX_PROC_NAME_MAX];
-	int nodeid;
-	int barrier;
-	int inbox;
-	int outbox;
-#endif
-
 	/* Retrieve parameters. */
-	assert(argc == 2);
-	assert((nclusters = atoi(argv[1])) > 0);
+	TEST_ASSERT(argc == 2);
+	TEST_ASSERT((nclusters = atoi(argv[1])) > 0);
 
-	printf("before setup\n");
 	TEST_ASSERT(kernel_setup() == 0);
-	printf("after setup\n");
-
-#if MSG_TEST
-	nodeid = hal_get_cluster_id();
-	sprintf(pathname, "/cpu%d", nodeid);
-	barrier = barrier_open(nclusters);
-#endif
 
 	test_name_link();
 	test_name_lookup();
@@ -252,46 +228,6 @@ int main(int argc, char **argv)
 	test_name_bad_unlink();
 	test_name_bad_lookup();
 	test_name_invalid_lookup();
-
-#if MSG_TEST
-	/* Register this cluster. */
-	assert(name_link(nodeid, pathname) == 0);
-
-	/* Wait for others clusters. */
-	barrier_wait(barrier);
-
-	/* Message exchange test using name resolution. */
-
-	assert(nclusters > 1);
-
-	inbox = mailbox_create(pathname);
-	sprintf(out_pathname, "/cpu%d", (nodeid + 1)%nclusters);
-
-	outbox = mailbox_open(out_pathname);
-
-	msg = nodeid;
-	assert(mailbox_write(outbox, &msg) == 0);
-
-	msg = -1;
-	while(msg == -1){
-		assert(mailbox_read(inbox, &msg) == 0);
-	}
-
-	if (nodeid - 1 < 0)
-	{
-		assert(msg == (nodeid + nclusters - 1));
-	}
-	else
-	{
-		assert(msg == (nodeid - 1)%nclusters);
-
-	}
-
-	/* House keeping. */
-	assert(mailbox_close(outbox) == 0);
-	assert(mailbox_close(inbox) == 0);
-	barrier_close(barrier);
-#endif
 
 	TEST_ASSERT(kernel_cleanup() == 0);
 	return (EXIT_SUCCESS);

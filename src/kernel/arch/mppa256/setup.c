@@ -53,9 +53,9 @@ int kernel_setup(void)
 
 	pthread_mutex_init(&core_lock, NULL);
 
-	pthread_mutex_lock(&core_lock);
-
 	hal_setup();
+
+	pthread_mutex_lock(&core_lock);
 
 	if (!initialized)
 	{
@@ -68,7 +68,10 @@ int kernel_setup(void)
 	index = (hal_get_node_id() - __k1_get_cluster_id());
 
 	if ((index < 0) || (index >= NR_IOCLUSTER_CORES))
-		printf("BAD INDEX");
+	{
+		pthread_mutex_unlock(&core_lock);
+		return (-EAGAIN);
+	}
 
 	/* Nothing to do. */
 	if (inbox[index] != -1)
@@ -112,9 +115,9 @@ int kernel_cleanup(void)
 		inbox[index] = -1;
 	}
 
-	hal_cleanup();
-
 	pthread_mutex_unlock(&core_lock);
+
+	hal_cleanup();
 
 	return 0;
 }

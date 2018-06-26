@@ -351,8 +351,6 @@ int main(int argc, char **argv)
 	int nodes[2];
 	int nclusters;
 
-	((void) argv);
-
 	TEST_ASSERT(kernel_setup() == 0);
 
 	ncores = hal_get_num_cores();

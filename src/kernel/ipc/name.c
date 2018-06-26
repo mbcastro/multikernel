@@ -66,6 +66,8 @@ static int name_init(void)
 	if (initialized)
 		return (0);
 
+	pthread_mutex_init(&lock, NULL);
+
 	pthread_mutex_lock(&lock);
 	server = hal_mailbox_open(hal_noc_nodes[NAME_SERVER_NODE]);
 	pthread_mutex_unlock(&lock);
@@ -91,6 +93,8 @@ void name_finalize(void)
 	/* Nothing to do. */
 	if (!initialized)
 		return;
+
+	pthread_mutex_init(&lock, NULL);
 
 	pthread_mutex_lock(&lock);
 	hal_mailbox_close(server);
@@ -127,6 +131,10 @@ int name_lookup(char *name)
 	if (name_init() != 0)
 		return (-EAGAIN);
 
+	pthread_mutex_init(&lock, NULL);
+
+	pthread_mutex_lock(&lock);
+
 	/* Build operation header. */
 	msg.source = hal_get_node_id();
 	msg.op = NAME_LOOKUP;
@@ -138,20 +146,19 @@ int name_lookup(char *name)
 		printf("Sending request for name: %s...\n", msg.name);
 	#endif
 
-	pthread_mutex_lock(&lock);
+
 	if (hal_mailbox_write(server, &msg, HAL_MAILBOX_MSG_SIZE)
 									 != HAL_MAILBOX_MSG_SIZE)
 		return (-EAGAIN);
-	pthread_mutex_unlock(&lock);
 
 	while(msg.nodeid == -1)
 	{
-		pthread_mutex_lock(&lock);
 		if (hal_mailbox_read(get_inbox(), &msg, HAL_MAILBOX_MSG_SIZE)
 											 != HAL_MAILBOX_MSG_SIZE)
 			return (-EAGAIN);
-		pthread_mutex_unlock(&lock);
 	}
+
+	pthread_mutex_unlock(&lock);
 
 	return (msg.nodeid);
 }
@@ -179,6 +186,10 @@ int name_link(int nodeid, const char *name)
 	if (name_init() != 0)
 		return (-EAGAIN);
 
+	pthread_mutex_init(&lock, NULL);
+
+	pthread_mutex_lock(&lock);
+
 	/* Build operation header. */
 	msg.source = hal_get_node_id();
 	msg.op = NAME_LINK;
@@ -186,21 +197,19 @@ int name_link(int nodeid, const char *name)
 	strcpy(msg.name, name);
 
 	/* Send link request. */
-	pthread_mutex_lock(&lock);
 	if (hal_mailbox_write(server, &msg, HAL_MAILBOX_MSG_SIZE)
 									 != HAL_MAILBOX_MSG_SIZE)
 		return (-EAGAIN);
-	pthread_mutex_unlock(&lock);
 
 	/* Wait server response */
 	while (msg.op == NAME_LINK)
 	{
-		pthread_mutex_lock(&lock);
 		if (hal_mailbox_read(get_inbox(), &msg, HAL_MAILBOX_MSG_SIZE) !=
 												   HAL_MAILBOX_MSG_SIZE)
 			return (-EAGAIN);
-		pthread_mutex_unlock(&lock);
 	}
+
+	pthread_mutex_unlock(&lock);
 
 	if ((msg.op != NAME_SUCCESS) && (msg.op != NAME_FAIL))
 		return (-EAGAIN);
@@ -225,6 +234,8 @@ int name_link(int nodeid, const char *name)
  */
 int name_unlink(const char *name)
 {
+	pthread_mutex_init(&lock, NULL);
+
 	/* Sanity check. */
 	if ((name == NULL) ||(strlen(name) >= (NANVIX_PROC_NAME_MAX - 1))
 										  || (strcmp(name, "") == 0))
@@ -238,6 +249,8 @@ int name_unlink(const char *name)
 	if (name_init() != 0)
 		return (-EAGAIN);
 
+	pthread_mutex_lock(&lock);
+
 	/* Build operation header. */
 	msg.source = hal_get_node_id();
 	msg.op = NAME_UNLINK;
@@ -249,21 +262,19 @@ int name_unlink(const char *name)
 		printf("Sending remove request for name: %s...\n", msg.name);
 	#endif
 
-	pthread_mutex_lock(&lock);
 	if (hal_mailbox_write(server, &msg, HAL_MAILBOX_MSG_SIZE)
 									 != HAL_MAILBOX_MSG_SIZE)
 		return (-EAGAIN);
-	pthread_mutex_unlock(&lock);
 
 	/* Wait server response */
 	while(msg.op == NAME_UNLINK)
 	{
-		pthread_mutex_lock(&lock);
 		if (hal_mailbox_read(get_inbox(), &msg, HAL_MAILBOX_MSG_SIZE)
 											 != HAL_MAILBOX_MSG_SIZE)
 			return (-EAGAIN);
-		pthread_mutex_unlock(&lock);
 	}
+
+	pthread_mutex_unlock(&lock);
 
 	if ((msg.op != NAME_SUCCESS) && (msg.op != NAME_FAIL))
 		return (-EAGAIN);
