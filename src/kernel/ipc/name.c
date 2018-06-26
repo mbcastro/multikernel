@@ -173,6 +173,10 @@ static int _name_link(int nodeid, const char *name)
 	if ((strlen(name) >= (NANVIX_PROC_NAME_MAX - 1)) || (!strcmp(name, "")))
 		return (-EINVAL);
 
+	/* Initilize name client. */
+	if (name_init() != 0)
+		return (-EAGAIN);
+
 	/* Build operation header. */
 	msg.source = hal_get_node_id();
 	msg.op = NAME_LINK;
@@ -233,6 +237,7 @@ static int _name_unlink(const char *name)
 	if ((strlen(name) >= (NANVIX_PROC_NAME_MAX - 1)) || (!strcmp(name, "")))
 		return (-EINVAL);
 
+	/* Initilize name client. */
 	if (name_init() != 0)
 		return (-EAGAIN);
 
