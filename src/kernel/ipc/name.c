@@ -126,11 +126,8 @@ static int _name_lookup(char *name)
 	if (hal_mailbox_write(server, &msg, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE)
 		return (-EAGAIN);
 
-	while (msg.nodeid == -1)
-	{
-		if (hal_mailbox_read(get_inbox(), &msg, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE)
-			return (-EAGAIN);
-	}
+	if (hal_mailbox_read(get_inbox(), &msg, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE)
+		return (-EAGAIN);
 
 	return (msg.nodeid);
 }
@@ -187,11 +184,8 @@ static int _name_link(int nodeid, const char *name)
 		return (-EAGAIN);
 
 	/* Wait server response */
-	while (msg.op == NAME_LINK)
-	{
-		if (hal_mailbox_read(get_inbox(), &msg, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE)
-			return (-EAGAIN);
-	}
+	if (hal_mailbox_read(get_inbox(), &msg, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE)
+		return (-EAGAIN);
 
 	if ((msg.op != NAME_SUCCESS) && (msg.op != NAME_FAIL))
 		return (-EAGAIN);
@@ -252,11 +246,8 @@ static int _name_unlink(const char *name)
 		return (-EAGAIN);
 
 	/* Wait server response */
-	while(msg.op == NAME_UNLINK)
-	{
-		if (hal_mailbox_read(get_inbox(), &msg, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE)
-			return (-EAGAIN);
-	}
+	if (hal_mailbox_read(get_inbox(), &msg, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE)
+		return (-EAGAIN);
 
 	if ((msg.op != NAME_SUCCESS) && (msg.op != NAME_FAIL))
 		return (-EAGAIN);
