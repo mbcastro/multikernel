@@ -38,27 +38,13 @@ static pthread_mutex_t kernel_lock;
 /**
  * @brief Input HAL mailbox.
  */
-static int inbox[HAL_NR_NOC_IONODES];
+static int inboxes[HAL_NR_NOC_IONODES];
 
 /**
  *
- * @brief Is mailboxes initialized ?
+ * @brief Is the kernel initialized ?
  */
-static int initialized = 0;
-
-/**
- * @brief Initializes inboxes.
- */
-static void inbox_init(void)
-{
-	if (!initialized)
-	{
-		for (int i = 0; i < HAL_NR_NOC_IONODES; i++)
-			inbox[i] = -1;
-
-		initialized = 1;
-	}
-}
+static int initialized[HAL_NR_NOC_IONODES] = { 0, };
 
 /**
  * @brief Initializes kernel modules.
@@ -66,40 +52,39 @@ static void inbox_init(void)
 int kernel_setup(void)
 {
 	int index;
+	int nodeid;
 
 	hal_setup();
 
-	pthread_mutex_init(&kernel_lock, NULL);
+	nodeid = hal_get_node_id();	
+	index = nodeid - hal_get_cluster_id();
+
+	/*
+	 * Kernel was already initialized.
+	 * There is nothing else to do.
+	 */
+	if (initialized[index])
+		return (0);
+
+	/* Master thread. */
+	if (index == 0)
+		pthread_mutex_init(&kernel_lock, NULL);
 
 	pthread_mutex_lock(&kernel_lock);
 
-	inbox_init();
-
-	index = (hal_get_node_id() - hal_get_cluster_id());
-
-	/* Bad index. */
-	if ((index < 0) || (index >= HAL_NR_NOC_IONODES))
-	{
-		pthread_mutex_unlock(&kernel_lock);
-		return (-EAGAIN);
-	}
-
-	/* Nothing to do. */
-	if (inbox[index] != -1)
-	{
-		pthread_mutex_unlock(&kernel_lock);
-		return 0;
-	}
-
-	/* Create inbox. */
-	inbox[index] = hal_mailbox_create(hal_get_node_id());
+		/* Create underlying input mailbox. */
+		if ((inboxes[index] = hal_mailbox_create(nodeid)) < 0)
+			goto error0;
 
 	pthread_mutex_unlock(&kernel_lock);
 
-	if(inbox[index] < 0)
-		return (-EAGAIN);
+	initialized[index] = 1;
 
 	return (0);
+
+error0:
+	pthread_mutex_unlock(&kernel_lock);
+	return (-EAGAIN);
 }
 
 /**
@@ -109,26 +94,34 @@ int kernel_cleanup(void)
 {
 	int index;
 
-	pthread_mutex_lock(&kernel_lock);
-
 	index = (hal_get_node_id() - hal_get_cluster_id());
 
-	if (inbox[index] != -1)
-	{
-		if (hal_mailbox_unlink(inbox[index]) != 0)
-		{
-			pthread_mutex_unlock(&kernel_lock);
-			return (-EAGAIN);
-		}
+	/* Kernel was not initialized. */
+	if (!initialized[index])
+		goto error0;
 
-		inbox[index] = -1;
-	}
+	pthread_mutex_lock(&kernel_lock);
+
+		/* Destroy underlying input mailbox. */
+		if (hal_mailbox_unlink(inboxes[index]) != 0)
+			goto error1;
 
 	pthread_mutex_unlock(&kernel_lock);
+
+	initialized[index] = 0;
+
+	/* Master thread. */
+	if (index == 0)
+		pthread_mutex_destroy(&kernel_lock);
 
 	hal_cleanup();
 
 	return (0);
+
+error1:
+	pthread_mutex_unlock(&kernel_lock);
+error0:
+	return (-EAGAIN);
 }
 
 /**
@@ -138,12 +131,12 @@ int get_inbox(void)
 {
 	int index;
 
-	pthread_mutex_lock(&kernel_lock);
+	index = hal_get_node_id() - hal_get_cluster_id();
 
-	index = (hal_get_node_id() - hal_get_cluster_id());
+	/* Kernel was not initialized. */
+	if (!initialized[index])
+		return (-EINVAL);
 
-	pthread_mutex_unlock(&kernel_lock);
-
-	return (inbox[index]);
+	return (inboxes[index]);
 }
 
