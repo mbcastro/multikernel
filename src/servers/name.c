@@ -223,8 +223,7 @@ void *name_server(void *args)
 		struct name_message msg;
 
 		pthread_mutex_lock(&lock);
-		assert(hal_mailbox_read(inbox, &msg, HAL_MAILBOX_MSG_SIZE)
-										 == HAL_MAILBOX_MSG_SIZE);
+		assert(hal_mailbox_read(inbox, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
 		pthread_mutex_unlock(&lock);
 
 		/* Handle name requests. */
@@ -246,8 +245,7 @@ void *name_server(void *args)
 				assert(source >= 0);
 
 				pthread_mutex_lock(&lock);
-				assert(hal_mailbox_write(source, &msg, HAL_MAILBOX_MSG_SIZE)
-												   == HAL_MAILBOX_MSG_SIZE);
+				assert(hal_mailbox_write(source, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
 				pthread_mutex_unlock(&lock);
 
 				pthread_mutex_lock(&lock);
@@ -279,8 +277,7 @@ void *name_server(void *args)
 				assert(source >= 0);
 
 				pthread_mutex_lock(&lock);
-				assert(hal_mailbox_write(source, &msg, HAL_MAILBOX_MSG_SIZE)
-												   == HAL_MAILBOX_MSG_SIZE);
+				assert(hal_mailbox_write(source, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
 				pthread_mutex_unlock(&lock);
 
 				pthread_mutex_lock(&lock);
@@ -311,8 +308,7 @@ void *name_server(void *args)
 				assert(source >= 0);
 
 				pthread_mutex_lock(&lock);
-				assert(hal_mailbox_write(source, &msg, HAL_MAILBOX_MSG_SIZE)
-												   == HAL_MAILBOX_MSG_SIZE);
+				assert(hal_mailbox_write(source, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
 				pthread_mutex_unlock(&lock);
 
 				pthread_mutex_lock(&lock);
