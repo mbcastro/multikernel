@@ -21,11 +21,8 @@
  */
 
 #include <pthread.h>
-#include <errno.h>
-#include <stdio.h>
 
 #define __NEED_HAL_NOC_
-#define __NEED_HAL_MAILBOX_
 #include <nanvix/hal.h>
 
 #include "core.h"
@@ -34,31 +31,6 @@
  * @brief Number of running threads.
  */
 static int nthreads = 0;
-
-/**
- * @brief Input HAL mailbox.
- */
-static int inbox[NR_IOCLUSTER_CORES];
-
-/**
- *
- * @brief Is mailboxes initialized ?
- */
-static int initialized = 0;
-
-/**
- * @brief Initializes inboxes.
- */
-static void inbox_init(void)
-{
-	if (!initialized)
-	{
-		for (int i = 0; i < NR_IOCLUSTER_CORES; i++)
-			inbox[i] = -1;
-
-		initialized = 1;
-	}
-}
 
 /**
  * @brief Initializes platform-dependent structures.
@@ -122,95 +94,4 @@ void hal_cleanup(void)
 			}
 		}
 	pthread_mutex_unlock(&core_lock);
-}
-
-/**
- * @brief Initializes kernel.
- */
-int kernel_setup(void)
-{
-	int index;
-
-	pthread_mutex_init(&core_lock, NULL);
-
-	hal_setup();
-
-	pthread_mutex_lock(&core_lock);
-
-	inbox_init();
-
-	index = (hal_get_node_id() - __k1_get_cluster_id());
-
-	/* Bad index. */
-	if ((index < 0) || (index >= NR_IOCLUSTER_CORES))
-	{
-		pthread_mutex_unlock(&core_lock);
-		return (-EAGAIN);
-	}
-
-	/* Nothing to do. */
-	if (inbox[index] != -1)
-	{
-		pthread_mutex_unlock(&core_lock);
-		return 0;
-	}
-
-	/* Create inbox. */
-	inbox[index] = hal_mailbox_create(hal_get_node_id());
-
-	pthread_mutex_unlock(&core_lock);
-
-	if(inbox[index] < 0)
-		return (-EAGAIN);
-
-	return 0;
-}
-
-/**
- * @brief Cleans kernel.
- */
-int kernel_cleanup(void)
-{
-	int index;
-
-	pthread_mutex_init(&core_lock, NULL);
-
-	pthread_mutex_lock(&core_lock);
-
-	index = (hal_get_node_id() - __k1_get_cluster_id());
-
-	if (inbox[index] != -1)
-	{
-		if (hal_mailbox_unlink(inbox[index]) != 0)
-		{
-			pthread_mutex_unlock(&core_lock);
-			return (-EAGAIN);
-		}
-
-		inbox[index] = -1;
-	}
-
-	pthread_mutex_unlock(&core_lock);
-
-	hal_cleanup();
-
-	return 0;
-}
-
-/**
- * @brief Get input mailbox.
- */
-int get_inbox(void)
-{
-	int index;
-
-	pthread_mutex_init(&core_lock, NULL);
-
-	pthread_mutex_lock(&core_lock);
-
-	index = (hal_get_node_id() - __k1_get_cluster_id());
-
-	pthread_mutex_unlock(&core_lock);
-
-	return (inbox[index]);
 }

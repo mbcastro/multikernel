@@ -22,6 +22,7 @@
 
 # C Source Files
 SRC = $(wildcard arch/$(TARGET)/*.c) \
+      $(wildcard init/*.c)           \
       $(wildcard ipc/*.c)
 
 # Object Files
