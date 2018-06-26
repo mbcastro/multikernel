@@ -102,11 +102,11 @@ function benchmark_mailbox
 			run1 "benchmark-hal-mailbox.img" "/benchmark/hal-mailbox-master" "$nlocals $nremotes row 4" \
 				| head -n -1                                                                            \
 				| cut -d" " -f 5                                                                        \
-				> hal-mailbox-1-$nremotes-row.benchmark
+				> hal-mailbox-$nlocals-$nremotes-row.benchmark
 			run1 "benchmark-hal-mailbox.img" "/benchmark/hal-mailbox-master" "$nlocals $nremotes col 4" \
 				| head -n -1                                                                            \
 				| cut -d" " -f 5                                                                        \
-				> hal-mailbox-1-$nremotes-col.benchmark
+				> hal-mailbox-$nlocals-$nremotes-col.benchmark
 		done
 	done
 
