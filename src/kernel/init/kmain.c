@@ -110,14 +110,12 @@ int kernel_cleanup(void)
 
 	initialized[index] = 0;
 
+end:
 	/* Master thread. */
 	if (index == 0)
 		pthread_mutex_destroy(&kernel_lock);
 
 	hal_cleanup();
-
-end:
-	pthread_mutex_unlock(&kernel_lock);
 	return (0);
 
 error:
