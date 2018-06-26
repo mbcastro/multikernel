@@ -26,6 +26,7 @@
 #define __NEED_HAL_NOC_
 #define __NEED_HAL_MAILBOX_
 #include <nanvix/hal.h>
+#include <nanvix/pm.h>
 
 #include "noc.h"
 
@@ -155,6 +156,9 @@ int hal_mailbox_unlink(int mbxid)
 	/* Invalid mailbox. */
 	if (mbxid < 0)
 		return (-EINVAL);
+
+	/* Unset inbox in the kernel. */
+	unset_inbox();
 
 	return (mppa_close(mbxid));
 }
