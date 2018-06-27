@@ -56,9 +56,9 @@ static int initialized[HAL_NR_NOC_IONODES] = { 0, };
  */
 struct mailbox
 {
-	char name[NANVIX_PROC_NAME_MAX];  /* Name.          */
-	int fd;                           /* NoC connector. */
-	int flags;                        /* Flags.         */
+	int fd;                          /* NoC connector. */
+	int flags;                       /* Flags.         */
+	char name[NANVIX_PROC_NAME_MAX]; /* Name.          */
 };
 
 /**
