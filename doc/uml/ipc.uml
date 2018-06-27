@@ -64,7 +64,7 @@ namespace IPC {
 	IPC.NameClient   .> IPC.NameMessage      : <<use>>
 	IPC.NameClient  ..> HAL.NoCInterface     : <<use>>
 	IPC.NameClient  ..> HAL.MailboxInterface : <<use>>
-	IPC.NameClient  ..> IPC.MailboxInterface : <<use>>
+	IPC.NameClient  ..> IPC.MailboxOperations : <<use>>
 
 	IPC.MailboxOperations   .> IPC.Mailbox           : <<use>>
 	IPC.MailboxOperations   .> HAL.MailboxInterface  : <<use>>
