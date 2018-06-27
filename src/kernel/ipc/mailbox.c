@@ -455,6 +455,9 @@ int mailbox_unlink(int mbxid)
 	if (name_unlink(mailboxes[mbxid].name) != 0)
 		return (-EAGAIN);
 
+	/* Unset inbox in the kernel. */
+	unset_inbox();
+
 	if ((r = hal_mailbox_unlink(mailboxes[mbxid].fd)) != 0)
 		return (r);
 

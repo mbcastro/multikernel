@@ -157,9 +157,6 @@ int hal_mailbox_unlink(int mbxid)
 	if (mbxid < 0)
 		return (-EINVAL);
 
-	/* Unset inbox in the kernel. */
-	unset_inbox();
-
 	return (mppa_close(mbxid));
 }
 
