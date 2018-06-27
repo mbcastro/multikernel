@@ -41,6 +41,17 @@
 /**@}*/
 
 /**
+ * @brief Input HAL mailbox.
+ */
+static int inboxes[HAL_NR_NOC_IONODES];
+
+/**
+ *
+ * @brief Is the inbox initialized ?
+ */
+static int initialized[HAL_NR_NOC_IONODES] = { 0, };
+
+/**
  * @brief Mailbox.
  */
 struct mailbox
@@ -54,6 +65,90 @@ struct mailbox
  * @brief table of mailboxes.
  */
 static struct mailbox mailboxes[HAL_NR_MAILBOX];
+
+/*============================================================================*
+ * initialize_inbox()                                                         *
+ *============================================================================*/
+
+/**
+ * @brief Initializes the inbox.
+ *
+ * @param index Index where the mailbox will be stored.
+ *
+ * @returns Upon successful completion zero is returned.
+ * A negative error code otherwise.
+ */
+int initialize_inbox(int index)
+{
+	int mailbox;
+	int nodeid;
+
+	nodeid = hal_get_node_id();
+
+	mailbox = hal_mailbox_create(nodeid);
+
+	if (mailbox < 0)
+		return (-EAGAIN);
+
+	inboxes[index] = mailbox;
+	initialized[index] = 1;
+
+	return (0);
+}
+
+/**
+ * @brief Unset initialized flag.
+ */
+static void unset_inbox()
+{
+	int index;
+
+	index = hal_get_node_id() - hal_get_cluster_id();
+
+	initialized[index] = 0;
+}
+
+/*============================================================================*
+ * destroy_inbox()                                                            *
+ *============================================================================*/
+
+/**
+ * @brief Destroy the inbox.
+ *
+ * @param index Index of the mailbox to destroy.
+ *
+ * @returns Upon successful completion zero is returned.
+ * A negative error code otherwise.
+ */
+int destroy_inbox(int index)
+{
+	/* Nothing to do. */
+	if (!initialized[index])
+		return (0);
+
+	if (hal_mailbox_unlink(inboxes[index]) != 0)
+		return (-EAGAIN);
+
+	unset_inbox(index);
+
+	return (0);
+}
+
+/**
+ * @brief Get input mailbox.
+ */
+int get_inbox(void)
+{
+	int index;
+
+	index = hal_get_node_id() - hal_get_cluster_id();
+
+	/* Inbox was not initialized. */
+	if (!initialized[index])
+		return (-EINVAL);
+
+	return (inboxes[index]);
+}
 
 /*============================================================================*
  * mailbox_is_valid()                                                         *
@@ -230,6 +325,10 @@ int mailbox_create(char *name)
 
 	/* Invalid name. */
 	if (name == NULL)
+		return (-EINVAL);
+
+	/* Check name length. */
+	if (strlen(name) > HAL_MAILBOX_MSG_SIZE)
 		return (-EINVAL);
 
 	/* Allocate mailbox. */
@@ -450,6 +549,9 @@ int mailbox_unlink(int mbxid)
 	/* Unlink name. */
 	if (name_unlink(mailboxes[mbxid].name) != 0)
 		return (-EAGAIN);
+
+	/* Unset inbox in the kernel. */
+	unset_inbox();
 
 	if ((r = hal_mailbox_unlink(mailboxes[mbxid].fd)) != 0)
 		return (r);
