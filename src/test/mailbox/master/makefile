@@ -20,64 +20,30 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-# Conflicts.
-.PHONY: hal
-.PHONY: hal-sync
-.PHONY: hal-mailbox
-.PHONY: hal-portal
-.PHONY: name
-.PHONY: mailbox
+# C Source Files
+SRC = $(wildcard *.c)
 
-# Change binaries directory.
-export BINDIR := $(BINDIR)/test
+# Object Files
+OBJ = $(SRC:.c=.o)
 
-# Builds everything.
-all: hal hal-sync hal-mailbox hal-portal name mailbox
+# Binary Files
+export ELFBIN = $(BINDIR)/mailbox-master
 
-# Builds HAL testing unit.
-hal:
+#===============================================================================
+
+# Builds the kernel.
+all: $(OBJ)
 	mkdir -p $(BINDIR)
-	cd hal && $(MAKE) all
+	$(CC) $(LDFLAGS) $(OBJ) -o $(ELFBIN) $(LIBKERNEL) $(LIBS)
 
-# Builds HAL Sync testing unit.
-hal-sync:
-	mkdir -p $(BINDIR)
-	cd hal-sync && $(MAKE) all
-
-# Builds HAL Mailbox testing unit.
-hal-mailbox:
-	mkdir -p $(BINDIR)
-	cd hal-mailbox && $(MAKE) all
-
-# Builds HAL Portal testing unit.
-hal-portal:
-	mkdir -p $(BINDIR)
-	cd hal-portal && $(MAKE) all
-
-# Builds Naming Service testing unit
-name:
-	mkdir -p $(BINDIR)
-	cd name && $(MAKE) all
-
-# Builds Named Mailbox testing unit
-mailbox:
-	mkdir -p $(BINDIR)
-	cd mailbox && $(MAKE) all
+# Builds object files.
+%.o: %.c
+	$(CC) $(CFLAGS) $< -c -o $@
 
 # Cleans compilation files.
 clean:
-	cd hal && $(MAKE) clean
-	cd hal-sync && $(MAKE) clean
-	cd hal-mailbox && $(MAKE) clean
-	cd hal-portal && $(MAKE) clean
-	cd name && $(MAKE) clean
-	cd mailbox && $(MAKE) clean
+	rm -rf $(OBJ)
 
 # Cleans everything.
-distclean:
-	cd hal && $(MAKE) distclean
-	cd hal-sync && $(MAKE) distclean
-	cd hal-mailbox && $(MAKE) distclean
-	cd hal-portal && $(MAKE) distclean
-	cd name && $(MAKE) distclean
-	cd mailbox && $(MAKE) distclean
+distclean: clean
+	rm -rf $(ELFBIN)

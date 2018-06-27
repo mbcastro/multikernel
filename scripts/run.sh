@@ -87,13 +87,13 @@ function run2
 function benchmark_mailbox
 {
 	echo "Benchmarking HAL Mailbox"
-	
+
 	echo "  nlocals=1 nremotes=1 (baseline)"
 	run1 "benchmark-hal-mailbox.img" "/benchmark/hal-mailbox-master" "1 1 row 1" \
 		| head -n -1                                                             \
 		| cut -d" " -f 5                                                         \
 		> hal-mailbox-1-1-row.benchmark
-	
+
 	for nlocals in 1 2 4;
 	do
 		for nremotes in 4 8 12 16;
@@ -122,11 +122,13 @@ then
 	run2 "test-hal-sync.img" "/test/hal-sync-master0" "/test/hal-sync-master1" "$NCLUSTERS" | grep "test"
 	run2 "test-hal-mailbox.img" "/test/hal-mailbox-master0" "/test/hal-mailbox-master1" | grep "test"
 	echo "Testing MAILBOX"
-	run2 "test-hal-mailbox.img" "/test/hal-mailbox-master0" "/test/hal-mailbox-master1" | grep "test" 
+	run2 "test-hal-mailbox.img" "/test/hal-mailbox-master0" "/test/hal-mailbox-master1" | grep "test"
 	echo "Testing PORTAL"
 	run1 "test-hal-portal.img" "/test/hal-portal-master" | grep "test"
 	echo "Testing NAME"
 	run2 "test-name.img" "/servers" "/test/name-master" "$NCLUSTERS" | grep "test"
+	echo "Testing MAILBOX"
+	run2 "test-mailbox.img" "/servers" "/test/mailbox-master" | grep "test"
 #	echo "Testing RMEM"
 #	run2 "rmem.img" "rmem-master" "rmem-server" "write $NCLUSTERS $SIZE"
 #	run2 "rmem.img" "rmem-master" "rmem-server" "read $NCLUSTERS $SIZE"

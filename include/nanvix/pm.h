@@ -31,10 +31,12 @@
 
 	/* Forward definitions .*/
 	extern int get_inbox(void);
+	extern int initialize_inbox(int);
+	extern int destroy_inbox(int);
 	extern int mailbox_create(char *);
 	extern int mailbox_open(char *);
-	extern int mailbox_read(int, void *);
-	extern int mailbox_write(int, const void *);
+	extern int mailbox_read(int, void *, size_t);
+	extern int mailbox_write(int, const void *, size_t);
 	extern int mailbox_close(int);
 	extern int mailbox_unlink(int);
 

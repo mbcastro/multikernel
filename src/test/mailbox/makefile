@@ -20,27 +20,26 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-#=============================================================================
-# Mailbox Unit Test
-#=============================================================================
+# Conflicts.
+.PHONY: master
+.PHONY: slave
 
-io-bin += mailbox-master
-mailbox-master-srcs := $(SRCDIR)/kernel/arch/mppa/mailbox.c \
-					   $(SRCDIR)/kernel/arch/mppa/core.c    \
-					   $(SRCDIR)/kernel/arch/mppa/noc.c     \
-					   $(SRCDIR)/test/mailbox/master.c
+#===============================================================================
 
-# Toolchain Configuration
-mailbox-master-cflags += -D_KALRAY_MPPA_256_HIGH_LEVEL -DDEBUG_MAILBOX
-mailbox-master-lflags := -lmppaipc
+# Builds binaries.
+all: master
 
-mailbox-objs := mailbox-master 
-mailbox-name := mailbox.img
+# Builds master binary.
+master:
+ifeq ($(BUILD_SERVERS),true)
+	cd master && $(MAKE) all
+endif
 
-#=============================================================================
-# MPPA Binary
-#=============================================================================
+# Cleans compilation files.
+clean:
+	cd master && $(MAKE) clean
 
-mppa-bin := mailbox
+# Cleans everything.
+distclean: clean
+	cd master && $(MAKE) distclean
 
-include $(K1_TOOLCHAIN_DIR)/share/make/Makefile.kalray
