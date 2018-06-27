@@ -285,6 +285,42 @@ static void test_mailbox_read_write(void)
 }
 
 /*===================================================================*
+ * API Test: Compute Clusters tests                                  *
+ *===================================================================*/
+
+/**
+ * @brief API Test: Compute Clusters tests
+ */
+static void test_mailbox_cc(int nclusters)
+{
+	int status;
+	int pids[nclusters];
+
+	char nclusters_str[4];
+	char test_str[4];
+	const char *args[] = {
+		"/test/mailbox-slave",
+		nclusters_str,
+		test_str,
+		NULL
+	};
+
+	printf("[test][api] Compute Clusters\n");
+
+	sprintf(nclusters_str, "%d", nclusters);
+	sprintf(test_str, "%d", 0);
+
+	for (int i = 0; i < nclusters; i++)
+		TEST_ASSERT((pids[i] = mppa_spawn(i, NULL, args[0], args, NULL)) != -1);
+
+	for (int i = 0; i < nclusters; i++)
+	{
+		TEST_ASSERT(mppa_waitpid(pids[i], &status, 0) != -1);
+		TEST_ASSERT(status == EXIT_SUCCESS);
+	}
+}
+
+/*===================================================================*
  * API Test: Mailbox Driver                                          *
  *===================================================================*/
 
@@ -295,9 +331,12 @@ int main(int argc, const char **argv)
 {
 	int nodes[2];
 	int syncid;
+	int nclusters;
 
-	((void) argc);
-	((void) argv);
+	TEST_ASSERT(argc == 2);
+
+	/* Retrieve kernel parameters. */
+	nclusters = atoi(argv[1]);
 
 	TEST_ASSERT(kernel_setup() == 0);
 
@@ -317,6 +356,7 @@ int main(int argc, const char **argv)
 	test_mailbox_create_unlink();
 	test_mailbox_open_close();
 	test_mailbox_read_write();
+	test_mailbox_cc(nclusters);
 
 	TEST_ASSERT(kernel_cleanup() == 0);
 	return (EXIT_SUCCESS);
