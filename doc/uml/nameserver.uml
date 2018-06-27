@@ -10,6 +10,8 @@ remove HAL.PortalInterface
 !include ipc.uml
 
 remove IPC.NameClient
+remove IPC.Mailbox
+remove IPC.MailboxOperations
 remove Unknown
 
 namespace NameServer {
