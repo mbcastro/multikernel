@@ -232,6 +232,10 @@ int mailbox_create(char *name)
 	if (name == NULL)
 		return (-EINVAL);
 
+	/* Check name length. */
+	if (strlen(name) > HAL_MAILBOX_MSG_SIZE)
+		return (-EINVAL);
+
 	/* Allocate mailbox. */
 	if ((mbxid = mailbox_alloc()) < 0)
 		return (-EAGAIN);
