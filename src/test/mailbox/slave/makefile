@@ -20,33 +20,30 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-# Conflicts.
-.PHONY: master
-.PHONY: slave
+# C Source Files
+SRC = $(wildcard *.c)
+
+# Object Files
+OBJ = $(SRC:.c=.o)
+
+# Binary Files
+export ELFBIN = $(BINDIR)/mailbox-slave
 
 #===============================================================================
 
-# Builds binaries.
-all: master slave
+# Builds the kernel.
+all: $(OBJ)
+	mkdir -p $(BINDIR)
+	$(CC) $(LDFLAGS) $(OBJ) -o $(ELFBIN) $(LIBKERNEL) $(LIBS)
 
-# Builds master binary.
-master:
-ifeq ($(BUILD_SERVERS),true)
-	cd master && $(MAKE) all
-endif
-
-# Builds slave binary.
-slave:
-ifeq ($(BUILD_SERVERS),false)
-	cd slave && $(MAKE) all
-endif
+# Builds object files.
+%.o: %.c
+	$(CC) $(CFLAGS) $< -c -o $@
 
 # Cleans compilation files.
 clean:
-	cd master && $(MAKE) clean
-	cd slave && $(MAKE) clean
+	rm -rf $(OBJ)
 
 # Cleans everything.
 distclean: clean
-	cd master && $(MAKE) distclean
-	cd slave && $(MAKE) distclean
+	rm -rf $(ELFBIN)

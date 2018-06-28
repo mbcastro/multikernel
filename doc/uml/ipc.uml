@@ -8,11 +8,6 @@ remove HAL.SetupInterface
 remove HAL.SyncInterface
 remove HAL.PortalInterface
 
-class Unknown {
-	+ int get_inbox()
-	+ void unset_inbox()
-}
-
 namespace IPC {
 	class NameClient {
 		+ int sys_name_link(int nodeid, const char *name)
@@ -48,9 +43,15 @@ namespace IPC {
 	class MailboxOperations {
 		- const int MAILBOX_USED
 		- const int MAILBOX_WRONLY
+		- int inboxes[HAL_NR_NOC_IONODES];
+		- int initialized[HAL_NR_NOC_IONODES] = { 0, };
 		- struct mailbox mailboxes[HAL_NR_MAILBOX]
 		- int mailbox_alloc(void)
 		- void mailbox_free(int mbxid)
+		- void unset_inbox()
+		+ int destroy_inbox(int index)
+		+ int get_inbox(void)
+		+ int initialize_inbox(int index)
 		+ int mailbox_create(char *name)
 		+ int mailbox_open(char *name)
 		+ int mailbox_read(int mbxid, void *buf, size_t)
@@ -63,15 +64,12 @@ namespace IPC {
 	IPC.NameClient   .> IPC.NameMessage      : <<use>>
 	IPC.NameClient  ..> HAL.NoCInterface     : <<use>>
 	IPC.NameClient  ..> HAL.MailboxInterface : <<use>>
+	IPC.NameClient  ..> IPC.MailboxOperations : <<use>>
 
 	IPC.MailboxOperations   .> IPC.Mailbox           : <<use>>
 	IPC.MailboxOperations   .> HAL.MailboxInterface  : <<use>>
 	IPC.MailboxOperations   .> HAL.NoCInterface      : <<use>>
 	IPC.MailboxOperations   .> NameClient            : <<use>>
 }
-
-Unknown <. IPC.NameClient       : <<use>>
-Unknown <. IPC.MailboxOperations : <<use>>
-Unknown <. HAL.MailboxInterface : <<use>>
 
 @enduml
