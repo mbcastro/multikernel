@@ -58,8 +58,8 @@
  *=======================================================================*/
 
 	/* Forward definitions. */
-	extern int barrier_open(int);
+	extern int barrier_create(int *, int);
 	extern int barrier_wait(int);
-	extern int barrier_close(int);
+	extern int barrier_unlink(int);
 
 #endif /* NANVIX_PM_H_ */
