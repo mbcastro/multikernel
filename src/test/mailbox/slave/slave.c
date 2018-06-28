@@ -206,6 +206,48 @@ static void test_mailbox_io_cc(int nclusters)
 	TEST_ASSERT(hal_sync_close(syncid) == 0)
 }
 
+/**
+ * @brief API Test: Compute cluster test -> Mailbox IO cluster
+ */
+static void test_mailbox_cc_io(int nclusters)
+{
+	char pathname_remote[NANVIX_PROC_NAME_MAX];
+	char buf[HAL_MAILBOX_MSG_SIZE];
+	int outbox;
+	int syncid_local;
+	int syncid;
+	int nodes[(nclusters + 1)];
+
+	/* Build nodes list. */
+	for (int i = 0; i < nclusters; i++)
+		nodes[i + 1] = i;
+
+	nodes[0] = 192;
+
+	TEST_ASSERT((syncid_local = hal_sync_create(nodes, (nclusters + 1), HAL_SYNC_ONE_TO_ALL)) >= 0);
+
+	TEST_ASSERT((syncid = hal_sync_open(nodes, (nclusters + 1), HAL_SYNC_ALL_TO_ONE)) >= 0);
+
+	sprintf(pathname_remote, "IO1");
+
+	/* Signal IO cluster. */
+	TEST_ASSERT(hal_sync_signal(syncid) == 0);
+
+	/* Wait for IO cluster. */
+	TEST_ASSERT(hal_sync_wait(syncid_local) == 0);
+
+	TEST_ASSERT((outbox = mailbox_open(pathname_remote)) >= 0);
+
+	memset(buf, 1, HAL_MAILBOX_MSG_SIZE);
+	TEST_ASSERT(mailbox_write(outbox, buf, sizeof(buf)) == 0);
+
+	TEST_ASSERT(mailbox_close(outbox) == 0);
+
+	/* House keeping. */
+	TEST_ASSERT(hal_sync_unlink(syncid_local) == 0);
+	TEST_ASSERT(hal_sync_close(syncid) == 0)
+}
+
 /*====================================================================*
  * main                                                               *
  *====================================================================*/
@@ -233,6 +275,11 @@ int main2(int argc, char **argv)
 		/* IO cluster -> Compute cluster test. */
 		case 1:
 			test_mailbox_io_cc(nclusters);
+			break;
+
+		/* Compute cluster -> IO cluster test. */
+		case 2:
+			test_mailbox_cc_io(nclusters);
 			break;
 
 		/* Should not happen. */
