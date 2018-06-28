@@ -56,8 +56,7 @@ static void test_mailbox_cc(int nclusters)
 	int nodeid;
 	int inbox;
 	int outbox;
-	int syncid_local;
-	int syncid;
+	int barrier;
 	int nodes[nclusters];
 
 	nodeid = hal_get_node_id();
@@ -73,73 +72,21 @@ static void test_mailbox_cc(int nclusters)
 			nodes[0] = 0;
 		}
 
-	/* This cluster is the leader one. */
-	if(nodeid == 0)
-	{
-		TEST_ASSERT((syncid_local = hal_sync_create(nodes, nclusters, HAL_SYNC_ALL_TO_ONE)) >= 0);
-		TEST_ASSERT((syncid = hal_sync_open(nodes, nclusters, HAL_SYNC_ONE_TO_ALL)) >= 0);
+	TEST_ASSERT((barrier = barrier_create(nodes, nclusters)) >= 0);
 
-		/* Wait for others clusters. */
-		TEST_ASSERT(hal_sync_wait(syncid_local) == 0);
-
-		/* Signal others clusters. */
-		TEST_ASSERT(hal_sync_signal(syncid) == 0);
-	}
-	else
-	{
-		TEST_ASSERT((syncid_local = hal_sync_create(nodes, nclusters, HAL_SYNC_ONE_TO_ALL)) >= 0);
-		TEST_ASSERT((syncid = hal_sync_open(nodes, nclusters, HAL_SYNC_ALL_TO_ONE)) >= 0);
-
-		/* Signal leader. */
-		TEST_ASSERT(hal_sync_signal(syncid) == 0);
-
-		/* Wait for others clusters. */
-		TEST_ASSERT(hal_sync_wait(syncid_local) == 0);
-	}
+	TEST_ASSERT(barrier_wait(barrier) == 0);
 
 	sprintf(pathname_local, "cool-name%d", nodeid);
 
 	TEST_ASSERT((inbox = mailbox_create(pathname_local)) >= 0);
 
-	/* This cluster is the leader one. */
-	if (nodeid == 0)
-	{
-		/* Wait for others clusters. */
-		TEST_ASSERT(hal_sync_wait(syncid_local) == 0);
-
-		/* Signal others clusters. */
-		TEST_ASSERT(hal_sync_signal(syncid) == 0);
-	}
-	else
-	{
-		/* Signal leader. */
-		TEST_ASSERT(hal_sync_signal(syncid) == 0);
-
-		/* Wait for leader cluster. */
-		TEST_ASSERT(hal_sync_wait(syncid_local) == 0);
-	}
+	TEST_ASSERT(barrier_wait(barrier) == 0);
 
 	sprintf(pathname_remote, "cool-name%d", (nodeid + 1)%nclusters);
 
 	TEST_ASSERT((outbox = mailbox_open(pathname_remote)) >= 0);
 
-	/* This cluster is the leader one. */
-	if (nodeid == 0)
-	{
-		/* Wait for others clusters. */
-		TEST_ASSERT(hal_sync_wait(syncid_local) == 0);
-
-		/* Signal others clusters. */
-		TEST_ASSERT(hal_sync_signal(syncid) == 0);
-	}
-	else
-	{
-		/* Signal leader. */
-		TEST_ASSERT(hal_sync_signal(syncid) == 0);
-
-		/* Wait for leader cluster. */
-		TEST_ASSERT(hal_sync_wait(syncid_local) == 0);
-	}
+	TEST_ASSERT(barrier_wait(barrier) == 0);
 
 	memset(buf, 1, HAL_MAILBOX_MSG_SIZE);
 	TEST_ASSERT(mailbox_write(outbox, buf, sizeof(buf)) == 0);
@@ -153,9 +100,7 @@ static void test_mailbox_cc(int nclusters)
 
 	TEST_ASSERT(mailbox_unlink(inbox) == 0);
 
-	/* House keeping. */
-	TEST_ASSERT(hal_sync_unlink(syncid_local) == 0);
-	TEST_ASSERT(hal_sync_close(syncid) == 0)
+	TEST_ASSERT(barrier_unlink(barrier) == 0);
 }
 
 /**
