@@ -5,7 +5,6 @@
 remove HAL.CoreInterface
 remove HAL.CoreTypes
 remove HAL.SetupInterface
-remove HAL.SyncInterface
 remove HAL.PortalInterface
 
 namespace IPC {
@@ -60,6 +59,12 @@ namespace IPC {
 		+ int mailbox_unlink(int mbxid)
 	}
 
+	class Barrier {
+		+ int barrier_create(int *nodes, int *nnodes)
+		+ int barrier_wait(int barrierid)
+		+ int barrier_unlink(void)
+	}
+
 	IPC.NameMessage  .> IPC.NameMessageTypes : <<use>>
 	IPC.NameClient   .> IPC.NameMessage      : <<use>>
 	IPC.NameClient  ..> HAL.NoCInterface     : <<use>>
@@ -70,6 +75,9 @@ namespace IPC {
 	IPC.MailboxOperations   .> HAL.MailboxInterface  : <<use>>
 	IPC.MailboxOperations   .> HAL.NoCInterface      : <<use>>
 	IPC.MailboxOperations   .> NameClient            : <<use>>
+
+	IPC.Barrier .> HAL.SyncInterface : <<use>>
+	IPC.Barrier .> HAL.NoCInterface  : <<use>>
 }
 
 @enduml
