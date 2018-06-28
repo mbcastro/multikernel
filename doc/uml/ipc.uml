@@ -60,9 +60,21 @@ namespace IPC {
 	}
 
 	class Barrier {
-		+ int barrier_create(int *nodes, int *nnodes)
+		+ int local;
+		+ int remote;
+		+ int nnodes;
+		+ int nodes[HAL_NR_NOC_NODES];
+		+ int flags;
+	}
+
+	class BarrierOperations {
+		- const int BARRIER_USED
+		- struct barrier barriers[HAL_NR_NOC_NODES];
+		- int barrier_alloc(void)
+		- int barrier_free(int barrierid)
+		+ int barrier_create(int *nodes, int nnodes)
 		+ int barrier_wait(int barrierid)
-		+ int barrier_unlink(void)
+		+ int barrier_unlink(int barrierid)
 	}
 
 	IPC.NameMessage  .> IPC.NameMessageTypes : <<use>>
@@ -76,8 +88,9 @@ namespace IPC {
 	IPC.MailboxOperations   .> HAL.NoCInterface      : <<use>>
 	IPC.MailboxOperations   .> NameClient            : <<use>>
 
-	IPC.Barrier .> HAL.SyncInterface : <<use>>
-	IPC.Barrier .> HAL.NoCInterface  : <<use>>
+	IPC.BarrierOperations .> HAL.SyncInterface : <<use>>
+	IPC.BarrierOperations .> HAL.NoCInterface  : <<use>>
+	IPC.BarrierOperations .> IPC.Barrier       : <<use>>
 }
 
 @enduml
