@@ -107,15 +107,13 @@
 #ifdef __NEED_HAL_PORTAL_
 
 	/**
-	 * @brief HAL portal.
+	 * @brief Number of unnamed portals.
 	 */
-	typedef struct
-	{
-		int portal_fd;  /* Portal NoC connector.     */
-		int sync_fd;    /* Sync NoC connector.       */
-		int remote;     /* Remote NoC node ID.       */
-		int local;      /* Local NoC node ID.        */
-	} portal_t;
+	#ifdef _KALRAY_MPPA_CCLUSTER_
+		#define HAL_NR_PORTAL HAL_NR_NOC_NODES
+	#else
+		#define HAL_NR_PORTAL (4*HAL_NR_NOC_NODES)
+	#endif
 
 #endif /* __NEED_HAL_PORTAL_ */
 
