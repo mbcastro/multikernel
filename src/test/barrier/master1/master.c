@@ -89,7 +89,7 @@ static void test_barrier_io(void)
 	int barrier;
 	int nodeid;
 
-	printf("[test][api] Barrier Create Unlink IO1\n");
+	printf("[test][api] Barrier IO Clusters 1\n");
 
 	nodeid = hal_get_node_id();
 
@@ -159,7 +159,7 @@ static void test_barrier_cc_io(int nclusters)
 		NULL
 	};
 
-	printf("[test][api] Compute Clusters - IO Clusters 1\n");
+	printf("[test][api] Barrier Compute Clusters - IO Clusters 1\n");
 
 	/* Build node list. */
 	for (int i = 0; i < nclusters; i++)
@@ -206,7 +206,7 @@ static void test_barrier_cc(int nclusters)
 		NULL
 	};
 
-	printf("[test][api] Compute Clusters\n");
+	printf("[test][api] Barrier Compute Clusters\n");
 
 	sprintf(nclusters_str, "%d", nclusters);
 	sprintf(test_str, "%d", 0);
