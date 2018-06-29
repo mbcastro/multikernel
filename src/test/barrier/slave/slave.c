@@ -39,6 +39,35 @@
 #define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
 
 /*===================================================================*
+ * API Test: Barrier Compute cluster tests                           *
+ *===================================================================*/
+
+/**
+ * @brief API Test: Barrier compute clusters tests.
+ */
+static void test_barrier_cc(int nclusters)
+{
+	int barrier;
+	int nodeid;
+	int nodes[nclusters];
+
+	nodeid = hal_get_node_id();
+
+	for (int i = 0; i < nclusters; i++)
+		nodes[i] = i;
+
+	TEST_ASSERT((barrier = barrier_create(nodes, nclusters)) >= 0);
+
+	printf("%d waits...\n", nodeid);
+
+	TEST_ASSERT(barrier_wait(barrier) == 0);
+
+	printf("%d passed the barrier.\n", nodeid);
+
+	TEST_ASSERT(barrier_unlink(barrier) == 0);
+}
+
+/*===================================================================*
  * API Test: Compute Cluster - IO Cluster tests                      *
  *===================================================================*/
 
@@ -91,12 +120,14 @@ int main2(int argc, char **argv)
 	{
 		/* Compute clusters test. */
 		case 0:
+			test_barrier_cc(nclusters);
 
 			break;
 
-		/* IO cluster - Compute cluster test. */
+		/* IO clusters - Compute clusters test. */
 		case 1:
 			test_barrier_cc_io(nclusters);
+
 			break;
 
 		/* Should not happen. */

@@ -53,70 +53,70 @@ static int ncores = 0;
 /**
  * @brief API Test: IO Clusters tests.
  */
-// static void *test_barrier_thread_io(void *args)
-// {
-// 	int nodeid;
-// 	int barrier;
-// 	int nodes[8] = {192, 129, 130, 131, 128, 193, 194, 195};
-//
-// 	((void) args);
-//
-// 	TEST_ASSERT(kernel_setup() == 0);
-//
-// 	nodeid = hal_get_node_id();
-//
-// 	TEST_ASSERT((barrier = barrier_create(nodes, (2 * ncores))) >= 0);
-//
-// 	printf("Node %d wait...\n", nodeid);
-//
-// 	TEST_ASSERT(barrier_wait(barrier) == 0);
-//
-// 	printf("Node %d passed the barrier.\n", nodeid);
-//
-// 	TEST_ASSERT(barrier_unlink(barrier) == 0);
-//
-// 	TEST_ASSERT(kernel_cleanup() == 0);
-// 	return (NULL);
-// }
-//
-// /**
-//  * @brief API Test: IO Clusters tests.
-//  */
-// static void test_barrier_io(void)
-// {
-// 	pthread_t threads[ncores];
-// 	int nodes[8] = {192, 129, 130, 131, 128, 193, 194, 195};
-// 	int barrier;
-// 	int nodeid;
-//
-// 	printf("[test][api] Barrier Create Unlink IO1\n");
-//
-// 	nodeid = hal_get_node_id();
-//
-// 	TEST_ASSERT((barrier = barrier_create(nodes, (2 * ncores))) >= 0);
-//
-// 	/* Spawn driver threads. */
-// 	for (int i = 1; i < ncores; i++)
-// 	{
-// 		TEST_ASSERT((pthread_create(&threads[i],
-// 			NULL,
-// 			test_barrier_thread_io,
-// 			NULL)) == 0
-// 		);
-// 	}
-//
-// 	printf("Node %d wait...\n", nodeid);
-//
-// 	TEST_ASSERT(barrier_wait(barrier) == 0);
-//
-// 	printf("Node %d passed the barrier.\n", nodeid);
-//
-// 	TEST_ASSERT(barrier_unlink(barrier) == 0);
-//
-// 	/* Wait for driver threads. */
-// 	for (int i = 1; i < ncores; i++)
-// 		pthread_join(threads[i], NULL);
-// }
+static void *test_barrier_thread_io(void *args)
+{
+	int nodeid;
+	int barrier;
+	int nodes[8] = {192, 129, 130, 131, 128, 193, 194, 195};
+
+	((void) args);
+
+	TEST_ASSERT(kernel_setup() == 0);
+
+	nodeid = hal_get_node_id();
+
+	TEST_ASSERT((barrier = barrier_create(nodes, (2 * ncores))) >= 0);
+
+	printf("Node %d wait...\n", nodeid);
+
+	TEST_ASSERT(barrier_wait(barrier) == 0);
+
+	printf("Node %d passed the barrier.\n", nodeid);
+
+	TEST_ASSERT(barrier_unlink(barrier) == 0);
+
+	TEST_ASSERT(kernel_cleanup() == 0);
+	return (NULL);
+}
+
+/**
+ * @brief API Test: IO Clusters tests.
+ */
+static void test_barrier_io(void)
+{
+	pthread_t threads[ncores];
+	int nodes[8] = {192, 129, 130, 131, 128, 193, 194, 195};
+	int barrier;
+	int nodeid;
+
+	printf("[test][api] Barrier Create Unlink IO1\n");
+
+	nodeid = hal_get_node_id();
+
+	TEST_ASSERT((barrier = barrier_create(nodes, (2 * ncores))) >= 0);
+
+	/* Spawn driver threads. */
+	for (int i = 1; i < ncores; i++)
+	{
+		TEST_ASSERT((pthread_create(&threads[i],
+			NULL,
+			test_barrier_thread_io,
+			NULL)) == 0
+		);
+	}
+
+	printf("Node %d wait...\n", nodeid);
+
+	TEST_ASSERT(barrier_wait(barrier) == 0);
+
+	printf("Node %d passed the barrier.\n", nodeid);
+
+	TEST_ASSERT(barrier_unlink(barrier) == 0);
+
+	/* Wait for driver threads. */
+	for (int i = 1; i < ncores; i++)
+		pthread_join(threads[i], NULL);
+}
 
 /*===================================================================*
  * API Test: Compute Cluster - IO Cluster tests                      *
@@ -186,6 +186,42 @@ static void test_barrier_cc_io(int nclusters)
 }
 
 /*===================================================================*
+ * API Test: Compute Cluster tests                                   *
+ *===================================================================*/
+
+/**
+* @brief API Test: Compute Cluster - IO Cluster tests.
+*/
+static void test_barrier_cc(int nclusters)
+{
+	int status;
+	int pids[nclusters];
+
+	char nclusters_str[4];
+	char test_str[4];
+	const char *args[] = {
+		"/test/barrier-slave",
+		nclusters_str,
+		test_str,
+		NULL
+	};
+
+	printf("[test][api] Compute Clusters\n");
+
+	sprintf(nclusters_str, "%d", nclusters);
+	sprintf(test_str, "%d", 0);
+
+	for (int i = 0; i < nclusters; i++)
+		TEST_ASSERT((pids[i] = mppa_spawn(i, NULL, args[0], args, NULL)) != -1);
+
+	for (int i = 0; i < nclusters; i++)
+	{
+		TEST_ASSERT(mppa_waitpid(pids[i], &status, 0) != -1);
+		TEST_ASSERT(status == EXIT_SUCCESS);
+	}
+}
+
+/*===================================================================*
  * API Test: Barrier Driver                                          *
  *===================================================================*/
 
@@ -206,8 +242,9 @@ int main(int argc, const char **argv)
 	ncores = hal_get_num_cores();
 
 	/* API tests. */
-	// test_barrier_io();
+	test_barrier_io();
 	test_barrier_cc_io(nclusters);
+	test_barrier_cc(nclusters);
 
 	TEST_ASSERT(kernel_cleanup() == 0);
 	return (EXIT_SUCCESS);
