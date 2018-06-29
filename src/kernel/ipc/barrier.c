@@ -51,6 +51,68 @@ struct barrier
 static struct barrier barriers[HAL_NR_NOC_NODES];
 
 /*=======================================================================*
+ * barrier_is_valid()                                                    *
+ *=======================================================================*/
+
+/**
+ * @brief Asserts whether or not a barrier is valid.
+ *
+ * @param barrierid		ID of the target barrier.
+ *
+ * @returns One if the target barrier is valid, and false
+ * otherwise.
+ */
+static int barrier_is_valid(int barrierid)
+{
+	return ((barrierid >= 0) && (barrierid < HAL_NR_NOC_NODES));
+}
+
+/*=======================================================================*
+ * barrier_is_used()                                                     *
+ *=======================================================================*/
+
+/**
+ * @brief Asserts whether or not a barrier is used.
+ *
+ * @param barrierid		ID of the target barrier.
+ *
+ * @returns One if the target barrier is used, and false
+ * otherwise.
+ */
+static int barrier_is_used(int barrierid)
+{
+	return (barriers[barrierid].flags & BARRIER_USED);
+}
+
+/*=======================================================================*
+ * barrier_set_used()                                                    *
+ *=======================================================================*/
+
+/**
+ * @brief Sets a barrier as used.
+ *
+ * @param barrierid		ID of the target barrier.
+ */
+static void barrier_set_used(int barrierid)
+{
+	barriers[barrierid].flags |= BARRIER_USED;
+}
+
+/*=======================================================================*
+ * barrier_clear_flags()                                                    *
+ *=======================================================================*/
+
+/**
+ * @brief Clears barrier flags.
+ *
+ * @param barrierid		ID of the target barrier.
+ */
+static void barrier_clear_flags(int barrierid)
+{
+	barriers[barrierid].flags = 0;
+}
+
+/*=======================================================================*
  * barrier_alloc()                                                       *
  *=======================================================================*/
 
@@ -67,9 +129,9 @@ static int barrier_alloc(void)
 	for (int i = 0; i < HAL_NR_NOC_NODES; i++)
 	{
 		/* Found. */
-		if (!(barriers[i].flags & BARRIER_USED))
+		if (!barrier_is_used(i))
 		{
-			barriers[i].flags |= BARRIER_USED;
+			barrier_set_used(i);
 			return (i);
 		}
 	}
@@ -89,13 +151,13 @@ static int barrier_alloc(void)
 static int barrier_free(int barrierid)
 {
 	/* Sanity check. */
-	if ((barrierid < 0) || (barrierid >= HAL_NR_NOC_NODES))
+	if (!barrier_is_valid(barrierid))
 		return (-EINVAL);
 
-	if (!(barriers[barrierid].flags & BARRIER_USED))
+	if (!barrier_is_used(barrierid))
 		return (-EINVAL);
 
-	barriers[barrierid].flags = 0;
+	barrier_clear_flags(barrierid);
 
 	return (0);
 }
@@ -146,19 +208,19 @@ found:
 	{
 		/* This node is the leader of the barrier. */
 		if ((local = hal_sync_create(nodes, nnodes, HAL_SYNC_ALL_TO_ONE)) < 0)
-			return (-EAGAIN);
+			goto error;
 
 		if ((remote = hal_sync_open(nodes, nnodes, HAL_SYNC_ONE_TO_ALL)) < 0)
-			return (-EAGAIN);
+			goto error;
 	}
 	else
 	{
 		/* This node is not the leader of the barrier. */
 		if ((local = hal_sync_create(nodes, nnodes, HAL_SYNC_ONE_TO_ALL)) < 0)
-			return (-EAGAIN);
+			goto error;
 
 		if ((remote = hal_sync_open(nodes, nnodes, HAL_SYNC_ALL_TO_ONE)) < 0)
-			return (-EAGAIN);
+			goto error;
 	}
 
 	/* Initialize the barrier. */
@@ -170,6 +232,11 @@ found:
 		barriers[barrierid].nodes[i] = nodes[i];
 
 	return (barrierid);
+
+error:
+
+	barrier_free(barrierid);
+	return (-EAGAIN);
 }
 
 /*=======================================================================*
@@ -184,11 +251,11 @@ found:
 int barrier_unlink(int barrierid)
 {
 	/* Invalid barrier Id. */
-	if ((barrierid < 0) || (barrierid >= HAL_NR_NOC_NODES))
+	if (!barrier_is_valid(barrierid))
 		return (-EINVAL);
 
 	/* Bad barrier. */
-	if (!(barriers[barrierid].flags & BARRIER_USED))
+	if (!barrier_is_used(barrierid))
 		return (-EINVAL);
 
 	if (hal_sync_unlink(barriers[barrierid].local) != 0)
@@ -217,11 +284,11 @@ int barrier_wait(int barrierid)
 	int nodeid;
 
 	/* Invalid barrier Id. */
-	if ((barrierid < 0) || (barrierid >= HAL_NR_NOC_NODES))
+	if (!barrier_is_valid(barrierid))
 		return (-EINVAL);
 
 	/* Bad barrier. */
-	if (!(barriers[barrierid].flags & BARRIER_USED))
+	if (!barrier_is_used(barrierid))
 		return (-EINVAL);
 
 	nodeid = hal_get_node_id();
@@ -229,11 +296,11 @@ int barrier_wait(int barrierid)
 	/* Is this node the leader of the list ? */
 	if (nodeid == barriers[barrierid].nodes[0])
 	{
-		/* Wait for others clusters. */
+		/* Wait for others nodes. */
 		if (hal_sync_wait(barriers[barrierid].local) != 0)
 		return (-EAGAIN);
 
-		/* Signal others clusters. */
+		/* Signal others nodes. */
 		if (hal_sync_signal(barriers[barrierid].remote) != 0)
 		return (-EAGAIN);
 	}
@@ -247,14 +314,14 @@ int barrier_wait(int barrierid)
 		}
 
 		return (-EINVAL);
-	
+
 found:
 
 		/* Signal leader. */
 		if (hal_sync_signal(barriers[barrierid].remote) != 0)
 			return (-EAGAIN);
 
-		/* Wait for leader cluster. */
+		/* Wait for leader node. */
 		if (hal_sync_wait(barriers[barrierid].local) != 0)
 			return (-EAGAIN);
 	}
