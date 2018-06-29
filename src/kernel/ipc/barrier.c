@@ -208,19 +208,19 @@ found:
 	{
 		/* This node is the leader of the barrier. */
 		if ((local = hal_sync_create(nodes, nnodes, HAL_SYNC_ALL_TO_ONE)) < 0)
-			goto error;
+			goto error0;
 
 		if ((remote = hal_sync_open(nodes, nnodes, HAL_SYNC_ONE_TO_ALL)) < 0)
-			goto error;
+			goto error1;
 	}
 	else
 	{
 		/* This node is not the leader of the barrier. */
 		if ((local = hal_sync_create(nodes, nnodes, HAL_SYNC_ONE_TO_ALL)) < 0)
-			goto error;
+			goto error0;
 
 		if ((remote = hal_sync_open(nodes, nnodes, HAL_SYNC_ALL_TO_ONE)) < 0)
-			goto error;
+			goto error1;
 	}
 
 	/* Initialize the barrier. */
@@ -233,8 +233,9 @@ found:
 
 	return (barrierid);
 
-error:
-
+error1:
+	hal_sync_unlink(local);
+error0:
 	barrier_free(barrierid);
 	return (-EAGAIN);
 }
@@ -298,11 +299,11 @@ int barrier_wait(int barrierid)
 	{
 		/* Wait for others nodes. */
 		if (hal_sync_wait(barriers[barrierid].local) != 0)
-		return (-EAGAIN);
+			return (-EAGAIN);
 
 		/* Signal others nodes. */
 		if (hal_sync_signal(barriers[barrierid].remote) != 0)
-		return (-EAGAIN);
+			return (-EAGAIN);
 	}
 	else
 	{
