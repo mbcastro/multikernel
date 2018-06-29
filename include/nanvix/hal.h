@@ -157,13 +157,13 @@
 #ifdef __NEED_HAL_PORTAL_
 
 	/* Forward definitions .*/
-	extern int hal_portal_allow(portal_t *, int);
-	extern int hal_portal_create(portal_t *, int);
-	extern int hal_portal_open(portal_t *, int);
-	extern int hal_portal_read(portal_t *, void *, size_t);
-	extern int hal_portal_write(portal_t *, const void *, size_t);
-	extern int hal_portal_close(portal_t *);
-	extern int hal_portal_unlink(portal_t *);
+	extern int hal_portal_allow(int, int);
+	extern int hal_portal_create(int);
+	extern int hal_portal_open(int);
+	extern int hal_portal_read(int, void *, size_t);
+	extern int hal_portal_write(int, const void *, size_t);
+	extern int hal_portal_close(int);
+	extern int hal_portal_unlink(int);
 
 #endif /* __NEED_HAL_PORTAL_ */
 

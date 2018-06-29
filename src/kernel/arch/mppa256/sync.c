@@ -40,12 +40,12 @@
 /**@}*/
 
 /**
- * @brief Table of synchronization point.
+ * @brief Table of synchronization points.
  */
 static struct 
 {
-	int fd;    /*< Underlying file descriptor.   */
-	int flags; /*< Flags.                        */
+	int fd;    /*< Underlying file descriptor. */
+	int flags; /*< Flags.                      */
 } synctab[HAL_NR_SYNC];
 
 /*============================================================================*

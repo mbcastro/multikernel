@@ -49,19 +49,49 @@ namespace mppa256 {
 		~ int noc_is_cnode(int)
 	}
 
-	Sync    ..> NoC  : <<use>>
-	Mailbox ..> NoC  : <<use>>
-	Portal  ..> NoC  : <<use>>
-	NoC     ..> Core : <<use>>
-	Setup   ..> Core : <<use>>
+	namespace UnnamedPortal {
+		class PortalFlags {
+			PORTAL_FLAGS_USED
+			PORTAL_FLAGS_WRONLY
+		}
+
+		class Portal {
+			- int flags
+			~ int portal_fd
+			~ int sync_fd
+			~ int remote
+			~ int local
+			~ int portal_is_valid(int portalid)
+			~ int portal_is_used(int portalid)
+			~ int portal_is_wronly(int portalid)
+			~ void portal_set_used(int portalid)
+			~ void portal_set_wronly(int portalid)
+			~  void portal_clear_flags(int portalid)
+		}
+
+		class PortalOperations {
+			- int portal_alloc(void)
+			- void portal_free(int portalid)
+		}
+
+		Portal               ..> PortalFlags            : <<use>>
+		PortalOperations     ..> Portal                 : <<use>>
+		PortalOperations "1" *-- "HAL_NR_PORTAL" Portal : portals
+	}
+
+	mppa256.Sync                           ..> NoC  : <<use>>
+	mppa256.Mailbox                        ..> NoC  : <<use>>
+	mppa256.UnnamedPortal.PortalOperations ..> NoC  : <<use>>
+	mppa256.NoC                            ..> Core : <<use>>
+	mppa256.Setup                          ..> Core : <<use>>
 }
 
-HAL.SetupInterface    <|.. mppa256.Setup   : <<implements>>
-HAL.NoCInterface      <|.. mppa256.NoC     : <<implements>>
-HAL.CoreInterface     <|.. mppa256.Core    : <<implements>>
-HAL.MailboxInterface  <|.. mppa256.Mailbox : <<implements>>
-HAL.SyncInterface     <|.. mppa256.Sync    : <<implements>>
-HAL.PortalInterface   <|.. mppa256.Portal  : <<implements>>
+HAL.SetupInterface    <|.. mppa256.Setup                          : <<implements>>
+HAL.NoCInterface      <|.. mppa256.NoC                            : <<implements>>
+HAL.CoreInterface     <|.. mppa256.Core                           : <<implements>>
+HAL.MailboxInterface  <|.. mppa256.Mailbox                        : <<implements>>
+HAL.SyncInterface     <|.. mppa256.Sync                           : <<implements>>
+HAL.PortalInterface   <|.. mppa256.UnnamedPortal.PortalOperations : <<implements>>
 
 @enduml
 
