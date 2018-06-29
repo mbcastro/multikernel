@@ -27,12 +27,13 @@
 .PHONY: hal-portal
 .PHONY: name
 .PHONY: mailbox
+.PHONY: barrier
 
 # Change binaries directory.
 export BINDIR := $(BINDIR)/test
 
 # Builds everything.
-all: hal hal-sync hal-mailbox hal-portal name mailbox
+all: hal hal-sync hal-mailbox hal-portal name mailbox barrier
 
 # Builds HAL testing unit.
 hal:
@@ -64,6 +65,11 @@ mailbox:
 	mkdir -p $(BINDIR)
 	cd mailbox && $(MAKE) all
 
+# Builds Barrier testing unit
+barrier:
+	mkdir -p $(BINDIR)
+	cd barrier && $(MAKE) all
+
 # Cleans compilation files.
 clean:
 	cd hal && $(MAKE) clean
@@ -72,6 +78,7 @@ clean:
 	cd hal-portal && $(MAKE) clean
 	cd name && $(MAKE) clean
 	cd mailbox && $(MAKE) clean
+	cd barrier && $(MAKE) clean
 
 # Cleans everything.
 distclean:
@@ -81,3 +88,4 @@ distclean:
 	cd hal-portal && $(MAKE) distclean
 	cd name && $(MAKE) distclean
 	cd mailbox && $(MAKE) distclean
+	cd barrier && $(MAKE) distclean
