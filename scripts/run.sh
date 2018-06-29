@@ -129,6 +129,8 @@ then
 	run2 "test-name.img" "/servers" "/test/name-master" "$NCLUSTERS" | grep "test"
 	echo "Testing MAILBOX"
 	run2 "test-mailbox.img" "/servers" "/test/mailbox-master" "$NCLUSTERS" | grep "test"
+	echo "Testing BARRIER"
+	run2 "test-barrier.img" "/test/barrier-master0" "/test/barrier-master1" "$NCLUSTERS" | grep "test"
 #	echo "Testing RMEM"
 #	run2 "rmem.img" "rmem-master" "rmem-server" "write $NCLUSTERS $SIZE"
 #	run2 "rmem.img" "rmem-master" "rmem-server" "read $NCLUSTERS $SIZE"

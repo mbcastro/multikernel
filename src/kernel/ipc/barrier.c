@@ -20,49 +20,97 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <assert.h>
-#include <inttypes.h>
 #include <errno.h>
-#include <string.h>
-#include <stdio.h>
 
-#define __NEED_HAL_CORE_
-#include <nanvix/klib.h>
+#define __NEED_HAL_NOC_
+#define __NEED_HAL_SYNC_
 #include <nanvix/hal.h>
 
-#include "../arch/mppa256/core.h"
-
 /**
- * @brief Number of barriers.
- */
-#define NR_BARRIER 3
-
-/**
- * @brief Mailbox flags.
+ * @brief Barrier flags.
  */
 /**@{*/
-#define BARRIER_USED   (1 << 0)
-#define BARRIER_WRONLY (1 << 1)
+#define BARRIER_USED (1 << 0)
 /**@}*/
-
-/**
- *
- */
 
 /**
  * @brief Barrier.
  */
 struct barrier
 {
-	int local;  /**< Local cluster sync.  */
-	int remote; /**< Remote cluster sync. */
-	int flags;  /**< Flags.               */
+	int local;                   /* Local sync.                         */
+	int remote;                  /* Remote sync.                        */
+	int nnodes;                  /* Number of NoC nodes in the barrier. */
+	int nodes[HAL_NR_NOC_NODES]; /* Id of NoC nodes in the barrier.     */
+	int flags;                   /* Flags.                              */
 };
 
 /**
- * @brief table of barriers.
+ * @brief Table of barriers.
  */
-static struct barrier barriers[NR_BARRIER];
+static struct barrier barriers[HAL_NR_NOC_NODES];
+
+/*=======================================================================*
+ * barrier_is_valid()                                                    *
+ *=======================================================================*/
+
+/**
+ * @brief Asserts whether or not a barrier is valid.
+ *
+ * @param barrierid		ID of the target barrier.
+ *
+ * @returns One if the target barrier is valid, and false
+ * otherwise.
+ */
+static int barrier_is_valid(int barrierid)
+{
+	return ((barrierid >= 0) && (barrierid < HAL_NR_NOC_NODES));
+}
+
+/*=======================================================================*
+ * barrier_is_used()                                                     *
+ *=======================================================================*/
+
+/**
+ * @brief Asserts whether or not a barrier is used.
+ *
+ * @param barrierid		ID of the target barrier.
+ *
+ * @returns One if the target barrier is used, and false
+ * otherwise.
+ */
+static int barrier_is_used(int barrierid)
+{
+	return (barriers[barrierid].flags & BARRIER_USED);
+}
+
+/*=======================================================================*
+ * barrier_set_used()                                                    *
+ *=======================================================================*/
+
+/**
+ * @brief Sets a barrier as used.
+ *
+ * @param barrierid		ID of the target barrier.
+ */
+static void barrier_set_used(int barrierid)
+{
+	barriers[barrierid].flags |= BARRIER_USED;
+}
+
+/*=======================================================================*
+ * barrier_clear_flags()                                                    *
+ *=======================================================================*/
+
+/**
+ * @brief Clears barrier flags.
+ *
+ * @param barrierid		ID of the target barrier.
+ */
+static void barrier_clear_flags(int barrierid)
+{
+	barriers[barrierid].flags = 0;
+}
 
 /*=======================================================================*
  * barrier_alloc()                                                       *
@@ -78,12 +126,12 @@ static struct barrier barriers[NR_BARRIER];
 static int barrier_alloc(void)
 {
 	/* Search for a free barrier. */
-	for (int i = 0; i < NR_BARRIER; i++)
+	for (int i = 0; i < HAL_NR_NOC_NODES; i++)
 	{
 		/* Found. */
-		if (!(barriers[i].flags & BARRIER_USED))
+		if (!barrier_is_used(i))
 		{
-			barriers[i].flags |= BARRIER_USED;
+			barrier_set_used(i);
 			return (i);
 		}
 	}
@@ -100,163 +148,127 @@ static int barrier_alloc(void)
  *
  * @param barrierid ID of the target barrier.
  */
-static void barrier_free(int barrierid)
+static int barrier_free(int barrierid)
 {
 	/* Sanity check. */
-	assert((barrierid >= 0) && (barrierid < NR_BARRIER));
-	assert(barriers[barrierid].flags & BARRIER_USED);
+	if (!barrier_is_valid(barrierid))
+		return (-EINVAL);
 
-	barriers[barrierid].flags = 0;
+	if (!barrier_is_used(barrierid))
+		return (-EINVAL);
+
+	barrier_clear_flags(barrierid);
+
+	return (0);
 }
 
 /*=======================================================================*
- * barrier_noctag()                                                      *
+ * barrier_create()                                                        *
  *=======================================================================*/
 
 /**
- * @brief Computes the barrier NoC tag for a cluster.
+ * @brief Create a barrier.
  *
- * @param local Id of target cluster.
+ * @param nodes		List of nodes in the barrier.
+ * @param nnodes	Number of nodes in the barrier.
  */
-static int barrier_noctag(int local)
+int barrier_create(int *nodes, int nnodes)
 {
-	if ((local == IOCLUSTER0) || (local == IOCLUSTER1))
-		return (2);
-	else if (local == CCLUSTER0)
-		return (3);
+	int barrierid; /* Id of the barrier.     */
+	int local;	   /* Local sync connector.  */
+	int remote;	   /* Remote sync connector. */
+	int nodeid;	   /* NoC node Id.           */
 
-	return (4);
-}
+	/* Invalid node list. */
+	if (nodes == NULL)
+		return (-EINVAL);
 
-/*=======================================================================*
- * barrier_open()                                                        *
- *=======================================================================*/
+	/* Number of nodes Invalid. */
+	if ((nnodes < 0) && (nnodes >= HAL_NR_NOC_NODES))
+		return (-EINVAL);
 
-/**
- * @brief Opens the global barrier.
- *
- * @param nclusters Number of compute clusters in the barrier.
- */
-int barrier_open(int ncclusters)
-{
-	int local;
-	int barrierid;
-	uint64_t mask;
-	char pathname[128];
+	nodeid = hal_get_node_id();
 
-	local = hal_get_cluster_id();
-
-	/* Allocate barrier. */
-	barrierid = barrier_alloc();
-	if (barrierid < 0)
-		return (-ENOENT);
-
-	/* I0 0 cluster barrier. */
-	if (local == IOCLUSTER0)
+	/* This node should be in the list. */
+	for (int i = 0; i < nnodes ; i++)
 	{
-		snprintf(pathname,
-			ARRAY_LENGTH(pathname),
-			"/mppa/sync/%d:%d",
-			IOCLUSTER0,
-			barrier_noctag(IOCLUSTER0)
-		);
-		assert((barriers[barrierid].local = mppa_open(pathname, O_RDONLY)) != -1);
-
-		mask = 0;
-		assert(mppa_ioctl(barriers[barrierid].local, MPPA_RX_SET_MATCH, mask) == 0);
-
-		snprintf(pathname,
-			ARRAY_LENGTH(pathname),
-			"/mppa/sync/%d:%d",
-			IOCLUSTER1,
-			barrier_noctag(IOCLUSTER1)
-		);
-		assert((barriers[barrierid].remote = mppa_open(pathname, O_WRONLY)) != -1);
+		if (nodes[i] == nodeid)
+			goto found;
 	}
 
-	/* IO 0 cluster barrier. */
-	else if (local == IOCLUSTER1)
+	return (-EINVAL);
+
+found:
+
+	/* Allocate a barrier. */
+	if((barrierid = barrier_alloc()) < 0)
+		return (-EAGAIN);
+
+	if (nodeid == nodes[0])
 	{
-		snprintf(pathname,
-			ARRAY_LENGTH(pathname),
-			"/mppa/sync/%d:%d",
-			IOCLUSTER1,
-			barrier_noctag(IOCLUSTER1)
-		);
-		assert((barriers[barrierid].local = mppa_open(pathname, O_RDONLY)) != -1);
+		/* This node is the leader of the barrier. */
+		if ((local = hal_sync_create(nodes, nnodes, HAL_SYNC_ALL_TO_ONE)) < 0)
+			goto error0;
 
-		mask = 0;
-		assert(mppa_ioctl(barriers[barrierid].local, MPPA_RX_SET_MATCH, mask) == 0);
-
-		snprintf(pathname,
-			ARRAY_LENGTH(pathname),
-			"/mppa/sync/%d:%d",
-			IOCLUSTER0,
-			barrier_noctag(IOCLUSTER0)
-		);
-		assert((barriers[barrierid].remote = mppa_open(pathname, O_WRONLY)) != -1);
+		if ((remote = hal_sync_open(nodes, nnodes, HAL_SYNC_ONE_TO_ALL)) < 0)
+			goto error1;
 	}
-
 	else
 	{
-		/* Invalid number of clusters. */
-		if ((ncclusters < 2) || (ncclusters > NR_CCLUSTER))
-			return (-EINVAL);
+		/* This node is not the leader of the barrier. */
+		if ((local = hal_sync_create(nodes, nnodes, HAL_SYNC_ONE_TO_ALL)) < 0)
+			goto error0;
 
-		/* Master compute cluster. */
-		if (local == CCLUSTER0)
-		{
-			int cclusters[NR_CCLUSTER];
-
-			snprintf(pathname,
-				ARRAY_LENGTH(pathname),
-				"/mppa/sync/%d:%d",
-				CCLUSTER0,
-				barrier_noctag(CCLUSTER0)
-			);
-			assert((barriers[barrierid].local = mppa_open(pathname, O_RDONLY)) != -1);
-
-			mask = ~((1 << (ncclusters - 1)) - 1);
-			assert(mppa_ioctl(barriers[barrierid].local, MPPA_RX_SET_MATCH, mask) == 0);
-
-			snprintf(pathname,
-				ARRAY_LENGTH(pathname),
-				"/mppa/sync/[%d..%d]:%d",
-				CCLUSTER1,
-				CCLUSTER0 + (ncclusters - 1),
-				barrier_noctag(CCLUSTER0 + ncclusters)
-			);
-			assert((barriers[barrierid].remote = mppa_open(pathname, O_WRONLY)) != -1);
-
-			for (int i = 0; i < (ncclusters - 1); i++)
-				cclusters[i] = i;
-			assert(mppa_ioctl(barriers[barrierid].remote, MPPA_TX_SET_RX_RANKS, ncclusters - 1, cclusters) == 0);
-		}
-		else
-		{
-			snprintf(pathname,
-				ARRAY_LENGTH(pathname),
-				"/mppa/sync/[%d..%d]:%d",
-				CCLUSTER1,
-				CCLUSTER0 + (ncclusters - 1),
-				barrier_noctag(CCLUSTER0 + ncclusters)
-			);
-			assert((barriers[barrierid].local = mppa_open(pathname, O_RDONLY)) != -1);
-
-			mask = 0;
-			assert(mppa_ioctl(barriers[barrierid].local, MPPA_RX_SET_MATCH, mask) == 0);
-
-			snprintf(pathname,
-				ARRAY_LENGTH(pathname),
-				"/mppa/sync/%d:%d",
-				CCLUSTER0,
-				barrier_noctag(CCLUSTER0)
-			);
-			assert((barriers[barrierid].remote = mppa_open(pathname, O_WRONLY)) != -1);
-		}
+		if ((remote = hal_sync_open(nodes, nnodes, HAL_SYNC_ALL_TO_ONE)) < 0)
+			goto error1;
 	}
 
+	/* Initialize the barrier. */
+	barriers[barrierid].remote = remote;
+	barriers[barrierid].local = local;
+	barriers[barrierid].nnodes = nnodes;
+
+	for(int i = 0; i < nnodes; i++)
+		barriers[barrierid].nodes[i] = nodes[i];
+
 	return (barrierid);
+
+error1:
+	hal_sync_unlink(local);
+error0:
+	barrier_free(barrierid);
+	return (-EAGAIN);
+}
+
+/*=======================================================================*
+ * barrier_unlink()                                                      *
+ *=======================================================================*/
+
+/**
+ * @brief Unlink a barrier.
+ *
+ * @param barrierid		Id of the barrier to unlink.
+ */
+int barrier_unlink(int barrierid)
+{
+	/* Invalid barrier Id. */
+	if (!barrier_is_valid(barrierid))
+		return (-EINVAL);
+
+	/* Bad barrier. */
+	if (!barrier_is_used(barrierid))
+		return (-EINVAL);
+
+	if (hal_sync_unlink(barriers[barrierid].local) != 0)
+		return (-EAGAIN);
+
+	if (hal_sync_close(barriers[barrierid].remote) != 0)
+		return (-EAGAIN);
+
+	if (barrier_free(barrierid) != 0)
+		return (-EINVAL);
+
+	return(0);
 }
 
 /*=======================================================================*
@@ -270,75 +282,50 @@ int barrier_open(int ncclusters)
  */
 int barrier_wait(int barrierid)
 {
-	int local;
-	uint64_t mask;
+	int nodeid;
 
-	/* Invalid barrier ID. */
-	if ((barrierid < 0) || (barrierid >= NR_BARRIER))
+	/* Invalid barrier Id. */
+	if (!barrier_is_valid(barrierid))
 		return (-EINVAL);
 
-	/* Invalid barrier. */
-	if (!(barriers[barrierid].flags & BARRIER_USED))
+	/* Bad barrier. */
+	if (!barrier_is_used(barrierid))
 		return (-EINVAL);
 
-	local = hal_get_cluster_id();
+	nodeid = hal_get_node_id();
 
-	/* IO 0 cluster barrier. */
-	if (local == IOCLUSTER0)
+	/* Is this node the leader of the list ? */
+	if (nodeid == barriers[barrierid].nodes[0])
 	{
-		assert(mppa_read(barriers[barrierid].local, &mask, sizeof(uint64_t)) == sizeof(uint64_t));
-		mask = ~0;
-		assert(mppa_write(barriers[barrierid].remote, &mask, sizeof(uint64_t)) == sizeof(uint64_t));
-	}
-	else if (local == IOCLUSTER1)
-	{
-		mask = ~0;
-		assert(mppa_write(barriers[barrierid].remote, &mask, sizeof(uint64_t)) == sizeof(uint64_t));
-		assert(mppa_read(barriers[barrierid].local, &mask, sizeof(uint64_t)) == sizeof(uint64_t));
-	}
+		/* Wait for others nodes. */
+		if (hal_sync_wait(barriers[barrierid].local) != 0)
+			return (-EAGAIN);
 
-	/* Compute cluster barrier. */
+		/* Signal others nodes. */
+		if (hal_sync_signal(barriers[barrierid].remote) != 0)
+			return (-EAGAIN);
+	}
 	else
 	{
-		/* Master compute cluster. */
-		if (local == CCLUSTER0)
+		/* This node should be in the list. */
+		for (int i = 0; i < barriers[barrierid].nnodes ; i++)
 		{
-			assert(mppa_read(barriers[barrierid].local, &mask, sizeof(uint64_t)) == sizeof(uint64_t));
-			mask = ~0;
-			assert(mppa_write(barriers[barrierid].remote, &mask, sizeof(uint64_t)) == sizeof(uint64_t));
+			if (barriers[barrierid].nodes[i] == nodeid)
+				goto found;
 		}
 
-		/* Worker compute cluster. */
-		else
-		{
-			mask = 1 << (local - 1);
-			assert(mppa_write(barriers[barrierid].remote, &mask, sizeof(uint64_t)) == sizeof(uint64_t));
-			assert(mppa_read(barriers[barrierid].local, &mask, sizeof(uint64_t)) == sizeof(uint64_t));
-		}
+		return (-EINVAL);
+
+found:
+
+		/* Signal leader. */
+		if (hal_sync_signal(barriers[barrierid].remote) != 0)
+			return (-EAGAIN);
+
+		/* Wait for leader node. */
+		if (hal_sync_wait(barriers[barrierid].local) != 0)
+			return (-EAGAIN);
 	}
-
-	return (0);
-}
-
-/**
- * @brief Closes the global barrier.
- *
- * @param barrierid ID of the target barrier.
- */
-int barrier_close(int barrierid)
-{
-	/* Invalid barrier ID. */
-	if ((barrierid < 0) || (barrierid >= NR_BARRIER))
-		return (-EINVAL);
-
-	/* Invalid barrier. */
-	if (!(barriers[barrierid].flags & BARRIER_USED))
-		return (-EINVAL);
-
-	assert(mppa_close(barriers[barrierid].local) != -1);
-	assert(mppa_close(barriers[barrierid].remote) != -1);
-
-	barrier_free(barrierid);
 
 	return (0);
 }
