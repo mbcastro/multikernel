@@ -24,14 +24,13 @@
 
 #define __NEED_HAL_NOC_
 #define __NEED_HAL_SYNC_
-
 #include <nanvix/hal.h>
 
 /**
  * @brief Barrier flags.
  */
 /**@{*/
-#define BARRIER_USED   (1 << 0)
+#define BARRIER_USED (1 << 0)
 /**@}*/
 
 /**
@@ -39,15 +38,15 @@
  */
 struct barrier
 {
-	int local;                   /* Local sync.  */
-	int remote;                  /* Remote sync. */
+	int local;                   /* Local sync.                         */
+	int remote;                  /* Remote sync.                        */
 	int nnodes;                  /* Number of NoC nodes in the barrier. */
-	int nodes[HAL_NR_NOC_NODES]; /* Id of NoC Nodes in the barrier. */
-	int flags;                   /* Flags. */
+	int nodes[HAL_NR_NOC_NODES]; /* Id of NoC nodes in the barrier.     */
+	int flags;                   /* Flags.                              */
 };
 
 /**
- * @brief table of barriers.
+ * @brief Table of barriers.
  */
 static struct barrier barriers[HAL_NR_NOC_NODES];
 
@@ -113,11 +112,10 @@ static int barrier_free(int barrierid)
  */
 int barrier_create(int *nodes, int nnodes)
 {
-	int barrierid;		/* Id of the barrier.         */
-	int local;			/* Local sync connector.      */
-	int remote;			/* Remote sync connector.     */
-	int nodeid;			/* NoC node Id.               */
-	int found = 0;		/* Is this node in the list ? */
+	int barrierid; /* Id of the barrier.     */
+	int local;	   /* Local sync connector.  */
+	int remote;	   /* Remote sync connector. */
+	int nodeid;	   /* NoC node Id.           */
 
 	/* Invalid node list. */
 	if (nodes == NULL)
@@ -131,11 +129,14 @@ int barrier_create(int *nodes, int nnodes)
 
 	/* This node should be in the list. */
 	for (int i = 0; i < nnodes ; i++)
-		if(nodes[i] == nodeid)
-			found = 1;
+	{
+		if (nodes[i] == nodeid)
+			goto found;
+	}
 
-	if (!found)
-		return (-EINVAL);
+	return (-EINVAL);
+
+found:
 
 	/* Allocate a barrier. */
 	if((barrierid = barrier_alloc()) < 0)
@@ -213,8 +214,7 @@ int barrier_unlink(int barrierid)
  */
 int barrier_wait(int barrierid)
 {
-	int found = 0;		/* Is this node in the list ? */
-	int nodeid;			/* NoC node Id.               */
+	int nodeid;
 
 	/* Invalid barrier Id. */
 	if ((barrierid < 0) || (barrierid >= HAL_NR_NOC_NODES))
@@ -241,11 +241,14 @@ int barrier_wait(int barrierid)
 	{
 		/* This node should be in the list. */
 		for (int i = 0; i < barriers[barrierid].nnodes ; i++)
-			if(barriers[barrierid].nodes[i] == nodeid)
-				found = 1;
+		{
+			if (barriers[barrierid].nodes[i] == nodeid)
+				goto found;
+		}
 
-		if (!found)
-			return (-EINVAL);
+		return (-EINVAL);
+	
+found:
 
 		/* Signal leader. */
 		if (hal_sync_signal(barriers[barrierid].remote) != 0)
