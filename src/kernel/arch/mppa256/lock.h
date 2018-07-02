@@ -20,65 +20,12 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <pthread.h>
+#ifndef _MPPA256_LOCK_H_
+#define _MPPA256_LOCK_H_
 
-#define __NEED_HAL_NOC_
-#include <nanvix/hal.h>
+	/* Forward definitions. */
+	extern void mppa256_lock(void);
+	extern void mppa256_unlock(void);
 
-#include "core.h"
-#include "lock.h"
+#endif /* _MPPA256_LOCK_H_ */
 
-/**
- * @brief Number of running threads.
- */
-static int nthreads = 0;
-
-/**
- * @brief Initializes platform-dependent structures.
- */
-void hal_setup(void)
-{
-	pthread_t tid;
-
-	tid = pthread_self();
-
-	mppa256_lock();
-		if (mppa256_is_iocluster(__k1_get_cluster_id()))
-		{
-			for (int i = 0; i < NR_IOCLUSTER_CORES; i++)
-			{
-				if (__threads[i] == 0)
-				{
-					__threads[i] = tid;
-					nthreads++;
-					break;
-				}
-			}
-		}
-	mppa256_unlock();
-}
-
-/**
- * @brief Cleans platform-dependent structures.
- */
-void hal_cleanup(void)
-{
-	pthread_t tid;
-
-	tid = pthread_self();
-
-	mppa256_lock();
-		if (mppa256_is_iocluster(__k1_get_cluster_id()))
-		{
-			for (int i = 0; i < NR_IOCLUSTER_CORES; i++)
-			{
-				if (__threads[i] == tid)
-				{
-					__threads[i] = 0;
-					nthreads--;
-					break;
-				}
-			}
-		}
-	mppa256_unlock();
-}

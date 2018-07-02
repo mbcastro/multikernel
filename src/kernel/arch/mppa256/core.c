@@ -20,22 +20,20 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <pthread.h>
+
 #include <HAL/hal/core/mp.h>
 
 #define __NEED_HAL_CORE_
 #include <nanvix/hal.h>
 
 #include "core.h" 
+#include "lock.h"
 
 /**
  * @brief Threads table.
  */
 pthread_t __threads[NR_IOCLUSTER_CORES] = { 0, };
-
-/**
- * @brief Lock for critical region.
- */
-pthread_mutex_t core_lock;
 
 /*============================================================================*
  * mppa256_is_ccluster()                                                      *
@@ -104,7 +102,7 @@ int hal_get_core_id(void)
 
 		tid = pthread_self();
 
-		pthread_mutex_lock(&core_lock);
+		mppa256_lock();
 		for (int i = 0; i < NR_IOCLUSTER_CORES; i++)
 		{
 			if (__threads[i] == tid)
@@ -113,7 +111,7 @@ int hal_get_core_id(void)
 				break;
 			}
 		}
-		pthread_mutex_unlock(&core_lock);
+		mppa256_unlock();
 
 		return (coreid);
 	}

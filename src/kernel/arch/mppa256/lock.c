@@ -22,63 +22,31 @@
 
 #include <pthread.h>
 
-#define __NEED_HAL_NOC_
-#include <nanvix/hal.h>
+/**
+ * @brief Global lock.
+ */
+static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
-#include "core.h"
-#include "lock.h"
+/*============================================================================*
+ * mppa256_lock()                                                             *
+ *============================================================================*/
 
 /**
- * @brief Number of running threads.
+ * @brief Locks MPPA-256 module.
  */
-static int nthreads = 0;
-
-/**
- * @brief Initializes platform-dependent structures.
- */
-void hal_setup(void)
+void mppa256_lock(void)
 {
-	pthread_t tid;
-
-	tid = pthread_self();
-
-	mppa256_lock();
-		if (mppa256_is_iocluster(__k1_get_cluster_id()))
-		{
-			for (int i = 0; i < NR_IOCLUSTER_CORES; i++)
-			{
-				if (__threads[i] == 0)
-				{
-					__threads[i] = tid;
-					nthreads++;
-					break;
-				}
-			}
-		}
-	mppa256_unlock();
+	pthread_mutex_lock(&lock);
 }
 
+/*============================================================================*
+ * mppa256_unlock()                                                           *
+ *============================================================================*/
+
 /**
- * @brief Cleans platform-dependent structures.
+ * @brief Unocks MPPA-256 module.
  */
-void hal_cleanup(void)
+void mppa256_unlock(void)
 {
-	pthread_t tid;
-
-	tid = pthread_self();
-
-	mppa256_lock();
-		if (mppa256_is_iocluster(__k1_get_cluster_id()))
-		{
-			for (int i = 0; i < NR_IOCLUSTER_CORES; i++)
-			{
-				if (__threads[i] == tid)
-				{
-					__threads[i] = 0;
-					nthreads--;
-					break;
-				}
-			}
-		}
-	mppa256_unlock();
+	pthread_mutex_unlock(&lock);
 }

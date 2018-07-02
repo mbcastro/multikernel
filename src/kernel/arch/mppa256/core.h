@@ -82,6 +82,5 @@
 
 	/* Forward definitions. */
 	extern pthread_t __threads[4];
-	extern pthread_mutex_t core_lock;
 
 #endif /* _MPPA256_CORE_H_ */
