@@ -49,7 +49,7 @@ void hal_setup(void)
 	tid = pthread_self();
 
 	pthread_mutex_lock(&core_lock);
-		if (k1_is_iocluster(__k1_get_cluster_id()))
+		if (mppa256_is_iocluster(__k1_get_cluster_id()))
 		{
 			for (int i = 0; i < NR_IOCLUSTER_CORES; i++)
 			{
@@ -81,7 +81,7 @@ void hal_cleanup(void)
 	tid = pthread_self();
 
 	pthread_mutex_lock(&core_lock);
-		if (k1_is_iocluster(__k1_get_cluster_id()))
+		if (mppa256_is_iocluster(__k1_get_cluster_id()))
 		{
 			for (int i = 0; i < NR_IOCLUSTER_CORES; i++)
 			{

@@ -93,7 +93,7 @@ int hal_get_node_id(void)
 
 	clusterid = __k1_get_cluster_id();
 
-	if (k1_is_iocluster(clusterid))
+	if (mppa256_is_iocluster(clusterid))
 		return (clusterid + hal_get_core_id());
 	return (clusterid);
 }

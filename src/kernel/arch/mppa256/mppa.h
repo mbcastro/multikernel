@@ -42,8 +42,8 @@
 #endif
 
 	/* Forward defnitions. */
-	extern uint64_t k1_timer_get(void);
-	extern uint64_t k1_timer_diff(uint64_t, uint64_t);
-	extern void k1_timer_init(void);
+	extern uint64_t mppa256_timer_get(void);
+	extern uint64_t mppa256_timer_diff(uint64_t, uint64_t);
+	extern void mppa256_timer_init(void);
 
 #endif /* _MPPA256_ */

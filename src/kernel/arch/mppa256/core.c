@@ -38,7 +38,7 @@ pthread_t __threads[NR_IOCLUSTER_CORES] = { 0, };
 pthread_mutex_t core_lock;
 
 /*============================================================================*
- * k1_is_ccluster()                                                           *
+ * mppa256_is_ccluster()                                                      *
  *============================================================================*/
 
 /**
@@ -50,13 +50,13 @@ pthread_mutex_t core_lock;
  * @return Non zero if the target cluster is a compute cluster and
  * zero otherwise.
  */
-int k1_is_ccluster(int clusterid)
+int mppa256_is_ccluster(int clusterid)
 {
 	return ((clusterid >= CCLUSTER0) && (clusterid <= CCLUSTER15));
 }
 
 /*============================================================================*
- * k1_is_iocluster()                                                          *
+ * mppa256_is_iocluster()                                                     *
  *============================================================================*/
 
 /**
@@ -67,7 +67,7 @@ int k1_is_ccluster(int clusterid)
  * @return Non zero if the target cluster is an IO cluster and zero
  * otherwise.
  */
-int k1_is_iocluster(int clusterid)
+int mppa256_is_iocluster(int clusterid)
 {
 	return ((clusterid == IOCLUSTER0) || (clusterid == IOCLUSTER1));
 } 
@@ -97,7 +97,7 @@ int hal_get_cluster_id(void)
  */
 int hal_get_core_id(void)
 {
-	if (k1_is_iocluster(__k1_get_cluster_id()))
+	if (mppa256_is_iocluster(__k1_get_cluster_id()))
 	{
 		int coreid = 0;
 		pthread_t tid;
@@ -136,7 +136,7 @@ int hal_get_core_type(void)
 
 	clusterid = hal_get_cluster_id();
 
-	return (k1_is_ccluster(clusterid) ? HAL_CORE_USER : HAL_CORE_SYSTEM);
+	return (mppa256_is_ccluster(clusterid) ? HAL_CORE_USER : HAL_CORE_SYSTEM);
 }
 
 /*============================================================================*
@@ -154,7 +154,7 @@ int hal_get_num_cores(void)
 
 	clusterid = hal_get_cluster_id();
 
-	return (k1_is_ccluster(clusterid) ? 17 : 4);
+	return (mppa256_is_ccluster(clusterid) ? 17 : 4);
 }
 
 /*============================================================================*

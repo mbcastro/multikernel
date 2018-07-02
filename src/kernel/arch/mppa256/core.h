@@ -77,8 +77,8 @@
 	#define IOCLUSTER1 192 /**< IO cluster 1.       */
 
 	/* Forward definitions. */
-	extern int k1_is_ccluster(int);
-	extern int k1_is_iocluster(int);
+	extern int mppa256_is_ccluster(int);
+	extern int mppa256_is_iocluster(int);
 
 	/* Forward definitions. */
 	extern pthread_t __threads[4];
