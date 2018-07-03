@@ -104,9 +104,6 @@ static void test_hal_sync_master_open_close(int nclusters)
 		HAL_SYNC_ONE_TO_ALL)) == 0
 	);
 
-	/* Wait for other clusters. */
-	sleep(1);
-
 	/* Build nodes list. */
 	for (int i = 0; i < nclusters; i++)
 		nodes[i] = i;
