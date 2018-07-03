@@ -730,7 +730,7 @@ again:
 		sync_set_busy(syncid);
 
 	/*
-	 * Realease lock, since we may sleep below.
+	 * Release lock, since we may sleep below.
 	 */
 	mppa256_sync_unlock();
 
@@ -799,7 +799,7 @@ again:
 		sync_set_busy(syncid);
 
 	/*
-	 * Realease lock, since we may sleep below.
+	 * Release lock, since we may sleep below.
 	 */
 	mppa256_sync_unlock();
 

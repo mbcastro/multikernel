@@ -38,7 +38,8 @@
  */
 /**@{*/
 #define PORTAL_FLAGS_USED   (1 << 0) /**< Used portal?     */
-#define PORTAL_FLAGS_WRONLY (1 << 2) /**< Write only mode? */
+#define PORTAL_FLAGS_WRONLY (1 << 1) /**< Write only mode? */
+#define PORTAL_FLAGS_BUSY   (1 << 2) /**< Busy?            */
 /**@}*/
 
 /**
@@ -172,6 +173,63 @@ static void portal_set_wronly(int portalid)
 }
 
 /*============================================================================*
+ * portal_is_busy()                                                            *
+ *============================================================================*/
+
+/**
+ * @brief Asserts whether or not a portal point is busy.
+ *
+ * @param portalid ID of the target portal point.
+ *
+ * @returns One if the target portal point is busy one, and false
+ * otherwise.
+ *
+ * @note This function is non-blocking.
+ * @note This function is @b NOT thread safe.
+ * @note This function is reentrant.
+ */
+static int portal_is_busy(int portalid)
+{
+	return (portals[portalid].flags & PORTAL_FLAGS_BUSY);
+}
+
+/*============================================================================*
+ * portal_set_busy()                                                            *
+ *============================================================================*/
+
+/**
+ * @brief Sets a portal point as busy.
+ *
+ * @param portalid ID of the target portal.
+ *
+ * @note This function is non-blocking.
+ * @note This function is @b NOT thread safe.
+ * @note This function is reentrant.
+ */
+static void portal_set_busy(int portalid)
+{
+	portals[portalid].flags |= PORTAL_FLAGS_BUSY;
+}
+
+/*============================================================================*
+ * portal_clear_busy()                                                        *
+ *============================================================================*/
+
+/**
+ * @brief Clears the busy flag of a portal.
+ *
+ * @param portalid ID of the target portal.
+ *
+ * @note This function is non-blocking.
+ * @note This function is @b NOT thread safe.
+ * @note This function is reentrant.
+ */
+static void portal_clear_busy(int portalid)
+{
+	portals[portalid].flags &= ~PORTAL_FLAGS_BUSY;
+}
+
+/*============================================================================*
  * portal_clear_flags()                                                       *
  *============================================================================*/
 
@@ -237,15 +295,7 @@ static void portal_free(int portalid)
  *============================================================================*/
 
 /**
- * @brief Internal hal_portal_create().
- *
- * @param local ID of the local NoC node.
- *
- * @returns Upon successful completion, the ID of a newly created
- * portal is returned. Upon failure, a negative error code is returned
- * instead.
- *
- * @note This function is @b NOT thread safe.
+ * @brief See hal_portal_create().
  */
 static int mppa256_portal_create(int local)
 {
@@ -294,7 +344,9 @@ error0:
  * portal is returned. Upon failure, a negative error code is returned
  * instead.
  *
- * @note This function is @b NOT thread safe.
+ * @note This function is blocking.
+ * @note This function is thread-safe.
+ * @note This function is reentrant.
  */
 int hal_portal_create(int local)
 {
@@ -320,14 +372,7 @@ int hal_portal_create(int local)
  *============================================================================*/
 
 /**
- * @brief Enables read operations from a remote.
- *
- * @param portalid ID of the target portal.
- * @paral local    NoC node ID of local.
- * @param remote   NoC node ID of target remote.
- *
- * @returns Upons successful completion zero is returned. Upon failure,
- * a negative error code is returned instead.
+ * @brief See hal_portal_allow().
  */
 static int mppa256_portal_allow(int portalid, int local, int remote)
 {
@@ -361,6 +406,10 @@ static int mppa256_portal_allow(int portalid, int local, int remote)
  *
  * @returns Upons successful completion zero is returned. Upon failure,
  * a negative error code is returned instead.
+ *
+ * @note This function is blocking.
+ * @note This function is thread-safe.
+ * @note This function is reentrant.
  */
 int hal_portal_allow(int portalid, int remote)
 {
@@ -401,15 +450,7 @@ int hal_portal_allow(int portalid, int remote)
  *============================================================================*/
 
 /**
- * @brief Internal hal_portal_open().
- *
- * @param local  ID of the local NoC node.
- * @param remote ID of the remote NoC node.
- *
- * @returns Upon successful completion, the ID of the target portal is
- * returned. Upon failure, a negative error code is returned instead.
- *
- * @note This function is @b NOT thread safe.
+ * @brief See hal_portal_open().
  */
 static int mppa256_portal_open(int local, int remote)
 {
@@ -469,7 +510,9 @@ error0:
  * @returns Upon successful completion, the ID of the target portal is
  * returned. Upon failure, a negative error code is returned instead.
  *
- * @note This function is @b NOT thread safe.
+ * @note This function is blocking.
+ * @note This function is thread-safe.
+ * @note This function is reentrant.
  */
 int hal_portal_open(int remote)
 {
@@ -498,16 +541,7 @@ int hal_portal_open(int remote)
  *============================================================================*/
 
 /**
- * @brief Internal hal_portal_read()
- *
- * @param portalid ID of target portal.
- * @param buf      Location from where data should be written.
- * @param n        Number of bytes to read.
- *
- * @returns Upon successful completion, the number of bytes read is
- * returned. Upon failure, a negative error code is returned instead.
- *
- * @note This function is @b NOT thread safe.
+ * @brief See hal_portal_read()
  */
 static int mppa256_portal_read(int portalid, void *buf, size_t n)
 {
@@ -518,12 +552,7 @@ static int mppa256_portal_read(int portalid, void *buf, size_t n)
 	/* Setup read operation. */
 	mppa_aiocb_ctor(&aiocb, portals[portalid].portal_fd, buf, n);
 	if (mppa_aio_read(&aiocb) == -1)
-		goto error1;
-
-	/*
-	 * Realease lock, since we may sleep below.
-	 */
-	mppa256_portal_unlock();
+		goto error0;
 
 	/* Unblock remote. */
 	mask = 1 << noc_get_node_num(portals[portalid].local);
@@ -537,8 +566,6 @@ static int mppa256_portal_read(int portalid, void *buf, size_t n)
 
 	return (nread);
 
-error1:
-	mppa256_portal_unlock();
 error0:
 	return (-EAGAIN);
 }
@@ -553,7 +580,9 @@ error0:
  * @returns Upon successful completion, the number of bytes read is
  * returned. Upon failure, a negative error code is returned instead.
  *
- * @note This function is @b NOT thread safe.
+ * @note This function is blocking.
+ * @note This function is thread-safe.
+ * @note This function is reentrant.
  */
 int hal_portal_read(int portalid, void *buf, size_t n)
 {
@@ -562,6 +591,16 @@ int hal_portal_read(int portalid, void *buf, size_t n)
 	/* Invalid portal ID.*/
 	if (!portal_is_valid(portalid))
 		goto error0;
+
+	/* Invalid buffer. */
+	if (buf == NULL)
+		goto error1;
+
+	/* Invalid read size. */
+	if (n < 1)
+		goto error1;
+
+again:
 
 	mppa256_portal_lock();
 
@@ -573,19 +612,26 @@ int hal_portal_read(int portalid, void *buf, size_t n)
 		if (portal_is_wronly(portalid))
 			goto error1;
 
-		/* Invalid buffer. */
-		if (buf == NULL)
-			goto error1;
+		/* Busy portal. */
+		if (portal_is_busy(portalid))
+		{
+			mppa256_portal_unlock();
+			goto again;
+		}
 
-		/* Invalid read size. */
-		if (n < 1)
-			goto error1;
-
-		nread = mppa256_portal_read(portalid, buf, n);
+		/* Set portal as busy. */
+		portal_set_busy(portalid);
 
 	/*
-	 * mppa256_portal_read() releases the lock.
+	 * Release lock, since we may sleep below.
 	 */
+	mppa256_portal_unlock();
+
+	nread = mppa256_portal_read(portalid, buf, n);
+	
+	mppa256_portal_lock();
+		portal_clear_busy(portalid);
+	mppa256_portal_unlock();
 
 	return (nread);
 
@@ -600,16 +646,7 @@ error0:
  *============================================================================*/
 
 /**
- * @brief Internal hal_portal_write()
- *
- * @param portalid ID of target portal.
- * @param buf      Location from where data should be read.
- * @param n        Number of bytes to write.
- *
- * @returns Upon successful the number of bytes written is returned.
- * Upon failure, a negative error code is returned instead.
- *
- * @note This function is @b NOT thread safe.
+ * @brief See hal_portal_write()
  */
 static int mppa256_portal_write(int portalid, const void *buf, size_t n)
 {
@@ -619,12 +656,7 @@ static int mppa256_portal_write(int portalid, const void *buf, size_t n)
 	/* Wait for remote to be ready. */
 	mask = 1 << noc_get_node_num(portals[portalid].remote);
 	if (mppa_ioctl(portals[portalid].sync_fd, MPPA_RX_SET_MATCH, ~mask) == -1)
-		goto error1;
-
-	/*
-	 * Realease lock, since we may sleep below.
-	 */
-	mppa256_portal_unlock();
+		goto error0;
 
 	if (mppa_read(portals[portalid].sync_fd, &mask, sizeof(uint64_t)) == -1)
 		goto error0;
@@ -634,8 +666,6 @@ static int mppa256_portal_write(int portalid, const void *buf, size_t n)
 
 	return (nwrite);
 
-error1:
-	mppa256_portal_unlock();
 error0:
 	return (-EAGAIN);
 }
@@ -650,7 +680,9 @@ error0:
  * @returns Upon successful the number of bytes written is returned.
  * Upon failure, a negative error code is returned instead.
  *
- * @note This function is @b NOT thread safe.
+ * @note This function is blocking.
+ * @note This function is thread-safe.
+ * @note This function is reentrant.
  */
 int hal_portal_write(int portalid, const void *buf, size_t n)
 {
@@ -659,6 +691,16 @@ int hal_portal_write(int portalid, const void *buf, size_t n)
 	/* Invalid portal ID.*/
 	if (!portal_is_valid(portalid))
 		goto error0;
+
+	/* Invalid buffer. */
+	if (buf == NULL)
+		goto error1;
+
+	/* Invalid write size. */
+	if (n < 1)
+		goto error1;
+
+again:
 	
 	mppa256_portal_lock();
 
@@ -670,19 +712,26 @@ int hal_portal_write(int portalid, const void *buf, size_t n)
 		if (!portal_is_wronly(portalid))
 			goto error1;
 
-		/* Invalid buffer. */
-		if (buf == NULL)
-			goto error1;
+		/* Busy portal. */
+		if (portal_is_busy(portalid))
+		{
+			mppa256_portal_unlock();
+			goto again;
+		}
 
-		/* Invalid write size. */
-		if (n < 1)
-			goto error1;
-
-		nwrite = mppa256_portal_write(portalid, buf, n);
+		/* Set portal as busy. */
+		portal_set_busy(portalid);
 
 	/*
-	 * mppa256_portal_write() releases the lock.
+	 * Release lock, since we may sleep below.
 	 */
+	mppa256_portal_unlock();
+
+	nwrite = mppa256_portal_write(portalid, buf, n);
+	
+	mppa256_portal_lock();
+		portal_clear_busy(portalid);
+	mppa256_portal_unlock();
 
 	return (nwrite);
 
@@ -704,13 +753,17 @@ error0:
  * @returns Upon successful completion zero is returned. Upon failure, a
  * negative error code is returned instead.
  *
- * @note This function is @b NOT thread safe.
+ * @note This function is blocking.
+ * @note This function is thread-safe.
+ * @note This function is reentrant.
  */
 int hal_portal_close(int portalid)
 {
 	/* Invalid portal.*/
 	if (!portal_is_valid(portalid))
 		goto error0;
+
+again:
 
 	mppa256_portal_lock();
 
@@ -722,18 +775,23 @@ int hal_portal_close(int portalid)
 		if (!portal_is_wronly(portalid))
 			goto error1;
 
-	mppa256_portal_unlock();
+		/* Busy portal. */
+		if (portal_is_busy(portalid))
+		{
+			mppa256_portal_unlock();
+			goto again;
+		}
 
-	/* Close underlying portal. */
-	if (mppa_close(portals[portalid].portal_fd) < 0)
-		goto error0;
+		/* Close underlying portal. */
+		if (mppa_close(portals[portalid].portal_fd) < 0)
+			goto error0;
 
-	/* Close underlying sync connector. */
-	if (mppa_close(portals[portalid].sync_fd) < 0)
-		goto error2;
+		/* Close underlying sync connector. */
+		if (mppa_close(portals[portalid].sync_fd) < 0)
+			goto error2;
 
-	mppa256_portal_lock();
 		portal_free(portalid);
+
 	mppa256_portal_unlock();
 
 	return (0);
@@ -759,13 +817,17 @@ error0:
  * @returns Upon successful completion zero is returned. Upon failure, a
  * negative error code is returned instead.
  *
- * @note This function is @b NOT thread safe.
+ * @note This function is blocking.
+ * @note This function is thread-safe.
+ * @note This function is reentrant.
  */
 int hal_portal_unlink(int portalid)
 {
 	/* Invalid portal.*/
 	if (!portal_is_valid(portalid))
 		goto error0;
+
+again:
 
 	mppa256_portal_lock();
 
@@ -777,22 +839,27 @@ int hal_portal_unlink(int portalid)
 		if (portal_is_wronly(portalid))
 			goto error1;
 
-	mppa256_portal_unlock();
+		/* Busy portal. */
+		if (portal_is_busy(portalid))
+		{
+			mppa256_portal_unlock();
+			goto again;
+		}
 
-	/* Close underlying portal. */
-	if (mppa_close(portals[portalid].portal_fd) < 0)
-		goto error0;
+		/* Close underlying portal. */
+		if (mppa_close(portals[portalid].portal_fd) < 0)
+			goto error0;
 
-	/* Close underlying sync connector. */
-	if (portals[portalid].sync_fd != -1)
-	{
-		if (mppa_close(portals[portalid].sync_fd) < 0)
-			goto error2;
-	}
+		/* Close underlying sync connector. */
+		if (portals[portalid].sync_fd != -1)
+		{
+			if (mppa_close(portals[portalid].sync_fd) < 0)
+				goto error2;
+		}
 
-	mppa256_portal_lock();
 		portals[portalid].sync_fd = -1;
 		portal_free(portalid);
+
 	mppa256_portal_unlock();
 
 	return (0);
