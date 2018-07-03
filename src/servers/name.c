@@ -38,7 +38,6 @@
 #endif
 
 /* Import definitions. */
-extern pthread_mutex_t lock;
 extern pthread_mutex_t barrier;
 
 /**
@@ -211,9 +210,7 @@ void *name_server(void *args)
 	name_init();
 
 	/* Open server mailbox. */
-	pthread_mutex_lock(&lock);
 		inbox = hal_mailbox_create(hal_noc_nodes[NAME_SERVER_NODE]);
-	pthread_mutex_unlock(&lock);
 
 	pthread_barrier_wait(&barrier);
 
@@ -221,9 +218,7 @@ void *name_server(void *args)
 	{
 		struct name_message msg;
 
-		pthread_mutex_lock(&lock);
 		assert(hal_mailbox_read(inbox, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
-		pthread_mutex_unlock(&lock);
 
 		/* Handle name requests. */
 		switch (msg.op)
@@ -237,19 +232,13 @@ void *name_server(void *args)
 				msg.nodeid = _name_lookup(msg.name);
 
 				/* Send response. */
-				pthread_mutex_lock(&lock);
 				source = hal_mailbox_open(msg.source);
-				pthread_mutex_unlock(&lock);
 
 				assert(source >= 0);
 
-				pthread_mutex_lock(&lock);
 				assert(hal_mailbox_write(source, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
-				pthread_mutex_unlock(&lock);
 
-				pthread_mutex_lock(&lock);
 				assert(hal_mailbox_close(source) == 0);
-				pthread_mutex_unlock(&lock);
 
 				break;
 
@@ -269,19 +258,13 @@ void *name_server(void *args)
 				assert(nr_registration >= 0);
 
 				/* Send acknowledgement. */
-				pthread_mutex_lock(&lock);
 				source = hal_mailbox_open(msg.source);
-				pthread_mutex_unlock(&lock);
 
 				assert(source >= 0);
 
-				pthread_mutex_lock(&lock);
 				assert(hal_mailbox_write(source, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
-				pthread_mutex_unlock(&lock);
 
-				pthread_mutex_lock(&lock);
 				assert(hal_mailbox_close(source) == 0);
-				pthread_mutex_unlock(&lock);
 
 				break;
 
@@ -300,19 +283,13 @@ void *name_server(void *args)
 				assert(nr_registration >= 0);
 
 				/* Send acknowledgement. */
-				pthread_mutex_lock(&lock);
 				source = hal_mailbox_open(msg.source);
-				pthread_mutex_unlock(&lock);
 
 				assert(source >= 0);
 
-				pthread_mutex_lock(&lock);
 				assert(hal_mailbox_write(source, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
-				pthread_mutex_unlock(&lock);
 
-				pthread_mutex_lock(&lock);
 				assert(hal_mailbox_close(source) == 0);
-				pthread_mutex_unlock(&lock);
 
 				break;
 
@@ -323,9 +300,7 @@ void *name_server(void *args)
 	}
 
 	/* House keeping. */
-	pthread_mutex_lock(&lock);
 		hal_mailbox_unlink(inbox);
-	pthread_mutex_unlock(&lock);
 
 	hal_cleanup();
 	return (NULL);
