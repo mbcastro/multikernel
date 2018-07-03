@@ -35,12 +35,14 @@
 #include <nanvix/hal.h>
 
 /**
- * @briwf Number of servers.
+ * @brief Number of servers.
  */
 #define NR_SERVERS 1
 
-/* Import definitions. */
+/* Forward definitions. */
 extern int name_server(int);
+extern void test_kernel(const char *);
+extern void test_runtime(const char *, int);
 
 /**
  * @brief Servers.
@@ -88,48 +90,6 @@ static void *server(void *args)
 	return (NULL);
 }
 
-/* Low-level unit-tests. */
-extern void test_hal(void);
-extern void test_hal_sync(void);
-extern void test_hal_mailbox(void);
-extern void test_hal_portal(void);
-
-/* High-level unit-tests. */
-extern void test_name(int);
-extern void test_mailbox(int);
-
-/**
- * @brief Generic test driver.
- */
-static void test0(const char *module)
-{
-	printf("[nanvix][spawner0] running low-level self-tests\n");
-
-	if (!strcmp(module, "--hal"))
-		test_hal();
-	else if (!strcmp(module, "--hal-sync"))
-		test_hal_sync();
-	else if (!strcmp(module, "--hal-mailbox"))
-		test_hal_mailbox();
-	else if (!strcmp(module, "--hal-portal"))
-		test_hal_portal();
-}
-
-/**
- * @brief Generic test driver.
- */
-static void test1(const char *module)
-{
-	printf("[nanvix][spawner0] running high-level self-tests\n");
-
-	if (!strcmp(module, "--name"))
-		test_name(NR_SERVERS);
-	else if (!strcmp(module, "--mailbox"))
-		test_mailbox(NR_SERVERS);
-
-	exit(EXIT_SUCCESS);
-}
-
 /**
  * @brief Resolves process names.
  */
@@ -156,7 +116,7 @@ int main(int argc, char **argv)
 
 	/* Run self-tests. */
 	if (debug)
-		test0(argv[2]);
+		test_kernel(argv[2]);
 
 	printf("[nanvix][spawner0] server alive\n");
 
@@ -175,7 +135,7 @@ int main(int argc, char **argv)
 
 	/* Run self-tests. */
 	if (debug)
-		test1(argv[2]);
+		test_runtime(argv[2], NR_SERVERS);
 
 	/* Release master IO cluster. */
 	nodes[0] = hal_get_node_id();
