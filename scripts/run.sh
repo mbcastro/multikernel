@@ -119,7 +119,7 @@ then
 	echo "Testing HAL"
 	run2 "nanvix-debug.img" "/servers" "/servers1" "--debug --hal" | grep nanvix
 	echo "Testing HAL Sync"
-	run2 "nanvix-debug.img" "/servers" "/servers1" "--debug --hal-sync" | grep nanvix
+	run2 "nanvix-debug-hal-sync.img" "/servers" "/servers1" "--debug --hal-sync" | grep nanvix
 	echo "Testing HAL Mailbox"
 	run2 "nanvix-debug.img" "/servers" "/servers1" "--debug --hal-mailbox" | grep nanvix
 	echo "Testing HAL Portal"
