@@ -86,11 +86,17 @@ static int mppa256_mailbox_create(int remote)
 			HAL_MAILBOX_MSG_SIZE
 	);
 
-	/* Open NoC connector. */
-	if ((fd = mppa_open(pathname, O_RDONLY)) == -1)
-		return (-EAGAIN);
+	mppa256_mailbox_lock();
+		/* Open NoC connector. */
+		if ((fd = mppa_open(pathname, O_RDONLY)) == -1)
+			goto error0;
+	mppa256_mailbox_unlock();
 
 	return (fd);
+
+error0:
+	mppa256_mailbox_unlock();
+	return (-EAGAIN);
 }
 
 /**
@@ -102,7 +108,9 @@ static int mppa256_mailbox_create(int remote)
  * mailbox is returned. Upon failure, a negative error code is
  * returned instead.
  *
+ * @note This function is blocking.
  * @note This function is thread-safe.
+ * @note This function is reentrant.
  */
 int hal_mailbox_create(int remote)
 {
@@ -112,9 +120,7 @@ int hal_mailbox_create(int remote)
 	if (remote != hal_get_node_id())
 		return (-EINVAL);
 
-	mppa256_mailbox_lock();
-		mbxid = mppa256_mailbox_create(remote);
-	mppa256_mailbox_unlock();
+	mbxid = mppa256_mailbox_create(remote);
 
 	return (mbxid);
 }
@@ -147,20 +153,24 @@ static int mppa256_mailbox_open(int nodeid)
 	);
 
 	/* Open NoC connector. */
-	if ((fd = mppa_open(pathname, O_WRONLY)) == -1)
-		goto error0;
+	mppa256_mailbox_lock();
+		if ((fd = mppa_open(pathname, O_WRONLY)) == -1)
+			goto error0;
+	mppa256_mailbox_unlock();
 
 	/* Set DMA interface for IO cluster. */
 	if (noc_is_ionode(hal_get_node_id()))
 	{
 		if (mppa_ioctl(fd, MPPA_TX_SET_INTERFACE, noc_get_dma(hal_get_node_id())) == -1)
-			goto error0;
+			goto error1;
 	}
 
 	return (fd);
 
-error0:
+error1:
 	mppa_close(fd);
+error0:
+	mppa256_mailbox_unlock();
 	return (-EAGAIN);
 }
 
@@ -173,7 +183,9 @@ error0:
  * is returned. Upon failure, a negative error code is returned
  * instead.
  *
+ * @note This function is blocking.
  * @note This function is thread-safe.
+ * @note This function is reentrant.
  */
 int hal_mailbox_open(int nodeid)
 {
@@ -187,9 +199,7 @@ int hal_mailbox_open(int nodeid)
 	if (nodeid == hal_get_node_id())
 		return (-EINVAL);
 
-	mppa256_mailbox_lock();
-		mbxid = mppa256_mailbox_open(nodeid);
-	mppa256_mailbox_unlock();
+	mbxid = mppa256_mailbox_open(nodeid);
 	
 	return (mbxid);
 }
@@ -206,7 +216,9 @@ int hal_mailbox_open(int nodeid)
  * @returns Upon successful completion, zero is returned. Upon failure,
  * a negative error code is returned instead.
  *
+ * @note This function is blocking.
  * @note This function is thread-safe.
+ * @note This function is reentrant.
  */
 int hal_mailbox_unlink(int mbxid)
 {
@@ -235,7 +247,9 @@ int hal_mailbox_unlink(int mbxid)
  * @returns Upon successful completion, zero is returned. Upon
  * failure, a negative error code is returned instead.
  *
+ * @note This function is blocking.
  * @note This function is thread-safe.
+ * @note This function is reentrant.
  */
 int hal_mailbox_close(int mbxid)
 {
