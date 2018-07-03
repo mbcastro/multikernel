@@ -30,6 +30,8 @@
 #define __NEED_HAL_NOC_
 #define __NEED_HAL_SETUP_
 #define __NEED_HAL_SYNC_
+#define __NEED_HAL_MAILBOX_
+#include <nanvix/config.h>
 #include <nanvix/hal.h>
 
 /**
@@ -38,43 +40,82 @@
 #define NR_SERVERS 1
 
 /* Import definitions. */
-extern int name_server(void);
+extern int name_server(int);
 
 /**
  * @brief Servers.
  */
 static struct
 {
-	int (*main) (void);
+	int (*main) (int);
+	int nodenum;
 } servers[NR_SERVERS] = {
-	{ name_server },
+	{ name_server, NAME_SERVER_NODE },
 };
 
 /**
  * @brief Servers lock.
  */
-pthread_mutex_t lock;
+static pthread_mutex_t lock;
 
 /**
  * @brief Barrier for synchronization.
  */
-pthread_barrier_t barrier;
+static pthread_barrier_t barrier;
 
 /**
  * @brief Server wrapper.
  */
 static void *server(void *args)
 {
-	int (*main_fn)(void);
+	int inbox;
+	int nodenum;
+	int servernum;
+	int (*main_fn) (int);
 
 	hal_setup();
 
-	main_fn = args;
+	servernum = ((int *)args)[0];
 
-	main_fn();
+	nodenum = servers[servernum].nodenum;
+	main_fn = servers[servernum].main;
+
+	/* Open server mailbox. */
+	inbox = hal_mailbox_create(hal_noc_nodes[nodenum]);
+
+	/* Wait for other servers. */
+	pthread_barrier_wait(&barrier);
+
+	/* Spawn server. */
+	main_fn(inbox);
 
 	hal_cleanup();
 	return (NULL);
+}
+
+/* Low-level unit-tests. */
+extern void test_hal(void);
+extern void test_hal_mailbox(void);
+extern void test_hal_sync(void);
+extern void test_hal_portal(void);
+
+/**
+ * @brief Generic test driver.
+ */
+static void test(const char *module)
+{
+	printf("[nanvix][spawner] running low-level self-tests\n");
+
+	if (!strcmp(module, "--hal"))
+		test_hal();
+	else if (!strcmp(module, "--hal-sync"))
+		test_hal_sync();
+	else if (!strcmp(module, "--hal-mailbox"))
+		test_hal_mailbox();
+	else if (!strcmp(module, "--hal-portal"))
+		test_hal_portal();
+
+	exit(EXIT_SUCCESS);
 }
 
 /**
@@ -83,26 +124,39 @@ static void *server(void *args)
 int main(int argc, char **argv)
 {
 	int syncid;
+	int debug = 0;
+	int args[NR_SERVERS];
 	int nodes[NR_SERVERS + 1];
 	pthread_t tids[NR_SERVERS];
 
-	((void) argc);
-	((void) argv);
+	/* Debug mode? */
+	if (argc >= 2)
+	{
+		if (!strcmp(argv[1] , "--debug"))
+			debug = 1;
+	}
 
 	hal_setup();
 
-	printf("[SPAWNER] booting up server\n");
+	printf("[nanvix][spawner] booting up server\n");
 
 	pthread_mutex_init(&lock, NULL);
 	pthread_barrier_init(&barrier, NULL, NR_SERVERS + 1);
 
+	/* Run self-tests. */
+	if (debug)
+		test(argv[2]);
+
+	printf("[nanvix][spawner] server alive\n");
+
 	/* Spawn servers. */
 	for (int i = 0; i < NR_SERVERS; i++)
 	{
+		args[i] = 0;
 		assert((pthread_create(&tids[i],
 			NULL,
 			server,
-			servers[i].main)) == 0
+			&args[i])) == 0
 		);
 	}
 
@@ -114,8 +168,6 @@ int main(int argc, char **argv)
 
 	assert((syncid = hal_sync_open(nodes, NR_SERVERS + 1, HAL_SYNC_ONE_TO_ALL)) >= 0);
 	assert(hal_sync_signal(syncid) == 0);
-
-	printf("[SPAWNER] server alive\n");
 
 	/* Wait for name server thread. */
 	for (int i = 0; i < NR_SERVERS; i++)

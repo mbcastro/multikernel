@@ -21,7 +21,9 @@
 #
 
 # C Source Files
-SRC = name.c spawner.c
+SRC = name.c                \
+	  spawner.c             \
+      $(wildcard tests/*.c)
 
 # Object Files
 OBJ = $(SRC:.c=.o)

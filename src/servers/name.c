@@ -27,7 +27,6 @@
 #include <stdlib.h>
 
 #define __NEED_HAL_NOC_
-#define __NEED_HAL_SETUP_
 #define __NEED_HAL_MAILBOX_
 #include <nanvix/config.h>
 #include <nanvix/hal.h>
@@ -37,9 +36,6 @@
 #ifdef DEBUG
 #include <stdio.h>
 #endif
-
-/* Import definitions. */
-extern pthread_mutex_t barrier;
 
 /**
  * @brief Number of registration.
@@ -194,22 +190,16 @@ static int _name_unlink(char *name)
 /**
  * @brief Handles remote name requests.
  *
- * @param args Server arguments.
+ * @param inbox Input mailbox.
  *
  * @returns Always returns NULL.
  */
-int name_server(void)
+int name_server(int inbox)
 {
-	int inbox;   /* Mailbox for small messages. */
-	int source;  /* NoC node ID of the client   */
 	int tmp;
+	int source;
 
 	name_init();
-
-	/* Open server mailbox. */
-		inbox = hal_mailbox_create(hal_noc_nodes[NAME_SERVER_NODE]);
-
-	pthread_barrier_wait(&barrier);
 
 	while(1)
 	{

@@ -421,29 +421,45 @@ int hal_portal_allow(int portalid, int remote)
 	if (!portal_is_valid(portalid))
 		return (-EINVAL);
 
-	/* Bad portal. */
-	if (!portal_is_used(portalid))
-		return (-EINVAL);
-
-	/* Bad portal. */
-	if (portal_is_wronly(portalid))
-		return (-EINVAL);
-
-	/* Invalid remote. */
-	if (remote < 0)
-		return (-EINVAL);
-
 	local = hal_get_node_id();
 
 	/* Invalid remote. */
 	if (remote == local)
-		return (-EINVAL);
+		goto error0;
+
+	/* Invalid remote. */
+	if (remote < 0)
+		goto error0;
+
+again:
 
 	mppa256_portal_lock();
+
+		/* Bad portal. */
+		if (!portal_is_used(portalid))
+			goto error1;
+
+		/* Bad portal. */
+		if (portal_is_wronly(portalid))
+			goto error1;
+
+		/* Busy portal. */
+		if (portal_is_busy(portalid))
+		{
+			mppa256_portal_unlock();
+			goto again;
+		}
+
 		ret = mppa256_portal_allow(portalid, local, remote);
+
 	mppa256_portal_unlock();
 
 	return (ret);
+
+error1:
+	mppa256_portal_unlock();
+error0:
+	return (-EINVAL);
 }
 
 /*============================================================================*

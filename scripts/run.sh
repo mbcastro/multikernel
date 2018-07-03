@@ -50,9 +50,9 @@ function run1
 	local ret=$?
 	if [ $ret == "0" ]
 	then
-		printf "[test] %-30s \e[32m%s\e[0m\n" "$multibin" "passed"
+		printf "[nanvix][test] %-30s \e[32m%s\e[0m\n" "$multibin" "passed"
 	else
-		printf "[test] %-30s \e[91m%s\e[0m\n" "$multibin" "FAILED"
+		printf "[nanvix][test] %-30s \e[91m%s\e[0m\n" "$multibin" "FAILED"
 	fi
 }
 
@@ -75,9 +75,9 @@ function run2
 	local ret=$?
 	if [ $ret == "0" ]
 	then
-		printf "[test] %-30s \e[32m%s\e[0m\n" "$multibin" "passed"
+		printf "[nanvix][test] %-30s \e[32m%s\e[0m\n" "$multibin" "passed"
 	else
-		printf "[test] %-30s \e[91m%s\e[0m\n" "$multibin" "FAILED"
+		printf "[nanvix][test] %-30s \e[91m%s\e[0m\n" "$multibin" "FAILED"
 	fi
 }
 
@@ -117,15 +117,15 @@ function benchmark_mailbox
 if [[ $1 == "test" ]];
 then
 	echo "Testing HAL"
-	run1 "test-hal.img" "/test/hal-master" | grep "test"
-	echo "Testing SYNC"
-	run2 "test-hal-sync.img" "/test/hal-sync-master0" "/test/hal-sync-master1" "$NCLUSTERS" | grep "test"
-	echo "Testing MAILBOX"
-	run2 "test-hal-mailbox.img" "/test/hal-mailbox-master0" "/test/hal-mailbox-master1" | grep "test"
-	echo "Testing PORTAL"
-	run1 "test-hal-portal.img" "/test/hal-portal-master" | grep "test"
-	echo "Testing NAME"
-	run2 "test-name.img" "/servers" "/test/name-master" "$NCLUSTERS" | grep "test"
+	run1 "nanvix.img" "/servers" "--debug --hal" | grep nanvix
+	echo "Testing HAL Sync"
+	run1 "nanvix.img" "/servers" "--debug --hal-sync" | grep nanvix
+	echo "Testing HAL Mailbox"
+	run1 "nanvix.img" "/servers" "--debug --hal-mailbox" | grep nanvix
+	echo "Testing HAL Portal"
+	run1 "nanvix.img" "/servers" "--debug --hal-portal" | grep nanvix
+#	echo "Testing NAME"
+#	run1 "test-name.img" "/servers" "--debug --name" | grep nanvix
 #	echo "Testing MAILBOX"
 #	run2 "test-mailbox.img" "/servers" "/test/mailbox-master" "$NCLUSTERS" | grep "test"
 #	echo "Testing BARRIER"
