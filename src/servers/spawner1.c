@@ -29,7 +29,7 @@
 #define __NEED_HAL_SETUP_
 #define __NEED_HAL_SYNC_
 #define __NEED_HAL_MAILBOX_
-#include <nanvix/config.h>
+#include <nanvix/const.h>
 #include <nanvix/hal.h>
 
 /* Unit-tests. */

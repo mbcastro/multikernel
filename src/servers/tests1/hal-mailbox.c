@@ -31,11 +31,9 @@
 #define __NEED_HAL_SETUP_
 #define __NEED_HAL_SYNC_
 #define __NEED_HAL_MAILBOX_
-#include <nanvix/config.h>
+#include <nanvix/const.h>
 #include <nanvix/hal.h>
 #include <nanvix/pm.h>
-
-#define OTHER_IOCLUSTER 128
 
 /**
  * @brief Asserts a logic expression.
@@ -78,7 +76,7 @@ static void test_hal_mailbox_open_close_io(void)
 	TEST_ASSERT(hal_sync_wait(syncid_local) == 0);
 	TEST_ASSERT(hal_sync_signal(syncid) == 0);
 
-	TEST_ASSERT((outbox = hal_mailbox_open(OTHER_IOCLUSTER)) >= 0);
+	TEST_ASSERT((outbox = hal_mailbox_open(hal_noc_nodes[SPAWNER_SERVER_NODE])) >= 0);
 
 	TEST_ASSERT(hal_mailbox_close(outbox) == 0);
 
@@ -101,9 +99,9 @@ void test_hal_mailbox(void)
 
 	/* Wait for other IO cluster. */
 	nodes[0] = hal_get_node_id();
-	nodes[1] = OTHER_IOCLUSTER;
+	nodes[1] = hal_noc_nodes[SPAWNER_SERVER_NODE];
 
-	nodes_local[0] = OTHER_IOCLUSTER;
+	nodes_local[0] = hal_noc_nodes[SPAWNER_SERVER_NODE];
 	nodes_local[1] = hal_get_node_id();
 
 	TEST_ASSERT((syncid_local = hal_sync_create(nodes_local, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);

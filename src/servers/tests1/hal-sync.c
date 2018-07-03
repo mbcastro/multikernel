@@ -27,6 +27,7 @@
 #define __NEED_HAL_NOC_
 #define __NEED_HAL_SETUP_
 #define __NEED_HAL_SYNC_
+#include <nanvix/const.h>
 #include <nanvix/hal.h>
 
 /**
@@ -52,9 +53,9 @@ static void test_hal_sync_barrier(void)
 	nodeid = hal_get_node_id();
 
 	nodes[0] = nodeid;
-	nodes[1] = 128;
+	nodes[1] = hal_noc_nodes[SPAWNER_SERVER_NODE];
 
-	nodes_local[0] = 128;
+	nodes_local[0] = hal_noc_nodes[SPAWNER_SERVER_NODE];
 	nodes_local[1] = nodeid;
 
 	/* Open syncrhonization points. */

@@ -31,7 +31,7 @@
 #define __NEED_HAL_SETUP_
 #define __NEED_HAL_SYNC_
 #define __NEED_HAL_MAILBOX_
-#include <nanvix/config.h>
+#include <nanvix/const.h>
 #include <nanvix/hal.h>
 
 /**
@@ -179,7 +179,7 @@ int main(int argc, char **argv)
 
 	/* Release master IO cluster. */
 	nodes[0] = hal_get_node_id();
-	nodes[1] = 192;
+	nodes[1] = hal_noc_nodes[SPAWNER1_SERVER_NODE];
 
 	assert((syncid = hal_sync_open(nodes, NR_SERVERS + 1, HAL_SYNC_ONE_TO_ALL)) >= 0);
 	assert(hal_sync_signal(syncid) == 0);

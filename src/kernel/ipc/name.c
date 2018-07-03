@@ -25,7 +25,7 @@
 
 #define __NEED_HAL_NOC_
 #define __NEED_HAL_MAILBOX_
-#include <nanvix/config.h>
+#include <nanvix/const.h>
 #include <nanvix/name.h>
 #include <nanvix/pm.h>
 #include <nanvix/hal.h>

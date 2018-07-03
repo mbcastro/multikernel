@@ -20,33 +20,23 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef CONST_H_
-#define CONST_H_
+#ifndef NANVIX_CONST_H_
+#define NANVIX_CONST_H_
 
 	/**
-	 * @name System Information
+	 * @brief Name server NoC node num.
 	 */
-	/**@{*/
-	#define SYSNAME  "Nanvix"      /**< Operating system name. */
-	#define NODENAME "bluedragon"  /**< Network node name.     */
-	#define RELEASE  "beta"        /**< Kernel release.        */
-	#define VERSION  "2.0"         /**< Kernel version.        */
-	/**@}*/
+	#define SPAWNER_SERVER_NODE 0
 
 	/**
-	 * @name Scope Constants
+	 * @brief Name server NoC node num.
 	 */
-	/**@{*/
-	#define PUBLIC         /**< Global scope       */
-	#define PRIVATE static /**< File scope.        */
-	#define EXTERN extern  /**< Defined elsewhere. */
-	/**@}*/
+	#define SPAWNER1_SERVER_NODE 4
 
 	/**
-	 * @name Logical Constants
+	 * @brief Name server NoC node num.
 	 */
-	#define FALSE 0 /**< False. */
-	#define TRUE  1 /**< True.  */
+	#define NAME_SERVER_NODE 1
 
 #endif /* CONST_H_ */
 
