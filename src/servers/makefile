@@ -26,8 +26,9 @@ SRC0 = name.c                \
        $(wildcard tests0/*.c)
 
 # C Source Files
-SRC1 = name.c     \
-	   spawner1.c \
+SRC1 = name.c                 \
+	   spawner1.c             \
+       $(wildcard tests1/*.c)
 
 # Object Files
 OBJ0 = $(SRC0:.c=.o)

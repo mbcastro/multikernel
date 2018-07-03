@@ -26,6 +26,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include <mppaipc.h>
+
 #define __NEED_HAL_CORE_
 #define __NEED_HAL_NOC_
 #define __NEED_HAL_SETUP_
@@ -352,6 +354,189 @@ static void test_hal_sync_signal_wait(void)
 	for (int i = 1; i < ncores; i++)
 		pthread_join(tids[i], NULL);
 }
+
+/*============================================================================*
+ * API Test: Barrier Mode                                                     *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Barrier Mode
+ */
+static void test_hal_sync_barrier(void)
+{
+	int nodeid;
+	int syncid;
+	int syncid_local;
+	int _nodes[2];
+	int _nodes_local[2];
+
+	printf("[nanvix][test][api] Barrier Mode\n");
+
+	nodeid = hal_get_node_id();
+
+	_nodes[0] = nodeid;
+	_nodes[1] = 192;
+
+	_nodes_local[0] = 192;
+	_nodes_local[1] = nodeid;
+
+	/* Open synchronization points. */
+	TEST_ASSERT((syncid_local = hal_sync_create(_nodes_local, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
+	TEST_ASSERT((syncid = hal_sync_open(_nodes, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
+
+	TEST_ASSERT(hal_sync_signal(syncid) == 0);
+	TEST_ASSERT(hal_sync_wait(syncid_local) == 0);
+
+	/* House keeping. */
+	TEST_ASSERT(hal_sync_unlink(syncid_local) == 0);
+	TEST_ASSERT(hal_sync_close(syncid) == 0);
+}
+
+/*===================================================================*
+ * API Test: Compute Clusters tests                                  *
+ *===================================================================*/
+
+/**
+ * @brief API Test: Compute Clusters tests
+ */
+static void test_hal_sync_create_unlink_cc(int nclusters)
+{
+	int status;
+	int pids[nclusters];
+
+	char nclusters_str[4];
+	char test_str[4];
+	const char *args[] = {
+		"/test/hal-sync-slave",
+		nclusters_str,
+		test_str,
+		NULL
+	};
+
+	printf("[nanvix][test][api] Compute Clusters Create and Unlink\n");
+	printf("[nanvix][test][api] Compute Clusters Open and Close\n");
+
+	sprintf(nclusters_str, "%d", nclusters);
+	sprintf(test_str, "%d", 0);
+
+	for (int i = 0; i < nclusters; i++)
+		TEST_ASSERT((pids[i] = mppa_spawn(i, NULL, args[0], args, NULL)) != -1);
+
+	for (int i = 0; i < nclusters; i++)
+	{
+		TEST_ASSERT(mppa_waitpid(pids[i], &status, 0) != -1);
+		TEST_ASSERT(status == EXIT_SUCCESS);
+	}
+}
+
+/*===================================================================*
+ * API Test: Wait Signal IO-Compute cluster                          *
+ *===================================================================*/
+
+/**
+ * @brief API Test: Synchronization Point Wait Signal
+ */
+static void test_hal_sync_wait_signal_cc(int nclusters)
+{
+	int syncid;
+	int _nodes[nclusters + 1];
+	int pids[nclusters];
+	int status;
+
+	printf("[nanvix][test][api] Wait Signal IO / compute cluster\n");
+
+	char nclusters_str[4];
+	char test_str[4];
+	const char *args[] = {
+		"/test/hal-sync-slave",
+		nclusters_str,
+		test_str,
+		NULL
+	};
+
+	/* Build nodes list. */
+	_nodes[0] = hal_get_node_id();
+
+	for (int i = 0; i < nclusters; i++)
+		_nodes[i + 1] = i;
+
+	sprintf(nclusters_str, "%d", nclusters);
+	sprintf(test_str, "%d", 1);
+
+	for (int i = 0; i < nclusters; i++)
+		TEST_ASSERT((pids[i] = mppa_spawn(i, NULL, args[0], args, NULL)) != -1);
+
+	TEST_ASSERT((syncid = hal_sync_open(_nodes, nclusters + 1, HAL_SYNC_ONE_TO_ALL)) >= 0);
+
+	TEST_ASSERT(hal_sync_signal(syncid) == 0);
+
+	TEST_ASSERT(hal_sync_close(syncid) == 0);
+
+	for (int i = 0; i < nclusters; i++)
+	{
+		TEST_ASSERT(mppa_waitpid(pids[i], &status, 0) != -1);
+		TEST_ASSERT(status == EXIT_SUCCESS);
+	}
+}
+
+/*===================================================================*
+ * API Test: Signal Wait IO-Compute cluster                          *
+ *===================================================================*/
+
+/**
+ * @brief API Test: Synchronization Point Wait Signal
+ */
+static void test_hal_sync_signal_wait_cc(int nclusters)
+{
+	int syncid;
+	int _nodes[nclusters + 1];
+	int pids[nclusters];
+	char nclusters_str[4];
+	char test_str[4];
+	const char *args[] = {
+		"/test/hal-sync-slave",
+		nclusters_str,
+		test_str,
+		NULL
+	};
+
+	printf("[test][api] Signal Wait IO / compute cluster\n");
+
+	/* Build nodes list. */
+	_nodes[0] = hal_get_node_id();
+
+	for (int i = 0; i < nclusters; i++)
+		_nodes[i + 1] = i;
+
+	/* Create synchronization point. */
+	TEST_ASSERT((syncid = hal_sync_create(
+		_nodes,
+		nclusters + 1,
+		HAL_SYNC_ALL_TO_ONE)) >= 0
+	);
+
+	/* Spawn slaves. */
+	sprintf(nclusters_str, "%d", nclusters);
+	sprintf(test_str, "%d", 2);
+	for (int i = 0; i < nclusters; i++)
+		TEST_ASSERT((pids[i] = mppa_spawn(i, NULL, args[0], args, NULL)) != -1);
+
+	/* Wait. */
+	TEST_ASSERT(hal_sync_wait(syncid) == 0);
+
+	/* Join. */
+	for (int i = 0; i < nclusters; i++)
+	{
+		int status;
+
+		TEST_ASSERT(mppa_waitpid(pids[i], &status, 0) != -1);
+		TEST_ASSERT(status == EXIT_SUCCESS);
+	}
+
+	/* House keeping. */
+	TEST_ASSERT(hal_sync_unlink(syncid) == 0);
+}
+
 
 /*===================================================================*
  * Fault Injection Test: Invalid Create                              *
@@ -733,7 +918,7 @@ static void test_hal_sync_bad_wait(void)
 /**
  * @brief Synchronization Point Test Driver
  */
-void test_hal_sync(void)
+void test_hal_sync()
 {
 	ncores = hal_get_num_cores();
 
@@ -744,6 +929,10 @@ void test_hal_sync(void)
 	test_hal_sync_open_close();
 	test_hal_sync_wait_signal();
 	test_hal_sync_signal_wait();
+	test_hal_sync_barrier();
+	test_hal_sync_create_unlink_cc(HAL_NR_NOC_CNODES);
+	test_hal_sync_wait_signal_cc(HAL_NR_NOC_CNODES);
+	test_hal_sync_signal_wait_cc(HAL_NR_NOC_CNODES);
 
 	/* Fault injection tests. */
 	test_hal_sync_invalid_create();

@@ -90,8 +90,8 @@ static void *server(void *args)
 
 /* Low-level unit-tests. */
 extern void test_hal(void);
-extern void test_hal_mailbox(void);
 extern void test_hal_sync(void);
+extern void test_hal_mailbox(void);
 extern void test_hal_portal(void);
 
 /**

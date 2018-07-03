@@ -52,6 +52,15 @@ static int ncores = 0;
  */
 static pthread_barrier_t barrier;
 
+/**
+ * @brief Synchronization point.
+ */
+static int syncid;
+static int syncid_local;
+
+static int nodes[2];
+static int nodes_local[2];
+
 /*===================================================================*
  * API Test: Create Unlink                                           *
  *===================================================================*/
@@ -168,6 +177,38 @@ static void test_hal_mailbox_open_close(void)
 	/* Wait for driver threads. */
 	for (int i = 1; i < ncores; i++)
 		pthread_join(threads[i], NULL);
+}
+
+/*===================================================================*
+ * API Test: Open Close between IO Clusters                          *
+ *===================================================================*/
+
+/**
+ * @brief API Test: Open Close between IO Clusters
+ */
+static void test_hal_mailbox_open_close_io(void)
+{
+	int inbox;
+	int outbox;
+	int nodeid;
+
+	printf("[nanvix][test][api] Mailbox Open Close IO Cluster 0\n");
+
+	nodeid = hal_get_node_id();
+
+	TEST_ASSERT((inbox = hal_mailbox_create(nodeid)) >= 0);
+
+	TEST_ASSERT(hal_sync_signal(syncid) == 0);
+	TEST_ASSERT(hal_sync_wait(syncid_local) == 0);
+
+	TEST_ASSERT((outbox = hal_mailbox_open(OTHER_IOCLUSTER)) >= 0);
+
+	TEST_ASSERT(hal_mailbox_close(outbox) == 0);
+
+	TEST_ASSERT(hal_sync_signal(syncid) == 0);
+	TEST_ASSERT(hal_sync_wait(syncid_local) == 0);
+
+	TEST_ASSERT(hal_mailbox_unlink(inbox) == 0);
 }
 
 /*===================================================================*
@@ -559,4 +600,23 @@ void test_hal_mailbox(void)
 	test_hal_mailbox_invalid_read();
 	test_hal_mailbox_bad_read();
 	test_hal_mailbox_null_read();
+
+	/* Wait for other IO cluster. */
+	nodes[0] = hal_get_node_id();
+	nodes[1] = OTHER_IOCLUSTER;
+
+	nodes_local[0] = OTHER_IOCLUSTER;
+	nodes_local[1] = hal_get_node_id();
+
+	TEST_ASSERT((syncid_local = hal_sync_create(nodes_local, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
+	TEST_ASSERT((syncid = hal_sync_open(nodes, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
+
+	TEST_ASSERT(hal_sync_signal(syncid) == 0);
+	TEST_ASSERT(hal_sync_wait(syncid_local) == 0);
+
+	test_hal_mailbox_open_close_io();
+
+	/* House keeping. */
+	TEST_ASSERT(hal_sync_unlink(syncid_local) == 0);
+	TEST_ASSERT(hal_sync_close(syncid) == 0)
 }

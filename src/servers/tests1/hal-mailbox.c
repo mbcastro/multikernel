@@ -24,8 +24,7 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <string.h>
-
-#include <mppa/osconfig.h>
+#include <stdlib.h>
 
 #define __NEED_HAL_CORE_
 #define __NEED_HAL_NOC_
@@ -96,13 +95,8 @@ static void test_hal_mailbox_open_close_io(void)
 /**
  * @brief Mailbox Test Driver
  */
-int main(int argc, const char **argv)
+void test_hal_mailbox(void)
 {
-	((void) argc);
-	((void) argv);
-
-	hal_setup();
-
 	ncores = hal_get_num_cores();
 
 	/* Wait for other IO cluster. */
@@ -123,7 +117,4 @@ int main(int argc, const char **argv)
 	/* House keeping. */
 	TEST_ASSERT(hal_sync_unlink(syncid_local) == 0);
 	TEST_ASSERT(hal_sync_close(syncid) == 0);
-
-	hal_cleanup();
-	return (EXIT_SUCCESS);
 }

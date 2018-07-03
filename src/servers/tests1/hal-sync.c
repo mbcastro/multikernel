@@ -23,8 +23,6 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include <mppa/osconfig.h>
-
 #define __NEED_HAL_CORE_
 #define __NEED_HAL_NOC_
 #define __NEED_HAL_SETUP_
@@ -71,25 +69,14 @@ static void test_hal_sync_barrier(void)
 	TEST_ASSERT(hal_sync_close(syncid) == 0);
 }
 
-/*============================================================================*
- * HAL Sync Test Driver                                                       *
- *============================================================================*/
+/*===================================================================*
+ * Synchronization Point Test Driver                                 *
+ *===================================================================*/
 
 /**
- * @brief HAL Sync Test Driver
+ * @brief Synchronization Point Test Driver
  */
-int main(int argc, const char **argv)
+void test_hal_sync(void)
 {
-	((void) argc);
-	((void) argv);
-
-	hal_setup();
-
-	/* API tests. */
 	test_hal_sync_barrier();
-
-	hal_cleanup();
-
-	while(1);
-	return (EXIT_SUCCESS);
 }

@@ -32,6 +32,10 @@
 #include <nanvix/config.h>
 #include <nanvix/hal.h>
 
+/* Unit-tests. */
+extern void test_hal_sync(void);
+extern void test_hal_mailbox(void);
+
 /**
  * @brief Generic test driver.
  */
@@ -40,6 +44,9 @@ static void test(const char *module)
 	((void)module);
 
 	printf("[nanvix][spawner1] running self-tests\n");
+
+	test_hal_sync();
+	test_hal_mailbox();
 }
 
 /**

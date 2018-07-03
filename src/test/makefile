@@ -22,8 +22,6 @@
 
 # Conflicts.
 .PHONY: hal-sync
-.PHONY: hal-mailbox
-.PHONY: hal-portal
 .PHONY: name
 .PHONY: mailbox
 .PHONY: barrier
@@ -32,32 +30,17 @@
 export BINDIR := $(BINDIR)/test
 
 # Builds everything.
-all: hal-sync hal-mailbox hal-portal name mailbox barrier
+all: hal-sync name mailbox barrier
 
 # Builds HAL Sync testing unit.
 hal-sync:
 	mkdir -p $(BINDIR)
 	cd hal-sync && $(MAKE) all
 
-# Builds HAL Mailbox testing unit.
-hal-mailbox:
-	mkdir -p $(BINDIR)
-	cd hal-mailbox && $(MAKE) all
-
-# Builds HAL Portal testing unit.
-hal-portal:
-	mkdir -p $(BINDIR)
-	cd hal-portal && $(MAKE) all
-
 # Builds Naming Service testing unit
 name:
 	mkdir -p $(BINDIR)
 	cd name && $(MAKE) all
-
-# Builds Named Mailbox testing unit
-mailbox:
-	mkdir -p $(BINDIR)
-	cd mailbox && $(MAKE) all
 
 # Builds Barrier testing unit
 barrier:
@@ -67,8 +50,6 @@ barrier:
 # Cleans compilation files.
 clean:
 	cd hal-sync && $(MAKE) clean
-	cd hal-mailbox && $(MAKE) clean
-	cd hal-portal && $(MAKE) clean
 	cd name && $(MAKE) clean
 	cd mailbox && $(MAKE) clean
 	cd barrier && $(MAKE) clean
@@ -76,8 +57,6 @@ clean:
 # Cleans everything.
 distclean:
 	cd hal-sync && $(MAKE) distclean
-	cd hal-mailbox && $(MAKE) distclean
-	cd hal-portal && $(MAKE) distclean
 	cd name && $(MAKE) distclean
 	cd mailbox && $(MAKE) distclean
 	cd barrier && $(MAKE) distclean

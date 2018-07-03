@@ -60,14 +60,7 @@ function build2
 		-T $multibin
 }
 
-build1 $BINDIR/servers $BINDIR/servers1 nanvix.img
+build2 $BINDIR/servers $BINDIR/servers1 $BINDIR/test/hal-sync-slave nanvix.img
 
-build1 $BINDIR/test/hal-mailbox-master0 $BINDIR/test/hal-mailbox-master1 test-hal-mailbox.img
-build1 $BINDIR/servers $BINDIR/test/hal-portal-master                    test-hal-portal.img
-
-build2 $BINDIR/test/hal-sync-master0 $BINDIR/test/hal-sync-master1 $BINDIR/test/sync-slave         test-hal-sync.img
 build2 $BINDIR/servers               $BINDIR/test/name-master      $BINDIR/test/name-slave         test-name.img
-build2 $BINDIR/servers               $BINDIR/test/mailbox-master   $BINDIR/test/mailbox-slave      test-mailbox.img
 build2 $BINDIR/test/barrier-master0  $BINDIR/test/barrier-master1  $BINDIR/test/barrier-slave      test-barrier.img
-
-build2 $BINDIR/servers $BINDIR/benchmark/hal-mailbox-master $BINDIR/benchmark/hal-mailbox-slave  benchmark-hal-mailbox.img
