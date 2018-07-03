@@ -869,6 +869,8 @@ int hal_sync_close(int syncid)
 	if (!sync_is_valid(syncid))
 		goto error0;
 
+again:
+
 	mppa256_sync_lock();
 
 		/* Bad sync. */
@@ -878,6 +880,13 @@ int hal_sync_close(int syncid)
 		/* Bad sync. */
 		if (!sync_is_wronly(syncid))
 			goto error1;
+
+		/* Busy sync. */
+		if (sync_is_busy(syncid))
+		{
+			mppa256_sync_unlock();
+			goto again;
+		}
 
 		if (mppa_close(synctab[syncid].fd) < 0)
 			goto error1;
@@ -916,6 +925,8 @@ int hal_sync_unlink(int syncid)
 	if (!sync_is_valid(syncid))
 		goto error0;
 
+again:
+
 	mppa256_sync_lock();
 
 		/* Bad sync. */
@@ -925,6 +936,13 @@ int hal_sync_unlink(int syncid)
 		/* Bad sync. */
 		if (sync_is_wronly(syncid))
 			goto error1;
+
+		/* Busy sync. */
+		if (sync_is_busy(syncid))
+		{
+			mppa256_sync_unlock();
+			goto again;
+		}
 
 		if (mppa_close(synctab[syncid].fd) < 0)
 			goto error1;
