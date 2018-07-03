@@ -325,6 +325,7 @@ static int mppa256_portal_create(int local)
 	portals[portalid].sync_fd = -1;
 	portals[portalid].remote = -1;
 	portals[portalid].local = local;
+	portal_clear_busy(portalid);
 
 	return (portalid);
 
@@ -491,6 +492,7 @@ static int mppa256_portal_open(int local, int remote)
 	portals[portalid].remote = remote;
 	portals[portalid].local = local;
 	portal_set_wronly(portalid);
+	portal_clear_busy(portalid);
 
 	return (portalid);
 
