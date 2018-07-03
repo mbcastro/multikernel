@@ -38,14 +38,14 @@
 #define NR_SERVERS 1
 
 /* Import definitions. */
-extern void *name_server(void *);
+extern int name_server(void);
 
 /**
  * @brief Servers.
  */
 static struct
 {
-	void *(*main) (void *);
+	int (*main) (void);
 } servers[NR_SERVERS] = {
 	{ name_server },
 };
@@ -59,6 +59,23 @@ pthread_mutex_t lock;
  * @brief Barrier for synchronization.
  */
 pthread_barrier_t barrier;
+
+/**
+ * @brief Server wrapper.
+ */
+static void *server(void *args)
+{
+	int (*main_fn)(void);
+
+	hal_setup();
+
+	main_fn = args;
+
+	main_fn();
+
+	hal_cleanup();
+	return (NULL);
+}
 
 /**
  * @brief Resolves process names.
@@ -84,8 +101,8 @@ int main(int argc, char **argv)
 	{
 		assert((pthread_create(&tids[i],
 			NULL,
-			servers[i].main,
-			NULL)) == 0
+			server,
+			servers[i].main)) == 0
 		);
 	}
 

@@ -24,6 +24,7 @@
 #include <pthread.h>
 #include <string.h>
 #include <errno.h>
+#include <stdlib.h>
 
 #define __NEED_HAL_NOC_
 #define __NEED_HAL_SETUP_
@@ -197,15 +198,11 @@ static int _name_unlink(char *name)
  *
  * @returns Always returns NULL.
  */
-void *name_server(void *args)
+int name_server(void)
 {
 	int inbox;   /* Mailbox for small messages. */
 	int source;  /* NoC node ID of the client   */
 	int tmp;
-
-	((void) args);
-
-	hal_setup();
 
 	name_init();
 
@@ -302,6 +299,5 @@ void *name_server(void *args)
 	/* House keeping. */
 		hal_mailbox_unlink(inbox);
 
-	hal_cleanup();
-	return (NULL);
+	return (EXIT_SUCCESS);
 }
