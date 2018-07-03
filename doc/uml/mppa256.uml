@@ -6,6 +6,8 @@ remove HAL.CoreTypes
 
 namespace mppa256 {
 	class Core {
+		- pthread_t threads[]
+		- pthread_mutex_t lock
 		~ const int NR_CCLUSTER
 		~ const int NR_IOCLUSTER
 		~ const int NR_IOCLUSTER_CORES
@@ -27,10 +29,13 @@ namespace mppa256 {
 		~ const int CCLUSTER15
 		~ const int IOCLUSTER0
 		~ const int IOCLUSTER1
-		~ pthread_t __threads[]
-		~ pthread_mutex_t core_lock
-		~ int k1_is_ccluster(int)
-		~ int k1_is_iocluster(int)
+		- void mppa256_core_lock(void)
+		- void mppa256_core_unlock(void)
+		~ int mppa256_is_ccluster(int)
+		~ int mpp256_is_iocluster(int)
+		~ int mppa256_get_cluster_id(void)
+		~ void mppa256_core_setup(void)
+		~ void mpp256_core_cleanup(void)
 	}
 
 	class NoC {

@@ -52,11 +52,6 @@ static pthread_barrier_t barrier;
  */
 static int ncores = 0;
 
-/**
- * @brief Lock for critical sections.
- */
-static pthread_mutex_t lock;
-
 /*===================================================================*
  * API Test: Create Unlink                                           *
  *===================================================================*/
@@ -77,15 +72,11 @@ static void *test_hal_portal_thread_create_unlink(void *args)
 
 	nodeid = hal_get_node_id();
 
-	pthread_mutex_lock(&lock);
 	TEST_ASSERT((inportal = hal_portal_create(nodeid)) >= 0);
-	pthread_mutex_unlock(&lock);
 
 	pthread_barrier_wait(&barrier);
 
-	pthread_mutex_lock(&lock);
 	TEST_ASSERT(hal_portal_unlink(inportal) == 0);
-	pthread_mutex_unlock(&lock);
 
 	hal_cleanup();
 	return (NULL);
@@ -140,17 +131,13 @@ static void *test_hal_portal_thread_open_close(void *args)
 
 	pthread_barrier_wait(&barrier);
 
-	pthread_mutex_lock(&lock);
 	TEST_ASSERT((outportal = hal_portal_open(((tid + 1) == ncores) ?
 		nodeid + 1 - ncores + 1:
 		nodeid + 1)) >= 0);
-	pthread_mutex_unlock(&lock);
 
 	pthread_barrier_wait(&barrier);
 
-	pthread_mutex_lock(&lock);
 	TEST_ASSERT(hal_portal_close(outportal) == 0);
-	pthread_mutex_unlock(&lock);
 
 	hal_cleanup();
 	return (NULL);
@@ -209,9 +196,7 @@ static void *test_hal_portal_thread_read_write(void *args)
 	/* Reader thread */
 	if (nodeid == clusterid + TID_READ)
 	{
-		pthread_mutex_lock(&lock);
 		TEST_ASSERT((inportal = hal_portal_create(nodeid)) >= 0);
-		pthread_mutex_unlock(&lock);
 
 		for (int dma = 0; dma < ncores; dma++)
 		{
@@ -229,23 +214,17 @@ static void *test_hal_portal_thread_read_write(void *args)
 				TEST_ASSERT(buf[i] == 1);
 		}
 
-		pthread_mutex_lock(&lock);
 		TEST_ASSERT(hal_portal_unlink(inportal) == 0);
-		pthread_mutex_unlock(&lock);
 	}
 	else
 	{
-		pthread_mutex_lock(&lock);
 		TEST_ASSERT((outportal = hal_portal_open(clusterid + TID_READ)) >= 0);
-		pthread_mutex_unlock(&lock);
 
 		memset(buf, 1, DATA_SIZE);
 		TEST_ASSERT(hal_portal_write(outportal, buf, DATA_SIZE)
 												  == DATA_SIZE);
 
-		pthread_mutex_lock(&lock);
 		TEST_ASSERT(hal_portal_close(outportal) == 0);
-		pthread_mutex_unlock(&lock);
 	}
 
 	hal_cleanup();
@@ -295,7 +274,6 @@ int main(int argc, const char **argv)
 
 	ncores = hal_get_num_cores();
 
-	pthread_mutex_init(&lock, NULL);
 	pthread_barrier_init(&barrier, NULL, ncores);
 
 	test_hal_portal_create_unlink();

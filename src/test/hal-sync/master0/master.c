@@ -40,6 +40,11 @@
 static int ncores = 0;
 
 /**
+ * @brief Nodes list.
+ */
+static int nodes[HAL_NR_NOC_NODES];
+
+/**
  * @brief Asserts a logic expression.
  */
 #define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
@@ -49,11 +54,6 @@ static int ncores = 0;
  */
 static pthread_barrier_t barrier;
 
-/**
- * @brief Lock for critical sections.
- */
-static pthread_mutex_t lock;
-
 /*============================================================================*
  * API Test: Create Unlink                                                    *
  *============================================================================*/
@@ -61,26 +61,31 @@ static pthread_mutex_t lock;
 /**
  * @brief API Test: Synchronization Point Create Unlink
  */
-static void *test_hal_sync_thread_create_unlink(void *args)
+static void *test_hal_sync_create_unlink_worker(void *args)
 {
+	int tnum;
 	int syncid;
-	int *nodes;
 
 	hal_setup();
 
-	nodes = ((int *)args);
+	tnum = ((int *)args)[0];
 
-	pthread_mutex_lock(&lock);
+	nodes[tnum] = hal_get_node_id();
+
+	/*
+	 * Wait for nodes list to be initialized. 
+	 */
+	pthread_barrier_wait(&barrier);
+
 	TEST_ASSERT((syncid = hal_sync_create(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) >= 0);
-	pthread_mutex_unlock(&lock);
 
+	/*
+	 * Wait for all processes to create the 
+	 * their synchronization points.
+	 */
 	pthread_barrier_wait(&barrier);
 
-	pthread_mutex_lock(&lock);
 	TEST_ASSERT(hal_sync_unlink(syncid) == 0);
-	pthread_mutex_unlock(&lock);
-
-	pthread_barrier_wait(&barrier);
 
 	hal_cleanup();
 	return (NULL);
@@ -91,22 +96,21 @@ static void *test_hal_sync_thread_create_unlink(void *args)
  */
 static void test_hal_sync_create_unlink(void)
 {
-	int nodes[ncores];
+	int args[ncores];
 	pthread_t tids[ncores];
 
 	printf("[test][api] Create Unlink\n");
 
-	/* Build nodes list. */
-	for (int i = 0; i < ncores; i++)
-		nodes[i] = hal_get_node_id() + i;
+	nodes[0] = hal_get_node_id();
 
 	/* Spawn driver threads. */
 	for (int i = 1; i < ncores; i++)
 	{
+		args[i] = i;
 		assert((pthread_create(&tids[i],
 			NULL,
-			test_hal_sync_thread_create_unlink,
-			nodes)) == 0
+			test_hal_sync_create_unlink_worker,
+			&args[i])) == 0
 		);
 	}
 
@@ -122,72 +126,59 @@ static void test_hal_sync_create_unlink(void)
 /**
  * @brief API Test: Synchronization Point Open Close
  */
-static void *test_hal_sync_thread_open_close(void *args)
+static void *test_hal_sync_open_close_worker(void *args)
 {
+	int tnum;
 	int syncid;
-	int *nodes;
 
 	hal_setup();
 
-	nodes = ((int *)args);
+	tnum = ((int *)args)[0];
 
-	pthread_mutex_lock(&lock);
+	nodes[tnum] = hal_get_node_id();
+
+	/*
+	 * Wait for nodes list to be initialized. 
+	 */
+	pthread_barrier_wait(&barrier);
+
 	TEST_ASSERT((syncid = hal_sync_create(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) >= 0);
-	pthread_mutex_unlock(&lock);
 
+	/*
+	 * Wait for all processes to open the 
+	 * their synchronization points.
+	 */
 	pthread_barrier_wait(&barrier);
 
-	pthread_mutex_lock(&lock);
 	TEST_ASSERT(hal_sync_unlink(syncid) == 0);
-	pthread_mutex_unlock(&lock);
-
-	pthread_barrier_wait(&barrier);
 
 	hal_cleanup();
 	return (NULL);
 }
 
-/**
- * @brief API Test: Synchronization Point Open Close
- */
-static void test_hal_sync_master_open_close(const int *nodes)
-{
-	int syncid;
-
-	pthread_mutex_lock(&lock);
-	TEST_ASSERT((syncid = hal_sync_open(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) >= 0);
-	pthread_mutex_unlock(&lock);
-
-	pthread_mutex_lock(&lock);
-	TEST_ASSERT(hal_sync_close(syncid) == 0);
-	pthread_mutex_unlock(&lock);
-}
 
 /**
  * @brief API Test: Synchronization Point Open Close
  */
 static void test_hal_sync_open_close(void)
 {
-	int nodes[ncores];
+	int args[ncores];
 	pthread_t tids[ncores];
 
 	printf("[test][api] Open Close\n");
 
-	/* Build nodes list. */
-	for (int i = 0; i < ncores; i++)
-		nodes[i] = hal_get_node_id() + i;
+	nodes[0] = hal_get_node_id();
 
 	/* Spawn driver threads. */
 	for (int i = 1; i < ncores; i++)
 	{
+		args[i] = i;
 		assert((pthread_create(&tids[i],
 			NULL,
-			test_hal_sync_thread_open_close,
-			nodes)) == 0
+			test_hal_sync_open_close_worker,
+			&args[i])) == 0
 		);
 	}
-
-	test_hal_sync_master_open_close(nodes);
 
 	/* Wait for driver threads. */
 	for (int i = 1; i < ncores; i++)
@@ -201,28 +192,50 @@ static void test_hal_sync_open_close(void)
 /**
  * @brief API Test: Synchronization Point Wait Signal
  */
-static void *test_hal_sync_thread_wait_signal(void *args)
+static void *test_hal_sync_wait_signal_worker(void *args)
 {
+	int tnum;
 	int syncid;
-	int *nodes;
 
 	hal_setup();
 
-	nodes = ((int *)args);
+	tnum = ((int *)args)[0];
 
-	pthread_mutex_lock(&lock);
-	TEST_ASSERT((syncid = hal_sync_create(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) >= 0);
-	pthread_mutex_unlock(&lock);
+	nodes[tnum] = hal_get_node_id();
 
+	/*
+	 * Wait for nodes list to be initialized. 
+	 */
 	pthread_barrier_wait(&barrier);
 
-	TEST_ASSERT(hal_sync_wait(syncid) == 0);
+	if (tnum == 0)
+	{
+		TEST_ASSERT((syncid = hal_sync_open(&nodes[0], ncores - 1, HAL_SYNC_ONE_TO_ALL)) >= 0);
 
-	pthread_mutex_lock(&lock);
-	TEST_ASSERT(hal_sync_unlink(syncid) == 0);
-	pthread_mutex_unlock(&lock);
+		/*
+		 * Wait for all processes to open the 
+		 * their synchronization points.
+		 */
+		pthread_barrier_wait(&barrier);
 
-	pthread_barrier_wait(&barrier);
+		TEST_ASSERT(hal_sync_signal(syncid) == 0);
+
+		TEST_ASSERT(hal_sync_close(syncid) == 0);
+	}
+	else
+	{
+		TEST_ASSERT((syncid = hal_sync_create(&nodes[0], ncores - 1, HAL_SYNC_ONE_TO_ALL)) >= 0);
+
+		/*
+		 * Wait for all processes to open the 
+		 * their synchronization points.
+		 */
+		pthread_barrier_wait(&barrier);
+
+		TEST_ASSERT(hal_sync_wait(syncid) == 0);
+
+		TEST_ASSERT(hal_sync_unlink(syncid) == 0);
+	}
 
 	hal_cleanup();
 	return (NULL);
@@ -231,46 +244,25 @@ static void *test_hal_sync_thread_wait_signal(void *args)
 /**
  * @brief API Test: Synchronization Point Wait Signal
  */
-static void test_hal_sync_master_wait_signal(const int *nodes)
-{
-	int syncid;
-
-	pthread_mutex_lock(&lock);
-	TEST_ASSERT((syncid = hal_sync_open(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) >= 0);
-	pthread_mutex_unlock(&lock);
-
-	TEST_ASSERT(hal_sync_signal(syncid) == 0);
-
-	pthread_mutex_lock(&lock);
-	TEST_ASSERT(hal_sync_close(syncid) == 0);
-	pthread_mutex_unlock(&lock);
-}
-
-/**
- * @brief API Test: Synchronization Point Wait Signal
- */
 static void test_hal_sync_wait_signal(void)
 {
-	int nodes[ncores];
+	int args[ncores];
 	pthread_t tids[ncores];
 
 	printf("[test][api] Wait Signal\n");
 
-	/* Build nodes list. */
-	for (int i = 0; i < ncores; i++)
-		nodes[i] = hal_get_node_id() + i;
+	nodes[0] = hal_get_node_id();
 
 	/* Spawn driver threads. */
 	for (int i = 1; i < ncores; i++)
 	{
+		args[i] = i - 1;
 		assert((pthread_create(&tids[i],
 			NULL,
-			test_hal_sync_thread_wait_signal,
-			nodes)) == 0
+			test_hal_sync_wait_signal_worker,
+			&args[i])) == 0
 		);
 	}
-
-	test_hal_sync_master_wait_signal(nodes);
 
 	/* Wait for driver threads. */
 	for (int i = 1; i < ncores; i++)
@@ -284,28 +276,50 @@ static void test_hal_sync_wait_signal(void)
 /**
  * @brief API Test: Synchronization Point Signal Wait
  */
-static void *test_hal_sync_thread_signal_wait(void *args)
+static void *test_hal_sync_signal_wait_worker(void *args)
 {
+	int tnum;
 	int syncid;
-	int *nodes;
 
 	hal_setup();
 
-	nodes = ((int *)args);
+	tnum = ((int *)args)[0];
 
-	pthread_mutex_lock(&lock);
-	TEST_ASSERT((syncid = hal_sync_open(nodes, ncores, HAL_SYNC_ALL_TO_ONE)) >= 0);
-	pthread_mutex_unlock(&lock);
+	nodes[tnum] = hal_get_node_id();
 
+	/*
+	 * Wait for nodes list to be initialized. 
+	 */
 	pthread_barrier_wait(&barrier);
 
-	TEST_ASSERT(hal_sync_signal(syncid) == 0);
+	if (tnum == 0)
+	{
+		TEST_ASSERT((syncid = hal_sync_create(&nodes[0], ncores - 1, HAL_SYNC_ALL_TO_ONE)) >= 0);
 
-	pthread_barrier_wait(&barrier);
+		/*
+		 * Wait for all processes to open the 
+		 * their synchronization points.
+		 */
+		pthread_barrier_wait(&barrier);
 
-	pthread_mutex_lock(&lock);
-	TEST_ASSERT(hal_sync_close(syncid) == 0);
-	pthread_mutex_unlock(&lock);
+		TEST_ASSERT(hal_sync_wait(syncid) == 0);
+
+		TEST_ASSERT(hal_sync_unlink(syncid) == 0);
+	}
+	else
+	{
+		TEST_ASSERT((syncid = hal_sync_open(&nodes[0], ncores - 1, HAL_SYNC_ALL_TO_ONE)) >= 0);
+
+		/*
+		 * Wait for all processes to open the 
+		 * their synchronization points.
+		 */
+		pthread_barrier_wait(&barrier);
+
+		TEST_ASSERT(hal_sync_signal(syncid) == 0);
+
+		TEST_ASSERT(hal_sync_close(syncid) == 0);
+	}
 
 	hal_cleanup();
 	return (NULL);
@@ -314,27 +328,9 @@ static void *test_hal_sync_thread_signal_wait(void *args)
 /**
  * @brief API Test: Synchronization Point Signal Wait
  */
-static void test_hal_sync_master_signal_wait(const int *nodes)
-{
-	int syncid;
-
-	pthread_mutex_lock(&lock);
-	TEST_ASSERT((syncid = hal_sync_create(nodes, ncores, HAL_SYNC_ALL_TO_ONE)) >= 0);
-	pthread_mutex_unlock(&lock);
-
-	TEST_ASSERT(hal_sync_wait(syncid) == 0);
-
-	pthread_mutex_lock(&lock);
-	TEST_ASSERT(hal_sync_unlink(syncid) == 0);
-	pthread_mutex_unlock(&lock);
-}
-
-/**
- * @brief API Test: Synchronization Point Signal Wait
- */
 static void test_hal_sync_signal_wait(void)
 {
-	int nodes[ncores];
+	int args[ncores];
 	pthread_t tids[ncores];
 
 	printf("[test][api] Signal Wait\n");
@@ -346,14 +342,13 @@ static void test_hal_sync_signal_wait(void)
 	/* Spawn driver threads. */
 	for (int i = 1; i < ncores; i++)
 	{
+		args[i] = i - 1;
 		assert((pthread_create(&tids[i],
 			NULL,
-			test_hal_sync_thread_signal_wait,
-			nodes)) == 0
+			test_hal_sync_signal_wait_worker,
+			&args[i])) == 0
 		);
 	}
-
-	test_hal_sync_master_signal_wait(nodes);
 
 	/* Wait for driver threads. */
 	for (int i = 1; i < ncores; i++)
@@ -369,22 +364,25 @@ static void test_hal_sync_signal_wait(void)
  */
 static void test_hal_sync_barrier(void)
 {
+	int nodeid;
 	int syncid;
 	int syncid_local;
-	int nodes[2];
-	int nodes_local[2];
+	int _nodes[2];
+	int _nodes_local[2];
 
 	printf("[test][api] Barrier Mode\n");
 
-	nodes[0] = 128;
-	nodes[1] = 192;
+	nodeid = hal_get_node_id();
 
-	nodes_local[0] = 192;
-	nodes_local[1] = 128;
+	_nodes[0] = nodeid;
+	_nodes[1] = 192;
+
+	_nodes_local[0] = 192;
+	_nodes_local[1] = nodeid;
 
 	/* Open synchronization points. */
-	TEST_ASSERT((syncid_local = hal_sync_create(nodes_local, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
-	TEST_ASSERT((syncid = hal_sync_open(nodes, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
+	TEST_ASSERT((syncid_local = hal_sync_create(_nodes_local, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
+	TEST_ASSERT((syncid = hal_sync_open(_nodes, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
 
 	TEST_ASSERT(hal_sync_signal(syncid) == 0);
 	TEST_ASSERT(hal_sync_wait(syncid_local) == 0);
@@ -438,23 +436,10 @@ static void test_hal_sync_create_unlink_cc(int nclusters)
 /**
  * @brief API Test: Synchronization Point Wait Signal
  */
-static void test_hal_sync_master_wait_signal_cc(const int *nodes, int nclusters)
-{
-	int syncid;
-
-	TEST_ASSERT((syncid = hal_sync_open(nodes, nclusters + 1, HAL_SYNC_ONE_TO_ALL)) >= 0);
-
-	TEST_ASSERT(hal_sync_signal(syncid) == 0);
-
-	TEST_ASSERT(hal_sync_close(syncid) == 0);
-}
-
-/**
- * @brief API Test: Synchronization Point Wait Signal
- */
 static void test_hal_sync_wait_signal_cc(int nclusters)
 {
-	int nodes[nclusters + 1];
+	int syncid;
+	int _nodes[nclusters + 1];
 	int pids[nclusters];
 	int status;
 
@@ -470,10 +455,10 @@ static void test_hal_sync_wait_signal_cc(int nclusters)
 	};
 
 	/* Build nodes list. */
-	nodes[0] = hal_get_node_id();
+	_nodes[0] = hal_get_node_id();
 
 	for (int i = 0; i < nclusters; i++)
-		nodes[i + 1] = i;
+		_nodes[i + 1] = i;
 
 	sprintf(nclusters_str, "%d", nclusters);
 	sprintf(test_str, "%d", 1);
@@ -481,7 +466,11 @@ static void test_hal_sync_wait_signal_cc(int nclusters)
 	for (int i = 0; i < nclusters; i++)
 		TEST_ASSERT((pids[i] = mppa_spawn(i, NULL, args[0], args, NULL)) != -1);
 
-	test_hal_sync_master_wait_signal_cc(nodes, nclusters);
+	TEST_ASSERT((syncid = hal_sync_open(_nodes, nclusters + 1, HAL_SYNC_ONE_TO_ALL)) >= 0);
+
+	TEST_ASSERT(hal_sync_signal(syncid) == 0);
+
+	TEST_ASSERT(hal_sync_close(syncid) == 0);
 
 	for (int i = 0; i < nclusters; i++)
 	{
@@ -494,14 +483,13 @@ static void test_hal_sync_wait_signal_cc(int nclusters)
  * API Test: Signal Wait IO-Compute cluster                          *
  *===================================================================*/
 
-
 /**
  * @brief API Test: Synchronization Point Wait Signal
  */
 static void test_hal_sync_signal_wait_cc(int nclusters)
 {
 	int syncid;
-	int nodes[nclusters + 1];
+	int _nodes[nclusters + 1];
 	int pids[nclusters];
 	char nclusters_str[4];
 	char test_str[4];
@@ -515,13 +503,14 @@ static void test_hal_sync_signal_wait_cc(int nclusters)
 	printf("[test][api] Signal Wait IO / compute cluster\n");
 
 	/* Build nodes list. */
-	nodes[0] = hal_get_node_id();
+	_nodes[0] = hal_get_node_id();
 
 	for (int i = 0; i < nclusters; i++)
-		nodes[i + 1] = i;
+		_nodes[i + 1] = i;
 
 	/* Create synchronization point. */
-	TEST_ASSERT((syncid = hal_sync_create(nodes,
+	TEST_ASSERT((syncid = hal_sync_create(
+		_nodes,
 		nclusters + 1,
 		HAL_SYNC_ALL_TO_ONE)) >= 0
 	);
@@ -557,8 +546,6 @@ static void test_hal_sync_signal_wait_cc(int nclusters)
  */
 static void test_hal_sync_invalid_create(void)
 {
-	int nodes[ncores];
-
 	printf("[test][fault injection] Invalid Create\n");
 
 	/* Build nodes list. */
@@ -582,8 +569,6 @@ static void test_hal_sync_invalid_create(void)
  */
 static void test_hal_sync_bad_create1(void)
 {
-	int nodes[ncores];
-
 	/* Invalid list of NoC nodes. */
 	for (int i = ncores - 1; i >= 0; i--)
 		nodes[i] = -1;
@@ -610,8 +595,6 @@ static void test_hal_sync_bad_create1(void)
  */
 static void test_hal_sync_bad_create2(void)
 {
-	int nodes[ncores];
-
 	/* Invalid list of NoC nodes. */
 	for (int i = ncores - 1; i >= 0; i--)
 		nodes[i] = -1;
@@ -651,8 +634,6 @@ static void test_hal_sync_bad_create(void)
  */
 static void test_hal_sync_invalid_open(void)
 {
-	int nodes[ncores];
-
 	printf("[test][fault injection] Invalid Open\n");
 
 	/* Build nodes list. */
@@ -676,7 +657,6 @@ static void test_hal_sync_invalid_open(void)
  */
 static void test_hal_sync_bad_open1(void)
 {
-	int nodes[ncores];
 
 	/* Invalid list of NoC nodes. */
 	for (int i = ncores - 1; i >= 0; i--)
@@ -702,8 +682,6 @@ static void test_hal_sync_bad_open1(void)
  */
 static void test_hal_sync_bad_open2(void)
 {
-	int nodes[ncores];
-
 	/* Invalid list of NoC nodes. */
 	for (int i = ncores - 1; i >= 0; i--)
 		nodes[i] = -1;
@@ -761,7 +739,6 @@ static void test_hal_sync_invalid_unlink(void)
 static void test_hal_sync_bad_unlink(void)
 {
 	int syncid;
-	int nodes[ncores];
 
 	printf("[test][fault injection] Bad Unlink\n");
 
@@ -784,7 +761,6 @@ static void test_hal_sync_bad_unlink(void)
 static void test_hal_sync_double_unlink(void)
 {
 	int syncid;
-	int nodes[ncores];
 
 	printf("[test][fault injection] Double Unlink\n");
 
@@ -823,7 +799,6 @@ static void test_hal_sync_invalid_close(void)
 static void test_hal_sync_bad_close(void)
 {
 	int syncid;
-	int nodes[ncores];
 
 	printf("[test][fault injection] Bad Close\n");
 
@@ -846,7 +821,6 @@ static void test_hal_sync_bad_close(void)
 static void test_hal_sync_double_close(void)
 {
 	int syncid;
-	int nodes[ncores];
 
 	printf("[test][fault injection] Double Close\n");
 
@@ -885,7 +859,6 @@ static void test_hal_sync_invalid_signal(void)
 static void test_hal_sync_bad_signal(void)
 {
 	int syncid;
-	int nodes[ncores];
 
 	printf("[test][fault injection] Bad Signal\n");
 
@@ -925,7 +898,6 @@ static void test_hal_sync_invalid_wait(void)
 static void test_hal_sync_bad_wait(void)
 {
 	int syncid;
-	int nodes[ncores];
 
 	printf("[test][fault injection] Bad Wait\n");
 
@@ -958,7 +930,6 @@ int main(int argc, const char **argv)
 
 	ncores = hal_get_num_cores();
 
-	pthread_mutex_init(&lock, NULL);
 	pthread_barrier_init(&barrier, NULL, ncores - 1);
 
 	/* API tests. */

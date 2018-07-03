@@ -45,16 +45,19 @@
  */
 static void test_hal_sync_barrier(void)
 {
+	int nodeid;
 	int syncid;
 	int syncid_local;
 	int nodes[2];
 	int nodes_local[2];
 
-	nodes[0] = 192;
+	nodeid = hal_get_node_id();
+
+	nodes[0] = nodeid;
 	nodes[1] = 128;
 
 	nodes_local[0] = 128;
-	nodes_local[1] = 192;
+	nodes_local[1] = nodeid;
 
 	/* Open syncrhonization points. */
 	TEST_ASSERT((syncid_local = hal_sync_create(nodes_local, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);

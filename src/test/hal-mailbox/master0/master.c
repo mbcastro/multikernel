@@ -62,11 +62,6 @@ static int syncid_local;
 static int nodes[2];
 static int nodes_local[2];
 
-/**
- * @brief Lock for critical sections.
- */
-static pthread_mutex_t lock;
-
 /*===================================================================*
  * API Test: Create Unlink                                           *
  *===================================================================*/
@@ -85,15 +80,11 @@ static void *test_hal_mailbox_thread_create_unlink(void *args)
 
 	nodeid = hal_get_node_id();
 
-	pthread_mutex_lock(&lock);
 	TEST_ASSERT((inbox = hal_mailbox_create(nodeid)) >= 0);
-	pthread_mutex_unlock(&lock);
 
 	pthread_barrier_wait(&barrier);
 
-	pthread_mutex_lock(&lock);
 	TEST_ASSERT(hal_mailbox_unlink(inbox) == 0);
-	pthread_mutex_unlock(&lock);
 
 	hal_cleanup();
 	return (NULL);
@@ -143,29 +134,21 @@ static void *test_hal_mailbox_thread_open_close(void *args)
 
 	nodeid = hal_get_node_id();
 
-	pthread_mutex_lock(&lock);
 	TEST_ASSERT((inbox = hal_mailbox_create(nodeid)) >= 0);
-	pthread_mutex_unlock(&lock);
 
 	pthread_barrier_wait(&barrier);
 
-	pthread_mutex_lock(&lock);
 	TEST_ASSERT((outbox = hal_mailbox_open(
 		((tid + 1) == ncores) ?
 			nodeid + 1 - ncores + 1:
 			nodeid + 1)) >= 0
 	);
-	pthread_mutex_unlock(&lock);
 
 	pthread_barrier_wait(&barrier);
 
-	pthread_mutex_lock(&lock);
 	TEST_ASSERT(hal_mailbox_close(outbox) == 0);
-	pthread_mutex_unlock(&lock);
 
-	pthread_mutex_lock(&lock);
 	TEST_ASSERT(hal_mailbox_unlink(inbox) == 0);
-	pthread_mutex_unlock(&lock);
 
 	hal_cleanup();
 	return (NULL);
@@ -204,73 +187,29 @@ static void test_hal_mailbox_open_close(void)
 /**
  * @brief API Test: Open Close between IO Clusters
  */
-static void *test_hal_mailbox_thread_open_close_io(void *args)
+static void test_hal_mailbox_open_close_io(void)
 {
 	int inbox;
 	int outbox;
 	int nodeid;
-	int tid;
-
-	hal_setup();
-
-	tid = ((int *)args)[0];
-
-	nodeid = hal_get_node_id();
-
-	pthread_mutex_lock(&lock);
-	TEST_ASSERT((inbox = hal_mailbox_create(nodeid)) >= 0);
-	pthread_mutex_unlock(&lock);
-
-	pthread_mutex_lock(&lock);
-	TEST_ASSERT(hal_sync_signal(syncid) == 0);
-	TEST_ASSERT(hal_sync_wait(syncid_local) == 0);
-	pthread_mutex_unlock(&lock);
-
-	pthread_mutex_lock(&lock);
-	TEST_ASSERT((outbox = hal_mailbox_open(OTHER_IOCLUSTER + tid)) >= 0);
-	pthread_mutex_unlock(&lock);
-
-	pthread_mutex_lock(&lock);
-	TEST_ASSERT(hal_mailbox_close(outbox) == 0);
-	pthread_mutex_unlock(&lock);
-
-	pthread_mutex_lock(&lock);
-	TEST_ASSERT(hal_sync_signal(syncid) == 0);
-	TEST_ASSERT(hal_sync_wait(syncid_local) == 0);
-	pthread_mutex_unlock(&lock);
-
-	pthread_mutex_lock(&lock);
-	TEST_ASSERT(hal_mailbox_unlink(inbox) == 0);
-	pthread_mutex_unlock(&lock);
-
-	hal_cleanup();
-	return(NULL);
-}
-
-/**
- * @brief API Test: Open Close between IO Clusters
- */
-static void test_hal_mailbox_open_close_io(void)
-{
-	int tids[ncores];
-	pthread_t threads[ncores];
 
 	printf("[test][api] Mailbox Open Close IO Cluster 0\n");
 
-	/* Spawn driver threads. */
-	for (int i = 1; i < ncores; i++)
-	{
-		tids[i] = i;
-		assert((pthread_create(&threads[i],
-			NULL,
-			test_hal_mailbox_thread_open_close_io,
-			&tids[i])) == 0
-		);
-	}
+	nodeid = hal_get_node_id();
 
-	/* Wait for driver threads. */
-	for (int i = 1; i < ncores; i++)
-		pthread_join(threads[i], NULL);
+	TEST_ASSERT((inbox = hal_mailbox_create(nodeid)) >= 0);
+
+	TEST_ASSERT(hal_sync_signal(syncid) == 0);
+	TEST_ASSERT(hal_sync_wait(syncid_local) == 0);
+
+	TEST_ASSERT((outbox = hal_mailbox_open(OTHER_IOCLUSTER)) >= 0);
+
+	TEST_ASSERT(hal_mailbox_close(outbox) == 0);
+
+	TEST_ASSERT(hal_sync_signal(syncid) == 0);
+	TEST_ASSERT(hal_sync_wait(syncid_local) == 0);
+
+	TEST_ASSERT(hal_mailbox_unlink(inbox) == 0);
 }
 
 /*===================================================================*
@@ -294,19 +233,15 @@ static void *test_hal_mailbox_thread_read_write(void *args)
 
 	nodeid = hal_get_node_id();
 
-	pthread_mutex_lock(&lock);
 	TEST_ASSERT((inbox = hal_mailbox_create(nodeid)) >= 0);
-	pthread_mutex_unlock(&lock);
 
 	pthread_barrier_wait(&barrier);
 
-	pthread_mutex_lock(&lock);
 	TEST_ASSERT((outbox = hal_mailbox_open(
 		((tid + 1) == ncores) ?
 			nodeid + 1 - ncores + 1:
 			nodeid + 1)) >= 0
 	);
-	pthread_mutex_unlock(&lock);
 
 	pthread_barrier_wait(&barrier);
 
@@ -318,13 +253,9 @@ static void *test_hal_mailbox_thread_read_write(void *args)
 	for (int i = 0; i < HAL_MAILBOX_MSG_SIZE; i++)
 		TEST_ASSERT(buf[i] == 1);
 
-	pthread_mutex_lock(&lock);
 	TEST_ASSERT(hal_mailbox_close(outbox) == 0);
-	pthread_mutex_unlock(&lock);
 
-	pthread_mutex_lock(&lock);
 	TEST_ASSERT(hal_mailbox_unlink(inbox) == 0);
-	pthread_mutex_unlock(&lock);
 
 	hal_cleanup();
 	return (NULL);
@@ -653,7 +584,6 @@ int main(int argc, const char **argv)
 
 	ncores = hal_get_num_cores();
 
-	pthread_mutex_init(&lock, NULL);
 	pthread_barrier_init(&barrier, NULL, ncores - 1);
 
 	/* API tests. */

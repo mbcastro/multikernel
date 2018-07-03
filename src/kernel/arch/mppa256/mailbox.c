@@ -30,31 +30,48 @@
 
 #include "noc.h"
 
+/**
+ * @brief Mailbox module lock.
+ */
+static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+
+/*============================================================================*
+ * mppa256_mailbox_lock()                                                     *
+ *============================================================================*/
+
+/**
+ * @brief Locks MPPA-256 mailbox module.
+ */
+static void mppa256_mailbox_lock(void)
+{
+	pthread_mutex_lock(&lock);
+}
+
+/*============================================================================*
+ * mppa256_mailbox_unlock()                                                   *
+ *============================================================================*/
+
+/**
+ * @brief Unlocks MPPA-256 mailbox module.
+ */
+static void mppa256_mailbox_unlock(void)
+{
+	pthread_mutex_unlock(&lock);
+}
+
 /*============================================================================*
  * hal_mailbox_create()                                                       *
  *============================================================================*/
 
 /**
- * @brief Creates a mailbox.
- *
- * @param remote ID of the target remote NoC node.
- *
- * @returns Upon successful completion, the ID of the newly created
- * mailbox is returned. Upon failure, a negative error code is
- * returned instead.
- *
- * @note This function is @b NOT thread safe.
+ * @brief See hal_mailbox_create().
  */
-int hal_mailbox_create(int remote)
+static int mppa256_mailbox_create(int remote)
 {
 	int fd;             /* NoC connector.              */
 	char remotes[128];  /* IDs of remote NoC nodes.    */
 	char pathname[128]; /* NoC connector name.         */
 	int noctag;         /* NoC tag used for transfers. */
-
-	/* Invalid NoC node ID. */
-	if (remote != hal_get_node_id())
-		return (-EINVAL);
 
 	noc_get_remotes(remotes, remote);
 	noctag = noctag_mailbox(remote);
@@ -69,11 +86,43 @@ int hal_mailbox_create(int remote)
 			HAL_MAILBOX_MSG_SIZE
 	);
 
-	/* Open NoC connector. */
-	if ((fd = mppa_open(pathname, O_RDONLY)) == -1)
-		return (-EAGAIN);
+	mppa256_mailbox_lock();
+		/* Open NoC connector. */
+		if ((fd = mppa_open(pathname, O_RDONLY)) == -1)
+			goto error0;
+	mppa256_mailbox_unlock();
 
 	return (fd);
+
+error0:
+	mppa256_mailbox_unlock();
+	return (-EAGAIN);
+}
+
+/**
+ * @brief Creates a mailbox.
+ *
+ * @param remote ID of the target remote NoC node.
+ *
+ * @returns Upon successful completion, the ID of the newly created
+ * mailbox is returned. Upon failure, a negative error code is
+ * returned instead.
+ *
+ * @note This function is blocking.
+ * @note This function is thread-safe.
+ * @note This function is reentrant.
+ */
+int hal_mailbox_create(int remote)
+{
+	int mbxid;
+
+	/* Invalid NoC node ID. */
+	if (remote != hal_get_node_id())
+		return (-EINVAL);
+
+	mbxid = mppa256_mailbox_create(remote);
+
+	return (mbxid);
 }
 
 /*============================================================================*
@@ -81,30 +130,14 @@ int hal_mailbox_create(int remote)
  *============================================================================*/
 
 /**
- * @brief Opens a mailbox.
- *
- * @param nodeid ID of the target NoC node.
- *
- * @returns Upon successful completion, the ID of the target mailbox
- * is returned. Upon failure, a negative error code is returned
- * instead.
- *
- * @note This function is @b NOT thread safe.
+ * @brief See hal_mailbox_open().
  */
-int hal_mailbox_open(int nodeid)
+static int mppa256_mailbox_open(int nodeid)
 {
 	int fd;             /* NoC connector.              */
 	char remotes[128];  /* IDs of remote NoC nodes.    */
 	char pathname[128]; /* NoC connector name.         */
 	int noctag;         /* NoC tag used for transfers. */
-
-	/* Invalid NoC node ID. */
-	if (nodeid < 0)
-		return (-EINVAL);
-
-	/* Invalid NoC node ID. */
-	if (nodeid == hal_get_node_id())
-		return (-EINVAL);
 
 	noc_get_remotes(remotes, nodeid);
 	noctag = noctag_mailbox(nodeid);
@@ -120,21 +153,55 @@ int hal_mailbox_open(int nodeid)
 	);
 
 	/* Open NoC connector. */
-	if ((fd = mppa_open(pathname, O_WRONLY)) == -1)
-		goto error0;
+	mppa256_mailbox_lock();
+		if ((fd = mppa_open(pathname, O_WRONLY)) == -1)
+			goto error0;
+	mppa256_mailbox_unlock();
 
 	/* Set DMA interface for IO cluster. */
 	if (noc_is_ionode(hal_get_node_id()))
 	{
 		if (mppa_ioctl(fd, MPPA_TX_SET_INTERFACE, noc_get_dma(hal_get_node_id())) == -1)
-			goto error0;
+			goto error1;
 	}
 
 	return (fd);
 
-error0:
+error1:
 	mppa_close(fd);
+error0:
+	mppa256_mailbox_unlock();
 	return (-EAGAIN);
+}
+
+/**
+ * @brief Opens a mailbox.
+ *
+ * @param nodeid ID of the target NoC node.
+ *
+ * @returns Upon successful completion, the ID of the target mailbox
+ * is returned. Upon failure, a negative error code is returned
+ * instead.
+ *
+ * @note This function is blocking.
+ * @note This function is thread-safe.
+ * @note This function is reentrant.
+ */
+int hal_mailbox_open(int nodeid)
+{
+	int mbxid;
+
+	/* Invalid NoC node ID. */
+	if (nodeid < 0)
+		return (-EINVAL);
+
+	/* Invalid NoC node ID. */
+	if (nodeid == hal_get_node_id())
+		return (-EINVAL);
+
+	mbxid = mppa256_mailbox_open(nodeid);
+	
+	return (mbxid);
 }
 
 /*============================================================================*
@@ -149,15 +216,23 @@ error0:
  * @returns Upon successful completion, zero is returned. Upon failure,
  * a negative error code is returned instead.
  *
- * @note This function is @b NOT thread safe.
+ * @note This function is blocking.
+ * @note This function is thread-safe.
+ * @note This function is reentrant.
  */
 int hal_mailbox_unlink(int mbxid)
 {
+	int ret;
+
 	/* Invalid mailbox. */
 	if (mbxid < 0)
 		return (-EINVAL);
 
-	return (mppa_close(mbxid));
+	mppa256_mailbox_lock();
+		ret = mppa_close(mbxid);
+	mppa256_mailbox_unlock();	
+
+	return (ret);
 }
 
 /*============================================================================*
@@ -172,15 +247,23 @@ int hal_mailbox_unlink(int mbxid)
  * @returns Upon successful completion, zero is returned. Upon
  * failure, a negative error code is returned instead.
  *
- * @note This function is @b NOT thread safe.
+ * @note This function is blocking.
+ * @note This function is thread-safe.
+ * @note This function is reentrant.
  */
 int hal_mailbox_close(int mbxid)
 {
+	int ret;
+
 	/* Invalid mailbox. */
 	if (mbxid < 0)
 		return (-EINVAL);
 
-	return (mppa_close(mbxid));
+	mppa256_mailbox_lock();
+		ret = mppa_close(mbxid);
+	mppa256_mailbox_unlock();	
+
+	return (ret);
 }
 
 /*============================================================================*
@@ -198,7 +281,7 @@ int hal_mailbox_close(int mbxid)
  * successfully written is returned. Upon failure, a negative error
  * code is returned instead.
  *
- * @note This function is @b NOT thread safe.
+ * @note This function is thread-safe.
  */
 size_t hal_mailbox_write(int mbxid, const void *buf, size_t n)
 {
@@ -236,7 +319,7 @@ size_t hal_mailbox_write(int mbxid, const void *buf, size_t n)
  * successfully read is returned. Upon failure, a negative error code
  * is returned instead.
  *
- * @note This function is @b NOT thread safe.
+ * @note This function is thread-safe.
  */
 size_t hal_mailbox_read(int mbxid, void *buf, size_t n)
 {
