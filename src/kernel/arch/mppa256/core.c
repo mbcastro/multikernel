@@ -76,6 +76,7 @@ static void mppa256_core_unlock(void)
  * @return Non zero if the target cluster is a compute cluster and
  * zero otherwise.
  *
+ * @note This function is non-blocking.
  * @note This function is thread-safe.
  */
 int mppa256_is_ccluster(int clusterid)
@@ -95,6 +96,7 @@ int mppa256_is_ccluster(int clusterid)
  * @return Non zero if the target cluster is an IO cluster and zero
  * otherwise.
  *
+ * @note This function is non-blocking.
  * @note This function is thread-safe.
  */
 int mppa256_is_iocluster(int clusterid)
@@ -111,6 +113,7 @@ int mppa256_is_iocluster(int clusterid)
  *
  * @returns The ID of the underlying cluster
  *
+ * @note This function is non-blocking.
  * @note This function is thread-safe.
  */
 int mppa256_get_cluster_id(void)
@@ -187,6 +190,7 @@ void mppa256_core_cleanup(void)
  *
  * @returns The ID of the underlying cluster
  *
+ * @note This function is non-blocking.
  * @note This function is thread-safe.
  */
 int hal_get_cluster_id(void)
@@ -203,6 +207,7 @@ int hal_get_cluster_id(void)
  *
  * @returns The ID of the underlying core.
  *
+ * @note This function is blocking.
  * @note This function is thread-safe.
  */
 int hal_get_core_id(void)
@@ -242,6 +247,7 @@ int hal_get_core_id(void)
  *
  * @returns The type of the underlying core.
  *
+ * @note This function is non-blocking.
  * @note This function is thread-safe.
  */
 int hal_get_core_type(void)
@@ -262,6 +268,7 @@ int hal_get_core_type(void)
  *
  * @returns The number of cores in the processor.
  *
+ * @note This function is non-blocking.
  * @note This function is thread-safe.
  */
 int hal_get_num_cores(void)
@@ -282,6 +289,7 @@ int hal_get_num_cores(void)
  *
  * @returns The frequency of the underlying core.
  *
+ * @note This function is non-blocking.
  * @note This function is thread-safe.
  */
 int hal_get_core_freq(void)

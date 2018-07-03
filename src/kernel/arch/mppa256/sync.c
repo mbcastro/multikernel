@@ -38,6 +38,7 @@
 #define SYNC_FLAGS_USED      (1 << 0) /**< Used synchronization point?      */
 #define SYNC_FLAGS_BROADCAST (1 << 1) /**< Broadcast synchronization point? */
 #define SYNC_FLAGS_WRONLY    (1 << 2) /**< Write only mode?                 */
+#define SYNC_FLAGS_BUSY      (1 << 3) /**< Busy?                            */
 /**@}*/
 
 /**
@@ -45,9 +46,9 @@
  */
 static struct 
 {
-	int fd;     /**< Underlying file descriptor. */
-	int flags;  /**< Flags.                      */
-	int ncount; /**< Number of remotes.          */
+	int fd;     /**< Underlying file descriptor.     */
+	int flags;  /**< Flags.                          */
+	int ncount; /**< Number of remotes in broadcast. */
 } synctab[HAL_NR_SYNC];
 
 /**
@@ -91,7 +92,9 @@ static void mppa256_sync_unlock(void)
  * @returns One if the target synchronization point is valid, and false
  * otherwise.
  *
+ * @note This function is non-blocking.
  * @note This function is thread-safe.
+ * @note This function is reentrant.
  */
 static int sync_is_valid(int syncid)
 {
@@ -110,7 +113,9 @@ static int sync_is_valid(int syncid)
  * @returns One if the target synchronization point is used, and false
  * otherwise.
  *
+ * @note This function is non-blocking.
  * @note This function is @b NOT thread safe.
+ * @note This function is reentrant.
  */
 static int sync_is_used(int syncid)
 {
@@ -122,14 +127,16 @@ static int sync_is_used(int syncid)
  *============================================================================*/
 
 /**
- * @brief Asserts whether of not a synchronization point is a broadcast one.
+ * @brief Asserts whether or not a synchronization point is a broadcast one.
  *
  * @param syncid ID of the target synchronization point.
  *
  * @returns One if the target synchronization point is a broadcast
  * one, and false otherwise.
  *
+ * @note This function is non-blocking.
  * @note This function is @b NOT thread safe.
+ * @note This function is reentrant.
  */
 static int sync_is_broadcast(int syncid)
 {
@@ -141,14 +148,16 @@ static int sync_is_broadcast(int syncid)
  *============================================================================*/
 
 /**
- * @brief Asserts whether of not a synchronization point is a write-only.
+ * @brief Asserts whether or not a synchronization point is a write-only.
  *
  * @param syncid ID of the target synchronization point.
  *
  * @returns One if the target synchronization point is write-only, and
  * false otherwise.
  *
+ * @note This function is non-blocking.
  * @note This function is @b NOT thread safe.
+ * @note This function is reentrant.
  */
 static int sync_is_wronly(int syncid)
 {
@@ -164,7 +173,9 @@ static int sync_is_wronly(int syncid)
  *
  * @param syncid ID of the target synchronization point.
  *
+ * @note This function is non-blocking.
  * @note This function is @b NOT thread safe.
+ * @note This function is reentrant.
  */
 static void sync_set_used(int syncid)
 {
@@ -180,7 +191,9 @@ static void sync_set_used(int syncid)
  *
  * @param syncid ID of the target synchronization point.
  *
+ * @note This function is non-blocking.
  * @note This function is @b NOT thread safe.
+ * @note This function is reentrant.
  */
 static void sync_set_broadcast(int syncid)
 {
@@ -188,7 +201,7 @@ static void sync_set_broadcast(int syncid)
 }
 
 /*============================================================================*
- * sync_set_wronly()                                                       *
+ * sync_set_wronly()                                                          *
  *============================================================================*/
 
 /**
@@ -196,11 +209,70 @@ static void sync_set_broadcast(int syncid)
  *
  * @param syncid ID of the target synchronization point.
  *
+ * @note This function is non-blocking.
  * @note This function is @b NOT thread safe.
+ * @note This function is reentrant.
  */
 static void sync_set_wronly(int syncid)
 {
 	synctab[syncid].flags |= SYNC_FLAGS_WRONLY;
+}
+
+/*============================================================================*
+ * sync_is_busy()                                                            *
+ *============================================================================*/
+
+/**
+ * @brief Asserts whether or not a synchronization point is busy.
+ *
+ * @param syncid ID of the target synchronization point.
+ *
+ * @returns One if the target synchronization point is busy one, and
+ * false otherwise.
+ *
+ * @note This function is non-blocking.
+ * @note This function is @b NOT thread safe.
+ * @note This function is reentrant.
+ */
+static int sync_is_busy(int syncid)
+{
+	return (synctab[syncid].flags & SYNC_FLAGS_BUSY);
+}
+
+/*============================================================================*
+ * sync_set_busy()                                                            *
+ *============================================================================*/
+
+/**
+ * @brief Sets a synchronization point as busy.
+ *
+ * @param syncid ID of the target synchronization point.
+ *
+ * @note This function is non-blocking.
+ * @note This function is @b NOT thread safe.
+ * @note This function is reentrant.
+ */
+static void sync_set_busy(int syncid)
+{
+	synctab[syncid].flags |= SYNC_FLAGS_BUSY;
+}
+
+/*============================================================================*
+ * sync_clear_busy()                                                          *
+ *============================================================================*/
+
+/**
+ * @brief Clears the busy flag of a synchronization point;
+ *
+ * @param syncid ID of the target synchronization point.
+ *
+ * @note This function is non-blocking.
+ * @note This function is @b NOT thread safe.
+ * @note This function is reentrant.
+ */
+static void sync_clear_busy(int syncid)
+{
+	synctab[syncid].flags &= ~SYNC_FLAGS_BUSY;
 }
 
 /*============================================================================*
@@ -212,7 +284,9 @@ static void sync_set_wronly(int syncid)
  *
  * @param syncid ID of the target synchronization point.
  *
+ * @note This function is non-blocking.
  * @note This function is @b NOT thread safe.
+ * @note This function is reentrant.
  */
 static void sync_clear_flags(int syncid)
 {
@@ -230,7 +304,9 @@ static void sync_clear_flags(int syncid)
  * synchronization point is returned. Upon failure, -1 is returned
  * instead.
  *
+ * @note This function is non-blocking.
  * @note This function is @b NOT thread safe.
+ * @note This function is reentrant.
  */
 static int sync_alloc(void)
 {
@@ -257,7 +333,9 @@ static int sync_alloc(void)
  *
  * @param syncid ID of the target synchronization point.
  *
+ * @note This function is non-blocking.
  * @note This function is @b NOT thread safe.
+ * @note This function is reentrant.
  */
 static void sync_free(int syncid)
 {
@@ -275,7 +353,9 @@ static void sync_free(int syncid)
  * @param nodes  IDs of target NoC nodes.
  * @param nnodes Number of target NoC nodes. 
  *
+ * @note This function is non-blocking.
  * @note This function is thread-safe.
+ * @note This function is reentrant.
  */
 static void sync_ranks(int *ranks, const int *nodes, int nnodes)
 {
@@ -305,10 +385,6 @@ static void sync_ranks(int *ranks, const int *nodes, int nnodes)
 
 /**
  * @see hal_sync_create()
- *
- * @note In this function we may sleep while we hold the lock.
- * However, I strongly beleive that no circular dependency may be
- * introduced, so we are good.
  */
 static int mppa256_sync_create(const int *nodes, int nnodes, int type)
 {
@@ -364,6 +440,7 @@ static int mppa256_sync_create(const int *nodes, int nnodes, int type)
 	synctab[syncid].fd = fd;
 	if (type == HAL_SYNC_ONE_TO_ALL)
 		sync_set_broadcast(syncid);
+	sync_clear_busy(syncid);
 
 	return (syncid);
 
@@ -386,7 +463,9 @@ error0:
  * synchronization point is returned. Upon failure, a negative error
  * code is returned instead.
  *
+ * @note This function is blocking.
  * @note This function is thread-safe.
+ * @note This function is reentrant.
  */
 int hal_sync_create(const int *nodes, int nnodes, int type)
 {
@@ -459,10 +538,6 @@ int hal_sync_create(const int *nodes, int nnodes, int type)
 
 /**
  * @see hal_sync_open()
- *
- * @note In this function we may sleep while we hold the lock.
- * However, I strongly beleive that no circular dependency may be
- * introduced, so we are good.
  */
 static int mppa256_sync_open(const int *nodes, int nnodes, int type)
 {
@@ -519,6 +594,7 @@ static int mppa256_sync_open(const int *nodes, int nnodes, int type)
 	if (type == HAL_SYNC_ONE_TO_ALL)
 		sync_set_broadcast(syncid);
 	sync_set_wronly(syncid);
+	sync_clear_busy(syncid);
 
 	return (syncid);
 
@@ -541,7 +617,9 @@ error0:
  * synchronization point is returned. Upon failure, a negative error
  * code is returned instead.
  *
+ * @note This function is blocking.
  * @note This function is thread-safe.
+ * @note This function is reentrant.
  *
  * @todo Check for Invalid Remote
  */
@@ -616,15 +694,20 @@ int hal_sync_open(const int *nodes, int nnodes, int type)
  * @returns Upon successful completion, zero is returned. Upon
  * failure, a negative error code is returned instead.
  *
+ * @note This function is blocking.
  * @note This function is thread-safe.
+ * @note This function is reentrant.
  */
 int hal_sync_wait(int syncid)
 {
+	int ret;
 	uint64_t mask;
 
 	/* Invalid sync. */
 	if (!sync_is_valid(syncid))
 		goto error0;
+
+again:
 
 	mppa256_sync_lock();
 
@@ -636,16 +719,29 @@ int hal_sync_wait(int syncid)
 		if (sync_is_wronly(syncid))
 			goto error1;
 
+		/* Busy sync. */
+		if (sync_is_busy(syncid))
+		{
+			mppa256_sync_unlock();
+			goto again;
+		}
+
+		/* Set sync as busy. */
+		sync_set_busy(syncid);
+
 	/*
 	 * Realease lock, since we may sleep below.
 	 */
 	mppa256_sync_unlock();
 
 	/* Wait. */
-	if (mppa_read(synctab[syncid].fd, &mask, sizeof(uint64_t)) != sizeof(uint64_t))
-		goto error0;
+	ret = (mppa_read(synctab[syncid].fd, &mask, sizeof(uint64_t)) != sizeof(uint64_t));
+	
+	mppa256_sync_lock();
+		sync_clear_busy(syncid);
+	mppa256_sync_unlock();
 
-	return (0);
+	return ((ret) ? -EAGAIN : 0);
 
 error1:
 	mppa256_sync_unlock();
@@ -665,10 +761,13 @@ error0:
  * @returns Upon successful completion, zero is returned. Upon
  * failure, a negative error code is returned instead.
  *
+ * @note This function is blocking.
  * @note This function is thread-safe.
+ * @note This function is reentrant.
  */
 int hal_sync_signal(int syncid)
 {
+	int ret;
 	int nodeid;
 	uint64_t mask;
 	int is_broadcast;
@@ -676,6 +775,8 @@ int hal_sync_signal(int syncid)
 	/* Invalid sync. */
 	if (!sync_is_valid(syncid))
 		goto error0;
+
+again:
 
 	mppa256_sync_lock();
 
@@ -687,16 +788,28 @@ int hal_sync_signal(int syncid)
 		if (!sync_is_wronly(syncid))
 			goto error1;
 
-		is_broadcast = sync_is_broadcast(syncid);
+		/* Busy sync. */
+		if (sync_is_busy(syncid))
+		{
+			mppa256_sync_unlock();
+			goto again;
+		}
+
+		/* Set sync as busy. */
+		sync_set_busy(syncid);
 
 	/*
 	 * Realease lock, since we may sleep below.
 	 */
 	mppa256_sync_unlock();
 
+	is_broadcast = sync_is_broadcast(syncid);
+
 	/* Broadcast. */
 	if (is_broadcast)
 	{
+		ret = 0;
+
 		for (int i = 0; i < synctab[syncid].ncount; i++)
 		{
 			if (mppa_ioctl(synctab[syncid].fd, MPPA_TX_SET_RX_RANK, i) == -1)
@@ -716,11 +829,14 @@ int hal_sync_signal(int syncid)
 
 		/* Signal. */
 		mask = 1 << noc_get_node_num(nodeid);
-		if (mppa_write(synctab[syncid].fd, &mask, sizeof(uint64_t)) != sizeof(uint64_t))
-			goto error0;
+		ret = (mppa_write(synctab[syncid].fd, &mask, sizeof(uint64_t)) != sizeof(uint64_t));
 	}
 
-	return (0);
+	mppa256_sync_lock();
+		sync_clear_busy(syncid);
+	mppa256_sync_unlock();
+
+	return ((ret) ? -EAGAIN : 0);
 
 error2:
 	printf("[PANIC] failed to release sync\n");
@@ -743,11 +859,9 @@ error0:
  * @returns Upon successful completion, zero is returned. Upon
  * failure, a negative error code is returned instead.
  *
+ * @note This function is blocking.
  * @note This function is thread-safe.
- *
- * @note In this function we may sleep while we hold the lock.
- * However, I strongly beleive that no circular dependency may be
- * introduced, so we are good.
+ * @note This function is reentrant.
  */
 int hal_sync_close(int syncid)
 {
@@ -792,11 +906,9 @@ error0:
  * @returns Upon successful completion, zero is returned. Upon
  * failure, a negative error code is returned instead.
  *
+ * @note This function is blocking.
  * @note This function is thread-safe.
- *
- * @note In this function we may sleep while we hold the lock.
- * However, I strongly beleive that no circular dependency may be
- * introduced, so we are good.
+ * @note This function is reentrant.
  */
 int hal_sync_unlink(int syncid)
 {
