@@ -42,6 +42,11 @@ name:
 	mkdir -p $(BINDIR)
 	cd name && $(MAKE) all
 
+# Builds Mailbox testing unit
+mailbox:
+	mkdir -p $(BINDIR)
+	cd mailbox && $(MAKE) all
+
 # Builds Barrier testing unit
 barrier:
 	mkdir -p $(BINDIR)

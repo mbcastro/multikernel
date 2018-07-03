@@ -117,17 +117,17 @@ function benchmark_mailbox
 if [[ $1 == "test" ]];
 then
 	echo "Testing HAL"
-	run2 "nanvix.img" "/servers" "/servers1" "--debug --hal" | grep nanvix
+	run2 "nanvix-debug.img" "/servers" "/servers1" "--debug --hal" | grep nanvix
 	echo "Testing HAL Sync"
-	run2 "nanvix.img" "/servers" "/servers1" "--debug --hal-sync" | grep nanvix
+	run2 "nanvix-debug.img" "/servers" "/servers1" "--debug --hal-sync" | grep nanvix
 	echo "Testing HAL Mailbox"
-	run2 "nanvix.img" "/servers" "/servers1" "--debug --hal-mailbox" | grep nanvix
+	run2 "nanvix-debug.img" "/servers" "/servers1" "--debug --hal-mailbox" | grep nanvix
 	echo "Testing HAL Portal"
-	run2 "nanvix.img" "/servers" "/servers1" "--debug --hal-portal" | grep nanvix
-	echo "Testing Naming Service"
-	run2 "nanvix.img" "/servers" "/servers1" "--debug --name" | grep nanvix
-#	echo "Testing MAILBOX"
-#	run2 "test-mailbox.img" "/servers" "/test/mailbox-master" "$NCLUSTERS" | grep "test"
+	run2 "nanvix-debug.img" "/servers" "/servers1" "--debug --hal-portal" | grep nanvix
+#	echo "Testing Naming Service"
+#	run2 "nanvix.img" "/servers" "/servers1" "--debug --name" | grep nanvix
+#	echo "Testing Mailbox"
+#	run2 "nanvix-debug-mailbox.img" "/servers" "/servers1" "--debug --mailbox"
 #	echo "Testing BARRIER"
 #	run2 "test-barrier.img" "/test/barrier-master0" "/test/barrier-master1" "$NCLUSTERS" | grep "test"
 #	echo "Testing RMEM"

@@ -20,23 +20,23 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
- #include <assert.h>
- #include <stdio.h>
- #include <string.h>
- #include <stdlib.h>
+#include <assert.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <pthread.h>
 
- #include <mppa/osconfig.h>
- #include <mppaipc.h>
+#include <mppaipc.h>
 
- #define __NEED_HAL_CORE_
- #define __NEED_HAL_NOC_
- #define __NEED_HAL_SYNC_
- #define __NEED_HAL_MAILBOX_
- #include <nanvix/hal.h>
- #include <nanvix/init.h>
- #include <nanvix/name.h>
- #include <nanvix/limits.h>
- #include <nanvix/pm.h>
+#define __NEED_HAL_CORE_
+#define __NEED_HAL_NOC_
+#define __NEED_HAL_SYNC_
+#define __NEED_HAL_MAILBOX_
+#include <nanvix/hal.h>
+#include <nanvix/init.h>
+#include <nanvix/name.h>
+#include <nanvix/limits.h>
+#include <nanvix/pm.h>
 
 /**
  * @brief Asserts a logic expression.
@@ -101,7 +101,7 @@ static void test_mailbox_create_unlink(void)
 	int tids[ncores];
 	pthread_t threads[ncores];
 
-	printf("[test][api] Mailbox Create Unlink\n");
+	printf("[nanvix][test][api] Mailbox Create Unlink\n");
 
 	/* Spawn driver threads. */
 	for (int i = 1; i < ncores; i++)
@@ -179,7 +179,7 @@ static void test_mailbox_open_close(void)
 	int tids[ncores];
 	pthread_t threads[ncores];
 
-	printf("[test][api] Mailbox Open Close\n");
+	printf("[nanvix][test][api] Mailbox Open Close\n");
 
 	/* Spawn driver threads. */
 	for (int i = 1; i < ncores; i++)
@@ -266,7 +266,7 @@ static void test_mailbox_read_write(void)
 	int tids[ncores];
 	pthread_t threads[ncores];
 
-	printf("[test][api] Mailbox Read Write\n");
+	printf("[nanvix][test][api] Mailbox Read Write\n");
 
 	/* Spawn driver threads. */
 	for (int i = 1; i < ncores; i++)
@@ -305,7 +305,7 @@ static void test_mailbox_cc(int nclusters)
 		NULL
 	};
 
-	printf("[test][api] Compute Clusters\n");
+	printf("[nanvix][test][api] Compute Clusters\n");
 
 	sprintf(nclusters_str, "%d", nclusters);
 	sprintf(test_str, "%d", 0);
@@ -380,7 +380,7 @@ static void test_mailbox_io_cc(int nclusters)
 		NULL
 	};
 
-	printf("[test][api] IO Cluster -> Compute Clusters \n");
+	printf("[nanvix][test][api] IO Cluster -> Compute Clusters \n");
 
 	int nodes[(nclusters + 1)];
 
@@ -470,7 +470,7 @@ static void test_mailbox_cc_io(int nclusters)
 		NULL
 	};
 
-	printf("[test][api] Compute Clusters -> IO Cluster \n");
+	printf("[nanvix][test][api] Compute Clusters -> IO Cluster \n");
 
 	int nodes[(nclusters + 1)];
 
@@ -504,27 +504,11 @@ static void test_mailbox_cc_io(int nclusters)
 /**
  * @brief Mailbox test driver.
  */
-int main(int argc, const char **argv)
+void test_mailbox(int nbusycores)
 {
-	int nodes[2];
-	int syncid;
-	int nclusters;
-
-	TEST_ASSERT(argc == 2);
-
-	/* Retrieve kernel parameters. */
-	nclusters = atoi(argv[1]);
-
 	TEST_ASSERT(kernel_setup() == 0);
 
-	/* Wait spawner server. */
-	nodes[0] = 128;
-	nodes[1] = hal_get_node_id();
-
-	TEST_ASSERT((syncid = hal_sync_create(nodes, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
-	TEST_ASSERT(hal_sync_wait(syncid) == 0);
-
-	ncores = hal_get_num_cores();
+	ncores = hal_get_num_cores() - nbusycores;
 
 	pthread_mutex_init(&lock, NULL);
 	pthread_barrier_init(&barrier, NULL, ncores - 1);
@@ -533,10 +517,9 @@ int main(int argc, const char **argv)
 	test_mailbox_create_unlink();
 	test_mailbox_open_close();
 	test_mailbox_read_write();
-	test_mailbox_cc(nclusters);
-	test_mailbox_io_cc(nclusters);
-	test_mailbox_cc_io(nclusters);
+	test_mailbox_cc(HAL_NR_NOC_CNODES);
+	test_mailbox_io_cc(HAL_NR_NOC_CNODES);
+	test_mailbox_cc_io(HAL_NR_NOC_CNODES);
 
 	TEST_ASSERT(kernel_cleanup() == 0);
-	return (EXIT_SUCCESS);
 }

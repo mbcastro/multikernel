@@ -96,6 +96,7 @@ extern void test_hal_portal(void);
 
 /* High-level unit-tests. */
 extern void test_name(int);
+extern void test_mailbox(int);
 
 /**
  * @brief Generic test driver.
@@ -123,6 +124,8 @@ static void test1(const char *module)
 
 	if (!strcmp(module, "--name"))
 		test_name(NR_SERVERS);
+	else if (!strcmp(module, "--mailbox"))
+		test_mailbox(NR_SERVERS);
 
 	exit(EXIT_SUCCESS);
 }
