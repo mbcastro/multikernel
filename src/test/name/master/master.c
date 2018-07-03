@@ -57,11 +57,6 @@ static int pids[NANVIX_PROC_MAX];
  */
 static pthread_barrier_t barrier;
 
-/**
- * @brief Lock for critical sections.
- */
-static pthread_mutex_t lock;
-
 /*===================================================================*
  * API Test: Name Link Unlink                                        *
  *===================================================================*/
@@ -85,15 +80,11 @@ static void *test_name_thread_link_unlink(void *args)
 
 	/* Link and unlink name. */
 	sprintf(pathname, "cool-name%d", tid);
-	pthread_mutex_lock(&lock);
 	TEST_ASSERT(name_link(nodeid, pathname) == 0);
-	pthread_mutex_unlock(&lock);
 
 	pthread_barrier_wait(&barrier);
 
-	pthread_mutex_lock(&lock);
 	TEST_ASSERT(name_unlink(pathname) == 0);
-	pthread_mutex_unlock(&lock);
 
 	TEST_ASSERT(kernel_cleanup() == 0);
 	return(NULL);
@@ -148,19 +139,13 @@ static void *test_name_thread_lookup(void *args)
 
 	/* Link and unlink name. */
 	sprintf(pathname, "cool-name%d", tid);
-	pthread_mutex_lock(&lock);
 	TEST_ASSERT(name_link(nodeid, pathname) == 0);
-	pthread_mutex_unlock(&lock);
 
 	pthread_barrier_wait(&barrier);
 
-	pthread_mutex_lock(&lock);
 	TEST_ASSERT(name_lookup(pathname) == nodeid);
-	pthread_mutex_unlock(&lock);
 
-	pthread_mutex_lock(&lock);
 	TEST_ASSERT(name_unlink(pathname) == 0);
-	pthread_mutex_unlock(&lock);
 
 	TEST_ASSERT(kernel_cleanup() == 0);
 	return(NULL);
@@ -360,7 +345,6 @@ int main(int argc, char **argv)
 
 	ncores = hal_get_num_cores();
 
-	pthread_mutex_init(&lock, NULL);
 	pthread_barrier_init(&barrier, NULL, ncores - 1);
 
 	TEST_ASSERT(argc == 2);

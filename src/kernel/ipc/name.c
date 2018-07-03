@@ -50,7 +50,7 @@ static int initialized = 0;
  * @returns Upon successful completion, zero is returned. Upon
  * failure, a negative error code is returned instead.
  */
-static int name_init(void)
+int name_init(void)
 {
 	/* Nothing to do. */
 	if (initialized)
