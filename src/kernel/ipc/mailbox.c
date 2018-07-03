@@ -83,6 +83,10 @@ int initialize_inbox(int index)
 	int mailbox;
 	int nodeid;
 
+	/* Nothing to do. */
+	if (initialized[index])
+		return (0);
+
 	nodeid = hal_get_node_id();
 
 	mailbox = hal_mailbox_create(nodeid);

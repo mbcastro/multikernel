@@ -130,6 +130,7 @@ int mppa256_get_cluster_id(void)
  */
 void mppa256_core_setup(void)
 {
+	int initialized = 0;
 	pthread_t tid;
 
 	tid = pthread_self();
@@ -138,12 +139,25 @@ void mppa256_core_setup(void)
 	{
 		mppa256_core_lock();
 
+			/* Check if core is already initialized. */
 			for (int i = 0; i < NR_IOCLUSTER_CORES; i++)
 			{
-				if (threads[i] == 0)
+				if (threads[i] == tid)
 				{
-					threads[i] = tid;
+					initialized = 1;
 					break;
+				}
+			}
+
+			if (!initialized)
+			{
+				for (int i = 0; i < NR_IOCLUSTER_CORES; i++)
+				{
+					if (threads[i] == 0)
+					{
+						threads[i] = tid;
+						break;
+					}
 				}
 			}
 
