@@ -273,6 +273,8 @@ static void sync_free(int syncid)
  * @param ranks Target list of RX NoC nodes.
  * @param nodes  IDs of target NoC nodes.
  * @param nnodes Number of target NoC nodes. 
+ *
+ * @note This function is thread-safe.
  */
 static void sync_ranks(int *ranks, const int *nodes, int nnodes)
 {
@@ -303,9 +305,9 @@ static void sync_ranks(int *ranks, const int *nodes, int nnodes)
 /**
  * @see hal_sync_create()
  *
- * @note In this function we may sleep while hold the lock. However, I
- * strongly beleive that no circular dependency may be introduced, so
- * we are good.
+ * @note In this function we may sleep while we hold the lock.
+ * However, I strongly beleive that no circular dependency may be
+ * introduced, so we are good.
  */
 static int mppa256_sync_create(const int *nodes, int nnodes, int type)
 {
@@ -457,9 +459,9 @@ int hal_sync_create(const int *nodes, int nnodes, int type)
 /**
  * @see hal_sync_open()
  *
- * @note In this function we may sleep while hold the lock. However, I
- * strongly beleive that no circular dependency may be introduced, so
- * we are good.
+ * @note In this function we may sleep while we hold the lock.
+ * However, I strongly beleive that no circular dependency may be
+ * introduced, so we are good.
  */
 static int mppa256_sync_open(const int *nodes, int nnodes, int type)
 {
@@ -623,7 +625,7 @@ int hal_sync_open(const int *nodes, int nnodes, int type)
  * @returns Upon successful completion, zero is returned. Upon
  * failure, a negative error code is returned instead.
  *
- * @note This function is @b NOT thread safe.
+ * @note This function is thread-safe.
  */
 int hal_sync_wait(int syncid)
 {
@@ -672,7 +674,7 @@ error0:
  * @returns Upon successful completion, zero is returned. Upon
  * failure, a negative error code is returned instead.
  *
- * @note This function is @b NOT thread safe.
+ * @note This function is thread-safe.
  */
 int hal_sync_signal(int syncid)
 {
@@ -728,7 +730,11 @@ error0:
  * @returns Upon successful completion, zero is returned. Upon
  * failure, a negative error code is returned instead.
  *
- * @note This function is @b NOT thread safe.
+ * @note This function is thread-safe.
+ *
+ * @note In this function we may sleep while we hold the lock.
+ * However, I strongly beleive that no circular dependency may be
+ * introduced, so we are good.
  */
 int hal_sync_close(int syncid)
 {
@@ -746,16 +752,11 @@ int hal_sync_close(int syncid)
 		if (!sync_is_wronly(syncid))
 			goto error1;
 
-	/*
-	 * Realease lock, since we may sleep below.
-	 */
-	mppa256_sync_unlock();
+		if (mppa_close(synctab[syncid].fd) < 0)
+			goto error1;
 
-	if (mppa_close(synctab[syncid].fd) < 0)
-		goto error0;
-
-	mppa256_sync_lock();
 		sync_free(syncid);
+
 	mppa256_sync_unlock();
 
 	return (0);
@@ -778,7 +779,11 @@ error0:
  * @returns Upon successful completion, zero is returned. Upon
  * failure, a negative error code is returned instead.
  *
- * @note This function is @b NOT thread safe.
+ * @note This function is thread-safe.
+ *
+ * @note In this function we may sleep while we hold the lock.
+ * However, I strongly beleive that no circular dependency may be
+ * introduced, so we are good.
  */
 int hal_sync_unlink(int syncid)
 {
@@ -796,16 +801,11 @@ int hal_sync_unlink(int syncid)
 		if (sync_is_wronly(syncid))
 			goto error1;
 
-	/*
-	 * Realease lock, since we may sleep below.
-	 */
-	mppa256_sync_unlock();
+		if (mppa_close(synctab[syncid].fd) < 0)
+			goto error1;
 
-	if (mppa_close(synctab[syncid].fd) < 0)
-		goto error0;
-
-	mppa256_sync_lock();
 		sync_free(syncid);
+
 	mppa256_sync_unlock();
 
 	return (0);
