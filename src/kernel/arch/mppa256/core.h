@@ -27,7 +27,6 @@
 		#error "bad target"
 	#endif
 
-	#include <inttypes.h>
 	#include <HAL/hal/core/timer.h>
 	#include <HAL/hal/core/diagnostic.h>
 #ifdef _KALRAY_MPPA_256_HIGH_LEVEL
@@ -79,8 +78,8 @@
 	/* Forward definitions. */
 	extern int mppa256_is_ccluster(int);
 	extern int mppa256_is_iocluster(int);
-
-	/* Forward definitions. */
-	extern pthread_t __threads[4];
+	extern int mppa256_get_cluster_id(void);
+	extern void mppa256_core_setup(void);
+	extern void mppa256_core_cleanup(void);
 
 #endif /* _MPPA256_CORE_H_ */

@@ -204,16 +204,13 @@ static void test_hal_mailbox_open_close(void)
 /**
  * @brief API Test: Open Close between IO Clusters
  */
-static void *test_hal_mailbox_thread_open_close_io(void *args)
+static void test_hal_mailbox_open_close_io(void)
 {
 	int inbox;
 	int outbox;
 	int nodeid;
-	int tid;
 
-	hal_setup();
-
-	tid = ((int *)args)[0];
+	printf("[test][api] Mailbox Open Close IO Cluster 1\n");
 
 	nodeid = hal_get_node_id();
 
@@ -221,56 +218,23 @@ static void *test_hal_mailbox_thread_open_close_io(void *args)
 	TEST_ASSERT((inbox = hal_mailbox_create(nodeid)) >= 0);
 	pthread_mutex_unlock(&lock);
 
-	pthread_mutex_lock(&lock);
 	TEST_ASSERT(hal_sync_wait(syncid_local) == 0);
 	TEST_ASSERT(hal_sync_signal(syncid) == 0);
-	pthread_mutex_unlock(&lock);
 
 	pthread_mutex_lock(&lock);
-	TEST_ASSERT((outbox = hal_mailbox_open(OTHER_IOCLUSTER + tid)) >= 0);
+	TEST_ASSERT((outbox = hal_mailbox_open(OTHER_IOCLUSTER)) >= 0);
 	pthread_mutex_unlock(&lock);
 
 	pthread_mutex_lock(&lock);
 	TEST_ASSERT(hal_mailbox_close(outbox) == 0);
 	pthread_mutex_unlock(&lock);
 
-	pthread_mutex_lock(&lock);
 	TEST_ASSERT(hal_sync_wait(syncid_local) == 0);
 	TEST_ASSERT(hal_sync_signal(syncid) == 0);
-	pthread_mutex_unlock(&lock);
 
 	pthread_mutex_lock(&lock);
 	TEST_ASSERT(hal_mailbox_unlink(inbox) == 0);
 	pthread_mutex_unlock(&lock);
-
-	hal_cleanup();
-	return(NULL);
-}
-
-/**
- * @brief API Test: Open Close between IO Clusters
- */
-static void test_hal_mailbox_open_close_io(void)
-{
-	int tids[ncores];
-	pthread_t threads[ncores];
-
-	printf("[test][api] Mailbox Open Close IO Cluster 1\n");
-
-	/* Spawn driver threads. */
-	for (int i = 1; i < ncores; i++)
-	{
-		tids[i] = i;
-		assert((pthread_create(&threads[i],
-			NULL,
-			test_hal_mailbox_thread_open_close_io,
-			&tids[i])) == 0
-		);
-	}
-
-	/* Wait for driver threads. */
-	for (int i = 1; i < ncores; i++)
-		pthread_join(threads[i], NULL);
 }
 
 /*===================================================================*
@@ -430,8 +394,6 @@ static void test_hal_mailbox_invalid_open(void)
  * Fault Injection Test: Bad Open                                    *
  *===================================================================*/
 
-#ifdef _TEST_MAILBOX_BAD_TEST_
-
 /**
  * @brief Fault Injection Test: Bad Open
  */
@@ -446,8 +408,6 @@ static void test_hal_mailbox_bad_open(void)
 
 	TEST_ASSERT((outbox = hal_mailbox_open(nodeid)) < 0);
 }
-
-#endif
 
 /*===================================================================*
  * Fault Injection Test: Double Open                                 *
@@ -670,9 +630,7 @@ int main(int argc, const char **argv)
 	test_hal_mailbox_bad_create();
 	test_hal_mailbox_double_create();
 	test_hal_mailbox_invalid_open();
-#ifdef _TEST_MAILBOX_BAD_TEST
 	test_hal_mailbox_bad_open();
-#endif
 	test_hal_mailbox_double_open();
 	test_hal_mailbox_double_unlink();
 	test_hal_mailbox_double_close();

@@ -21,6 +21,7 @@
  */
 
 #include <errno.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -48,6 +49,35 @@ static struct
 	int flags; /*< Flags.                      */
 } synctab[HAL_NR_SYNC];
 
+/**
+ * @brief Sync module lock.
+ */
+static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+
+/*============================================================================*
+ * mppa256_sync_lock()                                                        *
+ *============================================================================*/
+
+/**
+ * @brief Locks MPPA-256 sync module.
+ */
+static void mppa256_sync_lock(void)
+{
+	pthread_mutex_lock(&lock);
+}
+
+/*============================================================================*
+ * mppa256_sync_unlock()                                                      *
+ *============================================================================*/
+
+/**
+ * @brief Unlocks MPPA-256 sync module.
+ */
+static void mppa256_sync_unlock(void)
+{
+	pthread_mutex_unlock(&lock);
+}
+
 /*============================================================================*
  * sync_is_valid()                                                            *
  *============================================================================*/
@@ -60,7 +90,7 @@ static struct
  * @returns One if the target synchronization point is valid, and false
  * otherwise.
  *
- * @note This function is @b NOT thread safe.
+ * @note This function is thread-safe.
  */
 static int sync_is_valid(int syncid)
 {
@@ -272,8 +302,12 @@ static void sync_ranks(int *ranks, const int *nodes, int nnodes)
 
 /**
  * @see hal_sync_create()
+ *
+ * @note In this function we may sleep while hold the lock. However, I
+ * strongly beleive that no circular dependency may be introduced, so
+ * we are good.
  */
-static int _hal_sync_create(const int *nodes, int nnodes, int type)
+static int mppa256_sync_create(const int *nodes, int nnodes, int type)
 {
 	int fd;             /* NoC connector.           */
 	int syncid;         /* Synchronization point.   */
@@ -349,10 +383,11 @@ error0:
  * synchronization point is returned. Upon failure, a negative error
  * code is returned instead.
  *
- * @note This function is @b NOT thread safe.
+ * @note This function is thread-safe.
  */
 int hal_sync_create(const int *nodes, int nnodes, int type)
 {
+	int syncid;
 	int nodeid;
 	int ranks[nnodes];
 
@@ -408,7 +443,11 @@ int hal_sync_create(const int *nodes, int nnodes, int type)
 	else
 		memcpy(ranks, nodes, nnodes*sizeof(int));
 
-	return (_hal_sync_create(ranks, nnodes, type));
+	mppa256_sync_lock();
+		syncid = mppa256_sync_create(ranks, nnodes, type);
+	mppa256_sync_unlock();
+
+	return (syncid);
 }
 
 /*============================================================================*
@@ -417,8 +456,12 @@ int hal_sync_create(const int *nodes, int nnodes, int type)
 
 /**
  * @see hal_sync_open()
+ *
+ * @note In this function we may sleep while hold the lock. However, I
+ * strongly beleive that no circular dependency may be introduced, so
+ * we are good.
  */
-static int _hal_sync_open(const int *nodes, int nnodes, int type)
+static int mppa256_sync_open(const int *nodes, int nnodes, int type)
 {
 	int fd;                /* NoC connector.             */
 	int syncid;            /* Synchronization point.     */
@@ -505,12 +548,13 @@ error0:
  * synchronization point is returned. Upon failure, a negative error
  * code is returned instead.
  *
- * @note This function is @b NOT thread safe.
+ * @note This function is thread-safe.
  *
  * @todo Check for Invalid Remote
  */
 int hal_sync_open(const int *nodes, int nnodes, int type)
 {
+	int syncid;
 	int nodeid;
 
 	/* Invalid list of nodes. */
@@ -560,7 +604,11 @@ int hal_sync_open(const int *nodes, int nnodes, int type)
 			return (-EINVAL);
 	}
 
-	return (_hal_sync_open(nodes, nnodes, type));
+	mppa256_sync_lock();
+		syncid = mppa256_sync_open(nodes, nnodes, type);
+	mppa256_sync_unlock();
+
+	return (syncid);
 }
 
 /*============================================================================*
@@ -583,21 +631,33 @@ int hal_sync_wait(int syncid)
 
 	/* Invalid sync. */
 	if (!sync_is_valid(syncid))
-		return (-EINVAL);
+		goto error0;
 
-	/* Bad sync. */
-	if (!sync_is_used(syncid))
-		return (-EINVAL);
+	mppa256_sync_lock();
 
-	/* Bad sync. */
-	if (sync_is_wronly(syncid))
-		return (-EINVAL);
+		/* Bad sync. */
+		if (!sync_is_used(syncid))
+			goto error1;
+
+		/* Bad sync. */
+		if (sync_is_wronly(syncid))
+			goto error1;
+
+	/*
+	 * Realease lock, since we may sleep below.
+	 */
+	mppa256_sync_unlock();
 
 	/* Wait. */
 	if (mppa_read(synctab[syncid].fd, &mask, sizeof(uint64_t)) != sizeof(uint64_t))
-		return (-EAGAIN);
+		goto error0;
 
 	return (0);
+
+error1:
+	mppa256_sync_unlock();
+error0:
+	return (-EAGAIN);
 }
 
 /*============================================================================*
@@ -618,28 +678,42 @@ int hal_sync_signal(int syncid)
 {
 	int nodeid;
 	uint64_t mask;
+	int is_broadcast;
 
 	/* Invalid sync. */
 	if (!sync_is_valid(syncid))
-		return (-EINVAL);
+		goto error0;
 
-	/* Bad sync. */
-	if (!sync_is_used(syncid))
-		return (-EINVAL);
+	mppa256_sync_lock();
 
-	/* Bad sync. */
-	if (!sync_is_wronly(syncid))
-		return (-EINVAL);
+		/* Bad sync. */
+		if (!sync_is_used(syncid))
+			goto error1;
+
+		/* Bad sync. */
+		if (!sync_is_wronly(syncid))
+			goto error1;
+
+		is_broadcast = sync_is_broadcast(syncid);
+
+	/*
+	 * Realease lock, since we may sleep below.
+	 */
+	mppa256_sync_unlock();
 
 	nodeid = hal_get_node_id();
 
 	/* Signal. */
-	mask = (!sync_is_broadcast(syncid)) ? 
-		1 << noc_get_node_num(nodeid) : ~0;
+	mask = (!is_broadcast) ? 1 << noc_get_node_num(nodeid) : ~0;
 	if (mppa_write(synctab[syncid].fd, &mask, sizeof(uint64_t)) != sizeof(uint64_t))
-		return (-EAGAIN);
+		goto error0;
 
 	return (0);
+
+error1:
+	mppa256_sync_unlock();
+error0:
+	return (-EAGAIN);
 }
 
 /*============================================================================*
@@ -660,22 +734,36 @@ int hal_sync_close(int syncid)
 {
 	/* Invalid sync. */
 	if (!sync_is_valid(syncid))
-		return (-EINVAL);
+		goto error0;
 
-	/* Bad sync. */
-	if (!sync_is_used(syncid))
-		return (-EINVAL);
+	mppa256_sync_lock();
 
-	/* Bad sync. */
-	if (!sync_is_wronly(syncid))
-		return (-EINVAL);
+		/* Bad sync. */
+		if (!sync_is_used(syncid))
+			goto error1;
+
+		/* Bad sync. */
+		if (!sync_is_wronly(syncid))
+			goto error1;
+
+	/*
+	 * Realease lock, since we may sleep below.
+	 */
+	mppa256_sync_unlock();
 
 	if (mppa_close(synctab[syncid].fd) < 0)
-		return (-EAGAIN);
+		goto error0;
 
-	sync_free(syncid);
+	mppa256_sync_lock();
+		sync_free(syncid);
+	mppa256_sync_unlock();
 
 	return (0);
+
+error1:
+	mppa256_sync_unlock();
+error0:
+	return (-EAGAIN);
 }
 
 /*============================================================================*
@@ -696,20 +784,34 @@ int hal_sync_unlink(int syncid)
 {
 	/* Invalid sync. */
 	if (!sync_is_valid(syncid))
-		return (-EINVAL);
+		goto error0;
 
-	/* Bad sync. */
-	if (!sync_is_used(syncid))
-		return (-EINVAL);
+	mppa256_sync_lock();
 
-	/* Bad sync. */
-	if (sync_is_wronly(syncid))
-		return (-EINVAL);
+		/* Bad sync. */
+		if (!sync_is_used(syncid))
+			goto error1;
+
+		/* Bad sync. */
+		if (sync_is_wronly(syncid))
+			goto error1;
+
+	/*
+	 * Realease lock, since we may sleep below.
+	 */
+	mppa256_sync_unlock();
 
 	if (mppa_close(synctab[syncid].fd) < 0)
-		return (-EAGAIN);
+		goto error0;
 
-	sync_free(syncid);
+	mppa256_sync_lock();
+		sync_free(syncid);
+	mppa256_sync_unlock();
 
 	return (0);
+
+error1:
+	mppa256_sync_unlock();
+error0:
+	return (-EAGAIN);
 }

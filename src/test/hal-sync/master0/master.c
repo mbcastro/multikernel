@@ -49,11 +49,6 @@ static int ncores = 0;
  */
 static pthread_barrier_t barrier;
 
-/**
- * @brief Lock for critical sections.
- */
-static pthread_mutex_t lock;
-
 /*============================================================================*
  * API Test: Create Unlink                                                    *
  *============================================================================*/
@@ -70,15 +65,11 @@ static void *test_hal_sync_thread_create_unlink(void *args)
 
 	nodes = ((int *)args);
 
-	pthread_mutex_lock(&lock);
 	TEST_ASSERT((syncid = hal_sync_create(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) >= 0);
-	pthread_mutex_unlock(&lock);
 
 	pthread_barrier_wait(&barrier);
 
-	pthread_mutex_lock(&lock);
 	TEST_ASSERT(hal_sync_unlink(syncid) == 0);
-	pthread_mutex_unlock(&lock);
 
 	pthread_barrier_wait(&barrier);
 
@@ -131,15 +122,11 @@ static void *test_hal_sync_thread_open_close(void *args)
 
 	nodes = ((int *)args);
 
-	pthread_mutex_lock(&lock);
 	TEST_ASSERT((syncid = hal_sync_create(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) >= 0);
-	pthread_mutex_unlock(&lock);
 
 	pthread_barrier_wait(&barrier);
 
-	pthread_mutex_lock(&lock);
 	TEST_ASSERT(hal_sync_unlink(syncid) == 0);
-	pthread_mutex_unlock(&lock);
 
 	pthread_barrier_wait(&barrier);
 
@@ -154,13 +141,9 @@ static void test_hal_sync_master_open_close(const int *nodes)
 {
 	int syncid;
 
-	pthread_mutex_lock(&lock);
 	TEST_ASSERT((syncid = hal_sync_open(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) >= 0);
-	pthread_mutex_unlock(&lock);
 
-	pthread_mutex_lock(&lock);
 	TEST_ASSERT(hal_sync_close(syncid) == 0);
-	pthread_mutex_unlock(&lock);
 }
 
 /**
@@ -210,17 +193,13 @@ static void *test_hal_sync_thread_wait_signal(void *args)
 
 	nodes = ((int *)args);
 
-	pthread_mutex_lock(&lock);
 	TEST_ASSERT((syncid = hal_sync_create(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) >= 0);
-	pthread_mutex_unlock(&lock);
 
 	pthread_barrier_wait(&barrier);
 
 	TEST_ASSERT(hal_sync_wait(syncid) == 0);
 
-	pthread_mutex_lock(&lock);
 	TEST_ASSERT(hal_sync_unlink(syncid) == 0);
-	pthread_mutex_unlock(&lock);
 
 	pthread_barrier_wait(&barrier);
 
@@ -235,15 +214,11 @@ static void test_hal_sync_master_wait_signal(const int *nodes)
 {
 	int syncid;
 
-	pthread_mutex_lock(&lock);
 	TEST_ASSERT((syncid = hal_sync_open(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) >= 0);
-	pthread_mutex_unlock(&lock);
 
 	TEST_ASSERT(hal_sync_signal(syncid) == 0);
 
-	pthread_mutex_lock(&lock);
 	TEST_ASSERT(hal_sync_close(syncid) == 0);
-	pthread_mutex_unlock(&lock);
 }
 
 /**
@@ -293,9 +268,7 @@ static void *test_hal_sync_thread_signal_wait(void *args)
 
 	nodes = ((int *)args);
 
-	pthread_mutex_lock(&lock);
 	TEST_ASSERT((syncid = hal_sync_open(nodes, ncores, HAL_SYNC_ALL_TO_ONE)) >= 0);
-	pthread_mutex_unlock(&lock);
 
 	pthread_barrier_wait(&barrier);
 
@@ -303,9 +276,7 @@ static void *test_hal_sync_thread_signal_wait(void *args)
 
 	pthread_barrier_wait(&barrier);
 
-	pthread_mutex_lock(&lock);
 	TEST_ASSERT(hal_sync_close(syncid) == 0);
-	pthread_mutex_unlock(&lock);
 
 	hal_cleanup();
 	return (NULL);
@@ -318,15 +289,11 @@ static void test_hal_sync_master_signal_wait(const int *nodes)
 {
 	int syncid;
 
-	pthread_mutex_lock(&lock);
 	TEST_ASSERT((syncid = hal_sync_create(nodes, ncores, HAL_SYNC_ALL_TO_ONE)) >= 0);
-	pthread_mutex_unlock(&lock);
 
 	TEST_ASSERT(hal_sync_wait(syncid) == 0);
 
-	pthread_mutex_lock(&lock);
 	TEST_ASSERT(hal_sync_unlink(syncid) == 0);
-	pthread_mutex_unlock(&lock);
 }
 
 /**
@@ -958,7 +925,6 @@ int main(int argc, const char **argv)
 
 	ncores = hal_get_num_cores();
 
-	pthread_mutex_init(&lock, NULL);
 	pthread_barrier_init(&barrier, NULL, ncores - 1);
 
 	/* API tests. */

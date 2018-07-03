@@ -120,7 +120,6 @@ then
 	run1 "test-hal.img" "/test/hal-master" | grep "test"
 	echo "Testing SYNC"
 	run2 "test-hal-sync.img" "/test/hal-sync-master0" "/test/hal-sync-master1" "$NCLUSTERS" | grep "test"
-	run2 "test-hal-mailbox.img" "/test/hal-mailbox-master0" "/test/hal-mailbox-master1" | grep "test"
 	echo "Testing MAILBOX"
 	run2 "test-hal-mailbox.img" "/test/hal-mailbox-master0" "/test/hal-mailbox-master1" | grep "test"
 	echo "Testing PORTAL"
