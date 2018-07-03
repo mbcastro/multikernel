@@ -53,6 +53,35 @@ struct
 	int local;     /**< Local NoC node ID.    */
 } portals[HAL_NR_PORTAL];
 
+/**
+ * @brief Portal module lock.
+ */
+static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+
+/*============================================================================*
+ * mppa256_portal_lock()                                                      *
+ *============================================================================*/
+
+/**
+ * @brief Locks MPPA-256 portal module.
+ */
+static void mppa256_portal_lock(void)
+{
+	pthread_mutex_lock(&lock);
+}
+
+/*============================================================================*
+ * mppa256_portal_unlock()                                                    *
+ *============================================================================*/
+
+/**
+ * @brief Unlocks MPPA-256 portal module.
+ */
+static void mppa256_portal_unlock(void)
+{
+	pthread_mutex_unlock(&lock);
+}
+
 /*============================================================================*
  * portal_is_valid()                                                          *
  *============================================================================*/
@@ -65,7 +94,7 @@ struct
  * @returns One if the target portal is valid, and false
  * otherwise.
  *
- * @note This function is @b NOT thread safe.
+ * @note This function is thread-safe.
  */
 static int portal_is_valid(int portalid)
 {
@@ -218,7 +247,7 @@ static void portal_free(int portalid)
  *
  * @note This function is @b NOT thread safe.
  */
-static int _hal_portal_create(int local)
+static int mppa256_portal_create(int local)
 {
 	int portalid;       /* ID of  portal               */
 	int fd;             /* Portal NoC Connector.       */
@@ -269,6 +298,8 @@ error0:
  */
 int hal_portal_create(int local)
 {
+	int portalid;
+
 	/* Invalid local NoC node. */
 	if (local < -1)
 		return (-EINVAL);
@@ -277,7 +308,11 @@ int hal_portal_create(int local)
 	if (local != hal_get_node_id())
 		return (-EINVAL);
 
-	return (_hal_portal_create(local));
+	mppa256_portal_lock();
+		portalid = mppa256_portal_create(local);
+	mppa256_portal_unlock();
+
+	return (portalid);
 }
 
 /*============================================================================*
@@ -294,7 +329,7 @@ int hal_portal_create(int local)
  * @returns Upons successful completion zero is returned. Upon failure,
  * a negative error code is returned instead.
  */
-static int _hal_portal_allow(int portalid, int local, int remote)
+static int mppa256_portal_allow(int portalid, int local, int remote)
 {
 	int sync_fd;        /* Sync NoC connector. */
 	char pathname[128]; /* Portal pathname.    */
@@ -329,6 +364,7 @@ static int _hal_portal_allow(int portalid, int local, int remote)
  */
 int hal_portal_allow(int portalid, int remote)
 {
+	int ret;
 	int local;
 
 	/* Invalid portal.*/
@@ -353,7 +389,11 @@ int hal_portal_allow(int portalid, int remote)
 	if (remote == local)
 		return (-EINVAL);
 
-	return (_hal_portal_allow(portalid, local, remote));
+	mppa256_portal_lock();
+		ret = mppa256_portal_allow(portalid, local, remote);
+	mppa256_portal_unlock();
+
+	return (ret);
 }
 
 /*============================================================================*
@@ -371,7 +411,7 @@ int hal_portal_allow(int portalid, int remote)
  *
  * @note This function is @b NOT thread safe.
  */
-static int _hal_portal_open(int local, int remote)
+static int mppa256_portal_open(int local, int remote)
 {
 	int portalid;       /* ID of  portal         */
 	int portal_fd;      /* Portal NoC Connector. */
@@ -434,6 +474,7 @@ error0:
 int hal_portal_open(int remote)
 {
 	int local;
+	int portalid;
 
 	/* Invalid node ID. */
 	if (remote < 0)
@@ -445,7 +486,11 @@ int hal_portal_open(int remote)
 	if (remote == local)
 		return (-EINVAL);
 
-	return (_hal_portal_open(local, remote));
+	mppa256_portal_lock();
+		portalid = mppa256_portal_open(local, remote);
+	mppa256_portal_unlock();
+
+	return (portalid);
 }
 
 /*============================================================================*
@@ -464,7 +509,7 @@ int hal_portal_open(int remote)
  *
  * @note This function is @b NOT thread safe.
  */
-static int _hal_portal_read(int portalid, void *buf, size_t n)
+static int mppa256_portal_read(int portalid, void *buf, size_t n)
 {
 	uint64_t mask;
 	mppa_aiocb_t aiocb;
@@ -473,12 +518,17 @@ static int _hal_portal_read(int portalid, void *buf, size_t n)
 	/* Setup read operation. */
 	mppa_aiocb_ctor(&aiocb, portals[portalid].portal_fd, buf, n);
 	if (mppa_aio_read(&aiocb) == -1)
-		return (-EINVAL);
+		goto error1;
+
+	/*
+	 * Realease lock, since we may sleep below.
+	 */
+	mppa256_portal_unlock();
 
 	/* Unblock remote. */
 	mask = 1 << noc_get_node_num(portals[portalid].local);
 	if (mppa_write(portals[portalid].sync_fd, &mask, sizeof(uint64_t)) == -1)
-		return (-EAGAIN);
+		goto error0;
 
 	/* Wait read operation to complete. */
 	nread = mppa_aio_wait(&aiocb);
@@ -486,6 +536,11 @@ static int _hal_portal_read(int portalid, void *buf, size_t n)
 	portals[portalid].sync_fd = -1;
 
 	return (nread);
+
+error1:
+	mppa256_portal_unlock();
+error0:
+	return (-EAGAIN);
 }
 
 /**
@@ -502,27 +557,42 @@ static int _hal_portal_read(int portalid, void *buf, size_t n)
  */
 int hal_portal_read(int portalid, void *buf, size_t n)
 {
+	int nread;
+
 	/* Invalid portal ID.*/
 	if (!portal_is_valid(portalid))
-		return (-EINVAL);
+		goto error0;
 
-	/* Bad portal. */
-	if (!portal_is_used(portalid))
-		return (-EINVAL);
+	mppa256_portal_lock();
 
-	/* Bad portal.*/
-	if (portal_is_wronly(portalid))
-		return (-EINVAL);
+		/* Bad portal. */
+		if (!portal_is_used(portalid))
+			goto error1;
 
-	/* Invalid buffer. */
-	if (buf == NULL)
-		return (-EINVAL);
+		/* Bad portal.*/
+		if (portal_is_wronly(portalid))
+			goto error1;
 
-	/* Invalid read size. */
-	if (n < 1)
-		return (-EINVAL);
-	
-	return (_hal_portal_read(portalid, buf, n));
+		/* Invalid buffer. */
+		if (buf == NULL)
+			goto error1;
+
+		/* Invalid read size. */
+		if (n < 1)
+			goto error1;
+
+		nread = mppa256_portal_read(portalid, buf, n);
+
+	/*
+	 * mppa256_portal_read() releases the lock.
+	 */
+
+	return (nread);
+
+error1:
+	mppa256_portal_unlock();
+error0:
+	return (-EINVAL);
 }
 
 /*============================================================================*
@@ -541,7 +611,7 @@ int hal_portal_read(int portalid, void *buf, size_t n)
  *
  * @note This function is @b NOT thread safe.
  */
-static int _hal_portal_write(int portalid, const void *buf, size_t n)
+static int mppa256_portal_write(int portalid, const void *buf, size_t n)
 {
 	uint64_t mask;
 	size_t nwrite;
@@ -549,15 +619,25 @@ static int _hal_portal_write(int portalid, const void *buf, size_t n)
 	/* Wait for remote to be ready. */
 	mask = 1 << noc_get_node_num(portals[portalid].remote);
 	if (mppa_ioctl(portals[portalid].sync_fd, MPPA_RX_SET_MATCH, ~mask) == -1)
-		return (-EINVAL);
+		goto error1;
+
+	/*
+	 * Realease lock, since we may sleep below.
+	 */
+	mppa256_portal_unlock();
 
 	if (mppa_read(portals[portalid].sync_fd, &mask, sizeof(uint64_t)) == -1)
-		return (-EAGAIN);
+		goto error0;
 
 	/* Write. */
 	nwrite = mppa_pwrite(portals[portalid].portal_fd, buf, n, 0);
 
 	return (nwrite);
+
+error1:
+	mppa256_portal_unlock();
+error0:
+	return (-EAGAIN);
 }
 
 /**
@@ -574,27 +654,42 @@ static int _hal_portal_write(int portalid, const void *buf, size_t n)
  */
 int hal_portal_write(int portalid, const void *buf, size_t n)
 {
+	int nwrite;
+
 	/* Invalid portal ID.*/
 	if (!portal_is_valid(portalid))
-		return (-EINVAL);
+		goto error0;
+	
+	mppa256_portal_lock();
 
-	/* Bad portal. */
-	if (!portal_is_used(portalid))
-		return (-EINVAL);
+		/* Bad portal. */
+		if (!portal_is_used(portalid))
+			goto error1;
 
-	/* Bad portal. */
-	if (!portal_is_wronly(portalid))
-		return (-EINVAL);
+		/* Bad portal. */
+		if (!portal_is_wronly(portalid))
+			goto error1;
 
-	/* Invalid buffer. */
-	if (buf == NULL)
-		return (-EINVAL);
+		/* Invalid buffer. */
+		if (buf == NULL)
+			goto error1;
 
-	/* Invalid write size. */
-	if (n < 1)
-		return (-EINVAL);
+		/* Invalid write size. */
+		if (n < 1)
+			goto error1;
 
-	return (_hal_portal_write(portalid, buf, n));
+		nwrite = mppa256_portal_write(portalid, buf, n);
+
+	/*
+	 * mppa256_portal_write() releases the lock.
+	 */
+
+	return (nwrite);
+
+error1:
+	mppa256_portal_unlock();
+error0:
+	return (-EINVAL);
 }
 
 /*============================================================================*
@@ -615,31 +710,40 @@ int hal_portal_close(int portalid)
 {
 	/* Invalid portal.*/
 	if (!portal_is_valid(portalid))
-		return (-EINVAL);
+		goto error0;
 
-	/* Bad portal. */
-	if (!portal_is_used(portalid))
-		return (-EINVAL);
+	mppa256_portal_lock();
 
-	/* Bad portal. */
-	if (!portal_is_wronly(portalid))
-		return (-EINVAL);
+		/* Bad portal. */
+		if (!portal_is_used(portalid))
+			goto error1;
+
+		/* Bad portal. */
+		if (!portal_is_wronly(portalid))
+			goto error1;
+
+	mppa256_portal_unlock();
 
 	/* Close underlying portal. */
 	if (mppa_close(portals[portalid].portal_fd) < 0)
-		return (-EINVAL);
+		goto error0;
 
 	/* Close underlying sync connector. */
 	if (mppa_close(portals[portalid].sync_fd) < 0)
-		goto error;
+		goto error2;
 
-	portal_free(portalid);
+	mppa256_portal_lock();
+		portal_free(portalid);
+	mppa256_portal_unlock();
 
 	return (0);
 
-error:
+error2:
 	printf("[PANIC] failed cannot close portal\n");
 	while (1);
+error1:
+	mppa256_portal_unlock();
+error0:
 	return (-EINVAL);
 }
 
@@ -661,34 +765,43 @@ int hal_portal_unlink(int portalid)
 {
 	/* Invalid portal.*/
 	if (!portal_is_valid(portalid))
-		return (-EINVAL);
+		goto error0;
 
-	/* Bad portal. */
-	if (!portal_is_used(portalid))
-		return (-EINVAL);
+	mppa256_portal_lock();
 
-	/* Bad portal. */
-	if (portal_is_wronly(portalid))
-		return (-EINVAL);
+		/* Bad portal. */
+		if (!portal_is_used(portalid))
+			goto error1;
+
+		/* Bad portal. */
+		if (portal_is_wronly(portalid))
+			goto error1;
+
+	mppa256_portal_unlock();
 
 	/* Close underlying portal. */
 	if (mppa_close(portals[portalid].portal_fd) < 0)
-		return (-EINVAL);
+		goto error0;
 
 	/* Close underlying sync connector. */
 	if (portals[portalid].sync_fd != -1)
 	{
 		if (mppa_close(portals[portalid].sync_fd) < 0)
-			goto error;
+			goto error2;
 	}
 
-	portals[portalid].sync_fd = -1;
-	portal_free(portalid);
+	mppa256_portal_lock();
+		portals[portalid].sync_fd = -1;
+		portal_free(portalid);
+	mppa256_portal_unlock();
 
 	return (0);
 
-error:
+error2:
 	printf("[PANIC] failed cannot unlink portal\n");
 	while (1);
+error1:
+	mppa256_portal_unlock();
+error0:
 	return (-EINVAL);
 }
