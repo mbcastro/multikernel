@@ -24,8 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <pthread.h>
 
-#include <mppa/osconfig.h>
 #include <mppaipc.h>
 
 #define __NEED_HAL_CORE_
@@ -98,7 +98,7 @@ static void test_name_link_unlink(void)
 	int dmas[ncores];
 	pthread_t tids[ncores];
 
-	printf("[test][api] Name Link Unlink\n");
+	printf("[nanvix][test][api] Name Link Unlink\n");
 
 	/* Spawn driver threads. */
 	for (int i = 1; i < ncores; i++)
@@ -159,7 +159,7 @@ static void test_name_lookup(void)
 	int dmas[ncores];
 	pthread_t tids[ncores];
 
-	printf("[test][api] Name Lookup\n");
+	printf("[nanvix][test][api] Name Lookup\n");
 
 	/* Spawn driver threads. */
 	for (int i = 1; i < ncores; i++)
@@ -189,7 +189,7 @@ static void test_name_duplicate(void)
 	int nodeid;
 	char pathname[NANVIX_PROC_NAME_MAX];
 
-	printf("[test][fault injection] Duplicate Name\n");
+	printf("[nanvix][test][fault injection] Duplicate Name\n");
 
 	nodeid = hal_get_node_id();
 
@@ -212,7 +212,7 @@ static void test_name_invalid_link(void)
 	int nodeid;
 	char pathname[NANVIX_PROC_NAME_MAX + 1];
 
-	printf("[test][fault injection] Invalid Link\n");
+	printf("[nanvix][test][fault injection] Invalid Link\n");
 
 	nodeid = hal_get_node_id();
 
@@ -235,7 +235,7 @@ static void test_name_invalid_unlink(void)
 {
 	char pathname[NANVIX_PROC_NAME_MAX + 1];
 
-	printf("[test][fault onjection] Invalid Unlink\n");
+	printf("[nanvix][test][fault onjection] Invalid Unlink\n");
 
 	memset(pathname, 1, NANVIX_PROC_NAME_MAX + 1);
 
@@ -254,7 +254,7 @@ static void test_name_invalid_unlink(void)
 */
 static void test_name_bad_unlink(void)
 {
-	printf("[test][fault injection] Bad Unlink\n");
+	printf("[nanvix][test][fault injection] Bad Unlink\n");
 
 	/* Unlink missing name. */
 	TEST_ASSERT(name_unlink("missing_name") < 0);
@@ -269,7 +269,7 @@ static void test_name_bad_unlink(void)
 */
 static void test_name_bad_lookup(void)
 {
-	printf("[test][fault injection] Bad Lookup\n");
+	printf("[nanvix][test][fault injection] Bad Lookup\n");
 
 	/* Lookup missing name. */
 	TEST_ASSERT(name_lookup("missing_name") < 0);
@@ -286,7 +286,7 @@ static void test_name_invalid_lookup(void)
 {
 	char pathname[NANVIX_PROC_NAME_MAX + 1];
 
-	printf("[test][fault injection] Invalid Lookup\n");
+	printf("[nanvix][test][fault injection] Invalid Lookup\n");
 
 	memset(pathname, 1, NANVIX_PROC_NAME_MAX + 1);
 
@@ -314,7 +314,7 @@ static void test_name_slave(int nclusters)
 		NULL
 	};
 
-	printf("[test][api] Name Slaves\n");
+	printf("[nanvix][test][api] Name Slaves\n");
 
 	sprintf(nclusters_str, "%d", nclusters);
 
@@ -335,29 +335,13 @@ static void test_name_slave(int nclusters)
 /**
  * @brief Name Service Test Driver
  */
-int main(int argc, char **argv)
+void test_name(int nbusycores)
 {
-	int syncid;
-	int nodes[2];
-	int nclusters;
-
 	TEST_ASSERT(kernel_setup() == 0);
 
-	ncores = hal_get_num_cores();
+	ncores = hal_get_num_cores() - nbusycores;
 
 	pthread_barrier_init(&barrier, NULL, ncores - 1);
-
-	TEST_ASSERT(argc == 2);
-
-	/* Retrieve kernel parameters. */
-	nclusters = atoi(argv[1]);
-
-	/* Wait spawner server. */
-	nodes[0] = 128;
-	nodes[1] = hal_get_node_id();
-
-	TEST_ASSERT((syncid = hal_sync_create(nodes, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
-	TEST_ASSERT(hal_sync_wait(syncid) == 0);
 
 	/* API tests. */
 	test_name_link_unlink();
@@ -370,11 +354,9 @@ int main(int argc, char **argv)
 	test_name_bad_unlink();
 	test_name_bad_lookup();
 	test_name_invalid_lookup();
-	test_name_slave(nclusters);
-
-	/* House keeping. */
-	TEST_ASSERT(hal_sync_unlink(syncid) == 0);
+	
+	if (0)
+		test_name_slave(HAL_NR_NOC_CNODES);
 
 	TEST_ASSERT(kernel_cleanup() == 0);
-	return (EXIT_SUCCESS);
 }

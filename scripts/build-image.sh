@@ -60,7 +60,6 @@ function build2
 		-T $multibin
 }
 
-build2 $BINDIR/servers $BINDIR/servers1 $BINDIR/test/hal-sync-slave nanvix.img
+build2 $BINDIR/servers $BINDIR/servers1 "$BINDIR/test/hal-sync-slave $BINDIR/test/name-slave" nanvix.img
 
-build2 $BINDIR/servers               $BINDIR/test/name-master      $BINDIR/test/name-slave         test-name.img
 build2 $BINDIR/test/barrier-master0  $BINDIR/test/barrier-master1  $BINDIR/test/barrier-slave      test-barrier.img

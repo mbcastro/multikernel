@@ -94,10 +94,13 @@ extern void test_hal_sync(void);
 extern void test_hal_mailbox(void);
 extern void test_hal_portal(void);
 
+/* High-level unit-tests. */
+extern void test_name(int);
+
 /**
  * @brief Generic test driver.
  */
-static void test(const char *module)
+static void test0(const char *module)
 {
 	printf("[nanvix][spawner0] running low-level self-tests\n");
 
@@ -109,6 +112,17 @@ static void test(const char *module)
 		test_hal_mailbox();
 	else if (!strcmp(module, "--hal-portal"))
 		test_hal_portal();
+}
+
+/**
+ * @brief Generic test driver.
+ */
+static void test1(const char *module)
+{
+	printf("[nanvix][spawner0] running high-level self-tests\n");
+
+	if (!strcmp(module, "--name"))
+		test_name(NR_SERVERS);
 
 	exit(EXIT_SUCCESS);
 }
@@ -139,7 +153,7 @@ int main(int argc, char **argv)
 
 	/* Run self-tests. */
 	if (debug)
-		test(argv[2]);
+		test0(argv[2]);
 
 	printf("[nanvix][spawner0] server alive\n");
 
@@ -155,6 +169,10 @@ int main(int argc, char **argv)
 	}
 
 	pthread_barrier_wait(&barrier);
+
+	/* Run self-tests. */
+	if (debug)
+		test1(argv[2]);
 
 	/* Release master IO cluster. */
 	nodes[0] = hal_get_node_id();
