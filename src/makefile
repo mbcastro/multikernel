@@ -49,7 +49,8 @@ export ARFLAGS = rcs
 #===============================================================================
 
 # System Services
-export SERVERSBIN = $(BINDIR)/servers
+export SERVERSBIN0 = $(BINDIR)/servers
+export SERVERSBIN1 = $(BINDIR)/servers1
 
 #===============================================================================
 

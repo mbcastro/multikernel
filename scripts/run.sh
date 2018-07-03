@@ -117,13 +117,13 @@ function benchmark_mailbox
 if [[ $1 == "test" ]];
 then
 	echo "Testing HAL"
-	run1 "nanvix.img" "/servers" "--debug --hal" | grep nanvix
+	run2 "nanvix.img" "/servers" "/servers1" "--debug --hal" | grep nanvix
 	echo "Testing HAL Sync"
-	run1 "nanvix.img" "/servers" "--debug --hal-sync" | grep nanvix
+	run2 "nanvix.img" "/servers" "/servers1" "--debug --hal-sync" | grep nanvix
 	echo "Testing HAL Mailbox"
-	run1 "nanvix.img" "/servers" "--debug --hal-mailbox" | grep nanvix
+	run2 "nanvix.img" "/servers" "/servers1" "--debug --hal-mailbox" | grep nanvix
 	echo "Testing HAL Portal"
-	run1 "nanvix.img" "/servers" "--debug --hal-portal" | grep nanvix
+	run2 "nanvix.img" "/servers" "/servers1" "--debug --hal-portal" | grep nanvix
 #	echo "Testing NAME"
 #	run1 "test-name.img" "/servers" "--debug --name" | grep nanvix
 #	echo "Testing MAILBOX"

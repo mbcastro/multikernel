@@ -21,19 +21,38 @@
 #
 
 # C Source Files
-SRC = name.c                \
-	  spawner.c             \
-      $(wildcard tests/*.c)
+SRC0 = name.c                \
+	   spawner0.c            \
+       $(wildcard tests0/*.c)
+
+# C Source Files
+SRC1 = name.c     \
+	   spawner1.c \
 
 # Object Files
-OBJ = $(SRC:.c=.o)
+OBJ0 = $(SRC0:.c=.o)
+
+# Object Files
+OBJ1 = $(SRC1:.c=.o)
 
 #===============================================================================
 
 # Builds everything.
-all: $(OBJ)
+all: servers0 servers1
+
+#
+# Server fleet 0.
+#
+servers0: $(OBJ0)
 	mkdir -p $(BINDIR)
-	$(CC) $(LDFLAGS) $(OBJ) -o $(SERVERSBIN) $(LIBKERNEL) $(LIBS)
+	$(CC) $(LDFLAGS) $(OBJ0) -o $(SERVERSBIN0) $(LIBKERNEL) $(LIBS)
+
+#
+# Server fleet 1.
+#
+servers1: $(OBJ1)
+	mkdir -p $(BINDIR)
+	$(CC) $(LDFLAGS) $(OBJ1) -o $(SERVERSBIN1) $(LIBKERNEL) $(LIBS)
 
 # Builds object files.
 %.o: %.c
@@ -45,4 +64,5 @@ clean:
 
 # Cleans everything.
 distclean: clean
-	rm -rf $(SERVERSBIN)
+	rm -rf $(SERVERSBIN0)
+	rm -rf $(SERVERSBIN1)

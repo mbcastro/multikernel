@@ -54,11 +54,6 @@ static struct
 };
 
 /**
- * @brief Servers lock.
- */
-static pthread_mutex_t lock;
-
-/**
  * @brief Barrier for synchronization.
  */
 static pthread_barrier_t barrier;
@@ -104,7 +99,7 @@ extern void test_hal_portal(void);
  */
 static void test(const char *module)
 {
-	printf("[nanvix][spawner] running low-level self-tests\n");
+	printf("[nanvix][spawner0] running low-level self-tests\n");
 
 	if (!strcmp(module, "--hal"))
 		test_hal();
@@ -138,16 +133,15 @@ int main(int argc, char **argv)
 
 	hal_setup();
 
-	printf("[nanvix][spawner] booting up server\n");
+	printf("[nanvix][spawner0] booting up server\n");
 
-	pthread_mutex_init(&lock, NULL);
 	pthread_barrier_init(&barrier, NULL, NR_SERVERS + 1);
 
 	/* Run self-tests. */
 	if (debug)
 		test(argv[2]);
 
-	printf("[nanvix][spawner] server alive\n");
+	printf("[nanvix][spawner0] server alive\n");
 
 	/* Spawn servers. */
 	for (int i = 0; i < NR_SERVERS; i++)

@@ -32,17 +32,6 @@ then
 	exit 1
 fi
 
-function build0
-{
-	bootbin=$1
-	multibin=$2
-
-	$TOOLCHAIN/bin/k1-create-multibinary -f \
-		--remove-prefix $BINDIR             \
-		--boot $bootbin                     \
-		-T $multibin
-}
-
 function build1
 {
 	bootbin=$1
@@ -71,7 +60,7 @@ function build2
 		-T $multibin
 }
 
-build0 $BINDIR/servers nanvix.img
+build1 $BINDIR/servers $BINDIR/servers1 nanvix.img
 
 build1 $BINDIR/test/hal-mailbox-master0 $BINDIR/test/hal-mailbox-master1 test-hal-mailbox.img
 build1 $BINDIR/servers $BINDIR/test/hal-portal-master                    test-hal-portal.img
