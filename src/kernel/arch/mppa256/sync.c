@@ -45,8 +45,9 @@
  */
 static struct 
 {
-	int fd;    /*< Underlying file descriptor. */
-	int flags; /*< Flags.                      */
+	int fd;     /**< Underlying file descriptor. */
+	int flags;  /**< Flags.                      */
+	int ncount; /**< Number of remotes.          */
 } synctab[HAL_NR_SYNC];
 
 /**
@@ -469,7 +470,6 @@ static int mppa256_sync_open(const int *nodes, int nnodes, int type)
 	int syncid;            /* Synchronization point.     */
 	char remotes[128];     /* IDs of remote NoC nodes.   */
 	char pathname[128];    /* NoC connector name.        */
-	int ranks[nnodes - 1]; /* Offset to RX NoC nodes.    */
 	int nodeid;            /* ID of underlying NoC node. */
 
 	/* Allocate a synchronization point. */
@@ -513,18 +513,9 @@ static int mppa256_sync_open(const int *nodes, int nnodes, int type)
 			goto error2;
 	}
 
-	if (type == HAL_SYNC_ONE_TO_ALL)
-	{
-		/* Build list of RX NoC nodes. */
-		for (int i = 0; i < nnodes - 1; i++)
-			ranks[i] = i;
-
-		if (mppa_ioctl(fd, MPPA_TX_SET_RX_RANKS, nnodes - 1, ranks) == -1)
-			goto error2;
-	}
-
 	/* Initialize synchronization point. */
 	synctab[syncid].fd = fd;
+	synctab[syncid].ncount = nnodes - 1;
 	if (type == HAL_SYNC_ONE_TO_ALL)
 		sync_set_broadcast(syncid);
 	sync_set_wronly(syncid);
@@ -703,15 +694,37 @@ int hal_sync_signal(int syncid)
 	 */
 	mppa256_sync_unlock();
 
-	nodeid = hal_get_node_id();
+	/* Broadcast. */
+	if (is_broadcast)
+	{
+		for (int i = 0; i < synctab[syncid].ncount; i++)
+		{
+			if (mppa_ioctl(synctab[syncid].fd, MPPA_TX_SET_RX_RANK, i) == -1)
+				goto error2;
 
-	/* Signal. */
-	mask = (!is_broadcast) ? 1 << noc_get_node_num(nodeid) : ~0;
-	if (mppa_write(synctab[syncid].fd, &mask, sizeof(uint64_t)) != sizeof(uint64_t))
-		goto error0;
+			/* Signal. */
+			mask = ~0;
+			if (mppa_write(synctab[syncid].fd, &mask, sizeof(uint64_t)) != sizeof(uint64_t))
+				goto error2;
+		}
+	}
+
+	/* Unicast. */
+	else
+	{
+		nodeid = hal_get_node_id();
+
+		/* Signal. */
+		mask = 1 << noc_get_node_num(nodeid);
+		if (mppa_write(synctab[syncid].fd, &mask, sizeof(uint64_t)) != sizeof(uint64_t))
+			goto error0;
+	}
 
 	return (0);
 
+error2:
+	printf("[PANIC] failed to release sync\n");
+	while(1);
 error1:
 	mppa256_sync_unlock();
 error0:
