@@ -43,8 +43,10 @@ export TOOLCHAIN=/usr/local/k1tools
 export CFLAGS += -D_KALRAY_MPPA256 -D_KALRAY_MPPA_256_HIGH_LEVEL
 ifeq ($(ARCH),k1bdp)
 	export CFLAGS += -march=k1b -mos=nodeos -mcluster=node 
+	export CFLAGS += -D_KALRAY_MPPA_CCLUSTER_
 else
 	export CFLAGS += -march=k1b -mos=rtems -mcluster=ioddr 
+	export CFLAGS += -D_KALRAY_MPPA_IOCLUSTER_
 endif
 
 # Linker Options

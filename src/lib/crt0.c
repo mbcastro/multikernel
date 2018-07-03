@@ -30,6 +30,8 @@
 /* Forward definitions. */
 extern int main2(int, const char **);
 
+#ifdef _KALRAY_MPPA_CCLUSTER_
+
 /**
  * @brief Bootstrap for a user application.
  */
@@ -46,11 +48,12 @@ int main(int argc, const char **argv)
 
 	main2(argc, argv);	
 
-	/* Clearnup. */
+	/* Cleanup. */
 	if ((ret = kernel_cleanup()) != 0)
 	{
 		printf("[KERNEL] cleanup failed\n");
 		return (EXIT_FAILURE);
 	}
-
 }
+
+#endif
