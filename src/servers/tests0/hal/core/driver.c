@@ -20,48 +20,39 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <stdlib.h>
-#include <string.h>
+#include <pthread.h>
 #include <stdio.h>
 
-/* Kernel unit-tests. */
-extern void test_hal_core(void);
-extern void test_hal_sync(void);
-extern void test_hal_mailbox(void);
-extern void test_hal_portal(void);
+#define __NEED_HAL_CORE_
+#define __NEED_HAL_NOC_
+#include <nanvix/hal.h>
 
-/* Runtime unit-tests. */
-extern void test_name(int);
-extern void test_mailbox(int);
+#include "test.h"
 
 /**
- * @brief Generic test driver.
+ * @brief Number of cores in the underlying cluster.
  */
-void test_kernel(const char *module)
-{
-	printf("[nanvix][spawner0] running low-level self-tests\n");
-
-	if (!strcmp(module, "--hal-core"))
-		test_hal_core();
-	else if (!strcmp(module, "--hal-sync"))
-		test_hal_sync();
-	else if (!strcmp(module, "--hal-mailbox"))
-		test_hal_mailbox();
-	else if (!strcmp(module, "--hal-portal"))
-		test_hal_portal();
-}
+int core_ncores = 0;
 
 /**
- * @brief Generic test driver.
+ * @brief Global barrier for synchronization.
  */
-void test_runtime(const char *module, int nservers)
+pthread_barrier_t core_barrier;
+
+/**
+ * @brief Synchronization Point Test Driver
+ */
+void test_hal_core(void)
 {
-	printf("[nanvix][spawner0] running high-level self-tests\n");
+	core_ncores = hal_get_num_cores();
 
-	if (!strcmp(module, "--name"))
-		test_name(nservers);
-	else if (!strcmp(module, "--mailbox"))
-		test_mailbox(nservers);
+	pthread_barrier_init(&core_barrier, NULL, core_ncores - 1);
 
-	exit(EXIT_SUCCESS);
+	/* Run API tests. */
+	for (int i = 0; core_tests_api[i].test_fn != NULL; i++)
+	{
+		printf("[nanvix][test][api][hal][core] %s\n", core_tests_api[i].name);
+		core_tests_api[i].test_fn();
+	}
 }
+

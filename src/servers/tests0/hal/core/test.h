@@ -20,48 +20,29 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
+#ifndef _TEST_H_
+#define _TEST_H_
 
-/* Kernel unit-tests. */
-extern void test_hal_core(void);
-extern void test_hal_sync(void);
-extern void test_hal_mailbox(void);
-extern void test_hal_portal(void);
+	#include <stdlib.h>
+	#include <pthread.h>
 
-/* Runtime unit-tests. */
-extern void test_name(int);
-extern void test_mailbox(int);
+	/**
+	 * @brief Asserts a logic expression.
+	 */
+	#define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
 
-/**
- * @brief Generic test driver.
- */
-void test_kernel(const char *module)
-{
-	printf("[nanvix][spawner0] running low-level self-tests\n");
+	/**
+	 * @brief Unit test.
+	 */
+	struct test
+	{
+		void (*test_fn)(void); /**< Test function. */
+		const char *name;      /**< Test name.     */
+	};
 
-	if (!strcmp(module, "--hal-core"))
-		test_hal_core();
-	else if (!strcmp(module, "--hal-sync"))
-		test_hal_sync();
-	else if (!strcmp(module, "--hal-mailbox"))
-		test_hal_mailbox();
-	else if (!strcmp(module, "--hal-portal"))
-		test_hal_portal();
-}
+	/* Forward definitions. */
+	extern int core_ncores;
+	extern pthread_barrier_t core_barrier;
+	extern struct test core_tests_api[];
 
-/**
- * @brief Generic test driver.
- */
-void test_runtime(const char *module, int nservers)
-{
-	printf("[nanvix][spawner0] running high-level self-tests\n");
-
-	if (!strcmp(module, "--name"))
-		test_name(nservers);
-	else if (!strcmp(module, "--mailbox"))
-		test_mailbox(nservers);
-
-	exit(EXIT_SUCCESS);
-}
+#endif /* _TEST_H_ */

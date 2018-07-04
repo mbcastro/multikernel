@@ -31,23 +31,11 @@
 #include <nanvix/const.h>
 #include <nanvix/hal.h>
 
-/**
- * @brief Asserts a logic expression.
- */
-#define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
-/**
- * @brief Global barrier for synchronization.
- */
-static pthread_barrier_t barrier;
+#include "test.h"
 
-/**
- * @brief Number of cores in the underlying cluster.
- */
-static int ncores = 0;
-
-/*===================================================================*
- * API Test: Query Cluster ID                                        *
- *===================================================================*/
+/*============================================================================*
+ * API Test: Query Cluster ID                                                 *
+ *============================================================================*/
 
 /**
  * @brief API Test: Query Cluster ID
@@ -57,7 +45,7 @@ static void *test_thread_hal_get_cluster_id(void *args)
 	int arg;
 
 	hal_setup();
-	pthread_barrier_wait(&barrier);
+	pthread_barrier_wait(&core_barrier);
 
 	arg = ((int *)args)[0];
 
@@ -72,13 +60,11 @@ static void *test_thread_hal_get_cluster_id(void *args)
  */
 static void test_hal_get_cluster_id(void)
 {
-	int args[ncores];
-	pthread_t threads[ncores];
-
-	printf("[nanvix][test][hal][api] Query Cluster ID\n");
+	int args[core_ncores];
+	pthread_t threads[core_ncores];
 
 	/* Spawn driver threads. */
-	for (int i = 1; i < ncores; i++)
+	for (int i = 1; i < core_ncores; i++)
 	{
 		args[i] = hal_noc_nodes[SPAWNER_SERVER_NODE];
 		assert((pthread_create(&threads[i],
@@ -89,13 +75,13 @@ static void test_hal_get_cluster_id(void)
 	}
 
 	/* Wait for driver threads. */
-	for (int i = 1; i < ncores; i++)
+	for (int i = 1; i < core_ncores; i++)
 		pthread_join(threads[i], NULL);
 }
 
-/*===================================================================*
- * API Test: Query Core ID                                           *
- *===================================================================*/
+/*============================================================================*
+ * API Test: Query Core ID                                                    *
+ *============================================================================*/
 
 /**
  * @brief API Test: Query Core ID
@@ -105,7 +91,7 @@ static void *test_thread_hal_get_core_id(void *args)
 	int tid;
 
 	hal_setup();
-	pthread_barrier_wait(&barrier);
+	pthread_barrier_wait(&core_barrier);
 
 	tid = ((int *)args)[0];
 
@@ -120,13 +106,11 @@ static void *test_thread_hal_get_core_id(void *args)
  */
 static void test_hal_get_core_id(void)
 {
-	int args[ncores];
-	pthread_t threads[ncores];
-
-	printf("[nanvix][test][hal][api] Query Core ID\n");
+	int args[core_ncores];
+	pthread_t threads[core_ncores];
 
 	/* Spawn driver threads. */
-	for (int i = 1; i < ncores; i++)
+	for (int i = 1; i < core_ncores; i++)
 	{
 		args[i] = i;
 		assert((pthread_create(&threads[i],
@@ -137,13 +121,13 @@ static void test_hal_get_core_id(void)
 	}
 
 	/* Wait for driver threads. */
-	for (int i = 1; i < ncores; i++)
+	for (int i = 1; i < core_ncores; i++)
 		pthread_join(threads[i], NULL);
 }
 
-/*===================================================================*
- * API Test: Query Core Type                                         *
- *===================================================================*/
+/*============================================================================*
+ * API Test: Query Core Type                                                  *
+ *============================================================================*/
 
 /**
  * @brief API Test: Query Core Type
@@ -153,7 +137,7 @@ static void *test_thread_hal_get_core_type(void *args)
 	((void) args);
 
 	hal_setup();
-	pthread_barrier_wait(&barrier);
+	pthread_barrier_wait(&core_barrier);
 
 	TEST_ASSERT(hal_get_core_type() == HAL_CORE_SYSTEM);
 
@@ -166,12 +150,10 @@ static void *test_thread_hal_get_core_type(void *args)
  */
 static void test_hal_get_core_type(void)
 {
-	pthread_t threads[ncores];
-
-	printf("[nanvix][test][hal][api] Query Core Type\n");
+	pthread_t threads[core_ncores];
 
 	/* Spawn driver threads. */
-	for (int i = 1; i < ncores; i++)
+	for (int i = 1; i < core_ncores; i++)
 	{
 		assert((pthread_create(&threads[i],
 			NULL,
@@ -181,13 +163,13 @@ static void test_hal_get_core_type(void)
 	}
 
 	/* Wait for driver threads. */
-	for (int i = 1; i < ncores; i++)
+	for (int i = 1; i < core_ncores; i++)
 		pthread_join(threads[i], NULL);
 }
 
-/*===================================================================*
- * API Test: Query NoC Node ID                                         *
- *===================================================================*/
+/*============================================================================*
+ * API Test: Query NoC Node ID                                                *
+ *============================================================================*/
 
 /**
  * @brief API Test: Query NoC Node ID
@@ -197,7 +179,7 @@ static void *test_thread_hal_get_node_id(void *args)
 	int tid;
 
 	hal_setup();
-	pthread_barrier_wait(&barrier);
+	pthread_barrier_wait(&core_barrier);
 
 	tid = ((int *)args)[0];
 
@@ -212,13 +194,11 @@ static void *test_thread_hal_get_node_id(void *args)
  */
 static void test_hal_get_node_id(void)
 {
-	int args[ncores];
-	pthread_t threads[ncores];
-
-	printf("[nanvix][test][hal][api] Query NoC Node ID\n");
+	int args[core_ncores];
+	pthread_t threads[core_ncores];
 
 	/* Spawn driver threads. */
-	for (int i = 1; i < ncores; i++)
+	for (int i = 1; i < core_ncores; i++)
 	{
 		args[i] = i;
 		assert((pthread_create(&threads[i],
@@ -229,30 +209,19 @@ static void test_hal_get_node_id(void)
 	}
 
 	/* Wait for driver threads. */
-	for (int i = 1; i < ncores; i++)
+	for (int i = 1; i < core_ncores; i++)
 		pthread_join(threads[i], NULL);
 }
 
-/*===================================================================*
- * HAL Test Driver                                                   *
- *===================================================================*/
+/*============================================================================*/
 
 /**
- * @brief HAL Test Driver
+ * @brief Unit tests.
  */
-void test_hal(void)
-{
-	/*
-	 * We hope that this is not buggy.
-	 */
-	ncores = hal_get_num_cores();
-	printf("[nanvix][test][hal][api] Number of Cores = %d\n", ncores);
-
-	pthread_barrier_init(&barrier, NULL, ncores - 1);
-
-	/* Core Interface API tests. */
-	test_hal_get_cluster_id();
-	test_hal_get_core_id();
-	test_hal_get_core_type();
-	test_hal_get_node_id();
-}
+struct test core_tests_api[] = {
+	{ test_hal_get_cluster_id, "Get Cluster ID" },
+	{ test_hal_get_core_id,    "Get Core ID"    },
+	{ test_hal_get_core_type,  "Get Core Type"  },
+	{ test_hal_get_node_id,    "Get Node ID"    },
+	{ NULL,                    NULL             },
+};
