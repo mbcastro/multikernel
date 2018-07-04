@@ -21,8 +21,9 @@
 #
 
 # C Source Files
-SRC0 = name.c                \
-	   spawner0.c            \
+SRC0 = name.c                            \
+       spawner0.c                        \
+       $(wildcard tests0/hal/sync/*.c) \
        $(wildcard tests0/*.c)
 
 # C Source Files
