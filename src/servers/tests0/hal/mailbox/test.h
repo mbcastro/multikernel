@@ -20,56 +20,34 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <pthread.h>
-#include <stdio.h>
+#ifndef _TEST_H_
+#define _TEST_H_
 
-#define __NEED_HAL_CORE_
-#define __NEED_HAL_NOC_
-#include <nanvix/hal.h>
+	#include <stdlib.h>
+	#include <pthread.h>
 
-#include "test.h"
+	/**
+	 * @brief Asserts a logic expression.
+	 */
+	#define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
 
-/**
- * @brief Number of remote clusters.
- */
-int sync_nclusters = 0;
-
-/**
- * @brief Number of cores in the underlying cluster.
- */
-int ncores = 0;
-
-/**
- * @brief Nodes list.
- */
-int nodes[HAL_NR_NOC_NODES];
-
-/**
- * @brief Global barrier for synchronization.
- */
-pthread_barrier_t barrier;
-
-/**
- * @brief Synchronization Point Test Driver
- */
-void test_hal_sync(void)
-{
-	ncores = hal_get_num_cores();
-
-	pthread_barrier_init(&barrier, NULL, ncores - 1);
-
-	/* Run API tests. */
-	for (int i = 0; tests_api[i].test_fn != NULL; i++)
+	/**
+	 * @brief Unit test.
+	 */
+	struct test
 	{
-		printf("[nanvix][test][api][hal][sync] %s\n", tests_api[i].name);
-		tests_api[i].test_fn();
-	}
+		void (*test_fn)(void); /**< Test function. */
+		const char *name;      /**< Test name.     */
+	};
 
-	/* Run fault injection tests. */
-	for (int i = 0; tests_fault[i].test_fn != NULL; i++)
-	{
-		printf("[nanvix][test][fault][hal][sync] %s\n", tests_fault[i].name);
-		tests_fault[i].test_fn();
-	}
-}
+	/* Forward definitions. */
+	extern int syncid;
+	extern int syncid_local;
+	extern int mailbox_nodes[];
+	extern int mailbox_nodes_local[];
+	extern int mailbox_ncores;
+	extern pthread_barrier_t barrier;
+	extern struct test mailbox_tests_api[];
+	extern struct test mailbox_tests_fault[];
 
+#endif /* _TEST_H_ */

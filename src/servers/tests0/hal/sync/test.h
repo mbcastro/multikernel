@@ -41,7 +41,7 @@
 	};
 
 	/* Forward definitions. */
-	extern int nclusters;
+	extern int sync_nclusters;
 	extern int ncores;
 	extern int nodes[];
 	extern pthread_barrier_t barrier;

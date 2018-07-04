@@ -401,4 +401,5 @@ struct test tests_fault[] = {
 	{ test_hal_sync_bad_signal,     "Bad Signal" },
 	{ test_hal_sync_invalid_wait,   "Invalid Wait" },
 	{ test_hal_sync_bad_wait,       "Bad Wait" },
+	{ NULL,                         NULL},
 };

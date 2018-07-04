@@ -30,19 +30,18 @@
 #include "test.h"
 
 /**
- * @brief Number of remote clusters.
- */
-int sync_nclusters = 0;
-
-/**
  * @brief Number of cores in the underlying cluster.
  */
-int ncores = 0;
+int mailbox_ncores = 0;
 
 /**
- * @brief Nodes list.
+ * @brief Synchronization point.
  */
-int nodes[HAL_NR_NOC_NODES];
+int syncid;
+int syncid_local;
+
+int mailbox_nodes[2];
+int mailbox_nodes_local[2];
 
 /**
  * @brief Global barrier for synchronization.
@@ -50,26 +49,26 @@ int nodes[HAL_NR_NOC_NODES];
 pthread_barrier_t barrier;
 
 /**
- * @brief Synchronization Point Test Driver
+ * @brief Unnamed Mailbox Test Driver
  */
-void test_hal_sync(void)
+void test_hal_mailbox(void)
 {
-	ncores = hal_get_num_cores();
+	mailbox_ncores = hal_get_num_cores();
 
-	pthread_barrier_init(&barrier, NULL, ncores - 1);
+	pthread_barrier_init(&barrier, NULL, mailbox_ncores - 1);
 
 	/* Run API tests. */
-	for (int i = 0; tests_api[i].test_fn != NULL; i++)
+	for (int i = 0; mailbox_tests_api[i].test_fn != NULL; i++)
 	{
-		printf("[nanvix][test][api][hal][sync] %s\n", tests_api[i].name);
-		tests_api[i].test_fn();
+		printf("[nanvix][test][api][hal][mailbox] %s\n", mailbox_tests_api[i].name);
+		mailbox_tests_api[i].test_fn();
 	}
 
 	/* Run fault injection tests. */
-	for (int i = 0; tests_fault[i].test_fn != NULL; i++)
+	for (int i = 0; mailbox_tests_fault[i].test_fn != NULL; i++)
 	{
-		printf("[nanvix][test][fault][hal][sync] %s\n", tests_fault[i].name);
-		tests_fault[i].test_fn();
+		printf("[nanvix][test][fault][hal][mailbox] %s\n", mailbox_tests_fault[i].name);
+		mailbox_tests_fault[i].test_fn();
 	}
 }
 

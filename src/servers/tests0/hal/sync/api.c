@@ -374,24 +374,24 @@ static void test_hal_sync_barrier(void)
 static void test_hal_sync_create_unlink_cc(void)
 {
 	int status;
-	int pids[nclusters];
+	int pids[sync_nclusters];
 
-	char nclusters_str[4];
+	char sync_nclusters_str[4];
 	char test_str[4];
 	const char *args[] = {
 		"/test/hal-sync-slave",
-		nclusters_str,
+		sync_nclusters_str,
 		test_str,
 		NULL
 	};
 
-	sprintf(nclusters_str, "%d", nclusters);
+	sprintf(sync_nclusters_str, "%d", sync_nclusters);
 	sprintf(test_str, "%d", 0);
 
-	for (int i = 0; i < nclusters; i++)
+	for (int i = 0; i < sync_nclusters; i++)
 		TEST_ASSERT((pids[i] = mppa_spawn(i, NULL, args[0], args, NULL)) != -1);
 
-	for (int i = 0; i < nclusters; i++)
+	for (int i = 0; i < sync_nclusters; i++)
 	{
 		TEST_ASSERT(mppa_waitpid(pids[i], &status, 0) != -1);
 		TEST_ASSERT(status == EXIT_SUCCESS);
@@ -408,15 +408,15 @@ static void test_hal_sync_create_unlink_cc(void)
 static void test_hal_sync_wait_signal_cc(void)
 {
 	int syncid;
-	int _nodes[nclusters + 1];
-	int pids[nclusters];
+	int _nodes[sync_nclusters + 1];
+	int pids[sync_nclusters];
 	int status;
 
-	char nclusters_str[4];
+	char sync_nclusters_str[4];
 	char test_str[4];
 	const char *args[] = {
 		"/test/hal-sync-slave",
-		nclusters_str,
+		sync_nclusters_str,
 		test_str,
 		NULL
 	};
@@ -424,22 +424,22 @@ static void test_hal_sync_wait_signal_cc(void)
 	/* Build nodes list. */
 	_nodes[0] = hal_get_node_id();
 
-	for (int i = 0; i < nclusters; i++)
+	for (int i = 0; i < sync_nclusters; i++)
 		_nodes[i + 1] = i;
 
-	sprintf(nclusters_str, "%d", nclusters);
+	sprintf(sync_nclusters_str, "%d", sync_nclusters);
 	sprintf(test_str, "%d", 1);
 
-	for (int i = 0; i < nclusters; i++)
+	for (int i = 0; i < sync_nclusters; i++)
 		TEST_ASSERT((pids[i] = mppa_spawn(i, NULL, args[0], args, NULL)) != -1);
 
-	TEST_ASSERT((syncid = hal_sync_open(_nodes, nclusters + 1, HAL_SYNC_ONE_TO_ALL)) >= 0);
+	TEST_ASSERT((syncid = hal_sync_open(_nodes, sync_nclusters + 1, HAL_SYNC_ONE_TO_ALL)) >= 0);
 
 	TEST_ASSERT(hal_sync_signal(syncid) == 0);
 
 	TEST_ASSERT(hal_sync_close(syncid) == 0);
 
-	for (int i = 0; i < nclusters; i++)
+	for (int i = 0; i < sync_nclusters; i++)
 	{
 		TEST_ASSERT(mppa_waitpid(pids[i], &status, 0) != -1);
 		TEST_ASSERT(status == EXIT_SUCCESS);
@@ -456,13 +456,13 @@ static void test_hal_sync_wait_signal_cc(void)
 static void test_hal_sync_signal_wait_cc(void)
 {
 	int syncid;
-	int _nodes[nclusters + 1];
-	int pids[nclusters];
-	char nclusters_str[4];
+	int _nodes[sync_nclusters + 1];
+	int pids[sync_nclusters];
+	char sync_nclusters_str[4];
 	char test_str[4];
 	const char *args[] = {
 		"/test/hal-sync-slave",
-		nclusters_str,
+		sync_nclusters_str,
 		test_str,
 		NULL
 	};
@@ -470,27 +470,27 @@ static void test_hal_sync_signal_wait_cc(void)
 	/* Build nodes list. */
 	_nodes[0] = hal_get_node_id();
 
-	for (int i = 0; i < nclusters; i++)
+	for (int i = 0; i < sync_nclusters; i++)
 		_nodes[i + 1] = i;
 
 	/* Create synchronization point. */
 	TEST_ASSERT((syncid = hal_sync_create(
 		_nodes,
-		nclusters + 1,
+		sync_nclusters + 1,
 		HAL_SYNC_ALL_TO_ONE)) >= 0
 	);
 
 	/* Spawn slaves. */
-	sprintf(nclusters_str, "%d", nclusters);
+	sprintf(sync_nclusters_str, "%d", sync_nclusters);
 	sprintf(test_str, "%d", 2);
-	for (int i = 0; i < nclusters; i++)
+	for (int i = 0; i < sync_nclusters; i++)
 		TEST_ASSERT((pids[i] = mppa_spawn(i, NULL, args[0], args, NULL)) != -1);
 
 	/* Wait. */
 	TEST_ASSERT(hal_sync_wait(syncid) == 0);
 
 	/* Join. */
-	for (int i = 0; i < nclusters; i++)
+	for (int i = 0; i < sync_nclusters; i++)
 	{
 		int status;
 
@@ -510,13 +510,14 @@ static void test_hal_sync_signal_wait_cc(void)
 struct test tests_api[] = {
 	/* Intra-Cluster API Tests */
 	{ test_hal_sync_create_unlink,    "Create Unlink" },
-	{ test_hal_sync_open_close,       "Open Close" },
-	{ test_hal_sync_wait_signal,      "Wait Signal" },
-	{ test_hal_sync_signal_wait,      "Signal Wait" },
-	{ test_hal_sync_barrier,          "Barrier Mode" },
-	{ NULL,                           NULL},
+	{ test_hal_sync_open_close,       "Open Close"    },
+	{ test_hal_sync_wait_signal,      "Wait Signal"   },
+	{ test_hal_sync_signal_wait,      "Signal Wait"   },
+	{ test_hal_sync_barrier,          "Barrier Mode"  },
+	{ NULL,                           NULL            },
 	/* Inter-Cluster API Tests*/
-	{ test_hal_sync_create_unlink_cc, "CClusters Open Close" },
+	{ test_hal_sync_create_unlink_cc, "CClusters Open Close"   },
 	{ test_hal_sync_wait_signal_cc,   "IOClusters -> CCluster" },
 	{ test_hal_sync_signal_wait_cc,   "CCluster -> IO Cluster" },
+	{ NULL,                           NULL                     },
 };
