@@ -262,7 +262,7 @@ static void sync_set_busy(int syncid)
  *============================================================================*/
 
 /**
- * @brief Clears the busy flag of a synchronization point;
+ * @brief Clears the busy flag of a synchronization point.
  *
  * @param syncid ID of the target synchronization point.
  *
