@@ -40,8 +40,8 @@ int mailbox_ncores = 0;
 int syncid;
 int syncid_local;
 
-int mailbox_nodes[2];
-int mailbox_nodes_local[2];
+int mailbox_nodes[HAL_NR_NOC_NODES];
+int mailbox_nodes_local[HAL_NR_NOC_NODES];
 
 /**
  * @brief Global barrier for synchronization.

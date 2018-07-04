@@ -160,7 +160,7 @@ static void test_hal_mailbox_open_close(void)
  */
 static void *test_hal_mailbox_thread_read_write(void *args)
 {
-	int tid;
+	int tnum;
 	int inbox;
 	int outbox;
 	char buf[HAL_MAILBOX_MSG_SIZE];
@@ -168,29 +168,34 @@ static void *test_hal_mailbox_thread_read_write(void *args)
 
 	hal_setup();
 
-	tid = ((int *)args)[0];
+	tnum = ((int *)args)[0];
 
+	/* Build nodes list. */
 	nodeid = hal_get_node_id();
-
-	TEST_ASSERT((inbox = hal_mailbox_create(nodeid)) >= 0);
+	mailbox_nodes[tnum] = nodeid;
 
 	pthread_barrier_wait(&barrier);
 
+	TEST_ASSERT((inbox = hal_mailbox_create(nodeid)) >= 0);
+
 	TEST_ASSERT((outbox = hal_mailbox_open(
-		((tid + 1) == mailbox_ncores) ?
-			nodeid + 1 - mailbox_ncores + 1:
-			nodeid + 1)) >= 0
+		((tnum + 1) == mailbox_ncores) ?
+			mailbox_nodes[1]:
+			mailbox_nodes[tnum + 1])) >= 0
 	);
 
 	pthread_barrier_wait(&barrier);
 
 	memset(buf, 1, HAL_MAILBOX_MSG_SIZE);
 	TEST_ASSERT(hal_mailbox_write(outbox, buf, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
+
 	memset(buf, 0, HAL_MAILBOX_MSG_SIZE);
 	TEST_ASSERT(hal_mailbox_read(inbox, buf, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
 
 	for (int i = 0; i < HAL_MAILBOX_MSG_SIZE; i++)
 		TEST_ASSERT(buf[i] == 1);
+
+	pthread_barrier_wait(&barrier);
 
 	TEST_ASSERT(hal_mailbox_close(outbox) == 0);
 
