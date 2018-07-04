@@ -21,16 +21,15 @@
 #
 
 # C Source Files
-SRC0 = name.c                             \
-       spawner0.c                         \
+SRC0 = spawner0.c                         \
        $(wildcard tests0/hal/core/*.c)    \
        $(wildcard tests0/hal/sync/*.c)    \
        $(wildcard tests0/hal/mailbox/*.c) \
        $(wildcard tests0/*.c)
 
 # C Source Files
-SRC1 = name.c                 \
-	   spawner1.c             \
+SRC1 = spawner1.c             \
+	   name.c                 \
        $(wildcard tests1/*.c)
 
 # Object Files

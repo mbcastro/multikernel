@@ -37,10 +37,9 @@
 /**
  * @brief Number of servers.
  */
-#define NR_SERVERS 1
+#define NR_SERVERS 0
 
 /* Forward definitions. */
-extern int name_server(int);
 extern void test_kernel(const char *);
 extern void test_runtime(const char *, int);
 
@@ -52,7 +51,6 @@ static struct
 	int (*main) (int);
 	int nodenum;
 } servers[NR_SERVERS] = {
-	{ name_server, NAME_SERVER_NODE },
 };
 
 /**
@@ -120,6 +118,8 @@ int main(int argc, char **argv)
 
 	printf("[nanvix][spawner0] server alive\n");
 
+	while(1);
+
 	/* Spawn servers. */
 	for (int i = 0; i < NR_SERVERS; i++)
 	{
@@ -132,10 +132,6 @@ int main(int argc, char **argv)
 	}
 
 	pthread_barrier_wait(&barrier);
-
-	/* Run self-tests. */
-	if (debug)
-		test_runtime(argv[2], NR_SERVERS);
 
 	/* Release master IO cluster. */
 	nodes[0] = hal_get_node_id();

@@ -20,6 +20,8 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <assert.h>
+#include <pthread.h>
 #include <stdlib.h>
 
 #include <mppa/osconfig.h>
@@ -32,9 +34,61 @@
 #include <nanvix/const.h>
 #include <nanvix/hal.h>
 
-/* Unit-tests. */
+/**
+ * @brief Number of servers.
+ */
+#define NR_SERVERS 1
+
+/* Forward definitions. */
+extern int name_server(int);
 extern void test_hal_sync(void);
 extern void test_hal_mailbox(void);
+
+/**
+ * @brief Servers.
+ */
+static struct
+{
+	int (*main) (int);
+	int nodenum;
+} servers[NR_SERVERS] = {
+	{ name_server, NAME_SERVER_NODE },
+};
+
+/**
+ * @brief Barrier for synchronization.
+ */
+static pthread_barrier_t barrier;
+
+/**
+ * @brief Server wrapper.
+ */
+static void *server(void *args)
+{
+	int inbox;
+	int nodenum;
+	int servernum;
+	int (*main_fn) (int);
+
+	hal_setup();
+
+	servernum = ((int *)args)[0];
+
+	nodenum = servers[servernum].nodenum;
+	main_fn = servers[servernum].main;
+
+	/* Open server mailbox. */
+	inbox = hal_mailbox_create(hal_noc_nodes[nodenum]);
+
+	/* Wait for other servers. */
+	pthread_barrier_wait(&barrier);
+
+	/* Spawn server. */
+	main_fn(inbox);
+
+	hal_cleanup();
+	return (NULL);
+}
 
 /**
  * @brief Generic test driver.
@@ -43,7 +97,7 @@ static void test(const char *module)
 {
 	((void)module);
 
-	printf("[nanvix][spawner1] running self-tests\n");
+	printf("[nanvix][spawner0] running self-tests\n");
 
 	test_hal_sync();
 	test_hal_mailbox();
@@ -54,7 +108,11 @@ static void test(const char *module)
  */
 int main(int argc, char **argv)
 {
+	int syncid;
 	int debug = 0;
+	int args[NR_SERVERS];
+	int nodes[NR_SERVERS + 1];
+	pthread_t tids[NR_SERVERS];
 
 	/* Debug mode? */
 	if (argc >= 2)
@@ -67,13 +125,39 @@ int main(int argc, char **argv)
 
 	printf("[nanvix][spawner1] booting up server\n");
 
+	pthread_barrier_init(&barrier, NULL, NR_SERVERS + 1);
+
 	/* Run self-tests. */
 	if (debug)
 		test(argv[2]);
+	
+	while(1);
 
 	printf("[nanvix][spawner1] server alive\n");
 
-	while(1);
+	/* Spawn servers. */
+	for (int i = 0; i < NR_SERVERS; i++)
+	{
+		args[i] = 0;
+		assert((pthread_create(&tids[i],
+			NULL,
+			server,
+			&args[i])) == 0
+		);
+	}
+
+	pthread_barrier_wait(&barrier);
+
+	/* Release master IO cluster. */
+	nodes[0] = hal_get_node_id();
+	nodes[1] = hal_noc_nodes[SPAWNER_SERVER_NODE];
+
+	assert((syncid = hal_sync_open(nodes, NR_SERVERS + 1, HAL_SYNC_ONE_TO_ALL)) >= 0);
+	assert(hal_sync_signal(syncid) == 0);
+
+	/* Wait for name server thread. */
+	for (int i = 0; i < NR_SERVERS; i++)
+		pthread_join(tids[i], NULL);
 
 	hal_cleanup();
 	return (EXIT_SUCCESS);

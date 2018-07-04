@@ -49,6 +49,8 @@ void test_kernel(const char *module)
 		test_hal_mailbox();
 	else if (!strcmp(module, "--hal-portal"))
 		test_hal_portal();
+
+	exit(EXIT_SUCCESS);
 }
 
 /**
