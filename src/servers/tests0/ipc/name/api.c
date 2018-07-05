@@ -161,6 +161,39 @@ static void test_name_lookup(void)
 		pthread_join(tids[i], NULL);
 }
 
+/*============================================================================*
+ * API Test: slave tests                                                      *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Slave Tests
+ */
+static void test_name_slave(void)
+{
+	int status;
+	int pids[NANVIX_PROC_MAX];
+
+	char ipc_name_nclusters_str[4];
+	const char *args[] = {
+		"/test/name-slave",
+		ipc_name_nclusters_str,
+		NULL
+	};
+
+	printf("[nanvix][test][api] Name Slaves\n");
+
+	sprintf(ipc_name_nclusters_str, "%d", ipc_name_nclusters);
+
+	for (int i = 0; i < ipc_name_nclusters; i++)
+		TEST_ASSERT((pids[i] = mppa_spawn(i, NULL, args[0], args, NULL)) != -1);
+
+	for (int i = 0; i < ipc_name_nclusters; i++)
+	{
+		TEST_ASSERT(mppa_waitpid(pids[i], &status, 0) != -1);
+		TEST_ASSERT(status == EXIT_SUCCESS);
+	}
+}
+
 /*============================================================================*/
 
 /**
@@ -169,5 +202,7 @@ static void test_name_lookup(void)
 struct test ipc_name_tests_api[] = {
 	{ test_name_link_unlink, "Link Unlink" },
 	{ test_name_lookup,      "Lookup"      },
+	{ NULL,                  NULL          },
+	{ test_name_slave,       "Slave Tests" },
 	{ NULL,                  NULL          },
 };

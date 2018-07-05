@@ -30,6 +30,12 @@
 
 #include "test.h"
 
+
+/**
+ * @brief Number of remote clusters.
+ */
+int ipc_name_nclusters = 0;
+
 /**
  * @brief Number of cores in the underlying cluster.
  */
@@ -56,6 +62,13 @@ void test_name(int nbusycores)
 	{
 		printf("[nanvix][test][api][ipc][name] %s\n", ipc_name_tests_api[i].name);
 		ipc_name_tests_api[i].test_fn();
+	}
+
+	/* Run fault injection tests. */
+	for (int i = 0; ipc_name_tests_fault[i].test_fn != NULL; i++)
+	{
+		printf("[nanvix][test][fault][ipc][name] %s\n", ipc_name_tests_fault[i].name);
+		ipc_name_tests_fault[i].test_fn();
 	}
 
 	TEST_ASSERT(kernel_cleanup() == 0);

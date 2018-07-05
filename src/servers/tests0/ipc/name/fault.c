@@ -37,145 +37,7 @@
 #include <nanvix/limits.h>
 #include <nanvix/pm.h>
 
-/**
- * @brief Asserts a logic expression.
- */
-#define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
-
-/**
- * @brief Number of cores in the underlying cluster.
- */
-static int ncores = 0;
-
-/**
- * @brief ID of slave processes.
- */
-static int pids[NANVIX_PROC_MAX];
-
-/**
- * @brief Global barrier for synchronization.
- */
-static pthread_barrier_t barrier;
-
-/*===================================================================*
- * API Test: Name Link Unlink                                        *
- *===================================================================*/
-
-/**
- * @brief API Test: Name Link Unlink
- */
-static void *test_name_thread_link_unlink(void *args)
-{
-	char pathname[NANVIX_PROC_NAME_MAX];
-	int tid;
-	int nodeid;
-
-	TEST_ASSERT(kernel_setup() == 0);
-
-	pthread_barrier_wait(&barrier);
-
-	tid = ((int *)args)[0];
-
-	nodeid = hal_get_node_id();
-
-	/* Link and unlink name. */
-	sprintf(pathname, "cool-name%d", tid);
-	TEST_ASSERT(name_link(nodeid, pathname) == 0);
-
-	pthread_barrier_wait(&barrier);
-
-	TEST_ASSERT(name_unlink(pathname) == 0);
-
-	TEST_ASSERT(kernel_cleanup() == 0);
-	return(NULL);
-}
-
-/**
- * @brief API Test: Name Link Unlink
- */
-static void test_name_link_unlink(void)
-{
-	int dmas[ncores];
-	pthread_t tids[ncores];
-
-	printf("[nanvix][test][api] Name Link Unlink\n");
-
-	/* Spawn driver threads. */
-	for (int i = 1; i < ncores; i++)
-	{
-		dmas[i] = i;
-		assert((pthread_create(&tids[i],
-			NULL,
-			test_name_thread_link_unlink,
-			&dmas[i])) == 0
-		);
-	}
-
-	/* Wait for driver threads. */
-	for (int i = 1; i < ncores; i++)
-		pthread_join(tids[i], NULL);
-}
-
-/*===================================================================*
- * API Test: Name Lookup                                             *
- *===================================================================*/
-
-/**
- * @brief API Test: Master name lookup.
- */
-static void *test_name_thread_lookup(void *args)
-{
-	char pathname[NANVIX_PROC_NAME_MAX];
-	int tid;
-	int nodeid;
-
-	TEST_ASSERT(kernel_setup() == 0);
-
-	pthread_barrier_wait(&barrier);
-
-	tid = ((int *)args)[0];
-
-	nodeid = hal_get_node_id();
-
-	/* Link and unlink name. */
-	sprintf(pathname, "cool-name%d", tid);
-	TEST_ASSERT(name_link(nodeid, pathname) == 0);
-
-	pthread_barrier_wait(&barrier);
-
-	TEST_ASSERT(name_lookup(pathname) == nodeid);
-
-	TEST_ASSERT(name_unlink(pathname) == 0);
-
-	TEST_ASSERT(kernel_cleanup() == 0);
-	return(NULL);
-}
-
-/**
- * @brief API Test: Master name lookup.
- */
-static void test_name_lookup(void)
-{
-	int dmas[ncores];
-	pthread_t tids[ncores];
-
-	printf("[nanvix][test][api] Name Lookup\n");
-
-	/* Spawn driver threads. */
-	for (int i = 1; i < ncores; i++)
-	{
-		dmas[i] = i;
-		assert((pthread_create(&tids[i],
-			NULL,
-			test_name_thread_lookup,
-			&dmas[i])) == 0
-		);
-	}
-
-	/* Wait for driver threads. */
-	for (int i = 1; i < ncores; i++)
-		pthread_join(tids[i], NULL);
-}
+#include "test.h"
 
 /*===================================================================*
 * Fault Injection Test: Duplicate Name                               *
@@ -188,8 +50,6 @@ static void test_name_duplicate(void)
 {
 	int nodeid;
 	char pathname[NANVIX_PROC_NAME_MAX];
-
-	printf("[nanvix][test][fault injection] Duplicate Name\n");
 
 	nodeid = hal_get_node_id();
 
@@ -212,8 +72,6 @@ static void test_name_invalid_link(void)
 	int nodeid;
 	char pathname[NANVIX_PROC_NAME_MAX + 1];
 
-	printf("[nanvix][test][fault injection] Invalid Link\n");
-
 	nodeid = hal_get_node_id();
 
 	memset(pathname, 1, NANVIX_PROC_NAME_MAX + 1);
@@ -235,8 +93,6 @@ static void test_name_invalid_unlink(void)
 {
 	char pathname[NANVIX_PROC_NAME_MAX + 1];
 
-	printf("[nanvix][test][fault onjection] Invalid Unlink\n");
-
 	memset(pathname, 1, NANVIX_PROC_NAME_MAX + 1);
 
 	/* Unlink invalid names. */
@@ -254,8 +110,6 @@ static void test_name_invalid_unlink(void)
 */
 static void test_name_bad_unlink(void)
 {
-	printf("[nanvix][test][fault injection] Bad Unlink\n");
-
 	/* Unlink missing name. */
 	TEST_ASSERT(name_unlink("missing_name") < 0);
 }
@@ -269,8 +123,6 @@ static void test_name_bad_unlink(void)
 */
 static void test_name_bad_lookup(void)
 {
-	printf("[nanvix][test][fault injection] Bad Lookup\n");
-
 	/* Lookup missing name. */
 	TEST_ASSERT(name_lookup("missing_name") < 0);
 }
@@ -286,8 +138,6 @@ static void test_name_invalid_lookup(void)
 {
 	char pathname[NANVIX_PROC_NAME_MAX + 1];
 
-	printf("[nanvix][test][fault injection] Invalid Lookup\n");
-
 	memset(pathname, 1, NANVIX_PROC_NAME_MAX + 1);
 
 	/* Lookup invalid names. */
@@ -297,66 +147,18 @@ static void test_name_invalid_lookup(void)
 }
 
 /*===================================================================*
- * API Test: slave tests                                             *
- *===================================================================*/
-
-/**
- * @brief API Test: Slave Tests
- */
-static void test_name_slave(int nclusters)
-{
-	int status;
-
-	char nclusters_str[4];
-	const char *args[] = {
-		"/test/name-slave",
-		nclusters_str,
-		NULL
-	};
-
-	printf("[nanvix][test][api] Name Slaves\n");
-
-	sprintf(nclusters_str, "%d", nclusters);
-
-	for (int i = 0; i < nclusters; i++)
-		TEST_ASSERT((pids[i] = mppa_spawn(i, NULL, args[0], args, NULL)) != -1);
-
-	for (int i = 0; i < nclusters; i++)
-	{
-		TEST_ASSERT(mppa_waitpid(pids[i], &status, 0) != -1);
-		TEST_ASSERT(status == EXIT_SUCCESS);
-	}
-}
-
-/*===================================================================*
  * Name Service Test Driver                                          *
  *===================================================================*/
 
 /**
- * @brief Name Service Test Driver
+ * @brief Unit tests.
  */
-void test_name(int nbusycores)
-{
-	TEST_ASSERT(kernel_setup() == 0);
-
-	ncores = hal_get_num_cores() - nbusycores;
-
-	pthread_barrier_init(&barrier, NULL, ncores - 1);
-
-	/* API tests. */
-	test_name_link_unlink();
-	test_name_lookup();
-
-	/* Fault injection tests. */
-	test_name_duplicate();
-	test_name_invalid_link();
-	test_name_invalid_unlink();
-	test_name_bad_unlink();
-	test_name_bad_lookup();
-	test_name_invalid_lookup();
-	
-	if (0)
-		test_name_slave(HAL_NR_NOC_CNODES);
-
-	TEST_ASSERT(kernel_cleanup() == 0);
-}
+struct test ipc_name_tests_fault[] = {
+	{ test_name_duplicate,      "Link Duplicate Name" },
+	{ test_name_invalid_link,   "Invalid Link"        },
+	{ test_name_invalid_unlink, "Invalid Unlink"      },
+	{ test_name_bad_unlink,     "Bad Unlink"          },
+	{ test_name_bad_lookup,     "Bad Lookup"          },
+	{ test_name_invalid_lookup, "Invalid Lookup"      },
+	{ NULL,                     NULL                  },
+};

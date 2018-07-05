@@ -41,8 +41,10 @@
 	};
 
 	/* Forward definitions. */
+	extern int ipc_name_nclusters;
 	extern int ipc_name_ncores;
 	extern pthread_barrier_t ipc_name_barrier;
 	extern struct test ipc_name_tests_api[];
+	extern struct test ipc_name_tests_fault[];
 
 #endif /* _TEST_H_ */
