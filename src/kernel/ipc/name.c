@@ -83,13 +83,6 @@ int name_init(void)
  */
 void name_finalize(void)
 {
-	/* Nothing to do. */
-	if (!initialized)
-		return;
-
-	hal_mailbox_close(server);
-
-	initialized = 0;
 }
 
 /*============================================================================*
