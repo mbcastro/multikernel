@@ -177,11 +177,10 @@ void mppa256_core_cleanup(void)
 	pthread_t tid;
 
 	tid = pthread_self();
-
-	mppa256_core_lock();
 		
-		if (mppa256_is_iocluster(mppa256_get_cluster_id()))
-		{
+	if (mppa256_is_iocluster(mppa256_get_cluster_id()))
+	{
+		mppa256_core_lock();
 			for (int i = 0; i < NR_IOCLUSTER_CORES; i++)
 			{
 				if (threads[i] == tid)
@@ -190,9 +189,8 @@ void mppa256_core_cleanup(void)
 					break;
 				}
 			}
-		}
-
-	mppa256_core_unlock();
+		mppa256_core_unlock();
+	}
 }
 
 /*============================================================================*

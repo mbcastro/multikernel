@@ -23,6 +23,7 @@
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
+#include <pthread.h>
 
 #define __NEED_HAL_NOC_
 #define __NEED_HAL_MAILBOX_
@@ -40,6 +41,11 @@ static int server;
  * @brief Is the name service initialized ?
  */
 static int initialized = 0;
+
+/**
+ * @brief Mailbox module lock.
+ */
+static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
 /*============================================================================*
  * name_init()                                                                *
@@ -112,7 +118,7 @@ int sys_name_lookup(char *name)
 		return (-EINVAL);
 
 	/* Initilize name client. */
-	if (name_init() != 0)
+	if (!initialized)
 		return (-EAGAIN);
 
 	/* Build operation header. */
@@ -121,11 +127,15 @@ int sys_name_lookup(char *name)
 	msg.nodeid = -1;
 	strcpy(msg.name, name);
 
+	pthread_mutex_lock(&lock);
+
 	if (hal_mailbox_write(server, &msg, sizeof(struct name_message)) != sizeof(struct name_message))
 		return (-EAGAIN);
 
 	if (hal_mailbox_read(get_inbox(), &msg, sizeof(struct name_message)) != sizeof(struct name_message))
 		return (-EAGAIN);
+
+	pthread_mutex_unlock(&lock);
 
 	return (msg.nodeid);
 }
@@ -160,7 +170,7 @@ int sys_name_link(int nodeid, const char *name)
 		return (-EINVAL);
 
 	/* Initilize name client. */
-	if (name_init() != 0)
+	if (!initialized)
 		return (-EAGAIN);
 
 	/* Build operation header. */
@@ -169,6 +179,8 @@ int sys_name_link(int nodeid, const char *name)
 	msg.nodeid = nodeid;
 	strcpy(msg.name, name);
 
+	pthread_mutex_lock(&lock);
+
 	/* Send link request. */
 	if (hal_mailbox_write(server, &msg, sizeof(struct name_message)) != sizeof(struct name_message))
 		return (-EAGAIN);
@@ -176,6 +188,8 @@ int sys_name_link(int nodeid, const char *name)
 	/* Wait server response */
 	if (hal_mailbox_read(get_inbox(), &msg, sizeof(struct name_message)) != sizeof(struct name_message))
 		return (-EAGAIN);
+
+	pthread_mutex_unlock(&lock);
 
 	if ((msg.op != NAME_SUCCESS) && (msg.op != NAME_FAIL))
 		return (-EAGAIN);
@@ -211,7 +225,7 @@ int sys_name_unlink(const char *name)
 		return (-EINVAL);
 
 	/* Initilize name client. */
-	if (name_init() != 0)
+	if (!initialized)
 		return (-EAGAIN);
 
 	/* Build operation header. */
@@ -220,12 +234,17 @@ int sys_name_unlink(const char *name)
 	msg.nodeid = -1;
 	strcpy(msg.name, name);
 
+	pthread_mutex_lock(&lock);
+
 	if (hal_mailbox_write(server, &msg, sizeof(struct name_message)) != sizeof(struct name_message))
 		return (-EAGAIN);
 
 	/* Wait server response */
 	if (hal_mailbox_read(get_inbox(), &msg, sizeof(struct name_message)) != sizeof(struct name_message))
 		return (-EAGAIN);
+
+
+	pthread_mutex_unlock(&lock);
 
 	if ((msg.op != NAME_SUCCESS) && (msg.op != NAME_FAIL))
 		return (-EAGAIN);
