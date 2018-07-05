@@ -32,27 +32,13 @@
 #define __NEED_HAL_PORTAL_
 #include <nanvix/hal.h>
 
+#include "test.h"
+
 #define DATA_SIZE 128
-#define TID_READ 1
 
-/**
- * @brief Asserts a logic expression.
- */
-#define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
-
-/**
- * @brief Global barrier for synchronization.
- */
-static pthread_barrier_t barrier;
-
-/**
- * @brief Number of cores in the underlying cluster.
- */
-static int ncores = 0;
-
-/*===================================================================*
- * API Test: Create Unlink                                           *
- *===================================================================*/
+/*============================================================================*
+ * API Test: Create Unlink                                                    *
+ *============================================================================*/
 
 /**
  * @brief API Test: Portal Create Unlink
@@ -85,13 +71,11 @@ static void *test_hal_portal_thread_create_unlink(void *args)
  */
 static void test_hal_portal_create_unlink(void)
 {
-	int tids[ncores];
-	pthread_t threads[ncores];
-
-	printf("[nanvix][test][api] Portal Create Unlink\n");
+	int tids[hal_portal_ncores];
+	pthread_t threads[hal_portal_ncores];
 
 	/* Spawn driver threads. */
-	for (int i = 1; i < ncores; i++)
+	for (int i = 1; i < hal_portal_ncores; i++)
 	{
 		tids[i] = i;
 		assert((pthread_create(&threads[i],
@@ -102,13 +86,13 @@ static void test_hal_portal_create_unlink(void)
 	}
 
 	/* Wait for driver threads. */
-	for (int i = 1; i < ncores; i++)
+	for (int i = 1; i < hal_portal_ncores; i++)
 		pthread_join(threads[i], NULL);
 }
 
-/*===================================================================*
- * API Test: Open Close                                              *
- *===================================================================*/
+/*============================================================================*
+ * API Test: Open Close                                                       *
+ *============================================================================*/
 
 /**
  * @brief API Test: Portal Open Close
@@ -129,8 +113,8 @@ static void *test_hal_portal_thread_open_close(void *args)
 
 	pthread_barrier_wait(&barrier);
 
-	TEST_ASSERT((outportal = hal_portal_open(((tid + 1) == ncores) ?
-		nodeid + 1 - ncores + 1:
+	TEST_ASSERT((outportal = hal_portal_open(((tid + 1) == hal_portal_ncores) ?
+		nodeid + 1 - hal_portal_ncores + 1:
 		nodeid + 1)) >= 0);
 
 	pthread_barrier_wait(&barrier);
@@ -146,13 +130,11 @@ static void *test_hal_portal_thread_open_close(void *args)
  */
 static void test_hal_portal_open_close(void)
 {
-	int tids[ncores];
-	pthread_t threads[ncores];
-
-	printf("[nanvix][test][api] Portal Open Close\n");
+	int tids[hal_portal_ncores];
+	pthread_t threads[hal_portal_ncores];
 
 	/* Spawn driver threads. */
-	for (int i = 1; i < ncores; i++)
+	for (int i = 1; i < hal_portal_ncores; i++)
 	{
 		tids[i] = i;
 		assert((pthread_create(&threads[i],
@@ -163,13 +145,13 @@ static void test_hal_portal_open_close(void)
 	}
 
 	/* Wait for driver threads. */
-	for (int i = 1; i < ncores; i++)
+	for (int i = 1; i < hal_portal_ncores; i++)
 		pthread_join(threads[i], NULL);
 }
 
-/*===================================================================*
- * API Test: Read Write                                              *
- *===================================================================*/
+/*============================================================================*
+ * API Test: Read Write                                                       *
+ *============================================================================*/
 
 /**
  * @brief API Test: Portal Read Write thread
@@ -182,6 +164,7 @@ static void *test_hal_portal_thread_read_write(void *args)
 	char buf[DATA_SIZE];
 	int nodeid;
 	int clusterid;
+	int TID_READ = 1;
 
 	hal_setup();
 
@@ -198,7 +181,7 @@ static void *test_hal_portal_thread_read_write(void *args)
 		TEST_ASSERT((inportal = hal_portal_create(nodeid)) >= 0);
 		pthread_barrier_wait(&barrier);
 
-		for (int i = 1; i < ncores; i++)
+		for (int i = 1; i < hal_portal_ncores; i++)
 		{
 			if (clusterid + i == nodeid)
 				continue;
@@ -235,13 +218,11 @@ static void *test_hal_portal_thread_read_write(void *args)
  */
 static void test_hal_portal_read_write(void)
 {
-	int tids[ncores];
-	pthread_t threads[ncores];
-
-	printf("[nanvix][test][api] Portal Read Write\n");
+	int tids[hal_portal_ncores];
+	pthread_t threads[hal_portal_ncores];
 
 	/* Spawn driver threads. */
-	for (int i = 1; i < ncores; i++)
+	for (int i = 1; i < hal_portal_ncores; i++)
 	{
 		tids[i] = i;
 
@@ -253,24 +234,18 @@ static void test_hal_portal_read_write(void)
 	}
 
 	/* Wait for driver threads. */
-	for (int i = 1; i < ncores; i++)
+	for (int i = 1; i < hal_portal_ncores; i++)
 		pthread_join(threads[i], NULL);
 }
 
-/*===================================================================*
- * HAL Portal Test Driver                                            *
- *===================================================================*/
+/*============================================================================*/
 
 /**
- * @brief HAL Portal Test Driver
+ * @brief Unit tests.
  */
-void test_hal_portal(void)
-{
-	ncores = hal_get_num_cores();
-
-	pthread_barrier_init(&barrier, NULL, ncores - 1);
-
-	test_hal_portal_create_unlink();
-	test_hal_portal_open_close();
-	test_hal_portal_read_write();
-}
+struct test hal_portal_tests_api[] = {
+	{ test_hal_portal_create_unlink, "Create Unlink" },
+	{ test_hal_portal_read_write,    "Read Write"    },
+	{ test_hal_portal_open_close,    "Open Close"    },
+	{ NULL,                           NULL           },
+};
