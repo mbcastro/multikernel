@@ -129,15 +129,19 @@ int sys_name_lookup(char *name)
 
 	pthread_mutex_lock(&lock);
 
-	if (hal_mailbox_write(server, &msg, sizeof(struct name_message)) != sizeof(struct name_message))
-		return (-EAGAIN);
+		if (hal_mailbox_write(server, &msg, sizeof(struct name_message)) != sizeof(struct name_message))
+			goto error1;
 
-	if (hal_mailbox_read(get_inbox(), &msg, sizeof(struct name_message)) != sizeof(struct name_message))
-		return (-EAGAIN);
+		if (hal_mailbox_read(get_inbox(), &msg, sizeof(struct name_message)) != sizeof(struct name_message))
+			goto error1;
 
 	pthread_mutex_unlock(&lock);
 
 	return (msg.nodeid);
+
+error1:
+	pthread_mutex_unlock(&lock);
+	return (-EAGAIN);
 }
 
 /*============================================================================*
@@ -181,13 +185,13 @@ int sys_name_link(int nodeid, const char *name)
 
 	pthread_mutex_lock(&lock);
 
-	/* Send link request. */
-	if (hal_mailbox_write(server, &msg, sizeof(struct name_message)) != sizeof(struct name_message))
-		return (-EAGAIN);
+		/* Send link request. */
+		if (hal_mailbox_write(server, &msg, sizeof(struct name_message)) != sizeof(struct name_message))
+			goto error1;
 
-	/* Wait server response */
-	if (hal_mailbox_read(get_inbox(), &msg, sizeof(struct name_message)) != sizeof(struct name_message))
-		return (-EAGAIN);
+		/* Wait server response */
+		if (hal_mailbox_read(get_inbox(), &msg, sizeof(struct name_message)) != sizeof(struct name_message))
+			goto error1;
 
 	pthread_mutex_unlock(&lock);
 
@@ -198,6 +202,10 @@ int sys_name_link(int nodeid, const char *name)
 		return (0);
 
 	return (-1);
+
+error1:
+	pthread_mutex_unlock(&lock);
+	return (-EAGAIN);
 }
 
 /*============================================================================*
@@ -236,13 +244,12 @@ int sys_name_unlink(const char *name)
 
 	pthread_mutex_lock(&lock);
 
-	if (hal_mailbox_write(server, &msg, sizeof(struct name_message)) != sizeof(struct name_message))
-		return (-EAGAIN);
+		if (hal_mailbox_write(server, &msg, sizeof(struct name_message)) != sizeof(struct name_message))
+			goto error1;
 
-	/* Wait server response */
-	if (hal_mailbox_read(get_inbox(), &msg, sizeof(struct name_message)) != sizeof(struct name_message))
-		return (-EAGAIN);
-
+		/* Wait server response */
+		if (hal_mailbox_read(get_inbox(), &msg, sizeof(struct name_message)) != sizeof(struct name_message))
+			goto error1;
 
 	pthread_mutex_unlock(&lock);
 
@@ -253,5 +260,9 @@ int sys_name_unlink(const char *name)
 		return (0);
 
 	return (-1);
+
+error1:
+	pthread_mutex_unlock(&lock);
+	return (-EAGAIN);
 }
 
