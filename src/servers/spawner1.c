@@ -95,12 +95,49 @@ static void *server(void *args)
  */
 static void test(const char *module)
 {
-	((void)module);
+	if (!strcmp(module, "--hal-sync"))
+	{
+		test_hal_sync();
+		exit(EXIT_SUCCESS);
+	}
+	else if (!strcmp(module, "--hal-mailbox"))
+	{
+		test_hal_mailbox();
+		exit(EXIT_SUCCESS);
+	}
+}
 
-	printf("[nanvix][spawner0] running self-tests\n");
+/**
+ * @brief Sync spawners.
+ */
+static void spawners_sync(void)
+{
+	int nodeid;
+	int syncid;
+	int syncid_local;
+	int nodes[2];
+	int nodes_local[2];
 
-	test_hal_sync();
-	test_hal_mailbox();
+	nodeid = hal_get_node_id();
+
+	nodes[0] = nodeid;
+	nodes[1] = hal_noc_nodes[SPAWNER_SERVER_NODE];
+
+	nodes_local[0] = hal_noc_nodes[SPAWNER_SERVER_NODE];
+	nodes_local[1] = nodeid;
+
+	/* Open syncrhonization points. */
+	assert((syncid_local = hal_sync_create(nodes_local, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
+	assert((syncid = hal_sync_open(nodes, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
+
+	assert(hal_sync_wait(syncid_local) == 0);
+	assert(hal_sync_signal(syncid) == 0);
+
+	printf("[nanvix][spawner1] synced\n");
+
+	/* House keeping. */
+	assert(hal_sync_unlink(syncid_local) == 0);
+	assert(hal_sync_close(syncid) == 0);
 }
 
 /**
@@ -108,10 +145,8 @@ static void test(const char *module)
  */
 int main(int argc, char **argv)
 {
-	int syncid;
 	int debug = 0;
 	int args[NR_SERVERS];
-	int nodes[NR_SERVERS + 1];
 	pthread_t tids[NR_SERVERS];
 
 	/* Debug mode? */
@@ -130,8 +165,6 @@ int main(int argc, char **argv)
 	/* Run self-tests. */
 	if (debug)
 		test(argv[2]);
-	
-	while(1);
 
 	printf("[nanvix][spawner1] server alive\n");
 
@@ -148,12 +181,7 @@ int main(int argc, char **argv)
 
 	pthread_barrier_wait(&barrier);
 
-	/* Release master IO cluster. */
-	nodes[0] = hal_get_node_id();
-	nodes[1] = hal_noc_nodes[SPAWNER_SERVER_NODE];
-
-	assert((syncid = hal_sync_open(nodes, NR_SERVERS + 1, HAL_SYNC_ONE_TO_ALL)) >= 0);
-	assert(hal_sync_signal(syncid) == 0);
+	spawners_sync();
 
 	/* Wait for name server thread. */
 	for (int i = 0; i < NR_SERVERS; i++)

@@ -22,6 +22,7 @@
 
 #include <errno.h>
 #include <string.h>
+#include <stdio.h>
 
 #define __NEED_HAL_NOC_
 #define __NEED_HAL_MAILBOX_
@@ -31,7 +32,7 @@
 #include <nanvix/hal.h>
 
 /**
- * @brief Mailboxe for small messages.
+ * @brief Mailbox for small messages.
  */
 static int server;
 

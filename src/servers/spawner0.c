@@ -89,14 +89,45 @@ static void *server(void *args)
 }
 
 /**
+ * @brief Sync spawners.
+ */
+static void spawners_sync(void)
+{
+	int nodeid;
+	int syncid;
+	int syncid_local;
+	int nodes[2];
+	int nodes_local[2];
+
+	nodeid = hal_get_node_id();
+
+	nodes[0] = nodeid;
+	nodes[1] = hal_noc_nodes[SPAWNER1_SERVER_NODE];
+
+	nodes_local[0] = hal_noc_nodes[SPAWNER1_SERVER_NODE];
+	nodes_local[1] = nodeid;
+
+	/* Open synchronization points. */
+	assert((syncid_local = hal_sync_create(nodes_local, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
+	assert((syncid = hal_sync_open(nodes, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
+
+	assert(hal_sync_signal(syncid) == 0);
+	assert(hal_sync_wait(syncid_local) == 0);
+
+	printf("[nanvix][spawner0] synced\n");
+
+	/* House keeping. */
+	assert(hal_sync_unlink(syncid_local) == 0);
+	assert(hal_sync_close(syncid) == 0);
+}
+
+/**
  * @brief Resolves process names.
  */
 int main(int argc, char **argv)
 {
-	int syncid;
 	int debug = 0;
 	int args[NR_SERVERS];
-	int nodes[NR_SERVERS + 1];
 	pthread_t tids[NR_SERVERS];
 
 	/* Debug mode? */
@@ -118,8 +149,6 @@ int main(int argc, char **argv)
 
 	printf("[nanvix][spawner0] server alive\n");
 
-	while(1);
-
 	/* Spawn servers. */
 	for (int i = 0; i < NR_SERVERS; i++)
 	{
@@ -133,16 +162,17 @@ int main(int argc, char **argv)
 
 	pthread_barrier_wait(&barrier);
 
-	/* Release master IO cluster. */
-	nodes[0] = hal_get_node_id();
-	nodes[1] = hal_noc_nodes[SPAWNER1_SERVER_NODE];
+	spawners_sync();
 
-	assert((syncid = hal_sync_open(nodes, NR_SERVERS + 1, HAL_SYNC_ONE_TO_ALL)) >= 0);
-	assert(hal_sync_signal(syncid) == 0);
+	/* Run self-tests. */
+	if (debug)
+		test_runtime(argv[2], NR_SERVERS);
 
 	/* Wait for name server thread. */
 	for (int i = 0; i < NR_SERVERS; i++)
 		pthread_join(tids[i], NULL);
+
+	while(1);
 
 	hal_cleanup();
 	return (EXIT_SUCCESS);

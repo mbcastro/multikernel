@@ -562,16 +562,27 @@ again:
 			goto again;
 		}
 
-		if (mppa_close(mailboxes[mbxid].fd) < 0)
-			goto error1;
+		/* Set mailbox as busy. */
+		mailbox_set_busy(mbxid);
 
+	/*
+	 * Release lock, since we may sleep below.
+	 */
+	mppa256_mailbox_unlock();
+	
+	if (mppa_close(mailboxes[mbxid].fd) < 0)
+		goto error1;
+
+	mppa256_mailbox_lock();
 		mailbox_free(mbxid);
-
+		mailbox_clear_busy(mbxid);
 	mppa256_mailbox_unlock();
 
 	return (0);
 
 error1:
+	mppa256_mailbox_lock();
+		mailbox_clear_busy(mbxid);
 	mppa256_mailbox_unlock();
 error0:
 	return (-EAGAIN);

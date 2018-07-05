@@ -20,60 +20,44 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <stdlib.h>
-#include <string.h>
+#include <pthread.h>
 #include <stdio.h>
 
-/* Kernel unit-tests. */
-extern void test_hal_core(void);
-extern void test_hal_sync(void);
-extern void test_hal_mailbox(void);
-extern void test_hal_portal(void);
+#define __NEED_HAL_CORE_
+#define __NEED_HAL_NOC_
+#include <nanvix/hal.h>
+#include <nanvix/init.h>
 
-/* Runtime unit-tests. */
-extern void test_name(int);
-extern void test_mailbox(int);
+#include "test.h"
 
 /**
- * @brief Generic test driver.
+ * @brief Number of cores in the underlying cluster.
  */
-void test_kernel(const char *module)
-{
-	if (!strcmp(module, "--hal-core"))
-	{
-		test_hal_core();
-		exit(EXIT_SUCCESS);
-	}
-	else if (!strcmp(module, "--hal-sync"))
-	{
-		test_hal_sync();
-		exit(EXIT_SUCCESS);
-	}
-	else if (!strcmp(module, "--hal-mailbox"))
-	{
-		test_hal_mailbox();
-		exit(EXIT_SUCCESS);
-	}
-	else if (!strcmp(module, "--hal-portal"))
-	{
-		test_hal_portal();
-		exit(EXIT_SUCCESS);
-	}
-}
+int ipc_name_ncores = 0;
 
 /**
- * @brief Generic test driver.
+ * @brief Global barrier for synchronization.
  */
-void test_runtime(const char *module, int nservers)
+pthread_barrier_t ipc_name_barrier;
+
+/**
+ * @brief Synchronization Point Test Driver
+ */
+void test_name(int nbusycores)
 {
-	if (!strcmp(module, "--name"))
+	TEST_ASSERT(kernel_setup() == 0);
+
+	ipc_name_ncores = hal_get_num_cores() - nbusycores;
+
+	pthread_barrier_init(&ipc_name_barrier, NULL, ipc_name_ncores - 1);
+
+	/* Run API tests. */
+	for (int i = 0; ipc_name_tests_api[i].test_fn != NULL; i++)
 	{
-		test_name(nservers);
-		exit(EXIT_SUCCESS);
+		printf("[nanvix][test][api][ipc][name] %s\n", ipc_name_tests_api[i].name);
+		ipc_name_tests_api[i].test_fn();
 	}
-	else if (!strcmp(module, "--mailbox"))
-	{
-		test_mailbox(nservers);
-		exit(EXIT_SUCCESS);
-	}
+
+	TEST_ASSERT(kernel_cleanup() == 0);
 }
+

@@ -124,8 +124,8 @@ then
 	run2 "nanvix-debug.img" "/servers" "/servers1" "--debug --hal-mailbox" | grep nanvix
 	echo "Testing HAL Portal"
 	run2 "nanvix-debug.img" "/servers" "/servers1" "--debug --hal-portal" | grep nanvix
-#	echo "Testing Naming Service"
-#	run2 "nanvix.img" "/servers" "/servers1" "--debug --name" | grep nanvix
+	echo "Testing Naming Service"
+	run2 "nanvix-debug.img" "/servers" "/servers1" "--debug --name" | grep nanvix
 #	echo "Testing Mailbox"
 #	run2 "nanvix-debug-mailbox.img" "/servers" "/servers1" "--debug --mailbox"
 #	echo "Testing BARRIER"

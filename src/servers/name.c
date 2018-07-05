@@ -24,6 +24,7 @@
 #include <pthread.h>
 #include <string.h>
 #include <errno.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #define __NEED_HAL_NOC_
@@ -32,10 +33,6 @@
 #include <nanvix/hal.h>
 #include <nanvix/pm.h>
 #include <nanvix/name.h>
-
-#ifdef DEBUG
-#include <stdio.h>
-#endif
 
 /**
  * @brief Number of registration.
@@ -199,7 +196,11 @@ int name_server(int inbox)
 	int tmp;
 	int source;
 
+	printf("[nanvix][name] booting up server\n");
+
 	name_init();
+
+	printf("[nanvix][name] server alive\n");
 
 	while(1)
 	{
@@ -232,8 +233,8 @@ int name_server(int inbox)
 			/* Add name. */
 			case NAME_LINK:
 #ifdef DEBUG
-				printf("Entering NAME_LINK case... [nodeid ID: %d, name: %s].\n"
-														  msg.nodeid, msg.name);
+				printf("Entering NAME_LINK case... [nodeid ID: %d, name: %s].\n",
+														  (int) msg.nodeid, msg.name);
 #endif
 				tmp = nr_registration;
 

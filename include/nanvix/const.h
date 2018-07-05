@@ -36,7 +36,7 @@
 	/**
 	 * @brief Name server NoC node num.
 	 */
-	#define NAME_SERVER_NODE 1
+	#define NAME_SERVER_NODE 5
 
 #endif /* CONST_H_ */
 
