@@ -27,6 +27,7 @@ SRC0 = spawner0.c                         \
        $(wildcard tests0/hal/mailbox/*.c) \
        $(wildcard tests0/hal/portal/*.c)  \
        $(wildcard tests0/ipc/name/*.c)    \
+       $(wildcard tests0/ipc/mailbox/*.c) \
        $(wildcard tests0/*.c)
 
 # C Source Files

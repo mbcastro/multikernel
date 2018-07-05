@@ -20,60 +20,39 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <stdlib.h>
-#include <string.h>
+#include <pthread.h>
 #include <stdio.h>
 
-/* Kernel unit-tests. */
-extern void test_hal_core(void);
-extern void test_hal_sync(void);
-extern void test_hal_mailbox(void);
-extern void test_hal_portal(void);
+#define __NEED_HAL_CORE_
+#define __NEED_HAL_NOC_
+#include <nanvix/hal.h>
 
-/* Runtime unit-tests. */
-extern void test_name(int);
-extern void test_ipc_mailbox(int);
+#include "test.h"
 
 /**
- * @brief Generic test driver.
+ * @brief Number of cores in the underlying cluster.
  */
-void test_kernel(const char *module)
+int ipc_mailbox_ncores = 0;
+
+/**
+ * @brief Global barrier for synchronization.
+ */
+pthread_barrier_t barrier;
+
+/**
+ * @brief Unnamed Mailbox Test Driver
+ */
+void test_ipc_mailbox(void)
 {
-	if (!strcmp(module, "--hal-core"))
+	ipc_mailbox_ncores = hal_get_num_cores();
+
+	pthread_barrier_init(&barrier, NULL, ipc_mailbox_ncores - 1);
+
+	/* Run API tests. */
+	for (int i = 0; ipc_mailbox_tests_api[i].test_fn != NULL; i++)
 	{
-		test_hal_core();
-		exit(EXIT_SUCCESS);
-	}
-	else if (!strcmp(module, "--hal-sync"))
-	{
-		test_hal_sync();
-		exit(EXIT_SUCCESS);
-	}
-	else if (!strcmp(module, "--hal-mailbox"))
-	{
-		test_hal_mailbox();
-		exit(EXIT_SUCCESS);
-	}
-	else if (!strcmp(module, "--hal-portal"))
-	{
-		test_hal_portal();
-		exit(EXIT_SUCCESS);
+		printf("[nanvix][test][api][ipc][mailbox] %s\n", ipc_mailbox_tests_api[i].name);
+		ipc_mailbox_tests_api[i].test_fn();
 	}
 }
 
-/**
- * @brief Generic test driver.
- */
-void test_runtime(const char *module, int nservers)
-{
-	if (!strcmp(module, "--name"))
-	{
-		test_name(nservers);
-		exit(EXIT_SUCCESS);
-	}
-	else if (!strcmp(module, "--mailbox"))
-	{
-		test_ipc_mailbox(nservers);
-		exit(EXIT_SUCCESS);
-	}
-}
