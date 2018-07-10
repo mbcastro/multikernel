@@ -23,7 +23,6 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
-#include <pthread.h>
 
 #include <mppa/osconfig.h>
 #include <mppaipc.h>
@@ -40,32 +39,15 @@
  * @brief Benchmark parameters.
  */
 /**@{*/
-static int nlocals = 0;       /**< Number of local peers.          */
-static int ntotalremotes = 0; /**< Number of remotes peers.        */
-static int nremotes = 0;      /**< Number of remotes per local.    */
-static int niterations = 0;   /**< Number of benchmark parameters. */
-static int bufsize = 0;       /**< Buffer size.                    */
+static int nremotes = 0;    /**< Number of remotes processes.    */
+static int niterations = 0; /**< Number of benchmark parameters. */
+static int bufsize = 0;     /**< Buffer size.                    */
 /**@}*/
-
-/**
- * @brief Global barrier for synchronization.
- */
-static pthread_barrier_t barrier;
-
-/**
- * @brief Global lock for critical sections.
- */
-static pthread_mutex_t lock;
 
 /**
  * @brief ID of slave processes.
  */
 static int pids[NANVIX_PROC_MAX];
-
-/**
- * @brief Elapsed time.
- */
-static uint64_t etime[NANVIX_PROC_MAX];
 
 /*============================================================================*
  * Utility                                                                    *
@@ -73,12 +55,9 @@ static uint64_t etime[NANVIX_PROC_MAX];
 
 /**
  * @brief Spawns remote processes.
- *
- * @param tnum Number of the calling thread.
  */
-static void spawn_remotes(int tnum)
+static void spawn_remotes(void)
 {
-	const int off = tnum*nremotes;
 	int syncid;
 	int nodeid;
 	char master_node[4];
@@ -97,25 +76,24 @@ static void spawn_remotes(int tnum)
 		NULL
 	};
 
-	sprintf(niterations_str, "%d", niterations);
-	sprintf(bufsize_str, "%d", bufsize);
-
 	nodeid = hal_get_node_id();
 
 	/* Build nodes list. */
 	nodes[0] = nodeid;
 	for (int i = 0; i < nremotes; i++)
-		nodes[i + 1] = off + i;
+		nodes[i + 1] = i;
 
 	/* Create synchronization point. */
 	assert((syncid = hal_sync_create(nodes, nremotes + 1, HAL_SYNC_ALL_TO_ONE)) >= 0);
 
 	/* Spawn remotes. */
 	sprintf(master_node, "%d", nodeid);
-	sprintf(first_remote, "%d", off);
-	sprintf(last_remote, "%d", off + nremotes);
+	sprintf(first_remote, "%d", 0);
+	sprintf(last_remote, "%d", nremotes);
+	sprintf(niterations_str, "%d", niterations);
+	sprintf(bufsize_str, "%d", bufsize);
 	for (int i = 0; i < nremotes; i++)
-		assert((pids[off + i] = mppa_spawn(off + i, NULL, argv[0], argv, NULL)) != -1);
+		assert((pids[i] = mppa_spawn(i, NULL, argv[0], argv, NULL)) != -1);
 
 	/* Sync. */
 	assert(hal_sync_wait(syncid) == 0);
@@ -126,15 +104,11 @@ static void spawn_remotes(int tnum)
 
 /**
  * @brief Wait for remote processes.
- *
- * @param tnum Number of the calling thread.
  */
-static void join_remotes(int tnum)
+static void join_remotes(void)
 {
-	const int off = tnum*nremotes;
-
 	for (int i = 0; i < nremotes; i++)
-		assert(mppa_waitpid(pids[off + i], NULL, 0) != -1);
+		assert(mppa_waitpid(pids[i], NULL, 0) != -1);
 }
 
 /*============================================================================*
@@ -144,19 +118,13 @@ static void join_remotes(int tnum)
 /**
  * @brief Opens output portals.
  *
- * @param tnum       Number of the calling thread.
  * @param outportals Location to store IDs of output portals.
  */
-static void open_portals(int tnum, int *outportals)
+static void open_portals(int *outportals)
 {
 	/* Open output portales. */
 	for (int i = 0; i < nremotes; i++)
-	{
-		int remoteid;
-	   
-		remoteid = tnum*nremotes + i;
-		assert((outportals[i] = hal_portal_open(remoteid)) >= 0);
-	}
+		assert((outportals[i] = hal_portal_open(i)) >= 0);
 }
 
 /**
@@ -174,61 +142,27 @@ static void close_portals(const int *outportals)
 /**
  * @brief Benchmark kernel.
  */
-static void *kernel(void *args)
+static void kernel(const int *outportals, const char *buffer)
 {
-	int tnum;
+	uint64_t total;
 	uint64_t t1, t2;
-	int outportals[nremotes];
-	char buffer[bufsize];
-
-	/* Initialization. */
-	hal_setup();
-
-	tnum = ((int *) args)[0];
-
-	spawn_remotes(tnum);
-	open_portals(tnum, outportals);
-
-	memset(buffer, 1, bufsize);
 
 	/* Benchmark. */
 	for (int k = 0; k <= niterations; k++)
 	{
-		pthread_barrier_wait(&barrier);
-
 		t1 = hal_timer_get();
 		for (int i = 0; i < nremotes; i++)
 			assert(hal_portal_write(outportals[i], buffer, bufsize) == bufsize);
 		t2 = hal_timer_get();
 
-		etime[tnum] = hal_timer_diff(t1, t2);
-
-		pthread_barrier_wait(&barrier);
+		total = hal_timer_diff(t1, t2);
 
 		/* Warmup. */
 		if (k == 0)
 			continue;
 
-		/* Reduction. */
-		if (tnum == 0)
-		{
-			uint64_t total;
-
-			total = 0;
-			for (int i = 0; i < nlocals; i++)
-				total += etime[i];
-			printf("time: %.2lf\n", ((double)total)/nremotes);
-		}
+		printf("time: %.2lf\n", ((double)total)/nremotes);
 	}
-
-	close_portals(outportals);
-
-	join_remotes(tnum);
-	
-	/* House keeping. */
-	hal_cleanup();
-
-	return (NULL);
 }
 
 /**
@@ -236,32 +170,21 @@ static void *kernel(void *args)
  */
 static void benchmark(void)
 {
-	int args[nlocals];
-	pthread_t tnums[nlocals];
+	char buffer[bufsize];
+	int outportals[nremotes];
 
-	hal_timer_init();
+	/* Initialization. */
+	hal_setup();
+	spawn_remotes();
+	open_portals(outportals);
+	memset(buffer, 1, bufsize);
 
-	/* Spawn benchmark threads. */
-	for (int i = 0; i < nlocals; i++)
-	{
-		args[i] = i;
-
-		/* Master thread is already running. */
-		if (i == 0)
-			continue;
-
-		assert((pthread_create(&tnums[i],
-			NULL,
-			kernel,
-			&args[i])) == 0
-		);
-	}
-
-	kernel(&args[0]);
-
-	/* Wait for driver threads. */
-	for (int i = 1; i < nlocals; i++)
-		pthread_join(tnums[i], NULL);
+	kernel(outportals, buffer);
+	
+	/* House keeping. */
+	close_portals(outportals);
+	join_remotes();
+	hal_cleanup();
 }
 
 /*============================================================================*
@@ -273,28 +196,19 @@ static void benchmark(void)
  */
 int main(int argc, const char **argv)
 {
-	assert(argc == 5);
+	assert(argc == 4);
 
 	/* Retrieve kernel parameters. */
-	nlocals = atoi(argv[1]);
-	ntotalremotes = atoi(argv[2]);
-	niterations = atoi(argv[3]);
-	bufsize = atoi(argv[4]);
-	nremotes = ntotalremotes/nlocals;
+	nremotes = atoi(argv[1]);
+	niterations = atoi(argv[2]);
+	bufsize = atoi(argv[3]);
 
 	/* Parameter checking. */
-	assert((ntotalremotes%nlocals) == 0);
 	assert(niterations > 0);
 	assert((bufsize > 0) || (bufsize < (1024*1024)));
 	assert((bufsize%2) == 0);
 
-	pthread_mutex_init(&lock, NULL);
-	pthread_barrier_init(&barrier, NULL, nlocals);
-
 	benchmark();
-
-	pthread_mutex_destroy(&lock);
-	pthread_barrier_destroy(&barrier);
 
 	return (EXIT_SUCCESS);
 }
