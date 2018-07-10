@@ -316,6 +316,24 @@ static void test_hal_portal_invalid_read(void)
 }
 
 /*============================================================================*
+ * Fault Injection Test: Bad Read                                             *
+ *============================================================================*/
+
+/**
+ * @brief Fault Injection Test: Bad Read
+ */
+static void test_hal_portal_bad_read(void)
+{
+	int buf;
+	int inportal;
+
+	TEST_ASSERT(hal_portal_read(0, &buf, sizeof(buf)) < 0);
+	TEST_ASSERT((inportal = hal_portal_open(0)) >= 0);
+	TEST_ASSERT(hal_portal_read(inportal, &buf, sizeof(buf)) < 0);
+	TEST_ASSERT(hal_portal_close(inportal) == 0);
+}
+
+/*============================================================================*
  * Fault Injection Test: Invalid Write                                        *
  *============================================================================*/
 
@@ -390,6 +408,7 @@ struct test portal_tests_fault[] = {
 	{ test_hal_portal_double_allow,   "Double Allow"   },
 #endif
 	{ test_hal_portal_invalid_read,   "Invalid Read"   },
+	{ test_hal_portal_bad_read,       "Bad Read"       },
 	{ test_hal_portal_invalid_write,  "Invalid Write"  },
 	{ test_hal_portal_bad_write,      "Bad Write"      },
 	{ test_hal_portal_null_write,     "Null Write"     },
