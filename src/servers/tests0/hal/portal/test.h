@@ -23,13 +23,14 @@
 #ifndef _TEST_H_
 #define _TEST_H_
 
+	#include <assert.h>
 	#include <stdlib.h>
 	#include <pthread.h>
 
 	/**
 	 * @brief Asserts a logic expression.
 	 */
-	#define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
+	#define TEST_ASSERT(x) assert(x) 
 
 	/**
 	 * @brief Unit test.
@@ -44,5 +45,6 @@
 	extern int hal_portal_ncores;
 	extern pthread_barrier_t barrier;
 	extern struct test hal_portal_tests_api[];
+	extern struct test portal_tests_fault[];
 
 #endif /* _TEST_H_ */

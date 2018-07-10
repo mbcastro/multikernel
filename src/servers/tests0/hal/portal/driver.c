@@ -54,5 +54,12 @@ void test_hal_portal(void)
 		printf("[nanvix][test][api][hal][portal] %s\n", hal_portal_tests_api[i].name);
 		hal_portal_tests_api[i].test_fn();
 	}
+
+	/* Run fault injection tests. */
+	for (int i = 0; portal_tests_fault[i].test_fn != NULL; i++)
+	{
+		printf("[nanvix][test][fault][hal][portal] %s\n", portal_tests_fault[i].name);
+		portal_tests_fault[i].test_fn();
+	}
 }
 

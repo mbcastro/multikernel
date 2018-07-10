@@ -271,4 +271,5 @@ struct test mailbox_tests_api[] = {
 	{ test_hal_mailbox_read_write,    "Read Write"             },
 	{ NULL,                           NULL                     },
 	{ test_hal_mailbox_open_close_io, "IO Clusters Open Close" },
+	{ NULL,                           NULL                     },
 };
