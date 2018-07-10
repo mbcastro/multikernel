@@ -336,6 +336,25 @@ static void test_hal_portal_bad_read(void)
 }
 
 /*============================================================================*
+ * Fault Injection Test: Null Read                                            *
+ *============================================================================*/
+
+/**
+ * @brief Fault Injection Test: Null Read
+ */
+static void test_hal_portal_null_read(void)
+{
+	int nodeid;
+	int inportal;
+
+	nodeid = hal_get_node_id();
+
+	TEST_ASSERT((inportal = hal_portal_create(nodeid)) >= 0);
+	TEST_ASSERT(hal_portal_read(inportal, NULL, 1) < 0);
+	TEST_ASSERT(hal_portal_unlink(inportal) == 0);
+}
+
+/*============================================================================*
  * Fault Injection Test: Invalid Write                                        *
  *============================================================================*/
 
@@ -413,6 +432,7 @@ struct test portal_tests_fault[] = {
 #endif
 	{ test_hal_portal_invalid_read,   "Invalid Read"   },
 	{ test_hal_portal_bad_read,       "Bad Read"       },
+	{ test_hal_portal_null_read,      "Null Read"      },
 	{ test_hal_portal_invalid_write,  "Invalid Write"  },
 	{ test_hal_portal_bad_write,      "Bad Write"      },
 	{ test_hal_portal_null_write,     "Null Write"     },
