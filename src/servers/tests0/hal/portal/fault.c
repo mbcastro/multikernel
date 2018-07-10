@@ -31,9 +31,24 @@
 
 #include "test.h"
 
+/*============================================================================*
+ * Fault Injection Test: Invalid Create                                       *
+ *============================================================================*/
+
+/**
+ * @brief Fault Injection Test: Invalid Create
+ */
+static void test_hal_portal_invalid_create(void)
+{
+	int inbox;
+
+	TEST_ASSERT((inbox = hal_portal_create(-1)) < 0);
+}
+
 /**
  * @brief Unit tests.
  */
 struct test portal_tests_fault[] = {
-	{ NULL, NULL },
+	{ test_hal_portal_invalid_create, "Invalid Create" },
+	{ NULL,                           NULL             },
 };
