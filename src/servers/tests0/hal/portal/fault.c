@@ -313,6 +313,8 @@ static void test_hal_portal_invalid_read(void)
 	int buf;
 
 	TEST_ASSERT(hal_portal_read(-1, &buf, sizeof(buf)) < 0);
+	TEST_ASSERT(hal_portal_read(HAL_NR_PORTAL, &buf, sizeof(buf)) < 0);
+	TEST_ASSERT(hal_portal_read(HAL_NR_PORTAL + 1, &buf, sizeof(buf)) < 0);
 }
 
 /*============================================================================*
@@ -345,6 +347,8 @@ static void test_hal_portal_invalid_write(void)
 	int buf;
 
 	TEST_ASSERT(hal_portal_write(-1, &buf, sizeof(buf)) < 0);
+	TEST_ASSERT(hal_portal_write(HAL_NR_PORTAL, &buf, sizeof(buf)) < 0);
+	TEST_ASSERT(hal_portal_write(HAL_NR_PORTAL + 1, &buf, sizeof(buf)) < 0);
 }
 
 /*============================================================================*
