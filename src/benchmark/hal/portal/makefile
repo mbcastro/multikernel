@@ -20,29 +20,32 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-# Change binaries directory.
-export BINDIR := $(BINDIR)/benchmark
+# Conflicts.
+.PHONY: master
+.PHONY: slave
 
-# Builds everything.
-all: hal-mailbox hal-portal
+# Builds binaries.
+all: master slave
 
-# Builds HAL Mailbox Benchmark
-hal-mailbox:
-	mkdir -p $(BINDIR)
-	cd hal/mailbox && $(MAKE) all
+# Builds master binary.
+master:
+ifeq ($(BUILD_SERVERS),true)
+	cd master && $(MAKE) all
+endif
 
-# Builds HAL Portal Benchmark
-hal-portal:
-	mkdir -p $(BINDIR)
-	cd hal/portal && $(MAKE) all
+# Builds slave binary.
+slave:
+ifeq ($(BUILD_SERVERS),false)
+	cd slave && $(MAKE) all
+endif
 
 # Cleans compilation files.
 clean:
-	cd hal/mailbox && $(MAKE) clean
-	cd hal/portal && $(MAKE) clean
+	cd master && $(MAKE) clean
+	cd slave && $(MAKE) clean
 
 # Cleans everything.
-distclean:
-	cd hal/mailbox && $(MAKE) distclean
-	cd hal/portal && $(MAKE) distclean
+distclean: clean
+	cd master && $(MAKE) distclean
+	cd slave && $(MAKE) distclean
 
