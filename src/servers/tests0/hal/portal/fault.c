@@ -336,6 +336,22 @@ static void test_hal_portal_bad_write(void)
 	TEST_ASSERT(hal_portal_unlink(outportal) == 0);
 }
 
+/*============================================================================*
+ * Fault Injection Test: Null Write                                            *
+ *============================================================================*/
+
+/**
+ * @brief Fault Injection Test: Null Write
+ */
+static void test_hal_portal_null_write(void)
+{
+	int outportal;
+
+	TEST_ASSERT((outportal = hal_portal_open(0)) >= 0);
+	TEST_ASSERT(hal_portal_write(outportal, NULL, 1) < 0);
+	TEST_ASSERT(hal_portal_close(outportal) == 0);
+}
+
 /*============================================================================*/
 
 /**
@@ -361,5 +377,6 @@ struct test portal_tests_fault[] = {
 	{ test_hal_portal_double_allow,   "Double Allow"   },
 #endif
 	{ test_hal_portal_bad_write,      "Bad Write"      },
+	{ test_hal_portal_null_write,     "Null Write"     },
 	{ NULL,                           NULL             },
 };
