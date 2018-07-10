@@ -29,6 +29,13 @@
 #define __NEED_HAL_PORTAL_
 #include <nanvix/hal.h>
 
+/* Enable huge NoC node ID tests. */
+#ifdef _TEST_HUGE_ID
+	#define _TEST_HAL_PORTAL_INVALID_CREATE_HUGE_ID
+	#define _TEST_HAL_PORTAL_INVALID_OPEN_HUGE_ID
+	#define _TEST_HAL_PORTAL_INVALID_ALLOW_HUGE_ID
+#endif
+
 #include "test.h"
 
 /*============================================================================*
