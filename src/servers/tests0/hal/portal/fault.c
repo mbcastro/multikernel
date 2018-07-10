@@ -91,11 +91,11 @@ static void test_hal_portal_double_create(void)
  */
 static void test_hal_portal_invalid_open(void)
 {
-	int inbox;
+	int outbox;
 
-	TEST_ASSERT((inbox = hal_portal_open(-1)) < 0);
+	TEST_ASSERT((outbox = hal_portal_open(-1)) < 0);
 #ifdef _TEST_HAL_PORTAL_INVALID_OPEN_HUGE_ID
-	TEST_ASSERT((inbox = hal_portal_open(1000000)) < 0);
+	TEST_ASSERT((outbox = hal_portal_open(1000000)) < 0);
 #endif
 }
 
@@ -108,12 +108,12 @@ static void test_hal_portal_invalid_open(void)
  */
 static void test_hal_portal_bad_open(void)
 {
-	int inbox;
+	int outbox;
 	int nodeid;
 
 	nodeid = hal_get_node_id();
 
-	TEST_ASSERT((inbox = hal_portal_open(nodeid)) < 0);
+	TEST_ASSERT((outbox = hal_portal_open(nodeid)) < 0);
 }
 
 /*============================================================================*
@@ -125,12 +125,12 @@ static void test_hal_portal_bad_open(void)
  */
 static void test_hal_portal_double_open(void)
 {
-	int inbox;
-	int inbox2;
+	int outbox;
+	int outbox2;
 
-	TEST_ASSERT((inbox = hal_portal_open(0)) >= 0);
-	TEST_ASSERT((inbox2 = hal_portal_open(0)) < 0);
-	TEST_ASSERT((hal_portal_close(inbox)) == 0);
+	TEST_ASSERT((outbox = hal_portal_open(0)) >= 0);
+	TEST_ASSERT((outbox2 = hal_portal_open(0)) < 0);
+	TEST_ASSERT((hal_portal_close(outbox)) == 0);
 }
 
 /*============================================================================*
@@ -206,15 +206,15 @@ static void test_hal_portal_invalid_close(void)
  */
 static void test_hal_portal_bad_close(void)
 {
-	int inbox;
+	int outbox;
 	int nodeid;
 
 	nodeid = hal_get_node_id();
 
 	TEST_ASSERT(hal_portal_close(nodeid) < 0);
-	TEST_ASSERT((inbox = hal_portal_create(nodeid)) >= 0);
-	TEST_ASSERT(hal_portal_close(inbox) < 0);
-	TEST_ASSERT((hal_portal_unlink(inbox)) == 0);
+	TEST_ASSERT((outbox = hal_portal_create(nodeid)) >= 0);
+	TEST_ASSERT(hal_portal_close(outbox) < 0);
+	TEST_ASSERT((hal_portal_unlink(outbox)) == 0);
 }
 
 /*============================================================================*
@@ -226,11 +226,11 @@ static void test_hal_portal_bad_close(void)
  */
 static void test_hal_portal_double_close(void)
 {
-	int inbox;
+	int outbox;
 
-	TEST_ASSERT((inbox = hal_portal_open(0)) >= 0);
-	TEST_ASSERT((hal_portal_close(inbox)) == 0);
-	TEST_ASSERT((hal_portal_close(inbox)) < 0);
+	TEST_ASSERT((outbox = hal_portal_open(0)) >= 0);
+	TEST_ASSERT((hal_portal_close(outbox)) == 0);
+	TEST_ASSERT((hal_portal_close(outbox)) < 0);
 }
 
 /*============================================================================*/
