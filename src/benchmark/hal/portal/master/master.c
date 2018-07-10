@@ -42,11 +42,9 @@
  * @brief Benchmark parameters.
  */
 /**@{*/
-static const char *pattern; /**< Transfer pattern             */
-static int nlocals;         /**< Number of local peers.       */
-static int ntotalremotes;   /**< Number of remotes peers.     */
-static int nremotes;        /**< Number of remotes per local. */
-static int ncols;           /**< Number of remotes in a row.  */
+static int nlocals;       /**< Number of local peers.       */
+static int ntotalremotes; /**< Number of remotes peers.     */
+static int nremotes;      /**< Number of remotes per local. */
 /**@}*/
 
 /**
@@ -137,6 +135,31 @@ static void join_remotes(int tnum)
  *============================================================================*/
 
 /**
+ * @brief Opens output portals.
+ */
+static void open_portals(int tnum, int *outportals)
+{
+	/* Open output portales. */
+	for (int i = 0; i < nremotes; i++)
+	{
+		int remoteid;
+	   
+		remoteid = tnum*nremotes + i;
+		assert((outportals[i] = hal_portal_open(remoteid)) >= 0);
+	}
+}
+
+/**
+ * @brief Closes output portals.
+ */
+static void close_portals(const int *outportals)
+{
+	/* Close output portals. */
+	for (int i = 0; i < nremotes; i++)
+		assert((hal_portal_close(outportals[i])) == 0);
+}
+
+/**
  * @brief Benchmark kernel.
  */
 static void *kernel(void *args)
@@ -151,38 +174,12 @@ static void *kernel(void *args)
 
 	tnum = ((int *) args)[0];
 
+	spawn_remotes(tnum);
+	open_portals(tnum, outportals);
+
 	memset(buffer, 1, BUFFER_SIZE);
 
-	spawn_remotes(tnum);
-
-	/* Open output portales. */
-	if (!strcmp(pattern, "row"))
-	{
-		for (int i = 0, k = 0; i < ntotalremotes/ncols; i++)
-		{
-			for (int  j = 0; j < ncols/nlocals; j++)
-			{
-				int remoteid;
-			   
-				remoteid = i*ncols + tnum*(ncols/nlocals) + j;
-				assert((outportals[k++] = hal_portal_open(remoteid)) >= 0);
-			}
-		}
-	}
-	else
-	{
-		for (int  j = 0, k = 0; j < ncols/nlocals; j++)
-		{
-			for (int i = 0; i < ntotalremotes/ncols; i++)
-			{
-				int remoteid;
-			   
-				remoteid = i*ncols + tnum*(ncols/nlocals) + j;
-				assert((outportals[k++] = hal_portal_open(remoteid)) >= 0);
-			}
-		}
-	}
-
+	/* Benchmark. */
 	for (int k = 0; k < NITERATIONS; k++)
 	{
 		pthread_barrier_wait(&barrier);
@@ -207,10 +204,8 @@ static void *kernel(void *args)
 			printf("time: %.2lf\n", ((double)total)/nremotes);
 		}
 	}
-	
-	/* Close output portales. */
-	for (int k = 0; k < nremotes; k++)
-		assert((hal_portal_close(outportals[k])) == 0);
+
+	close_portals(outportals);
 
 	join_remotes(tnum);
 	
@@ -262,21 +257,15 @@ static void benchmark(void)
  */
 int main(int argc, const char **argv)
 {
-	assert(argc == 5);
+	assert(argc == 3);
 
 	/* Retrieve kernel parameters. */
 	nlocals = atoi(argv[1]);
 	ntotalremotes = atoi(argv[2]);
-	pattern = argv[3];
-	ncols = atoi(argv[4]);
 	nremotes = ntotalremotes/nlocals;
 
 	/* Parameter checking. */
-	assert((ntotalremotes%ncols) == 0);
 	assert((ntotalremotes%nlocals) == 0);
-	assert((ncols%nlocals) == 0);
-	if (!strcmp(pattern, "row"))
-		assert((ntotalremotes%ncols) == 0);
 
 	pthread_mutex_init(&lock, NULL);
 	pthread_barrier_init(&barrier, NULL, nlocals);
