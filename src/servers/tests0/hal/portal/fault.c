@@ -64,7 +64,7 @@ static void test_hal_portal_bad_create(void)
  *============================================================================*/
 
 /**
- * @brief Fault Injection Test: Bad Create
+ * @brief Fault Injection Test: Double Create
  */
 static void test_hal_portal_double_create(void)
 {
@@ -79,6 +79,20 @@ static void test_hal_portal_double_create(void)
 	TEST_ASSERT((hal_portal_unlink(inbox)) == 0);
 }
 
+/*============================================================================*
+ * Fault Injection Test: Invalid Open                                         *
+ *============================================================================*/
+
+/**
+ * @brief Fault Injection Test: Invalid Open
+ */
+static void test_hal_portal_invalid_open(void)
+{
+	int inbox;
+
+	TEST_ASSERT((inbox = hal_portal_open(-1)) < 0);
+}
+
 /*============================================================================*/
 
 /**
@@ -88,5 +102,6 @@ struct test portal_tests_fault[] = {
 	{ test_hal_portal_invalid_create, "Invalid Create" },
 	{ test_hal_portal_bad_create,     "Bad Create"     },
 	{ test_hal_portal_double_create,  "Double Create"  },
+	{ test_hal_portal_invalid_open,   "Invalid Open"   },
 	{ NULL,                           NULL             },
 };
