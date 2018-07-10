@@ -43,6 +43,9 @@ static void test_hal_portal_invalid_create(void)
 	int inbox;
 
 	TEST_ASSERT((inbox = hal_portal_create(-1)) < 0);
+#ifdef _TEST_HAL_PORTAL_INVALID_CREATE_HUGE_ID
+	TEST_ASSERT((inbox = hal_portal_create(1000000)) < 0);
+#endif
 }
 
 /*============================================================================*
@@ -91,6 +94,9 @@ static void test_hal_portal_invalid_open(void)
 	int inbox;
 
 	TEST_ASSERT((inbox = hal_portal_open(-1)) < 0);
+#ifdef _TEST_HAL_PORTAL_INVALID_OPEN_HUGE_ID
+	TEST_ASSERT((inbox = hal_portal_open(1000000)) < 0);
+#endif
 }
 
 /*============================================================================*
