@@ -217,6 +217,22 @@ static void test_hal_portal_bad_close(void)
 	TEST_ASSERT((hal_portal_unlink(inbox)) == 0);
 }
 
+/*============================================================================*
+ * Fault Injection Test: Double Close                                         *
+ *============================================================================*/
+
+/**
+ * @brief Fault Injection Test: Double Close
+ */
+static void test_hal_portal_double_close(void)
+{
+	int inbox;
+
+	TEST_ASSERT((inbox = hal_portal_open(0)) >= 0);
+	TEST_ASSERT((hal_portal_close(inbox)) == 0);
+	TEST_ASSERT((hal_portal_close(inbox)) < 0);
+}
+
 /*============================================================================*/
 
 /**
@@ -234,5 +250,6 @@ struct test portal_tests_fault[] = {
 	{ test_hal_portal_bad_unlink,     "Bad Unlink"     },
 	{ test_hal_portal_invalid_close,  "Invalid Close"  },
 	{ test_hal_portal_bad_close,      "Bad Close"      },
+	{ test_hal_portal_double_close,   "Double Close"   },
 	{ NULL,                           NULL             },
 };
