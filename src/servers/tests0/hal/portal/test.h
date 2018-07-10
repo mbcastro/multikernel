@@ -44,5 +44,6 @@
 	extern int hal_portal_ncores;
 	extern pthread_barrier_t barrier;
 	extern struct test hal_portal_tests_api[];
+	extern struct test portal_tests_fault[];
 
 #endif /* _TEST_H_ */

@@ -20,46 +20,20 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <pthread.h>
-#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 #define __NEED_HAL_CORE_
 #define __NEED_HAL_NOC_
+#define __NEED_HAL_SETUP_
+#define __NEED_HAL_PORTAL_
 #include <nanvix/hal.h>
 
 #include "test.h"
 
 /**
- * @brief Number of cores in the underlying cluster.
+ * @brief Unit tests.
  */
-int hal_portal_ncores = 0;
-
-/**
- * @brief Global barrier for synchronization.
- */
-pthread_barrier_t barrier;
-
-/**
- * @brief Unnamed Mailbox Test Driver
- */
-void test_hal_portal(void)
-{
-	hal_portal_ncores = hal_get_num_cores();
-
-	pthread_barrier_init(&barrier, NULL, hal_portal_ncores - 1);
-
-	/* Run API tests. */
-	for (int i = 0; hal_portal_tests_api[i].test_fn != NULL; i++)
-	{
-		printf("[nanvix][test][api][hal][portal] %s\n", hal_portal_tests_api[i].name);
-		hal_portal_tests_api[i].test_fn();
-	}
-
-	/* Run fault injection tests. */
-	for (int i = 0; portal_tests_fault[i].test_fn != NULL; i++)
-	{
-		printf("[nanvix][test][fault][hal][portal] %s\n", portal_tests_fault[i].name);
-		portal_tests_fault[i].test_fn();
-	}
-}
-
+struct test portal_tests_fault[] = {
+	{ NULL, NULL },
+};
