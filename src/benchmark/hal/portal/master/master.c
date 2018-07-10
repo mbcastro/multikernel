@@ -169,7 +169,7 @@ static void kernel_broadcast(void)
 		if (k == 0)
 			continue;
 
-		printf("time: %.2lf\n", ((double)total)/nremotes);
+		printf("%.2lf;%.2lf\n", ((double)total)/nremotes, (nremotes*bufsize)/((double)total)*1000000);
 	}
 
 	/* House keeping. */
@@ -209,7 +209,7 @@ static void kernel_gather(void)
 		if (k == 0)
 			continue;
 
-		printf("time: %.2lf\n", ((double)total)/nremotes);
+		printf("%.2lf;%.2lf\n", ((double)total)/nremotes, (nremotes*bufsize)/((double)total)*1000000);
 	}
 
 	/* House keeping. */
