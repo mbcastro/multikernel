@@ -93,6 +93,23 @@ static void test_hal_portal_invalid_open(void)
 	TEST_ASSERT((inbox = hal_portal_open(-1)) < 0);
 }
 
+/*============================================================================*
+ * Fault Injection Test: Bad Open                                             *
+ *============================================================================*/
+
+/**
+ * @brief Fault Injection Test: Bad Open
+ */
+static void test_hal_portal_bad_open(void)
+{
+	int inbox;
+	int nodeid;
+
+	nodeid = hal_get_node_id();
+
+	TEST_ASSERT((inbox = hal_portal_open(nodeid)) < 0);
+}
+
 /*============================================================================*/
 
 /**
@@ -103,5 +120,6 @@ struct test portal_tests_fault[] = {
 	{ test_hal_portal_bad_create,     "Bad Create"     },
 	{ test_hal_portal_double_create,  "Double Create"  },
 	{ test_hal_portal_invalid_open,   "Invalid Open"   },
+	{ test_hal_portal_bad_open,       "Bad Open"       },
 	{ NULL,                           NULL             },
 };
