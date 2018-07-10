@@ -24,11 +24,6 @@
 #define _KERNEL_H_
 
 	/**
-	 * @brief Number of kernel iterations.
-	 */
-	#define NITERATIONS 100
-
-	/**
 	 * @brief Buffer size.
 	 */
 	#define BUFFER_SIZE 128

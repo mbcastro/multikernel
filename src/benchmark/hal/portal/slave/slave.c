@@ -50,6 +50,11 @@ static int inportal;
  */
 static int nodeid;
 
+/**
+ * @brief Number of benchmark interations.
+ */
+static int niterations = 0;
+
 /*============================================================================*
  * Kernel                                                                     *
  *============================================================================*/
@@ -62,7 +67,7 @@ static void kernel(void)
 	char buffer[BUFFER_SIZE];
 
 	/* Benchmark. */
-	for (int k = 0; k < NITERATIONS; k++)
+	for (int k = 0; k < niterations; k++)
 	{
 		assert(hal_portal_allow(inportal, master_node) == 0);
 		assert(hal_portal_read(inportal, buffer, BUFFER_SIZE) == BUFFER_SIZE);
@@ -110,10 +115,11 @@ int main(int argc, const char **argv)
 	assert((inportal = hal_portal_create(nodeid)) >= 0);
 
 	/* Retrieve kernel parameters. */
-	assert(argc == 4);
+	assert(argc == 5);
 	master_node = atoi(argv[1]);
 	first_remote = atoi(argv[2]);
 	last_remote = atoi(argv[3]);
+	niterations = atoi(argv[4]);
 
 	sync_master(first_remote, last_remote);
 

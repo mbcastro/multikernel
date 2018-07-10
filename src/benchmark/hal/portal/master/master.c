@@ -42,9 +42,10 @@
  * @brief Benchmark parameters.
  */
 /**@{*/
-static int nlocals;       /**< Number of local peers.       */
-static int ntotalremotes; /**< Number of remotes peers.     */
-static int nremotes;      /**< Number of remotes per local. */
+static int nlocals = 0;       /**< Number of local peers.         */
+static int ntotalremotes = 0; /**< Number of remotes peers.       */
+static int nremotes = 0;      /**< Number of remotes per local.   */
+static int niterations = 0;   /**< Number of benchmark paramters. */
 /**@}*/
 
 /**
@@ -84,14 +85,18 @@ static void spawn_remotes(int tnum)
 	char master_node[4];
 	char first_remote[4];
 	char last_remote[4];
+	char niterations_str[4];
 	int nodes[nremotes + 1];
 	const char *argv[] = {
 		"/benchmark/hal-portal-slave",
 		master_node,
 		first_remote,
 		last_remote,
+		niterations_str,
 		NULL
 	};
+
+	sprintf(niterations_str, "%d", niterations);
 
 	nodeid = hal_get_node_id();
 
@@ -136,6 +141,9 @@ static void join_remotes(int tnum)
 
 /**
  * @brief Opens output portals.
+ *
+ * @param tnum       Number of the calling thread.
+ * @param outportals Location to store IDs of output portals.
  */
 static void open_portals(int tnum, int *outportals)
 {
@@ -151,6 +159,8 @@ static void open_portals(int tnum, int *outportals)
 
 /**
  * @brief Closes output portals.
+ *
+ * @param outportals IDs of target output portals.
  */
 static void close_portals(const int *outportals)
 {
@@ -180,7 +190,7 @@ static void *kernel(void *args)
 	memset(buffer, 1, BUFFER_SIZE);
 
 	/* Benchmark. */
-	for (int k = 0; k < NITERATIONS; k++)
+	for (int k = 0; k < niterations; k++)
 	{
 		pthread_barrier_wait(&barrier);
 
@@ -257,15 +267,17 @@ static void benchmark(void)
  */
 int main(int argc, const char **argv)
 {
-	assert(argc == 3);
+	assert(argc == 4);
 
 	/* Retrieve kernel parameters. */
 	nlocals = atoi(argv[1]);
 	ntotalremotes = atoi(argv[2]);
+	niterations = atoi(argv[3]);
 	nremotes = ntotalremotes/nlocals;
 
 	/* Parameter checking. */
 	assert((ntotalremotes%nlocals) == 0);
+	assert(niterations > 0);
 
 	pthread_mutex_init(&lock, NULL);
 	pthread_barrier_init(&barrier, NULL, nlocals);
