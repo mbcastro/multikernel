@@ -105,6 +105,34 @@ static void kernel_gather(void)
 }
 
 /*============================================================================*
+ * Ping Pong Kernel                                                              *
+ *============================================================================*/
+
+/**
+ * @brief Ping Pong kernel. 
+ */
+static void kernel_pingpong(void)
+{
+	int inportal;
+	int outportal;
+
+	assert((inportal = hal_portal_create(nodeid)) >= 0);
+	assert((outportal = hal_portal_open(master_node)) >= 0);
+
+	/* Benchmark. */
+	for (int k = 0; k <= niterations; k++)
+	{
+		assert(hal_portal_allow(inportal, master_node) == 0);
+		assert(hal_portal_read(inportal, buffer, bufsize) == bufsize);
+		assert(hal_portal_write(outportal, buffer, bufsize) == bufsize);
+	}
+
+	/* House keeping. */
+	assert(hal_portal_unlink(inportal) == 0);
+	assert(hal_portal_close(outportal) == 0);
+}
+
+/*============================================================================*
  * HAL Portal Microbenchmark Driver                                           *
  *============================================================================*/
 
@@ -160,6 +188,8 @@ int main(int argc, const char **argv)
 		kernel_broadcast();
 	else if (!strcmp(mode, "gather"))
 		kernel_gather();
+	else if (!strcmp(mode, "pingpong"))
+		kernel_pingpong();
 
 	/* House keeping. */
 	hal_cleanup();

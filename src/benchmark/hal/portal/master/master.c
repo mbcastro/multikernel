@@ -175,9 +175,10 @@ static void kernel_broadcast(void)
 		if (k == 0)
 			continue;
 
-		printf("%s;%d;%.2lf;%.2lf\n", 
-			mode, 
+		printf("%s;%d;%d;%.2lf;%.2lf\n", 
+			mode,
 			bufsize,
+			nremotes,
 			((double)total)/nremotes,
 			(nremotes*bufsize)/((double)total)*MEGA
 		);
@@ -219,15 +220,66 @@ static void kernel_gather(void)
 		if (k == 0)
 			continue;
 
-		printf("%s;%d;%.2lf;%.2lf\n", 
-			mode, 
+		printf("%s;%d;%d;%.2lf;%.2lf\n", 
+			mode,
 			bufsize,
+			nremotes,
 			((double)total)/nremotes,
 			(nremotes*bufsize)/((double)total)*MEGA
 		);
 	}
 
 	/* House keeping. */
+	assert(hal_portal_unlink(inportal) == 0);
+}
+
+/**
+ * @brief Ping-Pong kernel.
+ */
+static void kernel_pingpong(void)
+{
+	int inportal;
+	int nodeid;
+	uint64_t total;
+	uint64_t t1, t2;
+	int outportals[nremotes];
+
+	nodeid = hal_get_node_id();
+
+	/* Initialization. */
+	assert((inportal = hal_portal_create(nodeid)) >= 0);
+	open_portals(outportals);
+
+	/* Benchmark. */
+	for (int k = 0; k <= niterations; k++)
+	{
+		t1 = hal_timer_get();
+		for (int i = 0; i < nremotes; i++)
+			assert(hal_portal_write(outportals[i], buffer, bufsize) == bufsize);
+		for (int i = 0; i < nremotes; i++)
+		{
+			assert(hal_portal_allow(inportal, i) == 0);
+			assert(hal_portal_read(inportal, buffer, bufsize) == bufsize);
+		}
+		t2 = hal_timer_get();
+
+		total = hal_timer_diff(t1, t2);
+
+		/* Warmup. */
+		if (k == 0)
+			continue;
+
+		printf("%s;%d;%d;%.2lf;%.2lf\n", 
+			mode,
+			2*bufsize,
+			nremotes,
+			((double)total)/nremotes,
+			(2*nremotes*bufsize)/((double)total)*MEGA
+		);
+	}
+
+	/* House keeping. */
+	close_portals(outportals);
 	assert(hal_portal_unlink(inportal) == 0);
 }
 
@@ -244,6 +296,8 @@ static void benchmark(void)
 		kernel_broadcast();
 	else if (!strcmp(mode, "gather"))
 		kernel_gather();
+	else if (!strcmp(mode, "pingpong"))
+		kernel_pingpong();
 	
 	/* House keeping. */
 	join_remotes();
