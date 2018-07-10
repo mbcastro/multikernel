@@ -271,7 +271,7 @@ static void kernel_pingpong(void)
 
 		printf("%s;%d;%d;%.2lf;%.2lf\n", 
 			mode,
-			2*bufsize,
+			bufsize,
 			nremotes,
 			((double)total)/nremotes,
 			(2*nremotes*bufsize)/((double)total)*MEGA
