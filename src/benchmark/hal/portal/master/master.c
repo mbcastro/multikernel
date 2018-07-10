@@ -175,7 +175,12 @@ static void kernel_broadcast(void)
 		if (k == 0)
 			continue;
 
-		printf("%.2lf;%.2lf\n", ((double)total)/nremotes, (nremotes*bufsize)/((double)total)*1000000);
+		printf("%s;%d;%.2lf;%.2lf\n", 
+			mode, 
+			bufsize,
+			((double)total)/nremotes,
+			(nremotes*bufsize)/((double)total)*MEGA
+		);
 	}
 
 	/* House keeping. */
@@ -214,7 +219,12 @@ static void kernel_gather(void)
 		if (k == 0)
 			continue;
 
-		printf("%.2lf;%.2lf\n", ((double)total)/nremotes, (nremotes*bufsize)/((double)total)*1000000);
+		printf("%s;%d;%.2lf;%.2lf\n", 
+			mode, 
+			bufsize,
+			((double)total)/nremotes,
+			(nremotes*bufsize)/((double)total)*MEGA
+		);
 	}
 
 	/* House keeping. */
