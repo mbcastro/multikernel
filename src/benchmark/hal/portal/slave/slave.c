@@ -33,8 +33,6 @@
 #define __NEED_HAL_PORTAL_
 #include <nanvix/hal.h>
 
-#include "../kernel.h"
-
 /**
  * @brief Master node NoC ID.
  */
@@ -55,6 +53,11 @@ static int nodeid;
  */
 static int niterations = 0;
 
+/**
+ * @brief Buffer size.
+ */
+static int bufsize = 0;
+
 /*============================================================================*
  * Kernel                                                                     *
  *============================================================================*/
@@ -64,13 +67,13 @@ static int niterations = 0;
  */
 static void kernel(void)
 {
-	char buffer[BUFFER_SIZE];
+	char buffer[bufsize];
 
 	/* Benchmark. */
 	for (int k = 0; k <= niterations; k++)
 	{
 		assert(hal_portal_allow(inportal, master_node) == 0);
-		assert(hal_portal_read(inportal, buffer, BUFFER_SIZE) == BUFFER_SIZE);
+		assert(hal_portal_read(inportal, buffer, bufsize) == bufsize);
 	}
 }
 
@@ -115,11 +118,12 @@ int main(int argc, const char **argv)
 	assert((inportal = hal_portal_create(nodeid)) >= 0);
 
 	/* Retrieve kernel parameters. */
-	assert(argc == 5);
+	assert(argc == 6);
 	master_node = atoi(argv[1]);
 	first_remote = atoi(argv[2]);
 	last_remote = atoi(argv[3]);
 	niterations = atoi(argv[4]);
+	bufsize = atoi(argv[5]);
 
 	sync_master(first_remote, last_remote);
 

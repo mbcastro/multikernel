@@ -36,16 +36,15 @@
 #include <nanvix/hal.h>
 #include <nanvix/limits.h>
 
-#include "../kernel.h"
-
 /**
  * @brief Benchmark parameters.
  */
 /**@{*/
-static int nlocals = 0;       /**< Number of local peers.         */
-static int ntotalremotes = 0; /**< Number of remotes peers.       */
-static int nremotes = 0;      /**< Number of remotes per local.   */
-static int niterations = 0;   /**< Number of benchmark paramters. */
+static int nlocals = 0;       /**< Number of local peers.          */
+static int ntotalremotes = 0; /**< Number of remotes peers.        */
+static int nremotes = 0;      /**< Number of remotes per local.    */
+static int niterations = 0;   /**< Number of benchmark parameters. */
+static int bufsize = 0;       /**< Buffer size.                    */
 /**@}*/
 
 /**
@@ -86,6 +85,7 @@ static void spawn_remotes(int tnum)
 	char first_remote[4];
 	char last_remote[4];
 	char niterations_str[4];
+	char bufsize_str[4];
 	int nodes[nremotes + 1];
 	const char *argv[] = {
 		"/benchmark/hal-portal-slave",
@@ -93,10 +93,12 @@ static void spawn_remotes(int tnum)
 		first_remote,
 		last_remote,
 		niterations_str,
+		bufsize_str,
 		NULL
 	};
 
 	sprintf(niterations_str, "%d", niterations);
+	sprintf(bufsize_str, "%d", bufsize);
 
 	nodeid = hal_get_node_id();
 
@@ -177,7 +179,7 @@ static void *kernel(void *args)
 	int tnum;
 	uint64_t t1, t2;
 	int outportals[nremotes];
-	char buffer[BUFFER_SIZE];
+	char buffer[bufsize];
 
 	/* Initialization. */
 	hal_setup();
@@ -187,7 +189,7 @@ static void *kernel(void *args)
 	spawn_remotes(tnum);
 	open_portals(tnum, outportals);
 
-	memset(buffer, 1, BUFFER_SIZE);
+	memset(buffer, 1, bufsize);
 
 	/* Benchmark. */
 	for (int k = 0; k <= niterations; k++)
@@ -196,7 +198,7 @@ static void *kernel(void *args)
 
 		t1 = hal_timer_get();
 		for (int i = 0; i < nremotes; i++)
-			assert(hal_portal_write(outportals[i], buffer, BUFFER_SIZE) == BUFFER_SIZE);
+			assert(hal_portal_write(outportals[i], buffer, bufsize) == bufsize);
 		t2 = hal_timer_get();
 
 		etime[tnum] = hal_timer_diff(t1, t2);
@@ -271,17 +273,20 @@ static void benchmark(void)
  */
 int main(int argc, const char **argv)
 {
-	assert(argc == 4);
+	assert(argc == 5);
 
 	/* Retrieve kernel parameters. */
 	nlocals = atoi(argv[1]);
 	ntotalremotes = atoi(argv[2]);
 	niterations = atoi(argv[3]);
+	bufsize = atoi(argv[4]);
 	nremotes = ntotalremotes/nlocals;
 
 	/* Parameter checking. */
 	assert((ntotalremotes%nlocals) == 0);
 	assert(niterations > 0);
+	assert((bufsize > 0) || (bufsize < (1024*1024)));
+	assert((bufsize%2) == 0);
 
 	pthread_mutex_init(&lock, NULL);
 	pthread_barrier_init(&barrier, NULL, nlocals);
