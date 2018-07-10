@@ -35,6 +35,8 @@
 #include <nanvix/hal.h>
 #include <nanvix/limits.h>
 
+#include "../kernel.h"
+
 /**
  * @brief Benchmark parameters.
  */
@@ -49,6 +51,11 @@ static const char *mode = NULL; /**< Benchmark mode.                 */
  * @brief ID of slave processes.
  */
 static int pids[NANVIX_PROC_MAX];
+
+/**
+ * @brief Buffer.
+ */
+static char buffer[BUFFER_SIZE_MAX];
 
 /*============================================================================*
  * Utility                                                                    *
@@ -65,7 +72,7 @@ static void spawn_remotes(void)
 	char first_remote[4];
 	char last_remote[4];
 	char niterations_str[4];
-	char bufsize_str[4];
+	char bufsize_str[20];
 	int nodes[nremotes + 1];
 	const char *argv[] = {
 		"/benchmark/hal-portal-slave",
@@ -148,7 +155,6 @@ static void kernel_broadcast(void)
 {
 	uint64_t total;
 	uint64_t t1, t2;
-	char buffer[bufsize];
 	int outportals[nremotes];
 
 	/* Initialization. */
@@ -185,7 +191,6 @@ static void kernel_gather(void)
 	int nodeid;
 	uint64_t total;
 	uint64_t t1, t2;
-	char buffer[bufsize];
 
 	nodeid = hal_get_node_id();
 
@@ -254,7 +259,7 @@ int main(int argc, const char **argv)
 
 	/* Parameter checking. */
 	assert(niterations > 0);
-	assert((bufsize > 0) || (bufsize < (1024*1024)));
+	assert((bufsize > 0) && (bufsize < (BUFFER_SIZE_MAX)));
 	assert((bufsize%2) == 0);
 
 	benchmark();

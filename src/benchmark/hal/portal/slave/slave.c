@@ -34,6 +34,8 @@
 #define __NEED_HAL_PORTAL_
 #include <nanvix/hal.h>
 
+#include "../kernel.h"
+
 /**
  * @brief Master node NoC ID.
  */
@@ -54,6 +56,11 @@ static int niterations = 0;
  */
 static int bufsize = 0;
 
+/**
+ * @brief Buffer.
+ */
+static char buffer[BUFFER_SIZE_MAX];
+
 /*============================================================================*
  * Broadcast Kernel                                                           *
  *============================================================================*/
@@ -64,7 +71,6 @@ static int bufsize = 0;
 static void kernel_broadcast(void)
 {
 	int inportal;
-	char buffer[bufsize];
 
 	assert((inportal = hal_portal_create(nodeid)) >= 0);
 
@@ -88,7 +94,6 @@ static void kernel_broadcast(void)
 static void kernel_gather(void)
 {
 	int outportal;
-	char buffer[bufsize];
 
 	assert((outportal = hal_portal_open(master_node)) >= 0);
 
