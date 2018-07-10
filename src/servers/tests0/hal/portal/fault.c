@@ -277,6 +277,30 @@ static void test_hal_portal_bad_allow(void)
 	TEST_ASSERT((hal_portal_close(inportal)) == 0);
 }
 
+/*============================================================================*
+ * Fault Injection Test: Double Allow                                         *
+ *============================================================================*/
+
+#ifdef _TEST_HAL_PORTAL_DOUBLE_ALLOW
+
+/**
+ * @brief Fault Injection Test: Double Allow
+ */
+static void test_hal_portal_double_allow(void)
+{
+	int nodeid;
+	int inportal;
+
+	nodeid = hal_get_node_id();
+
+	TEST_ASSERT((inportal = hal_portal_create(nodeid)) >= 0);
+	TEST_ASSERT(hal_portal_allow(inportal, 0) == 0);
+	TEST_ASSERT(hal_portal_allow(inportal, 1) < 0);
+	TEST_ASSERT((hal_portal_unlink(inportal)) == 0);
+}
+
+#endif
+
 /*============================================================================*/
 
 /**
@@ -297,5 +321,8 @@ struct test portal_tests_fault[] = {
 	{ test_hal_portal_double_close,   "Double Close"   },
 	{ test_hal_portal_invalid_allow,  "Invalid Allow"  },
 	{ test_hal_portal_bad_allow,      "Bad Allow"      },
+#ifdef _TEST_HAL_PORTAL_DOUBLE_ALLOW
+	{ test_hal_portal_double_allow,   "Double Allow"   },
+#endif
 	{ NULL,                           NULL             },
 };
