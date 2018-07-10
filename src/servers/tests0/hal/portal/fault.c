@@ -45,10 +45,27 @@ static void test_hal_portal_invalid_create(void)
 	TEST_ASSERT((inbox = hal_portal_create(-1)) < 0);
 }
 
+/*============================================================================*
+ * Fault Injection Test: Bad Create                                           *
+ *============================================================================*/
+
+/**
+ * @brief Fault Injection Test: Bad Create
+ */
+static void test_hal_portal_bad_create(void)
+{
+	int inbox;
+
+	TEST_ASSERT((inbox = hal_portal_create(0)) < 0);
+}
+
+/*============================================================================*/
+
 /**
  * @brief Unit tests.
  */
 struct test portal_tests_fault[] = {
 	{ test_hal_portal_invalid_create, "Invalid Create" },
+	{ test_hal_portal_bad_create,     "Bad Create"     },
 	{ NULL,                           NULL             },
 };
