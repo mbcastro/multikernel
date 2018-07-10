@@ -301,6 +301,20 @@ static void test_hal_portal_double_allow(void)
 
 #endif
 
+/*============================================================================*
+ * Fault Injection Test: Invalid Write                                        *
+ *============================================================================*/
+
+/**
+ * @brief Fault Injection Test: Invalid Write
+ */
+static void test_hal_portal_invalid_write(void)
+{
+	int buf;
+
+	TEST_ASSERT(hal_portal_write(-1, &buf, sizeof(buf)) < 0);
+}
+
 /*============================================================================*/
 
 /**
@@ -321,6 +335,7 @@ struct test portal_tests_fault[] = {
 	{ test_hal_portal_double_close,   "Double Close"   },
 	{ test_hal_portal_invalid_allow,  "Invalid Allow"  },
 	{ test_hal_portal_bad_allow,      "Bad Allow"      },
+	{ test_hal_portal_invalid_write,  "Invalid Write"  },
 #ifdef _TEST_HAL_PORTAL_DOUBLE_ALLOW
 	{ test_hal_portal_double_allow,   "Double Allow"   },
 #endif
