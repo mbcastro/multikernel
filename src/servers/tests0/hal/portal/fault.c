@@ -315,6 +315,27 @@ static void test_hal_portal_invalid_write(void)
 	TEST_ASSERT(hal_portal_write(-1, &buf, sizeof(buf)) < 0);
 }
 
+/*============================================================================*
+ * Fault Injection Test: Bad Write                                            *
+ *============================================================================*/
+
+/**
+ * @brief Fault Injection Test: Bad Write
+ */
+static void test_hal_portal_bad_write(void)
+{
+	int buf;
+	int nodeid;
+	int outportal;
+
+	nodeid = hal_get_node_id();
+
+	TEST_ASSERT(hal_portal_write(0, &buf, sizeof(buf)) < 0);
+	TEST_ASSERT((outportal = hal_portal_create(nodeid)) >= 0);
+	TEST_ASSERT(hal_portal_write(outportal, &buf, sizeof(buf)) < 0);
+	TEST_ASSERT(hal_portal_unlink(outportal) == 0);
+}
+
 /*============================================================================*/
 
 /**
@@ -339,5 +360,6 @@ struct test portal_tests_fault[] = {
 #ifdef _TEST_HAL_PORTAL_DOUBLE_ALLOW
 	{ test_hal_portal_double_allow,   "Double Allow"   },
 #endif
+	{ test_hal_portal_bad_write,      "Bad Write"      },
 	{ NULL,                           NULL             },
 };
