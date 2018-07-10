@@ -307,4 +307,5 @@ struct test mailbox_tests_fault[] = {
 	{ test_hal_mailbox_invalid_read,   "Invalid Read"   },
 	{ test_hal_mailbox_bad_read,       "Bad Read"       },
 	{ test_hal_mailbox_null_read,      "Null Read"      },
+	{ NULL,                            NULL             },
 };
