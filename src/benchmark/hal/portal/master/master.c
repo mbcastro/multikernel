@@ -323,7 +323,7 @@ int main(int argc, const char **argv)
 
 	/* Parameter checking. */
 	assert(niterations > 0);
-	assert((bufsize > 0) && (bufsize < (BUFFER_SIZE_MAX)));
+	assert((bufsize > 0) && (bufsize <= (BUFFER_SIZE_MAX)));
 	assert((bufsize%2) == 0);
 
 	benchmark();
