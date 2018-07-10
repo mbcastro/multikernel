@@ -23,6 +23,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <mppa/osconfig.h>
 
@@ -37,11 +38,6 @@
  * @brief Master node NoC ID.
  */
 static int master_node;
-
-/**
- * @brief Inbox for receiving messages.
- */
-static int inportal;
 
 /**
  * @brief Underlying NoC node ID.
@@ -59,15 +55,18 @@ static int niterations = 0;
 static int bufsize = 0;
 
 /*============================================================================*
- * Kernel                                                                     *
+ * Broadcast Kernel                                                           *
  *============================================================================*/
 
 /**
- * @brief HAL Portal Microbenchmark Kernel
+ * @brief Broadcast kernel. 
  */
-static void kernel(void)
+static void kernel_broadcast(void)
 {
+	int inportal;
 	char buffer[bufsize];
+
+	assert((inportal = hal_portal_create(nodeid)) >= 0);
 
 	/* Benchmark. */
 	for (int k = 0; k <= niterations; k++)
@@ -75,6 +74,29 @@ static void kernel(void)
 		assert(hal_portal_allow(inportal, master_node) == 0);
 		assert(hal_portal_read(inportal, buffer, bufsize) == bufsize);
 	}
+
+	assert(hal_portal_unlink(inportal) == 0);
+}
+
+/*============================================================================*
+ * Gather Kernel                                                              *
+ *============================================================================*/
+
+/**
+ * @brief Gather kernel. 
+ */
+static void kernel_gather(void)
+{
+	int outportal;
+	char buffer[bufsize];
+
+	assert((outportal = hal_portal_open(master_node)) >= 0);
+
+	/* Benchmark. */
+	for (int k = 0; k <= niterations; k++)
+		assert(hal_portal_write(outportal, buffer, bufsize) == bufsize);
+
+	assert(hal_portal_close(outportal) == 0);
 }
 
 /*============================================================================*
@@ -109,29 +131,32 @@ static void sync_master(int first_remote, int last_remote)
  */
 int main(int argc, const char **argv)
 {
+	const char *mode;
 	int first_remote;
 	int last_remote;
 	
 	/* Initialization. */
 	hal_setup();
 	nodeid = hal_get_node_id();
-	assert((inportal = hal_portal_create(nodeid)) >= 0);
 
 	/* Retrieve kernel parameters. */
-	assert(argc == 6);
+	assert(argc == 7);
 	master_node = atoi(argv[1]);
 	first_remote = atoi(argv[2]);
 	last_remote = atoi(argv[3]);
 	niterations = atoi(argv[4]);
 	bufsize = atoi(argv[5]);
+	mode = argv[6];
 
 	sync_master(first_remote, last_remote);
 
 	/* Run kernel. */
-	kernel();
+	if (!strcmp(mode, "broadcast"))
+		kernel_broadcast();
+	else if (!strcmp(mode, "gather"))
+		kernel_gather();
 
 	/* House keeping. */
-	assert(hal_portal_unlink(inportal) == 0);
 	hal_cleanup();
 
 	return (EXIT_SUCCESS);

@@ -39,9 +39,10 @@
  * @brief Benchmark parameters.
  */
 /**@{*/
-static int nremotes = 0;    /**< Number of remotes processes.    */
-static int niterations = 0; /**< Number of benchmark parameters. */
-static int bufsize = 0;     /**< Buffer size.                    */
+static int nremotes = 0;        /**< Number of remotes processes.    */
+static int niterations = 0;     /**< Number of benchmark parameters. */
+static int bufsize = 0;         /**< Buffer size.                    */
+static const char *mode = NULL; /**< Benchmark mode.                 */
 /**@}*/
 
 /**
@@ -73,6 +74,7 @@ static void spawn_remotes(void)
 		last_remote,
 		niterations_str,
 		bufsize_str,
+		mode,
 		NULL
 	};
 
@@ -140,12 +142,18 @@ static void close_portals(const int *outportals)
 }
 
 /**
- * @brief Benchmark kernel.
+ * @brief Broadcast kernel.
  */
-static void kernel(const int *outportals, const char *buffer)
+static void kernel_broadcast(void)
 {
 	uint64_t total;
 	uint64_t t1, t2;
+	char buffer[bufsize];
+	int outportals[nremotes];
+
+	/* Initialization. */
+	open_portals(outportals);
+	memset(buffer, 1, bufsize);
 
 	/* Benchmark. */
 	for (int k = 0; k <= niterations; k++)
@@ -163,6 +171,49 @@ static void kernel(const int *outportals, const char *buffer)
 
 		printf("time: %.2lf\n", ((double)total)/nremotes);
 	}
+
+	/* House keeping. */
+	close_portals(outportals);
+}
+
+/**
+ * @brief Gather kernel.
+ */
+static void kernel_gather(void)
+{
+	int inportal;
+	int nodeid;
+	uint64_t total;
+	uint64_t t1, t2;
+	char buffer[bufsize];
+
+	nodeid = hal_get_node_id();
+
+	/* Initialization. */
+	assert((inportal = hal_portal_create(nodeid)) >= 0);
+
+	/* Benchmark. */
+	for (int k = 0; k <= niterations; k++)
+	{
+		t1 = hal_timer_get();
+		for (int i = 0; i < nremotes; i++)
+		{
+			assert(hal_portal_allow(inportal, i) == 0);
+			assert(hal_portal_read(inportal, buffer, bufsize) == bufsize);
+		}
+		t2 = hal_timer_get();
+
+		total = hal_timer_diff(t1, t2);
+
+		/* Warmup. */
+		if (k == 0)
+			continue;
+
+		printf("time: %.2lf\n", ((double)total)/nremotes);
+	}
+
+	/* House keeping. */
+	assert(hal_portal_unlink(inportal) == 0);
 }
 
 /**
@@ -170,19 +221,16 @@ static void kernel(const int *outportals, const char *buffer)
  */
 static void benchmark(void)
 {
-	char buffer[bufsize];
-	int outportals[nremotes];
-
 	/* Initialization. */
 	hal_setup();
 	spawn_remotes();
-	open_portals(outportals);
-	memset(buffer, 1, bufsize);
 
-	kernel(outportals, buffer);
+	if (!strcmp(mode, "broadcast"))
+		kernel_broadcast();
+	else if (!strcmp(mode, "gather"))
+		kernel_gather();
 	
 	/* House keeping. */
-	close_portals(outportals);
 	join_remotes();
 	hal_cleanup();
 }
@@ -196,12 +244,13 @@ static void benchmark(void)
  */
 int main(int argc, const char **argv)
 {
-	assert(argc == 4);
+	assert(argc == 5);
 
 	/* Retrieve kernel parameters. */
 	nremotes = atoi(argv[1]);
 	niterations = atoi(argv[2]);
 	bufsize = atoi(argv[3]);
+	mode = argv[4];
 
 	/* Parameter checking. */
 	assert(niterations > 0);
