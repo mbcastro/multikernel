@@ -178,6 +178,26 @@ static void test_hal_portal_invalid_close(void)
 	TEST_ASSERT(hal_portal_close(HAL_NR_PORTAL + 1) < 0);
 }
 
+/*============================================================================*
+ * Fault Injection Test: Bad Close                                            *
+ *============================================================================*/
+
+/**
+ * @brief Fault Injection Test: Bad Close
+ */
+static void test_hal_portal_bad_close(void)
+{
+	int inbox;
+	int nodeid;
+
+	nodeid = hal_get_node_id();
+
+	TEST_ASSERT(hal_portal_close(nodeid) < 0);
+	TEST_ASSERT((inbox = hal_portal_create(nodeid)) >= 0);
+	TEST_ASSERT(hal_portal_close(inbox) < 0);
+	TEST_ASSERT((hal_portal_unlink(inbox)) == 0);
+}
+
 /*============================================================================*/
 
 /**
@@ -193,5 +213,6 @@ struct test portal_tests_fault[] = {
 	{ test_hal_portal_invalid_unlink, "Invalid Unlink" },
 	{ test_hal_portal_bad_unlink,     "Bad Unlink"     },
 	{ test_hal_portal_invalid_close,  "Invalid Close"  },
+	{ test_hal_portal_bad_close,      "Bad Close"      },
 	{ NULL,                           NULL             },
 };
