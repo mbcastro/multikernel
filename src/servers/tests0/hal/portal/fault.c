@@ -59,6 +59,26 @@ static void test_hal_portal_bad_create(void)
 	TEST_ASSERT((inbox = hal_portal_create(0)) < 0);
 }
 
+/*============================================================================*
+ * Fault Injection Test: Double Create                                        *
+ *============================================================================*/
+
+/**
+ * @brief Fault Injection Test: Bad Create
+ */
+static void test_hal_portal_double_create(void)
+{
+	int inbox;
+	int inbox2;
+	int nodeid;
+
+	nodeid = hal_get_node_id();
+
+	TEST_ASSERT((inbox = hal_portal_create(nodeid)) >= 0);
+	TEST_ASSERT((inbox2 = hal_portal_create(nodeid)) < 0);
+	TEST_ASSERT((hal_portal_unlink(inbox)) == 0);
+}
+
 /*============================================================================*/
 
 /**
@@ -67,5 +87,6 @@ static void test_hal_portal_bad_create(void)
 struct test portal_tests_fault[] = {
 	{ test_hal_portal_invalid_create, "Invalid Create" },
 	{ test_hal_portal_bad_create,     "Bad Create"     },
+	{ test_hal_portal_double_create,  "Double Create"  },
 	{ NULL,                           NULL             },
 };
