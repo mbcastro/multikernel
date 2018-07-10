@@ -67,7 +67,7 @@ static void kernel(void)
 	char buffer[BUFFER_SIZE];
 
 	/* Benchmark. */
-	for (int k = 0; k < niterations; k++)
+	for (int k = 0; k <= niterations; k++)
 	{
 		assert(hal_portal_allow(inportal, master_node) == 0);
 		assert(hal_portal_read(inportal, buffer, BUFFER_SIZE) == BUFFER_SIZE);

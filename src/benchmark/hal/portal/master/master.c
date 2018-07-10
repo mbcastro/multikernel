@@ -190,7 +190,7 @@ static void *kernel(void *args)
 	memset(buffer, 1, BUFFER_SIZE);
 
 	/* Benchmark. */
-	for (int k = 0; k < niterations; k++)
+	for (int k = 0; k <= niterations; k++)
 	{
 		pthread_barrier_wait(&barrier);
 
@@ -202,6 +202,10 @@ static void *kernel(void *args)
 		etime[tnum] = hal_timer_diff(t1, t2);
 
 		pthread_barrier_wait(&barrier);
+
+		/* Warmup. */
+		if (k == 0)
+			continue;
 
 		/* Reduction. */
 		if (tnum == 0)
