@@ -23,13 +23,14 @@
 #ifndef _TEST_H_
 #define _TEST_H_
 
+	#include <assert.h>
 	#include <stdlib.h>
 	#include <pthread.h>
 
 	/**
 	 * @brief Asserts a logic expression.
 	 */
-	#define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
+	#define TEST_ASSERT(x) assert(x) 
 
 	/**
 	 * @brief Unit test.
