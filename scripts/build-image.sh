@@ -32,6 +32,19 @@ then
 	exit 1
 fi
 
+function build0
+{
+	bootbin=$1
+	nodebin=$2
+	multibin=$3
+
+	$TOOLCHAIN/bin/k1-create-multibinary -f \
+		--remove-prefix $BINDIR             \
+		--boot $bootbin                     \
+		--clusters $nodebin                 \
+		-T $multibin
+}
+
 function build1
 {
 	bootbin=$1
@@ -66,3 +79,7 @@ build2 $BINDIR/servers $BINDIR/servers1 "$BINDIR/test/name-slave"     nanvix-deb
 build2 $BINDIR/servers $BINDIR/servers1 "$BINDIR/test/mailbox-slave"  nanvix-debug-mailbox.img
 
 build2 $BINDIR/test/barrier-master0  $BINDIR/test/barrier-master1  $BINDIR/test/barrier-slave      test-barrier.img
+
+build0 $BINDIR/benchmark/hal-mailbox-master $BINDIR/benchmark/hal-mailbox-slave benchmark-hal-mailbox.img
+build0 $BINDIR/benchmark/hal-portal-master $BINDIR/benchmark/hal-portal-slave benchmark-hal-portal.img
+

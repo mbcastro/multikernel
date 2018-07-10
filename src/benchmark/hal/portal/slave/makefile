@@ -20,29 +20,31 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-# Change binaries directory.
-export BINDIR := $(BINDIR)/benchmark
+# C Source Files
+SRC = $(wildcard *.c)
 
-# Builds everything.
-all: hal-mailbox hal-portal
+# Object Files
+OBJ = $(SRC:.c=.o)
 
-# Builds HAL Mailbox Benchmark
-hal-mailbox:
+# Binary Files
+export ELFBIN = $(BINDIR)/hal-portal-slave
+
+#===============================================================================
+
+# Builds the kernel.
+all: $(OBJ)
 	mkdir -p $(BINDIR)
-	cd hal/mailbox && $(MAKE) all
+	$(CC) $(LDFLAGS) $(OBJ) -o $(ELFBIN) $(LIBKERNEL) $(LIBS)
 
-# Builds HAL Portal Benchmark
-hal-portal:
-	mkdir -p $(BINDIR)
-	cd hal/portal && $(MAKE) all
+# Builds object files.
+%.o: %.c
+	$(CC) $(CFLAGS) $< -c -o $@
 
 # Cleans compilation files.
 clean:
-	cd hal/mailbox && $(MAKE) clean
-	cd hal/portal && $(MAKE) clean
+	rm -rf $(OBJ)
 
 # Cleans everything.
-distclean:
-	cd hal/mailbox && $(MAKE) distclean
-	cd hal/portal && $(MAKE) distclean
+distclean: clean
+	rm -rf $(ELFBIN)
 
