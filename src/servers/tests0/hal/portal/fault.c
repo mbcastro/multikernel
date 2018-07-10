@@ -165,6 +165,25 @@ static void test_hal_portal_bad_unlink(void)
 }
 
 /*============================================================================*
+ * Fault Injection Test: Double Unlink                                        *
+ *============================================================================*/
+
+/**
+ * @brief Fault Injection Test: Double Unlink
+ */
+static void test_hal_portal_double_unlink(void)
+{
+	int inbox;
+	int nodeid;
+
+	nodeid = hal_get_node_id();
+
+	TEST_ASSERT((inbox = hal_portal_create(nodeid)) >= 0);
+	TEST_ASSERT((hal_portal_unlink(inbox)) == 0);
+	TEST_ASSERT((hal_portal_unlink(inbox)) < 0);
+}
+
+/*============================================================================*
  * Fault Injection Test: Invalid Close                                        *
  *============================================================================*/
 
@@ -211,6 +230,7 @@ struct test portal_tests_fault[] = {
 	{ test_hal_portal_bad_open,       "Bad Open"       },
 	{ test_hal_portal_double_open,    "Double Open"    },
 	{ test_hal_portal_invalid_unlink, "Invalid Unlink" },
+	{ test_hal_portal_double_unlink,  "Double Unlink"  },
 	{ test_hal_portal_bad_unlink,     "Bad Unlink"     },
 	{ test_hal_portal_invalid_close,  "Invalid Close"  },
 	{ test_hal_portal_bad_close,      "Bad Close"      },
