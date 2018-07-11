@@ -1,3 +1,0 @@
-[submodule "CAP-Bench-kernels"]
-	path = src/benchmark
-	url = https://github.com/nanvix/CAP-Bench-kernels.git
