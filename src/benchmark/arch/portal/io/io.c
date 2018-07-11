@@ -58,7 +58,7 @@ static int pids[NR_CCLUSTER];
 static char buffer[BUFFER_SIZE_MAX];
 
 /*============================================================================*
- * Utility                                                                    *
+ * Utilities                                                                  *
  *============================================================================*/
 
 /**
@@ -93,6 +93,51 @@ static void join_remotes(void)
 }
 
 /*============================================================================*
+ * Timer                                                                      *
+ *============================================================================*/
+
+/**
+ * @brief Timer error.
+ */
+static uint64_t timer_error = 0;
+
+/**
+ * @brief Gets the current timer value.
+ *
+ * @returns The current timer value;
+ */
+static inline uint64_t timer_get(void)
+{
+	return (__k1_read_dsu_timestamp());
+}
+
+/**
+ * @brief Computes the difference between two timer values.
+ *
+ * @param t1 Start time.
+ * @param t2 End time.
+ *
+ * @returns The difference between the two timers (t2 - t1).
+ */
+static inline uint64_t timer_diff(uint64_t t1, uint64_t t2)
+{
+	return (((t2 - t1) <= timer_error) ? timer_error : t2 - t1 - timer_error);
+}
+
+/**
+ * @brief Calibrates the timer.
+ */
+static void timer_init(void)
+{
+	uint64_t start, end;
+
+	start = timer_get();
+	end = timer_get();
+
+	timer_error = (end - start);
+}
+
+/*============================================================================*
  * Kernels                                                                    *
  *============================================================================*/
 
@@ -112,7 +157,7 @@ static void kernel_gather(void)
 		double total;
 		uint64_t t1, t2;
 
-		t1 = __k1_read_dsu_timestamp();
+		t1 = timer_get();
 		for (int i = 0; i < nclusters; i++)
 		{
 			uint64_t mask;
@@ -130,9 +175,9 @@ static void kernel_gather(void)
 			/* Wait read operation to complete. */
 			assert(mppa_aio_wait(&aiocb) == bufsize);
 		}
-		t2 = __k1_read_dsu_timestamp();
+		t2 = timer_get();
 
-		total = (t2 - t1)/((double) MPPA256_FREQ);
+		total = timer_diff(t1, t2)/((double) MPPA256_FREQ);
 
 		/* Warmup. */
 		if (k == 0)
@@ -163,6 +208,8 @@ static void benchmark(void)
 	/* Initialization. */
 	spawn_remotes();
 	assert((inportal = mppa_open("/mppa/portal/128:48", O_RDONLY)) != -1);
+
+	timer_init();
 
 	if (!strcmp(kernel, "gather"))
 		kernel_gather();
