@@ -110,22 +110,55 @@ function benchmark_mailbox
 		done
 	done
 
-	tar -cjvf benchmark-hal-sync.tar.bz2 *.benchmark
+	tar -cjvf benchmark-hal-mailbox.tar.bz2 *.benchmark
+	rm -rf *.benchmark
+}
+
+#
+# Benchmarks HAL Portal
+#
+function benchmark_portal
+{
+	echo "Benchmarking HAL Portal"
+
+	let niterations=30
+
+	for mode in "pingpong" "gather" "broadcast";
+	do
+		for bufsize in 1024 2048 4096 8192 16384 32768 65536 131072 262144 524288 1048576
+		do
+			for nremotes in {1..16};
+			do
+				echo "  nremotes=$nremotes bufsize=$bufsize mode=$mode"
+
+				run1 "benchmark-hal-portal.img"             \
+					"/benchmark/hal-portal-master"          \
+					"$nremotes $niterations $bufsize $mode" \
+				| head -n -1                                \
+				| cut -d" " -f 4                            \
+				> hal-mailbox-$mode-$nremotes-$bufsize.benchmark
+			done
+		done
+	done
+
+	tar -cjvf benchmark-hal-portal.tar.bz2 *.benchmark
 	rm -rf *.benchmark
 }
 
 if [[ $1 == "test" ]];
 then
-	echo "Testing HAL"
-	run2 "nanvix-debug.img" "/servers" "/servers1" "--debug --hal-core" | grep nanvix
-	echo "Testing HAL Sync"
-	run2 "nanvix-debug-hal-sync.img" "/servers" "/servers1" "--debug --hal-sync" | grep nanvix
-	echo "Testing HAL Mailbox"
-	run2 "nanvix-debug.img" "/servers" "/servers1" "--debug --hal-mailbox" | grep nanvix
-	echo "Testing HAL Portal"
-	run2 "nanvix-debug.img" "/servers" "/servers1" "--debug --hal-portal" | grep nanvix
-	echo "Testing Naming Service"
-	run2 "nanvix-debug.img" "/servers" "/servers1" "--debug --name" | grep nanvix
+	# echo "Testing HAL"
+	# run2 "nanvix-debug.img" "/servers" "/servers1" "--debug --hal-core" | grep nanvix
+	# echo "Testing HAL Sync"
+	# run2 "nanvix-debug-hal-sync.img" "/servers" "/servers1" "--debug --hal-sync" | grep nanvix
+	# echo "Testing HAL Mailbox"
+	# run2 "nanvix-debug.img" "/servers" "/servers1" "--debug --hal-mailbox" | grep nanvix
+	# echo "Testing HAL Portal"
+	# run2 "nanvix-debug.img" "/servers" "/servers1" "--debug --hal-portal" | grep nanvix
+	# echo "Testing Naming Service"
+	# run2 "nanvix-debug.img" "/servers" "/servers1" "--debug --name" | grep nanvix
+	echo "Testing mppa_waitpid()"
+	run1 "waitpid.img" "/test/waitpid-master"
 #	echo "Testing Mailbox"
 #	run2 "nanvix-debug-mailbox.img" "/servers" "/servers1" "--debug --mailbox"
 #	echo "Testing BARRIER"
@@ -138,6 +171,9 @@ then
 	if [[ $2 == "mailbox" ]];
 	then
 		benchmark_mailbox
+	elif [[ $2 == "portal" ]];
+	then
+		benchmark_portal
 	elif [[ $2 == "async" ]];
 	then
 		echo "Testing ASYNC"

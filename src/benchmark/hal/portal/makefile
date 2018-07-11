@@ -21,55 +21,31 @@
 #
 
 # Conflicts.
-.PHONY: hal-sync
-.PHONY: name
-.PHONY: mailbox
-.PHONY: barrier
-.PHONY: waitpid
+.PHONY: master
+.PHONY: slave
 
-# Change binaries directory.
-export BINDIR := $(BINDIR)/test
+# Builds binaries.
+all: master slave
 
-# Builds everything.
-all: hal-sync name mailbox barrier waitpid
+# Builds master binary.
+master:
+ifeq ($(BUILD_SERVERS),true)
+	cd master && $(MAKE) all
+endif
 
-# Builds HAL Sync testing unit.
-hal-sync:
-	mkdir -p $(BINDIR)
-	cd hal-sync && $(MAKE) all
-
-# Builds Naming Service testing unit
-name:
-	mkdir -p $(BINDIR)
-	cd name && $(MAKE) all
-
-# Builds Mailbox testing unit
-mailbox:
-	mkdir -p $(BINDIR)
-	cd mailbox && $(MAKE) all
-
-# Builds Barrier testing unit
-barrier:
-	mkdir -p $(BINDIR)
-	cd barrier && $(MAKE) all
-
-# Builds waitpid testing
-waitpid:
-	mkdir -p $(BINDIR)
-	cd waitpid && $(MAKE) all
+# Builds slave binary.
+slave:
+ifeq ($(BUILD_SERVERS),false)
+	cd slave && $(MAKE) all
+endif
 
 # Cleans compilation files.
 clean:
-	cd hal-sync && $(MAKE) clean
-	cd name && $(MAKE) clean
-	cd mailbox && $(MAKE) clean
-	cd barrier && $(MAKE) clean
-	cd waitpid && $(MAKE) clean
+	cd master && $(MAKE) clean
+	cd slave && $(MAKE) clean
 
 # Cleans everything.
-distclean:
-	cd hal-sync && $(MAKE) distclean
-	cd name && $(MAKE) distclean
-	cd mailbox && $(MAKE) distclean
-	cd barrier && $(MAKE) distclean
-	cd waitpid && $(MAKE) distclean
+distclean: clean
+	cd master && $(MAKE) distclean
+	cd slave && $(MAKE) distclean
+

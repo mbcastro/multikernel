@@ -20,56 +20,31 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-# Conflicts.
-.PHONY: hal-sync
-.PHONY: name
-.PHONY: mailbox
-.PHONY: barrier
-.PHONY: waitpid
+# C Source Files
+SRC = $(wildcard *.c)
 
-# Change binaries directory.
-export BINDIR := $(BINDIR)/test
+# Object Files
+OBJ = $(SRC:.c=.o)
 
-# Builds everything.
-all: hal-sync name mailbox barrier waitpid
+# Binary Files
+export ELFBIN = $(BINDIR)/hal-portal-slave
 
-# Builds HAL Sync testing unit.
-hal-sync:
+#===============================================================================
+
+# Builds the kernel.
+all: $(OBJ)
 	mkdir -p $(BINDIR)
-	cd hal-sync && $(MAKE) all
+	$(CC) $(LDFLAGS) $(OBJ) -o $(ELFBIN) $(LIBKERNEL) $(LIBS)
 
-# Builds Naming Service testing unit
-name:
-	mkdir -p $(BINDIR)
-	cd name && $(MAKE) all
-
-# Builds Mailbox testing unit
-mailbox:
-	mkdir -p $(BINDIR)
-	cd mailbox && $(MAKE) all
-
-# Builds Barrier testing unit
-barrier:
-	mkdir -p $(BINDIR)
-	cd barrier && $(MAKE) all
-
-# Builds waitpid testing
-waitpid:
-	mkdir -p $(BINDIR)
-	cd waitpid && $(MAKE) all
+# Builds object files.
+%.o: %.c
+	$(CC) $(CFLAGS) $< -c -o $@
 
 # Cleans compilation files.
 clean:
-	cd hal-sync && $(MAKE) clean
-	cd name && $(MAKE) clean
-	cd mailbox && $(MAKE) clean
-	cd barrier && $(MAKE) clean
-	cd waitpid && $(MAKE) clean
+	rm -rf $(OBJ)
 
 # Cleans everything.
-distclean:
-	cd hal-sync && $(MAKE) distclean
-	cd name && $(MAKE) distclean
-	cd mailbox && $(MAKE) distclean
-	cd barrier && $(MAKE) distclean
-	cd waitpid && $(MAKE) distclean
+distclean: clean
+	rm -rf $(ELFBIN)
+

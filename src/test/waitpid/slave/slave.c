@@ -20,46 +20,45 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <pthread.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 
-#define __NEED_HAL_CORE_
-#define __NEED_HAL_NOC_
+#define __NEED_HAL_SETUP_
+#include <nanvix/const.h>
 #include <nanvix/hal.h>
-
-#include "test.h"
-
-/**
- * @brief Number of cores in the underlying cluster.
- */
-int hal_portal_ncores = 0;
+#include <nanvix/pm.h>
 
 /**
- * @brief Global barrier for synchronization.
+ * @brief Asserts a logic expression.
  */
-pthread_barrier_t barrier;
+#define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
 
 /**
- * @brief Unnamed Mailbox Test Driver
+ * @brief waitpid test.
  */
-void test_hal_portal(void)
+int main(int argc, char **argv)
 {
-	hal_portal_ncores = hal_get_num_cores();
+	int barrier;
+	int nodes[2] = {0, 128};
 
-	pthread_barrier_init(&barrier, NULL, hal_portal_ncores - 1);
+	((void) argc);
+	((void) argv);
 
-	/* Run API tests. */
-	for (int i = 0; hal_portal_tests_api[i].test_fn != NULL; i++)
-	{
-		printf("[nanvix][test][api][hal][portal] %s\n", hal_portal_tests_api[i].name);
-		hal_portal_tests_api[i].test_fn();
-	}
+	hal_setup();
 
-	/* Run fault injection tests. */
-	for (int i = 0; portal_tests_fault[i].test_fn != NULL; i++)
-	{
-		printf("[nanvix][test][fault][hal][portal] %s\n", portal_tests_fault[i].name);
-		portal_tests_fault[i].test_fn();
-	}
+	TEST_ASSERT((barrier = barrier_create(nodes, 2)) >= 0);
+
+	printf("Slave alive\n");
+
+	while(1);
+
+	// sleep(10);
+
+	// printf("Slave passed the barrier\n");
+
+	// TEST_ASSERT(barrier_wait(barrier) == 0);
+
+	hal_cleanup();
+	return (EXIT_SUCCESS);
 }
-

@@ -20,25 +20,29 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-# Conflicts.
-.PHONY: hal-mailbox
-
 # Change binaries directory.
 export BINDIR := $(BINDIR)/benchmark
 
 # Builds everything.
-all: hal-mailbox
+all: hal-mailbox hal-portal
 
 # Builds HAL Mailbox Benchmark
 hal-mailbox:
 	mkdir -p $(BINDIR)
-	cd hal-mailbox && $(MAKE) all
+	cd hal/mailbox && $(MAKE) all
+
+# Builds HAL Portal Benchmark
+hal-portal:
+	mkdir -p $(BINDIR)
+	cd hal/portal && $(MAKE) all
 
 # Cleans compilation files.
 clean:
-	cd hal-mailbox && $(MAKE) clean
+	cd hal/mailbox && $(MAKE) clean
+	cd hal/portal && $(MAKE) clean
 
 # Cleans everything.
 distclean:
-	cd hal-mailbox && $(MAKE) distclean
+	cd hal/mailbox && $(MAKE) distclean
+	cd hal/portal && $(MAKE) distclean
 
