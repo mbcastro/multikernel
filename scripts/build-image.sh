@@ -82,4 +82,4 @@ build2 $BINDIR/test/barrier-master0  $BINDIR/test/barrier-master1  $BINDIR/test/
 
 build0 $BINDIR/benchmark/hal-mailbox-master $BINDIR/benchmark/hal-mailbox-slave benchmark-hal-mailbox.img
 build0 $BINDIR/benchmark/hal-portal-master $BINDIR/benchmark/hal-portal-slave benchmark-hal-portal.img
-
+build0 $BINDIR/test/waitpid-master $BINDIR/test/waitpid-slave waitpid.img
