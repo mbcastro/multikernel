@@ -168,36 +168,21 @@ then
 #	run2 "rmem.img" "rmem-master" "rmem-server" "read $NCLUSTERS $SIZE"
 elif [[ $1 == "benchmark" ]];
 then
-	if [[ $2 == "mailbox" ]];
-	then
-		benchmark_mailbox
-	elif [[ $2 == "portal" ]];
-	then
-		benchmark_portal
-	elif [[ $2 == "async" ]];
-	then
-		echo "Testing ASYNC"
-		run1 "async.img" "master.elf" "$NCLUSTERS $SIZE"
-	elif [[ $2 == "km" ]];
-	then
-		echo "Running KM PORTAL"
-		run1 "km-portal.img" "km-portal-master" "--nclusters $NCLUSTERS --class $CLASS"
-		echo "Running KM RMEM"
-		run2 "km-rmem.img" "km-rmem-master" "rmem-server" "--nclusters $NCLUSTERS --class $CLASS"
-	elif [[ $2 == "gf" ]];
-	then
-		echo "Running GF PORTAL"
-		run1 "gf-portal.img" "gf-portal-master" "--nclusters $NCLUSTERS --class $CLASS"
-		echo "Running GF RMEM"
-		run2 "gf-rmem.img" "gf-rmem-master" "rmem-server" "--nclusters $NCLUSTERS --class $CLASS"
-		echo "Running GF RMEM DENSE"
-		run2 "gf-dense-rmem.img" "gf-dense-rmem-master" "rmem-server" "--nclusters $NCLUSTERS --class $CLASS"
-	elif [[ $2 == "is" ]];
-	then
-
-		echo "Running IS PORTAL"
-		run1 "is-portal.img" "is-portal-master" "--nclusters $NCLUSTERS --class $CLASS"
-		echo "Running IS RMEM"
-		run2 "is-rmem.img" "is-rmem-master" "rmem-server" "--nclusters $NCLUSTERS --class $CLASS"
-	fi
+	case "$2" in
+		mppa256portal)
+			run1 "benchmark-mppa256-portal.img" \
+			"/benchmark/mppa256-portal-master"  \
+			"16 5 1048576 gather"
+		;;
+		mailbox)
+			benchmark_mailbox
+		;;
+		portal)
+			benchmark_portal
+		;;
+		*)
+			echo "Usage: run.sh test {mailbox|portal}"
+			exit 1
+		;;
+	esac
 fi
