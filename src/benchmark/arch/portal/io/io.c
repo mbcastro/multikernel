@@ -189,7 +189,7 @@ static void kernel_gather(void)
 		if (k == 0)
 			continue;
 
-		printf("%s;%d;%d;%.2lf;%.2lf\n", 
+		printf("nodeos;%s;%d;%d;%.2lf;%.2lf\n",
 			kernel,
 			bufsize,
 			nclusters,
@@ -240,7 +240,7 @@ static void kernel_broadcast(void)
 		if (k == 0)
 			continue;
 
-		printf("%s;%d;%d;%.2lf;%.2lf\n", 
+		printf("nodeos;%s;%d;%d;%.2lf;%.2lf\n",
 			kernel,
 			bufsize,
 			nclusters,
@@ -308,7 +308,7 @@ static void kernel_pingpong(void)
 		if (k == 0)
 			continue;
 
-		printf("%s;%d;%d;%.2lf;%.2lf\n", 
+		printf("nodeos;%s;%d;%d;%.2lf;%.2lf\n",
 			kernel,
 			bufsize,
 			nclusters,
