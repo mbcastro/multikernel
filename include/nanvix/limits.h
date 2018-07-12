@@ -23,6 +23,7 @@
 #ifndef NANVIX_LIMITS_H_
 #define NANVIX_LIMITS_H_
 
+	#define __NEED_HAL_CORE_
 	#include <nanvix/hal.h>
 
 	/**
