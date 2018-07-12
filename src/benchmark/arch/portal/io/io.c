@@ -60,7 +60,7 @@ static int pids[NR_CCLUSTER];
 /**
  * @brief Buffer.
  */
-static char buffer[BUFFER_SIZE_MAX];
+static char buffer[NR_CCLUSTER*BUFFER_SIZE_MAX];
 
 /*============================================================================*
  * Utilities                                                                  *
@@ -152,6 +152,10 @@ static void timer_init(void)
 static void kernel_gather(void)
 {
 	int sync_fd;
+	int ranks[nclusters];
+
+	for (int i = 0; i < nclusters; i++)
+		ranks[i] = i;
 
 	/* Open sync. */
 	assert((sync_fd = mppa_open(SYNC_SLAVES, O_WRONLY)) != -1);
@@ -160,27 +164,24 @@ static void kernel_gather(void)
 	for (int k = 0; k <= niterations; k++)
 	{
 		double total;
+		uint64_t mask;
 		uint64_t t1, t2;
+		mppa_aiocb_t aiocb;
 
-		/* Read data. */
+		/* Setup read operation. */
+		mppa_aiocb_ctor(&aiocb, inportal, buffer, nclusters*bufsize);
+		mppa_aiocb_set_trigger(&aiocb, nclusters);
+		assert(mppa_aio_read(&aiocb) != -1);
+
 		t1 = timer_get();
-		for (int i = 0; i < nclusters; i++)
-		{
-			uint64_t mask;
-			mppa_aiocb_t aiocb;
 
-			/* Setup read operation. */
-			mppa_aiocb_ctor(&aiocb, inportal, buffer, bufsize);
-			assert(mppa_aio_read(&aiocb) != -1);
-
-			/* Unblock remote. */
-			mask = 1 << i;
-			assert(mppa_ioctl(sync_fd, MPPA_TX_SET_RX_RANK, i) != -1);
+			/* Unblock remotes. */
+			mask = ~0;
+			assert(mppa_ioctl(sync_fd, MPPA_TX_SET_RX_RANKS, nclusters, ranks) != -1);
 			assert(mppa_write(sync_fd, &mask, sizeof(uint64_t)) != -1);
 
-			/* Wait read operation to complete. */
-			assert(mppa_aio_wait(&aiocb) == bufsize);
-		}
+			/* Read data. */
+			assert(mppa_aio_wait(&aiocb) == nclusters*bufsize);
 		t2 = timer_get();
 
 		total = timer_diff(t1, t2)/((double) MPPA256_FREQ);

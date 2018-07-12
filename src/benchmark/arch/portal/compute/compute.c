@@ -67,6 +67,7 @@ static void kernel_gather(void)
 	/* Benchmark. */
 	for (int k = 0; k <= niterations; k++)
 	{
+		int off;
 		uint64_t mask;
 
 		/* Wait for master. */
@@ -75,7 +76,8 @@ static void kernel_gather(void)
 		assert(mppa_read(sync_fd, &mask, sizeof(uint64_t)) != -1);
 
 		/* Send data. */
-		assert(mppa_pwrite(outportal, buffer, bufsize, 0) == bufsize);
+		off = __k1_get_cluster_id()*bufsize;
+		assert(mppa_pwrite(outportal, buffer, bufsize, off) == bufsize);
 	}
 
 	/* House keeping. */
