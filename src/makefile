@@ -48,6 +48,9 @@ export ARFLAGS = rcs
 # Binaries & Libraries
 #===============================================================================
 
+# Startup Routines
+export CRT0 = $(LIBDIR)/crt0.o
+
 # System Services
 export SERVERSBIN1 = $(BINDIR)/servers1
 

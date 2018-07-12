@@ -32,7 +32,7 @@ TESTBIN := $(BINDIR)/test
 #===============================================================================
 
 # Builds automated test driver.
-all: $(OBJ) $(LIBDIR)/crt0.o
+all: $(OBJ) $(CRT0)
 	$(CC) $(LDFLAGS) $^ -o $(TESTBIN) $(LIBUSER) $(LIBKERNEL) $(LIBS)
 
 # Builds object files.

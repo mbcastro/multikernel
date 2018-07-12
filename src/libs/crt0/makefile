@@ -35,11 +35,8 @@ OBJ = $(SRC:.c=.o)
 #===============================================================================
 
 # Builds startup routines for IO Cluster.
-all: libuser crt0
-
-crt0: 
-	$(CC) $(CFLAGS) crt0.c -c -o crt0.o
-	mv crt0.o $(LIBDIR)
+all: libuser
+	$(CC) $(CFLAGS) crt0.c -c -o $(CRT0)
 
 libuser: $(OBJ)
 	$(AR) $(ARFLAGS) $(LIBUSER) $(OBJ)
@@ -50,7 +47,7 @@ libuser: $(OBJ)
 
 # Cleans compilation files.
 clean:
-	rm -rf $(OBJ)
+	rm -rf $(OBJ) $(CRT0)
 
 # Cleans everything.
 distclean: clean
