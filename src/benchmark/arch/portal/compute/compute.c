@@ -59,10 +59,10 @@ static void kernel_gather(void)
 	int outportal;
 
 	/* Open output portal. */
-	assert((outportal = mppa_open("/mppa/portal/128:48", O_WRONLY)) != -1);
+	assert((outportal = mppa_open(PORTAL_MASTER, O_WRONLY)) != -1);
 
 	/* Open sync. */
-	assert((sync_fd = mppa_open("/mppa/sync/[0..15]:48", O_RDONLY)) != -1);
+	assert((sync_fd = mppa_open(SYNC_SLAVES, O_RDONLY)) != -1);
 
 	/* Benchmark. */
 	for (int k = 0; k <= niterations; k++)
@@ -81,6 +81,46 @@ static void kernel_gather(void)
 	/* House keeping. */
 	assert(mppa_close(sync_fd) != -1);
 	assert(mppa_close(outportal) != -1);
+}
+
+/*============================================================================*
+ * Broadcast Kernel                                                           *
+ *============================================================================*/
+
+/**
+ * @brief Broadcast kernel. 
+ */
+static void kernel_broadcast(void)
+{
+	int sync_fd;
+	int inportal;
+
+	assert((inportal = mppa_open(PORTAL_SLAVES, O_RDONLY)) != -1);
+
+	/* Open sync. */
+	assert((sync_fd = mppa_open(SYNC_MASTER, O_WRONLY)) != -1);
+
+	/* Benchmark. */
+	for (int k = 0; k <= niterations; k++)
+	{
+		uint64_t mask;
+		mppa_aiocb_t aiocb;
+
+		/* Setup read operation. */
+		mppa_aiocb_ctor(&aiocb, inportal, buffer, bufsize);
+		assert(mppa_aio_read(&aiocb) != -1);
+
+		/* Unblock remote. */
+		mask = 1 << __k1_get_cluster_id();
+		assert(mppa_write(sync_fd, &mask, sizeof(uint64_t)) != -1);
+
+		/* Wait read operation to complete. */
+		assert(mppa_aio_wait(&aiocb) == bufsize);
+	}
+
+	/* House keeping. */
+	assert(mppa_close(sync_fd) != -1);
+	assert(mppa_close(inportal) != -1);
 }
 
 /*============================================================================*
@@ -103,6 +143,8 @@ int main(int argc, const char **argv)
 	/* Run kernel. */
 	if (!strcmp(kernel, "gather"))
 		kernel_gather();
+	else if (!strcmp(kernel, "broadcast"))
+		kernel_broadcast();
 
 	return (EXIT_SUCCESS);
 }

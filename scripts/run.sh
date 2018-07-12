@@ -173,6 +173,10 @@ then
 			run1 "benchmark-mppa256-portal.img" \
 			"/benchmark/mppa256-portal-master"  \
 			"16 5 1048576 gather"
+
+			run1 "benchmark-mppa256-portal.img" \
+			"/benchmark/mppa256-portal-master"  \
+			"16 5 1048576 broadcast"
 		;;
 		mailbox)
 			benchmark_mailbox

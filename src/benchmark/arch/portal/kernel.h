@@ -43,5 +43,25 @@
 	 */
 	#define BUFFER_SIZE_MAX (1024*1024)
 
+	/**
+	 * @brief Portal connector to master.
+	 */
+	#define PORTAL_MASTER "/mppa/portal/128:48"
+
+	/**
+	 * @brief Portal connector to slaves.
+	 */
+	#define PORTAL_SLAVES "/mppa/portal/[0..15]:49"
+
+	/**
+	 * @brief Sync connector to slaves.
+	 */
+	#define SYNC_MASTER "/mppa/sync/128:48"
+
+	/**
+	 * @brief Sync connector to slaves.
+	 */
+	#define SYNC_SLAVES "/mppa/sync/[0..15]:59"
+
 #endif /* _KERNEL_H_ */
 

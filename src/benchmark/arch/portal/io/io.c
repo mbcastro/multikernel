@@ -48,6 +48,11 @@ static const char *kernel = NULL; /**< Benchmark kernel.               */
 static int inportal;
 
 /**
+ * @brief Master sync.
+ */
+static int sync_master;
+
+/**
  * @brief ID of slave processes.
  */
 static int pids[NR_CCLUSTER];
@@ -138,7 +143,7 @@ static void timer_init(void)
 }
 
 /*============================================================================*
- * Kernels                                                                    *
+ * Gather Kernel                                                              *
  *============================================================================*/
 
 /**
@@ -149,7 +154,7 @@ static void kernel_gather(void)
 	int sync_fd;
 
 	/* Open sync. */
-	assert((sync_fd = mppa_open("/mppa/sync/[0..15]:48", O_WRONLY)) != -1);
+	assert((sync_fd = mppa_open(SYNC_SLAVES, O_WRONLY)) != -1);
 
 	/* Benchmark. */
 	for (int k = 0; k <= niterations; k++)
@@ -157,6 +162,7 @@ static void kernel_gather(void)
 		double total;
 		uint64_t t1, t2;
 
+		/* Read data. */
 		t1 = timer_get();
 		for (int i = 0; i < nclusters; i++)
 		{
@@ -197,6 +203,57 @@ static void kernel_gather(void)
 }
 
 /*============================================================================*
+ * Broadcast Kernel                                                           *
+ *============================================================================*/
+
+/**
+ * @brief Broadcast kernel.
+ */
+static void kernel_broadcast(void)
+{
+	int outportal;
+
+	assert((outportal = mppa_open(PORTAL_SLAVES, O_WRONLY)) != -1);
+
+	/* Benchmark. */
+	for (int k = 0; k <= niterations; k++)
+	{
+		double total;
+		uint64_t mask;
+		uint64_t t1, t2;
+
+		/* Wait for slaves. */
+		assert(mppa_read(sync_master, &mask, sizeof(uint64_t)) != -1);
+
+		/* Send data. */
+		t1 = timer_get();
+		for (int i = 0; i < nclusters; i++)
+		{
+			assert(mppa_ioctl(outportal, MPPA_TX_SET_RX_RANK, i) != -1);
+			assert(mppa_pwrite(outportal, buffer, bufsize, 0) == bufsize);
+		}
+		t2 = timer_get();
+
+		total = timer_diff(t1, t2)/((double) MPPA256_FREQ);
+
+		/* Warmup. */
+		if (k == 0)
+			continue;
+
+		printf("%s;%d;%d;%.2lf;%.2lf\n", 
+			kernel,
+			bufsize,
+			nclusters,
+			(total*MEGA)/nclusters,
+			(nclusters*bufsize)/total
+		);
+	}
+
+	/* House keeping. */
+	assert(mppa_close(outportal) != -1);
+}
+
+/*============================================================================*
  * MPPA-256 Portal Microbenchmark Driver                                      *
  *============================================================================*/
 
@@ -205,18 +262,28 @@ static void kernel_gather(void)
  */
 static void benchmark(void)
 {
+	uint64_t mask;
+	
+	mask = ~((1 << nclusters) - 1);
+
 	/* Initialization. */
+	assert((inportal = mppa_open(PORTAL_MASTER, O_RDONLY)) != -1);
+	assert((sync_master = mppa_open(SYNC_MASTER, O_RDONLY)) != -1);
+	assert(mppa_ioctl(sync_master, MPPA_RX_SET_MATCH, mask) != -1);
 	spawn_remotes();
-	assert((inportal = mppa_open("/mppa/portal/128:48", O_RDONLY)) != -1);
 
 	timer_init();
 
+	/* Run kernel. */
 	if (!strcmp(kernel, "gather"))
 		kernel_gather();
+	else if (!strcmp(kernel, "broadcast"))
+		kernel_broadcast();
 	
 	/* House keeping. */
-	assert(mppa_close(inportal) != -1);
 	join_remotes();
+	assert(mppa_close(sync_master) != -1);
+	assert(mppa_close(inportal) != -1);
 }
 
 /**
