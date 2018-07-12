@@ -58,11 +58,9 @@ export SERVERSBIN1 = $(BINDIR)/servers1
 #===============================================================================
 
 # Conflicts.
-.PHONY: benchmarks
 .PHONY: kernel
 .PHONY: libs
 .PHONY: servers
-.PHONY: test
 
 # Builds everything.
 all: kernel servers libs test benchmarks 
@@ -85,26 +83,26 @@ libs: kernel
 # Builds testing system.
 test: kernel servers libs
 	mkdir -p $(BINDIR)
-	cd test && $(MAKE) all
+	cd sbin/test && $(MAKE) all
 
 # Builds benchmarks.
 benchmarks: kernel servers libs
 	mkdir -p $(BINDIR)
-	cd benchmarks && $(MAKE) all
+	cd sbin/benchmarks && $(MAKE) all
 
 # Cleans compilation files.
 clean:
 	cd kernel && $(MAKE) clean
 	cd servers && $(MAKE) clean
 	cd libs && $(MAKE) clean
-	cd test && $(MAKE) clean
-	cd benchmarks && $(MAKE) clean
+	cd sbin/test && $(MAKE) clean
+	cd sbin/benchmarks && $(MAKE) clean
 
 # Cleans everything.
 distclean:
 	cd kernel && $(MAKE) distclean
 	cd servers && $(MAKE) distclean
 	cd libs && $(MAKE) distclean
-	cd test && $(MAKE) distclean
-	cd benchmarks && $(MAKE) distclean
+	cd sbin/test && $(MAKE) distclean
+	cd sbin/benchmarks && $(MAKE) distclean
 
