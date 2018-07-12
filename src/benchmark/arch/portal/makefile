@@ -20,36 +20,32 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-# Change binaries directory.
-export BINDIR := $(BINDIR)/benchmark
+# Conflicts.
+.PHONY: io
+.PHONY: compute
 
-# Builds everything.
-all: arch-portal hal-mailbox hal-portal
+# Builds binaries.
+all: io compute
 
-# Builds Native Portal Microbenchmarks
-arch-portal:
-	mkdir -p $(BINDIR)
-	cd arch/portal && $(MAKE) all
+# Builds io binary.
+io:
+ifeq ($(ARCH),k1bio)
+	cd io && $(MAKE) all
+endif
 
-# Builds HAL Mailbox Benchmark
-hal-mailbox:
-	mkdir -p $(BINDIR)
-	cd hal/mailbox && $(MAKE) all
-
-# Builds HAL Portal Benchmark
-hal-portal:
-	mkdir -p $(BINDIR)
-	cd hal/portal && $(MAKE) all
+# Builds compute binary.
+compute:
+ifeq ($(ARCH),k1bdp)
+	cd compute && $(MAKE) all
+endif
 
 # Cleans compilation files.
 clean:
-	cd arch/portal && $(MAKE) clean
-	cd hal/mailbox && $(MAKE) clean
-	cd hal/portal && $(MAKE) clean
+	cd io && $(MAKE) clean
+	cd compute && $(MAKE) clean
 
 # Cleans everything.
-distclean:
-	cd arch/portal && $(MAKE) distclean
-	cd hal/mailbox && $(MAKE) distclean
-	cd hal/portal && $(MAKE) distclean
+distclean: clean
+	cd io && $(MAKE) distclean
+	cd compute && $(MAKE) distclean
 
