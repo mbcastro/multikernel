@@ -25,16 +25,11 @@ export OUTDIR=.
 
 # Global parameters.
 NCLUSTERS=16
-
-# Benchmark-specific parameters.
-CLASS=small
-
-# Testing unit specific parameters.
-NMESSAGES=2
-SIZE=$((16*1024))
+NITERATIONS=5
+BUFSIZE=1048576
 
 #
-# Runs a multibinary file in a single IO CLUSTER.
+# Runs a multibinary file using a single IO Cluster.
 #
 function run1
 {
@@ -57,7 +52,7 @@ function run1
 }
 
 #
-# Runs a multibinary file in the two IO Clusters.
+# Runs a multibinary file using two IO Clusters.
 #
 function run2
 {
@@ -81,69 +76,6 @@ function run2
 	fi
 }
 
-#
-# Benchmarks HAL Mailbox
-#
-function benchmark_mailbox
-{
-	echo "Benchmarking HAL Mailbox"
-
-	echo "  nlocals=1 nremotes=1 (baseline)"
-	run1 "benchmark-hal-mailbox.img" "/benchmark/hal-mailbox-master" "1 1 row 1" \
-		| head -n -1                                                             \
-		| cut -d" " -f 5                                                         \
-		> hal-mailbox-1-1-row.benchmark
-
-	for nlocals in 1 2 4;
-	do
-		for nremotes in 4 8 12 16;
-		do
-			echo "  nlocals=$nlocals nremotes=$nremotes"
-			run1 "benchmark-hal-mailbox.img" "/benchmark/hal-mailbox-master" "$nlocals $nremotes row 4" \
-				| head -n -1                                                                            \
-				| cut -d" " -f 5                                                                        \
-				> hal-mailbox-$nlocals-$nremotes-row.benchmark
-			run1 "benchmark-hal-mailbox.img" "/benchmark/hal-mailbox-master" "$nlocals $nremotes col 4" \
-				| head -n -1                                                                            \
-				| cut -d" " -f 5                                                                        \
-				> hal-mailbox-$nlocals-$nremotes-col.benchmark
-		done
-	done
-
-	tar -cjvf benchmark-hal-mailbox.tar.bz2 *.benchmark
-	rm -rf *.benchmark
-}
-
-#
-# Benchmarks HAL Portal
-#
-function benchmark_portal
-{
-	echo "Benchmarking HAL Portal"
-
-	let niterations=30
-
-	for mode in "pingpong" "gather" "broadcast";
-	do
-		for bufsize in 1024 2048 4096 8192 16384 32768 65536 131072 262144 524288 1048576
-		do
-			for nremotes in {1..16};
-			do
-				echo "  nremotes=$nremotes bufsize=$bufsize mode=$mode"
-
-				run1 "benchmark-hal-portal.img"             \
-					"/benchmark/hal-portal-master"          \
-					"$nremotes $niterations $bufsize $mode" \
-				| head -n -1                                \
-				| cut -d" " -f 4                            \
-				> hal-mailbox-$mode-$nremotes-$bufsize.benchmark
-			done
-		done
-	done
-
-	tar -cjvf benchmark-hal-portal.tar.bz2 *.benchmark
-	rm -rf *.benchmark
-}
 
 if [[ $1 == "test" ]];
 then
@@ -164,32 +96,28 @@ then
 #	echo "Testing BARRIER"
 #	run2 "test-barrier.img" "/test/barrier-master0" "/test/barrier-master1" "$NCLUSTERS" | grep "test"
 #	echo "Testing RMEM"
-#	run2 "rmem.img" "rmem-master" "rmem-server" "write $NCLUSTERS $SIZE"
-#	run2 "rmem.img" "rmem-master" "rmem-server" "read $NCLUSTERS $SIZE"
 elif [[ $1 == "benchmark" ]];
 then
 	case "$2" in
-		mppa256portal)
-			run1 "benchmark-mppa256-portal.img" \
-			"/benchmark/mppa256-portal-master"  \
-			"16 5 1048576 gather"
-
-			run1 "benchmark-mppa256-portal.img" \
-			"/benchmark/mppa256-portal-master"  \
-			"16 5 1048576 broadcast"
-
-			run1 "benchmark-mppa256-portal.img" \
-			"/benchmark/mppa256-portal-master"  \
-			"16 5 1048576 pingpong"
+		mppa256-portal)
+			for kernel in gather broadcast pingpong;
+			do
+				run1                                          \
+					"benchmark-mppa256-portal.img"            \
+					"/benchmark/mppa256-portal-master"        \
+					"$NCLUSTERS $NITERATIONS $BUFSIZE $kernel"
+			done
 		;;
-		mailbox)
-			benchmark_mailbox
-		;;
-		portal)
-			benchmark_portal
+		nanvix-portal)
+			for kernel in gather broadcast pingpong;
+			do
+				run1 "benchmark-hal-portal.img"                \
+					"/benchmark/hal-portal-master"             \
+					"$NCLUSTERS $NITERATIONS $BUFSIZE $kernel"
+			done
 		;;
 		*)
-			echo "Usage: run.sh test {mppa256|mailbox|portal}"
+			echo "Usage: run.sh test {mppa256-portal|nanvix-portal}"
 			exit 1
 		;;
 	esac
