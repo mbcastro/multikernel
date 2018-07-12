@@ -211,7 +211,11 @@ static void kernel_gather(void)
  */
 static void kernel_broadcast(void)
 {
+	int ranks[nclusters];
 	int outportal;
+
+	for (int i = 0; i < nclusters; i++)
+		ranks[i] = i;
 
 	assert((outportal = mppa_open(PORTAL_SLAVES, O_WRONLY)) != -1);
 
@@ -227,11 +231,8 @@ static void kernel_broadcast(void)
 
 		/* Send data. */
 		t1 = timer_get();
-		for (int i = 0; i < nclusters; i++)
-		{
-			assert(mppa_ioctl(outportal, MPPA_TX_SET_RX_RANK, i) != -1);
+			assert(mppa_ioctl(outportal, MPPA_TX_SET_RX_RANKS, nclusters, ranks) != -1);
 			assert(mppa_pwrite(outportal, buffer, bufsize, 0) == bufsize);
-		}
 		t2 = timer_get();
 
 		total = timer_diff(t1, t2)/((double) MPPA256_FREQ);
