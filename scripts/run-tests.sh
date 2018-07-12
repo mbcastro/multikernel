@@ -39,3 +39,6 @@ run2 "nanvix-debug.img" "/servers" "/servers1" "--debug --name" | grep nanvix
 
 echo "Runnaing Nammed Mailbox Tests"
 run2 "nanvix-debug.img" "/servers" "/servers1" "--debug --mailbox" | grep nanvix
+
+echo "Running Barrier Tests"
+run2 "nanvix-debug.img" "/servers" "/servers1" "--debug --barrier" | grep nanvix

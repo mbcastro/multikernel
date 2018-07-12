@@ -20,66 +20,28 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
+#ifndef _TEST_H_
+#define _TEST_H_
 
-/* Kernel unit-tests. */
-extern void test_hal_core(void);
-extern void test_hal_sync(void);
-extern void test_hal_mailbox(void);
-extern void test_hal_portal(void);
+	#include <stdlib.h>
+	#include <pthread.h>
 
-/* Runtime unit-tests. */
-extern void test_name(int);
-extern void test_ipc_mailbox(int);
-extern void test_ipc_barrier(int);
+	/**
+	 * @brief Asserts a logic expression.
+	 */
+	#define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
 
-/**
- * @brief Generic test driver.
- */
-void test_kernel(const char *module)
-{
-	if (!strcmp(module, "--hal-core"))
+	/**
+	 * @brief Unit test.
+	 */
+	struct test
 	{
-		test_hal_core();
-		exit(EXIT_SUCCESS);
-	}
-	else if (!strcmp(module, "--hal-sync"))
-	{
-		test_hal_sync();
-		exit(EXIT_SUCCESS);
-	}
-	else if (!strcmp(module, "--hal-mailbox"))
-	{
-		test_hal_mailbox();
-		exit(EXIT_SUCCESS);
-	}
-	else if (!strcmp(module, "--hal-portal"))
-	{
-		test_hal_portal();
-		exit(EXIT_SUCCESS);
-	}
-}
+		void (*test_fn)(void); /**< Test function. */
+		const char *name;      /**< Test name.     */
+	};
 
-/**
- * @brief Generic test driver.
- */
-void test_runtime(const char *module, int nservers)
-{
-	if (!strcmp(module, "--name"))
-	{
-		test_name(nservers);
-		exit(EXIT_SUCCESS);
-	}
-	else if (!strcmp(module, "--mailbox"))
-	{
-		test_ipc_mailbox(nservers);
-		exit(EXIT_SUCCESS);
-	}
-	else if (!strcmp(module, "--barrier"))
-	{
-		test_ipc_barrier(nservers);
-		exit(EXIT_SUCCESS);
-	}
-}
+	/* Forward definitions. */
+	extern int ipc_barrier_ncores;
+	extern struct test ipc_barrier_tests_api[];
+
+#endif /* _TEST_H_ */

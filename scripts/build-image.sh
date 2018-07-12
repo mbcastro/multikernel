@@ -77,8 +77,7 @@ build1 $BINDIR/servers $BINDIR/servers1 nanvix-debug.img
 build2 $BINDIR/servers $BINDIR/servers1 "$BINDIR/test/hal-sync-slave" nanvix-debug-hal-sync.img
 build2 $BINDIR/servers $BINDIR/servers1 "$BINDIR/test/name-slave"     nanvix-debug-name.img
 build2 $BINDIR/servers $BINDIR/servers1 "$BINDIR/test/mailbox-slave"  nanvix-debug-mailbox.img
-
-build2 $BINDIR/test/barrier-master0  $BINDIR/test/barrier-master1  $BINDIR/test/barrier-slave      test-barrier.img
+build2 $BINDIR/servers $BINDIR/servers1 "$BINDIR/test/barrier-slave"  nanvix-debug-barrier.img
 
 build0 $BINDIR/benchmark/mppa256-portal-master $BINDIR/benchmark/mppa256-portal-slave benchmark-mppa256-portal.img
 

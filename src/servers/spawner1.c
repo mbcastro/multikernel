@@ -43,6 +43,7 @@
 extern int name_server(int);
 extern void test_hal_sync(void);
 extern void test_hal_mailbox(void);
+extern void test_barrier(void);
 
 /**
  * @brief Servers.
@@ -93,7 +94,7 @@ static void *server(void *args)
 /**
  * @brief Generic test driver.
  */
-static void test(const char *module)
+static void test_kernel(const char *module)
 {
 	if (!strcmp(module, "--hal-sync"))
 	{
@@ -103,6 +104,18 @@ static void test(const char *module)
 	else if (!strcmp(module, "--hal-mailbox"))
 	{
 		test_hal_mailbox();
+		exit(EXIT_SUCCESS);
+	}
+}
+
+/**
+ * @brief Generic test driver.
+ */
+static void test_runtime(const char *module)
+{
+	if (!strcmp(module, "--barrier"))
+	{
+		test_barrier();
 		exit(EXIT_SUCCESS);
 	}
 }
@@ -164,7 +177,7 @@ int main(int argc, char **argv)
 
 	/* Run self-tests. */
 	if (debug)
-		test(argv[2]);
+		test_kernel(argv[2]);
 
 	printf("[nanvix][spawner1] server alive\n");
 
@@ -182,6 +195,10 @@ int main(int argc, char **argv)
 	pthread_barrier_wait(&barrier);
 
 	spawners_sync();
+
+	/* Run self-tests. */
+	if (debug)
+		test_runtime(argv[2]);
 
 	/* Wait for name server thread. */
 	for (int i = 0; i < NR_SERVERS; i++)
