@@ -21,20 +21,20 @@
 #
 
 # C Source Files
-SRC0 = spawner0.c                         \
-       $(wildcard tests0/hal/core/*.c)    \
-       $(wildcard tests0/hal/sync/*.c)    \
-       $(wildcard tests0/hal/mailbox/*.c) \
-       $(wildcard tests0/hal/portal/*.c)  \
-       $(wildcard tests0/ipc/barrier/*.c) \
-       $(wildcard tests0/ipc/name/*.c)    \
-       $(wildcard tests0/ipc/mailbox/*.c) \
-       $(wildcard tests0/*.c)
+SRC0 = $(wildcard spawner0/*.c)             \
+       $(wildcard spawner0/hal/core/*.c)    \
+       $(wildcard spawner0/hal/sync/*.c)    \
+       $(wildcard spawner0/hal/mailbox/*.c) \
+       $(wildcard spawner0/hal/portal/*.c)  \
+       $(wildcard spawner0/ipc/barrier/*.c) \
+       $(wildcard spawner0/ipc/name/*.c)    \
+       $(wildcard spawner0/ipc/mailbox/*.c)
+       
 
 # C Source Files
-SRC1 = spawner1.c             \
-	   name.c                 \
-       $(wildcard tests1/*.c)
+SRC1 = $(wildcard spawner1/*.c) \
+	   name.c
+       
 
 # Object Files
 OBJ0 = $(SRC0:.c=.o)
