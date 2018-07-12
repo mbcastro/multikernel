@@ -287,7 +287,10 @@ static void kernel_pingpong(void)
 			/* Send data. */
 			assert(mppa_ioctl(outportal, MPPA_TX_SET_RX_RANK, i) != -1);
 			assert(mppa_pwrite(outportal, buffer, bufsize, 0) == bufsize);
+		}
 
+		for (int i = 0; i < nclusters; i++)
+		{
 			/* Setup read operation. */
 			mppa_aiocb_ctor(&aiocb, inportal, buffer, bufsize);
 			assert(mppa_aio_read(&aiocb) != -1);
