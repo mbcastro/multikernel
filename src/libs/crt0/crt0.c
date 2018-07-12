@@ -21,71 +21,74 @@
  */
 
 #include <assert.h>
-#include <pthread.h>
 #include <stdlib.h>
 
 #include <mppa/osconfig.h>
 
-#define __NEED_HAL_CORE_
 #define __NEED_HAL_NOC_
 #define __NEED_HAL_SETUP_
 #define __NEED_HAL_SYNC_
-#define __NEED_HAL_MAILBOX_
 #include <nanvix/const.h>
 #include <nanvix/hal.h>
-
-/**
- * @brief Number of servers.
- */
-#define NR_SERVERS 0
+#include <nanvix/init.h>
 
 /* Forward definitions. */
-extern void test_kernel(const char *);
-extern void test_runtime(const char *, int);
+extern int main2(int, const char **);
+extern void test_hal_core(void);
+extern void test_hal_sync(void);
+extern void test_hal_mailbox(void);
+extern void test_hal_portal(void);
+extern void test_name(int);
+extern void test_ipc_mailbox(int);
+extern void test_ipc_barrier(int);
 
 /**
- * @brief Servers.
+ * @brief Generic kernel test driver.
  */
-static struct
+static void test_kernel(const char *module)
 {
-	int (*main) (int);
-	int nodenum;
-} servers[NR_SERVERS] = {
-};
+	if (!strcmp(module, "--hal-core"))
+	{
+		test_hal_core();
+		exit(EXIT_SUCCESS);
+	}
+	else if (!strcmp(module, "--hal-sync"))
+	{
+		test_hal_sync();
+		exit(EXIT_SUCCESS);
+	}
+	else if (!strcmp(module, "--hal-mailbox"))
+	{
+		test_hal_mailbox();
+		exit(EXIT_SUCCESS);
+	}
+	else if (!strcmp(module, "--hal-portal"))
+	{
+		test_hal_portal();
+		exit(EXIT_SUCCESS);
+	}
+}
 
 /**
- * @brief Barrier for synchronization.
+ * @brief Generic runtime test driver.
  */
-static pthread_barrier_t barrier;
-
-/**
- * @brief Server wrapper.
- */
-static void *server(void *args)
+static void test_runtime(const char *module, int nservers)
 {
-	int inbox;
-	int nodenum;
-	int servernum;
-	int (*main_fn) (int);
-
-	hal_setup();
-
-	servernum = ((int *)args)[0];
-
-	nodenum = servers[servernum].nodenum;
-	main_fn = servers[servernum].main;
-
-	/* Open server mailbox. */
-	inbox = hal_mailbox_create(hal_noc_nodes[nodenum]);
-
-	/* Wait for other servers. */
-	pthread_barrier_wait(&barrier);
-
-	/* Spawn server. */
-	main_fn(inbox);
-
-	hal_cleanup();
-	return (NULL);
+	if (!strcmp(module, "--name"))
+	{
+		test_name(nservers);
+		exit(EXIT_SUCCESS);
+	}
+	else if (!strcmp(module, "--mailbox"))
+	{
+		test_ipc_mailbox(nservers);
+		exit(EXIT_SUCCESS);
+	}
+	else if (!strcmp(module, "--barrier"))
+	{
+		test_ipc_barrier(nservers);
+		exit(EXIT_SUCCESS);
+	}
 }
 
 /**
@@ -122,13 +125,12 @@ static void spawners_sync(void)
 }
 
 /**
- * @brief Resolves process names.
+ * @brief Spawns User Application
  */
-int main(int argc, char **argv)
+int main(int argc, const char **argv)
 {
+	int ret;
 	int debug = 0;
-	int args[NR_SERVERS];
-	pthread_t tids[NR_SERVERS];
 
 	/* Debug mode? */
 	if (argc >= 2)
@@ -141,38 +143,37 @@ int main(int argc, char **argv)
 
 	printf("[nanvix][spawner0] booting up server\n");
 
-	pthread_barrier_init(&barrier, NULL, NR_SERVERS + 1);
-
 	/* Run self-tests. */
 	if (debug)
 		test_kernel(argv[2]);
 
 	printf("[nanvix][spawner0] server alive\n");
 
-	/* Spawn servers. */
-	for (int i = 0; i < NR_SERVERS; i++)
-	{
-		args[i] = 0;
-		assert((pthread_create(&tids[i],
-			NULL,
-			server,
-			&args[i])) == 0
-		);
-	}
-
-	pthread_barrier_wait(&barrier);
-
 	spawners_sync();
 
 	/* Run self-tests. */
 	if (debug)
-		test_runtime(argv[2], NR_SERVERS);
+		test_runtime(argv[2], 0);
 
-	/* Wait for name server thread. */
-	for (int i = 0; i < NR_SERVERS; i++)
-		pthread_join(tids[i], NULL);
+	/* Initialization. */
+	if ((ret = kernel_setup()) != 0)
+	{
+		printf("[KERNEL] startup failed\n");
+		return (EXIT_FAILURE);
+	}
+
+	ret = main2(argc, argv);	
+
+	/* Cleanup. */
+	if ((ret = kernel_cleanup()) != 0)
+	{
+		printf("[KERNEL] cleanup failed\n");
+		return (EXIT_FAILURE);
+	}
 
 	while(1);
+
+	/* Never gets here. */
 
 	hal_cleanup();
 	return (EXIT_SUCCESS);

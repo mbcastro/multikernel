@@ -21,14 +21,17 @@
 #
 
 export BUILD_BENCHMARKS=true
-export BUILD_TESTS=true
 export BUILD_KERNEL=true
 ifeq ($(ARCH),k1bdp)
 	export BUILD_LIBS=true
 	export BUILD_SERVERS=false
+	export BUILDING_CCLUSTER=true
+	export BUILD_TESTS=false
 else
 	export BUILD_LIBS=false
 	export BUILD_SERVERS=true
+	export BUILDING_IOCLUSTER=true
+	export BUILD_TESTS=true
 endif
 
 # Toolchain
@@ -61,7 +64,9 @@ endif
 ifeq ($(ARCH),k1bdp)
 	export LIBS = $(TOOLCHAIN)/k1-nodeos/lib/mOS/libmppaipc.a
 	export LIBKERNEL = $(LIBDIR)/libkernel-k1bdp.a
+	export LIBUSER = $(LIBDIR)/libuser-k1bdp.a
 else
 	export LIBS = $(TOOLCHAIN)/k1-rtems/lib/libmppaipc.a
 	export LIBKERNEL = $(LIBDIR)/libkernel-k1bio.a
+	export LIBUSER = $(LIBDIR)/libuser-k1bio.a
 endif

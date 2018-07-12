@@ -73,12 +73,16 @@ function build2
 		-T $multibin
 }
 
-build0 $BINDIR/test/waitpid-master $BINDIR/test/waitpid-slave waitpid.img
-build1 $BINDIR/servers $BINDIR/servers1 nanvix-debug.img
-build2 $BINDIR/servers $BINDIR/servers1 "$BINDIR/test/hal-sync-slave" nanvix-debug-hal-sync.img
+build1 $BINDIR/test $BINDIR/servers1 nanvix-debug.img
 
-build0 $BINDIR/benchmark/mppa256-portal-master $BINDIR/benchmark/mppa256-portal-slave benchmark-mppa256-portal.img
 
-build0 $BINDIR/benchmark/hal-mailbox-master $BINDIR/benchmark/hal-mailbox-slave benchmark-hal-mailbox.img
-build0 $BINDIR/benchmark/hal-portal-master $BINDIR/benchmark/hal-portal-slave benchmark-hal-portal.img
+
+#build0 $BINDIR/test/waitpid-master $BINDIR/test/waitpid-slave waitpid.img
+#build1 $BINDIR/servers $BINDIR/servers1 nanvix-debug.img
+#build2 $BINDIR/servers $BINDIR/servers1 "$BINDIR/test/hal-sync-slave" nanvix-debug-hal-sync.img
+#
+#build0 $BINDIR/benchmark/mppa256-portal-master $BINDIR/benchmark/mppa256-portal-slave benchmark-mppa256-portal.img
+#
+#build0 $BINDIR/benchmark/hal-mailbox-master $BINDIR/benchmark/hal-mailbox-slave benchmark-hal-mailbox.img
+#build0 $BINDIR/benchmark/hal-portal-master $BINDIR/benchmark/hal-portal-slave benchmark-hal-portal.img
 

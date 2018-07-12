@@ -21,65 +21,15 @@
  */
 
 #include <stdlib.h>
-#include <string.h>
 #include <stdio.h>
 
-/* Kernel unit-tests. */
-extern void test_hal_core(void);
-extern void test_hal_sync(void);
-extern void test_hal_mailbox(void);
-extern void test_hal_portal(void);
-
-/* Runtime unit-tests. */
-extern void test_name(int);
-extern void test_ipc_mailbox(int);
-extern void test_ipc_barrier(int);
-
 /**
- * @brief Generic test driver.
+ * @brief Automated test driver.
  */
-void test_kernel(const char *module)
+int main2(int argc, const char **argv)
 {
-	if (!strcmp(module, "--hal-core"))
-	{
-		test_hal_core();
-		exit(EXIT_SUCCESS);
-	}
-	else if (!strcmp(module, "--hal-sync"))
-	{
-		test_hal_sync();
-		exit(EXIT_SUCCESS);
-	}
-	else if (!strcmp(module, "--hal-mailbox"))
-	{
-		test_hal_mailbox();
-		exit(EXIT_SUCCESS);
-	}
-	else if (!strcmp(module, "--hal-portal"))
-	{
-		test_hal_portal();
-		exit(EXIT_SUCCESS);
-	}
-}
+	((void) argc);
+	((void) argv);
 
-/**
- * @brief Generic test driver.
- */
-void test_runtime(const char *module, int nservers)
-{
-	if (!strcmp(module, "--name"))
-	{
-		test_name(nservers);
-		exit(EXIT_SUCCESS);
-	}
-	else if (!strcmp(module, "--mailbox"))
-	{
-		test_ipc_mailbox(nservers);
-		exit(EXIT_SUCCESS);
-	}
-	else if (!strcmp(module, "--barrier"))
-	{
-		test_ipc_barrier(nservers);
-		exit(EXIT_SUCCESS);
-	}
+	return (EXIT_SUCCESS);
 }

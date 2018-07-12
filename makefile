@@ -50,5 +50,8 @@ endif
 
 # Cleans everything.
 distclean:
-	cd $(SRCDIR) && $(MAKE) distclean
+ifeq ($(TARGET),mppa256)
+	cd $(SRCDIR) && $(MAKE) distclean ARCH=k1bdp
+	cd $(SRCDIR) && $(MAKE) distclean ARCH=k1bio
+endif
 

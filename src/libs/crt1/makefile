@@ -20,28 +20,27 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-# Change binaries directory.
-export BINDIR := $(BINDIR)/test
+# C Source Files
+SRC = $(wildcard *.c)
 
-# Builds everything.
-all: hal-sync mppa256-waitpid
+# Object Files
+OBJ = $(SRC:.c=.o)
 
-# Builds HAL Sync testing unit.
-hal-sync:
-	mkdir -p $(BINDIR)
-	cd hal/sync && $(MAKE) all
+#===============================================================================
 
-# Builds waitpid testing
-mppa256-waitpid:
-	mkdir -p $(BINDIR)
-	cd arch/mppa256/waitpid && $(MAKE) all
+# Builds startup routines for Compute Cluster.
+all: $(OBJ)
+	$(AR) $(ARFLAGS) $(LIBUSER) $(OBJ)
+
+# Builds object files.
+%.o: %.c
+	$(CC) $(CFLAGS) $< -c -o $@
 
 # Cleans compilation files.
 clean:
-	cd hal/sync && $(MAKE) clean
-	cd arch/mppa256/waitpid && $(MAKE) clean
+	rm -rf $(OBJ)
 
 # Cleans everything.
-distclean:
-	cd hal/sync && $(MAKE) distclean
-	cd arch/mppa256/waitpid && $(MAKE) distclean
+distclean: clean
+	rm -rf $(LIBUSER)
+

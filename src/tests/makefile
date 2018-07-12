@@ -21,23 +21,19 @@
 #
 
 # C Source Files
-SRC = $(wildcard spawner1/*.c) \
-	   name.c
+SRC = $(wildcard *.c)
 
 # Object Files
 OBJ = $(SRC:.c=.o)
 
+# Change binaries directory.
+TESTBIN := $(BINDIR)/test
+
 #===============================================================================
 
-# Builds everything.
-all: servers
-
-#
-# Server fleet.
-#
-servers: $(OBJ)
-	mkdir -p $(BINDIR)
-	$(CC) $(LDFLAGS) $(OBJ) -o $(SERVERSBIN1) $(LIBKERNEL) $(LIBS)
+# Builds automated test driver.
+all: $(OBJ) $(LIBDIR)/crt0.o
+	$(CC) $(LDFLAGS) $^ -o $(TESTBIN) $(LIBUSER) $(LIBKERNEL) $(LIBS)
 
 # Builds object files.
 %.o: %.c
@@ -49,4 +45,5 @@ clean:
 
 # Cleans everything.
 distclean: clean
-	rm -rf $(SERVERSBIN1)
+	rm -rf $(TESTBIN)
+

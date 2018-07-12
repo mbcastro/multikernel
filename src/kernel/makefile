@@ -38,7 +38,6 @@ all: $(OBJ)
 
 # Builds object files.
 %.o: %.c
-	echo $(TARGET)
 	$(CC) $(CFLAGS) $<  -c -o $@
 
 # Cleans compilation files.

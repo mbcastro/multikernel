@@ -49,20 +49,19 @@ export ARFLAGS = rcs
 #===============================================================================
 
 # System Services
-export SERVERSBIN0 = $(BINDIR)/servers
 export SERVERSBIN1 = $(BINDIR)/servers1
 
 #===============================================================================
 
 # Conflicts.
-.PHONY: benchmark
+.PHONY: benchmarks
 .PHONY: kernel
-.PHONY: lib
+.PHONY: libs
 .PHONY: servers
-.PHONY: test
+.PHONY: tests
 
 # Builds everything.
-all: benchmarks kernel libs tests servers
+all: kernel servers libs tests benchmarks 
 
 # Builds the kernel.
 kernel: clean
@@ -76,37 +75,38 @@ ifeq ($(BUILD_SERVERS),true)
 	cd servers && $(MAKE) all
 endif
 
+# Builds user-level libraries.
+libs: kernel
+	mkdir -p $(LIBDIR)
+	cd libs && $(MAKE) all
+
 # Builds testing system.
 tests: kernel servers libs
 ifeq ($(BUILD_TESTS),true)
-	cd test && $(MAKE) all
+	mkdir -p $(BINDIR)
+	cd tests && $(MAKE) all
 endif
 
 # Builds benchmarks.
 benchmarks: kernel servers libs
 ifeq ($(BUILD_BENCHMARKS),true)
-	cd benchmark && $(MAKE) all
-endif
-
-# Builds user-level libraries.
-libs: kernel
-ifeq ($(BUILD_LIBS),true)
-	cd lib && $(MAKE) all
+	mkdir -p $(BINDIR)
+	cd benchmarks && $(MAKE) all
 endif
 
 # Cleans compilation files.
 clean:
-	cd benchmark && $(MAKE) clean
 	cd kernel && $(MAKE) clean
-	cd lib && $(MAKE) clean
 	cd servers && $(MAKE) clean
-	cd test && $(MAKE) clean
+	cd libs && $(MAKE) clean
+	cd tests && $(MAKE) clean
+	cd benchmarks && $(MAKE) clean
 
 # Cleans everything.
 distclean:
-	cd benchmark && $(MAKE) distclean
 	cd kernel && $(MAKE) distclean
-	cd lib && $(MAKE) distclean
 	cd servers && $(MAKE) distclean
-	cd test && $(MAKE) distclean
+	cd libs && $(MAKE) distclean
+	cd tests && $(MAKE) distclean
+	cd benchmarks && $(MAKE) distclean
 

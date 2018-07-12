@@ -20,33 +20,35 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-# C Source Files
-SRC = $(wildcard spawner1/*.c) \
-	   name.c
-
-# Object Files
-OBJ = $(SRC:.c=.o)
+# Conflicts.
+.PHONY: crt0
+.PHONY: crt1
 
 #===============================================================================
 
-# Builds everything.
-all: servers
+# Builds startup routines.
+all: crt0 crt1
 
-#
-# Server fleet.
-#
-servers: $(OBJ)
-	mkdir -p $(BINDIR)
-	$(CC) $(LDFLAGS) $(OBJ) -o $(SERVERSBIN1) $(LIBKERNEL) $(LIBS)
+# Builds startup routines for IO Cluster.
+crt0:
+ifeq ($(BUILDING_IOCLUSTER),true)
+	cd crt0 && $(MAKE) all
+endif
+	
 
-# Builds object files.
-%.o: %.c
-	$(CC) $(CFLAGS) $< -c -o $@
+# Builds startup routines for Compute Cluster.
+crt1:
+ifeq ($(BUILDING_CCLUSTER),true)
+	cd crt1 && $(MAKE) all
+endif
 
 # Cleans compilation files.
 clean:
-	rm -rf $(OBJ)
+	cd crt0 && $(MAKE) clean
+	cd crt1 && $(MAKE) clean
 
 # Cleans everything.
 distclean: clean
-	rm -rf $(SERVERSBIN1)
+	cd crt0 && $(MAKE) distclean
+	cd crt1 && $(MAKE) distclean
+

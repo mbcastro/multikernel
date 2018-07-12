@@ -21,17 +21,28 @@
 #
 
 # C Source Files
-SRC = $(wildcard *.c)
+SRC = $(wildcard hal/core/*.c)    \
+      $(wildcard hal/sync/*.c)    \
+      $(wildcard hal/mailbox/*.c) \
+      $(wildcard hal/portal/*.c)  \
+      $(wildcard ipc/barrier/*.c) \
+      $(wildcard ipc/name/*.c)    \
+      $(wildcard ipc/mailbox/*.c)
 
 # Object Files
 OBJ = $(SRC:.c=.o)
 
 #===============================================================================
 
-# Builds the kernel.
-all: $(OBJ)
-	mkdir -p $(LIBDIR)
-	$(AR) r $(LIBKERNEL) $(OBJ)
+# Builds startup routines for IO Cluster.
+all: libuser crt0
+
+crt0: 
+	$(CC) $(CFLAGS) crt0.c -c -o crt0.o
+	mv crt0.o $(LIBDIR)
+
+libuser: $(OBJ)
+	$(AR) $(ARFLAGS) $(LIBUSER) $(OBJ)
 
 # Builds object files.
 %.o: %.c
@@ -43,6 +54,5 @@ clean:
 
 # Cleans everything.
 distclean: clean
-	rm -rf $(LIBKERNEL)
-
+	rm -rf $(LIBUSER)
 
