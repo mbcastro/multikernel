@@ -37,5 +37,5 @@ run2 "nanvix-debug.img" "/servers" "/servers1" "--debug --hal-portal" | grep nan
 echo "Runnaing Naming Service Tests"
 run2 "nanvix-debug.img" "/servers" "/servers1" "--debug --name" | grep nanvix
 
-echo "Testing mppa_waitpid()"
-run1 "waitpid.img" "/test/waitpid-master"
+echo "Runnaing Nammed Mailbox Tests"
+run2 "nanvix-debug.img" "/servers" "/servers1" "--debug --mailbox" | grep nanvix
