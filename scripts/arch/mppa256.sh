@@ -20,13 +20,8 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-export K1TOOLS_DIR="/usr/local/k1tools"
 export OUTDIR=.
-
-# Global parameters.
-NCLUSTERS=16
-NITERATIONS=5
-BUFSIZE=1048576
+export K1TOOLS_DIR="/usr/local/k1tools"
 
 #
 # Runs a multibinary file using a single IO Cluster.
@@ -76,49 +71,3 @@ function run2
 	fi
 }
 
-
-if [[ $1 == "test" ]];
-then
-	echo "Testing HAL"
-	run2 "nanvix-debug.img" "/servers" "/servers1" "--debug --hal-core" | grep nanvix
-	echo "Testing HAL Sync"
-	run2 "nanvix-debug-hal-sync.img" "/servers" "/servers1" "--debug --hal-sync" | grep nanvix
-	echo "Testing HAL Mailbox"
-	run2 "nanvix-debug.img" "/servers" "/servers1" "--debug --hal-mailbox" | grep nanvix
-	echo "Testing HAL Portal"
-	run2 "nanvix-debug.img" "/servers" "/servers1" "--debug --hal-portal" | grep nanvix
-	echo "Testing Naming Service"
-	run2 "nanvix-debug.img" "/servers" "/servers1" "--debug --name" | grep nanvix
-	echo "Testing mppa_waitpid()"
-	run1 "waitpid.img" "/test/waitpid-master"
-#	echo "Testing Mailbox"
-#	run2 "nanvix-debug-mailbox.img" "/servers" "/servers1" "--debug --mailbox"
-#	echo "Testing BARRIER"
-#	run2 "test-barrier.img" "/test/barrier-master0" "/test/barrier-master1" "$NCLUSTERS" | grep "test"
-#	echo "Testing RMEM"
-elif [[ $1 == "benchmark" ]];
-then
-	case "$2" in
-		mppa256-portal)
-			for kernel in gather broadcast pingpong;
-			do
-				run1                                          \
-					"benchmark-mppa256-portal.img"            \
-					"/benchmark/mppa256-portal-master"        \
-					"$NCLUSTERS $NITERATIONS $BUFSIZE $kernel"
-			done
-		;;
-		nanvix-portal)
-			for kernel in gather broadcast pingpong;
-			do
-				run1 "benchmark-hal-portal.img"                \
-					"/benchmark/hal-portal-master"             \
-					"$NCLUSTERS $NITERATIONS $BUFSIZE $kernel"
-			done
-		;;
-		*)
-			echo "Usage: run.sh test {mppa256-portal|nanvix-portal}"
-			exit 1
-		;;
-	esac
-fi
