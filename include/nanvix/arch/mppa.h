@@ -49,9 +49,19 @@
 	#define HAL_NR_CORES_SYSTEM 16
 
 	/**
-	 * @brief Number of cluster in the platform.
+	 * @brief Number of IO Clusters in the platform.
 	 */
-	#define HAL_NR_CLUSTERS 20
+	#define HAL_NR_IOCLUSTERS 4
+
+	/**
+	 * @brief Number of Compute Clusters in the platform.
+	 */
+	#define HAL_NR_CCLUSTERS 16
+
+	/**
+	 * @brief Number of clusters in the platform.
+	 */
+	#define HAL_NR_CLUSTERS (NR_IOCLUSTER + NR_CCLUSTER)
 
 #endif /* __NEED_HAL_CORE_ */
 

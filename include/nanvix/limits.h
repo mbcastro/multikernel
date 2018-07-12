@@ -35,7 +35,7 @@
 	/**
 	 * @brief Maximum number of processes.
 	 */
-	#define NANVIX_PROC_MAX HAL_NR_CLUSTERS
+	#define NANVIX_PROC_MAX HAL_NR_CCLUSTERS
 
 #endif /* NANVIX_LIMITS_H_ */
 
