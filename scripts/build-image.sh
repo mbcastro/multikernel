@@ -73,9 +73,14 @@ function build2
 		-T $multibin
 }
 
+# Test Driver
 BINARIES="$BINDIR/test/hal-sync-slave"
 BINARIES="$BINARIES,$BINDIR/test/barrier-slave"
 BINARIES="$BINARIES,$BINDIR/test/mailbox-slave"
 BINARIES="$BINARIES,$BINDIR/test/name-slave"
 build2 $BINDIR/test-driver $BINDIR/servers1 "$BINARIES" nanvix-debug.img
 
+# Benchmarks
+build0 $BINDIR/benchmark/mppa256-portal-master $BINDIR/benchmark/mppa256-portal-slave benchmark-mppa256-portal.img
+build0 $BINDIR/benchmark/hal-mailbox-master $BINDIR/benchmark/hal-mailbox-slave benchmark-hal-mailbox.img
+build0 $BINDIR/benchmark/hal-portal-master $BINDIR/benchmark/hal-portal-slave benchmark-hal-portal.img
