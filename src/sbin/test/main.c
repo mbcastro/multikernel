@@ -20,8 +20,207 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
+
+#include <mppaipc.h>
+
+#define __NEED_HAL_CORE_
+#define __NEED_HAL_NOC_
+#define __NEED_HAL_SYNC_
+#include <nanvix/hal.h>
+#include <nanvix/limits.h>
+
+/*============================================================================*
+ * API Test: Create Unlink CC                                                 *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Create Unlink CC
+ */
+static void test_hal_sync_create_unlink_cc(void)
+{
+	int status;
+	int pids[NANVIX_PROC_MAX];
+	char masternode_str[4];
+	char sync_nclusters_str[4];
+	char test_str[4];
+	const char *args[] = {
+		"/test/hal-sync-slave",
+		masternode_str,
+		sync_nclusters_str,
+		test_str,
+		NULL
+	};
+
+	printf("[nanvix][test][api][hal][sync] CC Create Unlink\n");
+
+	sprintf(masternode_str, "%d", hal_get_node_id());
+	sprintf(sync_nclusters_str, "%d", NANVIX_PROC_MAX);
+	sprintf(test_str, "%d", 0);
+
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
+		assert((pids[i] = mppa_spawn(i, NULL, args[0], args, NULL)) != -1);
+
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
+	{
+		assert(mppa_waitpid(pids[i], &status, 0) != -1);
+		assert(status == EXIT_SUCCESS);
+	}
+}
+
+/*============================================================================*
+ * API Test: Open Close CC                                                    *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Open Close CC
+ */
+static void test_hal_sync_open_close_cc(void)
+{
+	int status;
+	int pids[NANVIX_PROC_MAX];
+	char masternode_str[4];
+	char sync_nclusters_str[4];
+	char test_str[4];
+	const char *args[] = {
+		"/test/hal-sync-slave",
+		masternode_str,
+		sync_nclusters_str,
+		test_str,
+		NULL
+	};
+
+	printf("[nanvix][test][api][hal][sync] CC Open Close\n");
+
+	sprintf(masternode_str, "%d", hal_get_node_id());
+	sprintf(sync_nclusters_str, "%d", NANVIX_PROC_MAX);
+	sprintf(test_str, "%d", 1);
+
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
+		assert((pids[i] = mppa_spawn(i, NULL, args[0], args, NULL)) != -1);
+
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
+	{
+		assert(mppa_waitpid(pids[i], &status, 0) != -1);
+		assert(status == EXIT_SUCCESS);
+	}
+}
+
+/*============================================================================*
+ * API Test: Wait Signal CC                                                   *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Wait Signal CC
+ */
+static void test_hal_sync_wait_signal_cc(void)
+{
+	int syncid;
+	int nodes[NANVIX_PROC_MAX + 1];
+	int pids[NANVIX_PROC_MAX];
+	int status;
+
+	char masternode_str[4];
+	char sync_nclusters_str[4];
+	char test_str[4];
+	const char *args[] = {
+		"/test/hal-sync-slave",
+		masternode_str,
+		sync_nclusters_str,
+		test_str,
+		NULL
+	};
+
+	printf("[nanvix][test][api][hal][sync] CC Wait Signal\n");
+
+	/* Build nodes list. */
+	nodes[0] = hal_get_node_id();
+
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
+		nodes[i + 1] = i;
+
+	sprintf(masternode_str, "%d", nodes[0]);
+	sprintf(sync_nclusters_str, "%d", NANVIX_PROC_MAX);
+	sprintf(test_str, "%d", 2);
+
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
+		assert((pids[i] = mppa_spawn(i, NULL, args[0], args, NULL)) != -1);
+
+	assert((syncid = hal_sync_open(nodes, NANVIX_PROC_MAX + 1, HAL_SYNC_ONE_TO_ALL)) >= 0);
+	assert(hal_sync_signal(syncid) == 0);
+	assert(hal_sync_close(syncid) == 0);
+
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
+	{
+		assert(mppa_waitpid(pids[i], &status, 0) != -1);
+		assert(status == EXIT_SUCCESS);
+	}
+}
+
+/*============================================================================*
+ * API Test: Signal Wait CC                                                   *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Signal Wait CC
+ */
+static void test_hal_sync_signal_wait_cc(void)
+{
+	int syncid;
+	char masternode_str[4];
+	int nodes[NANVIX_PROC_MAX + 1];
+	int pids[NANVIX_PROC_MAX];
+	char sync_nclusters_str[4];
+	char test_str[4];
+	const char *args[] = {
+		"/test/hal-sync-slave",
+		masternode_str,
+		sync_nclusters_str,
+		test_str,
+		NULL
+	};
+
+	printf("[nanvix][test][api][hal][sync] CC Signal Wait\n");
+
+	/* Build nodes list. */
+	nodes[0] = hal_get_node_id();
+
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
+		nodes[i + 1] = i;
+
+	/* Create synchronization point. */
+	assert((syncid = hal_sync_create(
+		nodes,
+		NANVIX_PROC_MAX + 1,
+		HAL_SYNC_ALL_TO_ONE)) >= 0
+	);
+
+	/* Spawn slaves. */
+	sprintf(masternode_str, "%d", nodes[0]);
+	sprintf(sync_nclusters_str, "%d", NANVIX_PROC_MAX);
+	sprintf(test_str, "%d", 3);
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
+		assert((pids[i] = mppa_spawn(i, NULL, args[0], args, NULL)) != -1);
+
+	/* Wait. */
+	assert(hal_sync_wait(syncid) == 0);
+
+	/* Join. */
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
+	{
+		int status;
+
+		assert(mppa_waitpid(pids[i], &status, 0) != -1);
+		assert(status == EXIT_SUCCESS);
+	}
+
+	/* House keeping. */
+	assert(hal_sync_unlink(syncid) == 0);
+}
+
+/*============================================================================*/
 
 /**
  * @brief Automated test driver.
@@ -30,6 +229,11 @@ int main2(int argc, const char **argv)
 {
 	((void) argc);
 	((void) argv);
+	
+	test_hal_sync_create_unlink_cc();
+	test_hal_sync_open_close_cc();
+	test_hal_sync_wait_signal_cc();
+	test_hal_sync_signal_wait_cc();
 
 	return (EXIT_SUCCESS);
 }

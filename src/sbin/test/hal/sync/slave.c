@@ -34,16 +34,16 @@
 #include <nanvix/hal.h>
 
 /**
- * @brief Asserts a logic expression.
+ * @brief ID of master node.
  */
-#define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
+static int masternode;
 
 /*============================================================================*
  * API Test: Create Unlink                                                    *
  *============================================================================*/
 
 /**
- * @brief API Test: Synchronization Point Create Unlink
+ * @brief API Test: Create Unlink
  */
 static void test_hal_sync_create_unlink(int nclusters)
 {
@@ -62,12 +62,12 @@ static void test_hal_sync_create_unlink(int nclusters)
 		nodes[0] -= nodes[1];
 	}
 
-	TEST_ASSERT((syncid = hal_sync_create(nodes,
+	assert((syncid = hal_sync_create(nodes,
 		nclusters,
 		HAL_SYNC_ONE_TO_ALL)) >= 0
 	);
 
-	TEST_ASSERT(hal_sync_unlink(syncid) == 0);
+	assert(hal_sync_unlink(syncid) == 0);
 }
 
 /*============================================================================*
@@ -75,7 +75,7 @@ static void test_hal_sync_create_unlink(int nclusters)
  *============================================================================*/
 
 /**
- * @brief API Test: Synchronization Point Open Close
+ * @brief API Test: Open Close
  */
 static void test_hal_sync_master_open_close(int nclusters)
 {
@@ -98,7 +98,7 @@ static void test_hal_sync_master_open_close(int nclusters)
 		nodes_local[0] -= nodes_local[1];
 	}
 
-	TEST_ASSERT((syncid_local = hal_sync_create(
+	assert((syncid_local = hal_sync_create(
 		nodes_local,
 		nclusters,
 		HAL_SYNC_ONE_TO_ALL)) == 0
@@ -121,69 +121,75 @@ static void test_hal_sync_master_open_close(int nclusters)
 		}
 	}
 
-	TEST_ASSERT((syncid = hal_sync_open(
+	assert((syncid = hal_sync_open(
 		nodes,
 		nclusters,
 		HAL_SYNC_ONE_TO_ALL)) >= 0
 	);
 
-	TEST_ASSERT(hal_sync_close(syncid) == 0);
+	assert(hal_sync_close(syncid) == 0);
 
-	TEST_ASSERT(hal_sync_unlink(syncid_local) == 0);
+	assert(hal_sync_unlink(syncid_local) == 0);
 }
 
+/*============================================================================*
+ * API Test: Wait Signal                                                      *
+ *============================================================================*/
+
 /**
- * @brief API Test: Synchronization Point Wait Signal
+ * @brief API Test: Wait Signal
  */
-static void test_hal_sync_thread_wait_signal(int nclusters)
+static void test_hal_sync_wait_signal(int nclusters)
 {
 	int syncid;
 	int nodes[nclusters + 1];
 
 	/* Build nodes list. */
-	nodes[0] = 128;
+	nodes[0] = masternode;
 
 	for (int i = 0; i < nclusters; i++)
 		nodes[i + 1] = i;
 
-	TEST_ASSERT((syncid = hal_sync_create(
+	assert((syncid = hal_sync_create(
 		nodes,
 		nclusters + 1,
 		HAL_SYNC_ONE_TO_ALL)) >= 0
 	);
 
-	TEST_ASSERT(hal_sync_wait(syncid) == 0);
+	assert(hal_sync_wait(syncid) == 0);
 
-	TEST_ASSERT(hal_sync_unlink(syncid) == 0);
+	assert(hal_sync_unlink(syncid) == 0);
 }
 
+/*============================================================================*
+ * API Test: Signal Wait                                                      *
+ *============================================================================*/
+
 /**
- * @brief API Test: Synchronization Point Signal Wait
+ * @brief API Test: Signal Wait
  */
-static void test_hal_sync_thread_signal_wait(int nclusters)
+static void test_hal_sync_signal_wait(int nclusters)
 {
 	int syncid;
 	int nodes[nclusters + 1];
 
 	/* Build nodes list. */
-	nodes[0] = 128;
+	nodes[0] = masternode;
 
 	for (int i = 0; i < nclusters; i++)
 		nodes[i + 1] = i;
 
-	TEST_ASSERT((syncid = hal_sync_open(nodes,
+	assert((syncid = hal_sync_open(nodes,
 		nclusters + 1,
 		HAL_SYNC_ALL_TO_ONE)) >= 0
 	);
 
-	TEST_ASSERT(hal_sync_signal(syncid) == 0);
+	assert(hal_sync_signal(syncid) == 0);
 
-	TEST_ASSERT(hal_sync_close(syncid) == 0);
+	assert(hal_sync_close(syncid) == 0);
 }
 
-/*====================================================================*
- * HAL Sync Test Driver                                               *
- *====================================================================*/
+/*============================================================================*/
 
 /**
  * @brief HAL Sync Test Driver
@@ -194,21 +200,28 @@ int main2(int argc, char **argv)
 	int nclusters;
 
 	/* Retrieve kernel parameters. */
-	TEST_ASSERT(argc == 3);
-	nclusters = atoi(argv[1]);
-	test = atoi(argv[2]);
+	assert(argc == 4);
+	masternode = atoi(argv[1]);
+	nclusters = atoi(argv[2]);
+	test = atoi(argv[3]);
 
-	if(test == 0)
+	switch (test)
 	{
-		test_hal_sync_create_unlink(nclusters);
-		test_hal_sync_master_open_close(nclusters);
+		case 0:
+			test_hal_sync_create_unlink(nclusters);
+			break;
+		case 1:
+			test_hal_sync_master_open_close(nclusters);
+			break;
+		case 2:
+			test_hal_sync_wait_signal(nclusters);
+			break;
+		case 3:
+			test_hal_sync_signal_wait(nclusters);
+			break;
+		default:
+			exit(EXIT_FAILURE);
 	}
-	else if(test == 1)
-		test_hal_sync_thread_wait_signal(nclusters);
-	else if(test == 2)
-		test_hal_sync_thread_signal_wait(nclusters);
-	else
-		exit(EXIT_FAILURE);
 
 	return (EXIT_SUCCESS);
 }

@@ -171,10 +171,6 @@ int main(int argc, const char **argv)
 		return (EXIT_FAILURE);
 	}
 
-	while(1);
-
-	/* Never gets here. */
-
 	hal_cleanup();
 	return (EXIT_SUCCESS);
 }

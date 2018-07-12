@@ -27,6 +27,7 @@ run2 "nanvix-debug.img" "/test-driver" "/servers1" "--debug --hal-core" | grep n
 
 echo "Running Unnamed Sync Tests"
 run2 "nanvix-debug.img" "/test-driver" "/servers1" "--debug --hal-sync" | grep nanvix
+run2 "nanvix-debug.img" "/test-driver" "/servers1" " "                  | grep nanvix
 
 echo "Running Unnamed Mailbox Tests"
 run2 "nanvix-debug.img" "/test-driver" "/servers1" "--debug --hal-mailbox" | grep nanvix
