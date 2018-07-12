@@ -41,10 +41,10 @@
  * @brief Benchmark parameters.
  */
 /**@{*/
-static int nremotes = 0;        /**< Number of remotes processes.    */
-static int niterations = 0;     /**< Number of benchmark parameters. */
-static int bufsize = 0;         /**< Buffer size.                    */
-static const char *mode = NULL; /**< Benchmark mode.                 */
+static int nclusters = 0;         /**< Number of remotes processes.    */
+static int niterations = 0;       /**< Number of benchmark parameters. */
+static int bufsize = 0;           /**< Buffer size.                    */
+static const char *kernel = NULL; /**< Benchmark kernel.               */
 /**@}*/
 
 /**
@@ -73,7 +73,7 @@ static void spawn_remotes(void)
 	char last_remote[4];
 	char niterations_str[4];
 	char bufsize_str[20];
-	int nodes[nremotes + 1];
+	int nodes[nclusters + 1];
 	const char *argv[] = {
 		"/benchmark/hal-portal-slave",
 		master_node,
@@ -81,7 +81,7 @@ static void spawn_remotes(void)
 		last_remote,
 		niterations_str,
 		bufsize_str,
-		mode,
+		kernel,
 		NULL
 	};
 
@@ -89,19 +89,19 @@ static void spawn_remotes(void)
 
 	/* Build nodes list. */
 	nodes[0] = nodeid;
-	for (int i = 0; i < nremotes; i++)
+	for (int i = 0; i < nclusters; i++)
 		nodes[i + 1] = i;
 
 	/* Create synchronization point. */
-	assert((syncid = hal_sync_create(nodes, nremotes + 1, HAL_SYNC_ALL_TO_ONE)) >= 0);
+	assert((syncid = hal_sync_create(nodes, nclusters + 1, HAL_SYNC_ALL_TO_ONE)) >= 0);
 
 	/* Spawn remotes. */
 	sprintf(master_node, "%d", nodeid);
 	sprintf(first_remote, "%d", 0);
-	sprintf(last_remote, "%d", nremotes);
+	sprintf(last_remote, "%d", nclusters);
 	sprintf(niterations_str, "%d", niterations);
 	sprintf(bufsize_str, "%d", bufsize);
-	for (int i = 0; i < nremotes; i++)
+	for (int i = 0; i < nclusters; i++)
 		assert((pids[i] = mppa_spawn(i, NULL, argv[0], argv, NULL)) != -1);
 
 	/* Sync. */
@@ -116,7 +116,7 @@ static void spawn_remotes(void)
  */
 static void join_remotes(void)
 {
-	for (int i = 0; i < nremotes; i++)
+	for (int i = 0; i < nclusters; i++)
 		assert(mppa_waitpid(pids[i], NULL, 0) != -1);
 }
 
@@ -132,7 +132,7 @@ static void join_remotes(void)
 static void open_portals(int *outportals)
 {
 	/* Open output portales. */
-	for (int i = 0; i < nremotes; i++)
+	for (int i = 0; i < nclusters; i++)
 		assert((outportals[i] = hal_portal_open(i)) >= 0);
 }
 
@@ -144,7 +144,7 @@ static void open_portals(int *outportals)
 static void close_portals(const int *outportals)
 {
 	/* Close output portals. */
-	for (int i = 0; i < nremotes; i++)
+	for (int i = 0; i < nclusters; i++)
 		assert((hal_portal_close(outportals[i])) == 0);
 }
 
@@ -153,9 +153,9 @@ static void close_portals(const int *outportals)
  */
 static void kernel_broadcast(void)
 {
-	uint64_t total;
+	double total;
 	uint64_t t1, t2;
-	int outportals[nremotes];
+	int outportals[nclusters];
 
 	/* Initialization. */
 	open_portals(outportals);
@@ -165,22 +165,22 @@ static void kernel_broadcast(void)
 	for (int k = 0; k <= niterations; k++)
 	{
 		t1 = hal_timer_get();
-		for (int i = 0; i < nremotes; i++)
+		for (int i = 0; i < nclusters; i++)
 			assert(hal_portal_write(outportals[i], buffer, bufsize) == bufsize);
 		t2 = hal_timer_get();
 
-		total = hal_timer_diff(t1, t2);
+		total = hal_timer_diff(t1, t2)/((double) hal_get_core_freq());
 
 		/* Warmup. */
 		if (k == 0)
 			continue;
 
-		printf("%s;%d;%d;%.2lf;%.2lf\n", 
-			mode,
+		printf("nanvix;%s;%d;%d;%.2lf;%.2lf\n",
+			kernel,
 			bufsize,
-			nremotes,
-			((double)total)/nremotes,
-			(nremotes*bufsize)/((double)total)*MEGA
+			nclusters,
+			(total*MEGA)/nclusters,
+			(nclusters*bufsize)/total
 		);
 	}
 
@@ -195,7 +195,7 @@ static void kernel_gather(void)
 {
 	int inportal;
 	int nodeid;
-	uint64_t total;
+	double total;
 	uint64_t t1, t2;
 
 	nodeid = hal_get_node_id();
@@ -207,25 +207,25 @@ static void kernel_gather(void)
 	for (int k = 0; k <= niterations; k++)
 	{
 		t1 = hal_timer_get();
-		for (int i = 0; i < nremotes; i++)
+		for (int i = 0; i < nclusters; i++)
 		{
 			assert(hal_portal_allow(inportal, i) == 0);
 			assert(hal_portal_read(inportal, buffer, bufsize) == bufsize);
 		}
 		t2 = hal_timer_get();
 
-		total = hal_timer_diff(t1, t2);
+		total = hal_timer_diff(t1, t2)/((double) hal_get_core_freq());
 
 		/* Warmup. */
 		if (k == 0)
 			continue;
 
-		printf("%s;%d;%d;%.2lf;%.2lf\n", 
-			mode,
+		printf("nanvix;%s;%d;%d;%.2lf;%.2lf\n",
+			kernel,
 			bufsize,
-			nremotes,
-			((double)total)/nremotes,
-			(nremotes*bufsize)/((double)total)*MEGA
+			nclusters,
+			(total*MEGA)/nclusters,
+			(nclusters*bufsize)/total
 		);
 	}
 
@@ -240,9 +240,9 @@ static void kernel_pingpong(void)
 {
 	int inportal;
 	int nodeid;
-	uint64_t total;
+	double total;
 	uint64_t t1, t2;
-	int outportals[nremotes];
+	int outportals[nclusters];
 
 	nodeid = hal_get_node_id();
 
@@ -254,27 +254,27 @@ static void kernel_pingpong(void)
 	for (int k = 0; k <= niterations; k++)
 	{
 		t1 = hal_timer_get();
-		for (int i = 0; i < nremotes; i++)
+		for (int i = 0; i < nclusters; i++)
 			assert(hal_portal_write(outportals[i], buffer, bufsize) == bufsize);
-		for (int i = 0; i < nremotes; i++)
+		for (int i = 0; i < nclusters; i++)
 		{
 			assert(hal_portal_allow(inportal, i) == 0);
 			assert(hal_portal_read(inportal, buffer, bufsize) == bufsize);
 		}
 		t2 = hal_timer_get();
 
-		total = hal_timer_diff(t1, t2);
+		total = hal_timer_diff(t1, t2)/((double) hal_get_core_freq());
 
 		/* Warmup. */
 		if (k == 0)
 			continue;
 
-		printf("%s;%d;%d;%.2lf;%.2lf\n", 
-			mode,
+		printf("nanvix;%s;%d;%d;%.2lf;%.2lf\n",
+			kernel,
 			bufsize,
-			nremotes,
-			((double)total)/nremotes,
-			(2*nremotes*bufsize)/((double)total)*MEGA
+			nclusters,
+			(total*MEGA)/nclusters,
+			2*(nclusters*bufsize)/total
 		);
 	}
 
@@ -292,11 +292,11 @@ static void benchmark(void)
 	hal_setup();
 	spawn_remotes();
 
-	if (!strcmp(mode, "broadcast"))
+	if (!strcmp(kernel, "broadcast"))
 		kernel_broadcast();
-	else if (!strcmp(mode, "gather"))
+	else if (!strcmp(kernel, "gather"))
 		kernel_gather();
-	else if (!strcmp(mode, "pingpong"))
+	else if (!strcmp(kernel, "pingpong"))
 		kernel_pingpong();
 	
 	/* House keeping. */
@@ -316,16 +316,18 @@ int main(int argc, const char **argv)
 	assert(argc == 5);
 
 	/* Retrieve kernel parameters. */
-	nremotes = atoi(argv[1]);
+	nclusters = atoi(argv[1]);
 	niterations = atoi(argv[2]);
 	bufsize = atoi(argv[3]);
-	mode = argv[4];
+	kernel = argv[4];
 
 	/* Parameter checking. */
 	assert(niterations > 0);
 	assert((bufsize > 0) && (bufsize <= (BUFFER_SIZE_MAX)));
 	assert((bufsize%2) == 0);
 
+
+	printf("CORE FREQ= %d\n", hal_get_core_freq());
 	benchmark();
 
 	return (EXIT_SUCCESS);

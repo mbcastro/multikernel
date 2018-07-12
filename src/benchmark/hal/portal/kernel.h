@@ -24,6 +24,11 @@
 #define _KERNEL_H_
 
 	/**
+	 * @brief Mega (10^6).
+	 */
+	#define MEGA (1000000)
+
+	/**
 	 * @brief 10^6
 	 */
 	#define MEGA (1000000)
