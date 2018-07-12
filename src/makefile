@@ -69,9 +69,7 @@ all: kernel servers libs test benchmarks
 
 # Builds the kernel.
 kernel: clean
-ifeq ($(BUILD_KERNEL),true)
 	cd kernel && $(MAKE) all
-endif
 
 # Builds system servers
 servers: kernel
@@ -91,10 +89,8 @@ test: kernel servers libs
 
 # Builds benchmarks.
 benchmarks: kernel servers libs
-ifeq ($(BUILD_BENCHMARKS),true)
 	mkdir -p $(BINDIR)
 	cd benchmarks && $(MAKE) all
-endif
 
 # Cleans compilation files.
 clean:

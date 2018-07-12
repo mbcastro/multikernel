@@ -20,8 +20,6 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-export BUILD_BENCHMARKS=true
-export BUILD_KERNEL=true
 ifeq ($(ARCH),k1bdp)
 	export BUILD_LIBS=true
 	export BUILD_SERVERS=false
