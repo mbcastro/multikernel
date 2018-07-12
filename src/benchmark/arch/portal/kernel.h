@@ -31,7 +31,7 @@
 	/**
 	 * @brief MPPA-256 frequency (500 MHz).
 	 */
-	#define MPPA256_FREQ (500*MEGA)
+	#define MPPA256_FREQ (400*MEGA)
 	
 	/**
 	 * @brief Number of compute clusters.

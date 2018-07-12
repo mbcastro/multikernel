@@ -326,8 +326,6 @@ int main(int argc, const char **argv)
 	assert((bufsize > 0) && (bufsize <= (BUFFER_SIZE_MAX)));
 	assert((bufsize%2) == 0);
 
-
-	printf("CORE FREQ= %d\n", hal_get_core_freq());
 	benchmark();
 
 	return (EXIT_SUCCESS);
