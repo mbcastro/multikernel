@@ -20,27 +20,16 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-# C Source Files
-SRC = $(wildcard *.c)
-
-# Object Files
-OBJ = $(SRC:.c=.o)
-
 #===============================================================================
 
 # Builds startup routines for Compute Cluster.
-all: $(OBJ)
-	$(AR) $(ARFLAGS) $(LIBUSER) $(OBJ)
-
-# Builds object files.
-%.o: %.c
-	$(CC) $(CFLAGS) $< -c -o $@
+all: 
+	$(CC) $(CFLAGS) crt1.c -c -o $(CRT1)
 
 # Cleans compilation files.
 clean:
-	rm -rf $(OBJ)
+	rm -rf $(CRT1)
 
 # Cleans everything.
 distclean: clean
-	rm -rf $(LIBUSER)
 

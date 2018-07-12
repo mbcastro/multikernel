@@ -26,12 +26,10 @@ ifeq ($(ARCH),k1bdp)
 	export BUILD_LIBS=true
 	export BUILD_SERVERS=false
 	export BUILDING_CCLUSTER=true
-	export BUILD_TESTS=false
 else
 	export BUILD_LIBS=false
 	export BUILD_SERVERS=true
 	export BUILDING_IOCLUSTER=true
-	export BUILD_TESTS=true
 endif
 
 # Toolchain

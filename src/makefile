@@ -50,6 +50,7 @@ export ARFLAGS = rcs
 
 # Startup Routines
 export CRT0 = $(LIBDIR)/crt0.o
+export CRT1 = $(LIBDIR)/crt1.o
 
 # System Services
 export SERVERSBIN1 = $(BINDIR)/servers1
@@ -61,10 +62,10 @@ export SERVERSBIN1 = $(BINDIR)/servers1
 .PHONY: kernel
 .PHONY: libs
 .PHONY: servers
-.PHONY: tests
+.PHONY: test
 
 # Builds everything.
-all: kernel servers libs tests benchmarks 
+all: kernel servers libs test benchmarks 
 
 # Builds the kernel.
 kernel: clean
@@ -84,11 +85,9 @@ libs: kernel
 	cd libs && $(MAKE) all
 
 # Builds testing system.
-tests: kernel servers libs
-ifeq ($(BUILD_TESTS),true)
+test: kernel servers libs
 	mkdir -p $(BINDIR)
-	cd tests && $(MAKE) all
-endif
+	cd test && $(MAKE) all
 
 # Builds benchmarks.
 benchmarks: kernel servers libs
@@ -102,7 +101,7 @@ clean:
 	cd kernel && $(MAKE) clean
 	cd servers && $(MAKE) clean
 	cd libs && $(MAKE) clean
-	cd tests && $(MAKE) clean
+	cd test && $(MAKE) clean
 	cd benchmarks && $(MAKE) clean
 
 # Cleans everything.
@@ -110,6 +109,6 @@ distclean:
 	cd kernel && $(MAKE) distclean
 	cd servers && $(MAKE) distclean
 	cd libs && $(MAKE) distclean
-	cd tests && $(MAKE) distclean
+	cd test && $(MAKE) distclean
 	cd benchmarks && $(MAKE) distclean
 

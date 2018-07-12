@@ -20,30 +20,43 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-# C Source Files
-SRC = $(wildcard *.c)
-
-# Object Files
-OBJ = $(SRC:.c=.o)
-
-# Binary Files
-export ELFBIN = $(BINDIR)/mailbox-slave
+# Change binaries directory.
+TESTBIN := $(BINDIR)/test-driver
 
 #===============================================================================
 
-# Builds the kernel.
-all: $(OBJ)
-	mkdir -p $(BINDIR)
-	$(CC) $(LDFLAGS) $(OBJ) -o $(ELFBIN) $(LIBKERNEL) $(LIBS)
+# Builds automated test driver.
+all: master slaves
 
-# Builds object files.
-%.o: %.c
-	$(CC) $(CFLAGS) $< -c -o $@
+# Builds Main Binary
+master:
+ifeq ($(BUILDING_IOCLUSTER),true)
+	$(CC) $(CFLAGS) main.c -c -o main.o
+	$(CC) $(LDFLAGS) main.o $(CRT0) -o $(TESTBIN) $(LIBUSER) $(LIBKERNEL) $(LIBS)
+endif
+
+# Builds Slave Binaries
+slaves: 
+ifeq ($(BUILDING_CCLUSTER),true)
+	cd hal/sync && $(MAKE) all
+	cd ipc/barrier && $(MAKE) all
+	cd ipc/mailbox && $(MAKE) all
+	cd ipc/name && $(MAKE) all
+endif
 
 # Cleans compilation files.
 clean:
-	rm -rf $(OBJ)
+	rm -rf main.o
+	cd hal/sync && $(MAKE) clean
+	cd ipc/barrier && $(MAKE) clean
+	cd ipc/mailbox && $(MAKE) clean
+	cd ipc/name && $(MAKE) clean
 
 # Cleans everything.
 distclean: clean
-	rm -rf $(ELFBIN)
+	rm -rf $(TESTBIN)
+	cd hal/sync && $(MAKE) distclean
+	cd ipc/barrier && $(MAKE) distclean
+	cd ipc/mailbox && $(MAKE) distclean
+	cd ipc/name && $(MAKE) distclean
+

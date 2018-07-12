@@ -20,24 +20,31 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-# Conflicts.
-.PHONY: slave
+# C Source Files
+SRC = $(wildcard *.c)
+
+# Object Files
+OBJ = $(SRC:.c=.o)
+
+# Binary Files
+export ELFBIN = $(BINDIR)/test/barrier-slave
 
 #===============================================================================
 
-# Builds binaries.
-all: slave
+# Builds the kernel.
+all: $(OBJ)
+	mkdir -p $(BINDIR)/test/
+	$(CC) $(LDFLAGS) $(OBJ) $(CRT1) -o $(ELFBIN) $(LIBKERNEL) $(LIBS)
 
-# Builds slave binary.
-slave:
-ifeq ($(BUILD_SERVERS),false)
-	cd slave && $(MAKE) all
-endif
+# Builds object files.
+%.o: %.c
+	$(CC) $(CFLAGS) $< -c -o $@
 
 # Cleans compilation files.
 clean:
-	cd slave && $(MAKE) clean
+	rm -rf $(OBJ)
 
 # Cleans everything.
 distclean: clean
-	cd slave && $(MAKE) clean
+	rm -rf $(ELFBIN)
+

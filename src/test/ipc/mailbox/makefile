@@ -27,14 +27,14 @@ SRC = $(wildcard *.c)
 OBJ = $(SRC:.c=.o)
 
 # Binary Files
-export ELFBIN = $(BINDIR)/hal-sync-slave
+export ELFBIN = $(BINDIR)/test/mailbox-slave
 
 #===============================================================================
 
 # Builds the kernel.
 all: $(OBJ)
-	mkdir -p $(BINDIR)
-	$(CC) $(LDFLAGS) $(OBJ) -o $(ELFBIN) $(LIBKERNEL) $(LIBS)
+	mkdir -p $(BINDIR)/test/
+	$(CC) $(LDFLAGS) $(OBJ) $(CRT1) -o $(ELFBIN) $(LIBKERNEL) $(LIBS)
 
 # Builds object files.
 %.o: %.c
@@ -47,3 +47,4 @@ clean:
 # Cleans everything.
 distclean: clean
 	rm -rf $(ELFBIN)
+

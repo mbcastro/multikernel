@@ -188,12 +188,10 @@ static void test_hal_sync_thread_signal_wait(int nclusters)
 /**
  * @brief HAL Sync Test Driver
  */
-int main(int argc, char **argv)
+int main2(int argc, char **argv)
 {
 	int test;
 	int nclusters;
-
-	hal_setup();
 
 	/* Retrieve kernel parameters. */
 	TEST_ASSERT(argc == 3);
@@ -212,6 +210,5 @@ int main(int argc, char **argv)
 	else
 		exit(EXIT_FAILURE);
 
-	hal_cleanup();
 	return (EXIT_SUCCESS);
 }
