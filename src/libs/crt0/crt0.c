@@ -153,5 +153,5 @@ int main(int argc, const char **argv)
 	}
 
 	hal_cleanup();
-	return (EXIT_SUCCESS);
+	return (ret);
 }
