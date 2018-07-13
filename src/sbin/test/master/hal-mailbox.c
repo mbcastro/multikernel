@@ -31,6 +31,7 @@
 #define __NEED_HAL_MAILBOX_
 #include <nanvix/hal.h>
 #include <nanvix/limits.h>
+#include <nanvix/pm.h>
 
 /**
  * @brief Asserts a logic expression.
@@ -229,6 +230,53 @@ static void test_hal_mailbox_read_write2_cc(void)
 	TEST_ASSERT(hal_sync_unlink(syncid) == 0);
 }
 
+/*============================================================================*
+ * API Test: Read Write 3 CC                                                  *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Read Write 2 CC
+ */
+static void test_hal_mailbox_read_write3_cc(void)
+{
+	int inbox;
+	char masternode_str[4];
+	char mailbox_nclusters_str[4];
+	char test_str[4];
+	const char *args[] = {
+		"/test/hal-mailbox-slave",
+		masternode_str,
+		mailbox_nclusters_str,
+		test_str,
+		NULL
+	};
+
+	printf("[nanvix][test][api][hal][mailbox] Read Write 3 CC\n");
+
+	/* Build arguments. */
+	sprintf(masternode_str, "%d", hal_get_node_id());
+	sprintf(mailbox_nclusters_str, "%d", NANVIX_PROC_MAX);
+	sprintf(test_str, "%d", 4);
+
+	TEST_ASSERT((inbox = get_inbox()) >= 0);
+
+	spawn_slaves(args);
+
+	/* Receive messages. */
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
+	{
+		char msg[HAL_MAILBOX_MSG_SIZE];
+
+		TEST_ASSERT((hal_mailbox_read(
+			inbox,
+			msg,
+			HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE)
+		);
+	}
+
+	join_slaves();
+}
+
 /*============================================================================*/
 
 /**
@@ -240,5 +288,6 @@ void test_hal_mailbox(void)
 	test_hal_mailbox_open_close_cc();
 	test_hal_mailbox_read_write_cc();
 	test_hal_mailbox_read_write2_cc();
+	test_hal_mailbox_read_write3_cc();
 }
 

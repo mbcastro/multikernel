@@ -194,7 +194,7 @@ static void test_hal_mailbox_read_write(int nclusters)
 }
 
 /*============================================================================*
- * API Test: Read Write 2 CC                                                   *
+ * API Test: Read Write 2 CC                                                  *
  *============================================================================*/
 
 /**
@@ -214,6 +214,30 @@ static void test_hal_mailbox_read_write2(int nclusters)
 		msg,
 		HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE)
 	);
+}
+
+/*============================================================================*
+ * API Test: Read Write 3 CC                                                  *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Read Write 3 CC
+ */
+static void test_hal_mailbox_read_write3(void)
+{
+	int outbox;
+	char msg[HAL_MAILBOX_MSG_SIZE];
+
+	TEST_ASSERT((outbox = hal_mailbox_open(masternode)) >= 0);
+
+	TEST_ASSERT((hal_mailbox_write(
+		outbox,
+		msg,
+		HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE)
+	);
+
+	/* House keeping. */
+	TEST_ASSERT(hal_mailbox_close(outbox) == 0);
 }
 
 /*============================================================================*/
@@ -245,6 +269,9 @@ int main2(int argc, char **argv)
 			break;
 		case 3:
 			test_hal_mailbox_read_write2(nclusters);
+			break;
+		case 4:
+			test_hal_mailbox_read_write3();
 			break;
 		default:
 			exit(EXIT_FAILURE);
