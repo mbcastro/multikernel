@@ -247,6 +247,24 @@ static void test_hal_sync_barrier2(int nclusters)
 	/* Open synchronization points. */
 	if (nodeid == 0)
 	{
+		TEST_ASSERT((syncid1 = hal_sync_create(nodes,
+			nclusters,
+			HAL_SYNC_ALL_TO_ONE)) >= 0
+		);
+		TEST_ASSERT((syncid2 = hal_sync_open(nodes,
+			nclusters,
+			HAL_SYNC_ONE_TO_ALL)) >= 0
+		);
+
+		TEST_ASSERT(hal_sync_wait(syncid1) == 0);
+		TEST_ASSERT(hal_sync_signal(syncid2) == 0);
+
+		/* House keeping. */
+		TEST_ASSERT(hal_sync_close(syncid2) == 0);
+		TEST_ASSERT(hal_sync_unlink(syncid1) == 0);
+	}
+	else
+	{
 		TEST_ASSERT((syncid2 = hal_sync_create(nodes,
 			nclusters,
 			HAL_SYNC_ONE_TO_ALL)) >= 0
@@ -260,26 +278,8 @@ static void test_hal_sync_barrier2(int nclusters)
 		TEST_ASSERT(hal_sync_wait(syncid2) == 0);
 
 		/* House keeping. */
-		TEST_ASSERT(hal_sync_close(syncid1) == 0);
 		TEST_ASSERT(hal_sync_unlink(syncid2) == 0);
-	}
-	else
-	{
-		TEST_ASSERT((syncid2 = hal_sync_open(nodes,
-			nclusters,
-			HAL_SYNC_ONE_TO_ALL)) >= 0
-		);
-		TEST_ASSERT((syncid1 = hal_sync_create(nodes,
-			nclusters,
-			HAL_SYNC_ALL_TO_ONE)) >= 0
-		);
-
-		TEST_ASSERT(hal_sync_signal(syncid2) == 0);
-		TEST_ASSERT(hal_sync_wait(syncid1) == 0);
-
-		/* House keeping. */
-		TEST_ASSERT(hal_sync_unlink(syncid1) == 0);
-		TEST_ASSERT(hal_sync_close(syncid2) == 0);
+		TEST_ASSERT(hal_sync_close(syncid1) == 0);
 	}
 }
 
