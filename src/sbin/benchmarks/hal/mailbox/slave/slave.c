@@ -38,7 +38,7 @@
 /**
  * @brief Master node NoC ID.
  */
-static int master_node;
+static int masternode;
 
 /**
  * @brief Underlying NoC node ID.
@@ -51,12 +51,17 @@ static int nodeid;
 static int niterations = 0;
 
 /**
+ * @brief Buffer.
+ */
+static char buffer[HAL_MAILBOX_MSG_SIZE];
+
+/**
  * @brief Inbox for receiving messages.
  */
 static int inbox;
 
 /*============================================================================*
- * Kernel                                                                     *
+ * Broadcast Kernel                                                           *
  *============================================================================*/
 
 /**
@@ -65,16 +70,35 @@ static int inbox;
 static void kernel_broadcast(void)
 {
 	int outbox;
-	char buffer[HAL_MAILBOX_MSG_SIZE];
 
 	/* Open outbox. */
-	assert((outbox = hal_mailbox_open(master_node)) >= 0);
+	assert((outbox = hal_mailbox_open(masternode)) >= 0);
 
 	/* Benchmark. */
 	for (int k = 0; k <= niterations; k++)
 		assert(hal_mailbox_read(inbox, buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
 
 	/* House keeping. */
+	assert(hal_mailbox_close(outbox) == 0);
+}
+
+/*============================================================================*
+ * Gather Kernel                                                              *
+ *============================================================================*/
+
+/**
+ * @brief Gather kernel. 
+ */
+static void kernel_gather(void)
+{
+	int outbox;
+
+	assert((outbox = hal_mailbox_open(masternode)) >= 0);
+
+	/* Benchmark. */
+	for (int k = 0; k <= niterations; k++)
+		assert(hal_mailbox_write(outbox, buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
+
 	assert(hal_mailbox_close(outbox) == 0);
 }
 
@@ -95,7 +119,7 @@ static void sync_master(int first_remote, int last_remote)
 	int nodes[nremotes + 1];
 
 	/* Build nodes list. */
-	nodes[0] = master_node;
+	nodes[0] = masternode;
 	for (int i = 0; i < nremotes; i++)
 		nodes[i + 1] = first_remote + i;
 
@@ -120,7 +144,7 @@ int main(int argc, const char **argv)
 
 	/* Retrieve kernel parameters. */
 	assert(argc == 6);
-	master_node = atoi(argv[1]);
+	masternode = atoi(argv[1]);
 	first_remote = atoi(argv[2]);
 	last_remote = atoi(argv[3]);
 	niterations = atoi(argv[4]);
@@ -133,6 +157,8 @@ int main(int argc, const char **argv)
 	/* Run kernel. */
 	if (!strcmp(mode, "broadcast"))
 		kernel_broadcast();
+	else if (!strcmp(mode, "gather"))
+		kernel_gather();
 
 	/* House keeping. */
 	assert(hal_mailbox_unlink(inbox) == 0);

@@ -57,6 +57,16 @@ static int pids[NANVIX_PROC_MAX];
  */
 static char buffer[HAL_MAILBOX_MSG_SIZE];
 
+/**
+ * @brief Underlying NoC node ID.
+ */
+static int nodeid;
+
+/**
+ * @brief Inbox for receiving messages.
+ */
+static int inbox;
+
 /*============================================================================*
  * Utility                                                                    *
  *============================================================================*/
@@ -67,7 +77,6 @@ static char buffer[HAL_MAILBOX_MSG_SIZE];
 static void spawn_remotes(void)
 {
 	int syncid;
-	int nodeid;
 	char master_node[4];
 	char first_remote[4];
 	char last_remote[4];
@@ -82,8 +91,6 @@ static void spawn_remotes(void)
 		kernel,
 		NULL
 	};
-
-	nodeid = hal_get_node_id();
 
 	/* Build nodes list. */
 	nodes[0] = nodeid;
@@ -150,13 +157,7 @@ static void close_mailboxes(const int *outboxes)
  */
 static void kernel_broadcast(void)
 {
-	int inbox;
-	int nodeid;
 	int outboxes[nclusters];
-
-	/* Initialization. */
-	nodeid = hal_get_node_id();
-	assert((inbox = hal_mailbox_create(nodeid)) >= 0);
 
 	/* Initialization. */
 	open_mailboxes(outboxes);
@@ -193,18 +194,55 @@ static void kernel_broadcast(void)
 }
 
 /**
+ * @brief Gather kernel.
+ */
+static void kernel_gather(void)
+{
+	double total;
+	uint64_t t1, t2;
+
+	/* Benchmark. */
+	for (int k = 0; k <= niterations; k++)
+	{
+		t1 = hal_timer_get();
+		for (int i = 0; i < nclusters; i++)
+			assert(hal_mailbox_read(inbox, buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
+		t2 = hal_timer_get();
+
+		total = hal_timer_diff(t1, t2)/((double) hal_get_core_freq());
+
+		/* Warmup. */
+		if (k == 0)
+			continue;
+
+		printf("nanvix;%s;%d;%d;%.2lf;%.2lf\n",
+			kernel,
+			HAL_MAILBOX_MSG_SIZE,
+			nclusters,
+			(total*MEGA)/nclusters,
+			(nclusters*HAL_MAILBOX_MSG_SIZE)/total
+		);
+	}
+}
+
+/**
  * @brief HAL Mailbox microbenchmark.
  */
 static void benchmark(void)
 {
 	/* Initialization. */
 	hal_setup();
+	nodeid = hal_get_node_id();
+	assert((inbox = hal_mailbox_create(nodeid)) >= 0);
 	spawn_remotes();
 
 	if (!strcmp(kernel, "broadcast"))
 		kernel_broadcast();
+	else if (!strcmp(kernel, "gather"))
+		kernel_gather();
 	
 	/* House keeping. */
+	assert(hal_mailbox_unlink(inbox) == 0);
 	join_remotes();
 	hal_cleanup();
 }

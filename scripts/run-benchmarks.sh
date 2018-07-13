@@ -40,7 +40,7 @@ case "$1" in
 	;;
 	nanvix-mailbox)
 		echo "Running Nanvix Mailbox Microbenchmarks"
-		for kernel in broadcast;
+		for kernel in gather broadcast;
 		do
 			run1 "benchmark-hal-mailbox.img"                \
 				"/benchmark/hal-mailbox-master"             \
