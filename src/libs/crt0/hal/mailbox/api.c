@@ -20,7 +20,6 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <assert.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <string.h>
@@ -75,7 +74,7 @@ static void test_hal_mailbox_create_unlink(void)
 	/* Spawn driver threads. */
 	for (int i = 1; i < mailbox_ncores; i++)
 	{
-		assert((pthread_create(&tids[i],
+		TEST_ASSERT((pthread_create(&tids[i],
 			NULL,
 			test_hal_mailbox_thread_create_unlink,
 			NULL)) == 0
@@ -139,7 +138,7 @@ static void test_hal_mailbox_open_close(void)
 	for (int i = 1; i < mailbox_ncores; i++)
 	{
 		tids[i] = i;
-		assert((pthread_create(&threads[i],
+		TEST_ASSERT((pthread_create(&threads[i],
 			NULL,
 			test_hal_mailbox_thread_open_close,
 			&tids[i])) == 0
@@ -217,7 +216,7 @@ static void test_hal_mailbox_read_write(void)
 	for (int i = 1; i < mailbox_ncores; i++)
 	{
 		tids[i] = i;
-		assert((pthread_create(&threads[i],
+		TEST_ASSERT((pthread_create(&threads[i],
 			NULL,
 			test_hal_mailbox_thread_read_write,
 			&tids[i])) == 0

@@ -20,7 +20,6 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <assert.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <string.h>
@@ -78,7 +77,7 @@ static void test_hal_portal_create_unlink(void)
 	for (int i = 1; i < hal_portal_ncores; i++)
 	{
 		tids[i] = i;
-		assert((pthread_create(&threads[i],
+		TEST_ASSERT((pthread_create(&threads[i],
 			NULL,
 			test_hal_portal_thread_create_unlink,
 			&tids[i])) == 0
@@ -137,7 +136,7 @@ static void test_hal_portal_open_close(void)
 	for (int i = 1; i < hal_portal_ncores; i++)
 	{
 		tids[i] = i;
-		assert((pthread_create(&threads[i],
+		TEST_ASSERT((pthread_create(&threads[i],
 			NULL,
 			test_hal_portal_thread_open_close,
 			&tids[i])) == 0
@@ -226,7 +225,7 @@ static void test_hal_portal_read_write(void)
 	{
 		tids[i] = i;
 
-		assert((pthread_create(&threads[i],
+		TEST_ASSERT((pthread_create(&threads[i],
 			NULL,
 			test_hal_portal_thread_read_write,
 			&tids[i])) == 0

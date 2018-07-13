@@ -20,7 +20,6 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -86,7 +85,7 @@ static void test_name_link_unlink(void)
 	for (int i = 1; i < ipc_name_ncores; i++)
 	{
 		dmas[i] = i;
-		assert((pthread_create(&tids[i],
+		TEST_ASSERT((pthread_create(&tids[i],
 			NULL,
 			test_name_thread_link_unlink,
 			&dmas[i])) == 0
@@ -149,7 +148,7 @@ static void test_name_lookup(void)
 	for (int i = 1; i < ipc_name_ncores; i++)
 	{
 		dmas[i] = i;
-		assert((pthread_create(&tids[i],
+		TEST_ASSERT((pthread_create(&tids[i],
 			NULL,
 			test_name_thread_lookup,
 			&dmas[i])) == 0

@@ -20,7 +20,6 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <assert.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <string.h>
@@ -88,7 +87,7 @@ static void test_hal_sync_create_unlink(void)
 	for (int i = 1; i < ncores; i++)
 	{
 		args[i] = i;
-		assert((pthread_create(&tids[i],
+		TEST_ASSERT((pthread_create(&tids[i],
 			NULL,
 			test_hal_sync_create_unlink_worker,
 			&args[i])) == 0
@@ -151,7 +150,7 @@ static void test_hal_sync_open_close(void)
 	for (int i = 1; i < ncores; i++)
 	{
 		args[i] = i;
-		assert((pthread_create(&tids[i],
+		TEST_ASSERT((pthread_create(&tids[i],
 			NULL,
 			test_hal_sync_open_close_worker,
 			&args[i])) == 0
@@ -233,7 +232,7 @@ static void test_hal_sync_wait_signal(void)
 	for (int i = 1; i < ncores; i++)
 	{
 		args[i] = i - 1;
-		assert((pthread_create(&tids[i],
+		TEST_ASSERT((pthread_create(&tids[i],
 			NULL,
 			test_hal_sync_wait_signal_worker,
 			&args[i])) == 0
@@ -317,7 +316,7 @@ static void test_hal_sync_signal_wait(void)
 	for (int i = 1; i < ncores; i++)
 	{
 		args[i] = i - 1;
-		assert((pthread_create(&tids[i],
+		TEST_ASSERT((pthread_create(&tids[i],
 			NULL,
 			test_hal_sync_signal_wait_worker,
 			&args[i])) == 0

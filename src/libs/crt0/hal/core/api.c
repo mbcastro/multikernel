@@ -20,7 +20,6 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -67,7 +66,7 @@ static void test_hal_get_cluster_id(void)
 	for (int i = 1; i < core_ncores; i++)
 	{
 		args[i] = hal_noc_nodes[SPAWNER_SERVER_NODE];
-		assert((pthread_create(&threads[i],
+		TEST_ASSERT((pthread_create(&threads[i],
 			NULL,
 			test_thread_hal_get_cluster_id,
 			&args[i])) == 0
@@ -113,7 +112,7 @@ static void test_hal_get_core_id(void)
 	for (int i = 1; i < core_ncores; i++)
 	{
 		args[i] = i;
-		assert((pthread_create(&threads[i],
+		TEST_ASSERT((pthread_create(&threads[i],
 			NULL,
 			test_thread_hal_get_core_id,
 			&args[i])) == 0
@@ -155,7 +154,7 @@ static void test_hal_get_core_type(void)
 	/* Spawn driver threads. */
 	for (int i = 1; i < core_ncores; i++)
 	{
-		assert((pthread_create(&threads[i],
+		TEST_ASSERT((pthread_create(&threads[i],
 			NULL,
 			test_thread_hal_get_core_type,
 			NULL)) == 0
@@ -201,7 +200,7 @@ static void test_hal_get_node_id(void)
 	for (int i = 1; i < core_ncores; i++)
 	{
 		args[i] = i;
-		assert((pthread_create(&threads[i],
+		TEST_ASSERT((pthread_create(&threads[i],
 			NULL,
 			test_thread_hal_get_node_id,
 			&args[i])) == 0

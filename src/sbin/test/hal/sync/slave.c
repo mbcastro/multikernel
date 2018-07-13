@@ -20,7 +20,6 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -32,6 +31,11 @@
 #define __NEED_HAL_SYNC_
 #include <nanvix/hal.h>
 #include <nanvix/limits.h>
+
+/**
+ * @brief Asserts a logic expression.
+ */
+#define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
 
 /**
  * @brief Nodes list.
@@ -66,12 +70,12 @@ static void test_hal_sync_create_unlink(int nclusters)
 		nodes[0] -= nodes[1];
 	}
 
-	assert((syncid = hal_sync_create(nodes,
+	TEST_ASSERT((syncid = hal_sync_create(nodes,
 		nclusters,
 		HAL_SYNC_ONE_TO_ALL)) >= 0
 	);
 
-	assert(hal_sync_unlink(syncid) == 0);
+	TEST_ASSERT(hal_sync_unlink(syncid) == 0);
 }
 
 /*============================================================================*
@@ -101,7 +105,7 @@ static void test_hal_sync_master_open_close(int nclusters)
 		nodes_local[0] -= nodes_local[1];
 	}
 
-	assert((syncid_local = hal_sync_create(
+	TEST_ASSERT((syncid_local = hal_sync_create(
 		nodes_local,
 		nclusters,
 		HAL_SYNC_ONE_TO_ALL)) == 0
@@ -124,15 +128,15 @@ static void test_hal_sync_master_open_close(int nclusters)
 		}
 	}
 
-	assert((syncid = hal_sync_open(
+	TEST_ASSERT((syncid = hal_sync_open(
 		nodes,
 		nclusters,
 		HAL_SYNC_ONE_TO_ALL)) >= 0
 	);
 
-	assert(hal_sync_close(syncid) == 0);
+	TEST_ASSERT(hal_sync_close(syncid) == 0);
 
-	assert(hal_sync_unlink(syncid_local) == 0);
+	TEST_ASSERT(hal_sync_unlink(syncid_local) == 0);
 }
 
 /*============================================================================*
@@ -151,15 +155,15 @@ static void test_hal_sync_wait_signal(int nclusters)
 	for (int i = 0; i < nclusters; i++)
 		nodes[i + 1] = i;
 
-	assert((syncid = hal_sync_create(
+	TEST_ASSERT((syncid = hal_sync_create(
 		nodes,
 		nclusters + 1,
 		HAL_SYNC_ONE_TO_ALL)) >= 0
 	);
 
-	assert(hal_sync_wait(syncid) == 0);
+	TEST_ASSERT(hal_sync_wait(syncid) == 0);
 
-	assert(hal_sync_unlink(syncid) == 0);
+	TEST_ASSERT(hal_sync_unlink(syncid) == 0);
 }
 
 /*============================================================================*
@@ -178,14 +182,14 @@ static void test_hal_sync_signal_wait(int nclusters)
 	for (int i = 0; i < nclusters; i++)
 		nodes[i + 1] = i;
 
-	assert((syncid = hal_sync_open(nodes,
+	TEST_ASSERT((syncid = hal_sync_open(nodes,
 		nclusters + 1,
 		HAL_SYNC_ALL_TO_ONE)) >= 0
 	);
 
-	assert(hal_sync_signal(syncid) == 0);
+	TEST_ASSERT(hal_sync_signal(syncid) == 0);
 
-	assert(hal_sync_close(syncid) == 0);
+	TEST_ASSERT(hal_sync_close(syncid) == 0);
 }
 
 /*============================================================================*
@@ -205,21 +209,21 @@ static void test_hal_sync_barrier(int nclusters)
 		nodes[i + 1] = i;
 
 	/* Open synchronization points. */
-	assert((syncid2 = hal_sync_create(nodes,
+	TEST_ASSERT((syncid2 = hal_sync_create(nodes,
 		nclusters + 1,
 		HAL_SYNC_ONE_TO_ALL)) >= 0
 	);
-	assert((syncid1 = hal_sync_open(nodes,
+	TEST_ASSERT((syncid1 = hal_sync_open(nodes,
 		nclusters + 1,
 		HAL_SYNC_ALL_TO_ONE)) >= 0
 	);
 
-	assert(hal_sync_signal(syncid1) == 0);
-	assert(hal_sync_wait(syncid2) == 0);
+	TEST_ASSERT(hal_sync_signal(syncid1) == 0);
+	TEST_ASSERT(hal_sync_wait(syncid2) == 0);
 
 	/* House keeping. */
-	assert(hal_sync_close(syncid1) == 0);
-	assert(hal_sync_unlink(syncid2) == 0);
+	TEST_ASSERT(hal_sync_close(syncid1) == 0);
+	TEST_ASSERT(hal_sync_unlink(syncid2) == 0);
 }
 
 /*============================================================================*
@@ -243,39 +247,39 @@ static void test_hal_sync_barrier2(int nclusters)
 	/* Open synchronization points. */
 	if (nodeid == 0)
 	{
-		assert((syncid2 = hal_sync_create(nodes,
+		TEST_ASSERT((syncid2 = hal_sync_create(nodes,
 			nclusters,
 			HAL_SYNC_ONE_TO_ALL)) >= 0
 		);
-		assert((syncid1 = hal_sync_open(nodes,
+		TEST_ASSERT((syncid1 = hal_sync_open(nodes,
 			nclusters,
 			HAL_SYNC_ALL_TO_ONE)) >= 0
 		);
 
-		assert(hal_sync_signal(syncid1) == 0);
-		assert(hal_sync_wait(syncid2) == 0);
+		TEST_ASSERT(hal_sync_signal(syncid1) == 0);
+		TEST_ASSERT(hal_sync_wait(syncid2) == 0);
 
 		/* House keeping. */
-		assert(hal_sync_close(syncid1) == 0);
-		assert(hal_sync_unlink(syncid2) == 0);
+		TEST_ASSERT(hal_sync_close(syncid1) == 0);
+		TEST_ASSERT(hal_sync_unlink(syncid2) == 0);
 	}
 	else
 	{
-		assert((syncid2 = hal_sync_open(nodes,
+		TEST_ASSERT((syncid2 = hal_sync_open(nodes,
 			nclusters,
 			HAL_SYNC_ONE_TO_ALL)) >= 0
 		);
-		assert((syncid1 = hal_sync_create(nodes,
+		TEST_ASSERT((syncid1 = hal_sync_create(nodes,
 			nclusters,
 			HAL_SYNC_ALL_TO_ONE)) >= 0
 		);
 
-		assert(hal_sync_signal(syncid2) == 0);
-		assert(hal_sync_wait(syncid1) == 0);
+		TEST_ASSERT(hal_sync_signal(syncid2) == 0);
+		TEST_ASSERT(hal_sync_wait(syncid1) == 0);
 
 		/* House keeping. */
-		assert(hal_sync_unlink(syncid1) == 0);
-		assert(hal_sync_close(syncid2) == 0);
+		TEST_ASSERT(hal_sync_unlink(syncid1) == 0);
+		TEST_ASSERT(hal_sync_close(syncid2) == 0);
 	}
 }
 
@@ -290,7 +294,7 @@ int main2(int argc, char **argv)
 	int nclusters;
 
 	/* Retrieve kernel parameters. */
-	assert(argc == 4);
+	TEST_ASSERT(argc == 4);
 	masternode = atoi(argv[1]);
 	nclusters = atoi(argv[2]);
 	test = atoi(argv[3]);

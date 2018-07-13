@@ -20,7 +20,6 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -31,6 +30,11 @@
 #define __NEED_HAL_SYNC_
 #include <nanvix/hal.h>
 #include <nanvix/limits.h>
+
+/**
+ * @brief Asserts a logic expression.
+ */
+#define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
 
 /**
  * @brief Nodes list.
@@ -52,7 +56,7 @@ static int pids[NANVIX_PROC_MAX];
 static void spawn_slaves(const char **args)
 {
 	for (int i = 0; i < NANVIX_PROC_MAX; i++)
-		assert((pids[i] = mppa_spawn(i, NULL, args[0], args, NULL)) != -1);
+		TEST_ASSERT((pids[i] = mppa_spawn(i, NULL, args[0], args, NULL)) != -1);
 }
 
 /**
@@ -64,8 +68,8 @@ static void join_slaves(void)
 
 	for (int i = 0; i < NANVIX_PROC_MAX; i++)
 	{
-		assert(mppa_waitpid(pids[i], &status, 0) != -1);
-		assert(status == EXIT_SUCCESS);
+		TEST_ASSERT(mppa_waitpid(pids[i], &status, 0) != -1);
+		TEST_ASSERT(status == EXIT_SUCCESS);
 	}
 }
 
@@ -161,9 +165,9 @@ static void test_hal_sync_wait_signal_cc(void)
 
 	spawn_slaves(args);
 
-	assert((syncid = hal_sync_open(nodes, NANVIX_PROC_MAX + 1, HAL_SYNC_ONE_TO_ALL)) >= 0);
-	assert(hal_sync_signal(syncid) == 0);
-	assert(hal_sync_close(syncid) == 0);
+	TEST_ASSERT((syncid = hal_sync_open(nodes, NANVIX_PROC_MAX + 1, HAL_SYNC_ONE_TO_ALL)) >= 0);
+	TEST_ASSERT(hal_sync_signal(syncid) == 0);
+	TEST_ASSERT(hal_sync_close(syncid) == 0);
 
 	join_slaves();
 }
@@ -192,7 +196,7 @@ static void test_hal_sync_signal_wait_cc(void)
 	printf("[nanvix][test][api][hal][sync] Signal Wait CC\n");
 
 	/* Create synchronization point. */
-	assert((syncid = hal_sync_create(
+	TEST_ASSERT((syncid = hal_sync_create(
 		nodes,
 		NANVIX_PROC_MAX + 1,
 		HAL_SYNC_ALL_TO_ONE)) >= 0
@@ -206,12 +210,12 @@ static void test_hal_sync_signal_wait_cc(void)
 	spawn_slaves(args);
 
 	/* Wait. */
-	assert(hal_sync_wait(syncid) == 0);
+	TEST_ASSERT(hal_sync_wait(syncid) == 0);
 
 	join_slaves();
 
 	/* House keeping. */
-	assert(hal_sync_unlink(syncid) == 0);
+	TEST_ASSERT(hal_sync_unlink(syncid) == 0);
 }
 
 /*============================================================================*
@@ -238,12 +242,12 @@ static void test_hal_sync_barrier_cc(void)
 	printf("[nanvix][test][api][hal][sync] Barrier CC\n");
 
 	/* Create synchronization point. */
-	assert((syncid1 = hal_sync_create(
+	TEST_ASSERT((syncid1 = hal_sync_create(
 		nodes,
 		NANVIX_PROC_MAX + 1,
 		HAL_SYNC_ALL_TO_ONE)) >= 0
 	);
-	assert((syncid2 = hal_sync_open(
+	TEST_ASSERT((syncid2 = hal_sync_open(
 		nodes,
 		NANVIX_PROC_MAX + 1,
 		HAL_SYNC_ONE_TO_ALL)) >= 0
@@ -257,14 +261,14 @@ static void test_hal_sync_barrier_cc(void)
 	spawn_slaves(args);
 
 	/* Wait. */
-	assert(hal_sync_wait(syncid1) == 0);
-	assert(hal_sync_signal(syncid2) == 0);
+	TEST_ASSERT(hal_sync_wait(syncid1) == 0);
+	TEST_ASSERT(hal_sync_signal(syncid2) == 0);
 
 	join_slaves();
 
 	/* House keeping. */
-	assert(hal_sync_close(syncid2) == 0);
-	assert(hal_sync_unlink(syncid1) == 0);
+	TEST_ASSERT(hal_sync_close(syncid2) == 0);
+	TEST_ASSERT(hal_sync_unlink(syncid1) == 0);
 }
 
 /*============================================================================*
