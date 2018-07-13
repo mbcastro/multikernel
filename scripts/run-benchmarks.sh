@@ -30,7 +30,7 @@ BUFSIZE=1048576
 case "$1" in
 	mppa256-rqueue)
 		echo "Running MPPA-256 Rqueue Microbenchmarks"
-		for kernel in broadcast;
+		for kernel in gather broadcast;
 		do
 			run1                                          \
 				"benchmark-mppa256-rqueue.img"            \

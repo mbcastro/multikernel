@@ -93,6 +93,32 @@ static void join_remotes(void)
 		assert(mppa_waitpid(pids[i], NULL, 0) != -1);
 }
 
+/**
+ * @brief Opens output mailboxes.
+ *
+ * @param outboxes Location to store mailbox IDs.
+ */
+static void open_outboxes(int *outboxes)
+{
+	char pathname[128];
+
+	for (int i = 0; i < nclusters; i++)
+	{
+		sprintf(pathname, RQUEUE_SLAVE, i, 58 + i, 59 + i);
+		assert((outboxes[i] = mppa_open(pathname, O_WRONLY)) != -1);
+	}
+}
+
+/**
+ * @brief Close output mailboxes.
+ */
+static void close_outboxes(int *outboxes)
+{
+	/* Open output mailboxes. */
+	for (int i = 0; i < nclusters; i++)
+		assert(mppa_close(outboxes[i]) != -1);
+}
+
 /*============================================================================*
  * Timer                                                                      *
  *============================================================================*/
@@ -143,32 +169,6 @@ static void timer_init(void)
  *============================================================================*/
 
 /**
- * @brief Opens output mailboxes.
- *
- * @param outboxes Location to store mailbox IDs.
- */
-static void open_outboxes(int *outboxes)
-{
-	char pathname[128];
-
-	for (int i = 0; i < nclusters; i++)
-	{
-		sprintf(pathname, RQUEUE_SLAVE, i, 58 + i, 59 + i);
-		assert((outboxes[i] = mppa_open(pathname, O_WRONLY)) != -1);
-	}
-}
-
-/**
- * @brief Close output mailboxes.
- */
-static void close_outboxes(int *outboxes)
-{
-	/* Open output mailboxes. */
-	for (int i = 0; i < nclusters; i++)
-		assert(mppa_close(outboxes[i]) != -1);
-}
-
-/**
  * @brief Broadcast kernel.
  */
 static void kernel_broadcast(void)
@@ -213,6 +213,43 @@ static void kernel_broadcast(void)
 }
 
 /*============================================================================*
+ * Gather Kernel                                                              *
+ *============================================================================*/
+
+/**
+ * @brief Gather kernel.
+ */
+static void kernel_gather(void)
+{
+	/* Benchmark. */
+	for (int k = 0; k <= niterations; k++)
+	{
+		double total;
+		uint64_t t1, t2;
+
+		/* Read data. */
+		t1 = timer_get();
+		for (int i = 0; i < nclusters; i++)
+			assert(mppa_read(inbox, buffer, MSG_SIZE) == MSG_SIZE);
+		t2 = timer_get();
+
+		total = timer_diff(t1, t2)/((double) MPPA256_FREQ);
+
+		/* Warmup. */
+		if (k == 0)
+			continue;
+
+		printf("nodeos;%s;%d;%d;%.2lf;%.2lf\n",
+			kernel,
+			MSG_SIZE,
+			nclusters,
+			(total*MEGA)/nclusters,
+			(nclusters*MSG_SIZE)/total
+		);
+	}
+}
+
+/*============================================================================*
  * MPPA-256 Rqueue Microbenchmark Driver                                      *
  *============================================================================*/
 
@@ -236,6 +273,8 @@ static void benchmark(void)
 	/* Run kernel. */
 	if (!strcmp(kernel, "broadcast"))
 		kernel_broadcast();
+	else if (!strcmp(kernel, "gather"))
+		kernel_gather();
 	
 	/* House keeping. */
 	join_remotes();
