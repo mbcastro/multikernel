@@ -228,36 +228,6 @@ static void test_hal_mailbox_read_write(void)
 		pthread_join(threads[i], NULL);
 }
 
-/*============================================================================*
- * API Test: Open Close between IO Clusters                                   *
- *============================================================================*/
-
-/**
- * @brief API Test: Open Close between IO Clusters
- */
-static void test_hal_mailbox_open_close_io(void)
-{
-	int inbox;
-	int outbox;
-	int nodeid;
-
-	nodeid = hal_get_node_id();
-
-	TEST_ASSERT((inbox = hal_mailbox_create(nodeid)) >= 0);
-
-	TEST_ASSERT(hal_sync_signal(syncid) == 0);
-	TEST_ASSERT(hal_sync_wait(syncid_local) == 0);
-
-	TEST_ASSERT((outbox = hal_mailbox_open(hal_noc_nodes[SPAWNER1_SERVER_NODE])) >= 0);
-
-	TEST_ASSERT(hal_mailbox_close(outbox) == 0);
-
-	TEST_ASSERT(hal_sync_signal(syncid) == 0);
-	TEST_ASSERT(hal_sync_wait(syncid_local) == 0);
-
-	TEST_ASSERT(hal_mailbox_unlink(inbox) == 0);
-}
-
 /*============================================================================*/
 
 /**
@@ -268,7 +238,5 @@ struct test mailbox_tests_api[] = {
 	{ test_hal_mailbox_create_unlink, "Create Unlink"          },
 	{ test_hal_mailbox_open_close,    "Open Close"             },
 	{ test_hal_mailbox_read_write,    "Read Write"             },
-	{ NULL,                           NULL                     },
-	{ test_hal_mailbox_open_close_io, "IO Clusters Open Close" },
 	{ NULL,                           NULL                     },
 };
