@@ -76,6 +76,7 @@ function build2
 # Test Driver
 BINARIES="$BINDIR/test/hal-sync-slave"
 BINARIES="$BINARIES,$BINDIR/test/hal-mailbox-slave"
+BINARIES="$BINARIES,$BINDIR/test/hal-portal-slave"
 BINARIES="$BINARIES,$BINDIR/test/barrier-slave"
 BINARIES="$BINARIES,$BINDIR/test/mailbox-slave"
 BINARIES="$BINARIES,$BINDIR/test/name-slave"

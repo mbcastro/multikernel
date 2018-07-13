@@ -26,6 +26,7 @@
 /* Forward definitions. */
 extern void test_hal_sync(void);
 extern void test_hal_mailbox(void);
+extern void test_hal_portal(void);
 
 /**
  * @brief Launches automated tests.
@@ -48,6 +49,8 @@ int main2(int argc, const char **argv)
 		test_hal_sync();
 	else if (!strcmp(argv[2], "--hal-mailbox"))
 		test_hal_mailbox();
+	else if (!strcmp(argv[2], "--hal-portal"))
+		test_hal_portal();
 
 	return (EXIT_SUCCESS);
 }
