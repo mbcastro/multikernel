@@ -2,7 +2,7 @@
 #include <stdlib.h>
 
 /* Forward definitions. */
-extern test_hal_sync(void);
+extern void test_hal_sync(void);
 
 /**
  * @brief Launches automated tests.
