@@ -214,7 +214,7 @@ static void test_hal_portal_read_write2_cc(void)
 	/* Wait. */
 	TEST_ASSERT(hal_sync_wait(syncid) == 0);
 
-	/* Send messages. */
+	/* Send data. */
 	for (int i = 0; i < NANVIX_PROC_MAX; i++)
 	{
 		int outportal;
@@ -235,6 +235,64 @@ static void test_hal_portal_read_write2_cc(void)
 	TEST_ASSERT(hal_sync_unlink(syncid) == 0);
 }
 
+/*============================================================================*
+ * API Test: Read Write 3 CC                                                  *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Read Write 2 CC
+ */
+static void test_hal_portal_read_write3_cc(void)
+{
+	int nodeid;
+	int inportal;
+	char masternode_str[4];
+	char portal_nclusters_str[4];
+	char test_str[4];
+	const char *args[] = {
+		"/test/hal-portal-slave",
+		masternode_str,
+		portal_nclusters_str,
+		test_str,
+		NULL
+	};
+
+	printf("[nanvix][test][api][hal][portal] Read Write 3 CC\n");
+
+	nodeid = hal_get_node_id();
+
+	/* Build arguments. */
+	sprintf(masternode_str, "%d", nodeid);
+	sprintf(portal_nclusters_str, "%d", NANVIX_PROC_MAX);
+	sprintf(test_str, "%d", 4);
+
+	TEST_ASSERT((inportal = hal_portal_create(nodeid)) >= 0);
+
+	spawn_slaves(args);
+
+	/* Receive data. */
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
+	{
+		char buffer[DATA_SIZE];
+
+		TEST_ASSERT((hal_portal_allow(
+			inportal,
+			i) == 0)
+		);
+
+		TEST_ASSERT((hal_portal_read(
+			inportal,
+			buffer,
+			DATA_SIZE) == DATA_SIZE)
+		);
+	}
+
+	join_slaves();
+
+	/* House keeping. */
+	TEST_ASSERT(hal_portal_unlink(inportal) == 0);
+}
+
 /*============================================================================*/
 
 /**
@@ -246,5 +304,6 @@ void test_hal_portal(void)
 	test_hal_portal_open_close_cc();
 	test_hal_portal_read_write_cc();
 	test_hal_portal_read_write2_cc();
+	test_hal_portal_read_write3_cc();
 }
 

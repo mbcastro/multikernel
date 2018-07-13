@@ -248,6 +248,29 @@ static void test_hal_portal_read_write2(int nclusters)
 	TEST_ASSERT(hal_portal_unlink(inportal) == 0);
 }
 
+/*============================================================================*
+ * API Test: Read Write 3 CC                                                  *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Read Write 3 CC
+ */
+static void test_hal_portal_read_write3(void)
+{
+	int outportal;
+
+	TEST_ASSERT((outportal = hal_portal_open(masternode)) >= 0);
+
+	TEST_ASSERT((hal_portal_write(
+		outportal,
+		buffer,
+		DATA_SIZE) == DATA_SIZE)
+	);
+
+	/* House keeping. */
+	TEST_ASSERT(hal_portal_close(outportal) == 0);
+}
+
 /*============================================================================*/
 
 /**
@@ -281,6 +304,9 @@ int main2(int argc, char **argv)
 			break;
 		case 3:
 			test_hal_portal_read_write2(nclusters);
+			break;
+		case 4:
+			test_hal_portal_read_write3();
 			break;
 		default:
 			exit(EXIT_FAILURE);
