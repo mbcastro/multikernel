@@ -40,10 +40,10 @@ case "$1" in
 	;;
 	nanvix-mailbox)
 		echo "Running Nanvix Mailbox Microbenchmarks"
-		for kernel in gather broadcast;
+		for kernel in gather broadcast pingpong;
 		do
-			run1 "benchmark-hal-mailbox.img"                \
-				"/benchmark/hal-mailbox-master"             \
+			run1 "benchmark-hal-mailbox.img"      \
+				"/benchmark/hal-mailbox-master"   \
 				"$NCLUSTERS $NITERATIONS $kernel"
 		done
 	;;

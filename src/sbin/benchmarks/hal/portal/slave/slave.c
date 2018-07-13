@@ -106,11 +106,11 @@ static void kernel_gather(void)
 }
 
 /*============================================================================*
- * Ping Pong Kernel                                                           *
+ * Ping-Pong Kernel                                                           *
  *============================================================================*/
 
 /**
- * @brief Ping Pong kernel. 
+ * @brief Ping-Pong kernel. 
  */
 static void kernel_pingpong(void)
 {

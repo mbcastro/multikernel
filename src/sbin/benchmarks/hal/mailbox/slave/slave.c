@@ -69,17 +69,9 @@ static int inbox;
  */
 static void kernel_broadcast(void)
 {
-	int outbox;
-
-	/* Open outbox. */
-	assert((outbox = hal_mailbox_open(masternode)) >= 0);
-
 	/* Benchmark. */
 	for (int k = 0; k <= niterations; k++)
 		assert(hal_mailbox_read(inbox, buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
-
-	/* House keeping. */
-	assert(hal_mailbox_close(outbox) == 0);
 }
 
 /*============================================================================*
@@ -93,12 +85,39 @@ static void kernel_gather(void)
 {
 	int outbox;
 
+	/* Open output box. */
 	assert((outbox = hal_mailbox_open(masternode)) >= 0);
 
 	/* Benchmark. */
 	for (int k = 0; k <= niterations; k++)
 		assert(hal_mailbox_write(outbox, buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
 
+	/* House keeping. */
+	assert(hal_mailbox_close(outbox) == 0);
+}
+
+/*============================================================================*
+ * Ping-Pong Kernel                                                           *
+ *============================================================================*/
+
+/**
+ * @brief Ping-Pong kernel. 
+ */
+static void kernel_pingpong(void)
+{
+	int outbox;
+
+	/* Open output box. */
+	assert((outbox = hal_mailbox_open(masternode)) >= 0);
+
+	/* Benchmark. */
+	for (int k = 0; k <= niterations; k++)
+	{
+		assert(hal_mailbox_read(inbox, buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
+		assert(hal_mailbox_write(outbox, buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
+	}
+
+	/* House keeping. */
 	assert(hal_mailbox_close(outbox) == 0);
 }
 
@@ -159,6 +178,8 @@ int main(int argc, const char **argv)
 		kernel_broadcast();
 	else if (!strcmp(mode, "gather"))
 		kernel_gather();
+	else if (!strcmp(mode, "pingpong"))
+		kernel_pingpong();
 
 	/* House keeping. */
 	assert(hal_mailbox_unlink(inbox) == 0);

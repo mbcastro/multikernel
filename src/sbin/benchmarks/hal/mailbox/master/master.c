@@ -226,6 +226,47 @@ static void kernel_gather(void)
 }
 
 /**
+ * @brief Ping-Pong kernel.
+ */
+static void kernel_pingpong(void)
+{
+	double total;
+	uint64_t t1, t2;
+	int outboxes[nclusters];
+
+	/* Initialization. */
+	open_mailboxes(outboxes);
+
+	/* Benchmark. */
+	for (int k = 0; k <= niterations; k++)
+	{
+		t1 = hal_timer_get();
+		for (int i = 0; i < nclusters; i++)
+			assert(hal_mailbox_write(outboxes[i], buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
+		for (int i = 0; i < nclusters; i++)
+			assert(hal_mailbox_read(inbox, buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
+		t2 = hal_timer_get();
+
+		total = hal_timer_diff(t1, t2)/((double) hal_get_core_freq());
+
+		/* Warmup. */
+		if (k == 0)
+			continue;
+
+		printf("nanvix;%s;%d;%d;%.2lf;%.2lf\n",
+			kernel,
+			HAL_MAILBOX_MSG_SIZE,
+			nclusters,
+			(total*MEGA)/nclusters,
+			2*(nclusters*HAL_MAILBOX_MSG_SIZE)/total
+		);
+	}
+
+	/* House keeping. */
+	close_mailboxes(outboxes);
+}
+
+/**
  * @brief HAL Mailbox microbenchmark.
  */
 static void benchmark(void)
@@ -240,6 +281,8 @@ static void benchmark(void)
 		kernel_broadcast();
 	else if (!strcmp(kernel, "gather"))
 		kernel_gather();
+	else if (!strcmp(kernel, "pingpong"))
+		kernel_pingpong();
 	
 	/* House keeping. */
 	assert(hal_mailbox_unlink(inbox) == 0);
