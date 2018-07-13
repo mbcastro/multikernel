@@ -29,7 +29,6 @@
 
 #define __NEED_HAL_CORE_
 #define __NEED_HAL_NOC_
-#define __NEED_HAL_SETUP_
 #define __NEED_HAL_SYNC_
 #include <nanvix/hal.h>
 
@@ -225,6 +224,64 @@ static void test_hal_sync_barrier(int nclusters)
 	assert(hal_sync_unlink(syncid2) == 0);
 }
 
+/*============================================================================*
+ * API Test: Barrier 2 CC                                                     *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Barrier 2 CC
+ */
+static void test_hal_sync_barrier2(int nclusters)
+{
+	int nodeid;
+	int syncid1, syncid2;
+	int nodes[nclusters];
+
+	nodeid = hal_get_node_id();
+
+	/* Build nodes list. */
+	for (int i = 0; i < nclusters; i++)
+		nodes[i] = i;
+
+	/* Open synchronization points. */
+	if (nodeid == 0)
+	{
+		assert((syncid2 = hal_sync_create(nodes,
+			nclusters,
+			HAL_SYNC_ONE_TO_ALL)) >= 0
+		);
+		assert((syncid1 = hal_sync_open(nodes,
+			nclusters,
+			HAL_SYNC_ALL_TO_ONE)) >= 0
+		);
+
+		assert(hal_sync_signal(syncid1) == 0);
+		assert(hal_sync_wait(syncid2) == 0);
+
+		/* House keeping. */
+		assert(hal_sync_close(syncid1) == 0);
+		assert(hal_sync_unlink(syncid2) == 0);
+	}
+	else
+	{
+		assert((syncid2 = hal_sync_open(nodes,
+			nclusters,
+			HAL_SYNC_ONE_TO_ALL)) >= 0
+		);
+		assert((syncid1 = hal_sync_create(nodes,
+			nclusters,
+			HAL_SYNC_ALL_TO_ONE)) >= 0
+		);
+
+		assert(hal_sync_signal(syncid2) == 0);
+		assert(hal_sync_wait(syncid1) == 0);
+
+		/* House keeping. */
+		assert(hal_sync_unlink(syncid1) == 0);
+		assert(hal_sync_close(syncid2) == 0);
+	}
+}
+
 /*============================================================================*/
 
 /**
@@ -257,6 +314,9 @@ int main2(int argc, char **argv)
 			break;
 		case 4:
 			test_hal_sync_barrier(nclusters);
+			break;
+		case 5:
+			test_hal_sync_barrier2(nclusters);
 			break;
 		default:
 			exit(EXIT_FAILURE);

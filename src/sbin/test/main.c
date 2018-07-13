@@ -268,6 +268,38 @@ static void test_hal_sync_barrier_cc(void)
 	assert(hal_sync_unlink(syncid1) == 0);
 }
 
+/*============================================================================*
+ * API Test: Barrier 2 CC                                                     *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Barrier 2 CC
+ */
+static void test_hal_sync_barrier2_cc(void)
+{
+	char masternode_str[4];
+	char sync_nclusters_str[4];
+	char test_str[4];
+	const char *args[] = {
+		"/test/hal-sync-slave",
+		masternode_str,
+		sync_nclusters_str,
+		test_str,
+		NULL
+	};
+
+	printf("[nanvix][test][api][hal][sync] Barrier 2 CC\n");
+
+	/* Build arguments. */
+	sprintf(masternode_str, "%d", nodes[0]);
+	sprintf(sync_nclusters_str, "%d", NANVIX_PROC_MAX);
+	sprintf(test_str, "%d", 5);
+
+	spawn_slaves(args);
+
+	join_slaves();
+}
+
 /*============================================================================*/
 
 /**
@@ -288,6 +320,7 @@ int main2(int argc, const char **argv)
 	test_hal_sync_wait_signal_cc();
 	test_hal_sync_signal_wait_cc();
 	test_hal_sync_barrier_cc();
+	test_hal_sync_barrier2_cc();
 
 	return (EXIT_SUCCESS);
 }
