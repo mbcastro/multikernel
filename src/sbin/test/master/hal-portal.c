@@ -28,7 +28,7 @@
 #define __NEED_HAL_CORE_
 #define __NEED_HAL_NOC_
 #define __NEED_HAL_SYNC_
-#define __NEED_HAL_MAILBOX_
+#define __NEED_HAL_PORTAL_
 #include <nanvix/hal.h>
 #include <nanvix/limits.h>
 #include <nanvix/pm.h>
@@ -37,6 +37,11 @@
  * @brief Asserts a logic expression.
  */
 #define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
+
+/**
+ * @brief Data Size.
+ */
+#define DATA_SIZE 128
 
 /*============================================================================*
  * Utilities                                                                  *
@@ -163,6 +168,73 @@ static void test_hal_portal_read_write_cc(void)
 	join_slaves();
 }
 
+/*============================================================================*
+ * API Test: Read Write 2 CC                                                  *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Read Write 2 CC
+ */
+static void test_hal_portal_read_write2_cc(void)
+{
+	int syncid;
+	int nodes[NANVIX_PROC_MAX + 1];
+	char masternode_str[4];
+	char portal_nclusters_str[4];
+	char test_str[4];
+	const char *args[] = {
+		"/test/hal-portal-slave",
+		masternode_str,
+		portal_nclusters_str,
+		test_str,
+		NULL
+	};
+
+	printf("[nanvix][test][api][hal][portal] Read Write 2 CC\n");
+
+	/* Build arguments. */
+	sprintf(masternode_str, "%d", hal_get_node_id());
+	sprintf(portal_nclusters_str, "%d", NANVIX_PROC_MAX);
+	sprintf(test_str, "%d", 3);
+
+	/* Build nodes list. */
+	nodes[0] = hal_get_node_id();
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
+		nodes[i + 1] = i;
+
+	/* Create synchronization point. */
+	TEST_ASSERT((syncid = hal_sync_create(
+		nodes,
+		NANVIX_PROC_MAX + 1,
+		HAL_SYNC_ALL_TO_ONE)) >= 0
+	);
+
+	spawn_slaves(args);
+
+	/* Wait. */
+	TEST_ASSERT(hal_sync_wait(syncid) == 0);
+
+	/* Send messages. */
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
+	{
+		int outportal;
+		char buffer[DATA_SIZE];
+
+		TEST_ASSERT((outportal = hal_portal_open(i)) >=0);
+		TEST_ASSERT((hal_portal_write(
+			outportal,
+			buffer,
+			DATA_SIZE) == DATA_SIZE)
+		);
+		TEST_ASSERT(hal_portal_close(outportal) == 0);
+	}
+
+	join_slaves();
+
+	/* House keeping. */
+	TEST_ASSERT(hal_sync_unlink(syncid) == 0);
+}
+
 /*============================================================================*/
 
 /**
@@ -173,5 +245,6 @@ void test_hal_portal(void)
 	test_hal_portal_create_unlink_cc();
 	test_hal_portal_open_close_cc();
 	test_hal_portal_read_write_cc();
+	test_hal_portal_read_write2_cc();
 }
 
