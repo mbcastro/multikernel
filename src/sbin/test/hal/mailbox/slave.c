@@ -20,7 +20,6 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <assert.h>
 #include <stdlib.h>
 #include <errno.h>
 
@@ -30,11 +29,18 @@
 #define __NEED_HAL_MAILBOX_
 #include <nanvix/hal.h>
 #include <nanvix/limits.h>
+#include <nanvix/pm.h>
+
+/**
+ * @brief Asserts a logic expression.
+ */
+#define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
 
 /**
  * @brief ID of master node.
  */
 static int masternode;
+
 /*============================================================================*
  * Utilities                                                                  *
  *============================================================================*/
@@ -48,7 +54,7 @@ static void sync_slaves(int nclusters)
 {
 	int nodeid;
 	int syncid1, syncid2;
-	static int nodes[NANVIX_PROC_MAX];
+	int nodes[NANVIX_PROC_MAX];
 
 	nodeid = hal_get_node_id();
 
@@ -59,40 +65,65 @@ static void sync_slaves(int nclusters)
 	/* Open synchronization points. */
 	if (nodeid == 0)
 	{
-		assert((syncid2 = hal_sync_create(nodes,
-			nclusters,
-			HAL_SYNC_ONE_TO_ALL)) >= 0
-		);
-		assert((syncid1 = hal_sync_open(nodes,
+		TEST_ASSERT((syncid1 = hal_sync_create(nodes,
 			nclusters,
 			HAL_SYNC_ALL_TO_ONE)) >= 0
 		);
+		TEST_ASSERT((syncid2 = hal_sync_open(nodes,
+			nclusters,
+			HAL_SYNC_ONE_TO_ALL)) >= 0
+		);
 
-		assert(hal_sync_signal(syncid1) == 0);
-		assert(hal_sync_wait(syncid2) == 0);
+		TEST_ASSERT(hal_sync_wait(syncid1) == 0);
+		TEST_ASSERT(hal_sync_signal(syncid2) == 0);
 
 		/* House keeping. */
-		assert(hal_sync_close(syncid1) == 0);
-		assert(hal_sync_unlink(syncid2) == 0);
+		TEST_ASSERT(hal_sync_close(syncid2) == 0);
+		TEST_ASSERT(hal_sync_unlink(syncid1) == 0);
 	}
 	else
 	{
-		assert((syncid2 = hal_sync_open(nodes,
+		TEST_ASSERT((syncid2 = hal_sync_create(nodes,
 			nclusters,
 			HAL_SYNC_ONE_TO_ALL)) >= 0
 		);
-		assert((syncid1 = hal_sync_create(nodes,
+		TEST_ASSERT((syncid1 = hal_sync_open(nodes,
 			nclusters,
 			HAL_SYNC_ALL_TO_ONE)) >= 0
 		);
 
-		assert(hal_sync_signal(syncid2) == 0);
-		assert(hal_sync_wait(syncid1) == 0);
+		TEST_ASSERT(hal_sync_signal(syncid1) == 0);
+		TEST_ASSERT(hal_sync_wait(syncid2) == 0);
 
 		/* House keeping. */
-		assert(hal_sync_unlink(syncid1) == 0);
-		assert(hal_sync_close(syncid2) == 0);
+		TEST_ASSERT(hal_sync_unlink(syncid2) == 0);
+		TEST_ASSERT(hal_sync_close(syncid1) == 0);
 	}
+}
+
+/**
+ * @brief Sync with master.
+ *
+ * @poaram nclusters Number of slaves.
+ */
+static void sync_master(int nclusters)
+{
+	int syncid;
+	int nodes[NANVIX_PROC_MAX + 1];
+
+	/* Build nodes list. */
+	nodes[0] = masternode;
+	for (int i = 0; i < nclusters; i++)
+		nodes[i + 1] = i;
+
+	TEST_ASSERT((syncid = hal_sync_open(nodes,
+		nclusters + 1,
+		HAL_SYNC_ALL_TO_ONE)) >= 0
+	);
+
+	TEST_ASSERT(hal_sync_signal(syncid) == 0);
+
+	TEST_ASSERT(hal_sync_close(syncid) == 0);
 }
 
 /*============================================================================*
@@ -105,13 +136,8 @@ static void sync_slaves(int nclusters)
 static void test_hal_mailbox_create_unlink(void)
 {
 	int inbox;
-	int nodeid;
 
-	nodeid = hal_get_node_id();
-
-	assert((inbox = hal_mailbox_create(nodeid)) >= 0);
-
-	assert(hal_mailbox_unlink(inbox) == 0);
+	TEST_ASSERT((inbox = get_inbox()) >= 0);
 }
 
 /*============================================================================*
@@ -125,9 +151,9 @@ static void test_hal_mailbox_open_close(void)
 {
 	int outbox;
 
-	assert((outbox = hal_mailbox_open(masternode)) >= 0);
+	TEST_ASSERT((outbox = hal_mailbox_open(masternode)) >= 0);
 
-	assert(hal_mailbox_close(outbox) == 0);
+	TEST_ASSERT(hal_mailbox_close(outbox) == 0);
 }
 
 /*============================================================================*
@@ -146,24 +172,48 @@ static void test_hal_mailbox_read_write(int nclusters)
 
 	nodeid = hal_get_node_id();
 
-	assert((inbox = hal_mailbox_create(nodeid)) >= 0);
+	TEST_ASSERT((inbox = get_inbox()) >= 0);
 
 	sync_slaves(nclusters);
 
-	assert((outbox = hal_mailbox_open((nodeid + 1)%nclusters)) >= 0);
-	assert((hal_mailbox_write(
+	TEST_ASSERT((outbox = hal_mailbox_open((nodeid + 1)%nclusters)) >= 0);
+
+	TEST_ASSERT((hal_mailbox_write(
 		outbox,
 		msg,
 		HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE)
 	);
-	assert((hal_mailbox_read(
+	TEST_ASSERT((hal_mailbox_read(
 		inbox,
 		msg,
 		HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE)
 	);
 
-	assert(hal_mailbox_close(outbox) == 0);
-	assert(hal_mailbox_unlink(inbox) == 0);
+	/* House keeping. */
+	TEST_ASSERT(hal_mailbox_close(outbox) == 0);
+}
+
+/*============================================================================*
+ * API Test: Read Write 2 CC                                                   *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Read Write 2 CC
+ */
+static void test_hal_mailbox_read_write2(int nclusters)
+{
+	int inbox;
+	char msg[HAL_MAILBOX_MSG_SIZE];
+
+	TEST_ASSERT((inbox = get_inbox()) >= 0);
+
+	sync_master(nclusters);
+
+	TEST_ASSERT((hal_mailbox_read(
+		inbox,
+		msg,
+		HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE)
+	);
 }
 
 /*============================================================================*/
@@ -177,12 +227,10 @@ int main2(int argc, char **argv)
 	int nclusters;
 
 	/* Retrieve kernel parameters. */
-	assert(argc == 4);
+	TEST_ASSERT(argc == 4);
 	masternode = atoi(argv[1]);
 	nclusters = atoi(argv[2]);
 	test = atoi(argv[3]);
-
-	((void) nclusters);
 
 	switch (test)
 	{
@@ -194,6 +242,9 @@ int main2(int argc, char **argv)
 			break;
 		case 2:
 			test_hal_mailbox_read_write(nclusters);
+			break;
+		case 3:
+			test_hal_mailbox_read_write2(nclusters);
 			break;
 		default:
 			exit(EXIT_FAILURE);
