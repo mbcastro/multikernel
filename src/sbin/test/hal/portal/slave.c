@@ -61,6 +61,21 @@ static void test_hal_portal_create_unlink(void)
 	TEST_ASSERT(hal_portal_unlink(inportal) == 0);
 }
 
+/*============================================================================*
+ * API Test: Open Close CC                                                    *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Open Close CC
+ */
+static void test_hal_portal_open_close(void)
+{
+	int outbox;
+
+	TEST_ASSERT((outbox = hal_portal_open(masternode)) >= 0);
+	TEST_ASSERT(hal_portal_close(outbox) == 0);
+}
+
 /*============================================================================*/
 
 /**
@@ -85,6 +100,9 @@ int main2(int argc, char **argv)
 	{
 		case 0:
 			test_hal_portal_create_unlink();
+			break;
+		case 1:
+			test_hal_portal_open_close();
 			break;
 		default:
 			exit(EXIT_FAILURE);
