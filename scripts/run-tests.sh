@@ -22,24 +22,24 @@
 
 source "scripts/arch/mppa256.sh"
 
-echo "Running Core and NoC Interface Tests"
+echo "=== Running Core and NoC Interface Tests"
 run2 "nanvix-debug.img" "/test-driver" "/servers1" "--debug --hal-core" | grep nanvix
 
-echo "Running Unnamed Sync Tests"
+echo "=== Running Unnamed Sync Tests"
 run2 "nanvix-debug.img" "/test-driver" "/servers1" "--debug --hal-sync" | grep nanvix
 run2 "nanvix-debug.img" "/test-driver" "/servers1" " "                  | grep nanvix
 
-echo "Running Unnamed Mailbox Tests"
+echo "=== Running Unnamed Mailbox Tests"
 run2 "nanvix-debug.img" "/test-driver" "/servers1" "--debug --hal-mailbox" | grep nanvix
 
-echo "Running Unnamed Portal Tests"
+echo "=== Running Unnamed Portal Tests"
 run2 "nanvix-debug.img" "/test-driver" "/servers1" "--debug --hal-portal" | grep nanvix
 
-echo "Runnaing Naming Service Tests"
+echo "=== Running Naming Service Tests"
 run2 "nanvix-debug.img" "/test-driver" "/servers1" "--debug --name" | grep nanvix
 
-echo "Runnaing Nammed Mailbox Tests"
+echo "=== Running Nammed Mailbox Tests"
 run2 "nanvix-debug.img" "/test-driver" "/servers1" "--debug --mailbox" | grep nanvix
 
-echo "Running Barrier Tests"
+echo "=== Running Barrier Tests"
 run2 "nanvix-debug.img" "/test-driver" "/servers1" "--debug --barrier" | grep nanvix
