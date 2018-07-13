@@ -93,7 +93,7 @@ static void test_hal_mailbox_open_close_io(void)
 /**
  * @brief Mailbox Test Driver
  */
-void test_hal_mailbox(void)
+void test_kernel_hal_mailbox(void)
 {
 	ncores = hal_get_num_cores();
 

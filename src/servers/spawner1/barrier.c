@@ -179,7 +179,7 @@ static void test_barrier_cc(int nclusters)
 /**
  * @brief Barrier test driver.
  */
-void test_barrier(void)
+void test_kernel_barrier(void)
 {
 	ncores = hal_get_num_cores();
 

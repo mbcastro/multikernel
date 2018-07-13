@@ -49,7 +49,7 @@ pthread_barrier_t ipc_name_barrier;
 /**
  * @brief Synchronization Point Test Driver
  */
-void test_name(int nbusycores)
+void test_kernel_name(int nbusycores)
 {
 	TEST_ASSERT(kernel_setup() == 0);
 

@@ -77,7 +77,7 @@ static void test_hal_sync_barrier(void)
 /**
  * @brief Synchronization Point Test Driver
  */
-void test_hal_sync(void)
+void test_kernel_hal_sync(void)
 {
 	test_hal_sync_barrier();
 }

@@ -42,7 +42,7 @@ pthread_barrier_t barrier;
 /**
  * @brief Unnamed Mailbox Test Driver
  */
-void test_hal_portal(void)
+void test_kernel_hal_portal(void)
 {
 	hal_portal_ncores = hal_get_num_cores();
 

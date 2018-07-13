@@ -37,7 +37,7 @@ int ipc_barrier_ncores = 0;
 /**
  * @brief Barrier Test Driver
  */
-void test_ipc_barrier(int nbusycores)
+void test_kernel_ipc_barrier(int nbusycores)
 {
 	TEST_ASSERT(kernel_setup() == 0);
 

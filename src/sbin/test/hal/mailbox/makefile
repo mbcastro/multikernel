@@ -20,25 +20,31 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-source "scripts/arch/mppa256.sh"
+# C Source Files
+SRC = $(wildcard *.c)
 
-echo "=== Running Core and NoC Interface Tests"
-run2 "nanvix-debug.img" "/test-driver" "/servers1" "--debug --hal-core" | grep nanvix
+# Object Files
+OBJ = $(SRC:.c=.o)
 
-echo "=== Running Unnamed Sync Tests"
-run2 "nanvix-debug.img" "/test-driver" "/servers1" "--debug --hal-sync" | grep nanvix
+# Binary Files
+export ELFBIN = $(BINDIR)/test/hal-mailbox-slave
 
-echo "=== Running Unnamed Mailbox Tests"
-run2 "nanvix-debug.img" "/test-driver" "/servers1" "--debug --hal-mailbox" | grep nanvix
+#===============================================================================
 
-echo "=== Running Unnamed Portal Tests"
-run2 "nanvix-debug.img" "/test-driver" "/servers1" "--debug --hal-portal" | grep nanvix
+# Builds the kernel.
+all: $(OBJ)
+	mkdir -p $(BINDIR)/test/
+	$(CC) $(LDFLAGS) $(OBJ) $(CRT1) -o $(ELFBIN) $(LIBKERNEL) $(LIBS)
 
-echo "=== Running Naming Service Tests"
-run2 "nanvix-debug.img" "/test-driver" "/servers1" "--debug --name" | grep nanvix
+# Builds object files.
+%.o: %.c
+	$(CC) $(CFLAGS) $< -c -o $@
 
-echo "=== Running Nammed Mailbox Tests"
-run2 "nanvix-debug.img" "/test-driver" "/servers1" "--debug --mailbox" | grep nanvix
+# Cleans compilation files.
+clean:
+	rm -rf $(OBJ)
 
-echo "=== Running Barrier Tests"
-run2 "nanvix-debug.img" "/test-driver" "/servers1" "--debug --barrier" | grep nanvix
+# Cleans everything.
+distclean: clean
+	rm -rf $(ELFBIN)
+

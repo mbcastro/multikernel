@@ -34,13 +34,13 @@
 
 /* Forward definitions. */
 extern int main2(int, const char **);
-extern void test_hal_core(void);
-extern void test_hal_sync(void);
-extern void test_hal_mailbox(void);
-extern void test_hal_portal(void);
-extern void test_name(int);
-extern void test_ipc_mailbox(int);
-extern void test_ipc_barrier(int);
+extern void test_kernel_hal_core(void);
+extern void test_kernel_hal_sync(void);
+extern void test_kernel_hal_mailbox(void);
+extern void test_kernel_hal_portal(void);
+extern void test_kernel_name(int);
+extern void test_kernel_ipc_mailbox(int);
+extern void test_kernel_ipc_barrier(int);
 
 /**
  * @brief Generic kernel test driver.
@@ -48,25 +48,13 @@ extern void test_ipc_barrier(int);
 static void test_kernel(const char *module)
 {
 	if (!strcmp(module, "--hal-core"))
-	{
-		test_hal_core();
-		exit(EXIT_SUCCESS);
-	}
+		test_kernel_hal_core();
 	else if (!strcmp(module, "--hal-sync"))
-	{
-		test_hal_sync();
-		exit(EXIT_SUCCESS);
-	}
+		test_kernel_hal_sync();
 	else if (!strcmp(module, "--hal-mailbox"))
-	{
-		test_hal_mailbox();
-		exit(EXIT_SUCCESS);
-	}
+		test_kernel_hal_mailbox();
 	else if (!strcmp(module, "--hal-portal"))
-	{
-		test_hal_portal();
-		exit(EXIT_SUCCESS);
-	}
+		test_kernel_hal_portal();
 }
 
 /**
@@ -75,20 +63,11 @@ static void test_kernel(const char *module)
 static void test_runtime(const char *module, int nservers)
 {
 	if (!strcmp(module, "--name"))
-	{
-		test_name(nservers);
-		exit(EXIT_SUCCESS);
-	}
+		test_kernel_name(nservers);
 	else if (!strcmp(module, "--mailbox"))
-	{
-		test_ipc_mailbox(nservers);
-		exit(EXIT_SUCCESS);
-	}
+		test_kernel_ipc_mailbox(nservers);
 	else if (!strcmp(module, "--barrier"))
-	{
-		test_ipc_barrier(nservers);
-		exit(EXIT_SUCCESS);
-	}
+		test_kernel_ipc_barrier(nservers);
 }
 
 /**
@@ -155,10 +134,12 @@ int main(int argc, const char **argv)
 	if (debug)
 		test_runtime(argv[2], 0);
 
+	printf("[nanvix][spawner0] switching to user mode\n");
+
 	/* Initialization. */
 	if ((ret = kernel_setup()) != 0)
 	{
-		printf("[KERNEL] startup failed\n");
+		printf("[nanvix][spawner0] startup failed\n");
 		return (EXIT_FAILURE);
 	}
 
@@ -167,7 +148,7 @@ int main(int argc, const char **argv)
 	/* Cleanup. */
 	if ((ret = kernel_cleanup()) != 0)
 	{
-		printf("[KERNEL] cleanup failed\n");
+		printf("[nanvix][spawner0] cleanup failed\n");
 		return (EXIT_FAILURE);
 	}
 

@@ -52,7 +52,7 @@ pthread_barrier_t barrier;
 /**
  * @brief Synchronization Point Test Driver
  */
-void test_hal_sync(void)
+void test_kernel_hal_sync(void)
 {
 	ncores = hal_get_num_cores();
 

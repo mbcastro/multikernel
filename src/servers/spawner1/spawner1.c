@@ -41,9 +41,9 @@
 
 /* Forward definitions. */
 extern int name_server(int);
-extern void test_hal_sync(void);
-extern void test_hal_mailbox(void);
-extern void test_barrier(void);
+extern void test_kernel_hal_sync(void);
+extern void test_kernel_hal_mailbox(void);
+extern void test_kernel_barrier(void);
 
 /**
  * @brief Servers.
@@ -97,15 +97,9 @@ static void *server(void *args)
 static void test_kernel(const char *module)
 {
 	if (!strcmp(module, "--hal-sync"))
-	{
-		test_hal_sync();
-		exit(EXIT_SUCCESS);
-	}
+		test_kernel_hal_sync();
 	else if (!strcmp(module, "--hal-mailbox"))
-	{
-		test_hal_mailbox();
-		exit(EXIT_SUCCESS);
-	}
+		test_kernel_hal_mailbox();
 }
 
 /**
@@ -114,10 +108,7 @@ static void test_kernel(const char *module)
 static void test_runtime(const char *module)
 {
 	if (!strcmp(module, "--barrier"))
-	{
-		test_barrier();
-		exit(EXIT_SUCCESS);
-	}
+		test_kernel_barrier();
 }
 
 /**

@@ -20,39 +20,65 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <pthread.h>
-#include <stdio.h>
+#include <assert.h>
+#include <stdlib.h>
+#include <errno.h>
 
 #define __NEED_HAL_CORE_
 #define __NEED_HAL_NOC_
+#define __NEED_HAL_MAILBOX_
 #include <nanvix/hal.h>
 
-#include "test.h"
+/**
+ * @brief ID of master node.
+ */
+static int masternode;
+
+/*============================================================================*
+ * API Test: Create Unlink CC                                                 *
+ *============================================================================*/
 
 /**
- * @brief Number of cores in the underlying cluster.
+ * @brief API Test: Create Unlink
  */
-int ipc_mailbox_ncores = 0;
-
-/**
- * @brief Global barrier for synchronization.
- */
-pthread_barrier_t barrier;
-
-/**
- * @brief Unnamed Mailbox Test Driver
- */
-void test_kernel_ipc_mailbox(void)
+static void test_hal_mailbox_create_unlink(void)
 {
-	ipc_mailbox_ncores = hal_get_num_cores();
+	int inbox;
+	int nodeid;
 
-	pthread_barrier_init(&barrier, NULL, ipc_mailbox_ncores - 1);
+	nodeid = hal_get_node_id();
 
-	/* Run API tests. */
-	for (int i = 0; ipc_mailbox_tests_api[i].test_fn != NULL; i++)
-	{
-		printf("[nanvix][test][api][ipc][mailbox] %s\n", ipc_mailbox_tests_api[i].name);
-		ipc_mailbox_tests_api[i].test_fn();
-	}
+	assert((inbox = hal_mailbox_create(nodeid)) >= 0);
+
+	assert(hal_mailbox_unlink(inbox) == 0);
 }
 
+/*============================================================================*/
+
+/**
+ * @brief HAL Mailbox Test Driver
+ */
+int main2(int argc, char **argv)
+{
+	int test;
+	int nclusters;
+
+	/* Retrieve kernel parameters. */
+	assert(argc == 4);
+	masternode = atoi(argv[1]);
+	nclusters = atoi(argv[2]);
+	test = atoi(argv[3]);
+
+	((void) nclusters);
+
+	switch (test)
+	{
+		case 0:
+			test_hal_mailbox_create_unlink();
+			break;
+		default:
+			exit(EXIT_FAILURE);
+	}
+
+	return (EXIT_SUCCESS);
+}

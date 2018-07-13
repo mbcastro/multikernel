@@ -38,6 +38,7 @@ endif
 slaves: 
 ifeq ($(BUILDING_CCLUSTER),true)
 	cd hal/sync && $(MAKE) all
+	cd hal/mailbox && $(MAKE) all
 	cd ipc/barrier && $(MAKE) all
 	cd ipc/mailbox && $(MAKE) all
 	cd ipc/name && $(MAKE) all
@@ -47,6 +48,7 @@ endif
 clean:
 	cd master && $(MAKE) clean
 	cd hal/sync && $(MAKE) clean
+	cd hal/mailbox && $(MAKE) clean
 	cd ipc/barrier && $(MAKE) clean
 	cd ipc/mailbox && $(MAKE) clean
 	cd ipc/name && $(MAKE) clean
@@ -55,6 +57,7 @@ clean:
 distclean: clean
 	cd master && $(MAKE) distclean
 	cd hal/sync && $(MAKE) distclean
+	cd hal/mailbox && $(MAKE) distclean
 	cd ipc/barrier && $(MAKE) distclean
 	cd ipc/mailbox && $(MAKE) distclean
 	cd ipc/name && $(MAKE) distclean
