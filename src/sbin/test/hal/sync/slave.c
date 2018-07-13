@@ -39,7 +39,7 @@
 static int masternode;
 
 /*============================================================================*
- * API Test: Create Unlink                                                    *
+ * API Test: Create Unlink CC                                                 *
  *============================================================================*/
 
 /**
@@ -71,7 +71,7 @@ static void test_hal_sync_create_unlink(int nclusters)
 }
 
 /*============================================================================*
- * API Test: Open Close                                                       *
+ * API Test: Open Close CC                                                    *
  *============================================================================*/
 
 /**
@@ -133,7 +133,7 @@ static void test_hal_sync_master_open_close(int nclusters)
 }
 
 /*============================================================================*
- * API Test: Wait Signal                                                      *
+ * API Test: Wait Signal CC                                                   *
  *============================================================================*/
 
 /**
@@ -162,7 +162,7 @@ static void test_hal_sync_wait_signal(int nclusters)
 }
 
 /*============================================================================*
- * API Test: Signal Wait                                                      *
+ * API Test: Signal Wait CC                                                   *
  *============================================================================*/
 
 /**
@@ -187,6 +187,42 @@ static void test_hal_sync_signal_wait(int nclusters)
 	assert(hal_sync_signal(syncid) == 0);
 
 	assert(hal_sync_close(syncid) == 0);
+}
+
+/*============================================================================*
+ * API Test: Barrier CC                                                       *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Barrier CC
+ */
+static void test_hal_sync_barrier(int nclusters)
+{
+	int syncid1, syncid2;
+	int nodes[nclusters + 1];
+
+	/* Build nodes list. */
+	nodes[0] = masternode;
+
+	for (int i = 0; i < nclusters; i++)
+		nodes[i + 1] = i;
+
+	/* Open synchronization points. */
+	assert((syncid2 = hal_sync_create(nodes,
+		nclusters + 1,
+		HAL_SYNC_ONE_TO_ALL)) >= 0
+	);
+	assert((syncid1 = hal_sync_open(nodes,
+		nclusters + 1,
+		HAL_SYNC_ALL_TO_ONE)) >= 0
+	);
+
+	assert(hal_sync_signal(syncid1) == 0);
+	assert(hal_sync_wait(syncid2) == 0);
+
+	/* House keeping. */
+	assert(hal_sync_close(syncid1) == 0);
+	assert(hal_sync_unlink(syncid2) == 0);
 }
 
 /*============================================================================*/
@@ -218,6 +254,9 @@ int main2(int argc, char **argv)
 			break;
 		case 3:
 			test_hal_sync_signal_wait(nclusters);
+			break;
+		case 4:
+			test_hal_sync_barrier(nclusters);
 			break;
 		default:
 			exit(EXIT_FAILURE);
