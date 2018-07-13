@@ -31,6 +31,12 @@
 #define __NEED_HAL_NOC_
 #define __NEED_HAL_SYNC_
 #include <nanvix/hal.h>
+#include <nanvix/limits.h>
+
+/**
+ * @brief Nodes list.
+ */
+static int nodes[NANVIX_PROC_MAX + 1];
 
 /**
  * @brief ID of master node.
@@ -47,7 +53,6 @@ static int masternode;
 static void test_hal_sync_create_unlink(int nclusters)
 {
 	int syncid;
-	int nodes[nclusters];
 
 	/* Build nodes list. */
 	for (int i = 0; i < nclusters; i++)
@@ -81,7 +86,6 @@ static void test_hal_sync_master_open_close(int nclusters)
 	int nodeid;
 	int syncid;
 	int syncid_local;
-	int nodes[nclusters];
 	int nodes_local[nclusters];
 
 	/* Build local nodes list. */
@@ -141,11 +145,9 @@ static void test_hal_sync_master_open_close(int nclusters)
 static void test_hal_sync_wait_signal(int nclusters)
 {
 	int syncid;
-	int nodes[nclusters + 1];
 
 	/* Build nodes list. */
 	nodes[0] = masternode;
-
 	for (int i = 0; i < nclusters; i++)
 		nodes[i + 1] = i;
 
@@ -170,11 +172,9 @@ static void test_hal_sync_wait_signal(int nclusters)
 static void test_hal_sync_signal_wait(int nclusters)
 {
 	int syncid;
-	int nodes[nclusters + 1];
 
 	/* Build nodes list. */
 	nodes[0] = masternode;
-
 	for (int i = 0; i < nclusters; i++)
 		nodes[i + 1] = i;
 
@@ -198,11 +198,9 @@ static void test_hal_sync_signal_wait(int nclusters)
 static void test_hal_sync_barrier(int nclusters)
 {
 	int syncid1, syncid2;
-	int nodes[nclusters + 1];
 
 	/* Build nodes list. */
 	nodes[0] = masternode;
-
 	for (int i = 0; i < nclusters; i++)
 		nodes[i + 1] = i;
 
@@ -235,7 +233,6 @@ static void test_hal_sync_barrier2(int nclusters)
 {
 	int nodeid;
 	int syncid1, syncid2;
-	int nodes[nclusters];
 
 	nodeid = hal_get_node_id();
 
