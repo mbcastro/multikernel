@@ -39,7 +39,7 @@ static int masternode;
  *============================================================================*/
 
 /**
- * @brief API Test: Create Unlink
+ * @brief API Test: Create Unlink CC
  */
 static void test_hal_mailbox_create_unlink(void)
 {
@@ -51,6 +51,22 @@ static void test_hal_mailbox_create_unlink(void)
 	assert((inbox = hal_mailbox_create(nodeid)) >= 0);
 
 	assert(hal_mailbox_unlink(inbox) == 0);
+}
+
+/*============================================================================*
+ * API Test: Open Close CC                                                    *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Open Close CC
+ */
+static void test_hal_mailbox_open_close(void)
+{
+	int outbox;
+
+	assert((outbox = hal_mailbox_open(masternode)) >= 0);
+
+	assert(hal_mailbox_close(outbox) == 0);
 }
 
 /*============================================================================*/
@@ -75,6 +91,9 @@ int main2(int argc, char **argv)
 	{
 		case 0:
 			test_hal_mailbox_create_unlink();
+			break;
+		case 1:
+			test_hal_mailbox_open_close();
 			break;
 		default:
 			exit(EXIT_FAILURE);

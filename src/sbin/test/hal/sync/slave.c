@@ -48,7 +48,7 @@ static int masternode;
  *============================================================================*/
 
 /**
- * @brief API Test: Create Unlink
+ * @brief API Test: Create Unlink CC
  */
 static void test_hal_sync_create_unlink(int nclusters)
 {
@@ -79,7 +79,7 @@ static void test_hal_sync_create_unlink(int nclusters)
  *============================================================================*/
 
 /**
- * @brief API Test: Open Close
+ * @brief API Test: Open Close CC
  */
 static void test_hal_sync_master_open_close(int nclusters)
 {
@@ -140,7 +140,7 @@ static void test_hal_sync_master_open_close(int nclusters)
  *============================================================================*/
 
 /**
- * @brief API Test: Wait Signal
+ * @brief API Test: Wait Signal CC
  */
 static void test_hal_sync_wait_signal(int nclusters)
 {
@@ -167,7 +167,7 @@ static void test_hal_sync_wait_signal(int nclusters)
  *============================================================================*/
 
 /**
- * @brief API Test: Signal Wait
+ * @brief API Test: Signal Wait CC
  */
 static void test_hal_sync_signal_wait(int nclusters)
 {
