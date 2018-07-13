@@ -250,6 +250,57 @@ static void kernel_gather(void)
 }
 
 /*============================================================================*
+ * Ping-Pong Kernel                                                           *
+ *============================================================================*/
+
+/**
+ * @brief Ping-Pong kernel. 
+ */
+static void kernel_pingpong(void)
+{
+	uint64_t mask;
+	int outboxes[nclusters];
+
+	open_outboxes(outboxes);
+
+	/* Wait for slaves. */
+	assert(mppa_read(sync_master, &mask, sizeof(uint64_t)) != -1);
+
+	/* Benchmark. */
+	for (int k = 0; k <= niterations; k++)
+	{
+		double total;
+		uint64_t t1, t2;
+
+		/* Send data. */
+		t1 = timer_get();
+		for (int i = 0; i < nclusters; i++)
+		{
+			assert(mppa_write(outboxes[i], buffer, MSG_SIZE) == MSG_SIZE);
+			assert(mppa_read(inbox, buffer, MSG_SIZE) == MSG_SIZE);
+		}
+		t2 = timer_get();
+
+		total = timer_diff(t1, t2)/((double) MPPA256_FREQ);
+
+		/* Warmup. */
+		if (k == 0)
+			continue;
+
+		printf("nodeos;%s;%d;%d;%.2lf;%.2lf\n",
+			kernel,
+			MSG_SIZE,
+			nclusters,
+			(total*MEGA)/nclusters,
+			2*(nclusters*MSG_SIZE)/total
+		);
+	}
+
+	/* House keeping. */
+	close_outboxes(outboxes);
+}
+
+/*============================================================================*
  * MPPA-256 Rqueue Microbenchmark Driver                                      *
  *============================================================================*/
 
@@ -275,6 +326,8 @@ static void benchmark(void)
 		kernel_broadcast();
 	else if (!strcmp(kernel, "gather"))
 		kernel_gather();
+	else if (!strcmp(kernel, "pingpong"))
+		kernel_pingpong();
 	
 	/* House keeping. */
 	join_remotes();

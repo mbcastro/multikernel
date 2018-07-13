@@ -59,6 +59,7 @@ static void kernel_broadcast(void)
 	for (int k = 0; k <= niterations; k++)
 		assert(mppa_read(inbox, buffer, MSG_SIZE) == MSG_SIZE);
 }
+
 /*============================================================================*
  * Gather Kernel                                                              *
  *============================================================================*/
@@ -76,6 +77,31 @@ static void kernel_gather(void)
 	/* Benchmark. */
 	for (int k = 0; k <= niterations; k++)
 		assert(mppa_write(outbox, buffer, MSG_SIZE) == MSG_SIZE);
+
+	/* House keeping. */
+	assert(mppa_close(outbox) != -1);
+}
+
+/*============================================================================*
+ * Ping-Pong Kernel                                                           *
+ *============================================================================*/
+
+/**
+ * @brief Ping-Pong kernel. 
+ */
+static void kernel_pingpong(void)
+{
+	int outbox;
+
+	/* Open output portal. */
+	assert((outbox = mppa_open(RQUEUE_MASTER, O_WRONLY)) != -1);
+
+	/* Benchmark. */
+	for (int k = 0; k <= niterations; k++)
+	{
+		assert(mppa_read(inbox, buffer, MSG_SIZE) == MSG_SIZE);
+		assert(mppa_write(outbox, buffer, MSG_SIZE) == MSG_SIZE);
+	}
 
 	/* House keeping. */
 	assert(mppa_close(outbox) != -1);
@@ -117,6 +143,8 @@ int main(int argc, const char **argv)
 		kernel_broadcast();
 	else if (!strcmp(kernel, "gather"))
 		kernel_gather();
+	else if (!strcmp(kernel, "pingpong"))
+		kernel_pingpong();
 
 	/* House keeping. */
 	assert(mppa_close(sync_fd) != -1);
