@@ -132,6 +132,37 @@ static void test_hal_portal_open_close_cc(void)
 	join_slaves();
 }
 
+/*============================================================================*
+ * API Test: Read Write CC                                                    *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Read Write CC
+ */
+static void test_hal_portal_read_write_cc(void)
+{
+	char masternode_str[4];
+	char portal_nclusters_str[4];
+	char test_str[4];
+	const char *args[] = {
+		"/test/hal-portal-slave",
+		masternode_str,
+		portal_nclusters_str,
+		test_str,
+		NULL
+	};
+
+	printf("[nanvix][test][api][hal][portal] Read Write CC\n");
+
+	/* Build arguments. */
+	sprintf(masternode_str, "%d", hal_get_node_id());
+	sprintf(portal_nclusters_str, "%d", NANVIX_PROC_MAX);
+	sprintf(test_str, "%d", 2);
+
+	spawn_slaves(args);
+	join_slaves();
+}
+
 /*============================================================================*/
 
 /**
@@ -141,5 +172,6 @@ void test_hal_portal(void)
 {
 	test_hal_portal_create_unlink_cc();
 	test_hal_portal_open_close_cc();
+	test_hal_portal_read_write_cc();
 }
 

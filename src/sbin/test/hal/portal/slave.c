@@ -37,6 +37,11 @@
 #define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
 
 /**
+ * @brief Data Size.
+ */
+#define DATA_SIZE 128
+
+/**
  * @brief ID of master node.
  */
 static int masternode;
@@ -45,6 +50,68 @@ static int masternode;
  * @brief Underlying NoC node ID.
  */
 static int nodeid;
+
+/**
+ * @brief Data buffer.
+ */
+static char buffer[DATA_SIZE];
+
+/*============================================================================*
+ * Utilities                                                                  *
+ *============================================================================*/
+
+/**
+ * @brief Sync slaves.
+ *
+ * @param nclusters Number of slaves.
+ */
+static void sync_slaves(int nclusters)
+{
+	int syncid1, syncid2;
+	int nodes[NANVIX_PROC_MAX];
+
+	/* Build nodes list. */
+	for (int i = 0; i < nclusters; i++)
+		nodes[i] = i;
+
+	/* Open synchronization points. */
+	if (nodeid == 0)
+	{
+		TEST_ASSERT((syncid1 = hal_sync_create(nodes,
+			nclusters,
+			HAL_SYNC_ALL_TO_ONE)) >= 0
+		);
+		TEST_ASSERT((syncid2 = hal_sync_open(nodes,
+			nclusters,
+			HAL_SYNC_ONE_TO_ALL)) >= 0
+		);
+
+		TEST_ASSERT(hal_sync_wait(syncid1) == 0);
+		TEST_ASSERT(hal_sync_signal(syncid2) == 0);
+
+		/* House keeping. */
+		TEST_ASSERT(hal_sync_close(syncid2) == 0);
+		TEST_ASSERT(hal_sync_unlink(syncid1) == 0);
+	}
+	else
+	{
+		TEST_ASSERT((syncid2 = hal_sync_create(nodes,
+			nclusters,
+			HAL_SYNC_ONE_TO_ALL)) >= 0
+		);
+		TEST_ASSERT((syncid1 = hal_sync_open(nodes,
+			nclusters,
+			HAL_SYNC_ALL_TO_ONE)) >= 0
+		);
+
+		TEST_ASSERT(hal_sync_signal(syncid1) == 0);
+		TEST_ASSERT(hal_sync_wait(syncid2) == 0);
+
+		/* House keeping. */
+		TEST_ASSERT(hal_sync_unlink(syncid2) == 0);
+		TEST_ASSERT(hal_sync_close(syncid1) == 0);
+	}
+}
 
 /*============================================================================*
  * API Test: Create Unlink CC                                                 *
@@ -70,10 +137,61 @@ static void test_hal_portal_create_unlink(void)
  */
 static void test_hal_portal_open_close(void)
 {
-	int outbox;
+	int outportal;
 
-	TEST_ASSERT((outbox = hal_portal_open(masternode)) >= 0);
-	TEST_ASSERT(hal_portal_close(outbox) == 0);
+	TEST_ASSERT((outportal = hal_portal_open(masternode)) >= 0);
+	TEST_ASSERT(hal_portal_close(outportal) == 0);
+}
+
+/*============================================================================*
+ * API Test: Read Write CC                                                    *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Read Write CC
+ */
+static void test_hal_portal_read_write(int nclusters)
+{
+	int inportal;
+	int outportal;
+
+	TEST_ASSERT((inportal = hal_portal_create(nodeid)) >= 0);
+
+	sync_slaves(nclusters);
+
+	TEST_ASSERT((outportal = hal_portal_open((nodeid + 1)%nclusters)) >= 0);
+
+	if (nodeid != 0)
+	{
+		TEST_ASSERT((hal_portal_allow(
+			inportal,
+			(nodeid == 0) ?
+				nclusters - 1 :
+				(nodeid - 1)%nclusters)) == 0
+		);
+	}
+
+	if (nodeid != (nclusters - 1))
+	{
+		TEST_ASSERT((hal_portal_write(
+			outportal,
+			buffer,
+			DATA_SIZE) == DATA_SIZE)
+		);
+	}
+
+	if (nodeid != 0)
+	{
+		TEST_ASSERT((hal_portal_read(
+			inportal,
+			buffer,
+			DATA_SIZE) == DATA_SIZE)
+		);
+	}
+
+	/* House keeping. */
+	TEST_ASSERT(hal_portal_close(outportal) == 0);
+	TEST_ASSERT(hal_portal_unlink(inportal) == 0);
 }
 
 /*============================================================================*/
@@ -103,6 +221,9 @@ int main2(int argc, char **argv)
 			break;
 		case 1:
 			test_hal_portal_open_close();
+			break;
+		case 2:
+			test_hal_portal_read_write(nclusters);
 			break;
 		default:
 			exit(EXIT_FAILURE);

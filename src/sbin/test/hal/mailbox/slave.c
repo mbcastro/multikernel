@@ -152,7 +152,6 @@ static void test_hal_mailbox_open_close(void)
 	int outbox;
 
 	TEST_ASSERT((outbox = hal_mailbox_open(masternode)) >= 0);
-
 	TEST_ASSERT(hal_mailbox_close(outbox) == 0);
 }
 
