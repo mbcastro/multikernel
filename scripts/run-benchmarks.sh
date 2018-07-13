@@ -28,9 +28,19 @@ NITERATIONS=5
 BUFSIZE=1048576
 
 case "$1" in
+	mppa256-rqueue)
+		echo "Running MPPA-256 Rqueue Microbenchmarks"
+		for kernel in broadcast gather pingpong;
+		do
+			run1                                          \
+				"benchmark-mppa256-rqueue.img"            \
+				"/benchmark/mppa256-rqueue-master"        \
+				"$NCLUSTERS $NITERATIONS $kernel"
+		done
+	;;
 	mppa256-portal)
 		echo "Running MPPA-256 Portal Microbenchmarks"
-		for kernel in gather broadcast pingpong;
+		for kernel in broadcast gather pingpong;
 		do
 			run1                                          \
 				"benchmark-mppa256-portal.img"            \
@@ -40,7 +50,7 @@ case "$1" in
 	;;
 	nanvix-mailbox)
 		echo "Running Nanvix Mailbox Microbenchmarks"
-		for kernel in gather broadcast pingpong;
+		for kernel in broadcast gather pingpong;
 		do
 			run1 "benchmark-hal-mailbox.img"      \
 				"/benchmark/hal-mailbox-master"   \
@@ -49,7 +59,7 @@ case "$1" in
 	;;
 	nanvix-portal)
 		echo "Running Nanvix Portal Microbenchmarks"
-		for kernel in gather broadcast pingpong;
+		for kernel in broadcast gather pingpong;
 		do
 			run1 "benchmark-hal-portal.img"                \
 				"/benchmark/hal-portal-master"             \
@@ -57,7 +67,7 @@ case "$1" in
 		done
 	;;
 	*)
-		echo "Usage: run.sh test {mppa256-portal|nanvix-portal}"
+		echo "Usage: run.sh test {mppa256-portal|mppa256-rqueue|nanvix-portal}"
 		exit 1
 	;;
 esac
