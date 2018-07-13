@@ -70,7 +70,7 @@ static int inbox;
 static void kernel_broadcast(void)
 {
 	/* Benchmark. */
-	for (int k = 0; k <= niterations; k++)
+	for (int k = 0; k <= (niterations + 1); k++)
 		assert(hal_mailbox_read(inbox, buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
 }
 
@@ -89,7 +89,7 @@ static void kernel_gather(void)
 	assert((outbox = hal_mailbox_open(masternode)) >= 0);
 
 	/* Benchmark. */
-	for (int k = 0; k <= niterations; k++)
+	for (int k = 0; k <= (niterations + 1); k++)
 		assert(hal_mailbox_write(outbox, buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
 
 	/* House keeping. */
@@ -111,7 +111,7 @@ static void kernel_pingpong(void)
 	assert((outbox = hal_mailbox_open(masternode)) >= 0);
 
 	/* Benchmark. */
-	for (int k = 0; k <= niterations; k++)
+	for (int k = 0; k <= (niterations + 1); k++)
 	{
 		assert(hal_mailbox_read(inbox, buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
 		assert(hal_mailbox_write(outbox, buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);

@@ -182,7 +182,7 @@ static void kernel_broadcast(void)
 	assert(mppa_read(sync_master, &mask, sizeof(uint64_t)) != -1);
 
 	/* Benchmark. */
-	for (int k = 0; k <= niterations; k++)
+	for (int k = 0; k <= (niterations + 1); k++)
 	{
 		double total;
 		uint64_t t1, t2;
@@ -196,7 +196,7 @@ static void kernel_broadcast(void)
 		total = timer_diff(t1, t2)/((double) MPPA256_FREQ);
 
 		/* Warmup. */
-		if (k == 0)
+		if (((k == 0) || (k == (niterations + 1))))
 			continue;
 
 		printf("nodeos;%s;%d;%d;%.2lf;%.2lf\n",
@@ -222,7 +222,7 @@ static void kernel_broadcast(void)
 static void kernel_gather(void)
 {
 	/* Benchmark. */
-	for (int k = 0; k <= niterations; k++)
+	for (int k = 0; k <= (niterations + 1); k++)
 	{
 		double total;
 		uint64_t t1, t2;
@@ -236,7 +236,7 @@ static void kernel_gather(void)
 		total = timer_diff(t1, t2)/((double) MPPA256_FREQ);
 
 		/* Warmup. */
-		if (k == 0)
+		if (((k == 0) || (k == (niterations + 1))))
 			continue;
 
 		printf("nodeos;%s;%d;%d;%.2lf;%.2lf\n",
@@ -267,7 +267,7 @@ static void kernel_pingpong(void)
 	assert(mppa_read(sync_master, &mask, sizeof(uint64_t)) != -1);
 
 	/* Benchmark. */
-	for (int k = 0; k <= niterations; k++)
+	for (int k = 0; k <= (niterations + 1); k++)
 	{
 		double total;
 		uint64_t t1, t2;
@@ -284,7 +284,7 @@ static void kernel_pingpong(void)
 		total = timer_diff(t1, t2)/((double) MPPA256_FREQ);
 
 		/* Warmup. */
-		if (k == 0)
+		if (((k == 0) || (k == (niterations + 1))))
 			continue;
 
 		printf("nodeos;%s;%d;%d;%.2lf;%.2lf\n",

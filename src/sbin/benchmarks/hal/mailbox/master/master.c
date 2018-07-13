@@ -124,10 +124,6 @@ static void join_remotes(void)
 		assert(mppa_waitpid(pids[i], NULL, 0) != -1);
 }
 
-/*============================================================================*
- * Kernels                                                                    *
- *============================================================================*/
-
 /**
  * @brief Opens output mailboxes.
  *
@@ -152,6 +148,10 @@ static void close_mailboxes(const int *outboxes)
 		assert((hal_mailbox_close(outboxes[i])) == 0);
 }
 
+/*============================================================================*
+ * Kernels                                                                    *
+ *============================================================================*/
+
 /**
  * @brief Broadcast kernel.
  */
@@ -164,7 +164,7 @@ static void kernel_broadcast(void)
 	memset(buffer, 1, HAL_MAILBOX_MSG_SIZE);
 
 	/* Benchmark. */
-	for (int k = 0; k <= niterations; k++)
+	for (int k = 0; k <= (niterations + 1); k++)
 	{
 		double total;
 		uint64_t t1, t2;
@@ -177,7 +177,7 @@ static void kernel_broadcast(void)
 		total = hal_timer_diff(t1, t2)/((double) hal_get_core_freq());
 
 		/* Warmup. */
-		if (k == 0)
+		if (((k == 0) || (k == (niterations + 1))))
 			continue;
 
 		printf("nanvix;%s;%d;%d;%.2lf;%.2lf\n",
@@ -202,7 +202,7 @@ static void kernel_gather(void)
 	uint64_t t1, t2;
 
 	/* Benchmark. */
-	for (int k = 0; k <= niterations; k++)
+	for (int k = 0; k <= (niterations + 1); k++)
 	{
 		t1 = hal_timer_get();
 		for (int i = 0; i < nclusters; i++)
@@ -212,7 +212,7 @@ static void kernel_gather(void)
 		total = hal_timer_diff(t1, t2)/((double) hal_get_core_freq());
 
 		/* Warmup. */
-		if (k == 0)
+		if (((k == 0) || (k == (niterations + 1))))
 			continue;
 
 		printf("nanvix;%s;%d;%d;%.2lf;%.2lf\n",
@@ -238,7 +238,7 @@ static void kernel_pingpong(void)
 	open_mailboxes(outboxes);
 
 	/* Benchmark. */
-	for (int k = 0; k <= niterations; k++)
+	for (int k = 0; k <= (niterations + 1); k++)
 	{
 		t1 = hal_timer_get();
 		for (int i = 0; i < nclusters; i++)
@@ -250,7 +250,7 @@ static void kernel_pingpong(void)
 		total = hal_timer_diff(t1, t2)/((double) hal_get_core_freq());
 
 		/* Warmup. */
-		if (k == 0)
+		if (((k == 0) || (k == (niterations + 1))))
 			continue;
 
 		printf("nanvix;%s;%d;%d;%.2lf;%.2lf\n",

@@ -56,7 +56,7 @@ static char buffer[MSG_SIZE];
 static void kernel_broadcast(void)
 {
 	/* Benchmark. */
-	for (int k = 0; k <= niterations; k++)
+	for (int k = 0; k <= (niterations + 1); k++)
 		assert(mppa_read(inbox, buffer, MSG_SIZE) == MSG_SIZE);
 }
 
@@ -75,7 +75,7 @@ static void kernel_gather(void)
 	assert((outbox = mppa_open(RQUEUE_MASTER, O_WRONLY)) != -1);
 
 	/* Benchmark. */
-	for (int k = 0; k <= niterations; k++)
+	for (int k = 0; k <= (niterations + 1); k++)
 		assert(mppa_write(outbox, buffer, MSG_SIZE) == MSG_SIZE);
 
 	/* House keeping. */
@@ -97,7 +97,7 @@ static void kernel_pingpong(void)
 	assert((outbox = mppa_open(RQUEUE_MASTER, O_WRONLY)) != -1);
 
 	/* Benchmark. */
-	for (int k = 0; k <= niterations; k++)
+	for (int k = 0; k <= (niterations + 1); k++)
 	{
 		assert(mppa_read(inbox, buffer, MSG_SIZE) == MSG_SIZE);
 		assert(mppa_write(outbox, buffer, MSG_SIZE) == MSG_SIZE);
