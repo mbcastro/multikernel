@@ -29,11 +29,6 @@
 	#define MEGA (1000000)
 
 	/**
-	 * @brief 10^6
-	 */
-	#define MEGA (1000000)
-
-	/**
 	 * @brief Maximum buffer size (in bytes).
 	 */
 	#define BUFFER_SIZE_MAX (1024*1024)

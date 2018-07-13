@@ -24,9 +24,9 @@
 #define _KERNEL_H_
 
 	/**
-	 * @brief Number of kernel iterations.
+	 * @brief Mega (10^6).
 	 */
-	#define NITERATIONS 100
+	#define MEGA (1000000)
 
 #endif /* _KERNEL_H_ */
 

@@ -21,7 +21,6 @@
  */
 
 #include <assert.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -72,6 +71,7 @@ static void kernel_broadcast(void)
 {
 	int inportal;
 
+	/* Open output portal. */
 	assert((inportal = hal_portal_create(nodeid)) >= 0);
 
 	/* Benchmark. */
@@ -81,6 +81,7 @@ static void kernel_broadcast(void)
 		assert(hal_portal_read(inportal, buffer, bufsize) == bufsize);
 	}
 
+	/* House keeping. */
 	assert(hal_portal_unlink(inportal) == 0);
 }
 
@@ -105,11 +106,11 @@ static void kernel_gather(void)
 }
 
 /*============================================================================*
- * Ping Pong Kernel                                                              *
+ * Ping-Pong Kernel                                                           *
  *============================================================================*/
 
 /**
- * @brief Ping Pong kernel. 
+ * @brief Ping-Pong kernel. 
  */
 static void kernel_pingpong(void)
 {

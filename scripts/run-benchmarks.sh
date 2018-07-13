@@ -38,6 +38,15 @@ case "$1" in
 				"$NCLUSTERS $NITERATIONS $BUFSIZE $kernel"
 		done
 	;;
+	nanvix-mailbox)
+		echo "Running Nanvix Mailbox Microbenchmarks"
+		for kernel in gather broadcast pingpong;
+		do
+			run1 "benchmark-hal-mailbox.img"      \
+				"/benchmark/hal-mailbox-master"   \
+				"$NCLUSTERS $NITERATIONS $kernel"
+		done
+	;;
 	nanvix-portal)
 		echo "Running Nanvix Portal Microbenchmarks"
 		for kernel in gather broadcast pingpong;
