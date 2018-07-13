@@ -21,7 +21,7 @@
  */
 
 #include <assert.h>
-#include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 
 #include <mppa/osconfig.h>
@@ -41,23 +41,28 @@
 static int master_node;
 
 /**
- * @brief Inbox for receiving messages.
- */
-static int inbox;
-
-/**
  * @brief Underlying NoC node ID.
  */
 static int nodeid;
+
+/**
+ * @brief Number of benchmark interations.
+ */
+static int niterations = 0;
+
+/**
+ * @brief Inbox for receiving messages.
+ */
+static int inbox;
 
 /*============================================================================*
  * Kernel                                                                     *
  *============================================================================*/
 
 /**
- * @brief HAL Mailbox Microbenchmark Kernel
+ * @brief Broadcast kernel. 
  */
-static void kernel(void)
+static void kernel_broadcast(void)
 {
 	int outbox;
 	char buffer[HAL_MAILBOX_MSG_SIZE];
@@ -66,11 +71,8 @@ static void kernel(void)
 	assert((outbox = hal_mailbox_open(master_node)) >= 0);
 
 	/* Benchmark. */
-	for (int k = 0; k < NITERATIONS; k++)
-	{
+	for (int k = 0; k <= niterations; k++)
 		assert(hal_mailbox_read(inbox, buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
-		assert(hal_mailbox_write(outbox, buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
-	}
 
 	/* House keeping. */
 	assert(hal_mailbox_close(outbox) == 0);
@@ -108,24 +110,29 @@ static void sync_master(int first_remote, int last_remote)
  */
 int main(int argc, const char **argv)
 {
+	const char *mode;
 	int first_remote;
 	int last_remote;
 	
 	/* Initialization. */
 	hal_setup();
 	nodeid = hal_get_node_id();
-	assert((inbox = hal_mailbox_create(nodeid)) >= 0);
 
 	/* Retrieve kernel parameters. */
-	assert(argc == 4);
+	assert(argc == 6);
 	master_node = atoi(argv[1]);
 	first_remote = atoi(argv[2]);
 	last_remote = atoi(argv[3]);
+	niterations = atoi(argv[4]);
+	mode = argv[5];
+
+	assert((inbox = hal_mailbox_create(nodeid)) >= 0);
 
 	sync_master(first_remote, last_remote);
 
 	/* Run kernel. */
-	kernel();
+	if (!strcmp(mode, "broadcast"))
+		kernel_broadcast();
 
 	/* House keeping. */
 	assert(hal_mailbox_unlink(inbox) == 0);
