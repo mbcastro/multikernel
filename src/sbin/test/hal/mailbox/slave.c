@@ -26,13 +26,74 @@
 
 #define __NEED_HAL_CORE_
 #define __NEED_HAL_NOC_
+#define __NEED_HAL_SYNC_
 #define __NEED_HAL_MAILBOX_
 #include <nanvix/hal.h>
+#include <nanvix/limits.h>
 
 /**
  * @brief ID of master node.
  */
 static int masternode;
+/*============================================================================*
+ * Utilities                                                                  *
+ *============================================================================*/
+
+/**
+ * @brief Sync slaves.
+ *
+ * @param nclusters Number of slaves.
+ */
+static void sync_slaves(int nclusters)
+{
+	int nodeid;
+	int syncid1, syncid2;
+	static int nodes[NANVIX_PROC_MAX];
+
+	nodeid = hal_get_node_id();
+
+	/* Build nodes list. */
+	for (int i = 0; i < nclusters; i++)
+		nodes[i] = i;
+
+	/* Open synchronization points. */
+	if (nodeid == 0)
+	{
+		assert((syncid2 = hal_sync_create(nodes,
+			nclusters,
+			HAL_SYNC_ONE_TO_ALL)) >= 0
+		);
+		assert((syncid1 = hal_sync_open(nodes,
+			nclusters,
+			HAL_SYNC_ALL_TO_ONE)) >= 0
+		);
+
+		assert(hal_sync_signal(syncid1) == 0);
+		assert(hal_sync_wait(syncid2) == 0);
+
+		/* House keeping. */
+		assert(hal_sync_close(syncid1) == 0);
+		assert(hal_sync_unlink(syncid2) == 0);
+	}
+	else
+	{
+		assert((syncid2 = hal_sync_open(nodes,
+			nclusters,
+			HAL_SYNC_ONE_TO_ALL)) >= 0
+		);
+		assert((syncid1 = hal_sync_create(nodes,
+			nclusters,
+			HAL_SYNC_ALL_TO_ONE)) >= 0
+		);
+
+		assert(hal_sync_signal(syncid2) == 0);
+		assert(hal_sync_wait(syncid1) == 0);
+
+		/* House keeping. */
+		assert(hal_sync_unlink(syncid1) == 0);
+		assert(hal_sync_close(syncid2) == 0);
+	}
+}
 
 /*============================================================================*
  * API Test: Create Unlink CC                                                 *
@@ -69,6 +130,42 @@ static void test_hal_mailbox_open_close(void)
 	assert(hal_mailbox_close(outbox) == 0);
 }
 
+/*============================================================================*
+ * API Test: Read Write CC                                                    *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Read Write CC
+ */
+static void test_hal_mailbox_read_write(int nclusters)
+{
+	int inbox;
+	int outbox;
+	int nodeid;
+	char msg[HAL_MAILBOX_MSG_SIZE];
+
+	nodeid = hal_get_node_id();
+
+	assert((inbox = hal_mailbox_create(nodeid)) >= 0);
+
+	sync_slaves(nclusters);
+
+	assert((outbox = hal_mailbox_open((nodeid + 1)%nclusters)) >= 0);
+	assert((hal_mailbox_write(
+		outbox,
+		msg,
+		HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE)
+	);
+	assert((hal_mailbox_read(
+		inbox,
+		msg,
+		HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE)
+	);
+
+	assert(hal_mailbox_close(outbox) == 0);
+	assert(hal_mailbox_unlink(inbox) == 0);
+}
+
 /*============================================================================*/
 
 /**
@@ -94,6 +191,9 @@ int main2(int argc, char **argv)
 			break;
 		case 1:
 			test_hal_mailbox_open_close();
+			break;
+		case 2:
+			test_hal_mailbox_read_write(nclusters);
 			break;
 		default:
 			exit(EXIT_FAILURE);

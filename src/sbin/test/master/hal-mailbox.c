@@ -126,6 +126,37 @@ static void test_hal_mailbox_open_close_cc(void)
 	join_slaves();
 }
 
+/*============================================================================*
+ * API Test: Read Write CC                                                    *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Read Write CC
+ */
+static void test_hal_mailbox_read_write_cc(void)
+{
+	char masternode_str[4];
+	char mailbox_nclusters_str[4];
+	char test_str[4];
+	const char *args[] = {
+		"/test/hal-mailbox-slave",
+		masternode_str,
+		mailbox_nclusters_str,
+		test_str,
+		NULL
+	};
+
+	printf("[nanvix][test][api][hal][mailbox] Read Write CC\n");
+
+	/* Build arguments. */
+	sprintf(masternode_str, "%d", hal_get_node_id());
+	sprintf(mailbox_nclusters_str, "%d", NANVIX_PROC_MAX);
+	sprintf(test_str, "%d", 2);
+
+	spawn_slaves(args);
+	join_slaves();
+}
+
 /*============================================================================*/
 
 /**
@@ -135,4 +166,5 @@ void test_hal_mailbox(void)
 {
 	test_hal_mailbox_create_unlink_cc();
 	test_hal_mailbox_open_close_cc();
+	test_hal_mailbox_read_write_cc();
 }
