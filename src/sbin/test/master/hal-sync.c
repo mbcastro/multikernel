@@ -69,7 +69,6 @@ static void join_slaves(void)
 	}
 }
 
-
 /*============================================================================*
  * API Test: Create Unlink CC                                                 *
  *============================================================================*/
@@ -303,13 +302,10 @@ static void test_hal_sync_barrier2_cc(void)
 /*============================================================================*/
 
 /**
- * @brief Automated test driver.
+ * @brief Automated HAL sync test driver.
  */
-int main2(int argc, const char **argv)
+void test_hal_sync(void)
 {
-	((void) argc);
-	((void) argv);
-
 	/* Build nodes list. */
 	nodes[0] = hal_get_node_id();
 	for (int i = 0; i < NANVIX_PROC_MAX; i++)
@@ -321,6 +317,4 @@ int main2(int argc, const char **argv)
 	test_hal_sync_signal_wait_cc();
 	test_hal_sync_barrier_cc();
 	test_hal_sync_barrier2_cc();
-
-	return (EXIT_SUCCESS);
 }
