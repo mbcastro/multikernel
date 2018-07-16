@@ -4,8 +4,10 @@
 
 remove HAL.CoreTypes
 remove HAL.CoreInterface
+remove HAL.SyncTypes
 remove HAL.SyncInterface
 remove HAL.PortalInterface
+remote HAL.PerformanceInterface
 
 !include ipc.uml
 

@@ -23,15 +23,22 @@
 #include <string.h>
 #include <stdio.h>
 
-#include <HAL/hal/core/mp.h>
-
 #define __NEED_HAL_CORE_
 #define __NEED_HAL_NOC_
 #include <nanvix/hal.h>
 #include <nanvix/klib.h>
 
 #include "core.h"
-#include "noc.h"
+
+/**
+ * @brief Number DMAs per compute cluster.
+ */
+#define NR_CCLUSTER_DMA 1
+
+/**
+ * @brief Number of DMAs per compute cluster.
+ */
+#define NR_IOCLUSTER_DMA 4
 
 /**
  * @brief NoC tags offsets.
@@ -130,24 +137,6 @@ int noc_get_node_num(int nodeid)
 }
 
 /*============================================================================*
- * noc_get_dma()                                                              *
- *============================================================================*/
-
-/**
- * @brief Gets the DMA channel of a NoC node.
- *
- * @param nodeid ID of the target NoC node.
- *
- * @note This function is non-blocking.
- * @note This function is thread-safe.
- */
-int noc_get_dma(int nodeid)
-{
-	return (noc_is_cnode(nodeid) ?
-			nodeid%NR_CCLUSTER_DMA : nodeid%NR_IOCLUSTER_DMA);
-}
-
-/*============================================================================*
  * noc_is_ionode0()                                                            *
  *============================================================================*/
 
@@ -227,6 +216,24 @@ int noc_is_cnode(int nodeid)
 	return ((nodeid >= CCLUSTER0) && (nodeid <= CCLUSTER15));
 }
 
+/*============================================================================*
+ * noc_get_dma()                                                              *
+ *============================================================================*/
+
+/**
+ * @brief Gets the DMA channel of a NoC node.
+ *
+ * @param nodeid ID of the target NoC node.
+ *
+ * @note This function is non-blocking.
+ * @note This function is thread-safe.
+ */
+int noc_get_dma(int nodeid)
+{
+	return (noc_is_cnode(nodeid) ?
+			nodeid%NR_CCLUSTER_DMA : nodeid%NR_IOCLUSTER_DMA);
+}
+
 /*=======================================================================*
  * noc_get_names()                                                       *
  *=======================================================================*/
@@ -273,7 +280,7 @@ void noc_get_remotes(char *remotes, int local)
 {
 	char tmp[5];
 
-	static int cclusters[NR_CCLUSTER*NR_CCLUSTER_DMA] = {
+	static int cclusters[HAL_NR_CCLUSTERS*NR_CCLUSTER_DMA] = {
 		CCLUSTER0,  CCLUSTER1,  CCLUSTER2,  CCLUSTER3,
 		CCLUSTER4,  CCLUSTER5,  CCLUSTER6,  CCLUSTER7,
 		CCLUSTER8,  CCLUSTER9,  CCLUSTER10, CCLUSTER11,

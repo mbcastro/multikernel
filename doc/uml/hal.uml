@@ -1,13 +1,13 @@
 @startuml
 
 namespace HAL {
-	enum HAL.CoreTypes {
-		+ const int HAL_CORE_USER
-		+ const int HAL_CORE_RMAN
-		+ const int HAL_CORE_SYSTEM
+	enum kernel.HAL.CoreTypes {
+		+ HAL_CORE_USER
+		+ HAL_CORE_RMAN
+		+ HAL_CORE_SYSTEM
 	}
 
-	interface HAL.CoreInterface {
+	interface kernel.HAL.CoreInterface {
 		+ const int HAL_NR_CORES_USER
 		+ const int HAL_NR_CORES_RMAN
 		+ const int HAL_NR_CORES_SYSTEM
@@ -21,7 +21,7 @@ namespace HAL {
 		+ int hal_get_core_freq(void)
 	}
 
-	interface HAL.MailboxInterface {
+	interface kernel.HAL.MailboxInterface {
 		+ const int HAL_NR_MAILBOX
 		+ const int HAL_MAILBOX_MSG_SIZE
 		+ int hal_mailbox_create(int)
@@ -32,7 +32,12 @@ namespace HAL {
 		+ size_t hal_mailbox_read(int, void *, size_t)
 	}
 
-	interface HAL.SyncInterface {
+	enum kernel.HAL.SyncTypes {
+		+ HAL_SYNC_ONE_TO_ALL
+		+ HAL_SYNC_ALL_TO_ONE
+	}	
+
+	interface kernel.HAL.SyncInterface {
 		+ const int HAL_NR_SYNC
 		+ const int HAL_SYNC_ONE_TO_ALL
 		+ const int HAL_SYNC_ALL_TO_ONE
@@ -44,18 +49,18 @@ namespace HAL {
 		+ int hal_sync_unlink(int)
 	}
 
-	interface HAL.PortalInterface {
-		class portal_t
-		+ int hal_portal_allow(portal_t *, int)
-		+ int hal_portal_create(portal_t *, int)
-		+ int hal_portal_open(portal_t *, int)
-		+ int hal_portal_read(portal_t *, void *, size_t)
-		+ int hal_portal_write(portal_t *, const void *, size_t)
-		+ int hal_portal_close(portal_t *)
-		+ int hal_portal_unlink(portal_t *)
+	interface kernel.HAL.PortalInterface {
+		+ const int HAL_NR_PORTAL
+		+ int hal_portal_allow(int, int)
+		+ int hal_portal_create(int)
+		+ int hal_portal_open(int)
+		+ int hal_portal_read(int, void *, size_t)
+		+ int hal_portal_write(int, const void *, size_t)
+		+ int hal_portal_close(int)
+		+ int hal_portal_unlink(int)
 	}
 
-	interface HAL.NoCInterface {
+	interface kernel.HAL.NoCInterface {
 		+ const int HAL_NR_NOC_IONODES
 		+ const int HAL_NR_NOC_CNODES
 		+ const int HAL_NR_NOC_NODES
@@ -63,12 +68,24 @@ namespace HAL {
 		+ int hal_get_node_id(void)
 	}
 
-	interface HAL.SetupInterface {
+	interface kernel.HAL.SetupInterface {
 		+ void hal_setup(void)
 		+ void hal_cleanup(void)
 	}
 
-	HAL.CoreInterface ..> HAL.CoreTypes : <<use>>
+	interface kernel.HAL.PerformanceInterface {
+		+ uint64_t hal_timer_get(void)
+		+ uint64_t hal_timer_diff(uint64_t, uint64_t)
+		+ void hal_timer_init(void)
+	}
+
+	kernel.HAL.CoreInterface ..> kernel.HAL.CoreTypes : <<use>>
+	kernel.HAL.SyncInterface ..> kernel.HAL.SyncTypes : <<use>>
 }
+
+kernel.HAL.SyncInterface        ..> "<nanvix/klib>"   : <<use>>
+kernel.HAL.MailboxInterface     ..> "<nanvix/klib>"   : <<use>>
+kernel.HAL.PortalInterface      ..> "<nanvix/klib>"   : <<use>>
+kernel.HAL.PerformanceInterface ..> "<inttypes>" : <<use>>
 
 @enduml

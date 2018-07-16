@@ -21,9 +21,12 @@
  */
 
 #include <errno.h>
-#include <pthread.h>
+#include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
+#include <pthread.h>
+
+#include <mppaipc.h>
 
 #define __NEED_HAL_NOC_
 #define __NEED_HAL_SYNC_

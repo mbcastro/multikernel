@@ -20,9 +20,9 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <nanvix/arch/mppa.h>
+#include <inttypes.h>
 
-#include "mppa.h" 
+#include <HAL/hal/core/timer.h>
 
 /**
  * @brief Timer error.

@@ -22,11 +22,13 @@
 
 #include <errno.h>
 #include <stdio.h>
+#include <pthread.h>
+
+#include <mppaipc.h>
 
 #define __NEED_HAL_NOC_
 #define __NEED_HAL_MAILBOX_
 #include <nanvix/hal.h>
-#include <nanvix/pm.h>
 
 #include "noc.h"
 

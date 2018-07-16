@@ -30,6 +30,16 @@
 #include "core.h" 
 
 /**
+ * @brief Number of cores in an IO CLUSTER.
+ */
+#define NR_IOCLUSTER_CORES 4
+
+/**
+ * @brief Number of cores in a Compute CLUSTER.
+ */
+#define NR_CCLUSTER_CORES 17
+
+/**
  * @brief Threads table.
  */
 static pthread_t threads[NR_IOCLUSTER_CORES] = { 0, };
@@ -289,7 +299,7 @@ int hal_get_num_cores(void)
 
 	clusterid = mppa256_get_cluster_id();
 
-	return (mppa256_is_ccluster(clusterid) ? 17 : 4);
+	return (mppa256_is_ccluster(clusterid) ? NR_CCLUSTER_CORES : NR_IOCLUSTER_CORES);
 }
 
 /*============================================================================*
