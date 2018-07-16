@@ -25,9 +25,6 @@
 
 #include <mppa/osconfig.h>
 
-#define __NEED_HAL_NOC_
-#define __NEED_HAL_SETUP_
-#define __NEED_HAL_SYNC_
 #include <nanvix/const.h>
 #include <nanvix/syscalls.h>
 
@@ -129,6 +126,9 @@ int main(int argc, const char **argv)
 
 	spawners_sync();
 
+	/* Initialization. */
+	assert(kernel_setup() == 0);
+
 	/* Run self-tests. */
 	if (debug)
 		test_runtime(argv[2], 0);
@@ -136,21 +136,17 @@ int main(int argc, const char **argv)
 	printf("[nanvix][spawner0] switching to user mode\n");
 
 	/* Initialization. */
-	if ((ret = kernel_setup()) != 0)
-	{
-		printf("[nanvix][spawner0] startup failed\n");
-		return (EXIT_FAILURE);
-	}
+	assert(runtime_setup() == 0);
 
 	ret = main2(argc, argv);	
 
 	/* Cleanup. */
-	if ((ret = kernel_cleanup()) != 0)
-	{
-		printf("[nanvix][spawner0] cleanup failed\n");
-		return (EXIT_FAILURE);
-	}
+	assert(runtime_cleanup() == 0);
 
+	printf("[nanvix][spawner0] shutting down\n");
+
+	/* Cleanup. */
+	assert(kernel_cleanup() == 0);
 	sys_cleanup();
 	return (ret);
 }

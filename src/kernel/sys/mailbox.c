@@ -38,7 +38,7 @@
  */
 int sys_mailbox_create(int remote)
 {
-	return (sys_mailbox_create(remote));
+	return (hal_mailbox_create(remote));
 }
 
 /**
@@ -56,7 +56,7 @@ int sys_mailbox_create(int remote)
  */
 int sys_mailbox_open(int nodeid)
 {
-	return (sys_mailbox_open(nodeid));
+	return (hal_mailbox_open(nodeid));
 }
 
 /**
@@ -73,7 +73,7 @@ int sys_mailbox_open(int nodeid)
  */
 int sys_mailbox_unlink(int mbxid)
 {
-	return (sys_mailbox_unlink(mbxid));
+	return (hal_mailbox_unlink(mbxid));
 }
 
 /**
@@ -90,7 +90,7 @@ int sys_mailbox_unlink(int mbxid)
  */
 int sys_mailbox_close(int mbxid)
 {
-	return (sys_mailbox_close(mbxid));
+	return (hal_mailbox_close(mbxid));
 }
 
 /**
@@ -108,7 +108,7 @@ int sys_mailbox_close(int mbxid)
  */
 size_t sys_mailbox_write(int mbxid, const void *buf, size_t n)
 {
-	return (sys_mailbox_write(mbxid, buf, n));
+	return (hal_mailbox_write(mbxid, buf, n));
 }
 
 /**
@@ -126,5 +126,5 @@ size_t sys_mailbox_write(int mbxid, const void *buf, size_t n)
  */
 size_t sys_mailbox_read(int mbxid, void *buf, size_t n)
 {
-	return (sys_mailbox_read(mbxid, buf, n));
+	return (hal_mailbox_read(mbxid, buf, n));
 }

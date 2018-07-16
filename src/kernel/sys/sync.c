@@ -40,7 +40,7 @@
  */
 int sys_sync_create(const int *nodes, int nnodes, int type)
 {
-	return (sys_sync_create(nodes, nnodes, type));
+	return (hal_sync_create(nodes, nnodes, type));
 }
 
 
@@ -63,7 +63,7 @@ int sys_sync_create(const int *nodes, int nnodes, int type)
  */
 int sys_sync_open(const int *nodes, int nnodes, int type)
 {
-	return (sys_sync_open(nodes, nnodes, type));
+	return (hal_sync_open(nodes, nnodes, type));
 }
 
 /**
@@ -80,7 +80,7 @@ int sys_sync_open(const int *nodes, int nnodes, int type)
  */
 int sys_sync_wait(int syncid)
 {
-	return (sys_sync_wait(syncid));
+	return (hal_sync_wait(syncid));
 }
 
 /**
@@ -97,7 +97,7 @@ int sys_sync_wait(int syncid)
  */
 int sys_sync_signal(int syncid)
 {
-	return (sys_sync_signal(syncid));
+	return (hal_sync_signal(syncid));
 }
 
 /**
@@ -114,7 +114,7 @@ int sys_sync_signal(int syncid)
  */
 int sys_sync_close(int syncid)
 {
-	return (sys_sync_close(syncid));
+	return (hal_sync_close(syncid));
 }
 
 /**
@@ -131,5 +131,5 @@ int sys_sync_close(int syncid)
  */
 int sys_sync_unlink(int syncid)
 {
-	return (sys_sync_unlink(syncid));
+	return (hal_sync_unlink(syncid));
 }

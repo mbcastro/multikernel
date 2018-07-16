@@ -22,6 +22,7 @@
 
 #include <errno.h>
 #include <pthread.h>
+#include <stdio.h>
 
 #include <nanvix/pm.h>
 #include <nanvix/syscalls.h>
@@ -74,6 +75,8 @@ int runtime_setup(void)
 		if (initialize_inbox(index) != 0)
 			goto error;
 
+		initialized[index] = 1;
+
 		name_init();
 
 	runtime_unlock();
@@ -82,6 +85,7 @@ int runtime_setup(void)
 
 error:
 	runtime_unlock();
+	printf("[nanvix][libs] failled to setup runtime\n");
 	return (-EAGAIN);
 }
 
@@ -112,5 +116,6 @@ int runtime_cleanup(void)
 
 error:
 	runtime_unlock();
+	printf("[nanvix][libs] failled to clean runtime\n");
 	return (-EAGAIN);
 }

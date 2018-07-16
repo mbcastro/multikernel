@@ -27,11 +27,6 @@
 
 #include <mppaipc.h>
 
-#define __NEED_HAL_CORE_
-#define __NEED_HAL_NOC_
-#define __NEED_HAL_SYNC_
-#define __NEED_HAL_MAILBOX_
-#include <nanvix/syscalls.h>
 #include <nanvix/syscalls.h>
 #include <nanvix/name.h>
 #include <nanvix/limits.h>
@@ -57,6 +52,7 @@ static void *test_mailbox_thread_create_unlink(void *args)
 	int tid;
 	int inbox;
 
+	TEST_ASSERT(kernel_setup() == 0);
 	TEST_ASSERT(runtime_setup() == 0);
 
 	pthread_barrier_wait(&barrier);
@@ -76,6 +72,7 @@ static void *test_mailbox_thread_create_unlink(void *args)
 	pthread_mutex_unlock(&lock);
 
 	TEST_ASSERT(runtime_cleanup() == 0);
+	TEST_ASSERT(kernel_cleanup() == 0);
 	return (NULL);
 }
 
@@ -118,6 +115,7 @@ static void *test_mailbox_thread_open_close(void *args)
 	int inbox;
 	int outbox;
 
+	TEST_ASSERT(kernel_setup() == 0);
 	TEST_ASSERT(runtime_setup() == 0);
 
 	pthread_barrier_wait(&barrier);
@@ -152,6 +150,7 @@ static void *test_mailbox_thread_open_close(void *args)
 	pthread_mutex_unlock(&lock);
 
 	TEST_ASSERT(runtime_cleanup() == 0);
+	TEST_ASSERT(kernel_cleanup() == 0);
 	return (NULL);
 }
 
@@ -195,6 +194,7 @@ static void *test_mailbox_thread_read_write(void *args)
 	int inbox;
 	int outbox;
 
+	TEST_ASSERT(kernel_setup() == 0);
 	TEST_ASSERT(runtime_setup() == 0);
 
 	pthread_barrier_wait(&barrier);
@@ -237,6 +237,7 @@ static void *test_mailbox_thread_read_write(void *args)
 	pthread_mutex_unlock(&lock);
 
 	TEST_ASSERT(runtime_cleanup() == 0);
+	TEST_ASSERT(kernel_cleanup() == 0);
 	return (NULL);
 }
 

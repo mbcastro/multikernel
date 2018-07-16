@@ -20,6 +20,7 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -38,18 +39,14 @@ int main(int argc, const char **argv)
 	int ret;
 
 	/* Initialization. */
-	if ((ret = runtime_setup()) != 0)
-	{
-		printf("[KERNEL] startup failed\n");
-		return (EXIT_FAILURE);
-	}
+	assert(kernel_setup() == 0);
+	assert(runtime_setup() == 0);
 
-	main2(argc, argv);	
+	ret = main2(argc, argv);	
 
 	/* Cleanup. */
-	if ((ret = runtime_cleanup()) != 0)
-	{
-		printf("[KERNEL] cleanup failed\n");
-		return (EXIT_FAILURE);
-	}
+	assert(runtime_cleanup() == 0);
+	assert(kernel_cleanup() == 0);
+
+	return (ret);
 }

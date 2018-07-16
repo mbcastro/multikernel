@@ -38,7 +38,7 @@
  */
 int sys_portal_create(int local)
 {
-	return (sys_portal_create(local));
+	return (hal_portal_create(local));
 }
 
 /**
@@ -56,7 +56,7 @@ int sys_portal_create(int local)
  */
 int sys_portal_allow(int portalid, int remote)
 {
-	return (sys_portal_allow(portalid, remote));
+	return (hal_portal_allow(portalid, remote));
 }
 
 /**
@@ -73,7 +73,7 @@ int sys_portal_allow(int portalid, int remote)
  */
 int sys_portal_open(int remote)
 {
-	return (sys_portal_open(remote));
+	return (hal_portal_open(remote));
 }
 
 /**
@@ -126,7 +126,7 @@ int sys_portal_close(int portalid)
  */
 int sys_portal_read(int portalid, void *buf, size_t n)
 {
-	return (sys_portal_read(portalid, buf, n));
+	return (hal_portal_read(portalid, buf, n));
 }
 
 /**
@@ -145,6 +145,6 @@ int sys_portal_read(int portalid, void *buf, size_t n)
  */
 int sys_portal_write(int portalid, const void *buf, size_t n)
 {
-	return (sys_portal_write(portalid, buf, n));
+	return (hal_portal_write(portalid, buf, n));
 }
 

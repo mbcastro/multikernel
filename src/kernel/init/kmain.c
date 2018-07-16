@@ -22,6 +22,7 @@
 
 #include <errno.h>
 #include <pthread.h>
+#include <stdio.h>
 
 #define __NEED_HAL_CORE_
 #define __NEED_HAL_NOC_
@@ -72,12 +73,15 @@ int kernel_setup(void)
 		if (initialized[index])
 			goto error;
 
+		initialized[index] = 1;
+
 	kernel_unlock();
 
 	return (0);
 
 error:
 	kernel_unlock();
+	printf("[nanvix][kernel] failled to setup kernel\n");
 	return (-EAGAIN);
 }
 
@@ -106,5 +110,6 @@ int kernel_cleanup(void)
 
 error:
 	kernel_unlock();
+	printf("[nanvix][kernel] failled to cleanup kernel\n");
 	return (-EAGAIN);
 }

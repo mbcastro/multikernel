@@ -24,9 +24,6 @@
 #include <stdlib.h>
 #include <pthread.h>
 
-#define __NEED_HAL_CORE_
-#define __NEED_HAL_NOC_
-#define __NEED_HAL_SETUP_
 #include <nanvix/const.h>
 #include <nanvix/syscalls.h>
 
