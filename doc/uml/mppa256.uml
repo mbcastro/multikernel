@@ -2,15 +2,16 @@
 
 !include hal.uml
 
+scale 3840*2160
+
 remove HAL.CoreTypes
 
 namespace mppa256 {
 	class Core {
 		- pthread_t threads[]
 		- pthread_mutex_t lock
-		~ const int NR_CCLUSTER
-		~ const int NR_IOCLUSTER
-		~ const int NR_IOCLUSTER_CORES
+		- const int NR_IOCLUSTER_CORES
+		- const int NR_CCLUSTER_CORES
 		~ const int CCLUSTER0
 		~ const int CCLUSTER1
 		~ const int CCLUSTER2
@@ -39,8 +40,8 @@ namespace mppa256 {
 	}
 
 	class NoC {
-		~ const int NR_CCLUSTER_DMA
-		~ const int NR_IOCLUSTER_DMA
+		- const int NR_CCLUSTER_DMA
+		- const int NR_IOCLUSTER_DMA
 		~ int noctag_mailbox(int)
 		~ int noctag_sync(int)
 		~ int noctag_portal(int)
@@ -54,10 +55,77 @@ namespace mppa256 {
 		~ int noc_is_cnode(int)
 	}
 
-	namespace UnnamedPortal {
-		class PortalFlags {
-			PORTAL_FLAGS_USED
-			PORTAL_FLAGS_WRONLY
+	namespace Sync {
+		enum SyncFlags {
+			~ SYNC_FLAGS_USED
+			~ SYNC_FLAGS_BROADCAST
+			~ SYNC_FLAGS_WRONLY
+			~ SYNC_FLAGS_BUSY
+		}
+
+		class Sync {
+			- int flags
+			~ int fd 
+			~ int ncount
+			~ int sync_is_valid(int syncid)
+			~ int sync_is_used(int syncid)
+			~ int sync_is_wronly(int syncid)
+			~ int sync_is_busy(int syncid)
+			~ int sync_is_broadcast(int syncid)
+			~ void sync_set_used(int syncid)
+			~ void sync_set_wronly(int syncid)
+			~ void sync_set_busy(int syncid)
+			~ void sync_set_broadcast(int syncid)
+			~ void sync_clear_busy(int syncid)
+			~ void sync_clear_flags(int syncid)
+		}
+
+		class SyncOperations {
+			- int sync_alloc(void)
+			- void sync_free(int syncid)
+			- void sync_ranks(int *ranks, const int *nodes, int nnodes)
+		}
+
+		Sync               ..> SyncFlags          : <<use>>
+		SyncOperations "1" *-- "HAL_NR_SYNC" Sync : synctab
+	}
+
+	namespace Mailbox {
+		enum MailboxFlags {
+			~ MAILBOX_FLAGS_USED
+			~ MAILBOX_FLAGS_WRONLY
+			~ MAILBOX_FLAGS_BUSY
+		}
+
+		class Mailbox {
+			- int flags
+			~ int fd 
+			~ int mailbox_is_valid(int mbxid)
+			~ int mailbox_is_used(int mbxid)
+			~ int mailbox_is_wronly(int mbxid)
+			~ int mailbox_is_busy(int mbxid)
+			~ void mailbox_set_used(int mbxid)
+			~ void mailbox_set_wronly(int mbxid)
+			~ void mailbox_set_busy(int mbxid)
+			~ void mailbox_clear_busy(int mbxid)
+			~ void mailbox_clear_flags(int mbxid)
+		}
+
+		class MailboxOperations {
+			- int mailbox_alloc(void)
+			- void mailbox_free(int mbxid)
+			- void mailbox_ranks(int *ranks, const int *nodes, int nnodes)
+		}
+
+		Mailbox               ..> MailboxFlags             : <<use>>
+		MailboxOperations "1" *-- "HAL_NR_MAILBOX" Mailbox : mailboxes
+	}
+
+	namespace Portal {
+		enum PortalFlags {
+			~ PORTAL_FLAGS_USED
+			~ PORTAL_FLAGS_WRONLY
+			~ PORTAL_FLAGS_BUSY
 		}
 
 		class Portal {
@@ -69,9 +137,12 @@ namespace mppa256 {
 			~ int portal_is_valid(int portalid)
 			~ int portal_is_used(int portalid)
 			~ int portal_is_wronly(int portalid)
+			~ int portal_is_busy(int portalid)
 			~ void portal_set_used(int portalid)
 			~ void portal_set_wronly(int portalid)
-			~  void portal_clear_flags(int portalid)
+			~ void portal_set_busy(int portalid)
+			~ void portal_clear_busy(int portalid)
+			~ void portal_clear_flags(int portalid)
 		}
 
 		class PortalOperations {
@@ -80,23 +151,48 @@ namespace mppa256 {
 		}
 
 		Portal               ..> PortalFlags            : <<use>>
-		PortalOperations     ..> Portal                 : <<use>>
 		PortalOperations "1" *-- "HAL_NR_PORTAL" Portal : portals
 	}
 
-	mppa256.Sync                           ..> NoC  : <<use>>
-	mppa256.Mailbox                        ..> NoC  : <<use>>
-	mppa256.UnnamedPortal.PortalOperations ..> NoC  : <<use>>
-	mppa256.NoC                            ..> Core : <<use>>
-	mppa256.Setup                          ..> Core : <<use>>
+	mppa256.Sync    ..> NoC  : <<use>>
+	mppa256.Mailbox ..> NoC  : <<use>>
+	mppa256.Portal  ..> NoC  : <<use>>
+	mppa256.NoC     ..> Core : <<use>>
+	mppa256.Setup   ..> Core : <<use>>
 }
 
-HAL.SetupInterface    <|.. mppa256.Setup                          : <<implements>>
-HAL.NoCInterface      <|.. mppa256.NoC                            : <<implements>>
-HAL.CoreInterface     <|.. mppa256.Core                           : <<implements>>
-HAL.MailboxInterface  <|.. mppa256.Mailbox                        : <<implements>>
-HAL.SyncInterface     <|.. mppa256.Sync                           : <<implements>>
-HAL.PortalInterface   <|.. mppa256.UnnamedPortal.PortalOperations : <<implements>>
+mppa256.Core ..> "<pthread>"         : <<use>>
+mppa256.Core ..> "<HAL/hal/core/mp>" : <<use>>
+
+mppa256.NoC ..> "<sring>"        : <<use>>
+mppa256.NoC ..> "<stdio>"        : <<use>>
+mppa256.NoC ..> "<nanvix/klib>"  : <<use>>
+
+mppa256.Sync ..> "<errno>"    : <<use>>
+mppa256.Sync ..> "<inttypes>" : <<use>>
+mppa256.Sync ..> "<mppaipc>"  : <<use>>
+mppa256.Sync ..> "<pthread>"  : <<use>>
+mppa256.Sync ..> "<stdio>"    : <<use>>
+mppa256.Sync ..> "<string>"    : <<use>>
+
+mppa256.Mailbox ..> "<errno>"    : <<use>>
+mppa256.Mailbox ..> "<mppaipc>"  : <<use>>
+mppa256.Mailbox ..> "<pthread>"  : <<use>>
+mppa256.Mailbox ..> "<stdio>"    : <<use>>
+
+mppa256.Portal ..> "<errno>"    : <<use>>
+mppa256.Portal ..> "<inttypes>" : <<use>>
+mppa256.Portal ..> "<mppaipc>"  : <<use>>
+mppa256.Portal ..> "<pthread>"  : <<use>>
+mppa256.Portal ..> "<stdio>"    : <<use>>
+
+HAL.SetupInterface    <|.. mppa256.Setup   : <<implements>>
+HAL.NoCInterface      <|.. mppa256.NoC     : <<implements>>
+HAL.CoreInterface     <|.. mppa256.Core    : <<implements>>
+HAL.MailboxInterface  <|.. mppa256.Mailbox : <<implements>>
+HAL.SyncInterface     <|.. mppa256.Sync    : <<implements>>
+HAL.PortalInterface   <|.. mppa256.Portal  : <<implements>>
+HAL.PortalInterface   <|.. mppa256.Timer   : <<implements>>
 
 @enduml
 

@@ -2,9 +2,9 @@
 
 namespace HAL {
 	enum HAL.CoreTypes {
-		+ const int HAL_CORE_USER
-		+ const int HAL_CORE_RMAN
-		+ const int HAL_CORE_SYSTEM
+		+ HAL_CORE_USER
+		+ HAL_CORE_RMAN
+		+ HAL_CORE_SYSTEM
 	}
 
 	interface HAL.CoreInterface {
@@ -33,8 +33,8 @@ namespace HAL {
 	}
 
 	enum HAL.SyncTypes {
-		+ const int HAL_SYNC_ONE_TO_ALL
-		+ const int HAL_SYNC_ALL_TO_ONE
+		+ HAL_SYNC_ONE_TO_ALL
+		+ HAL_SYNC_ALL_TO_ONE
 	}	
 
 	interface HAL.SyncInterface {
@@ -81,12 +81,11 @@ namespace HAL {
 
 	HAL.CoreInterface ..> HAL.CoreTypes : <<use>>
 	HAL.SyncInterface ..> HAL.SyncTypes : <<use>>
-
-	HAL.SyncInterface        ..> "stddef"   : <<use>>
-	HAL.MailboxInterface     ..> "stddef"   : <<use>>
-	HAL.PortalInterface      ..> "stddef"   : <<use>>
-	HAL.PerformanceInterface ..> "inttypes" : <<use>>
 }
 
+HAL.SyncInterface        ..> "<stddef>"   : <<use>>
+HAL.MailboxInterface     ..> "<stddef>"   : <<use>>
+HAL.PortalInterface      ..> "<stddef>"   : <<use>>
+HAL.PerformanceInterface ..> "<inttypes>" : <<use>>
 
 @enduml

@@ -3,7 +3,6 @@
 !include hal.uml
 !include mppa256.uml
 !include ipc.uml
-!include nameserver.uml
 
 restore *
 

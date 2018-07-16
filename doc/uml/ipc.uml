@@ -5,7 +5,11 @@
 remove HAL.CoreInterface
 remove HAL.CoreTypes
 remove HAL.SetupInterface
+remove HAL.SyncTypes
+remove HAL.SyncInterface
 remove HAL.PortalInterface
+remove HAL.PerformanceInterface
+remove "<inttypes>"
 
 namespace IPC {
 	class NameClient {
@@ -92,5 +96,10 @@ namespace IPC {
 	IPC.BarrierOperations .> HAL.NoCInterface  : <<use>>
 	IPC.BarrierOperations .> IPC.Barrier       : <<use>>
 }
+
+remove IPC.Barrier
+remove IPC.BarrierOperations
+remove IPC.Mailbox
+remove IPC.MailboxOperations
 
 @enduml
