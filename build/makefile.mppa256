@@ -20,15 +20,14 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-export BUILD_BENCHMARKS=true
-export BUILD_TESTS=true
-export BUILD_KERNEL=true
 ifeq ($(ARCH),k1bdp)
 	export BUILD_LIBS=true
 	export BUILD_SERVERS=false
+	export BUILDING_CCLUSTER=true
 else
 	export BUILD_LIBS=false
 	export BUILD_SERVERS=true
+	export BUILDING_IOCLUSTER=true
 endif
 
 # Toolchain
@@ -43,8 +42,10 @@ export TOOLCHAIN=/usr/local/k1tools
 export CFLAGS += -D_KALRAY_MPPA256 -D_KALRAY_MPPA_256_HIGH_LEVEL
 ifeq ($(ARCH),k1bdp)
 	export CFLAGS += -march=k1b -mos=nodeos -mcluster=node 
+	export CFLAGS += -D_KALRAY_MPPA_CCLUSTER_
 else
 	export CFLAGS += -march=k1b -mos=rtems -mcluster=ioddr 
+	export CFLAGS += -D_KALRAY_MPPA_IOCLUSTER_
 endif
 
 # Linker Options
@@ -59,7 +60,9 @@ endif
 ifeq ($(ARCH),k1bdp)
 	export LIBS = $(TOOLCHAIN)/k1-nodeos/lib/mOS/libmppaipc.a
 	export LIBKERNEL = $(LIBDIR)/libkernel-k1bdp.a
+	export LIBUSER = $(LIBDIR)/libuser-k1bdp.a
 else
 	export LIBS = $(TOOLCHAIN)/k1-rtems/lib/libmppaipc.a
 	export LIBKERNEL = $(LIBDIR)/libkernel-k1bio.a
+	export LIBUSER = $(LIBDIR)/libuser-k1bio.a
 endif

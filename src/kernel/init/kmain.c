@@ -28,19 +28,37 @@
 #define __NEED_HAL_NOC_
 #define __NEED_HAL_SETUP_
 #include <nanvix/hal.h>
-#define __NANVIX_PM_H_
 #include <nanvix/pm.h>
 
 /**
  * @brief Global kernel lock.
  */
-pthread_mutex_t kernel_lock;
+static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+
+/**
+ * @brief Locks the kernel.
+ */
+void kernel_lock(void)
+{
+	pthread_mutex_lock(&lock);
+}
+
+/**
+ * @brief Unlocks the kernel.
+ */
+void kernel_unlock(void)
+{
+	pthread_mutex_unlock(&lock);
+}
 
 /**
  *
  * @brief Is the kernel initialized ?
  */
 static int initialized[HAL_NR_NOC_IONODES] = { 0, };
+
+extern int name_init(void);
+extern void name_finalize(void);
 
 /**
  * @brief Initializes kernel modules.
@@ -62,23 +80,21 @@ int kernel_setup(void)
 	if (initialized[index])
 		return (0);
 
-	/* Master thread. */
-	if (index == 0)
-		pthread_mutex_init(&kernel_lock, NULL);
+	kernel_lock();
 
-	pthread_mutex_lock(&kernel_lock);
+		name_init();
 
 		/* Create underlying input mailbox. */
 		if (initialize_inbox(index) != 0)
 			goto error0;
 
-	pthread_mutex_unlock(&kernel_lock);
+	kernel_unlock();
 
 	initialized[index] = 1;
 	return (0);
 
 error0:
-	pthread_mutex_unlock(&kernel_lock);
+	kernel_unlock();
 	return (-EAGAIN);
 }
 
@@ -95,24 +111,22 @@ int kernel_cleanup(void)
 	if (!initialized[index])
 		return (-EAGAIN);
 
-	pthread_mutex_lock(&kernel_lock);
+	kernel_lock();
+
+		name_finalize();
 
 		/* Destroy underlying input mailbox. */
 		if (destroy_inbox(index) != 0)
 			goto error;
 
-	pthread_mutex_unlock(&kernel_lock);
+	kernel_unlock();
 
 	initialized[index] = 0;
-
-	/* Master thread. */
-	if (index == 0)
-		pthread_mutex_destroy(&kernel_lock);
 
 	hal_cleanup();
 	return (0);
 
 error:
-	pthread_mutex_unlock(&kernel_lock);
+	kernel_unlock();
 	return (-EAGAIN);
 }

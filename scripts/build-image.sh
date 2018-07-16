@@ -32,6 +32,19 @@ then
 	exit 1
 fi
 
+function build0
+{
+	bootbin=$1
+	nodebin=$2
+	multibin=$3
+
+	$TOOLCHAIN/bin/k1-create-multibinary -f \
+		--remove-prefix $BINDIR             \
+		--boot $bootbin                     \
+		--clusters $nodebin                 \
+		-T $multibin
+}
+
 function build1
 {
 	bootbin=$1
@@ -60,13 +73,17 @@ function build2
 		-T $multibin
 }
 
-build1 $BINDIR/servers $BINDIR/test/hal-master                           test-hal.img
-build1 $BINDIR/test/hal-mailbox-master0 $BINDIR/test/hal-mailbox-master1 test-hal-mailbox.img
-build1 $BINDIR/servers $BINDIR/test/hal-portal-master                    test-hal-portal.img
+# Test Driver
+BINARIES="$BINDIR/test/hal-sync-slave"
+BINARIES="$BINARIES,$BINDIR/test/hal-mailbox-slave"
+BINARIES="$BINARIES,$BINDIR/test/hal-portal-slave"
+BINARIES="$BINARIES,$BINDIR/test/barrier-slave"
+BINARIES="$BINARIES,$BINDIR/test/mailbox-slave"
+BINARIES="$BINARIES,$BINDIR/test/name-slave"
+build2 $BINDIR/test-driver $BINDIR/servers1 "$BINARIES" nanvix-debug.img
 
-build2 $BINDIR/test/hal-sync-master0 $BINDIR/test/hal-sync-master1 $BINDIR/test/sync-slave         test-hal-sync.img
-build2 $BINDIR/servers               $BINDIR/test/name-master      $BINDIR/test/name-slave         test-name.img
-build2 $BINDIR/servers               $BINDIR/test/mailbox-master   $BINDIR/test/mailbox-slave      test-mailbox.img
-build2 $BINDIR/test/barrier-master0  $BINDIR/test/barrier-master1  $BINDIR/test/barrier-slave      test-barrier.img
-
-build2 $BINDIR/servers $BINDIR/benchmark/hal-mailbox-master $BINDIR/benchmark/hal-mailbox-slave  benchmark-hal-mailbox.img
+# Benchmarks
+build0 $BINDIR/benchmark/mppa256-portal-master $BINDIR/benchmark/mppa256-portal-slave benchmark-mppa256-portal.img
+build0 $BINDIR/benchmark/mppa256-rqueue-master $BINDIR/benchmark/mppa256-rqueue-slave benchmark-mppa256-rqueue.img
+build0 $BINDIR/benchmark/hal-mailbox-master $BINDIR/benchmark/hal-mailbox-slave benchmark-hal-mailbox.img
+build0 $BINDIR/benchmark/hal-portal-master $BINDIR/benchmark/hal-portal-slave benchmark-hal-portal.img

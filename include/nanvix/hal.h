@@ -73,6 +73,16 @@
 	#endif
 
 	/* Sanity check. */
+	#ifndef HAL_NR_IOCLUSTERS
+		#error "undefined symbol: HAL_NR_IOCLUSTERS"
+	#endif
+
+	/* Sanity check. */
+	#ifndef HAL_NR_CCLUSTERS
+		#error "undefined symbol: HAL_NR_CCLUSTERS"
+	#endif
+
+	/* Sanity check. */
 	#ifndef HAL_NR_CLUSTERS
 		#error "undefined symbol: HAL_NR_CLUSTERS"
 	#endif

@@ -11,6 +11,8 @@ namespace HAL {
 		+ const int HAL_NR_CORES_USER
 		+ const int HAL_NR_CORES_RMAN
 		+ const int HAL_NR_CORES_SYSTEM
+		+ const int HAL_NR_IOCLUSTERS
+		+ const int HAL_NR_CCLUSTERS
 		+ const int HAL_NR_CLUSTERS
 		+ int hal_get_cluster_id(void)
 		+ int hal_get_core_id(void)

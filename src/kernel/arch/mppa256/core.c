@@ -20,6 +20,8 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <pthread.h>
+
 #include <HAL/hal/core/mp.h>
 
 #define __NEED_HAL_CORE_
@@ -30,15 +32,39 @@
 /**
  * @brief Threads table.
  */
-pthread_t __threads[NR_IOCLUSTER_CORES] = { 0, };
+static pthread_t threads[NR_IOCLUSTER_CORES] = { 0, };
 
 /**
- * @brief Lock for critical region.
+ * @brief Core module lock.
  */
-pthread_mutex_t core_lock;
+static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
 /*============================================================================*
- * k1_is_ccluster()                                                           *
+ * mppa256_core_lock()                                                        *
+ *============================================================================*/
+
+/**
+ * @brief Locks MPPA-256 core module.
+ */
+static void mppa256_core_lock(void)
+{
+	pthread_mutex_lock(&lock);
+}
+
+/*============================================================================*
+ * mppa256_core_unlock()                                                      *
+ *============================================================================*/
+
+/**
+ * @brief Unlocks MPPA-256 core module.
+ */
+static void mppa256_core_unlock(void)
+{
+	pthread_mutex_unlock(&lock);
+}
+
+/*============================================================================*
+ * mppa256_is_ccluster()                                                      *
  *============================================================================*/
 
 /**
@@ -49,14 +75,17 @@ pthread_mutex_t core_lock;
  *
  * @return Non zero if the target cluster is a compute cluster and
  * zero otherwise.
+ *
+ * @note This function is non-blocking.
+ * @note This function is thread-safe.
  */
-int k1_is_ccluster(int clusterid)
+int mppa256_is_ccluster(int clusterid)
 {
 	return ((clusterid >= CCLUSTER0) && (clusterid <= CCLUSTER15));
 }
 
 /*============================================================================*
- * k1_is_iocluster()                                                          *
+ * mppa256_is_iocluster()                                                     *
  *============================================================================*/
 
 /**
@@ -66,8 +95,11 @@ int k1_is_ccluster(int clusterid)
  *
  * @return Non zero if the target cluster is an IO cluster and zero
  * otherwise.
+ *
+ * @note This function is non-blocking.
+ * @note This function is thread-safe.
  */
-int k1_is_iocluster(int clusterid)
+int mppa256_is_iocluster(int clusterid)
 {
 	return ((clusterid == IOCLUSTER0) || (clusterid == IOCLUSTER1));
 } 
@@ -80,10 +112,102 @@ int k1_is_iocluster(int clusterid)
  * @brief Gets the ID of the underlying cluster.
  *
  * @returns The ID of the underlying cluster
+ *
+ * @note This function is non-blocking.
+ * @note This function is thread-safe.
+ */
+int mppa256_get_cluster_id(void)
+{
+	return (__k1_get_cluster_id());
+}
+
+/*============================================================================*
+ * hal_core_setup()                                                           *
+ *============================================================================*/
+
+/**
+ * @brief Initializes core module.
+ */
+void mppa256_core_setup(void)
+{
+	int initialized = 0;
+	pthread_t tid;
+
+	tid = pthread_self();
+
+	if (mppa256_is_iocluster(mppa256_get_cluster_id()))
+	{
+		mppa256_core_lock();
+
+			/* Check if core is already initialized. */
+			for (int i = 0; i < NR_IOCLUSTER_CORES; i++)
+			{
+				if (threads[i] == tid)
+				{
+					initialized = 1;
+					break;
+				}
+			}
+
+			if (!initialized)
+			{
+				for (int i = 0; i < NR_IOCLUSTER_CORES; i++)
+				{
+					if (threads[i] == 0)
+					{
+						threads[i] = tid;
+						break;
+					}
+				}
+			}
+
+		mppa256_core_unlock();
+	}
+}
+
+/*============================================================================*
+ * hal_core_cleanup()                                                         *
+ *============================================================================*/
+
+/**
+ * @brief Cleans up core module mess.
+ */
+void mppa256_core_cleanup(void)
+{
+	pthread_t tid;
+
+	tid = pthread_self();
+		
+	if (mppa256_is_iocluster(mppa256_get_cluster_id()))
+	{
+		mppa256_core_lock();
+			for (int i = 0; i < NR_IOCLUSTER_CORES; i++)
+			{
+				if (threads[i] == tid)
+				{
+					threads[i] = 0;
+					break;
+				}
+			}
+		mppa256_core_unlock();
+	}
+}
+
+/*============================================================================*
+ * hal_get_cluster_id()                                                       *
+ *============================================================================*/
+
+/**
+ * @brief Gets the ID of the underlying cluster.
+ *
+ * @returns The ID of the underlying cluster
+ *
+ * @note This function is non-blocking.
+ * @note This function is thread-safe.
  */
 int hal_get_cluster_id(void)
 {
-	return (__k1_get_cluster_id());
+	return (mppa256_get_cluster_id());
 }
 
 /*============================================================================*
@@ -94,26 +218,31 @@ int hal_get_cluster_id(void)
  * @brief Gets the ID of the underlying core.
  *
  * @returns The ID of the underlying core.
+ *
+ * @note This function is blocking.
+ * @note This function is thread-safe.
  */
 int hal_get_core_id(void)
 {
-	if (k1_is_iocluster(__k1_get_cluster_id()))
+	if (mppa256_is_iocluster(mppa256_get_cluster_id()))
 	{
 		int coreid = 0;
 		pthread_t tid;
 
 		tid = pthread_self();
 
-		pthread_mutex_lock(&core_lock);
+		mppa256_core_lock();
+
 		for (int i = 0; i < NR_IOCLUSTER_CORES; i++)
 		{
-			if (__threads[i] == tid)
+			if (threads[i] == tid)
 			{
 				coreid = i;
 				break;
 			}
 		}
-		pthread_mutex_unlock(&core_lock);
+
+		mppa256_core_unlock();
 
 		return (coreid);
 	}
@@ -129,14 +258,17 @@ int hal_get_core_id(void)
  * @brief Gets the type of the underlying core.
  *
  * @returns The type of the underlying core.
+ *
+ * @note This function is non-blocking.
+ * @note This function is thread-safe.
  */
 int hal_get_core_type(void)
 {
 	int clusterid;
 
-	clusterid = hal_get_cluster_id();
+	clusterid = mppa256_get_cluster_id();
 
-	return (k1_is_ccluster(clusterid) ? HAL_CORE_USER : HAL_CORE_SYSTEM);
+	return (mppa256_is_ccluster(clusterid) ? HAL_CORE_USER : HAL_CORE_SYSTEM);
 }
 
 /*============================================================================*
@@ -147,14 +279,17 @@ int hal_get_core_type(void)
  * @brief Gets the number of cores in the processor.
  *
  * @returns The number of cores in the processor.
+ *
+ * @note This function is non-blocking.
+ * @note This function is thread-safe.
  */
 int hal_get_num_cores(void)
 {
 	int clusterid;
 
-	clusterid = hal_get_cluster_id();
+	clusterid = mppa256_get_cluster_id();
 
-	return (k1_is_ccluster(clusterid) ? 17 : 4);
+	return (mppa256_is_ccluster(clusterid) ? 17 : 4);
 }
 
 /*============================================================================*
@@ -165,6 +300,9 @@ int hal_get_num_cores(void)
  * @brief Gets the frequency of the underlying core.
  *
  * @returns The frequency of the underlying core.
+ *
+ * @note This function is non-blocking.
+ * @note This function is thread-safe.
  */
 int hal_get_core_freq(void)
 {

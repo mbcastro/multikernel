@@ -24,9 +24,6 @@
 
 #include <nanvix/syscalls.h>
 
-/* Forward definitions. */
-extern pthread_mutex_t kernel_lock;
-
 /*============================================================================*
  * name_lookup()                                                              *
  *============================================================================*/
@@ -44,9 +41,7 @@ int name_lookup(char *name)
 {
 	int ret;
 
-	pthread_mutex_lock(&kernel_lock);
-		ret = sys_name_lookup(name);
-	pthread_mutex_unlock(&kernel_lock);
+	ret = sys_name_lookup(name);
 
 	return (ret);
 }
@@ -68,9 +63,7 @@ int name_link(int nodeid, const char *name)
 {
 	int ret;
 
-	pthread_mutex_lock(&kernel_lock);
-		ret = sys_name_link(nodeid, name);
-	pthread_mutex_unlock(&kernel_lock);
+	ret = sys_name_link(nodeid, name);
 
 	return (ret);
 }
@@ -91,9 +84,7 @@ int name_unlink(const char *name)
 {
 	int ret;
 
-	pthread_mutex_lock(&kernel_lock);
-		ret = sys_name_unlink(name);
-	pthread_mutex_unlock(&kernel_lock);
+	ret = sys_name_unlink(name);
 
 	return (ret);
 }

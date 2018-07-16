@@ -24,22 +24,15 @@
 #include <pthread.h>
 #include <string.h>
 #include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #define __NEED_HAL_NOC_
-#define __NEED_HAL_SETUP_
 #define __NEED_HAL_MAILBOX_
-#include <nanvix/config.h>
+#include <nanvix/const.h>
 #include <nanvix/hal.h>
 #include <nanvix/pm.h>
 #include <nanvix/name.h>
-
-#ifdef DEBUG
-#include <stdio.h>
-#endif
-
-/* Import definitions. */
-extern pthread_mutex_t lock;
-extern pthread_mutex_t barrier;
 
 /**
  * @brief Number of registration.
@@ -194,36 +187,26 @@ static int _name_unlink(char *name)
 /**
  * @brief Handles remote name requests.
  *
- * @param args Server arguments.
+ * @param inbox Input mailbox.
  *
  * @returns Always returns NULL.
  */
-void *name_server(void *args)
+int name_server(int inbox)
 {
-	int inbox;   /* Mailbox for small messages. */
-	int source;  /* NoC node ID of the client   */
 	int tmp;
+	int source;
 
-	((void) args);
-
-	hal_setup();
+	printf("[nanvix][name] booting up server\n");
 
 	name_init();
 
-	/* Open server mailbox. */
-	pthread_mutex_lock(&lock);
-		inbox = hal_mailbox_create(hal_noc_nodes[NAME_SERVER_NODE]);
-	pthread_mutex_unlock(&lock);
-
-	pthread_barrier_wait(&barrier);
+	printf("[nanvix][name] server alive\n");
 
 	while(1)
 	{
 		struct name_message msg;
 
-		pthread_mutex_lock(&lock);
 		assert(hal_mailbox_read(inbox, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
-		pthread_mutex_unlock(&lock);
 
 		/* Handle name requests. */
 		switch (msg.op)
@@ -237,27 +220,21 @@ void *name_server(void *args)
 				msg.nodeid = _name_lookup(msg.name);
 
 				/* Send response. */
-				pthread_mutex_lock(&lock);
 				source = hal_mailbox_open(msg.source);
-				pthread_mutex_unlock(&lock);
 
 				assert(source >= 0);
 
-				pthread_mutex_lock(&lock);
 				assert(hal_mailbox_write(source, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
-				pthread_mutex_unlock(&lock);
 
-				pthread_mutex_lock(&lock);
 				assert(hal_mailbox_close(source) == 0);
-				pthread_mutex_unlock(&lock);
 
 				break;
 
 			/* Add name. */
 			case NAME_LINK:
 #ifdef DEBUG
-				printf("Entering NAME_LINK case... [nodeid ID: %d, name: %s].\n"
-														  msg.nodeid, msg.name);
+				printf("Entering NAME_LINK case... [nodeid ID: %d, name: %s].\n",
+														  (int) msg.nodeid, msg.name);
 #endif
 				tmp = nr_registration;
 
@@ -269,19 +246,13 @@ void *name_server(void *args)
 				assert(nr_registration >= 0);
 
 				/* Send acknowledgement. */
-				pthread_mutex_lock(&lock);
 				source = hal_mailbox_open(msg.source);
-				pthread_mutex_unlock(&lock);
 
 				assert(source >= 0);
 
-				pthread_mutex_lock(&lock);
 				assert(hal_mailbox_write(source, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
-				pthread_mutex_unlock(&lock);
 
-				pthread_mutex_lock(&lock);
 				assert(hal_mailbox_close(source) == 0);
-				pthread_mutex_unlock(&lock);
 
 				break;
 
@@ -300,19 +271,13 @@ void *name_server(void *args)
 				assert(nr_registration >= 0);
 
 				/* Send acknowledgement. */
-				pthread_mutex_lock(&lock);
 				source = hal_mailbox_open(msg.source);
-				pthread_mutex_unlock(&lock);
 
 				assert(source >= 0);
 
-				pthread_mutex_lock(&lock);
 				assert(hal_mailbox_write(source, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
-				pthread_mutex_unlock(&lock);
 
-				pthread_mutex_lock(&lock);
 				assert(hal_mailbox_close(source) == 0);
-				pthread_mutex_unlock(&lock);
 
 				break;
 
@@ -323,10 +288,7 @@ void *name_server(void *args)
 	}
 
 	/* House keeping. */
-	pthread_mutex_lock(&lock);
 		hal_mailbox_unlink(inbox);
-	pthread_mutex_unlock(&lock);
 
-	hal_cleanup();
-	return (NULL);
+	return (EXIT_SUCCESS);
 }

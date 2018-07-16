@@ -86,15 +86,19 @@ const int hal_noc_nodes[HAL_NR_NOC_NODES] = {
  *
  * @returns The ID of the NoC node attached to the underlying core is
  * returned.
+ *
+ * @note This function is blocking.
+ * @note This function is thread-safe.
  */
 int hal_get_node_id(void)
 {
 	int clusterid;
 
-	clusterid = __k1_get_cluster_id();
+	clusterid = mppa256_get_cluster_id();
 
-	if (k1_is_iocluster(clusterid))
+	if (mppa256_is_iocluster(clusterid))
 		return (clusterid + hal_get_core_id());
+
 	return (clusterid);
 }
 
@@ -108,6 +112,9 @@ int hal_get_node_id(void)
  * @param nodeid ID of the target NoC node.
  *
  * @returns The logic number of the target NoC node.
+ *
+ * @note This function is non-blocking.
+ * @note This function is thread-safe.
  */
 int noc_get_node_num(int nodeid)
 {
@@ -130,6 +137,9 @@ int noc_get_node_num(int nodeid)
  * @brief Gets the DMA channel of a NoC node.
  *
  * @param nodeid ID of the target NoC node.
+ *
+ * @note This function is non-blocking.
+ * @note This function is thread-safe.
  */
 int noc_get_dma(int nodeid)
 {
@@ -148,6 +158,9 @@ int noc_get_dma(int nodeid)
  *
  * @returns One if the target NoC node is attached to IO cluster 0,
  * and zero otherwise.
+ *
+ * @note This function is non-blocking.
+ * @note This function is thread-safe.
  */
 int noc_is_ionode0(int nodeid)
 {
@@ -155,7 +168,7 @@ int noc_is_ionode0(int nodeid)
 }
 
 /*============================================================================*
- * noc_is_ionode1()                                                            *
+ * noc_is_ionode1()                                                           *
  *============================================================================*/
 
 /**
@@ -165,6 +178,9 @@ int noc_is_ionode0(int nodeid)
  *
  * @returns One if the target NoC node is attached to IO cluster 1,
  * and zero otherwise.
+ *
+ * @note This function is non-blocking.
+ * @note This function is thread-safe.
  */
 int noc_is_ionode1(int nodeid)
 {
@@ -182,6 +198,9 @@ int noc_is_ionode1(int nodeid)
  *
  * @returns One if the target NoC node is attached to an IO cluster,
  * and zero otherwise.
+ *
+ * @note This function is non-blocking.
+ * @note This function is thread-safe.
  */
 int noc_is_ionode(int nodeid)
 {
@@ -199,6 +218,9 @@ int noc_is_ionode(int nodeid)
  *
  * @returns One if the target NoC node is attached to a compute
  * cluster, and zero otherwise.
+ *
+ * @note This function is non-blocking.
+ * @note This function is thread-safe.
  */
 int noc_is_cnode(int nodeid)
 {
@@ -215,6 +237,9 @@ int noc_is_cnode(int nodeid)
  * @param names Place where the names should be stored.
  * @param nodes  List of of NoC node IDs.
  * @param nnodes Number of NoC nodes in the list.
+ *
+ * @note This function is non-blocking.
+ * @note This function is thread-safe.
  */
 void noc_get_names(char *names, const int *nodes, int nnodes)
 {
@@ -240,6 +265,9 @@ void noc_get_names(char *names, const int *nodes, int nnodes)
  *
  * @param remotes   Place where the list should be stored.
  * @param clusterid ID of local cluster.
+ *
+ * @note This function is non-blocking.
+ * @note This function is thread-safe.
  */
 void noc_get_remotes(char *remotes, int local)
 {
@@ -290,6 +318,9 @@ void noc_get_remotes(char *remotes, int local)
  *
  * @returns The NoC tag attached to the underlying node ID is
  * returned.
+ *
+ * @note This function is non-blocking.
+ * @note This function is thread-safe.
  */
 int noctag_mailbox(int nodeid)
 {
@@ -316,6 +347,9 @@ int noctag_mailbox(int nodeid)
  *
  * @returns The NoC tag attached to the underlying node ID is
  * returned.
+ *
+ * @note This function is non-blocking.
+ * @note This function is thread-safe.
  */
 int noctag_portal(int nodeid)
 {
@@ -339,6 +373,9 @@ int noctag_portal(int nodeid)
  * @brief Returns the synchronization NoC tag for a target NoC node ID.
  *
  * @param nodeid ID of the target NoC node.
+ *
+ * @note This function is non-blocking.
+ * @note This function is thread-safe.
  */
 int noctag_sync(int nodeid)
 {
