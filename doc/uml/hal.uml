@@ -32,6 +32,11 @@ namespace HAL {
 		+ size_t hal_mailbox_read(int, void *, size_t)
 	}
 
+	enum HAL.SyncTypes {
+		+ const int HAL_SYNC_ONE_TO_ALL
+		+ const int HAL_SYNC_ALL_TO_ONE
+	}	
+
 	interface HAL.SyncInterface {
 		+ const int HAL_NR_SYNC
 		+ const int HAL_SYNC_ONE_TO_ALL
@@ -45,14 +50,14 @@ namespace HAL {
 	}
 
 	interface HAL.PortalInterface {
-		class portal_t
-		+ int hal_portal_allow(portal_t *, int)
-		+ int hal_portal_create(portal_t *, int)
-		+ int hal_portal_open(portal_t *, int)
-		+ int hal_portal_read(portal_t *, void *, size_t)
-		+ int hal_portal_write(portal_t *, const void *, size_t)
-		+ int hal_portal_close(portal_t *)
-		+ int hal_portal_unlink(portal_t *)
+		+ const int HAL_NR_PORTAL
+		+ int hal_portal_allow(int, int)
+		+ int hal_portal_create(int)
+		+ int hal_portal_open(int)
+		+ int hal_portal_read(int, void *, size_t)
+		+ int hal_portal_write(int, const void *, size_t)
+		+ int hal_portal_close(int)
+		+ int hal_portal_unlink(int)
 	}
 
 	interface HAL.NoCInterface {
@@ -68,7 +73,20 @@ namespace HAL {
 		+ void hal_cleanup(void)
 	}
 
+	interface HAL.PerformanceInterface {
+		+ uint64_t hal_timer_get(void)
+		+ uint64_t hal_timer_diff(uint64_t, uint64_t)
+		+ void hal_timer_init(void)
+	}
+
 	HAL.CoreInterface ..> HAL.CoreTypes : <<use>>
+	HAL.SyncInterface ..> HAL.SyncTypes : <<use>>
+
+	HAL.SyncInterface        ..> "stddef"   : <<use>>
+	HAL.MailboxInterface     ..> "stddef"   : <<use>>
+	HAL.PortalInterface      ..> "stddef"   : <<use>>
+	HAL.PerformanceInterface ..> "inttypes" : <<use>>
 }
+
 
 @enduml
