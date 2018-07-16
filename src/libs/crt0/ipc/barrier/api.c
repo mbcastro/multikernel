@@ -27,8 +27,8 @@
  #define __NEED_HAL_CORE_
  #define __NEED_HAL_NOC_
  #define __NEED_HAL_SYNC_
- #include <nanvix/hal.h>
- #include <nanvix/init.h>
+ #include <nanvix/syscalls.h>
+ #include <nanvix/syscalls.h>
  #include <nanvix/pm.h>
 
 #include "test.h"
@@ -48,7 +48,7 @@ static void test_barrier_wait(void)
 	int nodeid;
 	int nodes[2];
 
-	nodeid = hal_get_node_id();
+	nodeid = sys_get_node_id();
    
 	nodes[0] = OTHERIO;
 	nodes[1] = nodeid;
@@ -72,7 +72,7 @@ static void test_barrier_cc()
 	int nodeid;
 	int nodes[(16 + 2)];
 
-	nodeid = hal_get_node_id();
+	nodeid = sys_get_node_id();
 
 	for (int i = 0; i < 16; i++)
 		nodes[i + 2] = i;

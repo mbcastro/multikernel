@@ -25,10 +25,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#define __NEED_HAL_CORE_
-#define __NEED_HAL_NOC_
-#define __NEED_HAL_MAILBOX_
-#include <nanvix/hal.h>
+#include <nanvix/syscalls.h>
 #include <nanvix/name.h>
 #include <nanvix/pm.h>
 
@@ -87,9 +84,9 @@ int initialize_inbox(int index)
 	if (initialized[index])
 		return (0);
 
-	nodeid = hal_get_node_id();
+	nodeid = sys_get_node_id();
 
-	mailbox = hal_mailbox_create(nodeid);
+	mailbox = sys_mailbox_create(nodeid);
 
 	if (mailbox < 0)
 		return (-EAGAIN);
@@ -107,7 +104,7 @@ static void unset_inbox()
 {
 	int index;
 
-	index = hal_get_node_id() - hal_get_cluster_id();
+	index = sys_get_node_id() - sys_get_cluster_id();
 
 	initialized[index] = 0;
 }
@@ -130,7 +127,7 @@ int destroy_inbox(int index)
 	if (!initialized[index])
 		return (0);
 
-	if (hal_mailbox_unlink(inboxes[index]) != 0)
+	if (sys_mailbox_unlink(inboxes[index]) != 0)
 		return (-EAGAIN);
 
 	unset_inbox(index);
@@ -145,7 +142,7 @@ int get_inbox(void)
 {
 	int index;
 
-	index = hal_get_node_id() - hal_get_cluster_id();
+	index = sys_get_node_id() - sys_get_cluster_id();
 
 	/* Inbox was not initialized. */
 	if (!initialized[index])
@@ -339,7 +336,7 @@ int mailbox_create(char *name)
 	if ((mbxid = mailbox_alloc()) < 0)
 		return (-EAGAIN);
 
-	nodeid = hal_get_node_id();
+	nodeid = sys_get_node_id();
 
 	/* Link name. */
 	if (name_link(nodeid, name) != 0)
@@ -392,7 +389,7 @@ int mailbox_open(char *name)
 		return (-EAGAIN);
 
 	/* Open underlying HW channel. */
-	if ((fd = hal_mailbox_open(nodeid)) < 0)
+	if ((fd = sys_mailbox_open(nodeid)) < 0)
 		goto error0;
 
 	/* Initialize mailbox. */
@@ -438,7 +435,7 @@ int mailbox_read(int mbxid, void *buf, size_t n)
 	if (buf == NULL)
 		return (-EINVAL);
 
-	if (hal_mailbox_read(mailboxes[mbxid].fd, buf, n) == n)
+	if (sys_mailbox_read(mailboxes[mbxid].fd, buf, n) == n)
 		return (0);
 
 	return (-EAGAIN);
@@ -476,7 +473,7 @@ int mailbox_write(int mbxid, const void *buf, size_t n)
 	if (buf == NULL)
 		return (-EINVAL);
 
-	if (hal_mailbox_write(mailboxes[mbxid].fd, buf, n) == n)
+	if (sys_mailbox_write(mailboxes[mbxid].fd, buf, n) == n)
 		return (0);
 
 	return (-EAGAIN);
@@ -512,7 +509,7 @@ int mailbox_close(int mbxid)
 	if (!mailbox_is_wronly(mbxid))
 		return (-EINVAL);
 
-	if ((r = hal_mailbox_close(mailboxes[mbxid].fd)) != 0)
+	if ((r = sys_mailbox_close(mailboxes[mbxid].fd)) != 0)
 		return (r);
 
 	mailbox_free(mbxid);
@@ -557,7 +554,7 @@ int mailbox_unlink(int mbxid)
 	/* Unset inbox in the kernel. */
 	unset_inbox();
 
-	if ((r = hal_mailbox_unlink(mailboxes[mbxid].fd)) != 0)
+	if ((r = sys_mailbox_unlink(mailboxes[mbxid].fd)) != 0)
 		return (r);
 
 	mailbox_free(mbxid);

@@ -25,7 +25,7 @@
 
 #define __NEED_HAL_CORE_
 #define __NEED_HAL_NOC_
-#include <nanvix/hal.h>
+#include <nanvix/syscalls.h>
 
 #include "test.h"
 
@@ -51,9 +51,9 @@ pthread_barrier_t barrier;
 /**
  * @brief Unnamed Mailbox Test Driver
  */
-void test_kernel_hal_mailbox(void)
+void test_kernel_sys_mailbox(void)
 {
-	mailbox_ncores = hal_get_num_cores();
+	mailbox_ncores = sys_get_num_cores();
 
 	pthread_barrier_init(&barrier, NULL, mailbox_ncores - 1);
 

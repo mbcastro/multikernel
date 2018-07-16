@@ -25,13 +25,8 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define __NEED_HAL_CORE_
-#define __NEED_HAL_NOC_
-#define __NEED_HAL_SETUP_
-#define __NEED_HAL_SYNC_
-#define __NEED_HAL_MAILBOX_
 #include <nanvix/const.h>
-#include <nanvix/hal.h>
+#include <nanvix/syscalls.h>
 #include <nanvix/pm.h>
 
 /**
@@ -60,7 +55,7 @@ static int nodes_local[2];
 /**
  * @brief API Test: Open Close between IO Clusters
  */
-static void test_hal_mailbox_open_close_io(void)
+static void test_sys_mailbox_open_close_io(void)
 {
 	int inbox;
 	int outbox;
@@ -68,21 +63,21 @@ static void test_hal_mailbox_open_close_io(void)
 
 	printf("[test][api] Mailbox Open Close IO Cluster 1\n");
 
-	nodeid = hal_get_node_id();
+	nodeid = sys_get_node_id();
 
-	TEST_ASSERT((inbox = hal_mailbox_create(nodeid)) >= 0);
+	TEST_ASSERT((inbox = sys_mailbox_create(nodeid)) >= 0);
 
-	TEST_ASSERT(hal_sync_wait(syncid_local) == 0);
-	TEST_ASSERT(hal_sync_signal(syncid) == 0);
+	TEST_ASSERT(sys_sync_wait(syncid_local) == 0);
+	TEST_ASSERT(sys_sync_signal(syncid) == 0);
 
-	TEST_ASSERT((outbox = hal_mailbox_open(hal_noc_nodes[SPAWNER_SERVER_NODE])) >= 0);
+	TEST_ASSERT((outbox = sys_mailbox_open(hal_noc_nodes[SPAWNER_SERVER_NODE])) >= 0);
 
-	TEST_ASSERT(hal_mailbox_close(outbox) == 0);
+	TEST_ASSERT(sys_mailbox_close(outbox) == 0);
 
-	TEST_ASSERT(hal_sync_wait(syncid_local) == 0);
-	TEST_ASSERT(hal_sync_signal(syncid) == 0);
+	TEST_ASSERT(sys_sync_wait(syncid_local) == 0);
+	TEST_ASSERT(sys_sync_signal(syncid) == 0);
 
-	TEST_ASSERT(hal_mailbox_unlink(inbox) == 0);
+	TEST_ASSERT(sys_mailbox_unlink(inbox) == 0);
 }
 
 /*===================================================================*
@@ -92,26 +87,26 @@ static void test_hal_mailbox_open_close_io(void)
 /**
  * @brief Mailbox Test Driver
  */
-void test_kernel_hal_mailbox(void)
+void test_kernel_sys_mailbox(void)
 {
-	ncores = hal_get_num_cores();
+	ncores = sys_get_num_cores();
 
 	/* Wait for other IO cluster. */
-	nodes[0] = hal_get_node_id();
+	nodes[0] = sys_get_node_id();
 	nodes[1] = hal_noc_nodes[SPAWNER_SERVER_NODE];
 
 	nodes_local[0] = hal_noc_nodes[SPAWNER_SERVER_NODE];
-	nodes_local[1] = hal_get_node_id();
+	nodes_local[1] = sys_get_node_id();
 
-	TEST_ASSERT((syncid_local = hal_sync_create(nodes_local, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
-	TEST_ASSERT((syncid = hal_sync_open(nodes, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
+	TEST_ASSERT((syncid_local = sys_sync_create(nodes_local, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
+	TEST_ASSERT((syncid = sys_sync_open(nodes, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
 
-	TEST_ASSERT(hal_sync_wait(syncid_local) == 0);
-	TEST_ASSERT(hal_sync_signal(syncid) == 0);
+	TEST_ASSERT(sys_sync_wait(syncid_local) == 0);
+	TEST_ASSERT(sys_sync_signal(syncid) == 0);
 
-	test_hal_mailbox_open_close_io();
+	test_sys_mailbox_open_close_io();
 
 	/* House keeping. */
-	TEST_ASSERT(hal_sync_unlink(syncid_local) == 0);
-	TEST_ASSERT(hal_sync_close(syncid) == 0);
+	TEST_ASSERT(sys_sync_unlink(syncid_local) == 0);
+	TEST_ASSERT(sys_sync_close(syncid) == 0);
 }

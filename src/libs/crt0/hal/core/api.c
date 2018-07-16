@@ -28,7 +28,7 @@
 #define __NEED_HAL_NOC_
 #define __NEED_HAL_SETUP_
 #include <nanvix/const.h>
-#include <nanvix/hal.h>
+#include <nanvix/syscalls.h>
 
 #include "test.h"
 
@@ -39,25 +39,25 @@
 /**
  * @brief API Test: Query Cluster ID
  */
-static void *test_thread_hal_get_cluster_id(void *args)
+static void *test_thread_sys_get_cluster_id(void *args)
 {
 	int arg;
 
-	hal_setup();
+	sys_setup();
 	pthread_barrier_wait(&core_barrier);
 
 	arg = ((int *)args)[0];
 
-	TEST_ASSERT(arg == hal_get_cluster_id());
+	TEST_ASSERT(arg == sys_get_cluster_id());
 
-	hal_cleanup();
+	sys_cleanup();
 	return (NULL);
 }
 
 /**
  * @brief API Test: Query Cluster ID.
  */
-static void test_hal_get_cluster_id(void)
+static void test_sys_get_cluster_id(void)
 {
 	int args[core_ncores];
 	pthread_t threads[core_ncores];
@@ -68,7 +68,7 @@ static void test_hal_get_cluster_id(void)
 		args[i] = hal_noc_nodes[SPAWNER_SERVER_NODE];
 		TEST_ASSERT((pthread_create(&threads[i],
 			NULL,
-			test_thread_hal_get_cluster_id,
+			test_thread_sys_get_cluster_id,
 			&args[i])) == 0
 		);
 	}
@@ -85,25 +85,25 @@ static void test_hal_get_cluster_id(void)
 /**
  * @brief API Test: Query Core ID
  */
-static void *test_thread_hal_get_core_id(void *args)
+static void *test_thread_sys_get_core_id(void *args)
 {
 	int tid;
 
-	hal_setup();
+	sys_setup();
 	pthread_barrier_wait(&core_barrier);
 
 	tid = ((int *)args)[0];
 
-	TEST_ASSERT(tid == hal_get_core_id());
+	TEST_ASSERT(tid == sys_get_core_id());
 
-	hal_cleanup();
+	sys_cleanup();
 	return (NULL);
 }
 
 /**
  * @brief API Test: Query Core ID.
  */
-static void test_hal_get_core_id(void)
+static void test_sys_get_core_id(void)
 {
 	int args[core_ncores];
 	pthread_t threads[core_ncores];
@@ -114,7 +114,7 @@ static void test_hal_get_core_id(void)
 		args[i] = i;
 		TEST_ASSERT((pthread_create(&threads[i],
 			NULL,
-			test_thread_hal_get_core_id,
+			test_thread_sys_get_core_id,
 			&args[i])) == 0
 		);
 	}
@@ -131,23 +131,23 @@ static void test_hal_get_core_id(void)
 /**
  * @brief API Test: Query Core Type
  */
-static void *test_thread_hal_get_core_type(void *args)
+static void *test_thread_sys_get_core_type(void *args)
 {
 	((void) args);
 
-	hal_setup();
+	sys_setup();
 	pthread_barrier_wait(&core_barrier);
 
-	TEST_ASSERT(hal_get_core_type() == HAL_CORE_SYSTEM);
+	TEST_ASSERT(sys_get_core_type() == HAL_CORE_SYSTEM);
 
-	hal_cleanup();
+	sys_cleanup();
 	return (NULL);
 }
 
 /**
  * @brief API Test: Query Core Type
  */
-static void test_hal_get_core_type(void)
+static void test_sys_get_core_type(void)
 {
 	pthread_t threads[core_ncores];
 
@@ -156,7 +156,7 @@ static void test_hal_get_core_type(void)
 	{
 		TEST_ASSERT((pthread_create(&threads[i],
 			NULL,
-			test_thread_hal_get_core_type,
+			test_thread_sys_get_core_type,
 			NULL)) == 0
 		);
 	}
@@ -173,25 +173,25 @@ static void test_hal_get_core_type(void)
 /**
  * @brief API Test: Query NoC Node ID
  */
-static void *test_thread_hal_get_node_id(void *args)
+static void *test_thread_sys_get_node_id(void *args)
 {
 	int tid;
 
-	hal_setup();
+	sys_setup();
 	pthread_barrier_wait(&core_barrier);
 
 	tid = ((int *)args)[0];
 
-	TEST_ASSERT(hal_get_node_id() == hal_noc_nodes[SPAWNER_SERVER_NODE + tid]);
+	TEST_ASSERT(sys_get_node_id() == hal_noc_nodes[SPAWNER_SERVER_NODE + tid]);
 
-	hal_cleanup();
+	sys_cleanup();
 	return (NULL);
 }
 
 /**
  * @brief API Test: Query NoC Node ID
  */
-static void test_hal_get_node_id(void)
+static void test_sys_get_node_id(void)
 {
 	int args[core_ncores];
 	pthread_t threads[core_ncores];
@@ -202,7 +202,7 @@ static void test_hal_get_node_id(void)
 		args[i] = i;
 		TEST_ASSERT((pthread_create(&threads[i],
 			NULL,
-			test_thread_hal_get_node_id,
+			test_thread_sys_get_node_id,
 			&args[i])) == 0
 		);
 	}
@@ -218,9 +218,9 @@ static void test_hal_get_node_id(void)
  * @brief Unit tests.
  */
 struct test core_tests_api[] = {
-	{ test_hal_get_cluster_id, "Get Cluster ID" },
-	{ test_hal_get_core_id,    "Get Core ID"    },
-	{ test_hal_get_core_type,  "Get Core Type"  },
-	{ test_hal_get_node_id,    "Get Node ID"    },
+	{ test_sys_get_cluster_id, "Get Cluster ID" },
+	{ test_sys_get_core_id,    "Get Core ID"    },
+	{ test_sys_get_core_type,  "Get Core Type"  },
+	{ test_sys_get_node_id,    "Get Node ID"    },
 	{ NULL,                    NULL             },
 };

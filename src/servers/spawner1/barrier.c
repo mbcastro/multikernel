@@ -25,12 +25,8 @@
 
 #include <mppaipc.h>
 
-#define __NEED_HAL_CORE_
-#define __NEED_HAL_NOC_
-#define __NEED_HAL_SYNC_
-
-#include <nanvix/hal.h>
-#include <nanvix/init.h>
+#include <nanvix/syscalls.h>
+#include <nanvix/syscalls.h>
 #include <nanvix/pm.h>
 
 #define OTHERIO 128
@@ -58,7 +54,7 @@ static void test_barrier_io(void)
 	int nodeid;
 	int nodes[2];
 
-	nodeid = hal_get_node_id();
+	nodeid = sys_get_node_id();
 
 	nodes[0] = nodeid;
 	nodes[1] = OTHERIO;
@@ -80,7 +76,7 @@ static void test_barrier_master_cc_io(int barrier)
 {
 	int nodeid;
 
-	nodeid = hal_get_node_id();
+	nodeid = sys_get_node_id();
 
 	printf("%d waits...\n", nodeid);
 
@@ -116,7 +112,7 @@ static void test_barrier_cc_io(int nclusters)
 	for (int i = 0; i < nclusters; i++)
 		nodes[i + 2] = i;
 
-	nodes[0] = hal_get_node_id();
+	nodes[0] = sys_get_node_id();
 	nodes[1] = OTHERIO;
 
 	TEST_ASSERT((barrier = barrier_create(nodes, (nclusters + 2))) >= 0);
@@ -181,7 +177,7 @@ static void test_barrier_cc(int nclusters)
  */
 void test_kernel_barrier(void)
 {
-	ncores = hal_get_num_cores();
+	ncores = sys_get_num_cores();
 
 	/* API tests. */
 	test_barrier_io();

@@ -26,7 +26,7 @@
 
 #define __NEED_HAL_SETUP_
 #include <nanvix/const.h>
-#include <nanvix/hal.h>
+#include <nanvix/syscalls.h>
 #include <nanvix/pm.h>
 
 /**
@@ -45,7 +45,7 @@ int main(int argc, char **argv)
 	((void) argc);
 	((void) argv);
 
-	hal_setup();
+	sys_setup();
 
 	TEST_ASSERT((barrier = barrier_create(nodes, 2)) >= 0);
 
@@ -59,6 +59,6 @@ int main(int argc, char **argv)
 
 	// TEST_ASSERT(barrier_wait(barrier) == 0);
 
-	hal_cleanup();
+	sys_cleanup();
 	return (EXIT_SUCCESS);
 }

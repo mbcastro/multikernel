@@ -50,8 +50,6 @@
 	
 	/* Forward definitions. */
 	extern uint64_t hal_timer_get(void);
-	extern uint64_t hal_timer_diff(uint64_t, uint64_t);
-	extern void hal_timer_init(void);
 
 #endif /* __NEED_HAL_PERFORMANCE_ */
 

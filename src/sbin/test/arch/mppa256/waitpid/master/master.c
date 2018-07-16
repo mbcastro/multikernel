@@ -31,7 +31,7 @@
 #define __NEED_HAL_SETUP_
 
 #include <nanvix/const.h>
-#include <nanvix/hal.h>
+#include <nanvix/syscalls.h>
 #include <nanvix/pm.h>
 
 /**
@@ -77,7 +77,7 @@ static void *server(void *args)
 {
 	((void) args);
 
-	hal_setup();
+	sys_setup();
 
 	pthread_barrier_wait(&barrier);
 
@@ -91,7 +91,7 @@ static void *server(void *args)
 	 */
 	exit(EXIT_SUCCESS);
 
-	hal_cleanup();
+	sys_cleanup();
 	return (NULL);
 }
 
@@ -105,7 +105,7 @@ int main(int argc, const char **argv)
 	((void) argc);
 	((void) argv);
 
-	hal_setup();
+	sys_setup();
 
 	pthread_barrier_init(&barrier, NULL, 2);
 
@@ -122,6 +122,6 @@ int main(int argc, const char **argv)
 
 	pthread_join(tid, NULL);
 
-	hal_cleanup();
+	sys_cleanup();
 	return (EXIT_SUCCESS);
 }

@@ -335,7 +335,6 @@ error0:
 	return (-EAGAIN);
 }
 
-
 /**
  * @brief Creates a portal.
  *

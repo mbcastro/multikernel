@@ -30,8 +30,8 @@
 #define __NEED_HAL_CORE_
 #define __NEED_HAL_NOC_
 #define __NEED_HAL_SYNC_
-#include <nanvix/hal.h>
-#include <nanvix/init.h>
+#include <nanvix/syscalls.h>
+#include <nanvix/syscalls.h>
 #include <nanvix/name.h>
 #include <nanvix/limits.h>
 #include <nanvix/pm.h>
@@ -51,13 +51,13 @@ static void *test_name_thread_link_unlink(void *args)
 	int tid;
 	int nodeid;
 
-	TEST_ASSERT(kernel_setup() == 0);
+	TEST_ASSERT(runtime_setup() == 0);
 
 	pthread_barrier_wait(&ipc_name_barrier);
 
 	tid = ((int *)args)[0];
 
-	nodeid = hal_get_node_id();
+	nodeid = sys_get_node_id();
 
 	/* Link and unlink name. */
 	sprintf(pathname, "cool-name%d", tid);
@@ -69,7 +69,7 @@ static void *test_name_thread_link_unlink(void *args)
 
 	pthread_barrier_wait(&ipc_name_barrier);
 
-	TEST_ASSERT(kernel_cleanup() == 0);
+	TEST_ASSERT(runtime_cleanup() == 0);
 	return(NULL);
 }
 
@@ -110,13 +110,13 @@ static void *test_name_thread_lookup(void *args)
 	int tid;
 	int nodeid;
 
-	TEST_ASSERT(kernel_setup() == 0);
+	TEST_ASSERT(runtime_setup() == 0);
 
 	pthread_barrier_wait(&ipc_name_barrier);
 
 	tid = ((int *)args)[0];
 
-	nodeid = hal_get_node_id();
+	nodeid = sys_get_node_id();
 
 	/* Link and unlink name. */
 	sprintf(pathname, "cool-name%d", tid);
@@ -132,7 +132,7 @@ static void *test_name_thread_lookup(void *args)
 
 	pthread_barrier_wait(&ipc_name_barrier);
 
-	TEST_ASSERT(kernel_cleanup() == 0);
+	TEST_ASSERT(runtime_cleanup() == 0);
 	return(NULL);
 }
 

@@ -20,39 +20,49 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <pthread.h>
-#include <stdio.h>
+#include <inttypes.h>
 
-#define __NEED_HAL_CORE_
-#define __NEED_HAL_NOC_
-#include <nanvix/syscalls.h>
-
-#include "test.h"
+#define __NEED_HAL_PERFORMANCE_
+#include <nanvix/hal.h>
 
 /**
- * @brief Number of cores in the underlying cluster.
+ * @brief Timer error.
  */
-int ipc_mailbox_ncores = 0;
+static uint64_t timer_error = 0;
 
 /**
- * @brief Global barrier for synchronization.
+ * @brief Gets the current timer value.
+ *
+ * @returns The current timer value;
  */
-pthread_barrier_t barrier;
-
-/**
- * @brief Unnamed Mailbox Test Driver
- */
-void test_kernel_ipc_mailbox(void)
+uint64_t sys_timer_get(void)
 {
-	ipc_mailbox_ncores = sys_get_num_cores();
+	return (hal_timer_get());
+}
 
-	pthread_barrier_init(&barrier, NULL, ipc_mailbox_ncores - 1);
+/**
+ * @brief Computes the difference between two timer values.
+ *
+ * @param t1 Start time.
+ * @param t2 End time.
+ *
+ * @returns The difference between the two timers (t2 - t1).
+ */
+uint64_t sys_timer_diff(uint64_t t1, uint64_t t2)
+{
+	return (((t2 - t1) <= timer_error) ? timer_error : t2 - t1 - timer_error);
+}
 
-	/* Run API tests. */
-	for (int i = 0; ipc_mailbox_tests_api[i].test_fn != NULL; i++)
-	{
-		printf("[nanvix][test][api][ipc][mailbox] %s\n", ipc_mailbox_tests_api[i].name);
-		ipc_mailbox_tests_api[i].test_fn();
-	}
+/**
+ * @brief Calibrates the timer.
+ */
+void sys_timer_init(void)
+{
+	uint64_t start, end;
+
+	start = hal_timer_get();
+	end = hal_timer_get();
+
+	timer_error = (end - start);
 }
 

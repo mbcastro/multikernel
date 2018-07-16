@@ -22,9 +22,8 @@
 
 # C Source Files
 SRC = $(wildcard arch/$(TARGET)/*.c) \
-      $(wildcard init/*.c)           \
-      $(wildcard ipc/*.c)            \
-      $(wildcard sys/name.c)
+      $(wildcard sys/*.c)            \
+      $(wildcard init/*.c)
 
 # Object Files
 OBJ = $(SRC:.c=.o)

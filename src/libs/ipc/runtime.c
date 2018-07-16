@@ -20,39 +20,97 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <errno.h>
 #include <pthread.h>
-#include <stdio.h>
 
-#define __NEED_HAL_CORE_
-#define __NEED_HAL_NOC_
+#include <nanvix/pm.h>
 #include <nanvix/syscalls.h>
 
-#include "test.h"
+extern int name_init(void); 
 
 /**
- * @brief Number of cores in the underlying cluster.
+ * @brief Global runtime lock.
  */
-int ipc_mailbox_ncores = 0;
+static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
 /**
- * @brief Global barrier for synchronization.
+ *
+ * @brief Is the runtime initialized ?
  */
-pthread_barrier_t barrier;
+static int initialized[HAL_NR_NOC_IONODES] = { 0, };
 
 /**
- * @brief Unnamed Mailbox Test Driver
+ * @brief Locks the runtime.
  */
-void test_kernel_ipc_mailbox(void)
+static void runtime_lock(void)
 {
-	ipc_mailbox_ncores = sys_get_num_cores();
-
-	pthread_barrier_init(&barrier, NULL, ipc_mailbox_ncores - 1);
-
-	/* Run API tests. */
-	for (int i = 0; ipc_mailbox_tests_api[i].test_fn != NULL; i++)
-	{
-		printf("[nanvix][test][api][ipc][mailbox] %s\n", ipc_mailbox_tests_api[i].name);
-		ipc_mailbox_tests_api[i].test_fn();
-	}
+	pthread_mutex_lock(&lock);
 }
 
+/**
+ * @brief Unlocks the runtime.
+ */
+static void runtime_unlock(void)
+{
+	pthread_mutex_unlock(&lock);
+}
+
+/**
+ * @brief Initializes the runtime.
+ */
+int runtime_setup(void)
+{
+	int index;
+
+	runtime_lock();
+
+		index = sys_get_core_id();
+
+		/* Runtime was already initialized. */
+		if (initialized[index])
+			goto error;
+
+		 /* Create underlying input mailbox. */		
+		if (initialize_inbox(index) != 0)
+			goto error;
+
+		name_init();
+
+	runtime_unlock();
+
+	return (0);
+
+error:
+	runtime_unlock();
+	return (-EAGAIN);
+}
+
+/**
+ * @brief Cleans runtime.
+ */
+int runtime_cleanup(void)
+{
+	int index;
+
+	runtime_lock();
+
+		index = sys_get_core_id();
+
+		/* Runtime was not initialized. */
+		if (!initialized[index])
+			goto error;
+
+		/* Destroy underlying input mailbox. */
+		if (destroy_inbox(index) != 0)
+			goto error;
+
+		initialized[index] = 0;
+
+	runtime_unlock();
+
+	return (0);
+
+error:
+	runtime_unlock();
+	return (-EAGAIN);
+}

@@ -31,7 +31,7 @@
 #define __NEED_HAL_SETUP_
 #define __NEED_HAL_SYNC_
 #define __NEED_HAL_PORTAL_
-#include <nanvix/hal.h>
+#include <nanvix/syscalls.h>
 
 #include "../kernel.h"
 
@@ -72,17 +72,17 @@ static void kernel_broadcast(void)
 	int inportal;
 
 	/* Open output portal. */
-	assert((inportal = hal_portal_create(nodeid)) >= 0);
+	assert((inportal = sys_portal_create(nodeid)) >= 0);
 
 	/* Benchmark. */
 	for (int k = 0; k <= niterations; k++)
 	{
-		assert(hal_portal_allow(inportal, master_node) == 0);
-		assert(hal_portal_read(inportal, buffer, bufsize) == bufsize);
+		assert(sys_portal_allow(inportal, master_node) == 0);
+		assert(sys_portal_read(inportal, buffer, bufsize) == bufsize);
 	}
 
 	/* House keeping. */
-	assert(hal_portal_unlink(inportal) == 0);
+	assert(sys_portal_unlink(inportal) == 0);
 }
 
 /*============================================================================*
@@ -96,13 +96,13 @@ static void kernel_gather(void)
 {
 	int outportal;
 
-	assert((outportal = hal_portal_open(master_node)) >= 0);
+	assert((outportal = sys_portal_open(master_node)) >= 0);
 
 	/* Benchmark. */
 	for (int k = 0; k <= niterations; k++)
-		assert(hal_portal_write(outportal, buffer, bufsize) == bufsize);
+		assert(sys_portal_write(outportal, buffer, bufsize) == bufsize);
 
-	assert(hal_portal_close(outportal) == 0);
+	assert(sys_portal_close(outportal) == 0);
 }
 
 /*============================================================================*
@@ -117,20 +117,20 @@ static void kernel_pingpong(void)
 	int inportal;
 	int outportal;
 
-	assert((inportal = hal_portal_create(nodeid)) >= 0);
-	assert((outportal = hal_portal_open(master_node)) >= 0);
+	assert((inportal = sys_portal_create(nodeid)) >= 0);
+	assert((outportal = sys_portal_open(master_node)) >= 0);
 
 	/* Benchmark. */
 	for (int k = 0; k <= niterations; k++)
 	{
-		assert(hal_portal_allow(inportal, master_node) == 0);
-		assert(hal_portal_read(inportal, buffer, bufsize) == bufsize);
-		assert(hal_portal_write(outportal, buffer, bufsize) == bufsize);
+		assert(sys_portal_allow(inportal, master_node) == 0);
+		assert(sys_portal_read(inportal, buffer, bufsize) == bufsize);
+		assert(sys_portal_write(outportal, buffer, bufsize) == bufsize);
 	}
 
 	/* House keeping. */
-	assert(hal_portal_unlink(inportal) == 0);
-	assert(hal_portal_close(outportal) == 0);
+	assert(sys_portal_unlink(inportal) == 0);
+	assert(sys_portal_close(outportal) == 0);
 }
 
 /*============================================================================*
@@ -155,9 +155,9 @@ static void sync_master(int first_remote, int last_remote)
 		nodes[i + 1] = first_remote + i;
 
 	/* Sync. */
-	assert((syncid = hal_sync_open(nodes, nremotes + 1, HAL_SYNC_ALL_TO_ONE)) >= 0);
-	assert(hal_sync_signal(syncid) == 0);
-	assert(hal_sync_close(syncid) == 0);
+	assert((syncid = sys_sync_open(nodes, nremotes + 1, HAL_SYNC_ALL_TO_ONE)) >= 0);
+	assert(sys_sync_signal(syncid) == 0);
+	assert(sys_sync_close(syncid) == 0);
 }
 
 /**
@@ -170,8 +170,8 @@ int main(int argc, const char **argv)
 	int last_remote;
 	
 	/* Initialization. */
-	hal_setup();
-	nodeid = hal_get_node_id();
+	sys_setup();
+	nodeid = sys_get_node_id();
 
 	/* Retrieve kernel parameters. */
 	assert(argc == 7);
@@ -193,7 +193,7 @@ int main(int argc, const char **argv)
 		kernel_pingpong();
 
 	/* House keeping. */
-	hal_cleanup();
+	sys_cleanup();
 
 	return (EXIT_SUCCESS);
 }

@@ -21,7 +21,7 @@
  */
 
 #include <mppa/osconfig.h>
-#include <nanvix/hal.h>
+#include <nanvix/syscalls.h>
 #include <nanvix/mm.h>
 #include <nanvix/pm.h>
 #include <nanvix/name.h>
@@ -206,7 +206,7 @@ static void *name_server(void *args)
 
 	/* Open server mailbox. */
 	pthread_mutex_lock(&lock);
-		inbox = hal_mailbox_create(IOCLUSTER0 + dma);
+		inbox = sys_mailbox_create(IOCLUSTER0 + dma);
 	pthread_mutex_unlock(&lock);
 
 	while(1)
@@ -227,7 +227,7 @@ static void *name_server(void *args)
 				msg.core = _name_lookup(msg.name);
 
 				/* Send response. */
-				int source =hal_mailbox_open(msg.source);
+				int source =sys_mailbox_open(msg.source);
 				assert(source >= 0);
 				assert(mailbox_write(source, &msg) == 0);
 				assert(mailbox_close(source) == 0);

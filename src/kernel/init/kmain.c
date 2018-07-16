@@ -21,14 +21,12 @@
  */
 
 #include <errno.h>
-#include <stdio.h>
 #include <pthread.h>
 
 #define __NEED_HAL_CORE_
 #define __NEED_HAL_NOC_
 #define __NEED_HAL_SETUP_
 #include <nanvix/hal.h>
-#include <nanvix/pm.h>
 
 /**
  * @brief Global kernel lock.
@@ -36,9 +34,15 @@
 static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
 /**
+ *
+ * @brief Is the kernel initialized ?
+ */
+static int initialized[HAL_NR_NOC_IONODES] = { 0, };
+
+/**
  * @brief Locks the kernel.
  */
-void kernel_lock(void)
+static void kernel_lock(void)
 {
 	pthread_mutex_lock(&lock);
 }
@@ -46,54 +50,33 @@ void kernel_lock(void)
 /**
  * @brief Unlocks the kernel.
  */
-void kernel_unlock(void)
+static void kernel_unlock(void)
 {
 	pthread_mutex_unlock(&lock);
 }
 
 /**
- *
- * @brief Is the kernel initialized ?
- */
-static int initialized[HAL_NR_NOC_IONODES] = { 0, };
-
-extern int name_init(void);
-extern void name_finalize(void);
-
-/**
- * @brief Initializes kernel modules.
+ * @brief Initializes the kernel.
  */
 int kernel_setup(void)
 {
 	int index;
-	int nodeid;
-
-	hal_setup();
-
-	nodeid = hal_get_node_id();
-	index = nodeid - hal_get_cluster_id();
-
-	/*
-	 * Kernel was already initialized.
-	 * There is nothing else to do.
-	 */
-	if (initialized[index])
-		return (0);
 
 	kernel_lock();
 
-		name_init();
+		hal_setup();
 
-		/* Create underlying input mailbox. */
-		if (initialize_inbox(index) != 0)
-			goto error0;
+		index = (hal_get_node_id() - hal_get_cluster_id());
+
+		/* Kernel was already initialized. */
+		if (initialized[index])
+			goto error;
 
 	kernel_unlock();
 
-	initialized[index] = 1;
 	return (0);
 
-error0:
+error:
 	kernel_unlock();
 	return (-EAGAIN);
 }
@@ -105,25 +88,20 @@ int kernel_cleanup(void)
 {
 	int index;
 
-	index = (hal_get_node_id() - hal_get_cluster_id());
-
-	/* Kernel was not initialized. */
-	if (!initialized[index])
-		return (-EAGAIN);
-
 	kernel_lock();
 
-		name_finalize();
+		index = (hal_get_node_id() - hal_get_cluster_id());
 
-		/* Destroy underlying input mailbox. */
-		if (destroy_inbox(index) != 0)
+		/* Kernel was not initialized. */
+		if (!initialized[index])
 			goto error;
+
+		initialized[index] = 0;
+
+		hal_cleanup();
 
 	kernel_unlock();
 
-	initialized[index] = 0;
-
-	hal_cleanup();
 	return (0);
 
 error:

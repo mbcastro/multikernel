@@ -29,15 +29,14 @@
 #define __NEED_HAL_SETUP_
 #define __NEED_HAL_SYNC_
 #include <nanvix/const.h>
-#include <nanvix/hal.h>
-#include <nanvix/init.h>
+#include <nanvix/syscalls.h>
 
 /* Forward definitions. */
 extern int main2(int, const char **);
-extern void test_kernel_hal_core(void);
-extern void test_kernel_hal_sync(void);
-extern void test_kernel_hal_mailbox(void);
-extern void test_kernel_hal_portal(void);
+extern void test_kernel_sys_core(void);
+extern void test_kernel_sys_sync(void);
+extern void test_kernel_sys_mailbox(void);
+extern void test_kernel_sys_portal(void);
 extern void test_kernel_name(int);
 extern void test_kernel_ipc_mailbox(int);
 extern void test_kernel_ipc_barrier(int);
@@ -48,13 +47,13 @@ extern void test_kernel_ipc_barrier(int);
 static void test_kernel(const char *module)
 {
 	if (!strcmp(module, "--hal-core"))
-		test_kernel_hal_core();
+		test_kernel_sys_core();
 	else if (!strcmp(module, "--hal-sync"))
-		test_kernel_hal_sync();
+		test_kernel_sys_sync();
 	else if (!strcmp(module, "--hal-mailbox"))
-		test_kernel_hal_mailbox();
+		test_kernel_sys_mailbox();
 	else if (!strcmp(module, "--hal-portal"))
-		test_kernel_hal_portal();
+		test_kernel_sys_portal();
 }
 
 /**
@@ -81,7 +80,7 @@ static void spawners_sync(void)
 	int nodes[2];
 	int nodes_local[2];
 
-	nodeid = hal_get_node_id();
+	nodeid = sys_get_node_id();
 
 	nodes[0] = nodeid;
 	nodes[1] = hal_noc_nodes[SPAWNER1_SERVER_NODE];
@@ -90,17 +89,17 @@ static void spawners_sync(void)
 	nodes_local[1] = nodeid;
 
 	/* Open synchronization points. */
-	assert((syncid_local = hal_sync_create(nodes_local, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
-	assert((syncid = hal_sync_open(nodes, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
+	assert((syncid_local = sys_sync_create(nodes_local, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
+	assert((syncid = sys_sync_open(nodes, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
 
-	assert(hal_sync_signal(syncid) == 0);
-	assert(hal_sync_wait(syncid_local) == 0);
+	assert(sys_sync_signal(syncid) == 0);
+	assert(sys_sync_wait(syncid_local) == 0);
 
 	printf("[nanvix][spawner0] synced\n");
 
 	/* House keeping. */
-	assert(hal_sync_unlink(syncid_local) == 0);
-	assert(hal_sync_close(syncid) == 0);
+	assert(sys_sync_unlink(syncid_local) == 0);
+	assert(sys_sync_close(syncid) == 0);
 }
 
 /**
@@ -118,7 +117,7 @@ int main(int argc, const char **argv)
 			debug = 1;
 	}
 
-	hal_setup();
+	sys_setup();
 
 	printf("[nanvix][spawner0] booting up server\n");
 
@@ -152,6 +151,6 @@ int main(int argc, const char **argv)
 		return (EXIT_FAILURE);
 	}
 
-	hal_cleanup();
+	sys_cleanup();
 	return (ret);
 }

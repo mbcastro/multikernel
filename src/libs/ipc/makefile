@@ -21,23 +21,17 @@
 #
 
 # C Source Files
-SRC = $(wildcard spawner1/*.c) \
-	   name.c
+SRC = $(wildcard *.c)
 
 # Object Files
 OBJ = $(SRC:.c=.o)
 
 #===============================================================================
 
-# Builds everything.
-all: servers
-
-#
-# Server fleet.
-#
-servers: $(OBJ)
-	mkdir -p $(BINDIR)
-	$(CC) $(LDFLAGS) $(OBJ) -o $(SERVERSBIN1) $(LIBKERNEL) $(LIBUSER) $(LIBS)
+# Builds IPC library.
+all: $(OBJ)
+	mkdir -p $(LIBDIR)
+	$(AR) $(ARFLAGS) $(LIBUSER) $(OBJ)
 
 # Builds object files.
 %.o: %.c
@@ -49,4 +43,5 @@ clean:
 
 # Cleans everything.
 distclean: clean
-	rm -rf $(SERVERSBIN1)
+	rm -rf $(LIBUSER)
+

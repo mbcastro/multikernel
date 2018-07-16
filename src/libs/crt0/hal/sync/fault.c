@@ -31,7 +31,7 @@
 #define __NEED_HAL_NOC_
 #define __NEED_HAL_SYNC_
 #include <nanvix/const.h>
-#include <nanvix/hal.h>
+#include <nanvix/syscalls.h>
 
 #include "test.h"
 
@@ -42,18 +42,18 @@
 /**
  * @brief Fault Injection Test: Synchronization Point Invalid Create
  */
-static void test_hal_sync_invalid_create(void)
+static void test_sys_sync_invalid_create(void)
 {
 	/* Build nodes list. */
 	for (int i = 0; i < ncores; i++)
-		nodes[i] = hal_get_node_id() + i;
+		nodes[i] = sys_get_node_id() + i;
 
-	TEST_ASSERT((hal_sync_create(NULL, ncores, HAL_SYNC_ONE_TO_ALL)) < 0);
-	TEST_ASSERT((hal_sync_create(nodes, -1, HAL_SYNC_ONE_TO_ALL)) < 0);
-	TEST_ASSERT((hal_sync_create(nodes, 0, HAL_SYNC_ONE_TO_ALL)) < 0);
-	TEST_ASSERT((hal_sync_create(nodes, 1, HAL_SYNC_ONE_TO_ALL)) < 0);
-	TEST_ASSERT((hal_sync_create(nodes, HAL_NR_NOC_NODES + 1, HAL_SYNC_ONE_TO_ALL)) < 0);
-	TEST_ASSERT((hal_sync_create(nodes, ncores, -1)) < 0);
+	TEST_ASSERT((sys_sync_create(NULL, ncores, HAL_SYNC_ONE_TO_ALL)) < 0);
+	TEST_ASSERT((sys_sync_create(nodes, -1, HAL_SYNC_ONE_TO_ALL)) < 0);
+	TEST_ASSERT((sys_sync_create(nodes, 0, HAL_SYNC_ONE_TO_ALL)) < 0);
+	TEST_ASSERT((sys_sync_create(nodes, 1, HAL_SYNC_ONE_TO_ALL)) < 0);
+	TEST_ASSERT((sys_sync_create(nodes, HAL_NR_NOC_NODES + 1, HAL_SYNC_ONE_TO_ALL)) < 0);
+	TEST_ASSERT((sys_sync_create(nodes, ncores, -1)) < 0);
 }
 
 /*============================================================================*
@@ -63,60 +63,60 @@ static void test_hal_sync_invalid_create(void)
 /**
  * @brief Fault Injection Test: Synchronization Point Bad Create
  */
-static void test_hal_sync_bad_create1(void)
+static void test_sys_sync_bad_create1(void)
 {
 	/* Invalid list of NoC nodes. */
 	for (int i = ncores - 1; i >= 0; i--)
 		nodes[i] = -1;
-	TEST_ASSERT((hal_sync_create(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) < 0);
+	TEST_ASSERT((sys_sync_create(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) < 0);
 
 	/* Underlying NoC node is the sender. */
 	for (int i = 0; i < ncores; i++)
-		nodes[i] = hal_get_node_id() + i;
-	TEST_ASSERT((hal_sync_create(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) < 0);
+		nodes[i] = sys_get_node_id() + i;
+	TEST_ASSERT((sys_sync_create(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) < 0);
 
 	/* Underlying NoC node is not listed. */
 	for (int i = ncores - 1; i >=0; i--)
-		nodes[i] = hal_get_node_id() + i - ncores + 1;
-	TEST_ASSERT((hal_sync_create(nodes, ncores - 1, HAL_SYNC_ONE_TO_ALL)) < 0);
+		nodes[i] = sys_get_node_id() + i - ncores + 1;
+	TEST_ASSERT((sys_sync_create(nodes, ncores - 1, HAL_SYNC_ONE_TO_ALL)) < 0);
 
 	/* Underlying NoC node appears twice in the list. */
-	nodes[ncores - 1] = hal_get_node_id();
-	nodes[ncores - 2] = hal_get_node_id();
-	TEST_ASSERT((hal_sync_create(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) < 0);
+	nodes[ncores - 1] = sys_get_node_id();
+	nodes[ncores - 2] = sys_get_node_id();
+	TEST_ASSERT((sys_sync_create(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) < 0);
 }
 
 /**
  * @brief Fault Injection Test: Synchronization Point Bad Create
  */
-static void test_hal_sync_bad_create2(void)
+static void test_sys_sync_bad_create2(void)
 {
 	/* Invalid list of NoC nodes. */
 	for (int i = ncores - 1; i >= 0; i--)
 		nodes[i] = -1;
-	TEST_ASSERT((hal_sync_create(nodes, ncores, HAL_SYNC_ALL_TO_ONE)) < 0);
+	TEST_ASSERT((sys_sync_create(nodes, ncores, HAL_SYNC_ALL_TO_ONE)) < 0);
 
 	/* Underlying NoC node is not the receiver. */
 	for (int i = ncores - 1; i >=0; i--)
-		nodes[i] = hal_get_node_id() + i - ncores + 1;
-	TEST_ASSERT((hal_sync_create(nodes, ncores, HAL_SYNC_ALL_TO_ONE)) < 0);
+		nodes[i] = sys_get_node_id() + i - ncores + 1;
+	TEST_ASSERT((sys_sync_create(nodes, ncores, HAL_SYNC_ALL_TO_ONE)) < 0);
 
 	/* Underlying NoC node is not listed. */
-	TEST_ASSERT((hal_sync_create(nodes, ncores - 1, HAL_SYNC_ALL_TO_ONE)) < 0);
+	TEST_ASSERT((sys_sync_create(nodes, ncores - 1, HAL_SYNC_ALL_TO_ONE)) < 0);
 
 	/* Underlying NoC node appears twice in the list. */
-	nodes[ncores - 1] = hal_get_node_id();
-	nodes[ncores - 2] = hal_get_node_id();
-	TEST_ASSERT((hal_sync_create(nodes, ncores, HAL_SYNC_ALL_TO_ONE)) < 0);
+	nodes[ncores - 1] = sys_get_node_id();
+	nodes[ncores - 2] = sys_get_node_id();
+	TEST_ASSERT((sys_sync_create(nodes, ncores, HAL_SYNC_ALL_TO_ONE)) < 0);
 }
 
 /**
  * @brief Fault Injection Test: Synchronization Point Bad Create
  */
-static void test_hal_sync_bad_create(void)
+static void test_sys_sync_bad_create(void)
 {
-	test_hal_sync_bad_create1();
-	test_hal_sync_bad_create2();
+	test_sys_sync_bad_create1();
+	test_sys_sync_bad_create2();
 }
 
 /*============================================================================*
@@ -126,18 +126,18 @@ static void test_hal_sync_bad_create(void)
 /**
  * @brief Fault Injection Test: Synchronization Point Invalid Open
  */
-static void test_hal_sync_invalid_open(void)
+static void test_sys_sync_invalid_open(void)
 {
 	/* Build nodes list. */
 	for (int i = 0; i < ncores; i++)
-		nodes[i] = hal_get_node_id() + i;
+		nodes[i] = sys_get_node_id() + i;
 
-	TEST_ASSERT((hal_sync_open(NULL, ncores, HAL_SYNC_ONE_TO_ALL)) < 0);
-	TEST_ASSERT((hal_sync_open(nodes, -1, HAL_SYNC_ONE_TO_ALL)) < 0);
-	TEST_ASSERT((hal_sync_open(nodes, 0, HAL_SYNC_ONE_TO_ALL)) < 0);
-	TEST_ASSERT((hal_sync_open(nodes, 1, HAL_SYNC_ONE_TO_ALL)) < 0);
-	TEST_ASSERT((hal_sync_open(nodes, HAL_NR_NOC_NODES + 1, HAL_SYNC_ONE_TO_ALL)) < 0);
-	TEST_ASSERT((hal_sync_open(nodes, ncores, -1)) < 0);
+	TEST_ASSERT((sys_sync_open(NULL, ncores, HAL_SYNC_ONE_TO_ALL)) < 0);
+	TEST_ASSERT((sys_sync_open(nodes, -1, HAL_SYNC_ONE_TO_ALL)) < 0);
+	TEST_ASSERT((sys_sync_open(nodes, 0, HAL_SYNC_ONE_TO_ALL)) < 0);
+	TEST_ASSERT((sys_sync_open(nodes, 1, HAL_SYNC_ONE_TO_ALL)) < 0);
+	TEST_ASSERT((sys_sync_open(nodes, HAL_NR_NOC_NODES + 1, HAL_SYNC_ONE_TO_ALL)) < 0);
+	TEST_ASSERT((sys_sync_open(nodes, ncores, -1)) < 0);
 }
 
 /*============================================================================*
@@ -147,59 +147,59 @@ static void test_hal_sync_invalid_open(void)
 /**
  * @brief Fault Injection Test: Synchronization Point Bad Open
  */
-static void test_hal_sync_bad_open1(void)
+static void test_sys_sync_bad_open1(void)
 {
 
 	/* Invalid list of NoC nodes. */
 	for (int i = ncores - 1; i >= 0; i--)
 		nodes[i] = -1;
-	TEST_ASSERT((hal_sync_open(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) < 0);
+	TEST_ASSERT((sys_sync_open(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) < 0);
 
 	/* Underlying NoC node is not the sender. */
 	for (int i = ncores - 1; i >=0; i--)
-		nodes[i] = hal_get_node_id() + i - ncores + 1;
-	TEST_ASSERT((hal_sync_open(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) < 0);
+		nodes[i] = sys_get_node_id() + i - ncores + 1;
+	TEST_ASSERT((sys_sync_open(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) < 0);
 
 	/* Underlying NoC node is not listed. */
-	TEST_ASSERT((hal_sync_open(nodes, ncores - 1, HAL_SYNC_ONE_TO_ALL)) < 0);
+	TEST_ASSERT((sys_sync_open(nodes, ncores - 1, HAL_SYNC_ONE_TO_ALL)) < 0);
 
 	/* Underlying NoC node appears twice in the list. */
-	nodes[ncores - 1] = hal_get_node_id();
-	nodes[ncores - 2] = hal_get_node_id();
-	TEST_ASSERT((hal_sync_open(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) < 0);
+	nodes[ncores - 1] = sys_get_node_id();
+	nodes[ncores - 2] = sys_get_node_id();
+	TEST_ASSERT((sys_sync_open(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) < 0);
 }
 
 /**
  * @brief Fault Injection Test: Synchronization Point Bad Open
  */
-static void test_hal_sync_bad_open2(void)
+static void test_sys_sync_bad_open2(void)
 {
 	/* Invalid list of NoC nodes. */
 	for (int i = ncores - 1; i >= 0; i--)
 		nodes[i] = -1;
-	TEST_ASSERT((hal_sync_open(nodes, ncores, HAL_SYNC_ALL_TO_ONE)) < 0);
+	TEST_ASSERT((sys_sync_open(nodes, ncores, HAL_SYNC_ALL_TO_ONE)) < 0);
 
 	/* Underlying NoC node is not the sender. */
 	for (int i = 0; i < ncores; i++)
-		nodes[i] = hal_get_node_id() + i;
-	TEST_ASSERT((hal_sync_open(nodes, ncores, HAL_SYNC_ALL_TO_ONE)) < 0);
+		nodes[i] = sys_get_node_id() + i;
+	TEST_ASSERT((sys_sync_open(nodes, ncores, HAL_SYNC_ALL_TO_ONE)) < 0);
 
 	/* Underlying NoC node is not listed. */
-	TEST_ASSERT((hal_sync_open(&nodes[1], ncores - 1, HAL_SYNC_ALL_TO_ONE)) < 0);
+	TEST_ASSERT((sys_sync_open(&nodes[1], ncores - 1, HAL_SYNC_ALL_TO_ONE)) < 0);
 
 	/* Underlying NoC node appears twice in the list. */
-	nodes[ncores - 1] = hal_get_node_id();
-	nodes[ncores - 2] = hal_get_node_id();
-	TEST_ASSERT((hal_sync_open(&nodes[1], ncores, HAL_SYNC_ALL_TO_ONE)) < 0);
+	nodes[ncores - 1] = sys_get_node_id();
+	nodes[ncores - 2] = sys_get_node_id();
+	TEST_ASSERT((sys_sync_open(&nodes[1], ncores, HAL_SYNC_ALL_TO_ONE)) < 0);
 }
 
 /**
  * @brief Fault Injection Test: Synchronization Point Bad Open
  */
-static void test_hal_sync_bad_open(void)
+static void test_sys_sync_bad_open(void)
 {
-	test_hal_sync_bad_open1();
-	test_hal_sync_bad_open2();
+	test_sys_sync_bad_open1();
+	test_sys_sync_bad_open2();
 }
 
 /*============================================================================*
@@ -209,12 +209,12 @@ static void test_hal_sync_bad_open(void)
 /**
  * @brief Fault Injection Test: Synchronization Point Invalid Unlink
  */
-static void test_hal_sync_invalid_unlink(void)
+static void test_sys_sync_invalid_unlink(void)
 {
-	TEST_ASSERT(hal_sync_unlink(-1) < 0);
-	TEST_ASSERT(hal_sync_unlink(1) < 0);
-	TEST_ASSERT(hal_sync_unlink(HAL_NR_SYNC) < 0);
-	TEST_ASSERT(hal_sync_unlink(HAL_NR_SYNC + 1) < 0);
+	TEST_ASSERT(sys_sync_unlink(-1) < 0);
+	TEST_ASSERT(sys_sync_unlink(1) < 0);
+	TEST_ASSERT(sys_sync_unlink(HAL_NR_SYNC) < 0);
+	TEST_ASSERT(sys_sync_unlink(HAL_NR_SYNC + 1) < 0);
 }
 
 /*============================================================================*
@@ -224,17 +224,17 @@ static void test_hal_sync_invalid_unlink(void)
 /**
  * @brief Fault Injection Test: Synchronization Point Bad Unlink
  */
-static void test_hal_sync_bad_unlink(void)
+static void test_sys_sync_bad_unlink(void)
 {
 	int syncid;
 
 	for (int i = 0; i < ncores; i++)
-		nodes[i] = hal_get_node_id() + i;
+		nodes[i] = sys_get_node_id() + i;
 
-	TEST_ASSERT((syncid = hal_sync_open(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) >= 0);
+	TEST_ASSERT((syncid = sys_sync_open(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) >= 0);
 
-	TEST_ASSERT(hal_sync_unlink(syncid) < 0);
-	TEST_ASSERT(hal_sync_close(syncid) == 0);
+	TEST_ASSERT(sys_sync_unlink(syncid) < 0);
+	TEST_ASSERT(sys_sync_close(syncid) == 0);
 }
 
 /*============================================================================*
@@ -244,16 +244,16 @@ static void test_hal_sync_bad_unlink(void)
 /**
  * @brief Fault Injection Test: Synchronization Point Double Unlink
  */
-static void test_hal_sync_double_unlink(void)
+static void test_sys_sync_double_unlink(void)
 {
 	int syncid;
 
 	for (int i = 0; i < ncores; i++)
-		nodes[i] = hal_get_node_id() + i;
+		nodes[i] = sys_get_node_id() + i;
 
-	TEST_ASSERT((syncid = hal_sync_create(nodes, ncores, HAL_SYNC_ALL_TO_ONE)) >= 0);
-	TEST_ASSERT(hal_sync_unlink(syncid) == 0);
-	TEST_ASSERT(hal_sync_unlink(syncid) < 0);
+	TEST_ASSERT((syncid = sys_sync_create(nodes, ncores, HAL_SYNC_ALL_TO_ONE)) >= 0);
+	TEST_ASSERT(sys_sync_unlink(syncid) == 0);
+	TEST_ASSERT(sys_sync_unlink(syncid) < 0);
 }
 
 /*============================================================================*
@@ -263,12 +263,12 @@ static void test_hal_sync_double_unlink(void)
 /**
  * @brief Fault Injection Test: Synchronization Point Invalid Close
  */
-static void test_hal_sync_invalid_close(void)
+static void test_sys_sync_invalid_close(void)
 {
-	TEST_ASSERT(hal_sync_close(-1) < 0);
-	TEST_ASSERT(hal_sync_close(1) < 0);
-	TEST_ASSERT(hal_sync_close(HAL_NR_SYNC) < 0);
-	TEST_ASSERT(hal_sync_close(HAL_NR_SYNC + 1) < 0);
+	TEST_ASSERT(sys_sync_close(-1) < 0);
+	TEST_ASSERT(sys_sync_close(1) < 0);
+	TEST_ASSERT(sys_sync_close(HAL_NR_SYNC) < 0);
+	TEST_ASSERT(sys_sync_close(HAL_NR_SYNC + 1) < 0);
 }
 
 /*============================================================================*
@@ -278,17 +278,17 @@ static void test_hal_sync_invalid_close(void)
 /**
  * @brief Fault Injection Test: Synchronization Point Bad Close
  */
-static void test_hal_sync_bad_close(void)
+static void test_sys_sync_bad_close(void)
 {
 	int syncid;
 
 	for (int i = 0; i < ncores; i++)
-		nodes[i] = hal_get_node_id() + i;
+		nodes[i] = sys_get_node_id() + i;
 
-	TEST_ASSERT((syncid = hal_sync_create(nodes, ncores, HAL_SYNC_ALL_TO_ONE)) >= 0);
+	TEST_ASSERT((syncid = sys_sync_create(nodes, ncores, HAL_SYNC_ALL_TO_ONE)) >= 0);
 
-	TEST_ASSERT(hal_sync_close(syncid) < 0);
-	TEST_ASSERT(hal_sync_unlink(syncid) == 0);
+	TEST_ASSERT(sys_sync_close(syncid) < 0);
+	TEST_ASSERT(sys_sync_unlink(syncid) == 0);
 }
 
 /*============================================================================*
@@ -298,16 +298,16 @@ static void test_hal_sync_bad_close(void)
 /**
  * @brief Fault Injection Test: Synchronization Point Double Close
  */
-static void test_hal_sync_double_close(void)
+static void test_sys_sync_double_close(void)
 {
 	int syncid;
 
 	for (int i = 0; i < ncores; i++)
-		nodes[i] = hal_get_node_id() + i;
+		nodes[i] = sys_get_node_id() + i;
 
-	TEST_ASSERT((syncid = hal_sync_open(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) >= 0);
-	TEST_ASSERT(hal_sync_close(syncid) == 0);
-	TEST_ASSERT(hal_sync_close(syncid) < 0);
+	TEST_ASSERT((syncid = sys_sync_open(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) >= 0);
+	TEST_ASSERT(sys_sync_close(syncid) == 0);
+	TEST_ASSERT(sys_sync_close(syncid) < 0);
 }
 
 /*============================================================================*
@@ -317,12 +317,12 @@ static void test_hal_sync_double_close(void)
 /**
  * @brief Fault Injection Test: Synchronization Point Invalid Signal
  */
-static void test_hal_sync_invalid_signal(void)
+static void test_sys_sync_invalid_signal(void)
 {
-	TEST_ASSERT(hal_sync_signal(-1) < 0);
-	TEST_ASSERT(hal_sync_signal(1) < 0);
-	TEST_ASSERT(hal_sync_signal(HAL_NR_SYNC) < 0);
-	TEST_ASSERT(hal_sync_signal(HAL_NR_SYNC + 1) < 0);
+	TEST_ASSERT(sys_sync_signal(-1) < 0);
+	TEST_ASSERT(sys_sync_signal(1) < 0);
+	TEST_ASSERT(sys_sync_signal(HAL_NR_SYNC) < 0);
+	TEST_ASSERT(sys_sync_signal(HAL_NR_SYNC + 1) < 0);
 }
 
 /*============================================================================*
@@ -332,17 +332,17 @@ static void test_hal_sync_invalid_signal(void)
 /**
  * @brief Fault Injection Test: Synchronization Point Bad Signal
  */
-static void test_hal_sync_bad_signal(void)
+static void test_sys_sync_bad_signal(void)
 {
 	int syncid;
 
 	for (int i = 0; i < ncores; i++)
-		nodes[i] = hal_get_node_id() + i;
+		nodes[i] = sys_get_node_id() + i;
 
-	TEST_ASSERT((syncid = hal_sync_create(nodes, ncores, HAL_SYNC_ALL_TO_ONE)) >= 0);
+	TEST_ASSERT((syncid = sys_sync_create(nodes, ncores, HAL_SYNC_ALL_TO_ONE)) >= 0);
 
-	TEST_ASSERT(hal_sync_signal(syncid) < 0);
-	TEST_ASSERT(hal_sync_unlink(syncid) == 0);
+	TEST_ASSERT(sys_sync_signal(syncid) < 0);
+	TEST_ASSERT(sys_sync_unlink(syncid) == 0);
 }
 
 /*============================================================================*
@@ -352,12 +352,12 @@ static void test_hal_sync_bad_signal(void)
 /**
  * @brief Fault Injection Test: Synchronization Point Invalid Wait
  */
-static void test_hal_sync_invalid_wait(void)
+static void test_sys_sync_invalid_wait(void)
 {
-	TEST_ASSERT(hal_sync_wait(-1) < 0);
-	TEST_ASSERT(hal_sync_wait(1) < 0);
-	TEST_ASSERT(hal_sync_wait(HAL_NR_SYNC) < 0);
-	TEST_ASSERT(hal_sync_wait(HAL_NR_SYNC + 1) < 0);
+	TEST_ASSERT(sys_sync_wait(-1) < 0);
+	TEST_ASSERT(sys_sync_wait(1) < 0);
+	TEST_ASSERT(sys_sync_wait(HAL_NR_SYNC) < 0);
+	TEST_ASSERT(sys_sync_wait(HAL_NR_SYNC + 1) < 0);
 }
 
 /*============================================================================*
@@ -367,17 +367,17 @@ static void test_hal_sync_invalid_wait(void)
 /**
  * @brief Fault Injection Test: Synchronization Point Bad Wait
  */
-static void test_hal_sync_bad_wait(void)
+static void test_sys_sync_bad_wait(void)
 {
 	int syncid;
 
 	for (int i = 0; i < ncores; i++)
-		nodes[i] = hal_get_node_id() + i;
+		nodes[i] = sys_get_node_id() + i;
 
-	TEST_ASSERT((syncid = hal_sync_open(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) >= 0);
+	TEST_ASSERT((syncid = sys_sync_open(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) >= 0);
 
-	TEST_ASSERT(hal_sync_wait(syncid) < 0);
-	TEST_ASSERT(hal_sync_close(syncid) == 0);
+	TEST_ASSERT(sys_sync_wait(syncid) < 0);
+	TEST_ASSERT(sys_sync_close(syncid) == 0);
 }
 
 /*============================================================================*/
@@ -386,19 +386,19 @@ static void test_hal_sync_bad_wait(void)
  * @brief Unit tests.
  */
 struct test tests_fault[] = {
-	{ test_hal_sync_invalid_create, "Invalid Create" },
-	{ test_hal_sync_bad_create,     "Bad Create"     },
-	{ test_hal_sync_invalid_open,   "Invalid Open"   },
-	{ test_hal_sync_bad_open,       "Bad Open"       },
-	{ test_hal_sync_invalid_unlink, "Invalid Unlink" },
-	{ test_hal_sync_bad_unlink,     "Bad Unlink"     },
-	{ test_hal_sync_double_unlink,  "Double Unlink"  },
-	{ test_hal_sync_invalid_close,  "Invalid Close"  },
-	{ test_hal_sync_bad_close,      "Bad Close"      },
-	{ test_hal_sync_double_close,   "Double Close"   },
-	{ test_hal_sync_invalid_signal, "Invalid Signal" },
-	{ test_hal_sync_bad_signal,     "Bad Signal"     },
-	{ test_hal_sync_invalid_wait,   "Invalid Wait"   },
-	{ test_hal_sync_bad_wait,       "Bad Wait"       },
+	{ test_sys_sync_invalid_create, "Invalid Create" },
+	{ test_sys_sync_bad_create,     "Bad Create"     },
+	{ test_sys_sync_invalid_open,   "Invalid Open"   },
+	{ test_sys_sync_bad_open,       "Bad Open"       },
+	{ test_sys_sync_invalid_unlink, "Invalid Unlink" },
+	{ test_sys_sync_bad_unlink,     "Bad Unlink"     },
+	{ test_sys_sync_double_unlink,  "Double Unlink"  },
+	{ test_sys_sync_invalid_close,  "Invalid Close"  },
+	{ test_sys_sync_bad_close,      "Bad Close"      },
+	{ test_sys_sync_double_close,   "Double Close"   },
+	{ test_sys_sync_invalid_signal, "Invalid Signal" },
+	{ test_sys_sync_bad_signal,     "Bad Signal"     },
+	{ test_sys_sync_invalid_wait,   "Invalid Wait"   },
+	{ test_sys_sync_bad_wait,       "Bad Wait"       },
 	{ NULL,                         NULL             },
 };

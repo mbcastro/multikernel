@@ -23,6 +23,7 @@
 # Conflicts.
 .PHONY: crt0
 .PHONY: crt1
+.PHONY: ipc
 
 #===============================================================================
 
@@ -30,25 +31,30 @@
 all: crt0 crt1
 
 # Builds startup routines for IO Cluster.
-crt0:
+crt0: ipc
 ifeq ($(BUILDING_IOCLUSTER),true)
 	cd crt0 && $(MAKE) all
 endif
-	
 
 # Builds startup routines for Compute Cluster.
-crt1:
+crt1: ipc
 ifeq ($(BUILDING_CCLUSTER),true)
 	cd crt1 && $(MAKE) all
 endif
+
+# Builds IPC library.
+ipc:
+	cd ipc && $(MAKE) all
 
 # Cleans compilation files.
 clean:
 	cd crt0 && $(MAKE) clean
 	cd crt1 && $(MAKE) clean
+	cd ipc && $(MAKE) clean
 
 # Cleans everything.
 distclean: clean
 	cd crt0 && $(MAKE) distclean
 	cd crt1 && $(MAKE) distclean
+	cd ipc && $(MAKE) distclean
 

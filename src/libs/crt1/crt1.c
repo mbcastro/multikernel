@@ -25,7 +25,7 @@
 
 #include <mppa/osconfig.h>
 
-#include <nanvix/init.h>
+#include <nanvix/syscalls.h>
 
 /* Forward definitions. */
 extern int main2(int, const char **);
@@ -38,7 +38,7 @@ int main(int argc, const char **argv)
 	int ret;
 
 	/* Initialization. */
-	if ((ret = kernel_setup()) != 0)
+	if ((ret = runtime_setup()) != 0)
 	{
 		printf("[KERNEL] startup failed\n");
 		return (EXIT_FAILURE);
@@ -47,7 +47,7 @@ int main(int argc, const char **argv)
 	main2(argc, argv);	
 
 	/* Cleanup. */
-	if ((ret = kernel_cleanup()) != 0)
+	if ((ret = runtime_cleanup()) != 0)
 	{
 		printf("[KERNEL] cleanup failed\n");
 		return (EXIT_FAILURE);

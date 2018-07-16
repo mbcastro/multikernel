@@ -27,10 +27,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define __NEED_HAL_NOC_
-#define __NEED_HAL_MAILBOX_
 #include <nanvix/const.h>
-#include <nanvix/hal.h>
+#include <nanvix/syscalls.h>
 #include <nanvix/pm.h>
 #include <nanvix/name.h>
 
@@ -206,7 +204,7 @@ int name_server(int inbox)
 	{
 		struct name_message msg;
 
-		assert(hal_mailbox_read(inbox, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
+		assert(sys_mailbox_read(inbox, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
 
 		/* Handle name requests. */
 		switch (msg.op)
@@ -220,13 +218,13 @@ int name_server(int inbox)
 				msg.nodeid = _name_lookup(msg.name);
 
 				/* Send response. */
-				source = hal_mailbox_open(msg.source);
+				source = sys_mailbox_open(msg.source);
 
 				assert(source >= 0);
 
-				assert(hal_mailbox_write(source, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
+				assert(sys_mailbox_write(source, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
 
-				assert(hal_mailbox_close(source) == 0);
+				assert(sys_mailbox_close(source) == 0);
 
 				break;
 
@@ -246,13 +244,13 @@ int name_server(int inbox)
 				assert(nr_registration >= 0);
 
 				/* Send acknowledgement. */
-				source = hal_mailbox_open(msg.source);
+				source = sys_mailbox_open(msg.source);
 
 				assert(source >= 0);
 
-				assert(hal_mailbox_write(source, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
+				assert(sys_mailbox_write(source, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
 
-				assert(hal_mailbox_close(source) == 0);
+				assert(sys_mailbox_close(source) == 0);
 
 				break;
 
@@ -271,13 +269,13 @@ int name_server(int inbox)
 				assert(nr_registration >= 0);
 
 				/* Send acknowledgement. */
-				source = hal_mailbox_open(msg.source);
+				source = sys_mailbox_open(msg.source);
 
 				assert(source >= 0);
 
-				assert(hal_mailbox_write(source, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
+				assert(sys_mailbox_write(source, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
 
-				assert(hal_mailbox_close(source) == 0);
+				assert(sys_mailbox_close(source) == 0);
 
 				break;
 
@@ -288,7 +286,7 @@ int name_server(int inbox)
 	}
 
 	/* House keeping. */
-		hal_mailbox_unlink(inbox);
+		sys_mailbox_unlink(inbox);
 
 	return (EXIT_SUCCESS);
 }

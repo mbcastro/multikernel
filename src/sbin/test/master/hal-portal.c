@@ -25,11 +25,7 @@
 
 #include <mppaipc.h>
 
-#define __NEED_HAL_CORE_
-#define __NEED_HAL_NOC_
-#define __NEED_HAL_SYNC_
-#define __NEED_HAL_PORTAL_
-#include <nanvix/hal.h>
+#include <nanvix/syscalls.h>
 #include <nanvix/limits.h>
 #include <nanvix/pm.h>
 
@@ -82,7 +78,7 @@ static void join_slaves(void)
 /**
  * @brief API Test: Create Unlink CC
  */
-static void test_hal_portal_create_unlink_cc(void)
+static void test_sys_portal_create_unlink_cc(void)
 {
 	char masternode_str[4];
 	char portal_nclusters_str[4];
@@ -98,7 +94,7 @@ static void test_hal_portal_create_unlink_cc(void)
 	printf("[nanvix][test][api][hal][portal] Create Unlink CC\n");
 
 	/* Build arguments. */
-	sprintf(masternode_str, "%d", hal_get_node_id());
+	sprintf(masternode_str, "%d", sys_get_node_id());
 	sprintf(portal_nclusters_str, "%d", NANVIX_PROC_MAX);
 	sprintf(test_str, "%d", 0);
 
@@ -113,7 +109,7 @@ static void test_hal_portal_create_unlink_cc(void)
 /**
  * @brief API Test: Open Close CC
  */
-static void test_hal_portal_open_close_cc(void)
+static void test_sys_portal_open_close_cc(void)
 {
 	char masternode_str[4];
 	char portal_nclusters_str[4];
@@ -129,7 +125,7 @@ static void test_hal_portal_open_close_cc(void)
 	printf("[nanvix][test][api][hal][portal] Open Close CC\n");
 
 	/* Build arguments. */
-	sprintf(masternode_str, "%d", hal_get_node_id());
+	sprintf(masternode_str, "%d", sys_get_node_id());
 	sprintf(portal_nclusters_str, "%d", NANVIX_PROC_MAX);
 	sprintf(test_str, "%d", 1);
 
@@ -144,7 +140,7 @@ static void test_hal_portal_open_close_cc(void)
 /**
  * @brief API Test: Read Write CC
  */
-static void test_hal_portal_read_write_cc(void)
+static void test_sys_portal_read_write_cc(void)
 {
 	char masternode_str[4];
 	char portal_nclusters_str[4];
@@ -160,7 +156,7 @@ static void test_hal_portal_read_write_cc(void)
 	printf("[nanvix][test][api][hal][portal] Read Write CC\n");
 
 	/* Build arguments. */
-	sprintf(masternode_str, "%d", hal_get_node_id());
+	sprintf(masternode_str, "%d", sys_get_node_id());
 	sprintf(portal_nclusters_str, "%d", NANVIX_PROC_MAX);
 	sprintf(test_str, "%d", 2);
 
@@ -175,7 +171,7 @@ static void test_hal_portal_read_write_cc(void)
 /**
  * @brief API Test: Read Write 2 CC
  */
-static void test_hal_portal_read_write2_cc(void)
+static void test_sys_portal_read_write2_cc(void)
 {
 	int syncid;
 	int nodes[NANVIX_PROC_MAX + 1];
@@ -193,17 +189,17 @@ static void test_hal_portal_read_write2_cc(void)
 	printf("[nanvix][test][api][hal][portal] Read Write 2 CC\n");
 
 	/* Build arguments. */
-	sprintf(masternode_str, "%d", hal_get_node_id());
+	sprintf(masternode_str, "%d", sys_get_node_id());
 	sprintf(portal_nclusters_str, "%d", NANVIX_PROC_MAX);
 	sprintf(test_str, "%d", 3);
 
 	/* Build nodes list. */
-	nodes[0] = hal_get_node_id();
+	nodes[0] = sys_get_node_id();
 	for (int i = 0; i < NANVIX_PROC_MAX; i++)
 		nodes[i + 1] = i;
 
 	/* Create synchronization point. */
-	TEST_ASSERT((syncid = hal_sync_create(
+	TEST_ASSERT((syncid = sys_sync_create(
 		nodes,
 		NANVIX_PROC_MAX + 1,
 		HAL_SYNC_ALL_TO_ONE)) >= 0
@@ -212,7 +208,7 @@ static void test_hal_portal_read_write2_cc(void)
 	spawn_slaves(args);
 
 	/* Wait. */
-	TEST_ASSERT(hal_sync_wait(syncid) == 0);
+	TEST_ASSERT(sys_sync_wait(syncid) == 0);
 
 	/* Send data. */
 	for (int i = 0; i < NANVIX_PROC_MAX; i++)
@@ -220,19 +216,19 @@ static void test_hal_portal_read_write2_cc(void)
 		int outportal;
 		char buffer[DATA_SIZE];
 
-		TEST_ASSERT((outportal = hal_portal_open(i)) >=0);
-		TEST_ASSERT((hal_portal_write(
+		TEST_ASSERT((outportal = sys_portal_open(i)) >=0);
+		TEST_ASSERT((sys_portal_write(
 			outportal,
 			buffer,
 			DATA_SIZE) == DATA_SIZE)
 		);
-		TEST_ASSERT(hal_portal_close(outportal) == 0);
+		TEST_ASSERT(sys_portal_close(outportal) == 0);
 	}
 
 	join_slaves();
 
 	/* House keeping. */
-	TEST_ASSERT(hal_sync_unlink(syncid) == 0);
+	TEST_ASSERT(sys_sync_unlink(syncid) == 0);
 }
 
 /*============================================================================*
@@ -242,7 +238,7 @@ static void test_hal_portal_read_write2_cc(void)
 /**
  * @brief API Test: Read Write 2 CC
  */
-static void test_hal_portal_read_write3_cc(void)
+static void test_sys_portal_read_write3_cc(void)
 {
 	int nodeid;
 	int inportal;
@@ -259,14 +255,14 @@ static void test_hal_portal_read_write3_cc(void)
 
 	printf("[nanvix][test][api][hal][portal] Read Write 3 CC\n");
 
-	nodeid = hal_get_node_id();
+	nodeid = sys_get_node_id();
 
 	/* Build arguments. */
 	sprintf(masternode_str, "%d", nodeid);
 	sprintf(portal_nclusters_str, "%d", NANVIX_PROC_MAX);
 	sprintf(test_str, "%d", 4);
 
-	TEST_ASSERT((inportal = hal_portal_create(nodeid)) >= 0);
+	TEST_ASSERT((inportal = sys_portal_create(nodeid)) >= 0);
 
 	spawn_slaves(args);
 
@@ -275,12 +271,12 @@ static void test_hal_portal_read_write3_cc(void)
 	{
 		char buffer[DATA_SIZE];
 
-		TEST_ASSERT((hal_portal_allow(
+		TEST_ASSERT((sys_portal_allow(
 			inportal,
 			i) == 0)
 		);
 
-		TEST_ASSERT((hal_portal_read(
+		TEST_ASSERT((sys_portal_read(
 			inportal,
 			buffer,
 			DATA_SIZE) == DATA_SIZE)
@@ -290,7 +286,7 @@ static void test_hal_portal_read_write3_cc(void)
 	join_slaves();
 
 	/* House keeping. */
-	TEST_ASSERT(hal_portal_unlink(inportal) == 0);
+	TEST_ASSERT(sys_portal_unlink(inportal) == 0);
 }
 
 /*============================================================================*/
@@ -298,12 +294,12 @@ static void test_hal_portal_read_write3_cc(void)
 /**
  * @brief Automated HAL portal test driver.
  */
-void test_hal_portal(void)
+void test_sys_portal(void)
 {
-	test_hal_portal_create_unlink_cc();
-	test_hal_portal_open_close_cc();
-	test_hal_portal_read_write_cc();
-	test_hal_portal_read_write2_cc();
-	test_hal_portal_read_write3_cc();
+	test_sys_portal_create_unlink_cc();
+	test_sys_portal_open_close_cc();
+	test_sys_portal_read_write_cc();
+	test_sys_portal_read_write2_cc();
+	test_sys_portal_read_write3_cc();
 }
 

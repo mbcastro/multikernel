@@ -22,9 +22,7 @@
 
 #include <errno.h>
 
-#define __NEED_HAL_NOC_
-#define __NEED_HAL_SYNC_
-#include <nanvix/hal.h>
+#include <nanvix/syscalls.h>
 
 /**
  * @brief Barrier flags.
@@ -187,7 +185,7 @@ int barrier_create(int *nodes, int nnodes)
 	if ((nnodes < 0) && (nnodes >= HAL_NR_NOC_NODES))
 		return (-EINVAL);
 
-	nodeid = hal_get_node_id();
+	nodeid = sys_get_node_id();
 
 	/* This node should be in the list. */
 	for (int i = 0; i < nnodes ; i++)
@@ -207,19 +205,19 @@ found:
 	if (nodeid == nodes[0])
 	{
 		/* This node is the leader of the barrier. */
-		if ((local = hal_sync_create(nodes, nnodes, HAL_SYNC_ALL_TO_ONE)) < 0)
+		if ((local = sys_sync_create(nodes, nnodes, HAL_SYNC_ALL_TO_ONE)) < 0)
 			goto error0;
 
-		if ((remote = hal_sync_open(nodes, nnodes, HAL_SYNC_ONE_TO_ALL)) < 0)
+		if ((remote = sys_sync_open(nodes, nnodes, HAL_SYNC_ONE_TO_ALL)) < 0)
 			goto error1;
 	}
 	else
 	{
 		/* This node is not the leader of the barrier. */
-		if ((local = hal_sync_create(nodes, nnodes, HAL_SYNC_ONE_TO_ALL)) < 0)
+		if ((local = sys_sync_create(nodes, nnodes, HAL_SYNC_ONE_TO_ALL)) < 0)
 			goto error0;
 
-		if ((remote = hal_sync_open(nodes, nnodes, HAL_SYNC_ALL_TO_ONE)) < 0)
+		if ((remote = sys_sync_open(nodes, nnodes, HAL_SYNC_ALL_TO_ONE)) < 0)
 			goto error1;
 	}
 
@@ -234,7 +232,7 @@ found:
 	return (barrierid);
 
 error1:
-	hal_sync_unlink(local);
+	sys_sync_unlink(local);
 error0:
 	barrier_free(barrierid);
 	return (-EAGAIN);
@@ -259,10 +257,10 @@ int barrier_unlink(int barrierid)
 	if (!barrier_is_used(barrierid))
 		return (-EINVAL);
 
-	if (hal_sync_unlink(barriers[barrierid].local) != 0)
+	if (sys_sync_unlink(barriers[barrierid].local) != 0)
 		return (-EAGAIN);
 
-	if (hal_sync_close(barriers[barrierid].remote) != 0)
+	if (sys_sync_close(barriers[barrierid].remote) != 0)
 		return (-EAGAIN);
 
 	if (barrier_free(barrierid) != 0)
@@ -292,17 +290,17 @@ int barrier_wait(int barrierid)
 	if (!barrier_is_used(barrierid))
 		return (-EINVAL);
 
-	nodeid = hal_get_node_id();
+	nodeid = sys_get_node_id();
 
 	/* Is this node the leader of the list ? */
 	if (nodeid == barriers[barrierid].nodes[0])
 	{
 		/* Wait for others nodes. */
-		if (hal_sync_wait(barriers[barrierid].local) != 0)
+		if (sys_sync_wait(barriers[barrierid].local) != 0)
 			return (-EAGAIN);
 
 		/* Signal others nodes. */
-		if (hal_sync_signal(barriers[barrierid].remote) != 0)
+		if (sys_sync_signal(barriers[barrierid].remote) != 0)
 			return (-EAGAIN);
 	}
 	else
@@ -319,11 +317,11 @@ int barrier_wait(int barrierid)
 found:
 
 		/* Signal leader. */
-		if (hal_sync_signal(barriers[barrierid].remote) != 0)
+		if (sys_sync_signal(barriers[barrierid].remote) != 0)
 			return (-EAGAIN);
 
 		/* Wait for leader node. */
-		if (hal_sync_wait(barriers[barrierid].local) != 0)
+		if (sys_sync_wait(barriers[barrierid].local) != 0)
 			return (-EAGAIN);
 	}
 

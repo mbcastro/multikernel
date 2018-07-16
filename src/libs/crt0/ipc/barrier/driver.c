@@ -24,8 +24,8 @@
 
 #define __NEED_HAL_CORE_
 #define __NEED_HAL_NOC_
-#include <nanvix/hal.h>
-#include <nanvix/init.h>
+#include <nanvix/syscalls.h>
+#include <nanvix/syscalls.h>
 
 #include "test.h"
 
@@ -39,9 +39,9 @@ int ipc_barrier_ncores = 0;
  */
 void test_kernel_ipc_barrier(int nbusycores)
 {
-	TEST_ASSERT(kernel_setup() == 0);
+	TEST_ASSERT(runtime_setup() == 0);
 
-	ipc_barrier_ncores = hal_get_num_cores() - nbusycores;
+	ipc_barrier_ncores = sys_get_num_cores() - nbusycores;
 
 	/* Run API tests. */
 	for (int i = 0; ipc_barrier_tests_api[i].test_fn != NULL; i++)
@@ -50,6 +50,6 @@ void test_kernel_ipc_barrier(int nbusycores)
 		ipc_barrier_tests_api[i].test_fn();
 	}
 
-	TEST_ASSERT(kernel_cleanup() == 0);
+	TEST_ASSERT(runtime_cleanup() == 0);
 }
 

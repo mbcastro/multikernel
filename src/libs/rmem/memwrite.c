@@ -20,39 +20,35 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <pthread.h>
-#include <stdio.h>
-
-#define __NEED_HAL_CORE_
-#define __NEED_HAL_NOC_
 #include <nanvix/syscalls.h>
-
-#include "test.h"
-
-/**
- * @brief Number of cores in the underlying cluster.
- */
-int ipc_mailbox_ncores = 0;
+#include <nanvix/mm.h>
+#include <nanvix/pm.h>
+#include <stdio.h>
+#include <string.h>
+#include "mem.h"
 
 /**
- * @brief Global barrier for synchronization.
+ * @brief Writes data to a remote memory.
+ *
+ * @param addr Remote address.
+ * @param bug  Location where the data should be read from.
+ * @param n    Number of bytes to write.
  */
-pthread_barrier_t barrier;
-
-/**
- * @brief Unnamed Mailbox Test Driver
- */
-void test_kernel_ipc_mailbox(void)
+void memwrite(uint64_t addr, const void *buf, size_t n)
 {
-	ipc_mailbox_ncores = sys_get_num_cores();
+	struct rmem_message msg;
 
-	pthread_barrier_init(&barrier, NULL, ipc_mailbox_ncores - 1);
+	meminit();
 
-	/* Run API tests. */
-	for (int i = 0; ipc_mailbox_tests_api[i].test_fn != NULL; i++)
-	{
-		printf("[nanvix][test][api][ipc][mailbox] %s\n", ipc_mailbox_tests_api[i].name);
-		ipc_mailbox_tests_api[i].test_fn();
-	}
+	/* Build operation header. */
+	msg.source = sys_get_cluster_id();
+	msg.op = RMEM_WRITE;
+	msg.blknum = addr;
+	msg.size = n;
+
+	/* Send operation header. */
+	mailbox_write(_mem_outbox, &msg);
+
+	/* Send data. */
+	portal_write(_mem_outportal, buf, n);
 }
-

@@ -20,56 +20,71 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <pthread.h>
-#include <stdio.h>
-
 #define __NEED_HAL_CORE_
-#define __NEED_HAL_NOC_
-#include <nanvix/syscalls.h>
-
-#include "test.h"
+#include <nanvix/hal.h>
 
 /**
- * @brief Number of remote clusters.
+ * @brief Gets the ID of the underlying cluster.
+ *
+ * @returns The ID of the underlying cluster
+ *
+ * @note This function is non-blocking.
+ * @note This function is thread-safe.
  */
-int sync_nclusters = 0;
-
-/**
- * @brief Number of cores in the underlying cluster.
- */
-int ncores = 0;
-
-/**
- * @brief Nodes list.
- */
-int nodes[HAL_NR_NOC_NODES];
-
-/**
- * @brief Global barrier for synchronization.
- */
-pthread_barrier_t barrier;
-
-/**
- * @brief Synchronization Point Test Driver
- */
-void test_kernel_sys_sync(void)
+int sys_get_cluster_id(void)
 {
-	ncores = sys_get_num_cores();
+	return (hal_get_cluster_id());
+}
 
-	pthread_barrier_init(&barrier, NULL, ncores - 1);
+/**
+ * @brief Gets the ID of the underlying core.
+ *
+ * @returns The ID of the underlying core.
+ *
+ * @note This function is blocking.
+ * @note This function is thread-safe.
+ */
+int sys_get_core_id(void)
+{
+	return (hal_get_core_id());
+}
 
-	/* Run API tests. */
-	for (int i = 0; tests_api[i].test_fn != NULL; i++)
-	{
-		printf("[nanvix][test][api][hal][sync] %s\n", tests_api[i].name);
-		tests_api[i].test_fn();
-	}
+/**
+ * @brief Gets the type of the underlying core.
+ *
+ * @returns The type of the underlying core.
+ *
+ * @note This function is non-blocking.
+ * @note This function is thread-safe.
+ */
+int sys_get_core_type(void)
+{
+	return (hal_get_core_type());
+}
 
-	/* Run fault injection tests. */
-	for (int i = 0; tests_fault[i].test_fn != NULL; i++)
-	{
-		printf("[nanvix][test][fault][hal][sync] %s\n", tests_fault[i].name);
-		tests_fault[i].test_fn();
-	}
+/**
+ * @brief Gets the number of cores in the processor.
+ *
+ * @returns The number of cores in the processor.
+ *
+ * @note This function is non-blocking.
+ * @note This function is thread-safe.
+ */
+int sys_get_num_cores(void)
+{
+	return (hal_get_num_cores());
+}
+
+/**
+ * @brief Gets the frequency of the underlying core.
+ *
+ * @returns The frequency of the underlying core.
+ *
+ * @note This function is non-blocking.
+ * @note This function is thread-safe.
+ */
+int sys_get_core_freq(void)
+{
+	return (hal_get_core_freq());
 }
 

@@ -29,7 +29,7 @@
 #define __NEED_HAL_SYNC_
 #define __NEED_HAL_MAILBOX_
 #include <nanvix/const.h>
-#include <nanvix/hal.h>
+#include <nanvix/syscalls.h>
 #include <nanvix/pm.h>
 
 #include "test.h"
@@ -41,11 +41,11 @@
 /**
  * @brief Fault Injection Test: Invalid Create
  */
-static void test_hal_mailbox_invalid_create(void)
+static void test_sys_mailbox_invalid_create(void)
 {
 	int inbox;
 
-	TEST_ASSERT((inbox = hal_mailbox_create(-1)) < 0);
+	TEST_ASSERT((inbox = sys_mailbox_create(-1)) < 0);
 }
 
 /*============================================================================*
@@ -55,11 +55,11 @@ static void test_hal_mailbox_invalid_create(void)
 /**
  * @brief Fault Injection Test: Bad Create
  */
-static void test_hal_mailbox_bad_create(void)
+static void test_sys_mailbox_bad_create(void)
 {
 	int inbox;
 
-	TEST_ASSERT((inbox = hal_mailbox_create(NAME_SERVER_NODE)) < 0);
+	TEST_ASSERT((inbox = sys_mailbox_create(NAME_SERVER_NODE)) < 0);
 }
 
 /*============================================================================*
@@ -69,17 +69,17 @@ static void test_hal_mailbox_bad_create(void)
 /**
  * @brief Fault Injection Test: Double Create
  */
-static void test_hal_mailbox_double_create(void)
+static void test_sys_mailbox_double_create(void)
 {
 	int inbox;
 	int nodeid;
 
-	nodeid = hal_get_node_id();
+	nodeid = sys_get_node_id();
 
-	TEST_ASSERT((inbox = hal_mailbox_create(nodeid)) >= 0);
-	TEST_ASSERT(hal_mailbox_create(nodeid) < 0);
+	TEST_ASSERT((inbox = sys_mailbox_create(nodeid)) >= 0);
+	TEST_ASSERT(sys_mailbox_create(nodeid) < 0);
 
-	TEST_ASSERT(hal_mailbox_unlink(inbox) == 0);
+	TEST_ASSERT(sys_mailbox_unlink(inbox) == 0);
 }
 
 /*============================================================================*
@@ -89,11 +89,11 @@ static void test_hal_mailbox_double_create(void)
 /**
  * @brief Fault Injection Test: Invalid Open
  */
-static void test_hal_mailbox_invalid_open(void)
+static void test_sys_mailbox_invalid_open(void)
 {
 	int outbox;
 
-	TEST_ASSERT((outbox = hal_mailbox_open(-1)) < 0);
+	TEST_ASSERT((outbox = sys_mailbox_open(-1)) < 0);
 }
 
 /*============================================================================*
@@ -103,14 +103,14 @@ static void test_hal_mailbox_invalid_open(void)
 /**
  * @brief Fault Injection Test: Bad Open
  */
-static void test_hal_mailbox_bad_open(void)
+static void test_sys_mailbox_bad_open(void)
 {
 	int outbox;
 	int nodeid;
 
-	nodeid = hal_get_node_id();
+	nodeid = sys_get_node_id();
 
-	TEST_ASSERT((outbox = hal_mailbox_open(nodeid)) < 0);
+	TEST_ASSERT((outbox = sys_mailbox_open(nodeid)) < 0);
 }
 
 /*============================================================================*
@@ -120,17 +120,17 @@ static void test_hal_mailbox_bad_open(void)
 /**
  * @brief Fault Injection Test: Double Open
  */
-static void test_hal_mailbox_double_open(void)
+static void test_sys_mailbox_double_open(void)
 {
 	int outbox;
 	int nodeid;
 
-	nodeid = hal_get_node_id();
+	nodeid = sys_get_node_id();
 
-	TEST_ASSERT((outbox = hal_mailbox_open(nodeid + 1)) >= 0);
-	TEST_ASSERT(hal_mailbox_open(nodeid + 1) < 0);
+	TEST_ASSERT((outbox = sys_mailbox_open(nodeid + 1)) >= 0);
+	TEST_ASSERT(sys_mailbox_open(nodeid + 1) < 0);
 
-	TEST_ASSERT(hal_mailbox_close(outbox) == 0);
+	TEST_ASSERT(sys_mailbox_close(outbox) == 0);
 }
 
 /*============================================================================*
@@ -140,16 +140,16 @@ static void test_hal_mailbox_double_open(void)
 /**
  * @brief Fault Injection Test: Double Unlink
  */
-static void test_hal_mailbox_double_unlink(void)
+static void test_sys_mailbox_double_unlink(void)
 {
 	int inbox;
 	int nodeid;
 
-	nodeid = hal_get_node_id();
+	nodeid = sys_get_node_id();
 
-	TEST_ASSERT((inbox = hal_mailbox_create(nodeid)) >= 0);
-	TEST_ASSERT(hal_mailbox_unlink(inbox) == 0);
-	TEST_ASSERT(hal_mailbox_unlink(inbox) < 0);
+	TEST_ASSERT((inbox = sys_mailbox_create(nodeid)) >= 0);
+	TEST_ASSERT(sys_mailbox_unlink(inbox) == 0);
+	TEST_ASSERT(sys_mailbox_unlink(inbox) < 0);
 }
 
 /*============================================================================*
@@ -159,16 +159,16 @@ static void test_hal_mailbox_double_unlink(void)
 /**
  * @brief Fault Injection Test: Double Close
  */
-static void test_hal_mailbox_double_close(void)
+static void test_sys_mailbox_double_close(void)
 {
 	int outbox;
 	int nodeid;
 
-	nodeid = hal_get_node_id();
+	nodeid = sys_get_node_id();
 
-	TEST_ASSERT((outbox = hal_mailbox_open(nodeid + 1)) >= 0);
-	TEST_ASSERT(hal_mailbox_close(outbox) == 0);
-	TEST_ASSERT(hal_mailbox_close(outbox) < 0);
+	TEST_ASSERT((outbox = sys_mailbox_open(nodeid + 1)) >= 0);
+	TEST_ASSERT(sys_mailbox_close(outbox) == 0);
+	TEST_ASSERT(sys_mailbox_close(outbox) < 0);
 }
 
 /*============================================================================*
@@ -178,13 +178,13 @@ static void test_hal_mailbox_double_close(void)
 /**
  * @brief Fault Injection Test: Invalid Write
  */
-static void test_hal_mailbox_invalid_write(void)
+static void test_sys_mailbox_invalid_write(void)
 {
 	char buf[HAL_MAILBOX_MSG_SIZE];
 
 	memset(buf, 1, HAL_MAILBOX_MSG_SIZE);
-	TEST_ASSERT(hal_mailbox_write(-1, buf, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE);
-	TEST_ASSERT(hal_mailbox_write(100000, buf, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE);
+	TEST_ASSERT(sys_mailbox_write(-1, buf, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE);
+	TEST_ASSERT(sys_mailbox_write(100000, buf, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE);
 }
 
 /*============================================================================*
@@ -194,20 +194,20 @@ static void test_hal_mailbox_invalid_write(void)
 /**
  * @brief Fault Injection Test: Bad Write
  */
-static void test_hal_mailbox_bad_write(void)
+static void test_sys_mailbox_bad_write(void)
 {
 	int inbox;
 	char buf[HAL_MAILBOX_MSG_SIZE];
 	int nodeid;
 
-	nodeid = hal_get_node_id();
+	nodeid = sys_get_node_id();
 
-	TEST_ASSERT((inbox = hal_mailbox_create(nodeid)) >= 0);
+	TEST_ASSERT((inbox = sys_mailbox_create(nodeid)) >= 0);
 
 	memset(buf, 1, HAL_MAILBOX_MSG_SIZE);
-	TEST_ASSERT(hal_mailbox_write(inbox, buf, 1) != HAL_MAILBOX_MSG_SIZE);
+	TEST_ASSERT(sys_mailbox_write(inbox, buf, 1) != HAL_MAILBOX_MSG_SIZE);
 
-	TEST_ASSERT(hal_mailbox_unlink(inbox) == 0);
+	TEST_ASSERT(sys_mailbox_unlink(inbox) == 0);
 }
 
 /*============================================================================*
@@ -217,16 +217,16 @@ static void test_hal_mailbox_bad_write(void)
 /**
  * @brief Fault Injection Test: Null Write
  */
-static void test_hal_mailbox_null_write(void)
+static void test_sys_mailbox_null_write(void)
 {
 	int outbox;
 	int nodeid;
 
-	nodeid = hal_get_node_id();
+	nodeid = sys_get_node_id();
 
-	TEST_ASSERT((outbox = hal_mailbox_open(nodeid + 1)) >= 0);
-	TEST_ASSERT(hal_mailbox_write(outbox, NULL, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE);
-	TEST_ASSERT(hal_mailbox_close(outbox) == 0);
+	TEST_ASSERT((outbox = sys_mailbox_open(nodeid + 1)) >= 0);
+	TEST_ASSERT(sys_mailbox_write(outbox, NULL, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE);
+	TEST_ASSERT(sys_mailbox_close(outbox) == 0);
 }
 
 /*============================================================================*
@@ -236,13 +236,13 @@ static void test_hal_mailbox_null_write(void)
 /**
  * @brief Fault Injection Test: Invalid Read
  */
-static void test_hal_mailbox_invalid_read(void)
+static void test_sys_mailbox_invalid_read(void)
 {
 	char buf[HAL_MAILBOX_MSG_SIZE];
 
 	memset(buf, 1, HAL_MAILBOX_MSG_SIZE);
-	TEST_ASSERT(hal_mailbox_read(-1, buf, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE);
-	TEST_ASSERT(hal_mailbox_read(100000, buf, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE);
+	TEST_ASSERT(sys_mailbox_read(-1, buf, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE);
+	TEST_ASSERT(sys_mailbox_read(100000, buf, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE);
 }
 
 /*============================================================================*
@@ -252,20 +252,20 @@ static void test_hal_mailbox_invalid_read(void)
 /**
  * @brief Fault Injection Test: Bad Read
  */
-static void test_hal_mailbox_bad_read(void)
+static void test_sys_mailbox_bad_read(void)
 {
 	int outbox;
 	char buf[HAL_MAILBOX_MSG_SIZE];
 	int nodeid;
 
-	nodeid = hal_get_node_id();
+	nodeid = sys_get_node_id();
 
-	TEST_ASSERT((outbox = hal_mailbox_open(nodeid + 1)) >= 0);
+	TEST_ASSERT((outbox = sys_mailbox_open(nodeid + 1)) >= 0);
 
 	memset(buf, 1, HAL_MAILBOX_MSG_SIZE);
-	TEST_ASSERT(hal_mailbox_read(outbox, buf, 1) != HAL_MAILBOX_MSG_SIZE);
+	TEST_ASSERT(sys_mailbox_read(outbox, buf, 1) != HAL_MAILBOX_MSG_SIZE);
 
-	TEST_ASSERT(hal_mailbox_close(outbox) == 0);
+	TEST_ASSERT(sys_mailbox_close(outbox) == 0);
 }
 
 /*============================================================================*
@@ -275,16 +275,16 @@ static void test_hal_mailbox_bad_read(void)
 /**
  * @brief Fault Injection Test: Null Read
  */
-static void test_hal_mailbox_null_read(void)
+static void test_sys_mailbox_null_read(void)
 {
 	int inbox;
 	int nodeid;
 
-	nodeid = hal_get_node_id();
+	nodeid = sys_get_node_id();
 
-	TEST_ASSERT((inbox = hal_mailbox_create(nodeid)) >= 0);
-	TEST_ASSERT(hal_mailbox_read(inbox, NULL, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE);
-	TEST_ASSERT(hal_mailbox_unlink(inbox) == 0);
+	TEST_ASSERT((inbox = sys_mailbox_create(nodeid)) >= 0);
+	TEST_ASSERT(sys_mailbox_read(inbox, NULL, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE);
+	TEST_ASSERT(sys_mailbox_unlink(inbox) == 0);
 }
 
 /*============================================================================*/
@@ -293,19 +293,19 @@ static void test_hal_mailbox_null_read(void)
  * @brief Unit tests.
  */
 struct test mailbox_tests_fault[] = {
-	{ test_hal_mailbox_invalid_create, "Invalid Create" },
-	{ test_hal_mailbox_bad_create,     "Bad Create"     },
-	{ test_hal_mailbox_double_create,  "Double Create"  },
-	{ test_hal_mailbox_invalid_open,   "Invalid Open"   },
-	{ test_hal_mailbox_bad_open,       "Bad Open"       },
-	{ test_hal_mailbox_double_open,    "Double Open"    },
-	{ test_hal_mailbox_double_unlink,  "Double Unlink"  },
-	{ test_hal_mailbox_double_close,   "Double Close"   },
-	{ test_hal_mailbox_invalid_write,  "Invalid Write"  },
-	{ test_hal_mailbox_bad_write,      "Bad Write"      },
-	{ test_hal_mailbox_null_write,     "Null Write"     },
-	{ test_hal_mailbox_invalid_read,   "Invalid Read"   },
-	{ test_hal_mailbox_bad_read,       "Bad Read"       },
-	{ test_hal_mailbox_null_read,      "Null Read"      },
+	{ test_sys_mailbox_invalid_create, "Invalid Create" },
+	{ test_sys_mailbox_bad_create,     "Bad Create"     },
+	{ test_sys_mailbox_double_create,  "Double Create"  },
+	{ test_sys_mailbox_invalid_open,   "Invalid Open"   },
+	{ test_sys_mailbox_bad_open,       "Bad Open"       },
+	{ test_sys_mailbox_double_open,    "Double Open"    },
+	{ test_sys_mailbox_double_unlink,  "Double Unlink"  },
+	{ test_sys_mailbox_double_close,   "Double Close"   },
+	{ test_sys_mailbox_invalid_write,  "Invalid Write"  },
+	{ test_sys_mailbox_bad_write,      "Bad Write"      },
+	{ test_sys_mailbox_null_write,     "Null Write"     },
+	{ test_sys_mailbox_invalid_read,   "Invalid Read"   },
+	{ test_sys_mailbox_bad_read,       "Bad Read"       },
+	{ test_sys_mailbox_null_read,      "Null Read"      },
 	{ NULL,                            NULL             },
 };

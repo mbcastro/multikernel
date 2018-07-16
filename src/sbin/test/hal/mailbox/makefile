@@ -34,7 +34,7 @@ export ELFBIN = $(BINDIR)/test/hal-mailbox-slave
 # Builds the kernel.
 all: $(OBJ)
 	mkdir -p $(BINDIR)/test/
-	$(CC) $(LDFLAGS) $(OBJ) $(CRT1) -o $(ELFBIN) $(LIBKERNEL) $(LIBS)
+	$(CC) $(LDFLAGS) $(OBJ) $(CRT1) -o $(ELFBIN) $(LIBUSER) $(LIBKERNEL) $(LIBS)
 
 # Builds object files.
 %.o: %.c

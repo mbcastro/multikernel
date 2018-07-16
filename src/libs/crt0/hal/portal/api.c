@@ -29,7 +29,7 @@
 #define __NEED_HAL_NOC_
 #define __NEED_HAL_SETUP_
 #define __NEED_HAL_PORTAL_
-#include <nanvix/hal.h>
+#include <nanvix/syscalls.h>
 
 #include "test.h"
 
@@ -42,50 +42,50 @@
 /**
  * @brief API Test: Portal Create Unlink
  */
-static void *test_hal_portal_thread_create_unlink(void *args)
+static void *test_sys_portal_thread_create_unlink(void *args)
 {
 	int inportal;
 	int nodeid;
 	
 	((void)args);
 
-	hal_setup();
+	sys_setup();
 
 	pthread_barrier_wait(&barrier);
 
-	nodeid = hal_get_node_id();
+	nodeid = sys_get_node_id();
 
-	TEST_ASSERT((inportal = hal_portal_create(nodeid)) >= 0);
+	TEST_ASSERT((inportal = sys_portal_create(nodeid)) >= 0);
 
 	pthread_barrier_wait(&barrier);
 
-	TEST_ASSERT(hal_portal_unlink(inportal) == 0);
+	TEST_ASSERT(sys_portal_unlink(inportal) == 0);
 
-	hal_cleanup();
+	sys_cleanup();
 	return (NULL);
 }
 
 /**
  * @brief API Test: Portal Create Unlink
  */
-static void test_hal_portal_create_unlink(void)
+static void test_sys_portal_create_unlink(void)
 {
-	int tids[hal_portal_ncores];
-	pthread_t threads[hal_portal_ncores];
+	int tids[sys_portal_ncores];
+	pthread_t threads[sys_portal_ncores];
 
 	/* Spawn driver threads. */
-	for (int i = 1; i < hal_portal_ncores; i++)
+	for (int i = 1; i < sys_portal_ncores; i++)
 	{
 		tids[i] = i;
 		TEST_ASSERT((pthread_create(&threads[i],
 			NULL,
-			test_hal_portal_thread_create_unlink,
+			test_sys_portal_thread_create_unlink,
 			&tids[i])) == 0
 		);
 	}
 
 	/* Wait for driver threads. */
-	for (int i = 1; i < hal_portal_ncores; i++)
+	for (int i = 1; i < sys_portal_ncores; i++)
 		pthread_join(threads[i], NULL);
 }
 
@@ -96,55 +96,55 @@ static void test_hal_portal_create_unlink(void)
 /**
  * @brief API Test: Portal Open Close
  */
-static void *test_hal_portal_thread_open_close(void *args)
+static void *test_sys_portal_thread_open_close(void *args)
 {
 	int outportal;
 	int tid;
 	int nodeid;
 
-	hal_setup();
+	sys_setup();
 
 	pthread_barrier_wait(&barrier);
 
 	tid = ((int *)args)[0];
 
-	nodeid = hal_get_node_id();
+	nodeid = sys_get_node_id();
 
 	pthread_barrier_wait(&barrier);
 
-	TEST_ASSERT((outportal = hal_portal_open(((tid + 1) == hal_portal_ncores) ?
-		nodeid + 1 - hal_portal_ncores + 1:
+	TEST_ASSERT((outportal = sys_portal_open(((tid + 1) == sys_portal_ncores) ?
+		nodeid + 1 - sys_portal_ncores + 1:
 		nodeid + 1)) >= 0);
 
 	pthread_barrier_wait(&barrier);
 
-	TEST_ASSERT(hal_portal_close(outportal) == 0);
+	TEST_ASSERT(sys_portal_close(outportal) == 0);
 
-	hal_cleanup();
+	sys_cleanup();
 	return (NULL);
 }
 
 /**
  * @brief API Test: Portal Open Close
  */
-static void test_hal_portal_open_close(void)
+static void test_sys_portal_open_close(void)
 {
-	int tids[hal_portal_ncores];
-	pthread_t threads[hal_portal_ncores];
+	int tids[sys_portal_ncores];
+	pthread_t threads[sys_portal_ncores];
 
 	/* Spawn driver threads. */
-	for (int i = 1; i < hal_portal_ncores; i++)
+	for (int i = 1; i < sys_portal_ncores; i++)
 	{
 		tids[i] = i;
 		TEST_ASSERT((pthread_create(&threads[i],
 			NULL,
-			test_hal_portal_thread_open_close,
+			test_sys_portal_thread_open_close,
 			&tids[i])) == 0
 		);
 	}
 
 	/* Wait for driver threads. */
-	for (int i = 1; i < hal_portal_ncores; i++)
+	for (int i = 1; i < sys_portal_ncores; i++)
 		pthread_join(threads[i], NULL);
 }
 
@@ -155,7 +155,7 @@ static void test_hal_portal_open_close(void)
 /**
  * @brief API Test: Portal Read Write thread
  */
-static void *test_hal_portal_thread_read_write(void *args)
+static void *test_sys_portal_thread_read_write(void *args)
 {
 	int tnum;
 	int outportal;
@@ -165,75 +165,75 @@ static void *test_hal_portal_thread_read_write(void *args)
 	int clusterid;
 	int TID_READ = 1;
 
-	hal_setup();
+	sys_setup();
 
 	pthread_barrier_wait(&barrier);
 
 	tnum = ((int *)args)[0];
 
-	nodeid = hal_get_node_id();
-	clusterid = hal_get_cluster_id();
+	nodeid = sys_get_node_id();
+	clusterid = sys_get_cluster_id();
 
 	/* Reader thread */
 	if (tnum == 1)
 	{
-		TEST_ASSERT((inportal = hal_portal_create(nodeid)) >= 0);
+		TEST_ASSERT((inportal = sys_portal_create(nodeid)) >= 0);
 		pthread_barrier_wait(&barrier);
 
-		for (int i = 1; i < hal_portal_ncores; i++)
+		for (int i = 1; i < sys_portal_ncores; i++)
 		{
 			if (clusterid + i == nodeid)
 				continue;
 
 			/* Enables read operations. */
-			TEST_ASSERT(hal_portal_allow(inportal, clusterid + i) == 0);
+			TEST_ASSERT(sys_portal_allow(inportal, clusterid + i) == 0);
 
 			memset(buf, 0, DATA_SIZE);
-			TEST_ASSERT(hal_portal_read(inportal, buf, DATA_SIZE) == DATA_SIZE);
+			TEST_ASSERT(sys_portal_read(inportal, buf, DATA_SIZE) == DATA_SIZE);
 
 			for (int j = 0; j < DATA_SIZE; j++)
 				TEST_ASSERT(buf[j] == 1);
 		}
 
-		TEST_ASSERT(hal_portal_unlink(inportal) == 0);
+		TEST_ASSERT(sys_portal_unlink(inportal) == 0);
 	}
 	else
 	{
-		TEST_ASSERT((outportal = hal_portal_open(clusterid + TID_READ)) >= 0);
+		TEST_ASSERT((outportal = sys_portal_open(clusterid + TID_READ)) >= 0);
 		pthread_barrier_wait(&barrier);
 
 		memset(buf, 1, DATA_SIZE);
-		TEST_ASSERT(hal_portal_write(outportal, buf, DATA_SIZE) == DATA_SIZE);
+		TEST_ASSERT(sys_portal_write(outportal, buf, DATA_SIZE) == DATA_SIZE);
 
-		TEST_ASSERT(hal_portal_close(outportal) == 0);
+		TEST_ASSERT(sys_portal_close(outportal) == 0);
 	}
 
-	hal_cleanup();
+	sys_cleanup();
 	return (NULL);
 }
 
 /**
  * @brief API Test: Portal Read Write
  */
-static void test_hal_portal_read_write(void)
+static void test_sys_portal_read_write(void)
 {
-	int tids[hal_portal_ncores];
-	pthread_t threads[hal_portal_ncores];
+	int tids[sys_portal_ncores];
+	pthread_t threads[sys_portal_ncores];
 
 	/* Spawn driver threads. */
-	for (int i = 1; i < hal_portal_ncores; i++)
+	for (int i = 1; i < sys_portal_ncores; i++)
 	{
 		tids[i] = i;
 
 		TEST_ASSERT((pthread_create(&threads[i],
 			NULL,
-			test_hal_portal_thread_read_write,
+			test_sys_portal_thread_read_write,
 			&tids[i])) == 0
 		);
 	}
 
 	/* Wait for driver threads. */
-	for (int i = 1; i < hal_portal_ncores; i++)
+	for (int i = 1; i < sys_portal_ncores; i++)
 		pthread_join(threads[i], NULL);
 }
 
@@ -242,9 +242,9 @@ static void test_hal_portal_read_write(void)
 /**
  * @brief Unit tests.
  */
-struct test hal_portal_tests_api[] = {
-	{ test_hal_portal_create_unlink, "Create Unlink" },
-	{ test_hal_portal_read_write,    "Read Write"    },
-	{ test_hal_portal_open_close,    "Open Close"    },
+struct test sys_portal_tests_api[] = {
+	{ test_sys_portal_create_unlink, "Create Unlink" },
+	{ test_sys_portal_read_write,    "Read Write"    },
+	{ test_sys_portal_open_close,    "Open Close"    },
 	{ NULL,                           NULL           },
 };

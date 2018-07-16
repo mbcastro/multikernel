@@ -25,9 +25,18 @@
 
 	#include <stddef.h>
 
-/*=======================================================================*
- * Mailbox                                                               *
- *=======================================================================*/
+/*============================================================================*
+ * Barrier                                                                    *
+ *============================================================================*/
+
+	/* Forward definitions. */
+	extern int barrier_create(int *, int);
+	extern int barrier_wait(int);
+	extern int barrier_unlink(int);
+
+/*============================================================================*
+ * Mailbox                                                                    *
+ *============================================================================*/
 
 	/* Forward definitions .*/
 	extern int get_inbox(void);
@@ -40,9 +49,9 @@
 	extern int mailbox_close(int);
 	extern int mailbox_unlink(int);
 
-/*=======================================================================*
- * Portal                                                                *
- *=======================================================================*/
+/*============================================================================*
+ * Portal                                                                     *
+ *============================================================================*/
 
 	/* Forward definitions .*/
 	extern int portal_allow(int, int);
@@ -52,14 +61,5 @@
 	extern int portal_write(int, const void *, size_t);
 	extern int portal_close(int);
 	extern int portal_unlink(int);
-
-/*======================================================================*
- * Barrier                                                              *
- *=======================================================================*/
-
-	/* Forward definitions. */
-	extern int barrier_create(int *, int);
-	extern int barrier_wait(int);
-	extern int barrier_unlink(int);
 
 #endif /* NANVIX_PM_H_ */

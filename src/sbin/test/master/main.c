@@ -24,9 +24,9 @@
 #include <string.h>
 
 /* Forward definitions. */
-extern void test_hal_sync(void);
-extern void test_hal_mailbox(void);
-extern void test_hal_portal(void);
+extern void test_sys_sync(void);
+extern void test_sys_mailbox(void);
+extern void test_sys_portal(void);
 
 /**
  * @brief Launches automated tests.
@@ -46,11 +46,11 @@ int main2(int argc, const char **argv)
 
 	/* Launch test driver. */
 	if (!strcmp(argv[2], "--hal-sync"))
-		test_hal_sync();
+		test_sys_sync();
 	else if (!strcmp(argv[2], "--hal-mailbox"))
-		test_hal_mailbox();
+		test_sys_mailbox();
 	else if (!strcmp(argv[2], "--hal-portal"))
-		test_hal_portal();
+		test_sys_portal();
 
 	return (EXIT_SUCCESS);
 }

@@ -20,41 +20,40 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <nanvix/hal.h>
+#include <nanvix/syscalls.h>
 #include <nanvix/mm.h>
 #include <nanvix/pm.h>
-#include <nanvix/name.h>
 #include <stdio.h>
-#include <assert.h>
+#include <string.h>
+#include "mem.h"
 
 /**
- * @brief Underlying IPC connectors.
+ * @brief Reads from a remote memory.
+ *
+ * @param addr Remote address.
+ * @param bug  Location where the data should be written to.
+ * @param n    Number of bytes to read.
  */
-/**@{*/
-int _mem_outbox = -1;    /* Mailbox used for small transfers. */
-int _mem_inportal = -1;  /* Portal used for large transfers.  */
-int _mem_outportal = -1; /* Portal used for large transfers.  */
-/**@}*/
-
-/**
- * @brief Initializes the RMA engine.
- */
-void meminit(void)
+void memread(uint64_t addr, void *buf, size_t n)
 {
-	int clusterid;                   /* Cluster ID of the calling process.   */
-	static int initialized = 0;      /* IS RMA Engine initialized?           */
+	int clusterid;           /* Cluster ID of the calling process. */
+	struct rmem_message msg; /* Remote memory operation.           */
 
-	/* Already initialized.  */
-	if (initialized)
-		return;
+	clusterid = sys_get_cluster_id();
 
-	/* Retrieve cluster information. */
-	clusterid = hal_get_cluster_id();
+	meminit();
 
-	/* Open underlying IPC connectors. */
-	_mem_inportal = _portal_create(clusterid);
-	_mem_outbox =hal_mailbox_open(IOCLUSTER1 + clusterid%NR_IOCLUSTER_DMA);
-	_mem_outportal = _portal_open(clusterid%NR_IOCLUSTER_DMA);
+	/* Build operation header. */
+	msg.source = clusterid;
+	msg.op = RMEM_READ;
+	msg.blknum = addr;
+	msg.size = n;
 
-	initialized = 1;
+	/* Send operation header. */
+	mailbox_write(_mem_outbox, &msg);
+
+	/* Send data. */
+	portal_allow(_mem_inportal, IOCLUSTER1);
+	portal_read(_mem_inportal, buf, n);
 }
+

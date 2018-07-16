@@ -27,7 +27,7 @@
 #define __NEED_HAL_NOC_
 #define __NEED_HAL_SETUP_
 #define __NEED_HAL_PORTAL_
-#include <nanvix/hal.h>
+#include <nanvix/syscalls.h>
 
 /* Enable huge NoC node ID tests. */
 #ifdef _TEST_HUGE_ID
@@ -45,13 +45,13 @@
 /**
  * @brief Fault Injection Test: Invalid Create
  */
-static void test_hal_portal_invalid_create(void)
+static void test_sys_portal_invalid_create(void)
 {
 	int inportal;
 
-	TEST_ASSERT((inportal = hal_portal_create(-1)) < 0);
+	TEST_ASSERT((inportal = sys_portal_create(-1)) < 0);
 #ifdef _TEST_HAL_PORTAL_INVALID_CREATE_HUGE_ID
-	TEST_ASSERT((inportal = hal_portal_create(1000000)) < 0);
+	TEST_ASSERT((inportal = sys_portal_create(1000000)) < 0);
 #endif
 }
 
@@ -62,11 +62,11 @@ static void test_hal_portal_invalid_create(void)
 /**
  * @brief Fault Injection Test: Bad Create
  */
-static void test_hal_portal_bad_create(void)
+static void test_sys_portal_bad_create(void)
 {
 	int inportal;
 
-	TEST_ASSERT((inportal = hal_portal_create(0)) < 0);
+	TEST_ASSERT((inportal = sys_portal_create(0)) < 0);
 }
 
 /*============================================================================*
@@ -76,17 +76,17 @@ static void test_hal_portal_bad_create(void)
 /**
  * @brief Fault Injection Test: Double Create
  */
-static void test_hal_portal_double_create(void)
+static void test_sys_portal_double_create(void)
 {
 	int inportal;
 	int inportal2;
 	int nodeid;
 
-	nodeid = hal_get_node_id();
+	nodeid = sys_get_node_id();
 
-	TEST_ASSERT((inportal = hal_portal_create(nodeid)) >= 0);
-	TEST_ASSERT((inportal2 = hal_portal_create(nodeid)) < 0);
-	TEST_ASSERT((hal_portal_unlink(inportal)) == 0);
+	TEST_ASSERT((inportal = sys_portal_create(nodeid)) >= 0);
+	TEST_ASSERT((inportal2 = sys_portal_create(nodeid)) < 0);
+	TEST_ASSERT((sys_portal_unlink(inportal)) == 0);
 }
 
 /*============================================================================*
@@ -96,13 +96,13 @@ static void test_hal_portal_double_create(void)
 /**
  * @brief Fault Injection Test: Invalid Open
  */
-static void test_hal_portal_invalid_open(void)
+static void test_sys_portal_invalid_open(void)
 {
 	int outportal;
 
-	TEST_ASSERT((outportal = hal_portal_open(-1)) < 0);
+	TEST_ASSERT((outportal = sys_portal_open(-1)) < 0);
 #ifdef _TEST_HAL_PORTAL_INVALID_OPEN_HUGE_ID
-	TEST_ASSERT((outportal = hal_portal_open(1000000)) < 0);
+	TEST_ASSERT((outportal = sys_portal_open(1000000)) < 0);
 #endif
 }
 
@@ -113,14 +113,14 @@ static void test_hal_portal_invalid_open(void)
 /**
  * @brief Fault Injection Test: Bad Open
  */
-static void test_hal_portal_bad_open(void)
+static void test_sys_portal_bad_open(void)
 {
 	int outportal;
 	int nodeid;
 
-	nodeid = hal_get_node_id();
+	nodeid = sys_get_node_id();
 
-	TEST_ASSERT((outportal = hal_portal_open(nodeid)) < 0);
+	TEST_ASSERT((outportal = sys_portal_open(nodeid)) < 0);
 }
 
 /*============================================================================*
@@ -130,14 +130,14 @@ static void test_hal_portal_bad_open(void)
 /**
  * @brief Fault Injection Test: Double Open
  */
-static void test_hal_portal_double_open(void)
+static void test_sys_portal_double_open(void)
 {
 	int outportal;
 	int outportal2;
 
-	TEST_ASSERT((outportal = hal_portal_open(0)) >= 0);
-	TEST_ASSERT((outportal2 = hal_portal_open(0)) < 0);
-	TEST_ASSERT((hal_portal_close(outportal)) == 0);
+	TEST_ASSERT((outportal = sys_portal_open(0)) >= 0);
+	TEST_ASSERT((outportal2 = sys_portal_open(0)) < 0);
+	TEST_ASSERT((sys_portal_close(outportal)) == 0);
 }
 
 /*============================================================================*
@@ -147,11 +147,11 @@ static void test_hal_portal_double_open(void)
 /**
  * @brief Fault Injection Test: Invalid Unlink
  */
-static void test_hal_portal_invalid_unlink(void)
+static void test_sys_portal_invalid_unlink(void)
 {
-	TEST_ASSERT(hal_portal_unlink(-1) < 0);
-	TEST_ASSERT(hal_portal_unlink(HAL_NR_PORTAL) < 0);
-	TEST_ASSERT(hal_portal_unlink(HAL_NR_PORTAL + 1) < 0);
+	TEST_ASSERT(sys_portal_unlink(-1) < 0);
+	TEST_ASSERT(sys_portal_unlink(HAL_NR_PORTAL) < 0);
+	TEST_ASSERT(sys_portal_unlink(HAL_NR_PORTAL + 1) < 0);
 }
 
 /*============================================================================*
@@ -161,14 +161,14 @@ static void test_hal_portal_invalid_unlink(void)
 /**
  * @brief Fault Injection Test: Bad Unlink
  */
-static void test_hal_portal_bad_unlink(void)
+static void test_sys_portal_bad_unlink(void)
 {
 	int inportal;
 
-	TEST_ASSERT(hal_portal_unlink(0) < 0);
-	TEST_ASSERT((inportal = hal_portal_open(0)) >= 0);
-	TEST_ASSERT(hal_portal_unlink(inportal) < 0);
-	TEST_ASSERT((hal_portal_close(inportal)) == 0);
+	TEST_ASSERT(sys_portal_unlink(0) < 0);
+	TEST_ASSERT((inportal = sys_portal_open(0)) >= 0);
+	TEST_ASSERT(sys_portal_unlink(inportal) < 0);
+	TEST_ASSERT((sys_portal_close(inportal)) == 0);
 }
 
 /*============================================================================*
@@ -178,16 +178,16 @@ static void test_hal_portal_bad_unlink(void)
 /**
  * @brief Fault Injection Test: Double Unlink
  */
-static void test_hal_portal_double_unlink(void)
+static void test_sys_portal_double_unlink(void)
 {
 	int inportal;
 	int nodeid;
 
-	nodeid = hal_get_node_id();
+	nodeid = sys_get_node_id();
 
-	TEST_ASSERT((inportal = hal_portal_create(nodeid)) >= 0);
-	TEST_ASSERT((hal_portal_unlink(inportal)) == 0);
-	TEST_ASSERT((hal_portal_unlink(inportal)) < 0);
+	TEST_ASSERT((inportal = sys_portal_create(nodeid)) >= 0);
+	TEST_ASSERT((sys_portal_unlink(inportal)) == 0);
+	TEST_ASSERT((sys_portal_unlink(inportal)) < 0);
 }
 
 /*============================================================================*
@@ -197,11 +197,11 @@ static void test_hal_portal_double_unlink(void)
 /**
  * @brief Fault Injection Test: Invalid Close
  */
-static void test_hal_portal_invalid_close(void)
+static void test_sys_portal_invalid_close(void)
 {
-	TEST_ASSERT(hal_portal_close(-1) < 0);
-	TEST_ASSERT(hal_portal_close(HAL_NR_PORTAL) < 0);
-	TEST_ASSERT(hal_portal_close(HAL_NR_PORTAL + 1) < 0);
+	TEST_ASSERT(sys_portal_close(-1) < 0);
+	TEST_ASSERT(sys_portal_close(HAL_NR_PORTAL) < 0);
+	TEST_ASSERT(sys_portal_close(HAL_NR_PORTAL + 1) < 0);
 }
 
 /*============================================================================*
@@ -211,17 +211,17 @@ static void test_hal_portal_invalid_close(void)
 /**
  * @brief Fault Injection Test: Bad Close
  */
-static void test_hal_portal_bad_close(void)
+static void test_sys_portal_bad_close(void)
 {
 	int outportal;
 	int nodeid;
 
-	nodeid = hal_get_node_id();
+	nodeid = sys_get_node_id();
 
-	TEST_ASSERT(hal_portal_close(nodeid) < 0);
-	TEST_ASSERT((outportal = hal_portal_create(nodeid)) >= 0);
-	TEST_ASSERT(hal_portal_close(outportal) < 0);
-	TEST_ASSERT((hal_portal_unlink(outportal)) == 0);
+	TEST_ASSERT(sys_portal_close(nodeid) < 0);
+	TEST_ASSERT((outportal = sys_portal_create(nodeid)) >= 0);
+	TEST_ASSERT(sys_portal_close(outportal) < 0);
+	TEST_ASSERT((sys_portal_unlink(outportal)) == 0);
 }
 
 /*============================================================================*
@@ -231,13 +231,13 @@ static void test_hal_portal_bad_close(void)
 /**
  * @brief Fault Injection Test: Double Close
  */
-static void test_hal_portal_double_close(void)
+static void test_sys_portal_double_close(void)
 {
 	int outportal;
 
-	TEST_ASSERT((outportal = hal_portal_open(0)) >= 0);
-	TEST_ASSERT((hal_portal_close(outportal)) == 0);
-	TEST_ASSERT((hal_portal_close(outportal)) < 0);
+	TEST_ASSERT((outportal = sys_portal_open(0)) >= 0);
+	TEST_ASSERT((sys_portal_close(outportal)) == 0);
+	TEST_ASSERT((sys_portal_close(outportal)) < 0);
 }
 
 /*============================================================================*
@@ -247,23 +247,23 @@ static void test_hal_portal_double_close(void)
 /**
  * @brief Fault Injection Test: Invalid Allow
  */
-static void test_hal_portal_invalid_allow(void)
+static void test_sys_portal_invalid_allow(void)
 {
 	int nodeid;
 	int inportal;
 
-	TEST_ASSERT(hal_portal_allow(-1, 0) < 0);
-	TEST_ASSERT(hal_portal_allow(HAL_NR_PORTAL, 0) < 0);
-	TEST_ASSERT(hal_portal_allow(HAL_NR_PORTAL + 1, 0) < 0);
+	TEST_ASSERT(sys_portal_allow(-1, 0) < 0);
+	TEST_ASSERT(sys_portal_allow(HAL_NR_PORTAL, 0) < 0);
+	TEST_ASSERT(sys_portal_allow(HAL_NR_PORTAL + 1, 0) < 0);
 
-	nodeid = hal_get_node_id();
+	nodeid = sys_get_node_id();
 
-	TEST_ASSERT((inportal = hal_portal_create(nodeid)) >= 0);
-	TEST_ASSERT(hal_portal_allow(inportal, -1) < 0);
+	TEST_ASSERT((inportal = sys_portal_create(nodeid)) >= 0);
+	TEST_ASSERT(sys_portal_allow(inportal, -1) < 0);
 #ifdef _TEST_HAL_PORTAL_INVALID_ALLOW_HUGE_ID
-	TEST_ASSERT(hal_portal_allow(inportal, 1000000) < 0);
+	TEST_ASSERT(sys_portal_allow(inportal, 1000000) < 0);
 #endif
-	TEST_ASSERT((hal_portal_unlink(inportal)) == 0);
+	TEST_ASSERT((sys_portal_unlink(inportal)) == 0);
 }
 
 /*============================================================================*
@@ -273,15 +273,15 @@ static void test_hal_portal_invalid_allow(void)
 /**
  * @brief Fault Injection Test: Bad Allow
  */
-static void test_hal_portal_bad_allow(void)
+static void test_sys_portal_bad_allow(void)
 {
 	int inportal;
 
-	TEST_ASSERT(hal_portal_allow(0, 0) < 0);
+	TEST_ASSERT(sys_portal_allow(0, 0) < 0);
 
-	TEST_ASSERT((inportal = hal_portal_open(0)) >= 0);
-	TEST_ASSERT(hal_portal_allow(inportal, 0) < 0);
-	TEST_ASSERT((hal_portal_close(inportal)) == 0);
+	TEST_ASSERT((inportal = sys_portal_open(0)) >= 0);
+	TEST_ASSERT(sys_portal_allow(inportal, 0) < 0);
+	TEST_ASSERT((sys_portal_close(inportal)) == 0);
 }
 
 /*============================================================================*
@@ -293,17 +293,17 @@ static void test_hal_portal_bad_allow(void)
 /**
  * @brief Fault Injection Test: Double Allow
  */
-static void test_hal_portal_double_allow(void)
+static void test_sys_portal_double_allow(void)
 {
 	int nodeid;
 	int inportal;
 
-	nodeid = hal_get_node_id();
+	nodeid = sys_get_node_id();
 
-	TEST_ASSERT((inportal = hal_portal_create(nodeid)) >= 0);
-	TEST_ASSERT(hal_portal_allow(inportal, 0) == 0);
-	TEST_ASSERT(hal_portal_allow(inportal, 1) < 0);
-	TEST_ASSERT((hal_portal_unlink(inportal)) == 0);
+	TEST_ASSERT((inportal = sys_portal_create(nodeid)) >= 0);
+	TEST_ASSERT(sys_portal_allow(inportal, 0) == 0);
+	TEST_ASSERT(sys_portal_allow(inportal, 1) < 0);
+	TEST_ASSERT((sys_portal_unlink(inportal)) == 0);
 }
 
 #endif
@@ -315,13 +315,13 @@ static void test_hal_portal_double_allow(void)
 /**
  * @brief Fault Injection Test: Invalid Read
  */
-static void test_hal_portal_invalid_read(void)
+static void test_sys_portal_invalid_read(void)
 {
 	int buf;
 
-	TEST_ASSERT(hal_portal_read(-1, &buf, sizeof(buf)) < 0);
-	TEST_ASSERT(hal_portal_read(HAL_NR_PORTAL, &buf, sizeof(buf)) < 0);
-	TEST_ASSERT(hal_portal_read(HAL_NR_PORTAL + 1, &buf, sizeof(buf)) < 0);
+	TEST_ASSERT(sys_portal_read(-1, &buf, sizeof(buf)) < 0);
+	TEST_ASSERT(sys_portal_read(HAL_NR_PORTAL, &buf, sizeof(buf)) < 0);
+	TEST_ASSERT(sys_portal_read(HAL_NR_PORTAL + 1, &buf, sizeof(buf)) < 0);
 }
 
 /*============================================================================*
@@ -331,15 +331,15 @@ static void test_hal_portal_invalid_read(void)
 /**
  * @brief Fault Injection Test: Bad Read
  */
-static void test_hal_portal_bad_read(void)
+static void test_sys_portal_bad_read(void)
 {
 	int buf;
 	int inportal;
 
-	TEST_ASSERT(hal_portal_read(0, &buf, sizeof(buf)) < 0);
-	TEST_ASSERT((inportal = hal_portal_open(0)) >= 0);
-	TEST_ASSERT(hal_portal_read(inportal, &buf, sizeof(buf)) < 0);
-	TEST_ASSERT(hal_portal_close(inportal) == 0);
+	TEST_ASSERT(sys_portal_read(0, &buf, sizeof(buf)) < 0);
+	TEST_ASSERT((inportal = sys_portal_open(0)) >= 0);
+	TEST_ASSERT(sys_portal_read(inportal, &buf, sizeof(buf)) < 0);
+	TEST_ASSERT(sys_portal_close(inportal) == 0);
 }
 
 /*============================================================================*
@@ -349,16 +349,16 @@ static void test_hal_portal_bad_read(void)
 /**
  * @brief Fault Injection Test: Null Read
  */
-static void test_hal_portal_null_read(void)
+static void test_sys_portal_null_read(void)
 {
 	int nodeid;
 	int inportal;
 
-	nodeid = hal_get_node_id();
+	nodeid = sys_get_node_id();
 
-	TEST_ASSERT((inportal = hal_portal_create(nodeid)) >= 0);
-	TEST_ASSERT(hal_portal_read(inportal, NULL, 1) < 0);
-	TEST_ASSERT(hal_portal_unlink(inportal) == 0);
+	TEST_ASSERT((inportal = sys_portal_create(nodeid)) >= 0);
+	TEST_ASSERT(sys_portal_read(inportal, NULL, 1) < 0);
+	TEST_ASSERT(sys_portal_unlink(inportal) == 0);
 }
 
 /*============================================================================*
@@ -368,13 +368,13 @@ static void test_hal_portal_null_read(void)
 /**
  * @brief Fault Injection Test: Invalid Write
  */
-static void test_hal_portal_invalid_write(void)
+static void test_sys_portal_invalid_write(void)
 {
 	int buf;
 
-	TEST_ASSERT(hal_portal_write(-1, &buf, sizeof(buf)) < 0);
-	TEST_ASSERT(hal_portal_write(HAL_NR_PORTAL, &buf, sizeof(buf)) < 0);
-	TEST_ASSERT(hal_portal_write(HAL_NR_PORTAL + 1, &buf, sizeof(buf)) < 0);
+	TEST_ASSERT(sys_portal_write(-1, &buf, sizeof(buf)) < 0);
+	TEST_ASSERT(sys_portal_write(HAL_NR_PORTAL, &buf, sizeof(buf)) < 0);
+	TEST_ASSERT(sys_portal_write(HAL_NR_PORTAL + 1, &buf, sizeof(buf)) < 0);
 }
 
 /*============================================================================*
@@ -384,18 +384,18 @@ static void test_hal_portal_invalid_write(void)
 /**
  * @brief Fault Injection Test: Bad Write
  */
-static void test_hal_portal_bad_write(void)
+static void test_sys_portal_bad_write(void)
 {
 	int buf;
 	int nodeid;
 	int outportal;
 
-	nodeid = hal_get_node_id();
+	nodeid = sys_get_node_id();
 
-	TEST_ASSERT(hal_portal_write(0, &buf, sizeof(buf)) < 0);
-	TEST_ASSERT((outportal = hal_portal_create(nodeid)) >= 0);
-	TEST_ASSERT(hal_portal_write(outportal, &buf, sizeof(buf)) < 0);
-	TEST_ASSERT(hal_portal_unlink(outportal) == 0);
+	TEST_ASSERT(sys_portal_write(0, &buf, sizeof(buf)) < 0);
+	TEST_ASSERT((outportal = sys_portal_create(nodeid)) >= 0);
+	TEST_ASSERT(sys_portal_write(outportal, &buf, sizeof(buf)) < 0);
+	TEST_ASSERT(sys_portal_unlink(outportal) == 0);
 }
 
 /*============================================================================*
@@ -405,13 +405,13 @@ static void test_hal_portal_bad_write(void)
 /**
  * @brief Fault Injection Test: Null Write
  */
-static void test_hal_portal_null_write(void)
+static void test_sys_portal_null_write(void)
 {
 	int outportal;
 
-	TEST_ASSERT((outportal = hal_portal_open(0)) >= 0);
-	TEST_ASSERT(hal_portal_write(outportal, NULL, 1) < 0);
-	TEST_ASSERT(hal_portal_close(outportal) == 0);
+	TEST_ASSERT((outportal = sys_portal_open(0)) >= 0);
+	TEST_ASSERT(sys_portal_write(outportal, NULL, 1) < 0);
+	TEST_ASSERT(sys_portal_close(outportal) == 0);
 }
 
 /*============================================================================*/
@@ -420,28 +420,28 @@ static void test_hal_portal_null_write(void)
  * @brief Unit tests.
  */
 struct test portal_tests_fault[] = {
-	{ test_hal_portal_invalid_create, "Invalid Create" },
-	{ test_hal_portal_bad_create,     "Bad Create"     },
-	{ test_hal_portal_double_create,  "Double Create"  },
-	{ test_hal_portal_invalid_open,   "Invalid Open"   },
-	{ test_hal_portal_bad_open,       "Bad Open"       },
-	{ test_hal_portal_double_open,    "Double Open"    },
-	{ test_hal_portal_invalid_unlink, "Invalid Unlink" },
-	{ test_hal_portal_double_unlink,  "Double Unlink"  },
-	{ test_hal_portal_bad_unlink,     "Bad Unlink"     },
-	{ test_hal_portal_invalid_close,  "Invalid Close"  },
-	{ test_hal_portal_bad_close,      "Bad Close"      },
-	{ test_hal_portal_double_close,   "Double Close"   },
-	{ test_hal_portal_invalid_allow,  "Invalid Allow"  },
-	{ test_hal_portal_bad_allow,      "Bad Allow"      },
+	{ test_sys_portal_invalid_create, "Invalid Create" },
+	{ test_sys_portal_bad_create,     "Bad Create"     },
+	{ test_sys_portal_double_create,  "Double Create"  },
+	{ test_sys_portal_invalid_open,   "Invalid Open"   },
+	{ test_sys_portal_bad_open,       "Bad Open"       },
+	{ test_sys_portal_double_open,    "Double Open"    },
+	{ test_sys_portal_invalid_unlink, "Invalid Unlink" },
+	{ test_sys_portal_double_unlink,  "Double Unlink"  },
+	{ test_sys_portal_bad_unlink,     "Bad Unlink"     },
+	{ test_sys_portal_invalid_close,  "Invalid Close"  },
+	{ test_sys_portal_bad_close,      "Bad Close"      },
+	{ test_sys_portal_double_close,   "Double Close"   },
+	{ test_sys_portal_invalid_allow,  "Invalid Allow"  },
+	{ test_sys_portal_bad_allow,      "Bad Allow"      },
 #ifdef _TEST_HAL_PORTAL_DOUBLE_ALLOW
-	{ test_hal_portal_double_allow,   "Double Allow"   },
+	{ test_sys_portal_double_allow,   "Double Allow"   },
 #endif
-	{ test_hal_portal_invalid_read,   "Invalid Read"   },
-	{ test_hal_portal_bad_read,       "Bad Read"       },
-	{ test_hal_portal_null_read,      "Null Read"      },
-	{ test_hal_portal_invalid_write,  "Invalid Write"  },
-	{ test_hal_portal_bad_write,      "Bad Write"      },
-	{ test_hal_portal_null_write,     "Null Write"     },
+	{ test_sys_portal_invalid_read,   "Invalid Read"   },
+	{ test_sys_portal_bad_read,       "Bad Read"       },
+	{ test_sys_portal_null_read,      "Null Read"      },
+	{ test_sys_portal_invalid_write,  "Invalid Write"  },
+	{ test_sys_portal_bad_write,      "Bad Write"      },
+	{ test_sys_portal_null_write,     "Null Write"     },
 	{ NULL,                           NULL             },
 };

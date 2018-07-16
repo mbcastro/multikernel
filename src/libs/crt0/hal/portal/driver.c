@@ -25,14 +25,14 @@
 
 #define __NEED_HAL_CORE_
 #define __NEED_HAL_NOC_
-#include <nanvix/hal.h>
+#include <nanvix/syscalls.h>
 
 #include "test.h"
 
 /**
  * @brief Number of cores in the underlying cluster.
  */
-int hal_portal_ncores = 0;
+int sys_portal_ncores = 0;
 
 /**
  * @brief Global barrier for synchronization.
@@ -42,17 +42,17 @@ pthread_barrier_t barrier;
 /**
  * @brief Unnamed Mailbox Test Driver
  */
-void test_kernel_hal_portal(void)
+void test_kernel_sys_portal(void)
 {
-	hal_portal_ncores = hal_get_num_cores();
+	sys_portal_ncores = sys_get_num_cores();
 
-	pthread_barrier_init(&barrier, NULL, hal_portal_ncores - 1);
+	pthread_barrier_init(&barrier, NULL, sys_portal_ncores - 1);
 
 	/* Run API tests. */
-	for (int i = 0; hal_portal_tests_api[i].test_fn != NULL; i++)
+	for (int i = 0; sys_portal_tests_api[i].test_fn != NULL; i++)
 	{
-		printf("[nanvix][test][api][hal][portal] %s\n", hal_portal_tests_api[i].name);
-		hal_portal_tests_api[i].test_fn();
+		printf("[nanvix][test][api][hal][portal] %s\n", sys_portal_tests_api[i].name);
+		sys_portal_tests_api[i].test_fn();
 	}
 
 	/* Run fault injection tests. */

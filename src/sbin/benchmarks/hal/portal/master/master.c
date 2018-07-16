@@ -33,7 +33,7 @@
 #define __NEED_HAL_SYNC_
 #define __NEED_HAL_PORTAL_
 #define __NEED_HAL_PERFORMANCE_
-#include <nanvix/hal.h>
+#include <nanvix/syscalls.h>
 #include <nanvix/limits.h>
 
 #include "../kernel.h"
@@ -86,7 +86,7 @@ static void spawn_remotes(void)
 		NULL
 	};
 
-	nodeid = hal_get_node_id();
+	nodeid = sys_get_node_id();
 
 	/* Build nodes list. */
 	nodes[0] = nodeid;
@@ -94,7 +94,7 @@ static void spawn_remotes(void)
 		nodes[i + 1] = i;
 
 	/* Create synchronization point. */
-	assert((syncid = hal_sync_create(nodes, nclusters + 1, HAL_SYNC_ALL_TO_ONE)) >= 0);
+	assert((syncid = sys_sync_create(nodes, nclusters + 1, HAL_SYNC_ALL_TO_ONE)) >= 0);
 
 	/* Spawn remotes. */
 	sprintf(master_node, "%d", nodeid);
@@ -106,10 +106,10 @@ static void spawn_remotes(void)
 		assert((pids[i] = mppa_spawn(i, NULL, argv[0], argv, NULL)) != -1);
 
 	/* Sync. */
-	assert(hal_sync_wait(syncid) == 0);
+	assert(sys_sync_wait(syncid) == 0);
 
 	/* House keeping. */
-	assert(hal_sync_unlink(syncid) == 0);
+	assert(sys_sync_unlink(syncid) == 0);
 }
 
 /**
@@ -134,7 +134,7 @@ static void open_portals(int *outportals)
 {
 	/* Open output portales. */
 	for (int i = 0; i < nclusters; i++)
-		assert((outportals[i] = hal_portal_open(i)) >= 0);
+		assert((outportals[i] = sys_portal_open(i)) >= 0);
 }
 
 /**
@@ -146,7 +146,7 @@ static void close_portals(const int *outportals)
 {
 	/* Close output portals. */
 	for (int i = 0; i < nclusters; i++)
-		assert((hal_portal_close(outportals[i])) == 0);
+		assert((sys_portal_close(outportals[i])) == 0);
 }
 
 /**
@@ -165,12 +165,12 @@ static void kernel_broadcast(void)
 	/* Benchmark. */
 	for (int k = 0; k <= niterations; k++)
 	{
-		t1 = hal_timer_get();
+		t1 = sys_timer_get();
 		for (int i = 0; i < nclusters; i++)
-			assert(hal_portal_write(outportals[i], buffer, bufsize) == bufsize);
-		t2 = hal_timer_get();
+			assert(sys_portal_write(outportals[i], buffer, bufsize) == bufsize);
+		t2 = sys_timer_get();
 
-		total = hal_timer_diff(t1, t2)/((double) hal_get_core_freq());
+		total = sys_timer_diff(t1, t2)/((double) sys_get_core_freq());
 
 		/* Warmup. */
 		if (k == 0)
@@ -199,23 +199,23 @@ static void kernel_gather(void)
 	double total;
 	uint64_t t1, t2;
 
-	nodeid = hal_get_node_id();
+	nodeid = sys_get_node_id();
 
 	/* Initialization. */
-	assert((inportal = hal_portal_create(nodeid)) >= 0);
+	assert((inportal = sys_portal_create(nodeid)) >= 0);
 
 	/* Benchmark. */
 	for (int k = 0; k <= niterations; k++)
 	{
-		t1 = hal_timer_get();
+		t1 = sys_timer_get();
 		for (int i = 0; i < nclusters; i++)
 		{
-			assert(hal_portal_allow(inportal, i) == 0);
-			assert(hal_portal_read(inportal, buffer, bufsize) == bufsize);
+			assert(sys_portal_allow(inportal, i) == 0);
+			assert(sys_portal_read(inportal, buffer, bufsize) == bufsize);
 		}
-		t2 = hal_timer_get();
+		t2 = sys_timer_get();
 
-		total = hal_timer_diff(t1, t2)/((double) hal_get_core_freq());
+		total = sys_timer_diff(t1, t2)/((double) sys_get_core_freq());
 
 		/* Warmup. */
 		if (k == 0)
@@ -231,7 +231,7 @@ static void kernel_gather(void)
 	}
 
 	/* House keeping. */
-	assert(hal_portal_unlink(inportal) == 0);
+	assert(sys_portal_unlink(inportal) == 0);
 }
 
 /**
@@ -245,26 +245,26 @@ static void kernel_pingpong(void)
 	uint64_t t1, t2;
 	int outportals[nclusters];
 
-	nodeid = hal_get_node_id();
+	nodeid = sys_get_node_id();
 
 	/* Initialization. */
-	assert((inportal = hal_portal_create(nodeid)) >= 0);
+	assert((inportal = sys_portal_create(nodeid)) >= 0);
 	open_portals(outportals);
 
 	/* Benchmark. */
 	for (int k = 0; k <= niterations; k++)
 	{
-		t1 = hal_timer_get();
+		t1 = sys_timer_get();
 		for (int i = 0; i < nclusters; i++)
-			assert(hal_portal_write(outportals[i], buffer, bufsize) == bufsize);
+			assert(sys_portal_write(outportals[i], buffer, bufsize) == bufsize);
 		for (int i = 0; i < nclusters; i++)
 		{
-			assert(hal_portal_allow(inportal, i) == 0);
-			assert(hal_portal_read(inportal, buffer, bufsize) == bufsize);
+			assert(sys_portal_allow(inportal, i) == 0);
+			assert(sys_portal_read(inportal, buffer, bufsize) == bufsize);
 		}
-		t2 = hal_timer_get();
+		t2 = sys_timer_get();
 
-		total = hal_timer_diff(t1, t2)/((double) hal_get_core_freq());
+		total = sys_timer_diff(t1, t2)/((double) sys_get_core_freq());
 
 		/* Warmup. */
 		if (k == 0)
@@ -281,7 +281,7 @@ static void kernel_pingpong(void)
 
 	/* House keeping. */
 	close_portals(outportals);
-	assert(hal_portal_unlink(inportal) == 0);
+	assert(sys_portal_unlink(inportal) == 0);
 }
 
 /**
@@ -290,7 +290,7 @@ static void kernel_pingpong(void)
 static void benchmark(void)
 {
 	/* Initialization. */
-	hal_setup();
+	sys_setup();
 	spawn_remotes();
 
 	if (!strcmp(kernel, "broadcast"))
@@ -302,7 +302,7 @@ static void benchmark(void)
 	
 	/* House keeping. */
 	join_remotes();
-	hal_cleanup();
+	sys_cleanup();
 }
 
 /*============================================================================*

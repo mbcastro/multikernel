@@ -25,10 +25,7 @@
 
 #include <mppaipc.h>
 
-#define __NEED_HAL_CORE_
-#define __NEED_HAL_NOC_
-#define __NEED_HAL_SYNC_
-#include <nanvix/hal.h>
+#include <nanvix/syscalls.h>
 #include <nanvix/limits.h>
 
 /**
@@ -80,7 +77,7 @@ static void join_slaves(void)
 /**
  * @brief API Test: Create Unlink CC
  */
-static void test_hal_sync_create_unlink_cc(void)
+static void test_sys_sync_create_unlink_cc(void)
 {
 	char masternode_str[4];
 	char sync_nclusters_str[4];
@@ -96,7 +93,7 @@ static void test_hal_sync_create_unlink_cc(void)
 	printf("[nanvix][test][api][hal][sync] Create Unlink CC\n");
 
 	/* Build arguments. */
-	sprintf(masternode_str, "%d", hal_get_node_id());
+	sprintf(masternode_str, "%d", sys_get_node_id());
 	sprintf(sync_nclusters_str, "%d", NANVIX_PROC_MAX);
 	sprintf(test_str, "%d", 0);
 
@@ -111,7 +108,7 @@ static void test_hal_sync_create_unlink_cc(void)
 /**
  * @brief API Test: Open Close CC
  */
-static void test_hal_sync_open_close_cc(void)
+static void test_sys_sync_open_close_cc(void)
 {
 	char masternode_str[4];
 	char sync_nclusters_str[4];
@@ -127,7 +124,7 @@ static void test_hal_sync_open_close_cc(void)
 	printf("[nanvix][test][api][hal][sync] Open Close CC\n");
 
 	/* Build arguments. */
-	sprintf(masternode_str, "%d", hal_get_node_id());
+	sprintf(masternode_str, "%d", sys_get_node_id());
 	sprintf(sync_nclusters_str, "%d", NANVIX_PROC_MAX);
 	sprintf(test_str, "%d", 1);
 
@@ -142,7 +139,7 @@ static void test_hal_sync_open_close_cc(void)
 /**
  * @brief API Test: Wait Signal CC
  */
-static void test_hal_sync_wait_signal_cc(void)
+static void test_sys_sync_wait_signal_cc(void)
 {
 	int syncid;
 	char masternode_str[4];
@@ -165,9 +162,9 @@ static void test_hal_sync_wait_signal_cc(void)
 
 	spawn_slaves(args);
 
-	TEST_ASSERT((syncid = hal_sync_open(nodes, NANVIX_PROC_MAX + 1, HAL_SYNC_ONE_TO_ALL)) >= 0);
-	TEST_ASSERT(hal_sync_signal(syncid) == 0);
-	TEST_ASSERT(hal_sync_close(syncid) == 0);
+	TEST_ASSERT((syncid = sys_sync_open(nodes, NANVIX_PROC_MAX + 1, HAL_SYNC_ONE_TO_ALL)) >= 0);
+	TEST_ASSERT(sys_sync_signal(syncid) == 0);
+	TEST_ASSERT(sys_sync_close(syncid) == 0);
 
 	join_slaves();
 }
@@ -179,7 +176,7 @@ static void test_hal_sync_wait_signal_cc(void)
 /**
  * @brief API Test: Signal Wait CC
  */
-static void test_hal_sync_signal_wait_cc(void)
+static void test_sys_sync_signal_wait_cc(void)
 {
 	int syncid;
 	char masternode_str[4];
@@ -196,7 +193,7 @@ static void test_hal_sync_signal_wait_cc(void)
 	printf("[nanvix][test][api][hal][sync] Signal Wait CC\n");
 
 	/* Create synchronization point. */
-	TEST_ASSERT((syncid = hal_sync_create(
+	TEST_ASSERT((syncid = sys_sync_create(
 		nodes,
 		NANVIX_PROC_MAX + 1,
 		HAL_SYNC_ALL_TO_ONE)) >= 0
@@ -210,12 +207,12 @@ static void test_hal_sync_signal_wait_cc(void)
 	spawn_slaves(args);
 
 	/* Wait. */
-	TEST_ASSERT(hal_sync_wait(syncid) == 0);
+	TEST_ASSERT(sys_sync_wait(syncid) == 0);
 
 	join_slaves();
 
 	/* House keeping. */
-	TEST_ASSERT(hal_sync_unlink(syncid) == 0);
+	TEST_ASSERT(sys_sync_unlink(syncid) == 0);
 }
 
 /*============================================================================*
@@ -225,7 +222,7 @@ static void test_hal_sync_signal_wait_cc(void)
 /**
  * @brief API Test: Barrier CC
  */
-static void test_hal_sync_barrier_cc(void)
+static void test_sys_sync_barrier_cc(void)
 {
 	int syncid1, syncid2;
 	char masternode_str[4];
@@ -242,12 +239,12 @@ static void test_hal_sync_barrier_cc(void)
 	printf("[nanvix][test][api][hal][sync] Barrier CC\n");
 
 	/* Create synchronization point. */
-	TEST_ASSERT((syncid1 = hal_sync_create(
+	TEST_ASSERT((syncid1 = sys_sync_create(
 		nodes,
 		NANVIX_PROC_MAX + 1,
 		HAL_SYNC_ALL_TO_ONE)) >= 0
 	);
-	TEST_ASSERT((syncid2 = hal_sync_open(
+	TEST_ASSERT((syncid2 = sys_sync_open(
 		nodes,
 		NANVIX_PROC_MAX + 1,
 		HAL_SYNC_ONE_TO_ALL)) >= 0
@@ -261,14 +258,14 @@ static void test_hal_sync_barrier_cc(void)
 	spawn_slaves(args);
 
 	/* Wait. */
-	TEST_ASSERT(hal_sync_wait(syncid1) == 0);
-	TEST_ASSERT(hal_sync_signal(syncid2) == 0);
+	TEST_ASSERT(sys_sync_wait(syncid1) == 0);
+	TEST_ASSERT(sys_sync_signal(syncid2) == 0);
 
 	join_slaves();
 
 	/* House keeping. */
-	TEST_ASSERT(hal_sync_close(syncid2) == 0);
-	TEST_ASSERT(hal_sync_unlink(syncid1) == 0);
+	TEST_ASSERT(sys_sync_close(syncid2) == 0);
+	TEST_ASSERT(sys_sync_unlink(syncid1) == 0);
 }
 
 /*============================================================================*
@@ -278,7 +275,7 @@ static void test_hal_sync_barrier_cc(void)
 /**
  * @brief API Test: Barrier 2 CC
  */
-static void test_hal_sync_barrier2_cc(void)
+static void test_sys_sync_barrier2_cc(void)
 {
 	char masternode_str[4];
 	char sync_nclusters_str[4];
@@ -308,17 +305,17 @@ static void test_hal_sync_barrier2_cc(void)
 /**
  * @brief Automated HAL sync test driver.
  */
-void test_hal_sync(void)
+void test_sys_sync(void)
 {
 	/* Build nodes list. */
-	nodes[0] = hal_get_node_id();
+	nodes[0] = sys_get_node_id();
 	for (int i = 0; i < NANVIX_PROC_MAX; i++)
 		nodes[i + 1] = i;
 	
-	test_hal_sync_create_unlink_cc();
-	test_hal_sync_open_close_cc();
-	test_hal_sync_wait_signal_cc();
-	test_hal_sync_signal_wait_cc();
-	test_hal_sync_barrier_cc();
-	test_hal_sync_barrier2_cc();
+	test_sys_sync_create_unlink_cc();
+	test_sys_sync_open_close_cc();
+	test_sys_sync_wait_signal_cc();
+	test_sys_sync_signal_wait_cc();
+	test_sys_sync_barrier_cc();
+	test_sys_sync_barrier2_cc();
 }

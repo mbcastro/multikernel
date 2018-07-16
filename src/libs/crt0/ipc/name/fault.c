@@ -30,8 +30,8 @@
 #define __NEED_HAL_CORE_
 #define __NEED_HAL_NOC_
 #define __NEED_HAL_SYNC_
-#include <nanvix/hal.h>
-#include <nanvix/init.h>
+#include <nanvix/syscalls.h>
+#include <nanvix/syscalls.h>
 #include <nanvix/name.h>
 #include <nanvix/limits.h>
 #include <nanvix/pm.h>
@@ -50,7 +50,7 @@ static void test_name_duplicate(void)
 	int nodeid;
 	char pathname[NANVIX_PROC_NAME_MAX];
 
-	nodeid = hal_get_node_id();
+	nodeid = sys_get_node_id();
 
 	/* Link name. */
 	sprintf(pathname, "cool-name");
@@ -71,7 +71,7 @@ static void test_name_invalid_link(void)
 	int nodeid;
 	char pathname[NANVIX_PROC_NAME_MAX + 1];
 
-	nodeid = hal_get_node_id();
+	nodeid = sys_get_node_id();
 
 	memset(pathname, 1, NANVIX_PROC_NAME_MAX + 1);
 

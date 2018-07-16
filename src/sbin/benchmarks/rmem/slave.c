@@ -144,7 +144,7 @@ int main(int argc, char **argv)
 	int clusterid;
 	char pathname[NANVIX_PROC_NAME_MAX];
 
-	clusterid = hal_get_cluster_id();
+	clusterid = sys_get_cluster_id();
 
 	/* Retrieve parameters. */
 	assert(argc == 4);
@@ -178,13 +178,13 @@ int main(int argc, char **argv)
 		kernel_read(size, nclusters, clusterid);
 	}
 
-	printf("END of %d\n", hal_get_cluster_id());
+	printf("END of %d\n", sys_get_cluster_id());
 
 	/* Wait for slaves. */
 	barrier = barrier_open(nclusters);
 	barrier_wait(barrier);
 
-	printf("%d crossed the barrier\n", hal_get_cluster_id());
+	printf("%d crossed the barrier\n", sys_get_cluster_id());
 
 	barrier_close(barrier);
 

@@ -30,7 +30,7 @@
 #define __NEED_HAL_SYNC_
 #define __NEED_HAL_MAILBOX_
 
-#include <nanvix/hal.h>
+#include <nanvix/syscalls.h>
 #include <nanvix/name.h>
 #include <nanvix/pm.h>
 
@@ -59,7 +59,7 @@ static void test_mailbox_cc(int nclusters)
 	int barrier;
 	int nodes[nclusters];
 
-	nodeid = hal_get_node_id();
+	nodeid = sys_get_node_id();
 
 	/* Build nodes list. */
 	for (int i = 0; i < nclusters; i++)
@@ -116,7 +116,7 @@ static void test_mailbox_io_cc(int nclusters)
 	int syncid;
 	int nodes[(nclusters + 1)];
 
-	nodeid = hal_get_node_id();
+	nodeid = sys_get_node_id();
 
 	/* Build nodes list. */
 	for (int i = 0; i < nclusters; i++)
@@ -124,19 +124,19 @@ static void test_mailbox_io_cc(int nclusters)
 
 	nodes[0] = 192;
 
-	TEST_ASSERT((syncid_local = hal_sync_create(nodes, (nclusters + 1), HAL_SYNC_ONE_TO_ALL)) >= 0);
+	TEST_ASSERT((syncid_local = sys_sync_create(nodes, (nclusters + 1), HAL_SYNC_ONE_TO_ALL)) >= 0);
 
-	TEST_ASSERT((syncid = hal_sync_open(nodes, (nclusters + 1), HAL_SYNC_ALL_TO_ONE)) >= 0);
+	TEST_ASSERT((syncid = sys_sync_open(nodes, (nclusters + 1), HAL_SYNC_ALL_TO_ONE)) >= 0);
 
 	sprintf(pathname_local, "compute_cluster%d", nodeid);
 
 	TEST_ASSERT((inbox = mailbox_create(pathname_local)) >= 0);
 
 	/* Signal IO cluster. */
-	TEST_ASSERT(hal_sync_signal(syncid) == 0);
+	TEST_ASSERT(sys_sync_signal(syncid) == 0);
 
 	/* Wait for IO cluster. */
-	TEST_ASSERT(hal_sync_wait(syncid_local) == 0);
+	TEST_ASSERT(sys_sync_wait(syncid_local) == 0);
 
 	memset(buf, 0, HAL_MAILBOX_MSG_SIZE);
 	TEST_ASSERT(mailbox_read(inbox, buf, sizeof(buf)) == 0);
@@ -147,8 +147,8 @@ static void test_mailbox_io_cc(int nclusters)
 	TEST_ASSERT(mailbox_unlink(inbox) == 0);
 
 	/* House keeping. */
-	TEST_ASSERT(hal_sync_unlink(syncid_local) == 0);
-	TEST_ASSERT(hal_sync_close(syncid) == 0)
+	TEST_ASSERT(sys_sync_unlink(syncid_local) == 0);
+	TEST_ASSERT(sys_sync_close(syncid) == 0)
 }
 
 /**
@@ -169,17 +169,17 @@ static void test_mailbox_cc_io(int nclusters)
 
 	nodes[0] = 192;
 
-	TEST_ASSERT((syncid_local = hal_sync_create(nodes, (nclusters + 1), HAL_SYNC_ONE_TO_ALL)) >= 0);
+	TEST_ASSERT((syncid_local = sys_sync_create(nodes, (nclusters + 1), HAL_SYNC_ONE_TO_ALL)) >= 0);
 
-	TEST_ASSERT((syncid = hal_sync_open(nodes, (nclusters + 1), HAL_SYNC_ALL_TO_ONE)) >= 0);
+	TEST_ASSERT((syncid = sys_sync_open(nodes, (nclusters + 1), HAL_SYNC_ALL_TO_ONE)) >= 0);
 
 	sprintf(pathname_remote, "IO1");
 
 	/* Signal IO cluster. */
-	TEST_ASSERT(hal_sync_signal(syncid) == 0);
+	TEST_ASSERT(sys_sync_signal(syncid) == 0);
 
 	/* Wait for IO cluster. */
-	TEST_ASSERT(hal_sync_wait(syncid_local) == 0);
+	TEST_ASSERT(sys_sync_wait(syncid_local) == 0);
 
 	TEST_ASSERT((outbox = mailbox_open(pathname_remote)) >= 0);
 
@@ -189,8 +189,8 @@ static void test_mailbox_cc_io(int nclusters)
 	TEST_ASSERT(mailbox_close(outbox) == 0);
 
 	/* House keeping. */
-	TEST_ASSERT(hal_sync_unlink(syncid_local) == 0);
-	TEST_ASSERT(hal_sync_close(syncid) == 0)
+	TEST_ASSERT(sys_sync_unlink(syncid_local) == 0);
+	TEST_ASSERT(sys_sync_close(syncid) == 0)
 }
 
 /*====================================================================*

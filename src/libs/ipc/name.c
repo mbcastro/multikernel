@@ -25,12 +25,10 @@
 #include <stdio.h>
 #include <pthread.h>
 
-#define __NEED_HAL_NOC_
-#define __NEED_HAL_MAILBOX_
 #include <nanvix/const.h>
+#include <nanvix/syscalls.h>
 #include <nanvix/name.h>
 #include <nanvix/pm.h>
-#include <nanvix/hal.h>
 
 /**
  * @brief Mailbox for small messages.
@@ -63,7 +61,7 @@ int name_init(void)
 	if (initialized)
 		return (0);
 
-	server = hal_mailbox_open(hal_noc_nodes[NAME_SERVER_NODE]);
+	server = sys_mailbox_open(hal_noc_nodes[NAME_SERVER_NODE]);
 
 	if (server >= 0)
 	{
@@ -98,7 +96,7 @@ void name_finalize(void)
  * name is returned. Upon failure, a negative error code is returned
  * instead.
  */
-int sys_name_lookup(char *name)
+int name_lookup(char *name)
 {
 	struct name_message msg;
 
@@ -115,17 +113,17 @@ int sys_name_lookup(char *name)
 		return (-EAGAIN);
 
 	/* Build operation header. */
-	msg.source = hal_get_node_id();
+	msg.source = sys_get_node_id();
 	msg.op = NAME_LOOKUP;
 	msg.nodeid = -1;
 	strcpy(msg.name, name);
 
 	pthread_mutex_lock(&lock);
 
-		if (hal_mailbox_write(server, &msg, sizeof(struct name_message)) != sizeof(struct name_message))
+		if (sys_mailbox_write(server, &msg, sizeof(struct name_message)) != sizeof(struct name_message))
 			goto error1;
 
-		if (hal_mailbox_read(get_inbox(), &msg, sizeof(struct name_message)) != sizeof(struct name_message))
+		if (sys_mailbox_read(get_inbox(), &msg, sizeof(struct name_message)) != sizeof(struct name_message))
 			goto error1;
 
 	pthread_mutex_unlock(&lock);
@@ -150,7 +148,7 @@ error1:
  * @returns Upon successful completion 0 is returned.
  * Upon failure, a negative error code is returned instead.
  */
-int sys_name_link(int nodeid, const char *name)
+int name_link(int nodeid, const char *name)
 {
 	struct name_message msg;
 
@@ -171,7 +169,7 @@ int sys_name_link(int nodeid, const char *name)
 		return (-EAGAIN);
 
 	/* Build operation header. */
-	msg.source = hal_get_node_id();
+	msg.source = sys_get_node_id();
 	msg.op = NAME_LINK;
 	msg.nodeid = nodeid;
 	strcpy(msg.name, name);
@@ -179,11 +177,11 @@ int sys_name_link(int nodeid, const char *name)
 	pthread_mutex_lock(&lock);
 
 		/* Send link request. */
-		if (hal_mailbox_write(server, &msg, sizeof(struct name_message)) != sizeof(struct name_message))
+		if (sys_mailbox_write(server, &msg, sizeof(struct name_message)) != sizeof(struct name_message))
 			goto error1;
 
 		/* Wait server response */
-		if (hal_mailbox_read(get_inbox(), &msg, sizeof(struct name_message)) != sizeof(struct name_message))
+		if (sys_mailbox_read(get_inbox(), &msg, sizeof(struct name_message)) != sizeof(struct name_message))
 			goto error1;
 
 	pthread_mutex_unlock(&lock);
@@ -213,7 +211,7 @@ error1:
  * @returns Upon successful completion 0 is returned.
  * Upon failure, a negative error code is returned instead.
  */
-int sys_name_unlink(const char *name)
+int name_unlink(const char *name)
 {
 	struct name_message msg;
 
@@ -230,18 +228,18 @@ int sys_name_unlink(const char *name)
 		return (-EAGAIN);
 
 	/* Build operation header. */
-	msg.source = hal_get_node_id();
+	msg.source = sys_get_node_id();
 	msg.op = NAME_UNLINK;
 	msg.nodeid = -1;
 	strcpy(msg.name, name);
 
 	pthread_mutex_lock(&lock);
 
-		if (hal_mailbox_write(server, &msg, sizeof(struct name_message)) != sizeof(struct name_message))
+		if (sys_mailbox_write(server, &msg, sizeof(struct name_message)) != sizeof(struct name_message))
 			goto error1;
 
 		/* Wait server response */
-		if (hal_mailbox_read(get_inbox(), &msg, sizeof(struct name_message)) != sizeof(struct name_message))
+		if (sys_mailbox_read(get_inbox(), &msg, sizeof(struct name_message)) != sizeof(struct name_message))
 			goto error1;
 
 	pthread_mutex_unlock(&lock);

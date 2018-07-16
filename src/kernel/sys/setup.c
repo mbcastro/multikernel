@@ -20,12 +20,21 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef NANVIX_INIT_H_
-#define NANVIX_INIT_H_
+#define __NEED_HAL_SETUP_
+#include <nanvix/hal.h>
 
-	/* Forward definitions. */
-	extern int kernel_setup(void);
-	extern int kernel_cleanup(void);
+/**
+ * @brief Initializes platform-dependent structures.
+ */
+void sys_setup(void)
+{
+	hal_setup();
+}
 
-#endif /* NANVIX_INIT_H_ */
-
+/**
+ * @brief Cleans platform-dependent structures.
+ */
+void sys_cleanup(void)
+{
+	hal_cleanup();
+}
