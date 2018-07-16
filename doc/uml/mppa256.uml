@@ -154,45 +154,45 @@ namespace mppa256 {
 		PortalOperations "1" *-- "HAL_NR_PORTAL" Portal : portals
 	}
 
-	mppa256.Sync    ..> NoC  : <<use>>
-	mppa256.Mailbox ..> NoC  : <<use>>
-	mppa256.Portal  ..> NoC  : <<use>>
-	mppa256.NoC     ..> Core : <<use>>
-	mppa256.Setup   ..> Core : <<use>>
+	kernel.mppa256.Sync    ..> kernel.mppa256.NoC  : <<use>>
+	kernel.mppa256.Mailbox ..> kernel.mppa256.NoC  : <<use>>
+	kernel.mppa256.Portal  ..> kernel.mppa256.NoC  : <<use>>
+	kernel.mppa256.NoC     ..> kernel.mppa256.Core : <<use>>
+	kernel.mppa256.Setup   ..> kernel.mppa256.Core : <<use>>
 }
 
-mppa256.Core ..> "<pthread>"         : <<use>>
-mppa256.Core ..> "<HAL/hal/core/mp>" : <<use>>
+kernel.mppa256.Core ..> "<pthread>"         : <<use>>
+kernel.mppa256.Core ..> "<kernel.HAL/hal/core/mp>" : <<use>>
 
-mppa256.NoC ..> "<sring>"        : <<use>>
-mppa256.NoC ..> "<stdio>"        : <<use>>
-mppa256.NoC ..> "<nanvix/klib>"  : <<use>>
+kernel.mppa256.NoC ..> "<nanvix/klib>"        : <<use>>
+kernel.mppa256.NoC ..> "<nanvix/klib>"        : <<use>>
+kernel.mppa256.NoC ..> "<nanvix/klib>"  : <<use>>
 
-mppa256.Sync ..> "<errno>"    : <<use>>
-mppa256.Sync ..> "<inttypes>" : <<use>>
-mppa256.Sync ..> "<mppaipc>"  : <<use>>
-mppa256.Sync ..> "<pthread>"  : <<use>>
-mppa256.Sync ..> "<stdio>"    : <<use>>
-mppa256.Sync ..> "<string>"    : <<use>>
+kernel.mppa256.Sync ..> "<nanvix/klib>"    : <<use>>
+kernel.mppa256.Sync ..> "<inttypes>" : <<use>>
+kernel.mppa256.Sync ..> "<mppaipc>"  : <<use>>
+kernel.mppa256.Sync ..> "<pthread>"  : <<use>>
+kernel.mppa256.Sync ..> "<nanvix/klib>"    : <<use>>
+kernel.mppa256.Sync ..> "<nanvix/klib>"    : <<use>>
 
-mppa256.Mailbox ..> "<errno>"    : <<use>>
-mppa256.Mailbox ..> "<mppaipc>"  : <<use>>
-mppa256.Mailbox ..> "<pthread>"  : <<use>>
-mppa256.Mailbox ..> "<stdio>"    : <<use>>
+kernel.mppa256.Mailbox ..> "<nanvix/klib>"    : <<use>>
+kernel.mppa256.Mailbox ..> "<mppaipc>"  : <<use>>
+kernel.mppa256.Mailbox ..> "<pthread>"  : <<use>>
+kernel.mppa256.Mailbox ..> "<nanvix/klib>"    : <<use>>
 
-mppa256.Portal ..> "<errno>"    : <<use>>
-mppa256.Portal ..> "<inttypes>" : <<use>>
-mppa256.Portal ..> "<mppaipc>"  : <<use>>
-mppa256.Portal ..> "<pthread>"  : <<use>>
-mppa256.Portal ..> "<stdio>"    : <<use>>
+kernel.mppa256.Portal ..> "<nanvix/klib>"    : <<use>>
+kernel.mppa256.Portal ..> "<inttypes>" : <<use>>
+kernel.mppa256.Portal ..> "<mppaipc>"  : <<use>>
+kernel.mppa256.Portal ..> "<pthread>"  : <<use>>
+kernel.mppa256.Portal ..> "<nanvix/klib>"    : <<use>>
 
-HAL.SetupInterface    <|.. mppa256.Setup   : <<implements>>
-HAL.NoCInterface      <|.. mppa256.NoC     : <<implements>>
-HAL.CoreInterface     <|.. mppa256.Core    : <<implements>>
-HAL.MailboxInterface  <|.. mppa256.Mailbox : <<implements>>
-HAL.SyncInterface     <|.. mppa256.Sync    : <<implements>>
-HAL.PortalInterface   <|.. mppa256.Portal  : <<implements>>
-HAL.PortalInterface   <|.. mppa256.Timer   : <<implements>>
+kernel.HAL.SetupInterface    <|.. kernel.mppa256.Setup   : <<implements>>
+kernel.HAL.NoCInterface      <|.. kernel.mppa256.NoC     : <<implements>>
+kernel.HAL.CoreInterface     <|.. kernel.mppa256.Core    : <<implements>>
+kernel.HAL.MailboxInterface  <|.. kernel.mppa256.Mailbox : <<implements>>
+kernel.HAL.SyncInterface     <|.. kernel.mppa256.Sync    : <<implements>>
+kernel.HAL.PortalInterface   <|.. kernel.mppa256.Portal  : <<implements>>
+kernel.HAL.PortalInterface   <|.. kernel.mppa256.Timer   : <<implements>>
 
 @enduml
 

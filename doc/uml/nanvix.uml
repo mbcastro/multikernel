@@ -1,0 +1,93 @@
+@startuml
+
+namespace kernel {
+
+	namespace klib {
+	}
+
+	namespace hal {
+		namespace sync {
+		}
+
+		namespace mailbox {
+		}
+
+		namespace portal {
+		}
+
+		namespace performance {
+		}
+
+		namespace noc {
+		}
+	}
+
+	namespace mppa256 {
+		namespace sync {
+		}
+
+		namespace mailbox {
+		}
+
+		namespace portal {
+		}
+
+		namespace performance {
+		}
+
+		namespace noc {
+		}
+	}
+
+	kernel.hal <|.. kernel.mppa256  :  <<implements>>
+	kernel.mppa256 ..> kernel.klib : <<use>>
+
+	namespace pm {
+
+		namespace thread {
+		}
+	}
+
+	kernel.pm ..> kernel.klib : <<use>>
+
+	class syscalls {
+	}
+
+	kernel.syscalls ..> kernel.hal : <<use>>
+	kernel.syscalls ..> kernel.pm  : <<use>>
+}
+
+namespace libs {
+
+	namespace ipc {
+		namespace barrier {
+		}
+
+		namespace mailbox {
+		}
+
+		namespace portal {
+		}
+
+		namespace name {
+		}
+	}
+
+	namespace sysv {
+		namespace semaphores {
+		}
+
+		namespace mqueues {
+		}
+
+		namespace shmem {
+		}
+	}
+
+	libs.ipc      ..> kernel.syscalls  : <<use>>
+	libs.ipc.name ..> kernel.syscalls  : <<use>>
+}
+
+
+@enduml
+
