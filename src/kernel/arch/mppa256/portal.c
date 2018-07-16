@@ -22,13 +22,13 @@
 
 #include <errno.h>
 #include <inttypes.h>
-#include <string.h>
 #include <stdio.h>
+#include <pthread.h>
+
+#include <mppaipc.h>
 
 #define __NEED_HAL_NOC_
 #define __NEED_HAL_PORTAL_
-#include <nanvix/name.h>
-#include <nanvix/klib.h>
 #include <nanvix/hal.h>
 
 #include "noc.h"
@@ -45,7 +45,7 @@
 /**
  * @brief Table of portals.
  */
-struct
+static struct
 {
 	int flags;     /**< Flags.                */
 	int portal_fd; /**< Portal NoC connector. */

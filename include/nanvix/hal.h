@@ -40,16 +40,20 @@
 	extern void hal_setup(void);
 	extern void hal_cleanup(void);
 
-#endif /* __NEED_HAL_SETUP */
+#endif /* __NEED_HAL_SETUP_ */
 
 /*============================================================================*
  * Performance Monitoring Interface                                           *
  *============================================================================*/
 
+#ifdef __NEED_HAL_PERFORMANCE_
+	
 	/* Forward definitions. */
 	extern uint64_t hal_timer_get(void);
 	extern uint64_t hal_timer_diff(uint64_t, uint64_t);
 	extern void hal_timer_init(void);
+
+#endif /* __NEED_HAL_PERFORMANCE_ */
 
 /*============================================================================*
  * Core Interface                                                             *

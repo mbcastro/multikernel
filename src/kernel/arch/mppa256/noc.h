@@ -27,30 +27,6 @@
 		#error "bad target"
 	#endif
 
-	#include <inttypes.h>
-	#include <HAL/hal/core/timer.h>
-	#include <HAL/hal/core/diagnostic.h>
-#ifdef _KALRAY_MPPA_256_HIGH_LEVEL
-	#include <mppaipc.h>
-	#include <pthread.h>
-#endif
-#ifdef _KALRAY_MPPA_256_LOW_LEVEL
-	#include <mppa_power.h>
-	#include <mppa_rpc.h>
-	#include <mppa_async.h>
-	#include <utask.h>
-#endif
-
-	/**
-	 * @brief Number DMAs per compute cluster.
-	 */
-	#define NR_CCLUSTER_DMA 1
-
-	/**
-	 * @brief Number of DMAs per compute cluster.
-	 */
-	#define NR_IOCLUSTER_DMA 4
-
 	/* Forward definitions. */
 	extern int noctag_mailbox(int);
 	extern int noctag_sync(int);

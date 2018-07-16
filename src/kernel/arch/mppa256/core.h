@@ -27,34 +27,6 @@
 		#error "bad target"
 	#endif
 
-	#include <HAL/hal/core/timer.h>
-	#include <HAL/hal/core/diagnostic.h>
-#ifdef _KALRAY_MPPA_256_HIGH_LEVEL
-	#include <mppaipc.h>
-	#include <pthread.h>
-#endif
-#ifdef _KALRAY_MPPA_256_LOW_LEVEL
-	#include <mppa_power.h>
-	#include <mppa_rpc.h>
-	#include <mppa_async.h>
-	#include <utask.h>
-#endif
-
-	/**
-	 * @brief Number of compute clusters.
-	 */
-	#define NR_CCLUSTER 16
-
-	/**
-	 * @brief Number of IO clusters.
-	 */
-	#define NR_IOCLUSTER 2
-
-	/**
-	 * @brief Number of Cores in an IO CLUSTER.
-	 */
-	#define NR_IOCLUSTER_CORES 4
-
 	/* Cluster IDs. */
 	#define CCLUSTER0    0 /**< Compute cluster  0. */
 	#define CCLUSTER1    1 /**< Compute cluster  1. */

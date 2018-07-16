@@ -32,6 +32,7 @@
 #define __NEED_HAL_SETUP_
 #define __NEED_HAL_SYNC_
 #define __NEED_HAL_PORTAL_
+#define __NEED_HAL_PERFORMANCE_
 #include <nanvix/hal.h>
 #include <nanvix/limits.h>
 
