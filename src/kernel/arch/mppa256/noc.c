@@ -20,9 +20,6 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <string.h>
-#include <stdio.h>
-
 #define __NEED_HAL_CORE_
 #define __NEED_HAL_NOC_
 #include <nanvix/hal.h>

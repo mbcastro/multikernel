@@ -20,12 +20,11 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <pthread.h>
-
 #include <HAL/hal/core/mp.h>
 
 #define __NEED_HAL_CORE_
 #include <nanvix/hal.h>
+#include <nanvix/klib.h>
 
 #include "core.h" 
 

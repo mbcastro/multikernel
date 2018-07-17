@@ -20,15 +20,12 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <errno.h>
-#include <stdio.h>
-#include <pthread.h>
-
 #include <mppaipc.h>
 
 #define __NEED_HAL_NOC_
 #define __NEED_HAL_MAILBOX_
 #include <nanvix/hal.h>
+#include <nanvix/klib.h>
 
 #include "noc.h"
 
