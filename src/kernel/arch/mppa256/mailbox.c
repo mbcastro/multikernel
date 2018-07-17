@@ -22,6 +22,7 @@
 
 #include <mppaipc.h>
 
+#define __NEED_HAL_CORE_
 #define __NEED_HAL_NOC_
 #define __NEED_HAL_MAILBOX_
 #include <nanvix/hal.h>
@@ -257,6 +258,8 @@ static void mailbox_clear_flags(int mbxid)
 /**
  * @brief Allocates a mailbox.
  *
+ * @param nodeid ID of target NoC node.
+ *
  * @returns Upon successful completion, the ID of a newly allocated
  * mailbox is returned. Upon failure, -1 is returned instead.
  *
@@ -264,20 +267,26 @@ static void mailbox_clear_flags(int mbxid)
  * @note This function is @b NOT thread safe.
  * @note This function is reentrant.
  */
-static int mailbox_alloc(void)
+static int mailbox_alloc(int nodeid)
 {
-	/* Search for a free mailboxrhonization point. */
-	for (int i = 0; i < HAL_NR_MAILBOX; i++)
+	int mbxid;
+
+	/* Check for double create. */
+	if (noc_is_cnode(hal_get_node_id()))
+		mbxid = hal_get_node_num(nodeid);
+	else
 	{
-		/* Found. */
-		if (!mailbox_is_used(i))
-		{
-			mailbox_set_used(i);
-			return (i);
-		}
+		mbxid = hal_get_core_id()*HAL_NR_NOC_NODES + 
+			hal_get_node_num(nodeid);
 	}
 
-	return (-1);
+	/* Allocate mailbox. */
+	if (mailbox_is_used(mbxid))
+		return (-1);
+
+	mailbox_set_used(mbxid);
+
+	return (mbxid);
 }
 
 /*============================================================================*
@@ -314,7 +323,7 @@ static int mppa256_mailbox_create(int remote)
 	int noctag;         /* NoC tag used for transfers. */
 
 	/* Allocate a mailbox. */
-	if ((mbxid = mailbox_alloc()) < 0)
+	if ((mbxid = mailbox_alloc(remote)) < 0)
 		goto error0;
 
 	noc_get_remotes(remotes, remote);
@@ -390,7 +399,7 @@ static int mppa256_mailbox_open(int nodeid)
 	int noctag;         /* NoC tag used for transfers. */
 
 	/* Allocate a mailbox. */
-	if ((mbxid = mailbox_alloc()) < 0)
+	if ((mbxid = mailbox_alloc(nodeid)) < 0)
 		goto error0;
 
 	noc_get_remotes(remotes, nodeid);
