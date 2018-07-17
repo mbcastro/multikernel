@@ -41,7 +41,7 @@
 int sys_portal_create(int nodenum)
 {
 	/* Invalid node. */
-	if (nodenum < 0)
+	if ((nodenum < 0) || (nodenum >= HAL_NR_NOC_NODES))
 		return (-EINVAL);
 
 	return (hal_portal_create(hal_noc_nodes[nodenum]));
@@ -63,7 +63,7 @@ int sys_portal_create(int nodenum)
 int sys_portal_allow(int portalid, int nodenum)
 {
 	/* Invalid node. */
-	if (nodenum < 0)
+	if ((nodenum < 0) || (nodenum >= HAL_NR_NOC_NODES))
 		return (-EINVAL);
 
 	return (hal_portal_allow(portalid, hal_noc_nodes[nodenum]));
@@ -84,7 +84,7 @@ int sys_portal_allow(int portalid, int nodenum)
 int sys_portal_open(int nodenum)
 {
 	/* Invalid node. */
-	if (nodenum < 0)
+	if ((nodenum < 0) || (nodenum >= HAL_NR_NOC_NODES))
 		return (-EINVAL);
 
 	return (hal_portal_open(hal_noc_nodes[nodenum]));

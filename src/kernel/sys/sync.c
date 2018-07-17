@@ -52,7 +52,7 @@ int sys_sync_create(const int *nodes, int nnodes, int type)
 	for (int i = 0; i < nnodes; i++)
 	{
 		/* Invalid nodes list. */
-		if (nodes[i] < 0)
+		if ((nodes[i] < 0) || (nodes[i] >= HAL_NR_NOC_NODES))
 			return (-EINVAL);
 
 		_nodes[i] = hal_noc_nodes[nodes[i]];
@@ -91,7 +91,7 @@ int sys_sync_open(const int *nodes, int nnodes, int type)
 	for (int i = 0; i < nnodes; i++)
 	{
 		/* Invalid nodes list. */
-		if (nodes[i] < 0)
+		if ((nodes[i] < 0) || (nodes[i] >= HAL_NR_NOC_NODES))
 			return (-EINVAL);
 
 		_nodes[i] = hal_noc_nodes[nodes[i]];
