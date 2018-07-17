@@ -40,6 +40,7 @@ static void test_sys_mailbox_invalid_create(void)
 	int inbox;
 
 	TEST_ASSERT((inbox = sys_mailbox_create(-1)) < 0);
+	TEST_ASSERT((inbox = sys_mailbox_create(1000000)) < 0);
 }
 
 /*============================================================================*
@@ -88,6 +89,7 @@ static void test_sys_mailbox_invalid_open(void)
 	int outbox;
 
 	TEST_ASSERT((outbox = sys_mailbox_open(-1)) < 0);
+	TEST_ASSERT((outbox = sys_mailbox_open(1000000)) < 0);
 }
 
 /*============================================================================*

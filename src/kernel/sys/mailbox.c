@@ -41,7 +41,7 @@
 int sys_mailbox_create(int nodenum)
 {
 	/* Invalid node. */
-	if (nodenum < 0)
+	if ((nodenum < 0) || (nodenum >= HAL_NR_NOC_NODES))
 		return (-EINVAL);
 
 	return (hal_mailbox_create(hal_noc_nodes[nodenum]));
@@ -63,7 +63,7 @@ int sys_mailbox_create(int nodenum)
 int sys_mailbox_open(int nodenum)
 {
 	/* Invalid node. */
-	if (nodenum < 0)
+	if ((nodenum < 0) || (nodenum >= HAL_NR_NOC_NODES))
 		return (-EINVAL);
 
 	return (hal_mailbox_open(hal_noc_nodes[nodenum]));
