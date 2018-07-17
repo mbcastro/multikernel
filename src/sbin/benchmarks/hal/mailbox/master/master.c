@@ -50,7 +50,7 @@ static int pids[NANVIX_PROC_MAX];
 /**
  * @brief Buffer.
  */
-static char buffer[HAL_MAILBOX_MSG_SIZE];
+static char buffer[MAILBOX_MSG_SIZE];
 
 /**
  * @brief Underlying NoC node ID.
@@ -156,7 +156,7 @@ static void kernel_broadcast(void)
 
 	/* Initialization. */
 	open_mailboxes(outboxes);
-	memset(buffer, 1, HAL_MAILBOX_MSG_SIZE);
+	memset(buffer, 1, MAILBOX_MSG_SIZE);
 
 	/* Benchmark. */
 	for (int k = 0; k <= (niterations + 1); k++)
@@ -166,7 +166,7 @@ static void kernel_broadcast(void)
 
 		t1 = sys_timer_get();
 		for (int i = 0; i < nclusters; i++)
-			assert(sys_mailbox_write(outboxes[i], buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
+			assert(sys_mailbox_write(outboxes[i], buffer, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
 		t2 = sys_timer_get();
 
 		total = sys_timer_diff(t1, t2)/((double) sys_get_core_freq());
@@ -177,10 +177,10 @@ static void kernel_broadcast(void)
 
 		printf("nanvix;%s;%d;%d;%.2lf;%.2lf\n",
 			kernel,
-			HAL_MAILBOX_MSG_SIZE,
+			MAILBOX_MSG_SIZE,
 			nclusters,
 			(total*MEGA)/nclusters,
-			(nclusters*HAL_MAILBOX_MSG_SIZE)/total
+			(nclusters*MAILBOX_MSG_SIZE)/total
 		);
 	}
 	
@@ -201,7 +201,7 @@ static void kernel_gather(void)
 	{
 		t1 = sys_timer_get();
 		for (int i = 0; i < nclusters; i++)
-			assert(sys_mailbox_read(inbox, buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
+			assert(sys_mailbox_read(inbox, buffer, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
 		t2 = sys_timer_get();
 
 		total = sys_timer_diff(t1, t2)/((double) sys_get_core_freq());
@@ -212,10 +212,10 @@ static void kernel_gather(void)
 
 		printf("nanvix;%s;%d;%d;%.2lf;%.2lf\n",
 			kernel,
-			HAL_MAILBOX_MSG_SIZE,
+			MAILBOX_MSG_SIZE,
 			nclusters,
 			(total*MEGA)/nclusters,
-			(nclusters*HAL_MAILBOX_MSG_SIZE)/total
+			(nclusters*MAILBOX_MSG_SIZE)/total
 		);
 	}
 }
@@ -237,9 +237,9 @@ static void kernel_pingpong(void)
 	{
 		t1 = sys_timer_get();
 		for (int i = 0; i < nclusters; i++)
-			assert(sys_mailbox_write(outboxes[i], buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
+			assert(sys_mailbox_write(outboxes[i], buffer, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
 		for (int i = 0; i < nclusters; i++)
-			assert(sys_mailbox_read(inbox, buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
+			assert(sys_mailbox_read(inbox, buffer, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
 		t2 = sys_timer_get();
 
 		total = sys_timer_diff(t1, t2)/((double) sys_get_core_freq());
@@ -250,10 +250,10 @@ static void kernel_pingpong(void)
 
 		printf("nanvix;%s;%d;%d;%.2lf;%.2lf\n",
 			kernel,
-			HAL_MAILBOX_MSG_SIZE,
+			MAILBOX_MSG_SIZE,
 			nclusters,
 			(total*MEGA)/nclusters,
-			2*(nclusters*HAL_MAILBOX_MSG_SIZE)/total
+			2*(nclusters*MAILBOX_MSG_SIZE)/total
 		);
 	}
 

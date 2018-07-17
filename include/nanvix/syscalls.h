@@ -32,6 +32,11 @@
 	#define __NEED_HAL_MAILBOX_
 	#include <nanvix/hal.h>
 
+	/**
+	 * @brief Size (in bytes) of a mailbox message.
+	 */
+	#define MAILBOX_MSG_SIZE HAL_MAILBOX_MSG_SIZE
+
 	/* Forward definitions. */
 	extern void sys_setup(void);
 	extern void sys_cleanup(void);

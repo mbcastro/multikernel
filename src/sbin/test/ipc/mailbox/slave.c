@@ -47,7 +47,7 @@ static void test_mailbox_cc(int nclusters)
 {
 	char pathname_local[NANVIX_PROC_NAME_MAX];
 	char pathname_remote[NANVIX_PROC_NAME_MAX];
-	char buf[HAL_MAILBOX_MSG_SIZE];
+	char buf[MAILBOX_MSG_SIZE];
 	int nodenum;
 	int inbox;
 	int outbox;
@@ -83,12 +83,12 @@ static void test_mailbox_cc(int nclusters)
 
 	TEST_ASSERT(barrier_wait(barrier) == 0);
 
-	memset(buf, 1, HAL_MAILBOX_MSG_SIZE);
+	memset(buf, 1, MAILBOX_MSG_SIZE);
 	TEST_ASSERT(mailbox_write(outbox, buf, sizeof(buf)) == 0);
-	memset(buf, 0, HAL_MAILBOX_MSG_SIZE);
+	memset(buf, 0, MAILBOX_MSG_SIZE);
 	TEST_ASSERT(mailbox_read(inbox, buf, sizeof(buf)) == 0);
 
-	for (int i = 0; i < HAL_MAILBOX_MSG_SIZE; i++)
+	for (int i = 0; i < MAILBOX_MSG_SIZE; i++)
 		TEST_ASSERT(buf[i] == 1);
 
 	TEST_ASSERT(mailbox_close(outbox) == 0);
@@ -104,7 +104,7 @@ static void test_mailbox_cc(int nclusters)
 static void test_mailbox_io_cc(int nclusters)
 {
 	char pathname_local[NANVIX_PROC_NAME_MAX];
-	char buf[HAL_MAILBOX_MSG_SIZE];
+	char buf[MAILBOX_MSG_SIZE];
 	int nodenum;
 	int inbox;
 	int syncid_local;
@@ -133,10 +133,10 @@ static void test_mailbox_io_cc(int nclusters)
 	/* Wait for IO cluster. */
 	TEST_ASSERT(sys_sync_wait(syncid_local) == 0);
 
-	memset(buf, 0, HAL_MAILBOX_MSG_SIZE);
+	memset(buf, 0, MAILBOX_MSG_SIZE);
 	TEST_ASSERT(mailbox_read(inbox, buf, sizeof(buf)) == 0);
 
-	for (int i = 0; i < HAL_MAILBOX_MSG_SIZE; i++)
+	for (int i = 0; i < MAILBOX_MSG_SIZE; i++)
 		TEST_ASSERT(buf[i] == 1);
 
 	TEST_ASSERT(mailbox_unlink(inbox) == 0);
@@ -152,7 +152,7 @@ static void test_mailbox_io_cc(int nclusters)
 static void test_mailbox_cc_io(int nclusters)
 {
 	char pathname_remote[NANVIX_PROC_NAME_MAX];
-	char buf[HAL_MAILBOX_MSG_SIZE];
+	char buf[MAILBOX_MSG_SIZE];
 	int outbox;
 	int syncid_local;
 	int syncid;
@@ -178,7 +178,7 @@ static void test_mailbox_cc_io(int nclusters)
 
 	TEST_ASSERT((outbox = mailbox_open(pathname_remote)) >= 0);
 
-	memset(buf, 1, HAL_MAILBOX_MSG_SIZE);
+	memset(buf, 1, MAILBOX_MSG_SIZE);
 	TEST_ASSERT(mailbox_write(outbox, buf, sizeof(buf)) == 0);
 
 	TEST_ASSERT(mailbox_close(outbox) == 0);

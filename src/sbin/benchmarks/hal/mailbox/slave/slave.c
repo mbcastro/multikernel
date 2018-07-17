@@ -48,7 +48,7 @@ static int niterations = 0;
 /**
  * @brief Buffer.
  */
-static char buffer[HAL_MAILBOX_MSG_SIZE];
+static char buffer[MAILBOX_MSG_SIZE];
 
 /**
  * @brief Inbox for receiving messages.
@@ -66,7 +66,7 @@ static void kernel_broadcast(void)
 {
 	/* Benchmark. */
 	for (int k = 0; k <= (niterations + 1); k++)
-		assert(sys_mailbox_read(inbox, buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
+		assert(sys_mailbox_read(inbox, buffer, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
 }
 
 /*============================================================================*
@@ -85,7 +85,7 @@ static void kernel_gather(void)
 
 	/* Benchmark. */
 	for (int k = 0; k <= (niterations + 1); k++)
-		assert(sys_mailbox_write(outbox, buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
+		assert(sys_mailbox_write(outbox, buffer, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
 
 	/* House keeping. */
 	assert(sys_mailbox_close(outbox) == 0);
@@ -108,8 +108,8 @@ static void kernel_pingpong(void)
 	/* Benchmark. */
 	for (int k = 0; k <= (niterations + 1); k++)
 	{
-		assert(sys_mailbox_read(inbox, buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
-		assert(sys_mailbox_write(outbox, buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
+		assert(sys_mailbox_read(inbox, buffer, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
+		assert(sys_mailbox_write(outbox, buffer, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
 	}
 
 	/* House keeping. */

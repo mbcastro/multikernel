@@ -175,11 +175,11 @@ static void test_sys_mailbox_double_close(void)
  */
 static void test_sys_mailbox_invalid_write(void)
 {
-	char buf[HAL_MAILBOX_MSG_SIZE];
+	char buf[MAILBOX_MSG_SIZE];
 
-	memset(buf, 1, HAL_MAILBOX_MSG_SIZE);
-	TEST_ASSERT(sys_mailbox_write(-1, buf, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE);
-	TEST_ASSERT(sys_mailbox_write(100000, buf, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE);
+	memset(buf, 1, MAILBOX_MSG_SIZE);
+	TEST_ASSERT(sys_mailbox_write(-1, buf, MAILBOX_MSG_SIZE) != MAILBOX_MSG_SIZE);
+	TEST_ASSERT(sys_mailbox_write(100000, buf, MAILBOX_MSG_SIZE) != MAILBOX_MSG_SIZE);
 }
 
 /*============================================================================*
@@ -192,15 +192,15 @@ static void test_sys_mailbox_invalid_write(void)
 static void test_sys_mailbox_bad_write(void)
 {
 	int inbox;
-	char buf[HAL_MAILBOX_MSG_SIZE];
+	char buf[MAILBOX_MSG_SIZE];
 	int nodenum;
 
 	nodenum = sys_get_node_num();
 
 	TEST_ASSERT((inbox = sys_mailbox_create(nodenum)) >= 0);
 
-	memset(buf, 1, HAL_MAILBOX_MSG_SIZE);
-	TEST_ASSERT(sys_mailbox_write(inbox, buf, 1) != HAL_MAILBOX_MSG_SIZE);
+	memset(buf, 1, MAILBOX_MSG_SIZE);
+	TEST_ASSERT(sys_mailbox_write(inbox, buf, 1) != MAILBOX_MSG_SIZE);
 
 	TEST_ASSERT(sys_mailbox_unlink(inbox) == 0);
 }
@@ -220,7 +220,7 @@ static void test_sys_mailbox_null_write(void)
 	nodenum = sys_get_node_num();
 
 	TEST_ASSERT((outbox = sys_mailbox_open(nodenum + 1)) >= 0);
-	TEST_ASSERT(sys_mailbox_write(outbox, NULL, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE);
+	TEST_ASSERT(sys_mailbox_write(outbox, NULL, MAILBOX_MSG_SIZE) != MAILBOX_MSG_SIZE);
 	TEST_ASSERT(sys_mailbox_close(outbox) == 0);
 }
 
@@ -233,11 +233,11 @@ static void test_sys_mailbox_null_write(void)
  */
 static void test_sys_mailbox_invalid_read(void)
 {
-	char buf[HAL_MAILBOX_MSG_SIZE];
+	char buf[MAILBOX_MSG_SIZE];
 
-	memset(buf, 1, HAL_MAILBOX_MSG_SIZE);
-	TEST_ASSERT(sys_mailbox_read(-1, buf, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE);
-	TEST_ASSERT(sys_mailbox_read(100000, buf, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE);
+	memset(buf, 1, MAILBOX_MSG_SIZE);
+	TEST_ASSERT(sys_mailbox_read(-1, buf, MAILBOX_MSG_SIZE) != MAILBOX_MSG_SIZE);
+	TEST_ASSERT(sys_mailbox_read(100000, buf, MAILBOX_MSG_SIZE) != MAILBOX_MSG_SIZE);
 }
 
 /*============================================================================*
@@ -250,15 +250,15 @@ static void test_sys_mailbox_invalid_read(void)
 static void test_sys_mailbox_bad_read(void)
 {
 	int outbox;
-	char buf[HAL_MAILBOX_MSG_SIZE];
+	char buf[MAILBOX_MSG_SIZE];
 	int nodenum;
 
 	nodenum = sys_get_node_num();
 
 	TEST_ASSERT((outbox = sys_mailbox_open(nodenum + 1)) >= 0);
 
-	memset(buf, 1, HAL_MAILBOX_MSG_SIZE);
-	TEST_ASSERT(sys_mailbox_read(outbox, buf, 1) != HAL_MAILBOX_MSG_SIZE);
+	memset(buf, 1, MAILBOX_MSG_SIZE);
+	TEST_ASSERT(sys_mailbox_read(outbox, buf, 1) != MAILBOX_MSG_SIZE);
 
 	TEST_ASSERT(sys_mailbox_close(outbox) == 0);
 }
@@ -278,7 +278,7 @@ static void test_sys_mailbox_null_read(void)
 	nodenum = sys_get_node_num();
 
 	TEST_ASSERT((inbox = sys_mailbox_create(nodenum)) >= 0);
-	TEST_ASSERT(sys_mailbox_read(inbox, NULL, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE);
+	TEST_ASSERT(sys_mailbox_read(inbox, NULL, MAILBOX_MSG_SIZE) != MAILBOX_MSG_SIZE);
 	TEST_ASSERT(sys_mailbox_unlink(inbox) == 0);
 }
 

@@ -61,7 +61,7 @@ struct mailbox
 /**
  * @brief table of mailboxes.
  */
-static struct mailbox mailboxes[HAL_NR_MAILBOX];
+static struct mailbox mailboxes[NANVIX_MAILBOX_MAX];
 
 /*============================================================================*
  * initialize_inbox()                                                         *
@@ -166,7 +166,7 @@ int get_inbox(void)
  */
 static inline int mailbox_is_valid(int mbxid)
 {
-	return ((mbxid >=0) && (mbxid < HAL_NR_MAILBOX));
+	return ((mbxid >=0) && (mbxid < NANVIX_MAILBOX_MAX));
 }
 
 /*============================================================================*
@@ -268,7 +268,7 @@ static inline void mailbox_set_wronly(int mbxid)
 static int mailbox_alloc(void)
 {
 	/* Search for a free mailbox. */
-	for (int i = 0; i < HAL_NR_MAILBOX; i++)
+	for (int i = 0; i < NANVIX_MAILBOX_MAX; i++)
 	{
 		/* Found. */
 		if (!mailbox_is_used(i))
@@ -329,7 +329,7 @@ int mailbox_create(char *name)
 		return (-EINVAL);
 
 	/* Check name length. */
-	if (strlen(name) > HAL_MAILBOX_MSG_SIZE)
+	if (strlen(name) > MAILBOX_MSG_SIZE)
 		return (-EINVAL);
 
 	/* Allocate mailbox. */
