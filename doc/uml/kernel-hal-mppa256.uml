@@ -1,0 +1,157 @@
+@startuml
+
+namespace mppa256 {
+	class Core {
+		- threads[]
+		- lock
+		- NR_IOCLUSTER_CORES
+		- NR_CCLUSTER_CORES
+		~ CCLUSTER0
+		~ CCLUSTER1
+		~ CCLUSTER2
+		~ CCLUSTER3
+		~ CCLUSTER4
+		~ CCLUSTER5
+		~ CCLUSTER6
+		~ CCLUSTER7
+		~ CCLUSTER8
+		~ CCLUSTER9
+		~ CCLUSTER10
+		~ CCLUSTER11
+		~ CCLUSTER12
+		~ CCLUSTER13
+		~ CCLUSTER14
+		~ CCLUSTER15
+		~ IOCLUSTER0
+		~ IOCLUSTER1
+		- mppa256_core_lock()
+		- mppa256_core_unlock()
+		~ mppa256_is_ccluster()
+		~ mpp256_is_iocluster()
+		~ mppa256_get_cluster_id()
+		~ mppa256_core_setup()
+		~ mpp256_core_cleanup()
+	}
+
+	class NoC {
+		- NR_CCLUSTER_DMA
+		- NR_IOCLUSTER_DMA
+		~ noctag_mailbox()
+		~ noctag_sync()
+		~ noctag_portal()
+		~ noc_get_remotes()
+		~ noc_get_names()
+		~ noc_get_dma()
+		~ noc_is_ionode()
+		~ noc_is_ionode0()
+		~ noc_is_ionode1()
+		~ noc_is_cnode()
+	}
+
+	namespace Sync {
+		enum SyncFlags {
+			~ SYNC_FLAGS_USED
+			~ SYNC_FLAGS_BROADCAST
+			~ SYNC_FLAGS_WRONLY
+			~ SYNC_FLAGS_BUSY
+		}
+
+		class Sync {
+			- flags
+			~ fd 
+			~ ncount
+			~ sync_is_valid()
+			~ sync_is_used()
+			~ sync_is_wronly()
+			~ sync_is_busy()
+			~ sync_is_broadcast()
+			~ sync_set_used()
+			~ sync_set_wronly()
+			~ sync_set_busy()
+			~ sync_set_broadcast()
+			~ sync_clear_busy()
+			~ sync_clear_flags()
+		}
+
+		class SyncOperations {
+			- sync_alloc()
+			- sync_free()
+			- sync_ranks()
+		}
+
+		Sync           .> SyncFlags : <<use>>
+		SyncOperations *- Sync      : synctab
+	}
+
+	namespace Mailbox {
+		enum MailboxFlags {
+			~ MAILBOX_FLAGS_USED
+			~ MAILBOX_FLAGS_WRONLY
+			~ MAILBOX_FLAGS_BUSY
+		}
+
+		class Mailbox {
+			- flags
+			~ fd 
+			~ mailbox_is_valid()
+			~ mailbox_is_used()
+			~ mailbox_is_wronly()
+			~ mailbox_is_busy()
+			~ mailbox_set_used()
+			~ mailbox_set_wronly()
+			~ mailbox_set_busy()
+			~ mailbox_clear_busy()
+			~ mailbox_clear_flags()
+		}
+
+		class MailboxOperations {
+			- mailbox_alloc()
+			- mailbox_free()
+			- mailbox_ranks()
+		}
+
+		Mailbox               .> MailboxFlags : <<use>>
+		MailboxOperations *- Mailbox          : mailboxes
+	}
+
+	namespace Portal {
+		enum PortalFlags {
+			~ PORTAL_FLAGS_USED
+			~ PORTAL_FLAGS_WRONLY
+			~ PORTAL_FLAGS_BUSY
+		}
+
+		class Portal {
+			- flags
+			~ portal_fd
+			~ sync_fd
+			~ remote
+			~ local
+			~ portal_is_valid()
+			~ portal_is_used()
+			~ portal_is_wronly()
+			~ portal_is_busy()
+			~ portal_set_used()
+			~ portal_set_wronly()
+			~ portal_set_busy()
+			~ portal_clear_busy()
+			~ portal_clear_flags()
+		}
+
+		class PortalOperations {
+			- portal_alloc()
+			- portal_free()
+		}
+
+		Portal           .> PortalFlags : <<use>>
+		PortalOperations *- Portal      : portals
+	}
+
+	mppa256.Sync    ..> mppa256.NoC  : <<use>>
+	mppa256.Mailbox ..> mppa256.NoC  : <<use>>
+	mppa256.Portal  ..> mppa256.NoC  : <<use>>
+	mppa256.NoC     ..> mppa256.Core : <<use>>
+}
+
+@enduml
+

@@ -28,8 +28,8 @@ namespace HAL {
 		+ hal_mailbox_open()
 		+ hal_mailbox_unlink()
 		+ hal_mailbox_close()
-		+ size_t hal_mailbox_write()
-		+ size_t hal_mailbox_read()
+		+ hal_mailbox_write()
+		+ hal_mailbox_read()
 	}
 
 	enum HAL.SyncTypes {
@@ -64,18 +64,18 @@ namespace HAL {
 		+ HAL_NR_NOC_IONODES
 		+ HAL_NR_NOC_CNODES
 		+ HAL_NR_NOC_NODES
-		+ hal_noc_nodes[HAL_NR_NOC_NODES]
+		+ hal_noc_nodes[]
 		+ hal_get_node_id()
 		+ hal_get_node_num()
 	}
 
 	interface HAL.SetupInterface {
-		+ void hal_setup()
-		+ void hal_cleanup()
+		+ hal_setup()
+		+ hal_cleanup()
 	}
 
 	interface HAL.PerformanceInterface {
-		+ uint64_t hal_timer_get()
+		+ hal_timer_get()
 	}
 
 	HAL.CoreInterface .> HAL.CoreTypes : <<use>>
