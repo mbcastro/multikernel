@@ -89,7 +89,7 @@ static void test_sys_mailbox_create_unlink_cc(void)
 	printf("[nanvix][test][api][hal][mailbox] Create Unlink CC\n");
 
 	/* Build arguments. */
-	sprintf(masternode_str, "%d", sys_get_node_id());
+	sprintf(masternode_str, "%d", sys_get_node_num());
 	sprintf(mailbox_nclusters_str, "%d", NANVIX_PROC_MAX);
 	sprintf(test_str, "%d", 0);
 
@@ -120,7 +120,7 @@ static void test_sys_mailbox_open_close_cc(void)
 	printf("[nanvix][test][api][hal][mailbox] Open Close CC\n");
 
 	/* Build arguments. */
-	sprintf(masternode_str, "%d", sys_get_node_id());
+	sprintf(masternode_str, "%d", sys_get_node_num());
 	sprintf(mailbox_nclusters_str, "%d", NANVIX_PROC_MAX);
 	sprintf(test_str, "%d", 1);
 
@@ -151,7 +151,7 @@ static void test_sys_mailbox_read_write_cc(void)
 	printf("[nanvix][test][api][hal][mailbox] Read Write CC\n");
 
 	/* Build arguments. */
-	sprintf(masternode_str, "%d", sys_get_node_id());
+	sprintf(masternode_str, "%d", sys_get_node_num());
 	sprintf(mailbox_nclusters_str, "%d", NANVIX_PROC_MAX);
 	sprintf(test_str, "%d", 2);
 
@@ -184,12 +184,12 @@ static void test_sys_mailbox_read_write2_cc(void)
 	printf("[nanvix][test][api][hal][mailbox] Read Write 2 CC\n");
 
 	/* Build arguments. */
-	sprintf(masternode_str, "%d", sys_get_node_id());
+	sprintf(masternode_str, "%d", sys_get_node_num());
 	sprintf(mailbox_nclusters_str, "%d", NANVIX_PROC_MAX);
 	sprintf(test_str, "%d", 3);
 
 	/* Build nodes list. */
-	nodes[0] = sys_get_node_id();
+	nodes[0] = sys_get_node_num();
 	for (int i = 0; i < NANVIX_PROC_MAX; i++)
 		nodes[i + 1] = i;
 
@@ -250,7 +250,7 @@ static void test_sys_mailbox_read_write3_cc(void)
 	printf("[nanvix][test][api][hal][mailbox] Read Write 3 CC\n");
 
 	/* Build arguments. */
-	sprintf(masternode_str, "%d", sys_get_node_id());
+	sprintf(masternode_str, "%d", sys_get_node_num());
 	sprintf(mailbox_nclusters_str, "%d", NANVIX_PROC_MAX);
 	sprintf(test_str, "%d", 4);
 

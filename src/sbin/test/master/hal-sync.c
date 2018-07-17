@@ -93,7 +93,7 @@ static void test_sys_sync_create_unlink_cc(void)
 	printf("[nanvix][test][api][hal][sync] Create Unlink CC\n");
 
 	/* Build arguments. */
-	sprintf(masternode_str, "%d", sys_get_node_id());
+	sprintf(masternode_str, "%d", sys_get_node_num());
 	sprintf(sync_nclusters_str, "%d", NANVIX_PROC_MAX);
 	sprintf(test_str, "%d", 0);
 
@@ -124,7 +124,7 @@ static void test_sys_sync_open_close_cc(void)
 	printf("[nanvix][test][api][hal][sync] Open Close CC\n");
 
 	/* Build arguments. */
-	sprintf(masternode_str, "%d", sys_get_node_id());
+	sprintf(masternode_str, "%d", sys_get_node_num());
 	sprintf(sync_nclusters_str, "%d", NANVIX_PROC_MAX);
 	sprintf(test_str, "%d", 1);
 
@@ -308,7 +308,7 @@ static void test_sys_sync_barrier2_cc(void)
 void test_sys_sync(void)
 {
 	/* Build nodes list. */
-	nodes[0] = sys_get_node_id();
+	nodes[0] = sys_get_node_num();
 	for (int i = 0; i < NANVIX_PROC_MAX; i++)
 		nodes[i + 1] = i;
 	

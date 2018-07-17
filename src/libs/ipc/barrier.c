@@ -175,7 +175,7 @@ int barrier_create(int *nodes, int nnodes)
 	int barrierid; /* Id of the barrier.     */
 	int local;	   /* Local sync connector.  */
 	int remote;	   /* Remote sync connector. */
-	int nodeid;	   /* NoC node Id.           */
+	int nodenum;   /* NoC node.              */
 
 	/* Invalid node list. */
 	if (nodes == NULL)
@@ -185,12 +185,12 @@ int barrier_create(int *nodes, int nnodes)
 	if ((nnodes < 0) && (nnodes >= HAL_NR_NOC_NODES))
 		return (-EINVAL);
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
 	/* This node should be in the list. */
 	for (int i = 0; i < nnodes ; i++)
 	{
-		if (nodes[i] == nodeid)
+		if (nodes[i] == nodenum)
 			goto found;
 	}
 
@@ -202,7 +202,7 @@ found:
 	if((barrierid = barrier_alloc()) < 0)
 		return (-EAGAIN);
 
-	if (nodeid == nodes[0])
+	if (nodenum == nodes[0])
 	{
 		/* This node is the leader of the barrier. */
 		if ((local = sys_sync_create(nodes, nnodes, HAL_SYNC_ALL_TO_ONE)) < 0)
@@ -280,7 +280,7 @@ int barrier_unlink(int barrierid)
  */
 int barrier_wait(int barrierid)
 {
-	int nodeid;
+	int nodenum;
 
 	/* Invalid barrier Id. */
 	if (!barrier_is_valid(barrierid))
@@ -290,10 +290,10 @@ int barrier_wait(int barrierid)
 	if (!barrier_is_used(barrierid))
 		return (-EINVAL);
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
 	/* Is this node the leader of the list ? */
-	if (nodeid == barriers[barrierid].nodes[0])
+	if (nodenum == barriers[barrierid].nodes[0])
 	{
 		/* Wait for others nodes. */
 		if (sys_sync_wait(barriers[barrierid].local) != 0)
@@ -308,7 +308,7 @@ int barrier_wait(int barrierid)
 		/* This node should be in the list. */
 		for (int i = 0; i < barriers[barrierid].nnodes ; i++)
 		{
-			if (barriers[barrierid].nodes[i] == nodeid)
+			if (barriers[barrierid].nodes[i] == nodenum)
 				goto found;
 		}
 

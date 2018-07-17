@@ -61,7 +61,7 @@ int name_init(void)
 	if (initialized)
 		return (0);
 
-	server = sys_mailbox_open(hal_noc_nodes[NAME_SERVER_NODE]);
+	server = sys_mailbox_open(NAME_SERVER_NODE);
 
 	if (server >= 0)
 	{
@@ -113,9 +113,9 @@ int name_lookup(char *name)
 		return (-EAGAIN);
 
 	/* Build operation header. */
-	msg.source = sys_get_node_id();
+	msg.source = sys_get_node_num();
 	msg.op = NAME_LOOKUP;
-	msg.nodeid = -1;
+	msg.nodenum = -1;
 	strcpy(msg.name, name);
 
 	pthread_mutex_lock(&lock);
@@ -128,7 +128,7 @@ int name_lookup(char *name)
 
 	pthread_mutex_unlock(&lock);
 
-	return (msg.nodeid);
+	return (msg.nodenum);
 
 error1:
 	pthread_mutex_unlock(&lock);
@@ -142,18 +142,18 @@ error1:
 /**
  * @brief link a process name.
  *
- * @param nodeid NoC node ID of the process to link.
+ * @param nodenum NoC node ID of the process to link.
  * @param name   Name of the process to link.
  *
  * @returns Upon successful completion 0 is returned.
  * Upon failure, a negative error code is returned instead.
  */
-int name_link(int nodeid, const char *name)
+int name_link(int nodenum, const char *name)
 {
 	struct name_message msg;
 
 	/* Invalid NoC node ID. */
-	if (nodeid < 0)
+	if (nodenum < 0)
 		return (-EINVAL);
 
 	/* Invalid name. */
@@ -169,9 +169,9 @@ int name_link(int nodeid, const char *name)
 		return (-EAGAIN);
 
 	/* Build operation header. */
-	msg.source = sys_get_node_id();
+	msg.source = sys_get_node_num();
 	msg.op = NAME_LINK;
-	msg.nodeid = nodeid;
+	msg.nodenum = nodenum;
 	strcpy(msg.name, name);
 
 	pthread_mutex_lock(&lock);
@@ -228,9 +228,9 @@ int name_unlink(const char *name)
 		return (-EAGAIN);
 
 	/* Build operation header. */
-	msg.source = sys_get_node_id();
+	msg.source = sys_get_node_num();
 	msg.op = NAME_UNLINK;
-	msg.nodeid = -1;
+	msg.nodenum = -1;
 	strcpy(msg.name, name);
 
 	pthread_mutex_lock(&lock);

@@ -53,13 +53,13 @@ static void test_mailbox_cc(int nclusters)
 	char pathname_local[NANVIX_PROC_NAME_MAX];
 	char pathname_remote[NANVIX_PROC_NAME_MAX];
 	char buf[HAL_MAILBOX_MSG_SIZE];
-	int nodeid;
+	int nodenum;
 	int inbox;
 	int outbox;
 	int barrier;
 	int nodes[nclusters];
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
 	/* Build nodes list. */
 	for (int i = 0; i < nclusters; i++)
@@ -76,13 +76,13 @@ static void test_mailbox_cc(int nclusters)
 
 	TEST_ASSERT(barrier_wait(barrier) == 0);
 
-	sprintf(pathname_local, "cool-name%d", nodeid);
+	sprintf(pathname_local, "cool-name%d", nodenum);
 
 	TEST_ASSERT((inbox = mailbox_create(pathname_local)) >= 0);
 
 	TEST_ASSERT(barrier_wait(barrier) == 0);
 
-	sprintf(pathname_remote, "cool-name%d", (nodeid + 1)%nclusters);
+	sprintf(pathname_remote, "cool-name%d", (nodenum + 1)%nclusters);
 
 	TEST_ASSERT((outbox = mailbox_open(pathname_remote)) >= 0);
 
@@ -110,13 +110,13 @@ static void test_mailbox_io_cc(int nclusters)
 {
 	char pathname_local[NANVIX_PROC_NAME_MAX];
 	char buf[HAL_MAILBOX_MSG_SIZE];
-	int nodeid;
+	int nodenum;
 	int inbox;
 	int syncid_local;
 	int syncid;
 	int nodes[(nclusters + 1)];
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
 	/* Build nodes list. */
 	for (int i = 0; i < nclusters; i++)
@@ -128,7 +128,7 @@ static void test_mailbox_io_cc(int nclusters)
 
 	TEST_ASSERT((syncid = sys_sync_open(nodes, (nclusters + 1), HAL_SYNC_ALL_TO_ONE)) >= 0);
 
-	sprintf(pathname_local, "compute_cluster%d", nodeid);
+	sprintf(pathname_local, "compute_cluster%d", nodenum);
 
 	TEST_ASSERT((inbox = mailbox_create(pathname_local)) >= 0);
 

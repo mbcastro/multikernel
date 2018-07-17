@@ -20,8 +20,10 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#define __NEED_HAL_NOC_
 #define __NEED_HAL_SYNC_
 #include <nanvix/hal.h>
+#include <nanvix/klib.h>
 
 /**
  * @brief Creates a synchronization point.
@@ -40,7 +42,23 @@
  */
 int sys_sync_create(const int *nodes, int nnodes, int type)
 {
-	return (hal_sync_create(nodes, nnodes, type));
+	/* Invalid number of nodes. */
+	if (nnodes < 0)
+		return (-EINVAL);
+
+	int _nodes[nnodes];
+
+	/* Convert NoC node numbers into IDs. */
+	for (int i = 0; i < nnodes; i++)
+	{
+		/* Invalid nodes list. */
+		if (nodes[i] < 0)
+			return (-EINVAL);
+
+		_nodes[i] = hal_noc_nodes[nodes[i]];
+	}
+
+	return (hal_sync_create(_nodes, nnodes, type));
 }
 
 
@@ -63,7 +81,23 @@ int sys_sync_create(const int *nodes, int nnodes, int type)
  */
 int sys_sync_open(const int *nodes, int nnodes, int type)
 {
-	return (hal_sync_open(nodes, nnodes, type));
+	/* Invalid number of nodes. */
+	if (nnodes < 0)
+		return (-EINVAL);
+
+	int _nodes[nnodes];
+
+	/* Convert NoC node numbers into IDs. */
+	for (int i = 0; i < nnodes; i++)
+	{
+		/* Invalid nodes list. */
+		if (nodes[i] < 0)
+			return (-EINVAL);
+
+		_nodes[i] = hal_noc_nodes[nodes[i]];
+	}
+
+	return (hal_sync_open(_nodes, nnodes, type));
 }
 
 /**

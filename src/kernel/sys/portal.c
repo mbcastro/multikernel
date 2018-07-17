@@ -20,13 +20,15 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#define __NEED_HAL_NOC_
 #define __NEED_HAL_PORTAL_
 #include <nanvix/hal.h>
+#include <nanvix/klib.h>
 
 /**
  * @brief Creates a portal.
  *
- * @param local ID of the local NoC node.
+ * @param nodenum Target NoC node.
  *
  * @returns Upon successful completion, the ID of a newly created
  * portal is returned. Upon failure, a negative error code is returned
@@ -36,16 +38,20 @@
  * @note This function is thread-safe.
  * @note This function is reentrant.
  */
-int sys_portal_create(int local)
+int sys_portal_create(int nodenum)
 {
-	return (hal_portal_create(local));
+	/* Invalid node. */
+	if (nodenum < 0)
+		return (-EINVAL);
+
+	return (hal_portal_create(hal_noc_nodes[nodenum]));
 }
 
 /**
- * @brief Enables read operations from a remote.
+ * @brief Enables read operations from a nodenum.
  *
  * @param portalid ID of the target portal.
- * @param remote   NoC node ID of target remote.
+ * @param nodenum  Target NoC node.
  *
  * @returns Upons successful completion zero is returned. Upon failure,
  * a negative error code is returned instead.
@@ -54,15 +60,19 @@ int sys_portal_create(int local)
  * @note This function is thread-safe.
  * @note This function is reentrant.
  */
-int sys_portal_allow(int portalid, int remote)
+int sys_portal_allow(int portalid, int nodenum)
 {
-	return (hal_portal_allow(portalid, remote));
+	/* Invalid node. */
+	if (nodenum < 0)
+		return (-EINVAL);
+
+	return (hal_portal_allow(portalid, hal_noc_nodes[nodenum]));
 }
 
 /**
  * @brief Opens a portal.
  *
- * @param remote ID of the target NoC node.
+ * @param nodenum Target NoC node.
  *
  * @returns Upon successful completion, the ID of the target portal is
  * returned. Upon failure, a negative error code is returned instead.
@@ -71,9 +81,13 @@ int sys_portal_allow(int portalid, int remote)
  * @note This function is thread-safe.
  * @note This function is reentrant.
  */
-int sys_portal_open(int remote)
+int sys_portal_open(int nodenum)
 {
-	return (hal_portal_open(remote));
+	/* Invalid node. */
+	if (nodenum < 0)
+		return (-EINVAL);
+
+	return (hal_portal_open(hal_noc_nodes[nodenum]));
 }
 
 /**

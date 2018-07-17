@@ -40,7 +40,7 @@
 int main(int argc, char **argv)
 {
 	int barrier;
-	int nodes[2] = {0, 128};
+	int nodes[2] = {0, SPAWNER_SERVER_NODE};
 
 	((void) argc);
 	((void) argv);

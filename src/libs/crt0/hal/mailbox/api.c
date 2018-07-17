@@ -25,11 +25,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define __NEED_HAL_CORE_
-#define __NEED_HAL_NOC_
-#define __NEED_HAL_SETUP_
-#define __NEED_HAL_SYNC_
-#define __NEED_HAL_MAILBOX_
 #include <nanvix/const.h>
 #include <nanvix/syscalls.h>
 #include <nanvix/pm.h>
@@ -46,15 +41,15 @@
 static void *test_sys_mailbox_thread_create_unlink(void *args)
 {
 	int inbox;
-	int nodeid;
+	int nodenum;
 
 	((void)args);
 
 	sys_setup();
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
-	TEST_ASSERT((inbox = sys_mailbox_create(nodeid)) >= 0);
+	TEST_ASSERT((inbox = sys_mailbox_create(nodenum)) >= 0);
 
 	pthread_barrier_wait(&barrier);
 
@@ -98,22 +93,22 @@ static void *test_sys_mailbox_thread_open_close(void *args)
 	int tid;
 	int inbox;
 	int outbox;
-	int nodeid;
+	int nodenum;
 
 	sys_setup();
 
 	tid = ((int *)args)[0];
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
-	TEST_ASSERT((inbox = sys_mailbox_create(nodeid)) >= 0);
+	TEST_ASSERT((inbox = sys_mailbox_create(nodenum)) >= 0);
 
 	pthread_barrier_wait(&barrier);
 
 	TEST_ASSERT((outbox = sys_mailbox_open(
 		((tid + 1) == mailbox_ncores) ?
-			nodeid + 1 - mailbox_ncores + 1:
-			nodeid + 1)) >= 0
+			nodenum + 1 - mailbox_ncores + 1:
+			nodenum + 1)) >= 0
 	);
 
 	pthread_barrier_wait(&barrier);
@@ -163,19 +158,19 @@ static void *test_sys_mailbox_thread_read_write(void *args)
 	int inbox;
 	int outbox;
 	char buf[HAL_MAILBOX_MSG_SIZE];
-	int nodeid;
+	int nodenum;
 
 	sys_setup();
 
 	tnum = ((int *)args)[0];
 
 	/* Build nodes list. */
-	nodeid = sys_get_node_id();
-	mailbox_nodes[tnum] = nodeid;
+	nodenum = sys_get_node_num();
+	mailbox_nodes[tnum] = nodenum;
 
 	pthread_barrier_wait(&barrier);
 
-	TEST_ASSERT((inbox = sys_mailbox_create(nodeid)) >= 0);
+	TEST_ASSERT((inbox = sys_mailbox_create(nodenum)) >= 0);
 
 	TEST_ASSERT((outbox = sys_mailbox_open(
 		((tnum + 1) == mailbox_ncores) ?

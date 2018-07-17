@@ -24,20 +24,6 @@
 #include <nanvix/hal.h>
 
 /**
- * @brief Gets the ID of the NoC node attached to the underlying core.
- *
- * @returns The ID of the NoC node attached to the underlying core is
- * returned.
- *
- * @note This function is blocking.
- * @note This function is thread-safe.
- */
-int sys_get_node_id(void)
-{
-	return (hal_get_node_id());
-}
-
-/**
  * @brief Gets the logic number of the underlying NoC node.
  *
  * @returns The logic number of the target NoC node.

@@ -39,19 +39,19 @@
  */
 static void test_sys_sync_barrier(void)
 {
-	int nodeid;
+	int nodenum;
 	int syncid;
 	int syncid_local;
 	int nodes[2];
 	int nodes_local[2];
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
-	nodes[0] = nodeid;
-	nodes[1] = hal_noc_nodes[SPAWNER_SERVER_NODE];
+	nodes[0] = nodenum;
+	nodes[1] = SPAWNER_SERVER_NODE;
 
-	nodes_local[0] = hal_noc_nodes[SPAWNER_SERVER_NODE];
-	nodes_local[1] = nodeid;
+	nodes_local[0] = SPAWNER_SERVER_NODE;
+	nodes_local[1] = nodenum;
 
 	/* Open syncrhonization points. */
 	TEST_ASSERT((syncid_local = sys_sync_create(nodes_local, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);

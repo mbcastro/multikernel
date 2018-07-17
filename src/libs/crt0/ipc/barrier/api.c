@@ -20,20 +20,18 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
- #include <stdlib.h>
+#include <stdlib.h>
 
- #include <mppaipc.h>
+#include <mppaipc.h>
 
- #define __NEED_HAL_CORE_
- #define __NEED_HAL_NOC_
- #define __NEED_HAL_SYNC_
- #include <nanvix/syscalls.h>
- #include <nanvix/syscalls.h>
- #include <nanvix/pm.h>
+#define __NEED_HAL_CORE_
+#define __NEED_HAL_NOC_
+#define __NEED_HAL_SYNC_
+#include <nanvix/const.h>
+#include <nanvix/syscalls.h>
+#include <nanvix/pm.h>
 
 #include "test.h"
-
-#define OTHERIO 192
 
 /*============================================================================*
  * API Test: Barrier Wait IO Clusters                                         *
@@ -45,13 +43,13 @@
 static void test_barrier_wait(void)
 {
 	int barrier;
-	int nodeid;
+	int nodenum;
 	int nodes[2];
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
    
-	nodes[0] = OTHERIO;
-	nodes[1] = nodeid;
+	nodes[0] = SPAWNER1_SERVER_NODE;
+	nodes[1] = nodenum;
 
 	/* Wait on barrier. */
 	TEST_ASSERT((barrier = barrier_create(nodes, 2)) >= 0);
@@ -69,16 +67,16 @@ static void test_barrier_wait(void)
 static void test_barrier_cc()
 {
 	int barrier;
-	int nodeid;
+	int nodenum;
 	int nodes[(16 + 2)];
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
 	for (int i = 0; i < 16; i++)
 		nodes[i + 2] = i;
 
-	nodes[0] = OTHERIO;
-	nodes[1] = nodeid;
+	nodes[0] = SPAWNER1_SERVER_NODE;
+	nodes[1] = nodenum;
 
 	TEST_ASSERT((barrier = barrier_create(nodes, (16 + 2))) >= 0);
 	TEST_ASSERT(barrier_wait(barrier) == 0);

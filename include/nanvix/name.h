@@ -44,7 +44,7 @@
 	{
 		uint16_t source;                 /**< Source cluster. */
 		uint16_t op;                     /**< Operation.      */
-		int32_t nodeid;                  /**< NoC node ID.    */
+		int32_t nodenum;                 /**< NoC node.       */
 		char name[NANVIX_PROC_NAME_MAX]; /**< Portal name.    */
 	};
 

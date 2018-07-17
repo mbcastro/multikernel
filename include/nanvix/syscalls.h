@@ -44,7 +44,6 @@
 	extern int sys_get_core_type(void);
 	extern int sys_get_num_cores(void);
 	extern int sys_get_core_freq(void);
-	extern int sys_get_node_id(void);
 	extern int sys_get_node_num(void);
 	extern int sys_mailbox_create(int);
 	extern int sys_mailbox_open(int);

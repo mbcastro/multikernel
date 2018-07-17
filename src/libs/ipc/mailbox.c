@@ -78,15 +78,15 @@ static struct mailbox mailboxes[HAL_NR_MAILBOX];
 int initialize_inbox(int index)
 {
 	int mailbox;
-	int nodeid;
+	int nodenum;
 
 	/* Nothing to do. */
 	if (initialized[index])
 		return (0);
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
-	mailbox = sys_mailbox_create(nodeid);
+	mailbox = sys_mailbox_create(nodenum);
 
 	if (mailbox < 0)
 		return (-EAGAIN);
@@ -104,7 +104,7 @@ static void unset_inbox()
 {
 	int index;
 
-	index = sys_get_node_id() - sys_get_cluster_id();
+	index = sys_get_core_id();
 
 	initialized[index] = 0;
 }
@@ -142,7 +142,7 @@ int get_inbox(void)
 {
 	int index;
 
-	index = sys_get_node_id() - sys_get_cluster_id();
+	index = sys_get_core_id();
 
 	/* Inbox was not initialized. */
 	if (!initialized[index])
@@ -320,9 +320,9 @@ static void mailbox_free(int mbxid)
 */
 int mailbox_create(char *name)
 {
-	int fd;     /* NoC connector. */
-	int nodeid; /* NoC node ID.   */
-	int mbxid;  /* ID of mailbix. */
+	int fd;      /* NoC connector. */
+	int nodenum; /* NoC node.      */
+	int mbxid;   /* ID of mailbix. */
 
 	/* Invalid name. */
 	if (name == NULL)
@@ -336,10 +336,10 @@ int mailbox_create(char *name)
 	if ((mbxid = mailbox_alloc()) < 0)
 		return (-EAGAIN);
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
 	/* Link name. */
-	if (name_link(nodeid, name) != 0)
+	if (name_link(nodenum, name) != 0)
 		return (-EAGAIN);
 
 	/* Get the client inbox. */
@@ -372,16 +372,16 @@ error0:
 */
 int mailbox_open(char *name)
 {
-	int fd;     /* NoC connector. */
-	int nodeid; /* NoC node ID.   */
-	int mbxid;  /* ID of mailbix. */
+	int fd;      /* NoC connector. */
+	int nodenum; /* NoC node.      */
+	int mbxid;   /* ID of mailbix. */
 
 	/* Invalid name. */
 	if (name == NULL)
 		return (-EINVAL);
 
 	/* Resolve name, */
-	if ((nodeid = name_lookup(name)) < 0)
+	if ((nodenum = name_lookup(name)) < 0)
 		return (-EAGAIN);
 
 	/* Allocate a mailbox. */
@@ -389,7 +389,7 @@ int mailbox_open(char *name)
 		return (-EAGAIN);
 
 	/* Open underlying HW channel. */
-	if ((fd = sys_mailbox_open(nodeid)) < 0)
+	if ((fd = sys_mailbox_open(nodenum)) < 0)
 		goto error0;
 
 	/* Initialize mailbox. */

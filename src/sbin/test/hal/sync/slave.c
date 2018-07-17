@@ -60,7 +60,7 @@ static void test_sys_sync_create_unlink(int nclusters)
 		nodes[i] = i;
 
 	/* Fix nodes list. */
-	if (nodes[0] == sys_get_node_id())
+	if (nodes[0] == sys_get_node_num())
 	{
 		nodes[0] += nodes[1];
 		nodes[1] -= nodes[1];
@@ -84,7 +84,7 @@ static void test_sys_sync_create_unlink(int nclusters)
  */
 static void test_sys_sync_master_open_close(int nclusters)
 {
-	int nodeid;
+	int nodenum;
 	int syncid;
 	int syncid_local;
 	int nodes_local[nclusters];
@@ -93,9 +93,9 @@ static void test_sys_sync_master_open_close(int nclusters)
 	for (int i = 0; i < nclusters; i++)
 		nodes_local[i] = i;
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
-	if (nodes_local[0] == nodeid)
+	if (nodes_local[0] == nodenum)
 	{
 		nodes_local[0] += nodes_local[1];
 		nodes_local[1] -= nodes_local[1];
@@ -113,14 +113,14 @@ static void test_sys_sync_master_open_close(int nclusters)
 		nodes[i] = i;
 
 	/* Fix nodes list. */
-	if (nodes[0] != nodeid)
+	if (nodes[0] != nodenum)
 	{
 		for (int i = 1; i < nclusters; i++)
 		{
-			if (nodes[i] == nodeid)
+			if (nodes[i] == nodenum)
 			{
 				nodes[i] = nodes[0];
-				nodes[0] = nodeid;
+				nodes[0] = nodenum;
 			}
 		}
 	}
@@ -232,17 +232,17 @@ static void test_sys_sync_barrier(int nclusters)
  */
 static void test_sys_sync_barrier2(int nclusters)
 {
-	int nodeid;
+	int nodenum;
 	int syncid1, syncid2;
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
 	/* Build nodes list. */
 	for (int i = 0; i < nclusters; i++)
 		nodes[i] = i;
 
 	/* Open synchronization points. */
-	if (nodeid == 0)
+	if (nodenum == 0)
 	{
 		TEST_ASSERT((syncid1 = sys_sync_create(nodes,
 			nclusters,

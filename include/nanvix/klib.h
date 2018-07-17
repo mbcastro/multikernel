@@ -23,6 +23,10 @@
 #ifndef NANVIX_KLIB_H_
 #define NANVIX_KLIB_H_
 
+	#include <errno.h>
+	#include <stdio.h>
+	#include <string.h>
+
 	/**
 	 * @brief Gets the length of an array.
 	 *
