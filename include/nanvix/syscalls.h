@@ -31,6 +31,7 @@
 	#define __NEED_HAL_NOC_
 	#define __NEED_HAL_SYNC_
 	#define __NEED_HAL_MAILBOX_
+	#define __NEED_HAL_PORTAL_
 	#include <nanvix/hal.h>
 
 	/* Forward definitions. */
