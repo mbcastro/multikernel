@@ -205,6 +205,13 @@ found:
 
 	if (nodenum == nodes[0])
 	{
+		/* Check for a bad barrier leader. */
+		for (int i = 1; i < nnodes; i++)
+		{
+			if (nodenum < nodes[0])
+				goto error0;
+		}
+
 		/* This node is the leader of the barrier. */
 		if ((local = sys_sync_create(nodes, nnodes, SYNC_ALL_TO_ONE)) < 0)
 			goto error0;
