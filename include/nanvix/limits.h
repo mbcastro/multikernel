@@ -23,8 +23,7 @@
 #ifndef NANVIX_LIMITS_H_
 #define NANVIX_LIMITS_H_
 
-	#define __NEED_HAL_CORE_
-	#define __NEED_HAL_MAILBOX_
+	#define __NEED_HAL_CONST_
 	#include <nanvix/hal.h>
 
 	/**

@@ -26,9 +26,7 @@
 	#include <stddef.h>
 	#include <inttypes.h>
 
-	#define __NEED_HAL_CORE_
-	#define __NEED_HAL_NOC_
-	#define __NEED_HAL_MAILBOX_
+	#define __NEED_HAL_CONST_
 	#include <nanvix/hal.h>
 
 	/**

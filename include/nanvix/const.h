@@ -23,7 +23,7 @@
 #ifndef NANVIX_CONST_H_
 #define NANVIX_CONST_H_
 
-	#define __NEED_HAL_NOC_
+	#define __NEED_HAL_CONST_
 	#include <nanvix/hal.h>
 
 	/**
