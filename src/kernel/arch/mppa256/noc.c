@@ -123,7 +123,7 @@ int hal_get_node_id(void)
  * @note This function is non-blocking.
  * @note This function is thread-safe.
  */
-int noc_get_node_num(int nodeid)
+int hal_get_node_num(int nodeid)
 {
 	/* Lookup table of NoC node IDs. */
 	for (int i = 1; i < HAL_NR_NOC_NODES; i++)

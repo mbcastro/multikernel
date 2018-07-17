@@ -37,3 +37,19 @@ int sys_get_node_id(void)
 	return (hal_get_node_id());
 }
 
+/**
+ * @brief Gets the logic number of the underlying NoC node.
+ *
+ * @returns The logic number of the target NoC node.
+ *
+ * @see hal_get_node_num()
+ */
+int sys_get_node_num(void)
+{
+	int nodeid;
+
+	nodeid = hal_get_node_id();
+
+	return (hal_get_node_num(nodeid));
+}
+
