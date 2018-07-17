@@ -27,8 +27,8 @@
 
 #include <mppaipc.h>
 
-#include <nanvix/const.h>
 #include <nanvix/syscalls.h>
+#include <nanvix/const.h>
 
 #include "test.h"
 
@@ -49,7 +49,7 @@ static void test_sys_sync_invalid_create(void)
 	TEST_ASSERT((sys_sync_create(nodes, -1, SYNC_ONE_TO_ALL)) < 0);
 	TEST_ASSERT((sys_sync_create(nodes, 0, SYNC_ONE_TO_ALL)) < 0);
 	TEST_ASSERT((sys_sync_create(nodes, 1, SYNC_ONE_TO_ALL)) < 0);
-	TEST_ASSERT((sys_sync_create(nodes, HAL_NR_NOC_NODES + 1, SYNC_ONE_TO_ALL)) < 0);
+	TEST_ASSERT((sys_sync_create(nodes, NANVIX_NR_NODES + 1, SYNC_ONE_TO_ALL)) < 0);
 	TEST_ASSERT((sys_sync_create(nodes, ncores, -1)) < 0);
 }
 
@@ -133,7 +133,7 @@ static void test_sys_sync_invalid_open(void)
 	TEST_ASSERT((sys_sync_open(nodes, -1, SYNC_ONE_TO_ALL)) < 0);
 	TEST_ASSERT((sys_sync_open(nodes, 0, SYNC_ONE_TO_ALL)) < 0);
 	TEST_ASSERT((sys_sync_open(nodes, 1, SYNC_ONE_TO_ALL)) < 0);
-	TEST_ASSERT((sys_sync_open(nodes, HAL_NR_NOC_NODES + 1, SYNC_ONE_TO_ALL)) < 0);
+	TEST_ASSERT((sys_sync_open(nodes, NANVIX_NR_NODES + 1, SYNC_ONE_TO_ALL)) < 0);
 	TEST_ASSERT((sys_sync_open(nodes, ncores, -1)) < 0);
 }
 

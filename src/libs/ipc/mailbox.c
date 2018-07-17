@@ -26,6 +26,7 @@
 #include <string.h>
 
 #include <nanvix/syscalls.h>
+#include <nanvix/const.h>
 #include <nanvix/name.h>
 #include <nanvix/pm.h>
 
@@ -40,13 +41,13 @@
 /**
  * @brief Input HAL mailbox.
  */
-static int inboxes[HAL_NR_NOC_IONODES];
+static int inboxes[NANVIX_NR_NODES];
 
 /**
  *
  * @brief Is the inbox initialized ?
  */
-static int initialized[HAL_NR_NOC_IONODES] = { 0, };
+static int initialized[NANVIX_NR_NODES] = { 0, };
 
 /**
  * @brief Mailbox.

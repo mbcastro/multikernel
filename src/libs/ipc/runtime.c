@@ -26,6 +26,7 @@
 
 #include <nanvix/pm.h>
 #include <nanvix/syscalls.h>
+#include <nanvix/const.h>
 
 extern int name_init(void); 
 
@@ -38,7 +39,7 @@ static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
  *
  * @brief Is the runtime initialized ?
  */
-static int initialized[HAL_NR_NOC_IONODES] = { 0, };
+static int initialized[NANVIX_NR_NODES] = { 0, };
 
 /**
  * @brief Locks the runtime.

@@ -27,8 +27,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <nanvix/const.h>
 #include <nanvix/syscalls.h>
+#include <nanvix/const.h>
 #include <nanvix/pm.h>
 #include <nanvix/name.h>
 
@@ -43,7 +43,7 @@ static int nr_registration = 0;
 static struct {
 	int nodenum;                     /**< NoC node.     */
 	char name[NANVIX_PROC_NAME_MAX]; /**< Process name. */
-} names[HAL_NR_NOC_NODES];
+} names[NANVIX_NR_NODES];
 
 /*===================================================================*
  * name_init()                                                       *
@@ -55,7 +55,7 @@ static struct {
 static void name_init(void)
 {
 	/* Initialize lookup table. */
-	for (int i = 0; i < HAL_NR_NOC_NODES; i++)
+	for (int i = 0; i < NANVIX_NR_NODES; i++)
 	{
 		names[i].nodenum = i;
 		strcpy(names[i].name, "");
@@ -80,7 +80,7 @@ static void name_init(void)
 static int _name_lookup(const char *name)
 {
 	/* Search for portal name. */
-	for (int i = 0; i < HAL_NR_NOC_NODES; i++)
+	for (int i = 0; i < NANVIX_NR_NODES; i++)
 	{
 		/* Found. */
 		if (!strcmp(name, names[i].name))
@@ -108,18 +108,18 @@ static int _name_link(int nodenum, char *name)
 	int index;          /* Index where the process will be stored. */
 
 	/* No entry available. */
-	if (nr_registration >= HAL_NR_NOC_NODES)
+	if (nr_registration >= NANVIX_NR_NODES)
 		return (-EINVAL);
 
 	/* Check that the name is not already used */
-	for (int i = 0; i < HAL_NR_NOC_NODES; i++)
+	for (int i = 0; i < NANVIX_NR_NODES; i++)
 	{
 		if (strcmp(names[i].name, name) == 0)
 			return (-EINVAL);
 	}
 
 	/* Find index. */
-	for (int i = 0; i < HAL_NR_NOC_NODES; i++)
+	for (int i = 0; i < NANVIX_NR_NODES; i++)
 	{
 		/* Found. */
 		if (names[i].nodenum == nodenum)
@@ -164,12 +164,12 @@ static int _name_unlink(char *name)
 	/* Search for portal name. */
 	int i = 0;
 
-	while (i < HAL_NR_NOC_NODES && strcmp(name, names[i].name))
+	while (i < NANVIX_NR_NODES && strcmp(name, names[i].name))
 	{
 		i++;
 	}
 
-	if (i < HAL_NR_NOC_NODES)
+	if (i < NANVIX_NR_NODES)
 	{
 		strcpy(names[i].name, "");
 		return (--nr_registration);

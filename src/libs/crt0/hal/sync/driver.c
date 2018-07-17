@@ -24,6 +24,7 @@
 #include <stdio.h>
 
 #include <nanvix/syscalls.h>
+#include <nanvix/const.h>
 
 #include "test.h"
 
@@ -40,7 +41,7 @@ int ncores = 0;
 /**
  * @brief Nodes list.
  */
-int nodes[HAL_NR_NOC_NODES];
+int nodes[NANVIX_NR_NODES];
 
 /**
  * @brief Global barrier for synchronization.
