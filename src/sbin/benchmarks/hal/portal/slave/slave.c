@@ -165,7 +165,7 @@ int main(int argc, const char **argv)
 	int last_remote;
 	
 	/* Initialization. */
-	sys_setup();
+	kernel_setup();
 	nodenum = sys_get_node_num();
 
 	/* Retrieve kernel parameters. */
@@ -188,7 +188,7 @@ int main(int argc, const char **argv)
 		kernel_pingpong();
 
 	/* House keeping. */
-	sys_cleanup();
+	kernel_cleanup();
 
 	return (EXIT_SUCCESS);
 }

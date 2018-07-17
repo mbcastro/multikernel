@@ -45,7 +45,7 @@ static void *test_sys_mailbox_thread_create_unlink(void *args)
 
 	((void)args);
 
-	sys_setup();
+	kernel_setup();
 
 	nodenum = sys_get_node_num();
 
@@ -55,7 +55,7 @@ static void *test_sys_mailbox_thread_create_unlink(void *args)
 
 	TEST_ASSERT(sys_mailbox_unlink(inbox) == 0);
 
-	sys_cleanup();
+	kernel_cleanup();
 	return (NULL);
 }
 
@@ -95,7 +95,7 @@ static void *test_sys_mailbox_thread_open_close(void *args)
 	int outbox;
 	int nodenum;
 
-	sys_setup();
+	kernel_setup();
 
 	tid = ((int *)args)[0];
 
@@ -117,7 +117,7 @@ static void *test_sys_mailbox_thread_open_close(void *args)
 
 	TEST_ASSERT(sys_mailbox_unlink(inbox) == 0);
 
-	sys_cleanup();
+	kernel_cleanup();
 	return (NULL);
 }
 
@@ -160,7 +160,7 @@ static void *test_sys_mailbox_thread_read_write(void *args)
 	char buf[MAILBOX_MSG_SIZE];
 	int nodenum;
 
-	sys_setup();
+	kernel_setup();
 
 	tnum = ((int *)args)[0];
 
@@ -195,7 +195,7 @@ static void *test_sys_mailbox_thread_read_write(void *args)
 
 	TEST_ASSERT(sys_mailbox_unlink(inbox) == 0);
 
-	sys_cleanup();
+	kernel_cleanup();
 	return (NULL);
 }
 

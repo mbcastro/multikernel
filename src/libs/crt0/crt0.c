@@ -114,7 +114,8 @@ int main(int argc, const char **argv)
 			debug = 1;
 	}
 
-	sys_setup();
+	/* Initialization. */
+	assert(kernel_setup() == 0);
 
 	printf("[nanvix][spawner0] booting up server\n");
 
@@ -125,9 +126,6 @@ int main(int argc, const char **argv)
 	printf("[nanvix][spawner0] server alive\n");
 
 	spawners_sync();
-
-	/* Initialization. */
-	assert(kernel_setup() == 0);
 
 	/* Run self-tests. */
 	if (debug)
@@ -147,6 +145,5 @@ int main(int argc, const char **argv)
 
 	/* Cleanup. */
 	assert(kernel_cleanup() == 0);
-	sys_cleanup();
 	return (ret);
 }

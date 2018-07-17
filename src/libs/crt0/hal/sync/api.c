@@ -44,7 +44,7 @@ static void *test_sys_sync_create_unlink_worker(void *args)
 	int tnum;
 	int syncid;
 
-	sys_setup();
+	kernel_setup();
 
 	tnum = ((int *)args)[0];
 
@@ -65,7 +65,7 @@ static void *test_sys_sync_create_unlink_worker(void *args)
 
 	TEST_ASSERT(sys_sync_unlink(syncid) == 0);
 
-	sys_cleanup();
+	kernel_cleanup();
 	return (NULL);
 }
 
@@ -107,7 +107,7 @@ static void *test_sys_sync_open_close_worker(void *args)
 	int tnum;
 	int syncid;
 
-	sys_setup();
+	kernel_setup();
 
 	tnum = ((int *)args)[0];
 
@@ -128,7 +128,7 @@ static void *test_sys_sync_open_close_worker(void *args)
 
 	TEST_ASSERT(sys_sync_unlink(syncid) == 0);
 
-	sys_cleanup();
+	kernel_cleanup();
 	return (NULL);
 }
 
@@ -170,7 +170,7 @@ static void *test_sys_sync_wait_signal_worker(void *args)
 	int tnum;
 	int syncid;
 
-	sys_setup();
+	kernel_setup();
 
 	tnum = ((int *)args)[0];
 
@@ -210,7 +210,7 @@ static void *test_sys_sync_wait_signal_worker(void *args)
 		TEST_ASSERT(sys_sync_unlink(syncid) == 0);
 	}
 
-	sys_cleanup();
+	kernel_cleanup();
 	return (NULL);
 }
 
@@ -252,7 +252,7 @@ static void *test_sys_sync_signal_wait_worker(void *args)
 	int tnum;
 	int syncid;
 
-	sys_setup();
+	kernel_setup();
 
 	tnum = ((int *)args)[0];
 
@@ -292,7 +292,7 @@ static void *test_sys_sync_signal_wait_worker(void *args)
 		TEST_ASSERT(sys_sync_close(syncid) == 0);
 	}
 
-	sys_cleanup();
+	kernel_cleanup();
 	return (NULL);
 }
 

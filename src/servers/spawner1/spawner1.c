@@ -66,7 +66,7 @@ static void *server(void *args)
 	int servernum;
 	int (*main_fn) (int);
 
-	sys_setup();
+	kernel_setup();
 
 	servernum = ((int *)args)[0];
 
@@ -82,7 +82,7 @@ static void *server(void *args)
 	/* Spawn server. */
 	main_fn(inbox);
 
-	sys_cleanup();
+	kernel_cleanup();
 	return (NULL);
 }
 
@@ -155,7 +155,7 @@ int main(int argc, char **argv)
 			debug = 1;
 	}
 
-	sys_setup();
+	kernel_setup();
 
 	printf("[nanvix][spawner1] booting up server\n");
 
@@ -190,6 +190,6 @@ int main(int argc, char **argv)
 	for (int i = 0; i < NR_SERVERS; i++)
 		pthread_join(tids[i], NULL);
 
-	sys_cleanup();
+	kernel_cleanup();
 	return (EXIT_SUCCESS);
 }

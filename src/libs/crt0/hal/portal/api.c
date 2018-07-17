@@ -45,7 +45,7 @@ static void *test_sys_portal_thread_create_unlink(void *args)
 	
 	((void)args);
 
-	sys_setup();
+	kernel_setup();
 
 	pthread_barrier_wait(&barrier);
 
@@ -57,7 +57,7 @@ static void *test_sys_portal_thread_create_unlink(void *args)
 
 	TEST_ASSERT(sys_portal_unlink(inportal) == 0);
 
-	sys_cleanup();
+	kernel_cleanup();
 	return (NULL);
 }
 
@@ -98,7 +98,7 @@ static void *test_sys_portal_thread_open_close(void *args)
 	int tid;
 	int nodenum;
 
-	sys_setup();
+	kernel_setup();
 
 	pthread_barrier_wait(&barrier);
 
@@ -116,7 +116,7 @@ static void *test_sys_portal_thread_open_close(void *args)
 
 	TEST_ASSERT(sys_portal_close(outportal) == 0);
 
-	sys_cleanup();
+	kernel_cleanup();
 	return (NULL);
 }
 
@@ -160,7 +160,7 @@ static void *test_sys_portal_thread_read_write(void *args)
 	int nodenum;
 	int TID_READ = 1;
 
-	sys_setup();
+	kernel_setup();
 
 	pthread_barrier_wait(&barrier);
 
@@ -199,7 +199,7 @@ static void *test_sys_portal_thread_read_write(void *args)
 		TEST_ASSERT(sys_portal_close(outportal) == 0);
 	}
 
-	sys_cleanup();
+	kernel_cleanup();
 	return (NULL);
 }
 

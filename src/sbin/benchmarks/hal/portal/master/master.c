@@ -284,7 +284,7 @@ static void kernel_pingpong(void)
 static void benchmark(void)
 {
 	/* Initialization. */
-	sys_setup();
+	kernel_setup();
 	spawn_remotes();
 
 	if (!strcmp(kernel, "broadcast"))
@@ -296,7 +296,7 @@ static void benchmark(void)
 	
 	/* House keeping. */
 	join_remotes();
-	sys_cleanup();
+	kernel_cleanup();
 }
 
 /*============================================================================*

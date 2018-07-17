@@ -54,8 +54,6 @@
 	#define MAILBOX_MSG_SIZE HAL_MAILBOX_MSG_SIZE
 
 	/* Forward definitions. */
-	extern void sys_setup(void);
-	extern void sys_cleanup(void);
 	extern uint64_t sys_timer_get(void);
 	extern uint64_t sys_timer_diff(uint64_t, uint64_t);
 	extern void sys_timer_init(void);

@@ -75,7 +75,7 @@ static void *server(void *args)
 {
 	((void) args);
 
-	sys_setup();
+	kernel_setup();
 
 	pthread_barrier_wait(&barrier);
 
@@ -89,7 +89,7 @@ static void *server(void *args)
 	 */
 	exit(EXIT_SUCCESS);
 
-	sys_cleanup();
+	kernel_cleanup();
 	return (NULL);
 }
 
@@ -103,7 +103,7 @@ int main(int argc, const char **argv)
 	((void) argc);
 	((void) argv);
 
-	sys_setup();
+	kernel_setup();
 
 	pthread_barrier_init(&barrier, NULL, 2);
 
@@ -120,6 +120,6 @@ int main(int argc, const char **argv)
 
 	pthread_join(tid, NULL);
 
-	sys_cleanup();
+	kernel_cleanup();
 	return (EXIT_SUCCESS);
 }

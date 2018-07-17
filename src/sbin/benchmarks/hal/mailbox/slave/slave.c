@@ -153,7 +153,7 @@ int main(int argc, const char **argv)
 	int last_remote;
 	
 	/* Initialization. */
-	sys_setup();
+	kernel_setup();
 	nodenum = sys_get_node_num();
 
 	/* Retrieve kernel parameters. */
@@ -178,7 +178,7 @@ int main(int argc, const char **argv)
 
 	/* House keeping. */
 	assert(sys_mailbox_unlink(inbox) == 0);
-	sys_cleanup();
+	kernel_cleanup();
 
 	return (EXIT_SUCCESS);
 }

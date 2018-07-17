@@ -267,7 +267,7 @@ static void kernel_pingpong(void)
 static void benchmark(void)
 {
 	/* Initialization. */
-	sys_setup();
+	kernel_setup();
 	nodenum = sys_get_node_num();
 	assert((inbox = sys_mailbox_create(nodenum)) >= 0);
 	spawn_remotes();
@@ -282,7 +282,7 @@ static void benchmark(void)
 	/* House keeping. */
 	assert(sys_mailbox_unlink(inbox) == 0);
 	join_remotes();
-	sys_cleanup();
+	kernel_cleanup();
 }
 
 /*============================================================================*
