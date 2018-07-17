@@ -89,7 +89,7 @@ static void *test_thread_sys_get_core_type(void *args)
 	sys_setup();
 	pthread_barrier_wait(&core_barrier);
 
-	TEST_ASSERT(sys_get_core_type() == HAL_CORE_SYSTEM);
+	TEST_ASSERT(sys_get_core_type() == CORE_SYSTEM);
 
 	sys_cleanup();
 	return (NULL);

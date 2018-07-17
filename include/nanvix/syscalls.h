@@ -32,6 +32,15 @@
 	#include <nanvix/hal.h>
 
 	/**
+	 * @brief Type of cores.
+	 */
+	/**@{*/
+	#define CORE_USER   HAL_CORE_USER   /**< User core.                */
+	#define CORE_RMAN   HAL_CORE_RMAN   /**< Resource management core. */
+	#define CORE_SYSTEM HAL_CORE_SYSTEM /**< System core.              */
+	/**@}*/
+
+	/**
 	 * @brief Types of synchronization points.
 	 */
 	/**@{*/

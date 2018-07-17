@@ -57,6 +57,15 @@
  * Core Interface                                                             *
  *============================================================================*/
 
+	/**
+	 * @brief Type of cores.
+	 */
+	/**@{*/
+	#define HAL_CORE_USER   0 /**< User core.                */
+	#define HAL_CORE_RMAN   1 /**< Resource management core. */
+	#define HAL_CORE_SYSTEM 2 /**< System core.              */
+	/**@}*/
+
 #ifdef __NEED_HAL_CORE_
 
 	/* Sanity check. */
@@ -88,15 +97,6 @@
 	#ifndef HAL_NR_CLUSTERS
 		#error "undefined symbol: HAL_NR_CLUSTERS"
 	#endif
-
-	/**
-	 * @brief Type of cores.
-	 */
-	/**@{*/
-	#define HAL_CORE_USER   0 /**< User core.                */
-	#define HAL_CORE_RMAN   1 /**< Resource management core. */
-	#define HAL_CORE_SYSTEM 2 /**< System core.              */
-	/**@}*/
 
 	/* Forward definitions. */
 	extern int hal_get_cluster_id(void);
