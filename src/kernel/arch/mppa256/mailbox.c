@@ -271,7 +271,7 @@ static int mailbox_alloc(int nodeid)
 {
 	int mbxid;
 
-	/* Check for double create. */
+	/* Check for double allocation. */
 	if (noc_is_cnode(hal_get_node_id()))
 		mbxid = hal_get_node_num(nodeid);
 	else
@@ -280,10 +280,9 @@ static int mailbox_alloc(int nodeid)
 			hal_get_node_num(nodeid);
 	}
 
-	/* Allocate mailbox. */
+	/* Allocate. */
 	if (mailbox_is_used(mbxid))
 		return (-1);
-
 	mailbox_set_used(mbxid);
 
 	return (mbxid);

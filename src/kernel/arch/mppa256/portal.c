@@ -24,6 +24,7 @@
 
 #include <mppaipc.h>
 
+#define __NEED_HAL_CORE_
 #define __NEED_HAL_NOC_
 #define __NEED_HAL_PORTAL_
 #include <nanvix/hal.h>
@@ -250,26 +251,33 @@ static void portal_clear_flags(int portalid)
 /**
  * @brief Allocates a portal.
  *
+ * @param nodeid ID of target NoC node.
+ *
  * @returns Upon successful completion, the ID of a newly allocated
  * portal is returned. Upon failure, -1 is returned
  * instead.
  *
  * @note This function is @b NOT thread safe.
  */
-static int portal_alloc(void)
+static int portal_alloc(int nodeid)
 {
-	/* Search for a free portal. */
-	for (int i = 0; i < HAL_NR_PORTAL; i++)
+	int portalid;
+
+	/* Check for double allocation. */
+	if (noc_is_cnode(hal_get_node_id()))
+		portalid = hal_get_node_num(nodeid);
+	else
 	{
-		/* Found. */
-		if (!portal_is_used(i))
-		{
-			portal_set_used(i);
-			return (i);
-		}
+		portalid = hal_get_core_id()*HAL_NR_NOC_NODES + 
+			hal_get_node_num(nodeid);
 	}
 
-	return (-1);
+	/* Allocate. */
+	if (portal_is_used(portalid))
+		return (-1);
+	portal_set_used(portalid);
+
+	return (portalid);
 }
 
 /*============================================================================*
@@ -303,7 +311,7 @@ static int mppa256_portal_create(int local)
 	int noctag;         /* NoC tag used for transfers. */
 
 	/* Allocate portal. */
-	if ((portalid = portal_alloc()) < 0)
+	if ((portalid = portal_alloc(local)) < 0)
 		goto error0;
 
 	noctag = noctag_portal(local);
@@ -474,7 +482,7 @@ static int mppa256_portal_open(int local, int remote)
 	char pathname[128]; /* NoC connector name.   */
 
 	/* Allocate portal. */
-	if ((portalid = portal_alloc()) < 0)
+	if ((portalid = portal_alloc(remote)) < 0)
 		goto error0;
 
 	/* Build pathname for NoC connector. */
