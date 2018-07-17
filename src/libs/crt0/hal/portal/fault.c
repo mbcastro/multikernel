@@ -25,13 +25,6 @@
 
 #include <nanvix/syscalls.h>
 
-/* Enable huge NoC node ID tests. */
-#ifdef _TEST_HUGE_ID
-	#define _TEST_HAL_PORTAL_INVALID_CREATE_HUGE_ID
-	#define _TEST_HAL_PORTAL_INVALID_OPEN_HUGE_ID
-	#define _TEST_HAL_PORTAL_INVALID_ALLOW_HUGE_ID
-#endif
-
 #include "test.h"
 
 /*============================================================================*
@@ -46,9 +39,7 @@ static void test_sys_portal_invalid_create(void)
 	int inportal;
 
 	TEST_ASSERT((inportal = sys_portal_create(-1)) < 0);
-#ifdef _TEST_HAL_PORTAL_INVALID_CREATE_HUGE_ID
 	TEST_ASSERT((inportal = sys_portal_create(1000000)) < 0);
-#endif
 }
 
 /*============================================================================*
@@ -97,9 +88,7 @@ static void test_sys_portal_invalid_open(void)
 	int outportal;
 
 	TEST_ASSERT((outportal = sys_portal_open(-1)) < 0);
-#ifdef _TEST_HAL_PORTAL_INVALID_OPEN_HUGE_ID
 	TEST_ASSERT((outportal = sys_portal_open(1000000)) < 0);
-#endif
 }
 
 /*============================================================================*
@@ -253,9 +242,7 @@ static void test_sys_portal_invalid_allow(void)
 
 	TEST_ASSERT((inportal = sys_portal_create(nodenum)) >= 0);
 	TEST_ASSERT(sys_portal_allow(inportal, -1) < 0);
-#ifdef _TEST_HAL_PORTAL_INVALID_ALLOW_HUGE_ID
 	TEST_ASSERT(sys_portal_allow(inportal, 1000000) < 0);
-#endif
 	TEST_ASSERT((sys_portal_unlink(inportal)) == 0);
 }
 

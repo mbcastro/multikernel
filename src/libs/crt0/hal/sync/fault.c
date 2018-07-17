@@ -51,6 +51,10 @@ static void test_sys_sync_invalid_create(void)
 	TEST_ASSERT((sys_sync_create(nodes, 1, SYNC_ONE_TO_ALL)) < 0);
 	TEST_ASSERT((sys_sync_create(nodes, NANVIX_NR_NODES + 1, SYNC_ONE_TO_ALL)) < 0);
 	TEST_ASSERT((sys_sync_create(nodes, ncores, -1)) < 0);
+	nodes[0] = -1;
+	TEST_ASSERT((sys_sync_create(nodes, ncores, SYNC_ONE_TO_ALL)) < 0);
+	nodes[0] = 1000000;
+	TEST_ASSERT((sys_sync_create(nodes, ncores, SYNC_ONE_TO_ALL)) < 0);
 }
 
 /*============================================================================*
@@ -135,6 +139,10 @@ static void test_sys_sync_invalid_open(void)
 	TEST_ASSERT((sys_sync_open(nodes, 1, SYNC_ONE_TO_ALL)) < 0);
 	TEST_ASSERT((sys_sync_open(nodes, NANVIX_NR_NODES + 1, SYNC_ONE_TO_ALL)) < 0);
 	TEST_ASSERT((sys_sync_open(nodes, ncores, -1)) < 0);
+	nodes[0] = -1;
+	TEST_ASSERT((sys_sync_open(nodes, ncores, SYNC_ONE_TO_ALL)) < 0);
+	nodes[0] = 1000000;
+	TEST_ASSERT((sys_sync_open(nodes, ncores, SYNC_ONE_TO_ALL)) < 0);
 }
 
 /*============================================================================*
