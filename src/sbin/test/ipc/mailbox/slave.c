@@ -119,9 +119,9 @@ static void test_mailbox_io_cc(int nclusters)
 
 	nodes[0] = 192;
 
-	TEST_ASSERT((syncid_local = sys_sync_create(nodes, (nclusters + 1), HAL_SYNC_ONE_TO_ALL)) >= 0);
+	TEST_ASSERT((syncid_local = sys_sync_create(nodes, (nclusters + 1), SYNC_ONE_TO_ALL)) >= 0);
 
-	TEST_ASSERT((syncid = sys_sync_open(nodes, (nclusters + 1), HAL_SYNC_ALL_TO_ONE)) >= 0);
+	TEST_ASSERT((syncid = sys_sync_open(nodes, (nclusters + 1), SYNC_ALL_TO_ONE)) >= 0);
 
 	sprintf(pathname_local, "compute_cluster%d", nodenum);
 
@@ -164,9 +164,9 @@ static void test_mailbox_cc_io(int nclusters)
 
 	nodes[0] = 192;
 
-	TEST_ASSERT((syncid_local = sys_sync_create(nodes, (nclusters + 1), HAL_SYNC_ONE_TO_ALL)) >= 0);
+	TEST_ASSERT((syncid_local = sys_sync_create(nodes, (nclusters + 1), SYNC_ONE_TO_ALL)) >= 0);
 
-	TEST_ASSERT((syncid = sys_sync_open(nodes, (nclusters + 1), HAL_SYNC_ALL_TO_ONE)) >= 0);
+	TEST_ASSERT((syncid = sys_sync_open(nodes, (nclusters + 1), SYNC_ALL_TO_ONE)) >= 0);
 
 	sprintf(pathname_remote, "IO1");
 

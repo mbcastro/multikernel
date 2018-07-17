@@ -202,7 +202,7 @@ static void test_sys_portal_read_write2_cc(void)
 	TEST_ASSERT((syncid = sys_sync_create(
 		nodes,
 		NANVIX_PROC_MAX + 1,
-		HAL_SYNC_ALL_TO_ONE)) >= 0
+		SYNC_ALL_TO_ONE)) >= 0
 	);
 
 	spawn_slaves(args);

@@ -126,8 +126,8 @@ static void spawners_sync(void)
 	nodes_local[1] = nodenum;
 
 	/* Open syncrhonization points. */
-	assert((syncid_local = sys_sync_create(nodes_local, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
-	assert((syncid = sys_sync_open(nodes, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
+	assert((syncid_local = sys_sync_create(nodes_local, 2, SYNC_ONE_TO_ALL)) >= 0);
+	assert((syncid = sys_sync_open(nodes, 2, SYNC_ONE_TO_ALL)) >= 0);
 
 	assert(sys_sync_wait(syncid_local) == 0);
 	assert(sys_sync_signal(syncid) == 0);

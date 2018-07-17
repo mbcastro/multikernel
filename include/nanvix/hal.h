@@ -189,13 +189,6 @@
  * Synchronization Point Interface                                            *
  *============================================================================*/
 
-#ifdef __NEED_HAL_SYNC_
-
-	/* Sanity check. */
-	#ifndef HAL_NR_SYNC
-		#error "undefined symbol: HAL_NR_SYNC"
-	#endif
-
 	/**
 	 * @brief Types of synchronization points.
 	 */
@@ -203,6 +196,13 @@
 	#define HAL_SYNC_ONE_TO_ALL 0 /**< One to all. */
 	#define HAL_SYNC_ALL_TO_ONE 1 /**< All to one. */
 	/**@}*/
+
+#ifdef __NEED_HAL_SYNC_
+
+	/* Sanity check. */
+	#ifndef HAL_NR_SYNC
+		#error "undefined symbol: HAL_NR_SYNC"
+	#endif
 
 	/* Forward definitions. */
 	extern int hal_sync_create(const int *, int, int);

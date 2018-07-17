@@ -205,19 +205,19 @@ found:
 	if (nodenum == nodes[0])
 	{
 		/* This node is the leader of the barrier. */
-		if ((local = sys_sync_create(nodes, nnodes, HAL_SYNC_ALL_TO_ONE)) < 0)
+		if ((local = sys_sync_create(nodes, nnodes, SYNC_ALL_TO_ONE)) < 0)
 			goto error0;
 
-		if ((remote = sys_sync_open(nodes, nnodes, HAL_SYNC_ONE_TO_ALL)) < 0)
+		if ((remote = sys_sync_open(nodes, nnodes, SYNC_ONE_TO_ALL)) < 0)
 			goto error1;
 	}
 	else
 	{
 		/* This node is not the leader of the barrier. */
-		if ((local = sys_sync_create(nodes, nnodes, HAL_SYNC_ONE_TO_ALL)) < 0)
+		if ((local = sys_sync_create(nodes, nnodes, SYNC_ONE_TO_ALL)) < 0)
 			goto error0;
 
-		if ((remote = sys_sync_open(nodes, nnodes, HAL_SYNC_ALL_TO_ONE)) < 0)
+		if ((remote = sys_sync_open(nodes, nnodes, SYNC_ALL_TO_ONE)) < 0)
 			goto error1;
 	}
 

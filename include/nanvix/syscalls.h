@@ -28,9 +28,16 @@
 
 	#define __NEED_HAL_CORE_
 	#define __NEED_HAL_NOC_
-	#define __NEED_HAL_SYNC_
 	#define __NEED_HAL_MAILBOX_
 	#include <nanvix/hal.h>
+
+	/**
+	 * @brief Types of synchronization points.
+	 */
+	/**@{*/
+	#define SYNC_ONE_TO_ALL HAL_SYNC_ONE_TO_ALL /**< One to all. */
+	#define SYNC_ALL_TO_ONE HAL_SYNC_ALL_TO_ONE /**< All to one. */
+	/**@}*/
 
 	/**
 	 * @brief Size (in bytes) of a mailbox message.
