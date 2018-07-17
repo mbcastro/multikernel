@@ -169,6 +169,11 @@
 
 #ifdef __NEED_HAL_PORTAL_
 
+	/* Sanity check. */
+	#ifndef HAL_NR_PORTAL
+		#error "undefined symbol: HAL_NR_PORTAL"
+	#endif
+
 	/* Forward definitions .*/
 	extern int hal_portal_allow(int, int);
 	extern int hal_portal_create(int);
