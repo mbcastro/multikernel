@@ -24,7 +24,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#define __NEED_HAL_SETUP_
 #include <nanvix/const.h>
 #include <nanvix/syscalls.h>
 #include <nanvix/pm.h>

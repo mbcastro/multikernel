@@ -27,12 +27,6 @@
 #include <mppa/osconfig.h>
 #include <mppaipc.h>
 
-#define __NEED_HAL_CORE_
-#define __NEED_HAL_NOC_
-#define __NEED_HAL_SETUP_
-#define __NEED_HAL_SYNC_
-#define __NEED_HAL_PORTAL_
-#define __NEED_HAL_PERFORMANCE_
 #include <nanvix/syscalls.h>
 #include <nanvix/limits.h>
 
