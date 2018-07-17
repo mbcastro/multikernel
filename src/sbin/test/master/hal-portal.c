@@ -27,7 +27,6 @@
 
 #include <nanvix/syscalls.h>
 #include <nanvix/limits.h>
-#include <nanvix/pm.h>
 
 /**
  * @brief Asserts a logic expression.

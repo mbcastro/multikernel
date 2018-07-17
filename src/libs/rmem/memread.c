@@ -22,7 +22,6 @@
 
 #include <nanvix/syscalls.h>
 #include <nanvix/mm.h>
-#include <nanvix/pm.h>
 #include <stdio.h>
 #include <string.h>
 #include "mem.h"

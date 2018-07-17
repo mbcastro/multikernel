@@ -27,7 +27,6 @@
 
 #include <nanvix/const.h>
 #include <nanvix/syscalls.h>
-#include <nanvix/pm.h>
 
 /**
  * @brief Asserts a logic expression.

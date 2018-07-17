@@ -27,7 +27,6 @@
 
 #include <nanvix/syscalls.h>
 #include <nanvix/const.h>
-#include <nanvix/pm.h>
 
 #include "test.h"
 
