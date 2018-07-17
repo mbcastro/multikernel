@@ -1,0 +1,85 @@
+@startuml
+
+namespace HAL {
+	enum HAL.CoreTypes {
+		+ HAL_CORE_USER
+		+ HAL_CORE_RMAN
+		+ HAL_CORE_SYSTEM
+	}
+
+	interface HAL.CoreInterface {
+		+ HAL_NR_CORES_USER
+		+ HAL_NR_CORES_RMAN
+		+ HAL_NR_CORES_SYSTEM
+		+ HAL_NR_IOCLUSTERS
+		+ HAL_NR_CCLUSTERS
+		+ HAL_NR_CLUSTERS
+		+ hal_get_cluster_id()
+		+ hal_get_core_id()
+		+ hal_get_core_type()
+		+ hal_get_num_cores()
+		+ hal_get_core_freq()
+	}
+
+	interface HAL.MailboxInterface {
+		+ HAL_NR_MAILBOX
+		+ HAL_MAILBOX_MSG_SIZE
+		+ hal_mailbox_create()
+		+ hal_mailbox_open()
+		+ hal_mailbox_unlink()
+		+ hal_mailbox_close()
+		+ size_t hal_mailbox_write()
+		+ size_t hal_mailbox_read()
+	}
+
+	enum HAL.SyncTypes {
+		+ HAL_SYNC_ONE_TO_ALL
+		+ HAL_SYNC_ALL_TO_ONE
+	}	
+
+	interface HAL.SyncInterface {
+		+ HAL_NR_SYNC
+		+ HAL_SYNC_ONE_TO_ALL
+		+ HAL_SYNC_ALL_TO_ONE
+		+ hal_sync_create()
+		+ hal_sync_open()
+		+ hal_sync_wait()
+		+ hal_sync_signal()
+		+ hal_sync_close()
+		+ hal_sync_unlink()
+	}
+
+	interface HAL.PortalInterface {
+		+ HAL_NR_PORTAL
+		+ hal_portal_allow()
+		+ hal_portal_create()
+		+ hal_portal_open()
+		+ hal_portal_read()
+		+ hal_portal_write()
+		+ hal_portal_close()
+		+ hal_portal_unlink()
+	}
+
+	interface HAL.NoCInterface {
+		+ HAL_NR_NOC_IONODES
+		+ HAL_NR_NOC_CNODES
+		+ HAL_NR_NOC_NODES
+		+ hal_noc_nodes[HAL_NR_NOC_NODES]
+		+ hal_get_node_id()
+		+ hal_get_node_num()
+	}
+
+	interface HAL.SetupInterface {
+		+ void hal_setup()
+		+ void hal_cleanup()
+	}
+
+	interface HAL.PerformanceInterface {
+		+ uint64_t hal_timer_get()
+	}
+
+	HAL.CoreInterface .> HAL.CoreTypes : <<use>>
+	HAL.SyncInterface .> HAL.SyncTypes : <<use>>
+}
+
+@enduml
