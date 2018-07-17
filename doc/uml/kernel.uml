@@ -1,0 +1,22 @@
+@startuml
+
+namespace kernel {
+	namespace hal {
+	}
+
+	namespace mppa256 {
+	}
+
+	namespace syscalls {
+	}
+
+	namespace klib {
+	}
+
+	kernel.hal      <|.. kernel.mppa256 : <<implements>>
+	kernel.mppa256  ..>  kernel.klib    : <<use>>
+	kernel.syscalls ..>  kernel.hal     : <<use>>
+	kernel.syscalls ..>  kernel.klib    : <<use>>
+}
+
+@enduml
