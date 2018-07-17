@@ -26,11 +26,6 @@
 
 #include <mppa/osconfig.h>
 
-#define __NEED_HAL_CORE_
-#define __NEED_HAL_NOC_
-#define __NEED_HAL_SETUP_
-#define __NEED_HAL_SYNC_
-#define __NEED_HAL_MAILBOX_
 #include <nanvix/syscalls.h>
 
 #include "../kernel.h"
@@ -43,7 +38,7 @@ static int masternode;
 /**
  * @brief Underlying NoC node ID.
  */
-static int nodeid;
+static int nodenum;
 
 /**
  * @brief Number of benchmark interations.
@@ -159,7 +154,7 @@ int main(int argc, const char **argv)
 	
 	/* Initialization. */
 	sys_setup();
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
 	/* Retrieve kernel parameters. */
 	assert(argc == 6);
@@ -169,7 +164,7 @@ int main(int argc, const char **argv)
 	niterations = atoi(argv[4]);
 	mode = argv[5];
 
-	assert((inbox = sys_mailbox_create(nodeid)) >= 0);
+	assert((inbox = sys_mailbox_create(nodenum)) >= 0);
 
 	sync_master(first_remote, last_remote);
 

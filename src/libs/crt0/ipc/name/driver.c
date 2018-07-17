@@ -23,9 +23,6 @@
 #include <pthread.h>
 #include <stdio.h>
 
-#define __NEED_HAL_CORE_
-#define __NEED_HAL_NOC_
-#include <nanvix/syscalls.h>
 #include <nanvix/syscalls.h>
 
 #include "test.h"

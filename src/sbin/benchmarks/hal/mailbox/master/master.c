@@ -28,12 +28,6 @@
 #include <mppa/osconfig.h>
 #include <mppaipc.h>
 
-#define __NEED_HAL_CORE_
-#define __NEED_HAL_NOC_
-#define __NEED_HAL_SETUP_
-#define __NEED_HAL_SYNC_
-#define __NEED_HAL_MAILBOX_
-#define __NEED_HAL_PERFORMANCE_
 #include <nanvix/syscalls.h>
 #include <nanvix/limits.h>
 
@@ -61,7 +55,7 @@ static char buffer[HAL_MAILBOX_MSG_SIZE];
 /**
  * @brief Underlying NoC node ID.
  */
-static int nodeid;
+static int nodenum;
 
 /**
  * @brief Inbox for receiving messages.
@@ -94,7 +88,7 @@ static void spawn_remotes(void)
 	};
 
 	/* Build nodes list. */
-	nodes[0] = nodeid;
+	nodes[0] = nodenum;
 	for (int i = 0; i < nclusters; i++)
 		nodes[i + 1] = i;
 
@@ -102,7 +96,7 @@ static void spawn_remotes(void)
 	assert((syncid = sys_sync_create(nodes, nclusters + 1, HAL_SYNC_ALL_TO_ONE)) >= 0);
 
 	/* Spawn remotes. */
-	sprintf(master_node, "%d", nodeid);
+	sprintf(master_node, "%d", nodenum);
 	sprintf(first_remote, "%d", 0);
 	sprintf(last_remote, "%d", nclusters);
 	sprintf(niterations_str, "%d", niterations);
@@ -274,8 +268,8 @@ static void benchmark(void)
 {
 	/* Initialization. */
 	sys_setup();
-	nodeid = sys_get_node_id();
-	assert((inbox = sys_mailbox_create(nodeid)) >= 0);
+	nodenum = sys_get_node_num();
+	assert((inbox = sys_mailbox_create(nodenum)) >= 0);
 	spawn_remotes();
 
 	if (!strcmp(kernel, "broadcast"))

@@ -24,7 +24,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#define __NEED_HAL_SETUP_
 #include <nanvix/const.h>
 #include <nanvix/syscalls.h>
 #include <nanvix/pm.h>
@@ -40,7 +39,7 @@
 int main(int argc, char **argv)
 {
 	int barrier;
-	int nodes[2] = {0, 128};
+	int nodes[2] = {0, SPAWNER_SERVER_NODE};
 
 	((void) argc);
 	((void) argv);

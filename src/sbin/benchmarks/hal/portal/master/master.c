@@ -27,12 +27,6 @@
 #include <mppa/osconfig.h>
 #include <mppaipc.h>
 
-#define __NEED_HAL_CORE_
-#define __NEED_HAL_NOC_
-#define __NEED_HAL_SETUP_
-#define __NEED_HAL_SYNC_
-#define __NEED_HAL_PORTAL_
-#define __NEED_HAL_PERFORMANCE_
 #include <nanvix/syscalls.h>
 #include <nanvix/limits.h>
 
@@ -68,7 +62,7 @@ static char buffer[BUFFER_SIZE_MAX];
 static void spawn_remotes(void)
 {
 	int syncid;
-	int nodeid;
+	int nodenum;
 	char master_node[4];
 	char first_remote[4];
 	char last_remote[4];
@@ -86,10 +80,10 @@ static void spawn_remotes(void)
 		NULL
 	};
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
 	/* Build nodes list. */
-	nodes[0] = nodeid;
+	nodes[0] = nodenum;
 	for (int i = 0; i < nclusters; i++)
 		nodes[i + 1] = i;
 
@@ -97,7 +91,7 @@ static void spawn_remotes(void)
 	assert((syncid = sys_sync_create(nodes, nclusters + 1, HAL_SYNC_ALL_TO_ONE)) >= 0);
 
 	/* Spawn remotes. */
-	sprintf(master_node, "%d", nodeid);
+	sprintf(master_node, "%d", nodenum);
 	sprintf(first_remote, "%d", 0);
 	sprintf(last_remote, "%d", nclusters);
 	sprintf(niterations_str, "%d", niterations);
@@ -195,14 +189,14 @@ static void kernel_broadcast(void)
 static void kernel_gather(void)
 {
 	int inportal;
-	int nodeid;
+	int nodenum;
 	double total;
 	uint64_t t1, t2;
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
 	/* Initialization. */
-	assert((inportal = sys_portal_create(nodeid)) >= 0);
+	assert((inportal = sys_portal_create(nodenum)) >= 0);
 
 	/* Benchmark. */
 	for (int k = 0; k <= niterations; k++)
@@ -240,15 +234,15 @@ static void kernel_gather(void)
 static void kernel_pingpong(void)
 {
 	int inportal;
-	int nodeid;
+	int nodenum;
 	double total;
 	uint64_t t1, t2;
 	int outportals[nclusters];
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
 	/* Initialization. */
-	assert((inportal = sys_portal_create(nodeid)) >= 0);
+	assert((inportal = sys_portal_create(nodenum)) >= 0);
 	open_portals(outportals);
 
 	/* Benchmark. */

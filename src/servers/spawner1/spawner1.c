@@ -74,7 +74,7 @@ static void *server(void *args)
 	main_fn = servers[servernum].main;
 
 	/* Open server mailbox. */
-	inbox = sys_mailbox_create(hal_noc_nodes[nodenum]);
+	inbox = sys_mailbox_create(nodenum);
 
 	/* Wait for other servers. */
 	pthread_barrier_wait(&barrier);
@@ -111,19 +111,19 @@ static void test_runtime(const char *module)
  */
 static void spawners_sync(void)
 {
-	int nodeid;
+	int nodenum;
 	int syncid;
 	int syncid_local;
 	int nodes[2];
 	int nodes_local[2];
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
-	nodes[0] = nodeid;
-	nodes[1] = hal_noc_nodes[SPAWNER_SERVER_NODE];
+	nodes[0] = nodenum;
+	nodes[1] = SPAWNER_SERVER_NODE;
 
-	nodes_local[0] = hal_noc_nodes[SPAWNER_SERVER_NODE];
-	nodes_local[1] = nodeid;
+	nodes_local[0] = SPAWNER_SERVER_NODE;
+	nodes_local[1] = nodenum;
 
 	/* Open syncrhonization points. */
 	assert((syncid_local = sys_sync_create(nodes_local, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);

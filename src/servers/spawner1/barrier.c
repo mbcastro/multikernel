@@ -25,11 +25,9 @@
 
 #include <mppaipc.h>
 
-#include <nanvix/syscalls.h>
+#include <nanvix/const.h>
 #include <nanvix/syscalls.h>
 #include <nanvix/pm.h>
-
-#define OTHERIO 128
 
 /**
  * @brief Asserts a logic expression.
@@ -51,13 +49,13 @@ static int ncores = 0;
 static void test_barrier_io(void)
 {
 	int barrier;
-	int nodeid;
+	int nodenum;
 	int nodes[2];
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
-	nodes[0] = nodeid;
-	nodes[1] = OTHERIO;
+	nodes[0] = nodenum;
+	nodes[1] = SPAWNER_SERVER_NODE;
 
 	/* Wait on barrier. */
 	TEST_ASSERT((barrier = barrier_create(nodes, 2)) >= 0);
@@ -74,15 +72,15 @@ static void test_barrier_io(void)
 */
 static void test_barrier_master_cc_io(int barrier)
 {
-	int nodeid;
+	int nodenum;
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
-	printf("%d waits...\n", nodeid);
+	printf("%d waits...\n", nodenum);
 
 	TEST_ASSERT(barrier_wait(barrier) == 0);
 
-	printf("%d passed the barrier.\n", nodeid);
+	printf("%d passed the barrier.\n", nodenum);
 
 	TEST_ASSERT(barrier_unlink(barrier) == 0);
 }
@@ -112,8 +110,8 @@ static void test_barrier_cc_io(int nclusters)
 	for (int i = 0; i < nclusters; i++)
 		nodes[i + 2] = i;
 
-	nodes[0] = sys_get_node_id();
-	nodes[1] = OTHERIO;
+	nodes[0] = sys_get_node_num();
+	nodes[1] = SPAWNER_SERVER_NODE;
 
 	TEST_ASSERT((barrier = barrier_create(nodes, (nclusters + 2))) >= 0);
 

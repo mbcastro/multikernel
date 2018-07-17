@@ -23,11 +23,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define __NEED_HAL_CORE_
-#define __NEED_HAL_NOC_
-#define __NEED_HAL_SETUP_
-#define __NEED_HAL_SYNC_
-#define __NEED_HAL_MAILBOX_
 #include <nanvix/const.h>
 #include <nanvix/syscalls.h>
 #include <nanvix/pm.h>
@@ -72,12 +67,12 @@ static void test_sys_mailbox_bad_create(void)
 static void test_sys_mailbox_double_create(void)
 {
 	int inbox;
-	int nodeid;
+	int nodenum;
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
-	TEST_ASSERT((inbox = sys_mailbox_create(nodeid)) >= 0);
-	TEST_ASSERT(sys_mailbox_create(nodeid) < 0);
+	TEST_ASSERT((inbox = sys_mailbox_create(nodenum)) >= 0);
+	TEST_ASSERT(sys_mailbox_create(nodenum) < 0);
 
 	TEST_ASSERT(sys_mailbox_unlink(inbox) == 0);
 }
@@ -106,11 +101,11 @@ static void test_sys_mailbox_invalid_open(void)
 static void test_sys_mailbox_bad_open(void)
 {
 	int outbox;
-	int nodeid;
+	int nodenum;
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
-	TEST_ASSERT((outbox = sys_mailbox_open(nodeid)) < 0);
+	TEST_ASSERT((outbox = sys_mailbox_open(nodenum)) < 0);
 }
 
 /*============================================================================*
@@ -123,12 +118,12 @@ static void test_sys_mailbox_bad_open(void)
 static void test_sys_mailbox_double_open(void)
 {
 	int outbox;
-	int nodeid;
+	int nodenum;
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
-	TEST_ASSERT((outbox = sys_mailbox_open(nodeid + 1)) >= 0);
-	TEST_ASSERT(sys_mailbox_open(nodeid + 1) < 0);
+	TEST_ASSERT((outbox = sys_mailbox_open(nodenum + 1)) >= 0);
+	TEST_ASSERT(sys_mailbox_open(nodenum + 1) < 0);
 
 	TEST_ASSERT(sys_mailbox_close(outbox) == 0);
 }
@@ -143,11 +138,11 @@ static void test_sys_mailbox_double_open(void)
 static void test_sys_mailbox_double_unlink(void)
 {
 	int inbox;
-	int nodeid;
+	int nodenum;
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
-	TEST_ASSERT((inbox = sys_mailbox_create(nodeid)) >= 0);
+	TEST_ASSERT((inbox = sys_mailbox_create(nodenum)) >= 0);
 	TEST_ASSERT(sys_mailbox_unlink(inbox) == 0);
 	TEST_ASSERT(sys_mailbox_unlink(inbox) < 0);
 }
@@ -162,11 +157,11 @@ static void test_sys_mailbox_double_unlink(void)
 static void test_sys_mailbox_double_close(void)
 {
 	int outbox;
-	int nodeid;
+	int nodenum;
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
-	TEST_ASSERT((outbox = sys_mailbox_open(nodeid + 1)) >= 0);
+	TEST_ASSERT((outbox = sys_mailbox_open(nodenum + 1)) >= 0);
 	TEST_ASSERT(sys_mailbox_close(outbox) == 0);
 	TEST_ASSERT(sys_mailbox_close(outbox) < 0);
 }
@@ -198,11 +193,11 @@ static void test_sys_mailbox_bad_write(void)
 {
 	int inbox;
 	char buf[HAL_MAILBOX_MSG_SIZE];
-	int nodeid;
+	int nodenum;
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
-	TEST_ASSERT((inbox = sys_mailbox_create(nodeid)) >= 0);
+	TEST_ASSERT((inbox = sys_mailbox_create(nodenum)) >= 0);
 
 	memset(buf, 1, HAL_MAILBOX_MSG_SIZE);
 	TEST_ASSERT(sys_mailbox_write(inbox, buf, 1) != HAL_MAILBOX_MSG_SIZE);
@@ -220,11 +215,11 @@ static void test_sys_mailbox_bad_write(void)
 static void test_sys_mailbox_null_write(void)
 {
 	int outbox;
-	int nodeid;
+	int nodenum;
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
-	TEST_ASSERT((outbox = sys_mailbox_open(nodeid + 1)) >= 0);
+	TEST_ASSERT((outbox = sys_mailbox_open(nodenum + 1)) >= 0);
 	TEST_ASSERT(sys_mailbox_write(outbox, NULL, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE);
 	TEST_ASSERT(sys_mailbox_close(outbox) == 0);
 }
@@ -256,11 +251,11 @@ static void test_sys_mailbox_bad_read(void)
 {
 	int outbox;
 	char buf[HAL_MAILBOX_MSG_SIZE];
-	int nodeid;
+	int nodenum;
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
-	TEST_ASSERT((outbox = sys_mailbox_open(nodeid + 1)) >= 0);
+	TEST_ASSERT((outbox = sys_mailbox_open(nodenum + 1)) >= 0);
 
 	memset(buf, 1, HAL_MAILBOX_MSG_SIZE);
 	TEST_ASSERT(sys_mailbox_read(outbox, buf, 1) != HAL_MAILBOX_MSG_SIZE);
@@ -278,11 +273,11 @@ static void test_sys_mailbox_bad_read(void)
 static void test_sys_mailbox_null_read(void)
 {
 	int inbox;
-	int nodeid;
+	int nodenum;
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
-	TEST_ASSERT((inbox = sys_mailbox_create(nodeid)) >= 0);
+	TEST_ASSERT((inbox = sys_mailbox_create(nodenum)) >= 0);
 	TEST_ASSERT(sys_mailbox_read(inbox, NULL, HAL_MAILBOX_MSG_SIZE) != HAL_MAILBOX_MSG_SIZE);
 	TEST_ASSERT(sys_mailbox_unlink(inbox) == 0);
 }

@@ -25,10 +25,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define __NEED_HAL_CORE_
-#define __NEED_HAL_NOC_
-#define __NEED_HAL_SETUP_
-#define __NEED_HAL_PORTAL_
 #include <nanvix/syscalls.h>
 
 #include "test.h"
@@ -45,7 +41,7 @@
 static void *test_sys_portal_thread_create_unlink(void *args)
 {
 	int inportal;
-	int nodeid;
+	int nodenum;
 	
 	((void)args);
 
@@ -53,9 +49,9 @@ static void *test_sys_portal_thread_create_unlink(void *args)
 
 	pthread_barrier_wait(&barrier);
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
-	TEST_ASSERT((inportal = sys_portal_create(nodeid)) >= 0);
+	TEST_ASSERT((inportal = sys_portal_create(nodenum)) >= 0);
 
 	pthread_barrier_wait(&barrier);
 
@@ -100,7 +96,7 @@ static void *test_sys_portal_thread_open_close(void *args)
 {
 	int outportal;
 	int tid;
-	int nodeid;
+	int nodenum;
 
 	sys_setup();
 
@@ -108,13 +104,13 @@ static void *test_sys_portal_thread_open_close(void *args)
 
 	tid = ((int *)args)[0];
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
 	pthread_barrier_wait(&barrier);
 
 	TEST_ASSERT((outportal = sys_portal_open(((tid + 1) == sys_portal_ncores) ?
-		nodeid + 1 - sys_portal_ncores + 1:
-		nodeid + 1)) >= 0);
+		nodenum + 1 - sys_portal_ncores + 1:
+		nodenum + 1)) >= 0);
 
 	pthread_barrier_wait(&barrier);
 
@@ -161,8 +157,7 @@ static void *test_sys_portal_thread_read_write(void *args)
 	int outportal;
 	int inportal;
 	char buf[DATA_SIZE];
-	int nodeid;
-	int clusterid;
+	int nodenum;
 	int TID_READ = 1;
 
 	sys_setup();
@@ -171,22 +166,18 @@ static void *test_sys_portal_thread_read_write(void *args)
 
 	tnum = ((int *)args)[0];
 
-	nodeid = sys_get_node_id();
-	clusterid = sys_get_cluster_id();
+	nodenum = sys_get_node_num();
 
 	/* Reader thread */
-	if (tnum == 1)
+	if (tnum == TID_READ)
 	{
-		TEST_ASSERT((inportal = sys_portal_create(nodeid)) >= 0);
+		TEST_ASSERT((inportal = sys_portal_create(nodenum)) >= 0);
 		pthread_barrier_wait(&barrier);
 
-		for (int i = 1; i < sys_portal_ncores; i++)
+		for (int i = 1; i < sys_portal_ncores - 1; i++)
 		{
-			if (clusterid + i == nodeid)
-				continue;
-
 			/* Enables read operations. */
-			TEST_ASSERT(sys_portal_allow(inportal, clusterid + i) == 0);
+			TEST_ASSERT(sys_portal_allow(inportal, nodenum + i) == 0);
 
 			memset(buf, 0, DATA_SIZE);
 			TEST_ASSERT(sys_portal_read(inportal, buf, DATA_SIZE) == DATA_SIZE);
@@ -199,8 +190,8 @@ static void *test_sys_portal_thread_read_write(void *args)
 	}
 	else
 	{
-		TEST_ASSERT((outportal = sys_portal_open(clusterid + TID_READ)) >= 0);
 		pthread_barrier_wait(&barrier);
+		TEST_ASSERT((outportal = sys_portal_open(nodenum - tnum + TID_READ)) >= 0);
 
 		memset(buf, 1, DATA_SIZE);
 		TEST_ASSERT(sys_portal_write(outportal, buf, DATA_SIZE) == DATA_SIZE);

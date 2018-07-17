@@ -44,7 +44,7 @@ static int masternode;
 /**
  * @brief Underlying NoC node ID.
  */
-static int nodeid;
+static int nodenum;
 
 /**
  * @brief Data buffer.
@@ -70,7 +70,7 @@ static void sync_slaves(int nclusters)
 		nodes[i] = i;
 
 	/* Open synchronization points. */
-	if (nodeid == 0)
+	if (nodenum == 0)
 	{
 		TEST_ASSERT((syncid1 = sys_sync_create(nodes,
 			nclusters,
@@ -143,7 +143,7 @@ static void test_sys_portal_create_unlink(void)
 {
 	int inportal;
 
-	TEST_ASSERT((inportal = sys_portal_create(nodeid)) >= 0);
+	TEST_ASSERT((inportal = sys_portal_create(nodenum)) >= 0);
 	TEST_ASSERT(sys_portal_unlink(inportal) == 0);
 }
 
@@ -174,23 +174,23 @@ static void test_sys_portal_read_write(int nclusters)
 	int inportal;
 	int outportal;
 
-	TEST_ASSERT((inportal = sys_portal_create(nodeid)) >= 0);
+	TEST_ASSERT((inportal = sys_portal_create(nodenum)) >= 0);
 
 	sync_slaves(nclusters);
 
-	TEST_ASSERT((outportal = sys_portal_open((nodeid + 1)%nclusters)) >= 0);
+	TEST_ASSERT((outportal = sys_portal_open((nodenum + 1)%nclusters)) >= 0);
 
-	if (nodeid != 0)
+	if (nodenum != 0)
 	{
 		TEST_ASSERT((sys_portal_allow(
 			inportal,
-			(nodeid == 0) ?
+			(nodenum == 0) ?
 				nclusters - 1 :
-				(nodeid - 1)%nclusters)) == 0
+				(nodenum - 1)%nclusters)) == 0
 		);
 	}
 
-	if (nodeid != (nclusters - 1))
+	if (nodenum != (nclusters - 1))
 	{
 		TEST_ASSERT((sys_portal_write(
 			outportal,
@@ -199,7 +199,7 @@ static void test_sys_portal_read_write(int nclusters)
 		);
 	}
 
-	if (nodeid != 0)
+	if (nodenum != 0)
 	{
 		TEST_ASSERT((sys_portal_read(
 			inportal,
@@ -224,7 +224,7 @@ static void test_sys_portal_read_write2(int nclusters)
 {
 	int inportal;
 
-	TEST_ASSERT((inportal = sys_portal_create(nodeid)) >= 0);
+	TEST_ASSERT((inportal = sys_portal_create(nodenum)) >= 0);
 
 	sync_master(nclusters);
 
@@ -282,7 +282,7 @@ int main2(int argc, char **argv)
 	nclusters = atoi(argv[2]);
 	test = atoi(argv[3]);
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
 	((void) nclusters);
 

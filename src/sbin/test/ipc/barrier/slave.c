@@ -23,15 +23,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define __NEED_HAL_CORE_
-#define __NEED_HAL_NOC_
-#define __NEED_HAL_SYNC_
-
+#include <nanvix/const.h>
 #include <nanvix/syscalls.h>
 #include <nanvix/pm.h>
-
-#define IO1 192
-#define IO0 128
 
 /**
  * @brief Asserts a logic expression.
@@ -48,21 +42,21 @@
 static void test_barrier_cc(int nclusters)
 {
 	int barrier;
-	int nodeid;
+	int nodenum;
 	int nodes[nclusters];
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
 	for (int i = 0; i < nclusters; i++)
 		nodes[i] = i;
 
 	TEST_ASSERT((barrier = barrier_create(nodes, nclusters)) >= 0);
 
-	printf("%d waits...\n", nodeid);
+	printf("%d waits...\n", nodenum);
 
 	TEST_ASSERT(barrier_wait(barrier) == 0);
 
-	printf("%d passed the barrier.\n", nodeid);
+	printf("%d passed the barrier.\n", nodenum);
 
 	TEST_ASSERT(barrier_unlink(barrier) == 0);
 }
@@ -77,24 +71,24 @@ static void test_barrier_cc(int nclusters)
 static void test_barrier_cc_io(int nclusters)
 {
 	int barrier;
-	int nodeid;
+	int nodenum;
 	int nodes[(nclusters + 2)];
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
 	for (int i = 0; i < nclusters; i++)
 		nodes[i + 2] = i;
 
-	nodes[0] = IO1;
-	nodes[1] = IO0;
+	nodes[0] = SPAWNER1_SERVER_NODE;
+	nodes[1] = SPAWNER_SERVER_NODE;
 
 	TEST_ASSERT((barrier = barrier_create(nodes, (nclusters + 2))) >= 0);
 
-	printf("%d waits...\n", nodeid);
+	printf("%d waits...\n", nodenum);
 
 	TEST_ASSERT(barrier_wait(barrier) == 0);
 
-	printf("%d passed the barrier.\n", nodeid);
+	printf("%d passed the barrier.\n", nodenum);
 
 	TEST_ASSERT(barrier_unlink(barrier) == 0);
 }

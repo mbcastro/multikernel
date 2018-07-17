@@ -26,11 +26,6 @@
 
 #include <mppa/osconfig.h>
 
-#define __NEED_HAL_CORE_
-#define __NEED_HAL_NOC_
-#define __NEED_HAL_SETUP_
-#define __NEED_HAL_SYNC_
-#define __NEED_HAL_PORTAL_
 #include <nanvix/syscalls.h>
 
 #include "../kernel.h"
@@ -43,7 +38,7 @@ static int master_node;
 /**
  * @brief Underlying NoC node ID.
  */
-static int nodeid;
+static int nodenum;
 
 /**
  * @brief Number of benchmark interations.
@@ -72,7 +67,7 @@ static void kernel_broadcast(void)
 	int inportal;
 
 	/* Open output portal. */
-	assert((inportal = sys_portal_create(nodeid)) >= 0);
+	assert((inportal = sys_portal_create(nodenum)) >= 0);
 
 	/* Benchmark. */
 	for (int k = 0; k <= niterations; k++)
@@ -117,7 +112,7 @@ static void kernel_pingpong(void)
 	int inportal;
 	int outportal;
 
-	assert((inportal = sys_portal_create(nodeid)) >= 0);
+	assert((inportal = sys_portal_create(nodenum)) >= 0);
 	assert((outportal = sys_portal_open(master_node)) >= 0);
 
 	/* Benchmark. */
@@ -171,7 +166,7 @@ int main(int argc, const char **argv)
 	
 	/* Initialization. */
 	sys_setup();
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
 	/* Retrieve kernel parameters. */
 	assert(argc == 7);

@@ -27,10 +27,6 @@
 
 #include <mppaipc.h>
 
-#define __NEED_HAL_CORE_
-#define __NEED_HAL_NOC_
-#define __NEED_HAL_SYNC_
-#include <nanvix/syscalls.h>
 #include <nanvix/syscalls.h>
 #include <nanvix/name.h>
 #include <nanvix/limits.h>
@@ -49,7 +45,7 @@ static void *test_name_thread_link_unlink(void *args)
 {
 	char pathname[NANVIX_PROC_NAME_MAX];
 	int tid;
-	int nodeid;
+	int nodenum;
 
 	TEST_ASSERT(kernel_setup() == 0);
 	TEST_ASSERT(runtime_setup() == 0);
@@ -58,11 +54,11 @@ static void *test_name_thread_link_unlink(void *args)
 
 	tid = ((int *)args)[0];
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
 	/* Link and unlink name. */
 	sprintf(pathname, "cool-name%d", tid);
-	TEST_ASSERT(name_link(nodeid, pathname) == 0);
+	TEST_ASSERT(name_link(nodenum, pathname) == 0);
 
 	pthread_barrier_wait(&ipc_name_barrier);
 
@@ -110,7 +106,7 @@ static void *test_name_thread_lookup(void *args)
 {
 	char pathname[NANVIX_PROC_NAME_MAX];
 	int tid;
-	int nodeid;
+	int nodenum;
 
 	TEST_ASSERT(kernel_setup() == 0);
 	TEST_ASSERT(runtime_setup() == 0);
@@ -119,15 +115,15 @@ static void *test_name_thread_lookup(void *args)
 
 	tid = ((int *)args)[0];
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
 	/* Link and unlink name. */
 	sprintf(pathname, "cool-name%d", tid);
-	TEST_ASSERT(name_link(nodeid, pathname) == 0);
+	TEST_ASSERT(name_link(nodenum, pathname) == 0);
 
 	pthread_barrier_wait(&ipc_name_barrier);
 
-	TEST_ASSERT(name_lookup(pathname) == nodeid);
+	TEST_ASSERT(name_lookup(pathname) == nodenum);
 
 	pthread_barrier_wait(&ipc_name_barrier);
 

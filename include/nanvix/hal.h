@@ -133,6 +133,7 @@
 
 	/* Forward definitions. */
 	extern int hal_get_node_id(void);
+	extern int hal_get_node_num(int);
 
 #endif /* __NEED_HAL_NOC_ */
 

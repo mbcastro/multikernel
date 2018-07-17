@@ -31,7 +31,6 @@
 	extern int noctag_mailbox(int);
 	extern int noctag_sync(int);
 	extern int noctag_portal(int);
-	extern int noc_get_node_num(int);
 	extern void noc_get_remotes(char *, int);
 	extern void noc_get_names(char *, const int *, int);
 	extern int noc_get_dma(int);

@@ -48,18 +48,18 @@ static int masternode;
  */
 static void sync_slaves(int nclusters)
 {
-	int nodeid;
+	int nodenum;
 	int syncid1, syncid2;
 	int nodes[NANVIX_PROC_MAX];
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
 	/* Build nodes list. */
 	for (int i = 0; i < nclusters; i++)
 		nodes[i] = i;
 
 	/* Open synchronization points. */
-	if (nodeid == 0)
+	if (nodenum == 0)
 	{
 		TEST_ASSERT((syncid1 = sys_sync_create(nodes,
 			nclusters,
@@ -162,16 +162,16 @@ static void test_sys_mailbox_read_write(int nclusters)
 {
 	int inbox;
 	int outbox;
-	int nodeid;
+	int nodenum;
 	char msg[HAL_MAILBOX_MSG_SIZE];
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
 	TEST_ASSERT((inbox = get_inbox()) >= 0);
 
 	sync_slaves(nclusters);
 
-	TEST_ASSERT((outbox = sys_mailbox_open((nodeid + 1)%nclusters)) >= 0);
+	TEST_ASSERT((outbox = sys_mailbox_open((nodenum + 1)%nclusters)) >= 0);
 
 	TEST_ASSERT((sys_mailbox_write(
 		outbox,

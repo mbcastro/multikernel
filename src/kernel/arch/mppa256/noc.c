@@ -58,14 +58,6 @@
  * @brief IDs of NoC nodes.
  */
 const int hal_noc_nodes[HAL_NR_NOC_NODES] = {
-	IOCLUSTER0 + 0,
-	IOCLUSTER0 + 1,
-	IOCLUSTER0 + 2,
-	IOCLUSTER0 + 3,
-	IOCLUSTER1 + 0,
-	IOCLUSTER1 + 1,
-	IOCLUSTER1 + 2,
-	IOCLUSTER1 + 3,
 	CCLUSTER0,
 	CCLUSTER1,
 	CCLUSTER2,
@@ -81,7 +73,15 @@ const int hal_noc_nodes[HAL_NR_NOC_NODES] = {
 	CCLUSTER12,
 	CCLUSTER13,
 	CCLUSTER14,
-	CCLUSTER15
+	CCLUSTER15,
+	IOCLUSTER0 + 0,
+	IOCLUSTER0 + 1,
+	IOCLUSTER0 + 2,
+	IOCLUSTER0 + 3,
+	IOCLUSTER1 + 0,
+	IOCLUSTER1 + 1,
+	IOCLUSTER1 + 2,
+	IOCLUSTER1 + 3
 };
 
 /*============================================================================*
@@ -123,7 +123,7 @@ int hal_get_node_id(void)
  * @note This function is non-blocking.
  * @note This function is thread-safe.
  */
-int noc_get_node_num(int nodeid)
+int hal_get_node_num(int nodeid)
 {
 	/* Lookup table of NoC node IDs. */
 	for (int i = 1; i < HAL_NR_NOC_NODES; i++)

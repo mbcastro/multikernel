@@ -27,9 +27,6 @@
 
 #include <mppaipc.h>
 
-#define __NEED_HAL_CORE_
-#define __NEED_HAL_NOC_
-#define __NEED_HAL_SYNC_
 #include <nanvix/const.h>
 #include <nanvix/syscalls.h>
 
@@ -46,7 +43,7 @@ static void test_sys_sync_invalid_create(void)
 {
 	/* Build nodes list. */
 	for (int i = 0; i < ncores; i++)
-		nodes[i] = sys_get_node_id() + i;
+		nodes[i] = sys_get_node_num() + i;
 
 	TEST_ASSERT((sys_sync_create(NULL, ncores, HAL_SYNC_ONE_TO_ALL)) < 0);
 	TEST_ASSERT((sys_sync_create(nodes, -1, HAL_SYNC_ONE_TO_ALL)) < 0);
@@ -72,17 +69,17 @@ static void test_sys_sync_bad_create1(void)
 
 	/* Underlying NoC node is the sender. */
 	for (int i = 0; i < ncores; i++)
-		nodes[i] = sys_get_node_id() + i;
+		nodes[i] = sys_get_node_num() + i;
 	TEST_ASSERT((sys_sync_create(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) < 0);
 
 	/* Underlying NoC node is not listed. */
 	for (int i = ncores - 1; i >=0; i--)
-		nodes[i] = sys_get_node_id() + i - ncores + 1;
+		nodes[i] = sys_get_node_num() + i - ncores + 1;
 	TEST_ASSERT((sys_sync_create(nodes, ncores - 1, HAL_SYNC_ONE_TO_ALL)) < 0);
 
 	/* Underlying NoC node appears twice in the list. */
-	nodes[ncores - 1] = sys_get_node_id();
-	nodes[ncores - 2] = sys_get_node_id();
+	nodes[ncores - 1] = sys_get_node_num();
+	nodes[ncores - 2] = sys_get_node_num();
 	TEST_ASSERT((sys_sync_create(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) < 0);
 }
 
@@ -98,15 +95,15 @@ static void test_sys_sync_bad_create2(void)
 
 	/* Underlying NoC node is not the receiver. */
 	for (int i = ncores - 1; i >=0; i--)
-		nodes[i] = sys_get_node_id() + i - ncores + 1;
+		nodes[i] = sys_get_node_num() + i - ncores + 1;
 	TEST_ASSERT((sys_sync_create(nodes, ncores, HAL_SYNC_ALL_TO_ONE)) < 0);
 
 	/* Underlying NoC node is not listed. */
 	TEST_ASSERT((sys_sync_create(nodes, ncores - 1, HAL_SYNC_ALL_TO_ONE)) < 0);
 
 	/* Underlying NoC node appears twice in the list. */
-	nodes[ncores - 1] = sys_get_node_id();
-	nodes[ncores - 2] = sys_get_node_id();
+	nodes[ncores - 1] = sys_get_node_num();
+	nodes[ncores - 2] = sys_get_node_num();
 	TEST_ASSERT((sys_sync_create(nodes, ncores, HAL_SYNC_ALL_TO_ONE)) < 0);
 }
 
@@ -130,7 +127,7 @@ static void test_sys_sync_invalid_open(void)
 {
 	/* Build nodes list. */
 	for (int i = 0; i < ncores; i++)
-		nodes[i] = sys_get_node_id() + i;
+		nodes[i] = sys_get_node_num() + i;
 
 	TEST_ASSERT((sys_sync_open(NULL, ncores, HAL_SYNC_ONE_TO_ALL)) < 0);
 	TEST_ASSERT((sys_sync_open(nodes, -1, HAL_SYNC_ONE_TO_ALL)) < 0);
@@ -157,15 +154,15 @@ static void test_sys_sync_bad_open1(void)
 
 	/* Underlying NoC node is not the sender. */
 	for (int i = ncores - 1; i >=0; i--)
-		nodes[i] = sys_get_node_id() + i - ncores + 1;
+		nodes[i] = sys_get_node_num() + i - ncores + 1;
 	TEST_ASSERT((sys_sync_open(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) < 0);
 
 	/* Underlying NoC node is not listed. */
 	TEST_ASSERT((sys_sync_open(nodes, ncores - 1, HAL_SYNC_ONE_TO_ALL)) < 0);
 
 	/* Underlying NoC node appears twice in the list. */
-	nodes[ncores - 1] = sys_get_node_id();
-	nodes[ncores - 2] = sys_get_node_id();
+	nodes[ncores - 1] = sys_get_node_num();
+	nodes[ncores - 2] = sys_get_node_num();
 	TEST_ASSERT((sys_sync_open(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) < 0);
 }
 
@@ -181,15 +178,15 @@ static void test_sys_sync_bad_open2(void)
 
 	/* Underlying NoC node is not the sender. */
 	for (int i = 0; i < ncores; i++)
-		nodes[i] = sys_get_node_id() + i;
+		nodes[i] = sys_get_node_num() + i;
 	TEST_ASSERT((sys_sync_open(nodes, ncores, HAL_SYNC_ALL_TO_ONE)) < 0);
 
 	/* Underlying NoC node is not listed. */
 	TEST_ASSERT((sys_sync_open(&nodes[1], ncores - 1, HAL_SYNC_ALL_TO_ONE)) < 0);
 
 	/* Underlying NoC node appears twice in the list. */
-	nodes[ncores - 1] = sys_get_node_id();
-	nodes[ncores - 2] = sys_get_node_id();
+	nodes[ncores - 1] = sys_get_node_num();
+	nodes[ncores - 2] = sys_get_node_num();
 	TEST_ASSERT((sys_sync_open(&nodes[1], ncores, HAL_SYNC_ALL_TO_ONE)) < 0);
 }
 
@@ -229,7 +226,7 @@ static void test_sys_sync_bad_unlink(void)
 	int syncid;
 
 	for (int i = 0; i < ncores; i++)
-		nodes[i] = sys_get_node_id() + i;
+		nodes[i] = sys_get_node_num() + i;
 
 	TEST_ASSERT((syncid = sys_sync_open(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) >= 0);
 
@@ -249,7 +246,7 @@ static void test_sys_sync_double_unlink(void)
 	int syncid;
 
 	for (int i = 0; i < ncores; i++)
-		nodes[i] = sys_get_node_id() + i;
+		nodes[i] = sys_get_node_num() + i;
 
 	TEST_ASSERT((syncid = sys_sync_create(nodes, ncores, HAL_SYNC_ALL_TO_ONE)) >= 0);
 	TEST_ASSERT(sys_sync_unlink(syncid) == 0);
@@ -283,7 +280,7 @@ static void test_sys_sync_bad_close(void)
 	int syncid;
 
 	for (int i = 0; i < ncores; i++)
-		nodes[i] = sys_get_node_id() + i;
+		nodes[i] = sys_get_node_num() + i;
 
 	TEST_ASSERT((syncid = sys_sync_create(nodes, ncores, HAL_SYNC_ALL_TO_ONE)) >= 0);
 
@@ -303,7 +300,7 @@ static void test_sys_sync_double_close(void)
 	int syncid;
 
 	for (int i = 0; i < ncores; i++)
-		nodes[i] = sys_get_node_id() + i;
+		nodes[i] = sys_get_node_num() + i;
 
 	TEST_ASSERT((syncid = sys_sync_open(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) >= 0);
 	TEST_ASSERT(sys_sync_close(syncid) == 0);
@@ -337,7 +334,7 @@ static void test_sys_sync_bad_signal(void)
 	int syncid;
 
 	for (int i = 0; i < ncores; i++)
-		nodes[i] = sys_get_node_id() + i;
+		nodes[i] = sys_get_node_num() + i;
 
 	TEST_ASSERT((syncid = sys_sync_create(nodes, ncores, HAL_SYNC_ALL_TO_ONE)) >= 0);
 
@@ -372,7 +369,7 @@ static void test_sys_sync_bad_wait(void)
 	int syncid;
 
 	for (int i = 0; i < ncores; i++)
-		nodes[i] = sys_get_node_id() + i;
+		nodes[i] = sys_get_node_num() + i;
 
 	TEST_ASSERT((syncid = sys_sync_open(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) >= 0);
 

@@ -23,10 +23,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define __NEED_HAL_CORE_
-#define __NEED_HAL_NOC_
-#define __NEED_HAL_SETUP_
-#define __NEED_HAL_PORTAL_
 #include <nanvix/syscalls.h>
 
 /* Enable huge NoC node ID tests. */
@@ -80,12 +76,12 @@ static void test_sys_portal_double_create(void)
 {
 	int inportal;
 	int inportal2;
-	int nodeid;
+	int nodenum;
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
-	TEST_ASSERT((inportal = sys_portal_create(nodeid)) >= 0);
-	TEST_ASSERT((inportal2 = sys_portal_create(nodeid)) < 0);
+	TEST_ASSERT((inportal = sys_portal_create(nodenum)) >= 0);
+	TEST_ASSERT((inportal2 = sys_portal_create(nodenum)) < 0);
 	TEST_ASSERT((sys_portal_unlink(inportal)) == 0);
 }
 
@@ -116,11 +112,11 @@ static void test_sys_portal_invalid_open(void)
 static void test_sys_portal_bad_open(void)
 {
 	int outportal;
-	int nodeid;
+	int nodenum;
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
-	TEST_ASSERT((outportal = sys_portal_open(nodeid)) < 0);
+	TEST_ASSERT((outportal = sys_portal_open(nodenum)) < 0);
 }
 
 /*============================================================================*
@@ -181,11 +177,11 @@ static void test_sys_portal_bad_unlink(void)
 static void test_sys_portal_double_unlink(void)
 {
 	int inportal;
-	int nodeid;
+	int nodenum;
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
-	TEST_ASSERT((inportal = sys_portal_create(nodeid)) >= 0);
+	TEST_ASSERT((inportal = sys_portal_create(nodenum)) >= 0);
 	TEST_ASSERT((sys_portal_unlink(inportal)) == 0);
 	TEST_ASSERT((sys_portal_unlink(inportal)) < 0);
 }
@@ -214,12 +210,12 @@ static void test_sys_portal_invalid_close(void)
 static void test_sys_portal_bad_close(void)
 {
 	int outportal;
-	int nodeid;
+	int nodenum;
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
-	TEST_ASSERT(sys_portal_close(nodeid) < 0);
-	TEST_ASSERT((outportal = sys_portal_create(nodeid)) >= 0);
+	TEST_ASSERT(sys_portal_close(nodenum) < 0);
+	TEST_ASSERT((outportal = sys_portal_create(nodenum)) >= 0);
 	TEST_ASSERT(sys_portal_close(outportal) < 0);
 	TEST_ASSERT((sys_portal_unlink(outportal)) == 0);
 }
@@ -249,16 +245,16 @@ static void test_sys_portal_double_close(void)
  */
 static void test_sys_portal_invalid_allow(void)
 {
-	int nodeid;
+	int nodenum;
 	int inportal;
 
 	TEST_ASSERT(sys_portal_allow(-1, 0) < 0);
 	TEST_ASSERT(sys_portal_allow(HAL_NR_PORTAL, 0) < 0);
 	TEST_ASSERT(sys_portal_allow(HAL_NR_PORTAL + 1, 0) < 0);
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
-	TEST_ASSERT((inportal = sys_portal_create(nodeid)) >= 0);
+	TEST_ASSERT((inportal = sys_portal_create(nodenum)) >= 0);
 	TEST_ASSERT(sys_portal_allow(inportal, -1) < 0);
 #ifdef _TEST_HAL_PORTAL_INVALID_ALLOW_HUGE_ID
 	TEST_ASSERT(sys_portal_allow(inportal, 1000000) < 0);
@@ -295,12 +291,12 @@ static void test_sys_portal_bad_allow(void)
  */
 static void test_sys_portal_double_allow(void)
 {
-	int nodeid;
+	int nodenum;
 	int inportal;
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
-	TEST_ASSERT((inportal = sys_portal_create(nodeid)) >= 0);
+	TEST_ASSERT((inportal = sys_portal_create(nodenum)) >= 0);
 	TEST_ASSERT(sys_portal_allow(inportal, 0) == 0);
 	TEST_ASSERT(sys_portal_allow(inportal, 1) < 0);
 	TEST_ASSERT((sys_portal_unlink(inportal)) == 0);
@@ -351,12 +347,12 @@ static void test_sys_portal_bad_read(void)
  */
 static void test_sys_portal_null_read(void)
 {
-	int nodeid;
+	int nodenum;
 	int inportal;
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
-	TEST_ASSERT((inportal = sys_portal_create(nodeid)) >= 0);
+	TEST_ASSERT((inportal = sys_portal_create(nodenum)) >= 0);
 	TEST_ASSERT(sys_portal_read(inportal, NULL, 1) < 0);
 	TEST_ASSERT(sys_portal_unlink(inportal) == 0);
 }
@@ -387,13 +383,13 @@ static void test_sys_portal_invalid_write(void)
 static void test_sys_portal_bad_write(void)
 {
 	int buf;
-	int nodeid;
+	int nodenum;
 	int outportal;
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
 	TEST_ASSERT(sys_portal_write(0, &buf, sizeof(buf)) < 0);
-	TEST_ASSERT((outportal = sys_portal_create(nodeid)) >= 0);
+	TEST_ASSERT((outportal = sys_portal_create(nodenum)) >= 0);
 	TEST_ASSERT(sys_portal_write(outportal, &buf, sizeof(buf)) < 0);
 	TEST_ASSERT(sys_portal_unlink(outportal) == 0);
 }

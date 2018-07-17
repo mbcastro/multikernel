@@ -20,13 +20,15 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#define __NEED_HAL_NOC_
 #define __NEED_HAL_MAILBOX_
 #include <nanvix/hal.h>
+#include <nanvix/klib.h>
 
 /**
  * @brief Creates a mailbox.
  *
- * @param remote ID of the target remote NoC node.
+ * @param nodenum Target NoC node.
  *
  * @returns Upon successful completion, the ID of the newly created
  * mailbox is returned. Upon failure, a negative error code is
@@ -36,15 +38,19 @@
  * @note This function is thread-safe.
  * @note This function is reentrant.
  */
-int sys_mailbox_create(int remote)
+int sys_mailbox_create(int nodenum)
 {
-	return (hal_mailbox_create(remote));
+	/* Invalid node. */
+	if (nodenum < 0)
+		return (-EINVAL);
+
+	return (hal_mailbox_create(hal_noc_nodes[nodenum]));
 }
 
 /**
  * @brief Opens a mailbox.
  *
- * @param nodeid ID of the target NoC node.
+ * @param nodenum Target NoC node.
  *
  * @returns Upon successful completion, the ID of the target mailbox
  * is returned. Upon failure, a negative error code is returned
@@ -54,9 +60,13 @@ int sys_mailbox_create(int remote)
  * @note This function is thread-safe.
  * @note This function is reentrant.
  */
-int sys_mailbox_open(int nodeid)
+int sys_mailbox_open(int nodenum)
 {
-	return (hal_mailbox_open(nodeid));
+	/* Invalid node. */
+	if (nodenum < 0)
+		return (-EINVAL);
+
+	return (hal_mailbox_open(hal_noc_nodes[nodenum]));
 }
 
 /**

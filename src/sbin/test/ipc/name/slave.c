@@ -46,7 +46,7 @@ static void test_name_unlink(void)
 	int nodeid;
 	char pathname[NANVIX_PROC_NAME_MAX];
 
-	nodeid = sys_get_node_id();
+	nodeid = sys_get_node_num();
 	sprintf(pathname, "/cpu%d", nodeid);
 
 	/* Unregister this cluster. */
@@ -65,7 +65,7 @@ static void test_name_link(void)
 	int nodeid;
 	char pathname[NANVIX_PROC_NAME_MAX];
 
-	nodeid = sys_get_node_id();
+	nodeid = sys_get_node_num();
 	sprintf(pathname, "/cpu%d", nodeid);
 
 	/* Register this cluster. */
@@ -84,7 +84,7 @@ static void test_name_lookup(void)
 	int nodeid;
 	char pathname[NANVIX_PROC_NAME_MAX];
 
-	nodeid = sys_get_node_id();
+	nodeid = sys_get_node_num();
 
 	sprintf(pathname, "/cpu%d", nodeid);
 
@@ -103,7 +103,7 @@ static void test_name_duplicate(void)
 	int nodeid;
 	char pathname[NANVIX_PROC_NAME_MAX];
 
-	nodeid = sys_get_node_id();
+	nodeid = sys_get_node_num();
 
 	sprintf(pathname, "/cpu%d", nodeid);
 
@@ -126,7 +126,7 @@ static void test_name_invalid_link(void)
 	int nodeid;
 	char pathname[NANVIX_PROC_NAME_MAX + 1];
 
-	nodeid = sys_get_node_id();
+	nodeid = sys_get_node_num();
 
 	memset(pathname, 1, NANVIX_PROC_NAME_MAX + 1);
 

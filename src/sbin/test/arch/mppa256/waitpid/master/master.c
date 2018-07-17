@@ -28,8 +28,6 @@
 #include <mppa/osconfig.h>
 #include <mppaipc.h>
 
-#define __NEED_HAL_SETUP_
-
 #include <nanvix/const.h>
 #include <nanvix/syscalls.h>
 #include <nanvix/pm.h>
@@ -48,7 +46,7 @@ static void spawn_slaves(int nclusters)
 {
 	int status;
 	int barrier_slave;
-	int nodes[2] = {0, 128};
+	int nodes[2] = {0, SPAWNER_SERVER_NODE};
 
 	const char *args[] = {
 		"/test/waitpid-slave",

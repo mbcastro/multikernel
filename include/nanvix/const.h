@@ -26,17 +26,17 @@
 	/**
 	 * @brief Name server NoC node num.
 	 */
-	#define SPAWNER_SERVER_NODE 0
+	#define SPAWNER_SERVER_NODE 16
 
 	/**
 	 * @brief Name server NoC node num.
 	 */
-	#define SPAWNER1_SERVER_NODE 4
+	#define SPAWNER1_SERVER_NODE 20
 
 	/**
 	 * @brief Name server NoC node num.
 	 */
-	#define NAME_SERVER_NODE 5
+	#define NAME_SERVER_NODE 21
 
 #endif /* CONST_H_ */
 

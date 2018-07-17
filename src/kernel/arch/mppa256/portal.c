@@ -572,7 +572,7 @@ static int mppa256_portal_read(int portalid, void *buf, size_t n)
 		goto error0;
 
 	/* Unblock remote. */
-	mask = 1 << noc_get_node_num(portals[portalid].local);
+	mask = 1 << hal_get_node_num(portals[portalid].local);
 	if (mppa_write(portals[portalid].sync_fd, &mask, sizeof(uint64_t)) == -1)
 		goto error0;
 
@@ -671,7 +671,7 @@ static int mppa256_portal_write(int portalid, const void *buf, size_t n)
 	size_t nwrite;
 
 	/* Wait for remote to be ready. */
-	mask = 1 << noc_get_node_num(portals[portalid].remote);
+	mask = 1 << hal_get_node_num(portals[portalid].remote);
 	if (mppa_ioctl(portals[portalid].sync_fd, MPPA_RX_SET_MATCH, ~mask) == -1)
 		goto error0;
 

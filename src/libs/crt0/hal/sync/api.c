@@ -27,10 +27,6 @@
 
 #include <mppaipc.h>
 
-#define __NEED_HAL_CORE_
-#define __NEED_HAL_NOC_
-#define __NEED_HAL_SETUP_
-#define __NEED_HAL_SYNC_
 #include <nanvix/const.h>
 #include <nanvix/syscalls.h>
 
@@ -52,7 +48,7 @@ static void *test_sys_sync_create_unlink_worker(void *args)
 
 	tnum = ((int *)args)[0];
 
-	nodes[tnum] = sys_get_node_id();
+	nodes[tnum] = sys_get_node_num();
 
 	/*
 	 * Wait for nodes list to be initialized. 
@@ -81,7 +77,7 @@ static void test_sys_sync_create_unlink(void)
 	int args[ncores];
 	pthread_t tids[ncores];
 
-	nodes[0] = sys_get_node_id();
+	nodes[0] = sys_get_node_num();
 
 	/* Spawn driver threads. */
 	for (int i = 1; i < ncores; i++)
@@ -115,7 +111,7 @@ static void *test_sys_sync_open_close_worker(void *args)
 
 	tnum = ((int *)args)[0];
 
-	nodes[tnum] = sys_get_node_id();
+	nodes[tnum] = sys_get_node_num();
 
 	/*
 	 * Wait for nodes list to be initialized. 
@@ -144,7 +140,7 @@ static void test_sys_sync_open_close(void)
 	int args[ncores];
 	pthread_t tids[ncores];
 
-	nodes[0] = sys_get_node_id();
+	nodes[0] = sys_get_node_num();
 
 	/* Spawn driver threads. */
 	for (int i = 1; i < ncores; i++)
@@ -178,7 +174,7 @@ static void *test_sys_sync_wait_signal_worker(void *args)
 
 	tnum = ((int *)args)[0];
 
-	nodes[tnum] = sys_get_node_id();
+	nodes[tnum] = sys_get_node_num();
 
 	/*
 	 * Wait for nodes list to be initialized. 
@@ -226,7 +222,7 @@ static void test_sys_sync_wait_signal(void)
 	int args[ncores];
 	pthread_t tids[ncores];
 
-	nodes[0] = sys_get_node_id();
+	nodes[0] = sys_get_node_num();
 
 	/* Spawn driver threads. */
 	for (int i = 1; i < ncores; i++)
@@ -260,7 +256,7 @@ static void *test_sys_sync_signal_wait_worker(void *args)
 
 	tnum = ((int *)args)[0];
 
-	nodes[tnum] = sys_get_node_id();
+	nodes[tnum] = sys_get_node_num();
 
 	/*
 	 * Wait for nodes list to be initialized. 
@@ -310,7 +306,7 @@ static void test_sys_sync_signal_wait(void)
 
 	/* Build nodes list. */
 	for (int i = 0; i < ncores; i++)
-		nodes[i] = sys_get_node_id() + i;
+		nodes[i] = sys_get_node_num() + i;
 
 	/* Spawn driver threads. */
 	for (int i = 1; i < ncores; i++)
@@ -337,19 +333,19 @@ static void test_sys_sync_signal_wait(void)
  */
 static void test_sys_sync_barrier(void)
 {
-	int nodeid;
+	int nodenum;
 	int syncid;
 	int syncid_local;
 	int _nodes[2];
 	int _nodes_local[2];
 
-	nodeid = sys_get_node_id();
+	nodenum = sys_get_node_num();
 
-	_nodes[0] = nodeid;
-	_nodes[1] = hal_noc_nodes[SPAWNER1_SERVER_NODE];
+	_nodes[0] = nodenum;
+	_nodes[1] = SPAWNER1_SERVER_NODE;
 
-	_nodes_local[0] = hal_noc_nodes[SPAWNER1_SERVER_NODE];
-	_nodes_local[1] = nodeid;
+	_nodes_local[0] = SPAWNER1_SERVER_NODE;
+	_nodes_local[1] = nodenum;
 
 	/* Open synchronization points. */
 	TEST_ASSERT((syncid_local = sys_sync_create(_nodes_local, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
