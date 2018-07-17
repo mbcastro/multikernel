@@ -197,7 +197,7 @@ static void test_sys_mailbox_read_write2_cc(void)
 	TEST_ASSERT((syncid = sys_sync_create(
 		nodes,
 		NANVIX_PROC_MAX + 1,
-		HAL_SYNC_ALL_TO_ONE)) >= 0
+		SYNC_ALL_TO_ONE)) >= 0
 	);
 
 	spawn_slaves(args);
@@ -209,13 +209,13 @@ static void test_sys_mailbox_read_write2_cc(void)
 	for (int i = 0; i < NANVIX_PROC_MAX; i++)
 	{
 		int outbox;
-		char msg[HAL_MAILBOX_MSG_SIZE];
+		char msg[MAILBOX_MSG_SIZE];
 
 		TEST_ASSERT((outbox = sys_mailbox_open(i)) >=0);
 		TEST_ASSERT((sys_mailbox_write(
 			outbox,
 			msg,
-			HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE)
+			MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE)
 		);
 		TEST_ASSERT(sys_mailbox_close(outbox) == 0);
 	}
@@ -261,12 +261,12 @@ static void test_sys_mailbox_read_write3_cc(void)
 	/* Receive messages. */
 	for (int i = 0; i < NANVIX_PROC_MAX; i++)
 	{
-		char msg[HAL_MAILBOX_MSG_SIZE];
+		char msg[MAILBOX_MSG_SIZE];
 
 		TEST_ASSERT((sys_mailbox_read(
 			inbox,
 			msg,
-			HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE)
+			MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE)
 		);
 	}
 

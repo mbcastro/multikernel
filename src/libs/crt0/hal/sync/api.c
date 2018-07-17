@@ -44,7 +44,7 @@ static void *test_sys_sync_create_unlink_worker(void *args)
 	int tnum;
 	int syncid;
 
-	sys_setup();
+	kernel_setup();
 
 	tnum = ((int *)args)[0];
 
@@ -55,7 +55,7 @@ static void *test_sys_sync_create_unlink_worker(void *args)
 	 */
 	pthread_barrier_wait(&barrier);
 
-	TEST_ASSERT((syncid = sys_sync_create(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) >= 0);
+	TEST_ASSERT((syncid = sys_sync_create(nodes, ncores, SYNC_ONE_TO_ALL)) >= 0);
 
 	/*
 	 * Wait for all processes to create the 
@@ -65,7 +65,7 @@ static void *test_sys_sync_create_unlink_worker(void *args)
 
 	TEST_ASSERT(sys_sync_unlink(syncid) == 0);
 
-	sys_cleanup();
+	kernel_cleanup();
 	return (NULL);
 }
 
@@ -107,7 +107,7 @@ static void *test_sys_sync_open_close_worker(void *args)
 	int tnum;
 	int syncid;
 
-	sys_setup();
+	kernel_setup();
 
 	tnum = ((int *)args)[0];
 
@@ -118,7 +118,7 @@ static void *test_sys_sync_open_close_worker(void *args)
 	 */
 	pthread_barrier_wait(&barrier);
 
-	TEST_ASSERT((syncid = sys_sync_create(nodes, ncores, HAL_SYNC_ONE_TO_ALL)) >= 0);
+	TEST_ASSERT((syncid = sys_sync_create(nodes, ncores, SYNC_ONE_TO_ALL)) >= 0);
 
 	/*
 	 * Wait for all processes to open the 
@@ -128,7 +128,7 @@ static void *test_sys_sync_open_close_worker(void *args)
 
 	TEST_ASSERT(sys_sync_unlink(syncid) == 0);
 
-	sys_cleanup();
+	kernel_cleanup();
 	return (NULL);
 }
 
@@ -170,7 +170,7 @@ static void *test_sys_sync_wait_signal_worker(void *args)
 	int tnum;
 	int syncid;
 
-	sys_setup();
+	kernel_setup();
 
 	tnum = ((int *)args)[0];
 
@@ -183,7 +183,7 @@ static void *test_sys_sync_wait_signal_worker(void *args)
 
 	if (tnum == 0)
 	{
-		TEST_ASSERT((syncid = sys_sync_open(&nodes[0], ncores - 1, HAL_SYNC_ONE_TO_ALL)) >= 0);
+		TEST_ASSERT((syncid = sys_sync_open(&nodes[0], ncores - 1, SYNC_ONE_TO_ALL)) >= 0);
 
 		/*
 		 * Wait for all processes to open the 
@@ -197,7 +197,7 @@ static void *test_sys_sync_wait_signal_worker(void *args)
 	}
 	else
 	{
-		TEST_ASSERT((syncid = sys_sync_create(&nodes[0], ncores - 1, HAL_SYNC_ONE_TO_ALL)) >= 0);
+		TEST_ASSERT((syncid = sys_sync_create(&nodes[0], ncores - 1, SYNC_ONE_TO_ALL)) >= 0);
 
 		/*
 		 * Wait for all processes to open the 
@@ -210,7 +210,7 @@ static void *test_sys_sync_wait_signal_worker(void *args)
 		TEST_ASSERT(sys_sync_unlink(syncid) == 0);
 	}
 
-	sys_cleanup();
+	kernel_cleanup();
 	return (NULL);
 }
 
@@ -252,7 +252,7 @@ static void *test_sys_sync_signal_wait_worker(void *args)
 	int tnum;
 	int syncid;
 
-	sys_setup();
+	kernel_setup();
 
 	tnum = ((int *)args)[0];
 
@@ -265,7 +265,7 @@ static void *test_sys_sync_signal_wait_worker(void *args)
 
 	if (tnum == 0)
 	{
-		TEST_ASSERT((syncid = sys_sync_create(&nodes[0], ncores - 1, HAL_SYNC_ALL_TO_ONE)) >= 0);
+		TEST_ASSERT((syncid = sys_sync_create(&nodes[0], ncores - 1, SYNC_ALL_TO_ONE)) >= 0);
 
 		/*
 		 * Wait for all processes to open the 
@@ -279,7 +279,7 @@ static void *test_sys_sync_signal_wait_worker(void *args)
 	}
 	else
 	{
-		TEST_ASSERT((syncid = sys_sync_open(&nodes[0], ncores - 1, HAL_SYNC_ALL_TO_ONE)) >= 0);
+		TEST_ASSERT((syncid = sys_sync_open(&nodes[0], ncores - 1, SYNC_ALL_TO_ONE)) >= 0);
 
 		/*
 		 * Wait for all processes to open the 
@@ -292,7 +292,7 @@ static void *test_sys_sync_signal_wait_worker(void *args)
 		TEST_ASSERT(sys_sync_close(syncid) == 0);
 	}
 
-	sys_cleanup();
+	kernel_cleanup();
 	return (NULL);
 }
 
@@ -348,8 +348,8 @@ static void test_sys_sync_barrier(void)
 	_nodes_local[1] = nodenum;
 
 	/* Open synchronization points. */
-	TEST_ASSERT((syncid_local = sys_sync_create(_nodes_local, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
-	TEST_ASSERT((syncid = sys_sync_open(_nodes, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
+	TEST_ASSERT((syncid_local = sys_sync_create(_nodes_local, 2, SYNC_ONE_TO_ALL)) >= 0);
+	TEST_ASSERT((syncid = sys_sync_open(_nodes, 2, SYNC_ONE_TO_ALL)) >= 0);
 
 	TEST_ASSERT(sys_sync_signal(syncid) == 0);
 	TEST_ASSERT(sys_sync_wait(syncid_local) == 0);

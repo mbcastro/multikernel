@@ -150,7 +150,7 @@ static void sync_master(int first_remote, int last_remote)
 		nodes[i + 1] = first_remote + i;
 
 	/* Sync. */
-	assert((syncid = sys_sync_open(nodes, nremotes + 1, HAL_SYNC_ALL_TO_ONE)) >= 0);
+	assert((syncid = sys_sync_open(nodes, nremotes + 1, SYNC_ALL_TO_ONE)) >= 0);
 	assert(sys_sync_signal(syncid) == 0);
 	assert(sys_sync_close(syncid) == 0);
 }
@@ -165,7 +165,7 @@ int main(int argc, const char **argv)
 	int last_remote;
 	
 	/* Initialization. */
-	sys_setup();
+	kernel_setup();
 	nodenum = sys_get_node_num();
 
 	/* Retrieve kernel parameters. */
@@ -188,7 +188,7 @@ int main(int argc, const char **argv)
 		kernel_pingpong();
 
 	/* House keeping. */
-	sys_cleanup();
+	kernel_cleanup();
 
 	return (EXIT_SUCCESS);
 }

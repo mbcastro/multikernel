@@ -25,9 +25,8 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include <nanvix/const.h>
 #include <nanvix/syscalls.h>
-#include <nanvix/pm.h>
+#include <nanvix/const.h>
 
 #include "test.h"
 
@@ -45,7 +44,7 @@ static void *test_sys_mailbox_thread_create_unlink(void *args)
 
 	((void)args);
 
-	sys_setup();
+	kernel_setup();
 
 	nodenum = sys_get_node_num();
 
@@ -55,7 +54,7 @@ static void *test_sys_mailbox_thread_create_unlink(void *args)
 
 	TEST_ASSERT(sys_mailbox_unlink(inbox) == 0);
 
-	sys_cleanup();
+	kernel_cleanup();
 	return (NULL);
 }
 
@@ -95,7 +94,7 @@ static void *test_sys_mailbox_thread_open_close(void *args)
 	int outbox;
 	int nodenum;
 
-	sys_setup();
+	kernel_setup();
 
 	tid = ((int *)args)[0];
 
@@ -117,7 +116,7 @@ static void *test_sys_mailbox_thread_open_close(void *args)
 
 	TEST_ASSERT(sys_mailbox_unlink(inbox) == 0);
 
-	sys_cleanup();
+	kernel_cleanup();
 	return (NULL);
 }
 
@@ -157,10 +156,10 @@ static void *test_sys_mailbox_thread_read_write(void *args)
 	int tnum;
 	int inbox;
 	int outbox;
-	char buf[HAL_MAILBOX_MSG_SIZE];
+	char buf[MAILBOX_MSG_SIZE];
 	int nodenum;
 
-	sys_setup();
+	kernel_setup();
 
 	tnum = ((int *)args)[0];
 
@@ -180,13 +179,13 @@ static void *test_sys_mailbox_thread_read_write(void *args)
 
 	pthread_barrier_wait(&barrier);
 
-	memset(buf, 1, HAL_MAILBOX_MSG_SIZE);
-	TEST_ASSERT(sys_mailbox_write(outbox, buf, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
+	memset(buf, 1, MAILBOX_MSG_SIZE);
+	TEST_ASSERT(sys_mailbox_write(outbox, buf, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
 
-	memset(buf, 0, HAL_MAILBOX_MSG_SIZE);
-	TEST_ASSERT(sys_mailbox_read(inbox, buf, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
+	memset(buf, 0, MAILBOX_MSG_SIZE);
+	TEST_ASSERT(sys_mailbox_read(inbox, buf, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
 
-	for (int i = 0; i < HAL_MAILBOX_MSG_SIZE; i++)
+	for (int i = 0; i < MAILBOX_MSG_SIZE; i++)
 		TEST_ASSERT(buf[i] == 1);
 
 	pthread_barrier_wait(&barrier);
@@ -195,7 +194,7 @@ static void *test_sys_mailbox_thread_read_write(void *args)
 
 	TEST_ASSERT(sys_mailbox_unlink(inbox) == 0);
 
-	sys_cleanup();
+	kernel_cleanup();
 	return (NULL);
 }
 

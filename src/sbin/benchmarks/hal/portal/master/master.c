@@ -88,7 +88,7 @@ static void spawn_remotes(void)
 		nodes[i + 1] = i;
 
 	/* Create synchronization point. */
-	assert((syncid = sys_sync_create(nodes, nclusters + 1, HAL_SYNC_ALL_TO_ONE)) >= 0);
+	assert((syncid = sys_sync_create(nodes, nclusters + 1, SYNC_ALL_TO_ONE)) >= 0);
 
 	/* Spawn remotes. */
 	sprintf(master_node, "%d", nodenum);
@@ -284,7 +284,7 @@ static void kernel_pingpong(void)
 static void benchmark(void)
 {
 	/* Initialization. */
-	sys_setup();
+	kernel_setup();
 	spawn_remotes();
 
 	if (!strcmp(kernel, "broadcast"))
@@ -296,7 +296,7 @@ static void benchmark(void)
 	
 	/* House keeping. */
 	join_remotes();
-	sys_cleanup();
+	kernel_cleanup();
 }
 
 /*============================================================================*

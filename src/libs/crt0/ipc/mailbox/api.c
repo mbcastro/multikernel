@@ -189,7 +189,7 @@ static void *test_mailbox_thread_read_write(void *args)
 {
 	char pathname_local[NANVIX_PROC_NAME_MAX];
 	char pathname_remote[NANVIX_PROC_NAME_MAX];
-	char buf[HAL_MAILBOX_MSG_SIZE];
+	char buf[MAILBOX_MSG_SIZE];
 	int tid;
 	int inbox;
 	int outbox;
@@ -220,12 +220,12 @@ static void *test_mailbox_thread_read_write(void *args)
 
 	pthread_barrier_wait(&barrier);
 
-	memset(buf, 1, HAL_MAILBOX_MSG_SIZE);
+	memset(buf, 1, MAILBOX_MSG_SIZE);
 	TEST_ASSERT(mailbox_write(outbox, buf, sizeof(buf)) == 0);
-	memset(buf, 0, HAL_MAILBOX_MSG_SIZE);
+	memset(buf, 0, MAILBOX_MSG_SIZE);
 	TEST_ASSERT(mailbox_read(inbox, buf, sizeof(buf)) == 0);
 
-	for (int i = 0; i < HAL_MAILBOX_MSG_SIZE; i++)
+	for (int i = 0; i < MAILBOX_MSG_SIZE; i++)
 		TEST_ASSERT(buf[i] == 1);
 
 	pthread_mutex_lock(&lock);

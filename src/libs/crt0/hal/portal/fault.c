@@ -146,8 +146,7 @@ static void test_sys_portal_double_open(void)
 static void test_sys_portal_invalid_unlink(void)
 {
 	TEST_ASSERT(sys_portal_unlink(-1) < 0);
-	TEST_ASSERT(sys_portal_unlink(HAL_NR_PORTAL) < 0);
-	TEST_ASSERT(sys_portal_unlink(HAL_NR_PORTAL + 1) < 0);
+	TEST_ASSERT(sys_portal_unlink(1000000) < 0);
 }
 
 /*============================================================================*
@@ -196,8 +195,7 @@ static void test_sys_portal_double_unlink(void)
 static void test_sys_portal_invalid_close(void)
 {
 	TEST_ASSERT(sys_portal_close(-1) < 0);
-	TEST_ASSERT(sys_portal_close(HAL_NR_PORTAL) < 0);
-	TEST_ASSERT(sys_portal_close(HAL_NR_PORTAL + 1) < 0);
+	TEST_ASSERT(sys_portal_close(1000000) < 0);
 }
 
 /*============================================================================*
@@ -249,8 +247,7 @@ static void test_sys_portal_invalid_allow(void)
 	int inportal;
 
 	TEST_ASSERT(sys_portal_allow(-1, 0) < 0);
-	TEST_ASSERT(sys_portal_allow(HAL_NR_PORTAL, 0) < 0);
-	TEST_ASSERT(sys_portal_allow(HAL_NR_PORTAL + 1, 0) < 0);
+	TEST_ASSERT(sys_portal_allow(1000000, 0) < 0);
 
 	nodenum = sys_get_node_num();
 
@@ -316,8 +313,7 @@ static void test_sys_portal_invalid_read(void)
 	int buf;
 
 	TEST_ASSERT(sys_portal_read(-1, &buf, sizeof(buf)) < 0);
-	TEST_ASSERT(sys_portal_read(HAL_NR_PORTAL, &buf, sizeof(buf)) < 0);
-	TEST_ASSERT(sys_portal_read(HAL_NR_PORTAL + 1, &buf, sizeof(buf)) < 0);
+	TEST_ASSERT(sys_portal_read(1000000, &buf, sizeof(buf)) < 0);
 }
 
 /*============================================================================*
@@ -369,8 +365,7 @@ static void test_sys_portal_invalid_write(void)
 	int buf;
 
 	TEST_ASSERT(sys_portal_write(-1, &buf, sizeof(buf)) < 0);
-	TEST_ASSERT(sys_portal_write(HAL_NR_PORTAL, &buf, sizeof(buf)) < 0);
-	TEST_ASSERT(sys_portal_write(HAL_NR_PORTAL + 1, &buf, sizeof(buf)) < 0);
+	TEST_ASSERT(sys_portal_write(1000000, &buf, sizeof(buf)) < 0);
 }
 
 /*============================================================================*

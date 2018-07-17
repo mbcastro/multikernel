@@ -23,6 +23,14 @@
 #ifndef NANVIX_CONST_H_
 #define NANVIX_CONST_H_
 
+	#define __NEED_HAL_CONST_
+	#include <nanvix/hal.h>
+
+	/**
+	 * @brief Number of NoC nodes.
+	 */
+	#define NANVIX_NR_NODES HAL_NR_NOC_NODES
+
 	/**
 	 * @brief Name server NoC node num.
 	 */

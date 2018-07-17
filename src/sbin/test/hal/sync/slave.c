@@ -69,7 +69,7 @@ static void test_sys_sync_create_unlink(int nclusters)
 
 	TEST_ASSERT((syncid = sys_sync_create(nodes,
 		nclusters,
-		HAL_SYNC_ONE_TO_ALL)) >= 0
+		SYNC_ONE_TO_ALL)) >= 0
 	);
 
 	TEST_ASSERT(sys_sync_unlink(syncid) == 0);
@@ -105,7 +105,7 @@ static void test_sys_sync_master_open_close(int nclusters)
 	TEST_ASSERT((syncid_local = sys_sync_create(
 		nodes_local,
 		nclusters,
-		HAL_SYNC_ONE_TO_ALL)) == 0
+		SYNC_ONE_TO_ALL)) == 0
 	);
 
 	/* Build nodes list. */
@@ -128,7 +128,7 @@ static void test_sys_sync_master_open_close(int nclusters)
 	TEST_ASSERT((syncid = sys_sync_open(
 		nodes,
 		nclusters,
-		HAL_SYNC_ONE_TO_ALL)) >= 0
+		SYNC_ONE_TO_ALL)) >= 0
 	);
 
 	TEST_ASSERT(sys_sync_close(syncid) == 0);
@@ -155,7 +155,7 @@ static void test_sys_sync_wait_signal(int nclusters)
 	TEST_ASSERT((syncid = sys_sync_create(
 		nodes,
 		nclusters + 1,
-		HAL_SYNC_ONE_TO_ALL)) >= 0
+		SYNC_ONE_TO_ALL)) >= 0
 	);
 
 	TEST_ASSERT(sys_sync_wait(syncid) == 0);
@@ -181,7 +181,7 @@ static void test_sys_sync_signal_wait(int nclusters)
 
 	TEST_ASSERT((syncid = sys_sync_open(nodes,
 		nclusters + 1,
-		HAL_SYNC_ALL_TO_ONE)) >= 0
+		SYNC_ALL_TO_ONE)) >= 0
 	);
 
 	TEST_ASSERT(sys_sync_signal(syncid) == 0);
@@ -208,11 +208,11 @@ static void test_sys_sync_barrier(int nclusters)
 	/* Open synchronization points. */
 	TEST_ASSERT((syncid2 = sys_sync_create(nodes,
 		nclusters + 1,
-		HAL_SYNC_ONE_TO_ALL)) >= 0
+		SYNC_ONE_TO_ALL)) >= 0
 	);
 	TEST_ASSERT((syncid1 = sys_sync_open(nodes,
 		nclusters + 1,
-		HAL_SYNC_ALL_TO_ONE)) >= 0
+		SYNC_ALL_TO_ONE)) >= 0
 	);
 
 	TEST_ASSERT(sys_sync_signal(syncid1) == 0);
@@ -246,11 +246,11 @@ static void test_sys_sync_barrier2(int nclusters)
 	{
 		TEST_ASSERT((syncid1 = sys_sync_create(nodes,
 			nclusters,
-			HAL_SYNC_ALL_TO_ONE)) >= 0
+			SYNC_ALL_TO_ONE)) >= 0
 		);
 		TEST_ASSERT((syncid2 = sys_sync_open(nodes,
 			nclusters,
-			HAL_SYNC_ONE_TO_ALL)) >= 0
+			SYNC_ONE_TO_ALL)) >= 0
 		);
 
 		TEST_ASSERT(sys_sync_wait(syncid1) == 0);
@@ -264,11 +264,11 @@ static void test_sys_sync_barrier2(int nclusters)
 	{
 		TEST_ASSERT((syncid2 = sys_sync_create(nodes,
 			nclusters,
-			HAL_SYNC_ONE_TO_ALL)) >= 0
+			SYNC_ONE_TO_ALL)) >= 0
 		);
 		TEST_ASSERT((syncid1 = sys_sync_open(nodes,
 			nclusters,
-			HAL_SYNC_ALL_TO_ONE)) >= 0
+			SYNC_ALL_TO_ONE)) >= 0
 		);
 
 		TEST_ASSERT(sys_sync_signal(syncid1) == 0);

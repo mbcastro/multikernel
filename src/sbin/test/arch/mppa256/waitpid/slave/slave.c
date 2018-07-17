@@ -44,7 +44,7 @@ int main(int argc, char **argv)
 	((void) argc);
 	((void) argv);
 
-	sys_setup();
+	kernel_setup();
 
 	TEST_ASSERT((barrier = barrier_create(nodes, 2)) >= 0);
 
@@ -58,6 +58,6 @@ int main(int argc, char **argv)
 
 	// TEST_ASSERT(barrier_wait(barrier) == 0);
 
-	sys_cleanup();
+	kernel_cleanup();
 	return (EXIT_SUCCESS);
 }

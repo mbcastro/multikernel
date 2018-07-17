@@ -63,11 +63,11 @@ static void sync_slaves(int nclusters)
 	{
 		TEST_ASSERT((syncid1 = sys_sync_create(nodes,
 			nclusters,
-			HAL_SYNC_ALL_TO_ONE)) >= 0
+			SYNC_ALL_TO_ONE)) >= 0
 		);
 		TEST_ASSERT((syncid2 = sys_sync_open(nodes,
 			nclusters,
-			HAL_SYNC_ONE_TO_ALL)) >= 0
+			SYNC_ONE_TO_ALL)) >= 0
 		);
 
 		TEST_ASSERT(sys_sync_wait(syncid1) == 0);
@@ -81,11 +81,11 @@ static void sync_slaves(int nclusters)
 	{
 		TEST_ASSERT((syncid2 = sys_sync_create(nodes,
 			nclusters,
-			HAL_SYNC_ONE_TO_ALL)) >= 0
+			SYNC_ONE_TO_ALL)) >= 0
 		);
 		TEST_ASSERT((syncid1 = sys_sync_open(nodes,
 			nclusters,
-			HAL_SYNC_ALL_TO_ONE)) >= 0
+			SYNC_ALL_TO_ONE)) >= 0
 		);
 
 		TEST_ASSERT(sys_sync_signal(syncid1) == 0);
@@ -114,7 +114,7 @@ static void sync_master(int nclusters)
 
 	TEST_ASSERT((syncid = sys_sync_open(nodes,
 		nclusters + 1,
-		HAL_SYNC_ALL_TO_ONE)) >= 0
+		SYNC_ALL_TO_ONE)) >= 0
 	);
 
 	TEST_ASSERT(sys_sync_signal(syncid) == 0);
@@ -163,7 +163,7 @@ static void test_sys_mailbox_read_write(int nclusters)
 	int inbox;
 	int outbox;
 	int nodenum;
-	char msg[HAL_MAILBOX_MSG_SIZE];
+	char msg[MAILBOX_MSG_SIZE];
 
 	nodenum = sys_get_node_num();
 
@@ -176,12 +176,12 @@ static void test_sys_mailbox_read_write(int nclusters)
 	TEST_ASSERT((sys_mailbox_write(
 		outbox,
 		msg,
-		HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE)
+		MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE)
 	);
 	TEST_ASSERT((sys_mailbox_read(
 		inbox,
 		msg,
-		HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE)
+		MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE)
 	);
 
 	/* House keeping. */
@@ -198,7 +198,7 @@ static void test_sys_mailbox_read_write(int nclusters)
 static void test_sys_mailbox_read_write2(int nclusters)
 {
 	int inbox;
-	char msg[HAL_MAILBOX_MSG_SIZE];
+	char msg[MAILBOX_MSG_SIZE];
 
 	TEST_ASSERT((inbox = get_inbox()) >= 0);
 
@@ -207,7 +207,7 @@ static void test_sys_mailbox_read_write2(int nclusters)
 	TEST_ASSERT((sys_mailbox_read(
 		inbox,
 		msg,
-		HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE)
+		MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE)
 	);
 }
 
@@ -221,14 +221,14 @@ static void test_sys_mailbox_read_write2(int nclusters)
 static void test_sys_mailbox_read_write3(void)
 {
 	int outbox;
-	char msg[HAL_MAILBOX_MSG_SIZE];
+	char msg[MAILBOX_MSG_SIZE];
 
 	TEST_ASSERT((outbox = sys_mailbox_open(masternode)) >= 0);
 
 	TEST_ASSERT((sys_mailbox_write(
 		outbox,
 		msg,
-		HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE)
+		MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE)
 	);
 
 	/* House keeping. */

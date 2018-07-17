@@ -26,6 +26,7 @@
 #include <string.h>
 
 #include <nanvix/syscalls.h>
+#include <nanvix/const.h>
 #include <nanvix/name.h>
 #include <nanvix/pm.h>
 
@@ -40,13 +41,13 @@
 /**
  * @brief Input HAL mailbox.
  */
-static int inboxes[HAL_NR_NOC_IONODES];
+static int inboxes[NANVIX_NR_NODES];
 
 /**
  *
  * @brief Is the inbox initialized ?
  */
-static int initialized[HAL_NR_NOC_IONODES] = { 0, };
+static int initialized[NANVIX_NR_NODES] = { 0, };
 
 /**
  * @brief Mailbox.
@@ -61,7 +62,7 @@ struct mailbox
 /**
  * @brief table of mailboxes.
  */
-static struct mailbox mailboxes[HAL_NR_MAILBOX];
+static struct mailbox mailboxes[NANVIX_MAILBOX_MAX];
 
 /*============================================================================*
  * initialize_inbox()                                                         *
@@ -166,7 +167,7 @@ int get_inbox(void)
  */
 static inline int mailbox_is_valid(int mbxid)
 {
-	return ((mbxid >=0) && (mbxid < HAL_NR_MAILBOX));
+	return ((mbxid >=0) && (mbxid < NANVIX_MAILBOX_MAX));
 }
 
 /*============================================================================*
@@ -268,7 +269,7 @@ static inline void mailbox_set_wronly(int mbxid)
 static int mailbox_alloc(void)
 {
 	/* Search for a free mailbox. */
-	for (int i = 0; i < HAL_NR_MAILBOX; i++)
+	for (int i = 0; i < NANVIX_MAILBOX_MAX; i++)
 	{
 		/* Found. */
 		if (!mailbox_is_used(i))
@@ -329,7 +330,7 @@ int mailbox_create(char *name)
 		return (-EINVAL);
 
 	/* Check name length. */
-	if (strlen(name) > HAL_MAILBOX_MSG_SIZE)
+	if (strlen(name) > MAILBOX_MSG_SIZE)
 		return (-EINVAL);
 
 	/* Allocate mailbox. */

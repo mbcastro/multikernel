@@ -40,14 +40,14 @@ static void *test_thread_sys_get_core_id(void *args)
 {
 	int tid;
 
-	sys_setup();
+	kernel_setup();
 	pthread_barrier_wait(&core_barrier);
 
 	tid = ((int *)args)[0];
 
 	TEST_ASSERT(tid == sys_get_core_id());
 
-	sys_cleanup();
+	kernel_cleanup();
 	return (NULL);
 }
 
@@ -86,12 +86,12 @@ static void *test_thread_sys_get_core_type(void *args)
 {
 	((void) args);
 
-	sys_setup();
+	kernel_setup();
 	pthread_barrier_wait(&core_barrier);
 
-	TEST_ASSERT(sys_get_core_type() == HAL_CORE_SYSTEM);
+	TEST_ASSERT(sys_get_core_type() == CORE_SYSTEM);
 
-	sys_cleanup();
+	kernel_cleanup();
 	return (NULL);
 }
 

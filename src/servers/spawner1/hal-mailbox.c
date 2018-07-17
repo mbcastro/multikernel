@@ -27,7 +27,6 @@
 
 #include <nanvix/const.h>
 #include <nanvix/syscalls.h>
-#include <nanvix/pm.h>
 
 /**
  * @brief Asserts a logic expression.
@@ -101,8 +100,8 @@ void test_kernel_sys_mailbox(void)
 	nodes_local[0] = SPAWNER_SERVER_NODE;
 	nodes_local[1] = nodenum;
 
-	TEST_ASSERT((syncid_local = sys_sync_create(nodes_local, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
-	TEST_ASSERT((syncid = sys_sync_open(nodes, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
+	TEST_ASSERT((syncid_local = sys_sync_create(nodes_local, 2, SYNC_ONE_TO_ALL)) >= 0);
+	TEST_ASSERT((syncid = sys_sync_open(nodes, 2, SYNC_ONE_TO_ALL)) >= 0);
 
 	TEST_ASSERT(sys_sync_wait(syncid_local) == 0);
 	TEST_ASSERT(sys_sync_signal(syncid) == 0);

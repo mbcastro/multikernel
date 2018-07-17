@@ -26,17 +26,32 @@
 	#include <stddef.h>
 	#include <inttypes.h>
 
-	#define __NEED_HAL_CORE_
-	#define __NEED_HAL_SETUP_
-	#define __NEED_HAL_NOC_
-	#define __NEED_HAL_SYNC_
-	#define __NEED_HAL_MAILBOX_
-	#define __NEED_HAL_PORTAL_
+	#define __NEED_HAL_CONST_
 	#include <nanvix/hal.h>
 
+	/**
+	 * @brief Type of cores.
+	 */
+	/**@{*/
+	#define CORE_USER   HAL_CORE_USER   /**< User core.                */
+	#define CORE_RMAN   HAL_CORE_RMAN   /**< Resource management core. */
+	#define CORE_SYSTEM HAL_CORE_SYSTEM /**< System core.              */
+	/**@}*/
+
+	/**
+	 * @brief Types of synchronization points.
+	 */
+	/**@{*/
+	#define SYNC_ONE_TO_ALL HAL_SYNC_ONE_TO_ALL /**< One to all. */
+	#define SYNC_ALL_TO_ONE HAL_SYNC_ALL_TO_ONE /**< All to one. */
+	/**@}*/
+
+	/**
+	 * @brief Size (in bytes) of a mailbox message.
+	 */
+	#define MAILBOX_MSG_SIZE HAL_MAILBOX_MSG_SIZE
+
 	/* Forward definitions. */
-	extern void sys_setup(void);
-	extern void sys_cleanup(void);
 	extern uint64_t sys_timer_get(void);
 	extern uint64_t sys_timer_diff(uint64_t, uint64_t);
 	extern void sys_timer_init(void);

@@ -31,7 +31,7 @@
  * Core Interface                                                             *
  *============================================================================*/
 
-#ifdef __NEED_HAL_CORE_
+#if (defined(__NEED_HAL_CORE_) || defined(__NEED_HAL_CONST_))
 
 	/**
 	 * @brief Number of user cores.
@@ -63,13 +63,13 @@
 	 */
 	#define HAL_NR_CLUSTERS (NR_IOCLUSTER + NR_CCLUSTER)
 
-#endif /* __NEED_HAL_CORE_ */
+#endif /* __NEED_HAL_CONST_ */
 
 /*============================================================================*
  * NoC Interface                                                              *
  *============================================================================*/
 
-#ifdef __NEED_HAL_NOC_
+#if (defined(__NEED_HAL_NOC_) || defined(__NEED_HAL_CONST_))
 
 	/**
 	 * @brief Number of NoC nodes attached to an IO device.
@@ -86,13 +86,13 @@
 	 */
 	#define HAL_NR_NOC_NODES (HAL_NR_NOC_IONODES + HAL_NR_NOC_CNODES)
 
-#endif /* __NEED_HAL_NOC_ */
+#endif /* __NEED_HAL_CONST_ */
 
 /*============================================================================*
  * Mailbox Interface                                                          *
  *============================================================================*/
 
-#ifdef __NEED_HAL_MAILBOX_
+#if (defined(__NEED_HAL_MAILBOX_) || defined(__NEED_HAL_CONST_))
 
 	/**
 	 * @brief Number of mailboxes.
@@ -108,13 +108,13 @@
 	 */
 	#define HAL_MAILBOX_MSG_SIZE 64
 
-#endif /* __NEED_HAL_MAILBOX_ */
+#endif /* __NEED_HAL_CONST_ */
 
 /*============================================================================*
  * Portal Interface                                                           *
  *============================================================================*/
 
-#ifdef __NEED_HAL_PORTAL_
+#if (defined(__NEED_HAL_PORTAL_) || defined(__NEED_HAL_CONST_))
 
 	/**
 	 * @brief Number of unnamed portals.
@@ -125,13 +125,13 @@
 		#define HAL_NR_PORTAL (4*HAL_NR_NOC_NODES)
 	#endif
 
-#endif /* __NEED_HAL_PORTAL_ */
+#endif /* __NEED_HAL_CONST_ */
 
 /*============================================================================*
  * Synchronization Point Interface                                            *
  *============================================================================*/
 
-#ifdef __NEED_HAL_SYNC_
+#if (defined(__NEED_HAL_SYNC_) || defined(__NEED_HAL_CONST_))
 
 	/**
 	 * @brief Number of mailboxes.
@@ -142,6 +142,6 @@
 		#define HAL_NR_SYNC (4*HAL_NR_NOC_NODES)
 	#endif
 
-#endif /* __NEED_HAL_SYNC_ */
+#endif /* __NEED_HAL_CONST_ */
 
 #endif /* NANVIX_ARCH_MPPA256 */

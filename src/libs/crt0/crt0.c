@@ -86,8 +86,8 @@ static void spawners_sync(void)
 	nodes_local[1] = nodenum;
 
 	/* Open synchronization points. */
-	assert((syncid_local = sys_sync_create(nodes_local, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
-	assert((syncid = sys_sync_open(nodes, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
+	assert((syncid_local = sys_sync_create(nodes_local, 2, SYNC_ONE_TO_ALL)) >= 0);
+	assert((syncid = sys_sync_open(nodes, 2, SYNC_ONE_TO_ALL)) >= 0);
 
 	assert(sys_sync_signal(syncid) == 0);
 	assert(sys_sync_wait(syncid_local) == 0);
@@ -114,7 +114,8 @@ int main(int argc, const char **argv)
 			debug = 1;
 	}
 
-	sys_setup();
+	/* Initialization. */
+	assert(kernel_setup() == 0);
 
 	printf("[nanvix][spawner0] booting up server\n");
 
@@ -125,9 +126,6 @@ int main(int argc, const char **argv)
 	printf("[nanvix][spawner0] server alive\n");
 
 	spawners_sync();
-
-	/* Initialization. */
-	assert(kernel_setup() == 0);
 
 	/* Run self-tests. */
 	if (debug)
@@ -147,6 +145,5 @@ int main(int argc, const char **argv)
 
 	/* Cleanup. */
 	assert(kernel_cleanup() == 0);
-	sys_cleanup();
 	return (ret);
 }

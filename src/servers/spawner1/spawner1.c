@@ -66,7 +66,7 @@ static void *server(void *args)
 	int servernum;
 	int (*main_fn) (int);
 
-	sys_setup();
+	kernel_setup();
 
 	servernum = ((int *)args)[0];
 
@@ -82,7 +82,7 @@ static void *server(void *args)
 	/* Spawn server. */
 	main_fn(inbox);
 
-	sys_cleanup();
+	kernel_cleanup();
 	return (NULL);
 }
 
@@ -126,8 +126,8 @@ static void spawners_sync(void)
 	nodes_local[1] = nodenum;
 
 	/* Open syncrhonization points. */
-	assert((syncid_local = sys_sync_create(nodes_local, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
-	assert((syncid = sys_sync_open(nodes, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
+	assert((syncid_local = sys_sync_create(nodes_local, 2, SYNC_ONE_TO_ALL)) >= 0);
+	assert((syncid = sys_sync_open(nodes, 2, SYNC_ONE_TO_ALL)) >= 0);
 
 	assert(sys_sync_wait(syncid_local) == 0);
 	assert(sys_sync_signal(syncid) == 0);
@@ -155,7 +155,7 @@ int main(int argc, char **argv)
 			debug = 1;
 	}
 
-	sys_setup();
+	kernel_setup();
 
 	printf("[nanvix][spawner1] booting up server\n");
 
@@ -190,6 +190,6 @@ int main(int argc, char **argv)
 	for (int i = 0; i < NR_SERVERS; i++)
 		pthread_join(tids[i], NULL);
 
-	sys_cleanup();
+	kernel_cleanup();
 	return (EXIT_SUCCESS);
 }

@@ -23,6 +23,7 @@
 #include <errno.h>
 
 #include <nanvix/syscalls.h>
+#include <nanvix/const.h>
 
 /**
  * @brief Barrier flags.
@@ -36,17 +37,17 @@
  */
 struct barrier
 {
-	int local;                   /* Local sync.                         */
-	int remote;                  /* Remote sync.                        */
-	int nnodes;                  /* Number of NoC nodes in the barrier. */
-	int nodes[HAL_NR_NOC_NODES]; /* Id of NoC nodes in the barrier.     */
-	int flags;                   /* Flags.                              */
+	int local;                  /* Local sync.                         */
+	int remote;                 /* Remote sync.                        */
+	int nnodes;                 /* Number of NoC nodes in the barrier. */
+	int nodes[NANVIX_NR_NODES]; /* Id of NoC nodes in the barrier.     */
+	int flags;                  /* Flags.                              */
 };
 
 /**
  * @brief Table of barriers.
  */
-static struct barrier barriers[HAL_NR_NOC_NODES];
+static struct barrier barriers[NANVIX_NR_NODES];
 
 /*=======================================================================*
  * barrier_is_valid()                                                    *
@@ -62,7 +63,7 @@ static struct barrier barriers[HAL_NR_NOC_NODES];
  */
 static int barrier_is_valid(int barrierid)
 {
-	return ((barrierid >= 0) && (barrierid < HAL_NR_NOC_NODES));
+	return ((barrierid >= 0) && (barrierid < NANVIX_NR_NODES));
 }
 
 /*=======================================================================*
@@ -124,7 +125,7 @@ static void barrier_clear_flags(int barrierid)
 static int barrier_alloc(void)
 {
 	/* Search for a free barrier. */
-	for (int i = 0; i < HAL_NR_NOC_NODES; i++)
+	for (int i = 0; i < NANVIX_NR_NODES; i++)
 	{
 		/* Found. */
 		if (!barrier_is_used(i))
@@ -182,7 +183,7 @@ int barrier_create(int *nodes, int nnodes)
 		return (-EINVAL);
 
 	/* Number of nodes Invalid. */
-	if ((nnodes < 0) && (nnodes >= HAL_NR_NOC_NODES))
+	if ((nnodes < 0) && (nnodes >= NANVIX_NR_NODES))
 		return (-EINVAL);
 
 	nodenum = sys_get_node_num();
@@ -205,19 +206,19 @@ found:
 	if (nodenum == nodes[0])
 	{
 		/* This node is the leader of the barrier. */
-		if ((local = sys_sync_create(nodes, nnodes, HAL_SYNC_ALL_TO_ONE)) < 0)
+		if ((local = sys_sync_create(nodes, nnodes, SYNC_ALL_TO_ONE)) < 0)
 			goto error0;
 
-		if ((remote = sys_sync_open(nodes, nnodes, HAL_SYNC_ONE_TO_ALL)) < 0)
+		if ((remote = sys_sync_open(nodes, nnodes, SYNC_ONE_TO_ALL)) < 0)
 			goto error1;
 	}
 	else
 	{
 		/* This node is not the leader of the barrier. */
-		if ((local = sys_sync_create(nodes, nnodes, HAL_SYNC_ONE_TO_ALL)) < 0)
+		if ((local = sys_sync_create(nodes, nnodes, SYNC_ONE_TO_ALL)) < 0)
 			goto error0;
 
-		if ((remote = sys_sync_open(nodes, nnodes, HAL_SYNC_ALL_TO_ONE)) < 0)
+		if ((remote = sys_sync_open(nodes, nnodes, SYNC_ALL_TO_ONE)) < 0)
 			goto error1;
 	}
 
