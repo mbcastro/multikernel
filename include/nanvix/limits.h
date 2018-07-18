@@ -43,5 +43,12 @@
 	 */
 	#define NANVIX_MAILBOX_MAX HAL_NR_MAILBOX
 
+	/**
+	 * @brief Maximum length of a sempahore name.
+	 *
+	 * @note The null character is included.
+	 */
+	#define NANVIX_SEM_NAME_MAX 56
+
 #endif /* NANVIX_LIMITS_H_ */
 
