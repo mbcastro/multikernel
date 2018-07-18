@@ -20,9 +20,8 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <nanvix/hal.h>
+#include <nanvix/syscalls.h>
 #include <nanvix/mm.h>
-#include <nanvix/pm.h>
 #include <stdio.h>
 #include <string.h>
 #include "mem.h"
@@ -41,7 +40,7 @@ void memwrite(uint64_t addr, const void *buf, size_t n)
 	meminit();
 
 	/* Build operation header. */
-	msg.source = hal_get_cluster_id();
+	msg.source = sys_get_cluster_id();
 	msg.op = RMEM_WRITE;
 	msg.blknum = addr;
 	msg.size = n;

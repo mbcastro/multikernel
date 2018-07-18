@@ -23,10 +23,7 @@
 #include <pthread.h>
 #include <stdio.h>
 
-#define __NEED_HAL_CORE_
-#define __NEED_HAL_NOC_
-#include <nanvix/hal.h>
-#include <nanvix/init.h>
+#include <nanvix/syscalls.h>
 
 #include "test.h"
 
@@ -51,9 +48,9 @@ pthread_barrier_t ipc_name_barrier;
  */
 void test_kernel_name(int nbusycores)
 {
-	TEST_ASSERT(kernel_setup() == 0);
+	TEST_ASSERT(runtime_setup() == 0);
 
-	ipc_name_ncores = hal_get_num_cores() - nbusycores;
+	ipc_name_ncores = sys_get_num_cores() - nbusycores;
 
 	pthread_barrier_init(&ipc_name_barrier, NULL, ipc_name_ncores - 1);
 
@@ -71,6 +68,6 @@ void test_kernel_name(int nbusycores)
 		ipc_name_tests_fault[i].test_fn();
 	}
 
-	TEST_ASSERT(kernel_cleanup() == 0);
+	TEST_ASSERT(runtime_cleanup() == 0);
 }
 

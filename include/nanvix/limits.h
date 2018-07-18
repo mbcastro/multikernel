@@ -23,7 +23,7 @@
 #ifndef NANVIX_LIMITS_H_
 #define NANVIX_LIMITS_H_
 
-	#define __NEED_HAL_CORE_
+	#define __NEED_HAL_CONST_
 	#include <nanvix/hal.h>
 
 	/**
@@ -37,6 +37,11 @@
 	 * @brief Maximum number of processes.
 	 */
 	#define NANVIX_PROC_MAX HAL_NR_CCLUSTERS
+
+	/**
+	 * @brief Maximum number of mailboxes.
+	 */
+	#define NANVIX_MAILBOX_MAX HAL_NR_MAILBOX
 
 #endif /* NANVIX_LIMITS_H_ */
 

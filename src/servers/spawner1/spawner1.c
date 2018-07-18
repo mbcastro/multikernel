@@ -26,13 +26,8 @@
 
 #include <mppa/osconfig.h>
 
-#define __NEED_HAL_CORE_
-#define __NEED_HAL_NOC_
-#define __NEED_HAL_SETUP_
-#define __NEED_HAL_SYNC_
-#define __NEED_HAL_MAILBOX_
 #include <nanvix/const.h>
-#include <nanvix/hal.h>
+#include <nanvix/syscalls.h>
 
 /**
  * @brief Number of servers.
@@ -41,8 +36,8 @@
 
 /* Forward definitions. */
 extern int name_server(int);
-extern void test_kernel_hal_sync(void);
-extern void test_kernel_hal_mailbox(void);
+extern void test_kernel_sys_sync(void);
+extern void test_kernel_sys_mailbox(void);
 extern void test_kernel_barrier(void);
 
 /**
@@ -71,7 +66,7 @@ static void *server(void *args)
 	int servernum;
 	int (*main_fn) (int);
 
-	hal_setup();
+	kernel_setup();
 
 	servernum = ((int *)args)[0];
 
@@ -79,7 +74,7 @@ static void *server(void *args)
 	main_fn = servers[servernum].main;
 
 	/* Open server mailbox. */
-	inbox = hal_mailbox_create(hal_noc_nodes[nodenum]);
+	inbox = sys_mailbox_create(nodenum);
 
 	/* Wait for other servers. */
 	pthread_barrier_wait(&barrier);
@@ -87,7 +82,7 @@ static void *server(void *args)
 	/* Spawn server. */
 	main_fn(inbox);
 
-	hal_cleanup();
+	kernel_cleanup();
 	return (NULL);
 }
 
@@ -97,9 +92,9 @@ static void *server(void *args)
 static void test_kernel(const char *module)
 {
 	if (!strcmp(module, "--hal-sync"))
-		test_kernel_hal_sync();
+		test_kernel_sys_sync();
 	else if (!strcmp(module, "--hal-mailbox"))
-		test_kernel_hal_mailbox();
+		test_kernel_sys_mailbox();
 }
 
 /**
@@ -116,32 +111,32 @@ static void test_runtime(const char *module)
  */
 static void spawners_sync(void)
 {
-	int nodeid;
+	int nodenum;
 	int syncid;
 	int syncid_local;
 	int nodes[2];
 	int nodes_local[2];
 
-	nodeid = hal_get_node_id();
+	nodenum = sys_get_node_num();
 
-	nodes[0] = nodeid;
-	nodes[1] = hal_noc_nodes[SPAWNER_SERVER_NODE];
+	nodes[0] = nodenum;
+	nodes[1] = SPAWNER_SERVER_NODE;
 
-	nodes_local[0] = hal_noc_nodes[SPAWNER_SERVER_NODE];
-	nodes_local[1] = nodeid;
+	nodes_local[0] = SPAWNER_SERVER_NODE;
+	nodes_local[1] = nodenum;
 
 	/* Open syncrhonization points. */
-	assert((syncid_local = hal_sync_create(nodes_local, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
-	assert((syncid = hal_sync_open(nodes, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
+	assert((syncid_local = sys_sync_create(nodes_local, 2, SYNC_ONE_TO_ALL)) >= 0);
+	assert((syncid = sys_sync_open(nodes, 2, SYNC_ONE_TO_ALL)) >= 0);
 
-	assert(hal_sync_wait(syncid_local) == 0);
-	assert(hal_sync_signal(syncid) == 0);
+	assert(sys_sync_wait(syncid_local) == 0);
+	assert(sys_sync_signal(syncid) == 0);
 
 	printf("[nanvix][spawner1] synced\n");
 
 	/* House keeping. */
-	assert(hal_sync_unlink(syncid_local) == 0);
-	assert(hal_sync_close(syncid) == 0);
+	assert(sys_sync_unlink(syncid_local) == 0);
+	assert(sys_sync_close(syncid) == 0);
 }
 
 /**
@@ -160,7 +155,7 @@ int main(int argc, char **argv)
 			debug = 1;
 	}
 
-	hal_setup();
+	kernel_setup();
 
 	printf("[nanvix][spawner1] booting up server\n");
 
@@ -195,6 +190,6 @@ int main(int argc, char **argv)
 	for (int i = 0; i < NR_SERVERS; i++)
 		pthread_join(tids[i], NULL);
 
-	hal_cleanup();
+	kernel_cleanup();
 	return (EXIT_SUCCESS);
 }

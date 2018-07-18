@@ -22,12 +22,8 @@
 
 #include <stdlib.h>
 
-#define __NEED_HAL_CORE_
-#define __NEED_HAL_NOC_
-#define __NEED_HAL_SETUP_
-#define __NEED_HAL_SYNC_
 #include <nanvix/const.h>
-#include <nanvix/hal.h>
+#include <nanvix/syscalls.h>
 
 /**
  * @brief Asserts a logic expression.
@@ -41,32 +37,32 @@
 /**
  * @brief API Test: Barrier
  */
-static void test_hal_sync_barrier(void)
+static void test_sys_sync_barrier(void)
 {
-	int nodeid;
+	int nodenum;
 	int syncid;
 	int syncid_local;
 	int nodes[2];
 	int nodes_local[2];
 
-	nodeid = hal_get_node_id();
+	nodenum = sys_get_node_num();
 
-	nodes[0] = nodeid;
-	nodes[1] = hal_noc_nodes[SPAWNER_SERVER_NODE];
+	nodes[0] = nodenum;
+	nodes[1] = SPAWNER_SERVER_NODE;
 
-	nodes_local[0] = hal_noc_nodes[SPAWNER_SERVER_NODE];
-	nodes_local[1] = nodeid;
+	nodes_local[0] = SPAWNER_SERVER_NODE;
+	nodes_local[1] = nodenum;
 
 	/* Open syncrhonization points. */
-	TEST_ASSERT((syncid_local = hal_sync_create(nodes_local, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
-	TEST_ASSERT((syncid = hal_sync_open(nodes, 2, HAL_SYNC_ONE_TO_ALL)) >= 0);
+	TEST_ASSERT((syncid_local = sys_sync_create(nodes_local, 2, SYNC_ONE_TO_ALL)) >= 0);
+	TEST_ASSERT((syncid = sys_sync_open(nodes, 2, SYNC_ONE_TO_ALL)) >= 0);
 
-	TEST_ASSERT(hal_sync_wait(syncid_local) == 0);
-	TEST_ASSERT(hal_sync_signal(syncid) == 0);
+	TEST_ASSERT(sys_sync_wait(syncid_local) == 0);
+	TEST_ASSERT(sys_sync_signal(syncid) == 0);
 
 	/* House keeping. */
-	TEST_ASSERT(hal_sync_unlink(syncid_local) == 0);
-	TEST_ASSERT(hal_sync_close(syncid) == 0);
+	TEST_ASSERT(sys_sync_unlink(syncid_local) == 0);
+	TEST_ASSERT(sys_sync_close(syncid) == 0);
 }
 
 /*===================================================================*
@@ -76,7 +72,7 @@ static void test_hal_sync_barrier(void)
 /**
  * @brief Synchronization Point Test Driver
  */
-void test_kernel_hal_sync(void)
+void test_kernel_sys_sync(void)
 {
-	test_hal_sync_barrier();
+	test_sys_sync_barrier();
 }

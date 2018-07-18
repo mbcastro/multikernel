@@ -20,41 +20,49 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <inttypes.h>
+
+#define __NEED_HAL_PERFORMANCE_
 #include <nanvix/hal.h>
-#include <nanvix/mm.h>
-#include <nanvix/pm.h>
-#include <nanvix/name.h>
-#include <stdio.h>
-#include <assert.h>
 
 /**
- * @brief Underlying IPC connectors.
+ * @brief Timer error.
  */
-/**@{*/
-int _mem_outbox = -1;    /* Mailbox used for small transfers. */
-int _mem_inportal = -1;  /* Portal used for large transfers.  */
-int _mem_outportal = -1; /* Portal used for large transfers.  */
-/**@}*/
+static uint64_t timer_error = 0;
 
 /**
- * @brief Initializes the RMA engine.
+ * @brief Gets the current timer value.
+ *
+ * @returns The current timer value;
  */
-void meminit(void)
+uint64_t sys_timer_get(void)
 {
-	int clusterid;                   /* Cluster ID of the calling process.   */
-	static int initialized = 0;      /* IS RMA Engine initialized?           */
-
-	/* Already initialized.  */
-	if (initialized)
-		return;
-
-	/* Retrieve cluster information. */
-	clusterid = hal_get_cluster_id();
-
-	/* Open underlying IPC connectors. */
-	_mem_inportal = _portal_create(clusterid);
-	_mem_outbox =hal_mailbox_open(IOCLUSTER1 + clusterid%NR_IOCLUSTER_DMA);
-	_mem_outportal = _portal_open(clusterid%NR_IOCLUSTER_DMA);
-
-	initialized = 1;
+	return (hal_timer_get());
 }
+
+/**
+ * @brief Computes the difference between two timer values.
+ *
+ * @param t1 Start time.
+ * @param t2 End time.
+ *
+ * @returns The difference between the two timers (t2 - t1).
+ */
+uint64_t sys_timer_diff(uint64_t t1, uint64_t t2)
+{
+	return (((t2 - t1) <= timer_error) ? timer_error : t2 - t1 - timer_error);
+}
+
+/**
+ * @brief Calibrates the timer.
+ */
+void sys_timer_init(void)
+{
+	uint64_t start, end;
+
+	start = hal_timer_get();
+	end = hal_timer_get();
+
+	timer_error = (end - start);
+}
+

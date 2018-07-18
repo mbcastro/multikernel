@@ -63,22 +63,22 @@ export SERVERSBIN1 = $(BINDIR)/servers1
 .PHONY: servers
 
 # Builds everything.
-all: kernel servers libs test benchmarks 
+all: kernel libs servers test benchmarks
 
 # Builds the kernel.
 kernel: clean
 	cd kernel && $(MAKE) all
 
-# Builds system servers
-servers: kernel
-ifeq ($(BUILD_SERVERS),true)
-	cd servers && $(MAKE) all
-endif
-
 # Builds user-level libraries.
 libs: kernel
 	mkdir -p $(LIBDIR)
 	cd libs && $(MAKE) all
+
+# Builds system servers
+servers: kernel libs
+ifeq ($(BUILD_SERVERS),true)
+	cd servers && $(MAKE) all
+endif
 
 # Builds testing system.
 test: kernel servers libs

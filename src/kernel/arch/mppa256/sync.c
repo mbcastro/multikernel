@@ -20,17 +20,14 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <errno.h>
 #include <inttypes.h>
-#include <stdio.h>
-#include <string.h>
-#include <pthread.h>
 
 #include <mppaipc.h>
 
 #define __NEED_HAL_NOC_
 #define __NEED_HAL_SYNC_
 #include <nanvix/hal.h>
+#include <nanvix/klib.h>
 
 #include "noc.h"
 
@@ -428,7 +425,7 @@ static int mppa256_sync_create(const int *nodes, int nnodes, int type)
 		/* Build sync mask. */
 		mask = 0;
 		for (int i = 1; i < nnodes; i++)
-			mask |= 1 << noc_get_node_num(nodes[i]);
+			mask |= 1 << hal_get_node_num(nodes[i]);
 	}
 
 	/* Open NoC connector. */
@@ -831,7 +828,7 @@ again:
 		nodeid = hal_get_node_id();
 
 		/* Signal. */
-		mask = 1 << noc_get_node_num(nodeid);
+		mask = 1 << hal_get_node_num(nodeid);
 		ret = (mppa_write(synctab[syncid].fd, &mask, sizeof(uint64_t)) != sizeof(uint64_t));
 	}
 

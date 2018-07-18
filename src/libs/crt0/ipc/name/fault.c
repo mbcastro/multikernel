@@ -27,11 +27,7 @@
 
 #include <mppaipc.h>
 
-#define __NEED_HAL_CORE_
-#define __NEED_HAL_NOC_
-#define __NEED_HAL_SYNC_
-#include <nanvix/hal.h>
-#include <nanvix/init.h>
+#include <nanvix/syscalls.h>
 #include <nanvix/name.h>
 #include <nanvix/limits.h>
 #include <nanvix/pm.h>
@@ -47,15 +43,15 @@
 */
 static void test_name_duplicate(void)
 {
-	int nodeid;
+	int nodenum;
 	char pathname[NANVIX_PROC_NAME_MAX];
 
-	nodeid = hal_get_node_id();
+	nodenum = sys_get_node_num();
 
 	/* Link name. */
 	sprintf(pathname, "cool-name");
-	TEST_ASSERT(name_link(nodeid, pathname) == 0);
-	TEST_ASSERT(name_link(nodeid, pathname) < 0);
+	TEST_ASSERT(name_link(nodenum, pathname) == 0);
+	TEST_ASSERT(name_link(nodenum, pathname) < 0);
 	TEST_ASSERT(name_unlink(pathname) == 0);
 }
 
@@ -68,17 +64,17 @@ static void test_name_duplicate(void)
 */
 static void test_name_invalid_link(void)
 {
-	int nodeid;
+	int nodenum;
 	char pathname[NANVIX_PROC_NAME_MAX + 1];
 
-	nodeid = hal_get_node_id();
+	nodenum = sys_get_node_num();
 
 	memset(pathname, 1, NANVIX_PROC_NAME_MAX + 1);
 
 	/* Link invalid names. */
-	TEST_ASSERT(name_link(nodeid, pathname) < 0);
-	TEST_ASSERT(name_link(nodeid, NULL) < 0);
-	TEST_ASSERT(name_link(nodeid, "") < 0);
+	TEST_ASSERT(name_link(nodenum, pathname) < 0);
+	TEST_ASSERT(name_link(nodenum, NULL) < 0);
+	TEST_ASSERT(name_link(nodenum, "") < 0);
 }
 
 /*============================================================================*

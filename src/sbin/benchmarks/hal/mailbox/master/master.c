@@ -28,13 +28,7 @@
 #include <mppa/osconfig.h>
 #include <mppaipc.h>
 
-#define __NEED_HAL_CORE_
-#define __NEED_HAL_NOC_
-#define __NEED_HAL_SETUP_
-#define __NEED_HAL_SYNC_
-#define __NEED_HAL_MAILBOX_
-#define __NEED_HAL_PERFORMANCE_
-#include <nanvix/hal.h>
+#include <nanvix/syscalls.h>
 #include <nanvix/limits.h>
 
 #include "../kernel.h"
@@ -56,12 +50,12 @@ static int pids[NANVIX_PROC_MAX];
 /**
  * @brief Buffer.
  */
-static char buffer[HAL_MAILBOX_MSG_SIZE];
+static char buffer[MAILBOX_MSG_SIZE];
 
 /**
  * @brief Underlying NoC node ID.
  */
-static int nodeid;
+static int nodenum;
 
 /**
  * @brief Inbox for receiving messages.
@@ -94,15 +88,15 @@ static void spawn_remotes(void)
 	};
 
 	/* Build nodes list. */
-	nodes[0] = nodeid;
+	nodes[0] = nodenum;
 	for (int i = 0; i < nclusters; i++)
 		nodes[i + 1] = i;
 
 	/* Create synchronization point. */
-	assert((syncid = hal_sync_create(nodes, nclusters + 1, HAL_SYNC_ALL_TO_ONE)) >= 0);
+	assert((syncid = sys_sync_create(nodes, nclusters + 1, SYNC_ALL_TO_ONE)) >= 0);
 
 	/* Spawn remotes. */
-	sprintf(master_node, "%d", nodeid);
+	sprintf(master_node, "%d", nodenum);
 	sprintf(first_remote, "%d", 0);
 	sprintf(last_remote, "%d", nclusters);
 	sprintf(niterations_str, "%d", niterations);
@@ -110,10 +104,10 @@ static void spawn_remotes(void)
 		assert((pids[i] = mppa_spawn(i, NULL, argv[0], argv, NULL)) != -1);
 
 	/* Sync. */
-	assert(hal_sync_wait(syncid) == 0);
+	assert(sys_sync_wait(syncid) == 0);
 
 	/* House keeping. */
-	assert(hal_sync_unlink(syncid) == 0);
+	assert(sys_sync_unlink(syncid) == 0);
 }
 
 /**
@@ -134,7 +128,7 @@ static void open_mailboxes(int *outboxes)
 {
 	/* Open output portales. */
 	for (int i = 0; i < nclusters; i++)
-		assert((outboxes[i] = hal_mailbox_open(i)) >= 0);
+		assert((outboxes[i] = sys_mailbox_open(i)) >= 0);
 }
 
 /**
@@ -146,7 +140,7 @@ static void close_mailboxes(const int *outboxes)
 {
 	/* Close output mailboxes. */
 	for (int i = 0; i < nclusters; i++)
-		assert((hal_mailbox_close(outboxes[i])) == 0);
+		assert((sys_mailbox_close(outboxes[i])) == 0);
 }
 
 /*============================================================================*
@@ -162,7 +156,7 @@ static void kernel_broadcast(void)
 
 	/* Initialization. */
 	open_mailboxes(outboxes);
-	memset(buffer, 1, HAL_MAILBOX_MSG_SIZE);
+	memset(buffer, 1, MAILBOX_MSG_SIZE);
 
 	/* Benchmark. */
 	for (int k = 0; k <= (niterations + 1); k++)
@@ -170,12 +164,12 @@ static void kernel_broadcast(void)
 		double total;
 		uint64_t t1, t2;
 
-		t1 = hal_timer_get();
+		t1 = sys_timer_get();
 		for (int i = 0; i < nclusters; i++)
-			assert(hal_mailbox_write(outboxes[i], buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
-		t2 = hal_timer_get();
+			assert(sys_mailbox_write(outboxes[i], buffer, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
+		t2 = sys_timer_get();
 
-		total = hal_timer_diff(t1, t2)/((double) hal_get_core_freq());
+		total = sys_timer_diff(t1, t2)/((double) sys_get_core_freq());
 
 		/* Warmup. */
 		if (((k == 0) || (k == (niterations + 1))))
@@ -183,10 +177,10 @@ static void kernel_broadcast(void)
 
 		printf("nanvix;%s;%d;%d;%.2lf;%.2lf\n",
 			kernel,
-			HAL_MAILBOX_MSG_SIZE,
+			MAILBOX_MSG_SIZE,
 			nclusters,
 			(total*MEGA)/nclusters,
-			(nclusters*HAL_MAILBOX_MSG_SIZE)/total
+			(nclusters*MAILBOX_MSG_SIZE)/total
 		);
 	}
 	
@@ -205,12 +199,12 @@ static void kernel_gather(void)
 	/* Benchmark. */
 	for (int k = 0; k <= (niterations + 1); k++)
 	{
-		t1 = hal_timer_get();
+		t1 = sys_timer_get();
 		for (int i = 0; i < nclusters; i++)
-			assert(hal_mailbox_read(inbox, buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
-		t2 = hal_timer_get();
+			assert(sys_mailbox_read(inbox, buffer, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
+		t2 = sys_timer_get();
 
-		total = hal_timer_diff(t1, t2)/((double) hal_get_core_freq());
+		total = sys_timer_diff(t1, t2)/((double) sys_get_core_freq());
 
 		/* Warmup. */
 		if (((k == 0) || (k == (niterations + 1))))
@@ -218,10 +212,10 @@ static void kernel_gather(void)
 
 		printf("nanvix;%s;%d;%d;%.2lf;%.2lf\n",
 			kernel,
-			HAL_MAILBOX_MSG_SIZE,
+			MAILBOX_MSG_SIZE,
 			nclusters,
 			(total*MEGA)/nclusters,
-			(nclusters*HAL_MAILBOX_MSG_SIZE)/total
+			(nclusters*MAILBOX_MSG_SIZE)/total
 		);
 	}
 }
@@ -241,14 +235,14 @@ static void kernel_pingpong(void)
 	/* Benchmark. */
 	for (int k = 0; k <= (niterations + 1); k++)
 	{
-		t1 = hal_timer_get();
+		t1 = sys_timer_get();
 		for (int i = 0; i < nclusters; i++)
-			assert(hal_mailbox_write(outboxes[i], buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
+			assert(sys_mailbox_write(outboxes[i], buffer, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
 		for (int i = 0; i < nclusters; i++)
-			assert(hal_mailbox_read(inbox, buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
-		t2 = hal_timer_get();
+			assert(sys_mailbox_read(inbox, buffer, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
+		t2 = sys_timer_get();
 
-		total = hal_timer_diff(t1, t2)/((double) hal_get_core_freq());
+		total = sys_timer_diff(t1, t2)/((double) sys_get_core_freq());
 
 		/* Warmup. */
 		if (((k == 0) || (k == (niterations + 1))))
@@ -256,10 +250,10 @@ static void kernel_pingpong(void)
 
 		printf("nanvix;%s;%d;%d;%.2lf;%.2lf\n",
 			kernel,
-			HAL_MAILBOX_MSG_SIZE,
+			MAILBOX_MSG_SIZE,
 			nclusters,
 			(total*MEGA)/nclusters,
-			2*(nclusters*HAL_MAILBOX_MSG_SIZE)/total
+			2*(nclusters*MAILBOX_MSG_SIZE)/total
 		);
 	}
 
@@ -273,9 +267,9 @@ static void kernel_pingpong(void)
 static void benchmark(void)
 {
 	/* Initialization. */
-	hal_setup();
-	nodeid = hal_get_node_id();
-	assert((inbox = hal_mailbox_create(nodeid)) >= 0);
+	kernel_setup();
+	nodenum = sys_get_node_num();
+	assert((inbox = sys_mailbox_create(nodenum)) >= 0);
 	spawn_remotes();
 
 	if (!strcmp(kernel, "broadcast"))
@@ -286,9 +280,9 @@ static void benchmark(void)
 		kernel_pingpong();
 	
 	/* House keeping. */
-	assert(hal_mailbox_unlink(inbox) == 0);
+	assert(sys_mailbox_unlink(inbox) == 0);
 	join_remotes();
-	hal_cleanup();
+	kernel_cleanup();
 }
 
 /*============================================================================*

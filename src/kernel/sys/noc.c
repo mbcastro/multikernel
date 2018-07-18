@@ -20,40 +20,22 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#define __NEED_HAL_NOC_
 #include <nanvix/hal.h>
-#include <nanvix/mm.h>
-#include <nanvix/pm.h>
-#include <stdio.h>
-#include <string.h>
-#include "mem.h"
 
 /**
- * @brief Reads from a remote memory.
+ * @brief Gets the logic number of the underlying NoC node.
  *
- * @param addr Remote address.
- * @param bug  Location where the data should be written to.
- * @param n    Number of bytes to read.
+ * @returns The logic number of the target NoC node.
+ *
+ * @see hal_get_node_num()
  */
-void memread(uint64_t addr, void *buf, size_t n)
+int sys_get_node_num(void)
 {
-	int clusterid;           /* Cluster ID of the calling process. */
-	struct rmem_message msg; /* Remote memory operation.           */
+	int nodeid;
 
-	clusterid = hal_get_cluster_id();
+	nodeid = hal_get_node_id();
 
-	meminit();
-
-	/* Build operation header. */
-	msg.source = clusterid;
-	msg.op = RMEM_READ;
-	msg.blknum = addr;
-	msg.size = n;
-
-	/* Send operation header. */
-	mailbox_write(_mem_outbox, &msg);
-
-	/* Send data. */
-	portal_allow(_mem_inportal, IOCLUSTER1);
-	portal_read(_mem_inportal, buf, n);
+	return (hal_get_node_num(nodeid));
 }
 

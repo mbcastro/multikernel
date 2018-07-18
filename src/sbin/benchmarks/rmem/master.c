@@ -21,11 +21,9 @@
  */
 
 #include <mppa/osconfig.h>
-#include <nanvix/hal.h>
+#include <nanvix/syscalls.h>
 #include <nanvix/mm.h>
-#include <nanvix/pm.h>
 #include <nanvix/name.h>
-#include <nanvix/klib.h>
 #include <assert.h>
 #include <stdlib.h>
 #include "kernel.h"
@@ -57,7 +55,7 @@ static int nr_registration = 0;
 static struct {
 	int core;                        /**< CPU ID.      */
 	char name[NANVIX_PROC_NAME_MAX]; /**< Portal name. */
-} names[HAL_NR_NOC_NODES] = {
+} names[NANVIX_NR_NODES] = {
 	{ CCLUSTER0,      "\0"  },
 	{ CCLUSTER1,      "\0"  },
 	{ CCLUSTER2,      "\0"  },
@@ -100,7 +98,7 @@ static struct {
 static int _name_lookup(const char *name)
 {
 	/* Search for portal name. */
-	for (int i = 0; i < HAL_NR_NOC_NODES; i++)
+	for (int i = 0; i < NANVIX_NR_NODES; i++)
 	{
 		/* Found. */
 		if (!strcmp(name, names[i].name))
@@ -128,7 +126,7 @@ static int _name_link(int core, char *name)
 	int index;          /* Index where the process will be stored. */
 
 	/* No entry available. */
-	if (nr_registration >= HAL_NR_NOC_NODES)
+	if (nr_registration >= NANVIX_NR_NODES)
 		return (-EINVAL);
 
 	/* Compute index registration */
@@ -172,12 +170,12 @@ static int _name_unlink(char *name)
 	/* Search for portal name. */
 	int i = 0;
 
-	while (i < HAL_NR_NOC_NODES && strcmp(name, names[i].name))
+	while (i < NANVIX_NR_NODES && strcmp(name, names[i].name))
 	{
 		i++;
 	}
 
-	if (i < HAL_NR_NOC_NODES)
+	if (i < NANVIX_NR_NODES)
 	{
 		strcpy(names[i].name, "\0");
 		return (--nr_registration);
@@ -206,7 +204,7 @@ static void *name_server(void *args)
 
 	/* Open server mailbox. */
 	pthread_mutex_lock(&lock);
-		inbox = hal_mailbox_create(IOCLUSTER0 + dma);
+		inbox = sys_mailbox_create(IOCLUSTER0 + dma);
 	pthread_mutex_unlock(&lock);
 
 	while(1)
@@ -227,7 +225,7 @@ static void *name_server(void *args)
 				msg.core = _name_lookup(msg.name);
 
 				/* Send response. */
-				int source =hal_mailbox_open(msg.source);
+				int source =sys_mailbox_open(msg.source);
 				assert(source >= 0);
 				assert(mailbox_write(source, &msg) == 0);
 				assert(mailbox_close(source) == 0);

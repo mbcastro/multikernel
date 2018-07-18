@@ -26,12 +26,7 @@
 
 #include <mppa/osconfig.h>
 
-#define __NEED_HAL_CORE_
-#define __NEED_HAL_NOC_
-#define __NEED_HAL_SETUP_
-#define __NEED_HAL_SYNC_
-#define __NEED_HAL_MAILBOX_
-#include <nanvix/hal.h>
+#include <nanvix/syscalls.h>
 
 #include "../kernel.h"
 
@@ -43,7 +38,7 @@ static int masternode;
 /**
  * @brief Underlying NoC node ID.
  */
-static int nodeid;
+static int nodenum;
 
 /**
  * @brief Number of benchmark interations.
@@ -53,7 +48,7 @@ static int niterations = 0;
 /**
  * @brief Buffer.
  */
-static char buffer[HAL_MAILBOX_MSG_SIZE];
+static char buffer[MAILBOX_MSG_SIZE];
 
 /**
  * @brief Inbox for receiving messages.
@@ -71,7 +66,7 @@ static void kernel_broadcast(void)
 {
 	/* Benchmark. */
 	for (int k = 0; k <= (niterations + 1); k++)
-		assert(hal_mailbox_read(inbox, buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
+		assert(sys_mailbox_read(inbox, buffer, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
 }
 
 /*============================================================================*
@@ -86,14 +81,14 @@ static void kernel_gather(void)
 	int outbox;
 
 	/* Open output box. */
-	assert((outbox = hal_mailbox_open(masternode)) >= 0);
+	assert((outbox = sys_mailbox_open(masternode)) >= 0);
 
 	/* Benchmark. */
 	for (int k = 0; k <= (niterations + 1); k++)
-		assert(hal_mailbox_write(outbox, buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
+		assert(sys_mailbox_write(outbox, buffer, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
 
 	/* House keeping. */
-	assert(hal_mailbox_close(outbox) == 0);
+	assert(sys_mailbox_close(outbox) == 0);
 }
 
 /*============================================================================*
@@ -108,17 +103,17 @@ static void kernel_pingpong(void)
 	int outbox;
 
 	/* Open output box. */
-	assert((outbox = hal_mailbox_open(masternode)) >= 0);
+	assert((outbox = sys_mailbox_open(masternode)) >= 0);
 
 	/* Benchmark. */
 	for (int k = 0; k <= (niterations + 1); k++)
 	{
-		assert(hal_mailbox_read(inbox, buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
-		assert(hal_mailbox_write(outbox, buffer, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
+		assert(sys_mailbox_read(inbox, buffer, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
+		assert(sys_mailbox_write(outbox, buffer, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
 	}
 
 	/* House keeping. */
-	assert(hal_mailbox_close(outbox) == 0);
+	assert(sys_mailbox_close(outbox) == 0);
 }
 
 /*============================================================================*
@@ -143,9 +138,9 @@ static void sync_master(int first_remote, int last_remote)
 		nodes[i + 1] = first_remote + i;
 
 	/* Sync. */
-	assert((syncid = hal_sync_open(nodes, nremotes + 1, HAL_SYNC_ALL_TO_ONE)) >= 0);
-	assert(hal_sync_signal(syncid) == 0);
-	assert(hal_sync_close(syncid) == 0);
+	assert((syncid = sys_sync_open(nodes, nremotes + 1, SYNC_ALL_TO_ONE)) >= 0);
+	assert(sys_sync_signal(syncid) == 0);
+	assert(sys_sync_close(syncid) == 0);
 }
 
 /**
@@ -158,8 +153,8 @@ int main(int argc, const char **argv)
 	int last_remote;
 	
 	/* Initialization. */
-	hal_setup();
-	nodeid = hal_get_node_id();
+	kernel_setup();
+	nodenum = sys_get_node_num();
 
 	/* Retrieve kernel parameters. */
 	assert(argc == 6);
@@ -169,7 +164,7 @@ int main(int argc, const char **argv)
 	niterations = atoi(argv[4]);
 	mode = argv[5];
 
-	assert((inbox = hal_mailbox_create(nodeid)) >= 0);
+	assert((inbox = sys_mailbox_create(nodenum)) >= 0);
 
 	sync_master(first_remote, last_remote);
 
@@ -182,8 +177,8 @@ int main(int argc, const char **argv)
 		kernel_pingpong();
 
 	/* House keeping. */
-	assert(hal_mailbox_unlink(inbox) == 0);
-	hal_cleanup();
+	assert(sys_mailbox_unlink(inbox) == 0);
+	kernel_cleanup();
 
 	return (EXIT_SUCCESS);
 }

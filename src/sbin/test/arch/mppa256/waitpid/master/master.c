@@ -28,10 +28,8 @@
 #include <mppa/osconfig.h>
 #include <mppaipc.h>
 
-#define __NEED_HAL_SETUP_
-
 #include <nanvix/const.h>
-#include <nanvix/hal.h>
+#include <nanvix/syscalls.h>
 #include <nanvix/pm.h>
 
 /**
@@ -48,7 +46,7 @@ static void spawn_slaves(int nclusters)
 {
 	int status;
 	int barrier_slave;
-	int nodes[2] = {0, 128};
+	int nodes[2] = {0, SPAWNER_SERVER_NODE};
 
 	const char *args[] = {
 		"/test/waitpid-slave",
@@ -77,7 +75,7 @@ static void *server(void *args)
 {
 	((void) args);
 
-	hal_setup();
+	kernel_setup();
 
 	pthread_barrier_wait(&barrier);
 
@@ -91,7 +89,7 @@ static void *server(void *args)
 	 */
 	exit(EXIT_SUCCESS);
 
-	hal_cleanup();
+	kernel_cleanup();
 	return (NULL);
 }
 
@@ -105,7 +103,7 @@ int main(int argc, const char **argv)
 	((void) argc);
 	((void) argv);
 
-	hal_setup();
+	kernel_setup();
 
 	pthread_barrier_init(&barrier, NULL, 2);
 
@@ -122,6 +120,6 @@ int main(int argc, const char **argv)
 
 	pthread_join(tid, NULL);
 
-	hal_cleanup();
+	kernel_cleanup();
 	return (EXIT_SUCCESS);
 }

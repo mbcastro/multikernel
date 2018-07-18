@@ -23,9 +23,8 @@
 #include <pthread.h>
 #include <stdio.h>
 
-#define __NEED_HAL_CORE_
-#define __NEED_HAL_NOC_
-#include <nanvix/hal.h>
+#include <nanvix/syscalls.h>
+#include <nanvix/const.h>
 
 #include "test.h"
 
@@ -42,7 +41,7 @@ int ncores = 0;
 /**
  * @brief Nodes list.
  */
-int nodes[HAL_NR_NOC_NODES];
+int nodes[NANVIX_NR_NODES];
 
 /**
  * @brief Global barrier for synchronization.
@@ -52,9 +51,9 @@ pthread_barrier_t barrier;
 /**
  * @brief Synchronization Point Test Driver
  */
-void test_kernel_hal_sync(void)
+void test_kernel_sys_sync(void)
 {
-	ncores = hal_get_num_cores();
+	ncores = sys_get_num_cores();
 
 	pthread_barrier_init(&barrier, NULL, ncores - 1);
 

@@ -37,7 +37,7 @@ all: servers
 #
 servers: $(OBJ)
 	mkdir -p $(BINDIR)
-	$(CC) $(LDFLAGS) $(OBJ) -o $(SERVERSBIN1) $(LIBKERNEL) $(LIBS)
+	$(CC) $(LDFLAGS) $(OBJ) -o $(SERVERSBIN1) $(LIBKERNEL) $(LIBUSER) $(LIBS)
 
 # Builds object files.
 %.o: %.c

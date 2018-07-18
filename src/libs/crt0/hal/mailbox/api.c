@@ -25,14 +25,8 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define __NEED_HAL_CORE_
-#define __NEED_HAL_NOC_
-#define __NEED_HAL_SETUP_
-#define __NEED_HAL_SYNC_
-#define __NEED_HAL_MAILBOX_
+#include <nanvix/syscalls.h>
 #include <nanvix/const.h>
-#include <nanvix/hal.h>
-#include <nanvix/pm.h>
 
 #include "test.h"
 
@@ -43,31 +37,31 @@
 /**
  * @brief API Test: Mailbox Create Unlink
  */
-static void *test_hal_mailbox_thread_create_unlink(void *args)
+static void *test_sys_mailbox_thread_create_unlink(void *args)
 {
 	int inbox;
-	int nodeid;
+	int nodenum;
 
 	((void)args);
 
-	hal_setup();
+	kernel_setup();
 
-	nodeid = hal_get_node_id();
+	nodenum = sys_get_node_num();
 
-	TEST_ASSERT((inbox = hal_mailbox_create(nodeid)) >= 0);
+	TEST_ASSERT((inbox = sys_mailbox_create(nodenum)) >= 0);
 
 	pthread_barrier_wait(&barrier);
 
-	TEST_ASSERT(hal_mailbox_unlink(inbox) == 0);
+	TEST_ASSERT(sys_mailbox_unlink(inbox) == 0);
 
-	hal_cleanup();
+	kernel_cleanup();
 	return (NULL);
 }
 
 /**
  * @brief API Test: Mailbox Create Unlink
  */
-static void test_hal_mailbox_create_unlink(void)
+static void test_sys_mailbox_create_unlink(void)
 {
 	pthread_t tids[mailbox_ncores];
 
@@ -76,7 +70,7 @@ static void test_hal_mailbox_create_unlink(void)
 	{
 		TEST_ASSERT((pthread_create(&tids[i],
 			NULL,
-			test_hal_mailbox_thread_create_unlink,
+			test_sys_mailbox_thread_create_unlink,
 			NULL)) == 0
 		);
 	}
@@ -93,43 +87,43 @@ static void test_hal_mailbox_create_unlink(void)
 /**
  * @brief API Test: Mailbox Open Close
  */
-static void *test_hal_mailbox_thread_open_close(void *args)
+static void *test_sys_mailbox_thread_open_close(void *args)
 {
 	int tid;
 	int inbox;
 	int outbox;
-	int nodeid;
+	int nodenum;
 
-	hal_setup();
+	kernel_setup();
 
 	tid = ((int *)args)[0];
 
-	nodeid = hal_get_node_id();
+	nodenum = sys_get_node_num();
 
-	TEST_ASSERT((inbox = hal_mailbox_create(nodeid)) >= 0);
+	TEST_ASSERT((inbox = sys_mailbox_create(nodenum)) >= 0);
 
 	pthread_barrier_wait(&barrier);
 
-	TEST_ASSERT((outbox = hal_mailbox_open(
+	TEST_ASSERT((outbox = sys_mailbox_open(
 		((tid + 1) == mailbox_ncores) ?
-			nodeid + 1 - mailbox_ncores + 1:
-			nodeid + 1)) >= 0
+			nodenum + 1 - mailbox_ncores + 1:
+			nodenum + 1)) >= 0
 	);
 
 	pthread_barrier_wait(&barrier);
 
-	TEST_ASSERT(hal_mailbox_close(outbox) == 0);
+	TEST_ASSERT(sys_mailbox_close(outbox) == 0);
 
-	TEST_ASSERT(hal_mailbox_unlink(inbox) == 0);
+	TEST_ASSERT(sys_mailbox_unlink(inbox) == 0);
 
-	hal_cleanup();
+	kernel_cleanup();
 	return (NULL);
 }
 
 /**
  * @brief API Test: Mailbox Open Close
  */
-static void test_hal_mailbox_open_close(void)
+static void test_sys_mailbox_open_close(void)
 {
 	int tids[mailbox_ncores];
 	pthread_t threads[mailbox_ncores];
@@ -140,7 +134,7 @@ static void test_hal_mailbox_open_close(void)
 		tids[i] = i;
 		TEST_ASSERT((pthread_create(&threads[i],
 			NULL,
-			test_hal_mailbox_thread_open_close,
+			test_sys_mailbox_thread_open_close,
 			&tids[i])) == 0
 		);
 	}
@@ -157,27 +151,27 @@ static void test_hal_mailbox_open_close(void)
 /**
  * @brief API Test: Mailbox Read Write
  */
-static void *test_hal_mailbox_thread_read_write(void *args)
+static void *test_sys_mailbox_thread_read_write(void *args)
 {
 	int tnum;
 	int inbox;
 	int outbox;
-	char buf[HAL_MAILBOX_MSG_SIZE];
-	int nodeid;
+	char buf[MAILBOX_MSG_SIZE];
+	int nodenum;
 
-	hal_setup();
+	kernel_setup();
 
 	tnum = ((int *)args)[0];
 
 	/* Build nodes list. */
-	nodeid = hal_get_node_id();
-	mailbox_nodes[tnum] = nodeid;
+	nodenum = sys_get_node_num();
+	mailbox_nodes[tnum] = nodenum;
 
 	pthread_barrier_wait(&barrier);
 
-	TEST_ASSERT((inbox = hal_mailbox_create(nodeid)) >= 0);
+	TEST_ASSERT((inbox = sys_mailbox_create(nodenum)) >= 0);
 
-	TEST_ASSERT((outbox = hal_mailbox_open(
+	TEST_ASSERT((outbox = sys_mailbox_open(
 		((tnum + 1) == mailbox_ncores) ?
 			mailbox_nodes[1]:
 			mailbox_nodes[tnum + 1])) >= 0
@@ -185,29 +179,29 @@ static void *test_hal_mailbox_thread_read_write(void *args)
 
 	pthread_barrier_wait(&barrier);
 
-	memset(buf, 1, HAL_MAILBOX_MSG_SIZE);
-	TEST_ASSERT(hal_mailbox_write(outbox, buf, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
+	memset(buf, 1, MAILBOX_MSG_SIZE);
+	TEST_ASSERT(sys_mailbox_write(outbox, buf, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
 
-	memset(buf, 0, HAL_MAILBOX_MSG_SIZE);
-	TEST_ASSERT(hal_mailbox_read(inbox, buf, HAL_MAILBOX_MSG_SIZE) == HAL_MAILBOX_MSG_SIZE);
+	memset(buf, 0, MAILBOX_MSG_SIZE);
+	TEST_ASSERT(sys_mailbox_read(inbox, buf, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
 
-	for (int i = 0; i < HAL_MAILBOX_MSG_SIZE; i++)
+	for (int i = 0; i < MAILBOX_MSG_SIZE; i++)
 		TEST_ASSERT(buf[i] == 1);
 
 	pthread_barrier_wait(&barrier);
 
-	TEST_ASSERT(hal_mailbox_close(outbox) == 0);
+	TEST_ASSERT(sys_mailbox_close(outbox) == 0);
 
-	TEST_ASSERT(hal_mailbox_unlink(inbox) == 0);
+	TEST_ASSERT(sys_mailbox_unlink(inbox) == 0);
 
-	hal_cleanup();
+	kernel_cleanup();
 	return (NULL);
 }
 
 /**
  * @brief API Test: Mailbox Read Write
  */
-static void test_hal_mailbox_read_write(void)
+static void test_sys_mailbox_read_write(void)
 {
 	int tids[mailbox_ncores];
 	pthread_t threads[mailbox_ncores];
@@ -218,7 +212,7 @@ static void test_hal_mailbox_read_write(void)
 		tids[i] = i;
 		TEST_ASSERT((pthread_create(&threads[i],
 			NULL,
-			test_hal_mailbox_thread_read_write,
+			test_sys_mailbox_thread_read_write,
 			&tids[i])) == 0
 		);
 	}
@@ -235,8 +229,8 @@ static void test_hal_mailbox_read_write(void)
  */
 struct test mailbox_tests_api[] = {
 	/* Intra-Cluster API Tests */
-	{ test_hal_mailbox_create_unlink, "Create Unlink"          },
-	{ test_hal_mailbox_open_close,    "Open Close"             },
-	{ test_hal_mailbox_read_write,    "Read Write"             },
+	{ test_sys_mailbox_create_unlink, "Create Unlink"          },
+	{ test_sys_mailbox_open_close,    "Open Close"             },
+	{ test_sys_mailbox_read_write,    "Read Write"             },
 	{ NULL,                           NULL                     },
 };

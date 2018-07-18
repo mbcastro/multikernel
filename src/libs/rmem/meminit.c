@@ -20,12 +20,40 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef NANVIX_INIT_H_
-#define NANVIX_INIT_H_
+#include <nanvix/syscalls.h>
+#include <nanvix/mm.h>
+#include <nanvix/name.h>
+#include <stdio.h>
+#include <assert.h>
 
-	/* Forward definitions. */
-	extern int kernel_setup(void);
-	extern int kernel_cleanup(void);
+/**
+ * @brief Underlying IPC connectors.
+ */
+/**@{*/
+int _mem_outbox = -1;    /* Mailbox used for small transfers. */
+int _mem_inportal = -1;  /* Portal used for large transfers.  */
+int _mem_outportal = -1; /* Portal used for large transfers.  */
+/**@}*/
 
-#endif /* NANVIX_INIT_H_ */
+/**
+ * @brief Initializes the RMA engine.
+ */
+void meminit(void)
+{
+	int clusterid;                   /* Cluster ID of the calling process.   */
+	static int initialized = 0;      /* IS RMA Engine initialized?           */
 
+	/* Already initialized.  */
+	if (initialized)
+		return;
+
+	/* Retrieve cluster information. */
+	clusterid = sys_get_cluster_id();
+
+	/* Open underlying IPC connectors. */
+	_mem_inportal = _portal_create(clusterid);
+	_mem_outbox =sys_mailbox_open(IOCLUSTER1 + clusterid%NR_IOCLUSTER_DMA);
+	_mem_outportal = _portal_open(clusterid%NR_IOCLUSTER_DMA);
+
+	initialized = 1;
+}

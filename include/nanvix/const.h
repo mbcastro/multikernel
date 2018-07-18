@@ -23,20 +23,28 @@
 #ifndef NANVIX_CONST_H_
 #define NANVIX_CONST_H_
 
+	#define __NEED_HAL_CONST_
+	#include <nanvix/hal.h>
+
 	/**
-	 * @brief Name server NoC node num.
+	 * @brief Number of NoC nodes.
 	 */
-	#define SPAWNER_SERVER_NODE 0
+	#define NANVIX_NR_NODES HAL_NR_NOC_NODES
 
 	/**
 	 * @brief Name server NoC node num.
 	 */
-	#define SPAWNER1_SERVER_NODE 4
+	#define SPAWNER_SERVER_NODE 16
 
 	/**
 	 * @brief Name server NoC node num.
 	 */
-	#define NAME_SERVER_NODE 5
+	#define SPAWNER1_SERVER_NODE 20
+
+	/**
+	 * @brief Name server NoC node num.
+	 */
+	#define NAME_SERVER_NODE 21
 
 #endif /* CONST_H_ */
 

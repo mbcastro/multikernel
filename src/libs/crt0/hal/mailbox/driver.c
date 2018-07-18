@@ -23,9 +23,8 @@
 #include <pthread.h>
 #include <stdio.h>
 
-#define __NEED_HAL_CORE_
-#define __NEED_HAL_NOC_
-#include <nanvix/hal.h>
+#include <nanvix/syscalls.h>
+#include <nanvix/const.h>
 
 #include "test.h"
 
@@ -40,8 +39,8 @@ int mailbox_ncores = 0;
 int syncid;
 int syncid_local;
 
-int mailbox_nodes[HAL_NR_NOC_NODES];
-int mailbox_nodes_local[HAL_NR_NOC_NODES];
+int mailbox_nodes[NANVIX_NR_NODES];
+int mailbox_nodes_local[NANVIX_NR_NODES];
 
 /**
  * @brief Global barrier for synchronization.
@@ -51,9 +50,9 @@ pthread_barrier_t barrier;
 /**
  * @brief Unnamed Mailbox Test Driver
  */
-void test_kernel_hal_mailbox(void)
+void test_kernel_sys_mailbox(void)
 {
-	mailbox_ncores = hal_get_num_cores();
+	mailbox_ncores = sys_get_num_cores();
 
 	pthread_barrier_init(&barrier, NULL, mailbox_ncores - 1);
 

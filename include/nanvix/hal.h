@@ -50,8 +50,6 @@
 	
 	/* Forward definitions. */
 	extern uint64_t hal_timer_get(void);
-	extern uint64_t hal_timer_diff(uint64_t, uint64_t);
-	extern void hal_timer_init(void);
 
 #endif /* __NEED_HAL_PERFORMANCE_ */
 
@@ -59,7 +57,16 @@
  * Core Interface                                                             *
  *============================================================================*/
 
-#ifdef __NEED_HAL_CORE_
+#if (defined(__NEED_HAL_CORE_) || defined(__NEED_HAL_CONST_))
+
+	/**
+	 * @brief Type of cores.
+	 */
+	/**@{*/
+	#define HAL_CORE_USER   0 /**< User core.                */
+	#define HAL_CORE_RMAN   1 /**< Resource management core. */
+	#define HAL_CORE_SYSTEM 2 /**< System core.              */
+	/**@}*/
 
 	/* Sanity check. */
 	#ifndef HAL_NR_CORES_USER
@@ -91,14 +98,9 @@
 		#error "undefined symbol: HAL_NR_CLUSTERS"
 	#endif
 
-	/**
-	 * @brief Type of cores.
-	 */
-	/**@{*/
-	#define HAL_CORE_USER   0 /**< User core.                */
-	#define HAL_CORE_RMAN   1 /**< Resource management core. */
-	#define HAL_CORE_SYSTEM 2 /**< System core.              */
-	/**@}*/
+#endif /* (__NEED_HAL_CORE_ || __NEED_HAL_CONST_) */
+
+#ifdef __NEED_HAL_CORE_
 
 	/* Forward definitions. */
 	extern int hal_get_cluster_id(void);
@@ -113,7 +115,7 @@
  * NoC Interface                                                              *
  *============================================================================*/
 
-#ifdef __NEED_HAL_NOC_
+#if (defined(__NEED_HAL_NOC_) || defined(__NEED_HAL_CONST_))
 
 	/* Sanity check. */
 	#ifndef HAL_NR_NOC_IONODES
@@ -130,11 +132,16 @@
 		#error "undefined symbol: HAL_NR_NOC_NODES"
 	#endif
 
+#endif /* (__NEED_HAL_NOC_ || __NEED_HAL_CONST_) */
+
+#ifdef __NEED_HAL_NOC_
+
 	/* Forward definitions. */
 	extern const int hal_noc_nodes[HAL_NR_NOC_NODES];
 
 	/* Forward definitions. */
 	extern int hal_get_node_id(void);
+	extern int hal_get_node_num(int);
 
 #endif /* __NEED_HAL_NOC_ */
 
@@ -142,7 +149,7 @@
  * Mailbox Interface                                                          *
  *============================================================================*/
 
-#ifdef __NEED_HAL_MAILBOX_
+#if (defined(__NEED_HAL_MAILBOX_) || defined(__NEED_HAL_CONST_))
 
 	/* Sanity check. */
 	#ifndef HAL_NR_MAILBOX
@@ -153,6 +160,10 @@
 	#ifndef HAL_MAILBOX_MSG_SIZE
 		#error "undefined symbol: HAL_MAILBOX_MSG_SIZE"
 	#endif
+
+#endif /* (__NEED_HAL_MAILBOX_ || __NEED_HAL_CONST_) */
+
+#ifdef __NEED_HAL_MAILBOX_
 
 	/* Forward definitions. */
 	extern int hal_mailbox_create(int);
@@ -167,6 +178,15 @@
 /*============================================================================*
  * Portal Interface                                                           *
  *============================================================================*/
+
+#if (defined(__NEED_HAL_PORTAL_) || defined(__NEED_HAL_CONST_))
+
+	/* Sanity check. */
+	#ifndef HAL_NR_PORTAL
+		#error "undefined symbol: HAL_NR_PORTAL"
+	#endif
+
+#endif /* (__NEED_HAL_PORTAL_ || __NEED_HAL_CONST_) */
 
 #ifdef __NEED_HAL_PORTAL_
 
@@ -185,12 +205,7 @@
  * Synchronization Point Interface                                            *
  *============================================================================*/
 
-#ifdef __NEED_HAL_SYNC_
-
-	/* Sanity check. */
-	#ifndef HAL_NR_SYNC
-		#error "undefined symbol: HAL_NR_SYNC"
-	#endif
+#if (defined(__NEED_HAL_SYNC_) || defined(__NEED_HAL_CONST_))
 
 	/**
 	 * @brief Types of synchronization points.
@@ -199,6 +214,16 @@
 	#define HAL_SYNC_ONE_TO_ALL 0 /**< One to all. */
 	#define HAL_SYNC_ALL_TO_ONE 1 /**< All to one. */
 	/**@}*/
+
+
+	/* Sanity check. */
+	#ifndef HAL_NR_SYNC
+		#error "undefined symbol: HAL_NR_SYNC"
+	#endif
+
+#endif /* (__NEED_HAL_SYNC_ || __NEED_HAL_CONST_) */
+
+#ifdef __NEED_HAL_SYNC_
 
 	/* Forward definitions. */
 	extern int hal_sync_create(const int *, int, int);

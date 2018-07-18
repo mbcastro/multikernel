@@ -27,12 +27,7 @@
 
 #include <mppaipc.h>
 
-#define __NEED_HAL_CORE_
-#define __NEED_HAL_NOC_
-#define __NEED_HAL_SYNC_
-#define __NEED_HAL_MAILBOX_
-#include <nanvix/hal.h>
-#include <nanvix/init.h>
+#include <nanvix/syscalls.h>
 #include <nanvix/name.h>
 #include <nanvix/limits.h>
 #include <nanvix/pm.h>
@@ -58,6 +53,7 @@ static void *test_mailbox_thread_create_unlink(void *args)
 	int inbox;
 
 	TEST_ASSERT(kernel_setup() == 0);
+	TEST_ASSERT(runtime_setup() == 0);
 
 	pthread_barrier_wait(&barrier);
 
@@ -75,6 +71,7 @@ static void *test_mailbox_thread_create_unlink(void *args)
 	TEST_ASSERT(mailbox_unlink(inbox) == 0);
 	pthread_mutex_unlock(&lock);
 
+	TEST_ASSERT(runtime_cleanup() == 0);
 	TEST_ASSERT(kernel_cleanup() == 0);
 	return (NULL);
 }
@@ -119,6 +116,7 @@ static void *test_mailbox_thread_open_close(void *args)
 	int outbox;
 
 	TEST_ASSERT(kernel_setup() == 0);
+	TEST_ASSERT(runtime_setup() == 0);
 
 	pthread_barrier_wait(&barrier);
 
@@ -151,6 +149,7 @@ static void *test_mailbox_thread_open_close(void *args)
 	TEST_ASSERT(mailbox_unlink(inbox) == 0);
 	pthread_mutex_unlock(&lock);
 
+	TEST_ASSERT(runtime_cleanup() == 0);
 	TEST_ASSERT(kernel_cleanup() == 0);
 	return (NULL);
 }
@@ -190,12 +189,13 @@ static void *test_mailbox_thread_read_write(void *args)
 {
 	char pathname_local[NANVIX_PROC_NAME_MAX];
 	char pathname_remote[NANVIX_PROC_NAME_MAX];
-	char buf[HAL_MAILBOX_MSG_SIZE];
+	char buf[MAILBOX_MSG_SIZE];
 	int tid;
 	int inbox;
 	int outbox;
 
 	TEST_ASSERT(kernel_setup() == 0);
+	TEST_ASSERT(runtime_setup() == 0);
 
 	pthread_barrier_wait(&barrier);
 
@@ -220,12 +220,12 @@ static void *test_mailbox_thread_read_write(void *args)
 
 	pthread_barrier_wait(&barrier);
 
-	memset(buf, 1, HAL_MAILBOX_MSG_SIZE);
+	memset(buf, 1, MAILBOX_MSG_SIZE);
 	TEST_ASSERT(mailbox_write(outbox, buf, sizeof(buf)) == 0);
-	memset(buf, 0, HAL_MAILBOX_MSG_SIZE);
+	memset(buf, 0, MAILBOX_MSG_SIZE);
 	TEST_ASSERT(mailbox_read(inbox, buf, sizeof(buf)) == 0);
 
-	for (int i = 0; i < HAL_MAILBOX_MSG_SIZE; i++)
+	for (int i = 0; i < MAILBOX_MSG_SIZE; i++)
 		TEST_ASSERT(buf[i] == 1);
 
 	pthread_mutex_lock(&lock);
@@ -236,6 +236,7 @@ static void *test_mailbox_thread_read_write(void *args)
 	TEST_ASSERT(mailbox_unlink(inbox) == 0);
 	pthread_mutex_unlock(&lock);
 
+	TEST_ASSERT(runtime_cleanup() == 0);
 	TEST_ASSERT(kernel_cleanup() == 0);
 	return (NULL);
 }

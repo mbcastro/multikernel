@@ -23,9 +23,7 @@
 #include <pthread.h>
 #include <stdio.h>
 
-#define __NEED_HAL_CORE_
-#define __NEED_HAL_NOC_
-#include <nanvix/hal.h>
+#include <nanvix/syscalls.h>
 
 #include "test.h"
 
@@ -44,7 +42,7 @@ pthread_barrier_t barrier;
  */
 void test_kernel_ipc_mailbox(void)
 {
-	ipc_mailbox_ncores = hal_get_num_cores();
+	ipc_mailbox_ncores = sys_get_num_cores();
 
 	pthread_barrier_init(&barrier, NULL, ipc_mailbox_ncores - 1);
 

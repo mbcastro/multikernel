@@ -25,11 +25,6 @@
 #include <HAL/hal/core/timer.h>
 
 /**
- * @brief Timer error.
- */
-static uint64_t timer_error = 0;
-
-/**
  * @brief Gets the current timer value.
  *
  * @returns The current timer value;
@@ -37,30 +32,4 @@ static uint64_t timer_error = 0;
 uint64_t hal_timer_get(void)
 {
 	return (__k1_read_dsu_timestamp());
-}
-
-/**
- * @brief Computes the difference between two timer values.
- *
- * @param t1 Start time.
- * @param t2 End time.
- *
- * @returns The difference between the two timers (t2 - t1).
- */
-uint64_t hal_timer_diff(uint64_t t1, uint64_t t2)
-{
-	return (((t2 - t1) <= timer_error) ? timer_error : t2 - t1 - timer_error);
-}
-
-/**
- * @brief Calibrates the timer.
- */
-void hal_timer_init(void)
-{
-	uint64_t start, end;
-
-	start = hal_timer_get();
-	end = hal_timer_get();
-
-	timer_error = (end - start);
 }
