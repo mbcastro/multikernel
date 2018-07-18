@@ -31,7 +31,7 @@ OBJ = $(SRC:.c=.o)
 # Builds everything.
 all: $(OBJ)
 	mkdir -p $(BINDIR)
-	$(CC) $(LDFLAGS) $(OBJ) $(CRT0) -o $(SERVERSBIN1) $(LIBKERNEL) $(LIBSERVERS) $(LIBUSER) $(LIBS)
+	$(CC) $(LDFLAGS) $(OBJ) $(CRT0) -o $(SERVERSBIN1) $(LIBSERVERS) $(LIBUSER) $(LIBKERNEL) $(LIBS)
 
 # Builds object files.
 %.o: %.c
