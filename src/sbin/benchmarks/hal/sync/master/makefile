@@ -20,49 +20,31 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-# Change binaries directory.
-export BINDIR := $(BINDIR)/benchmark
+# C Source Files
+SRC = $(wildcard *.c)
 
-# Builds everything.
-all: arch-rqueue arch-portal hal-sync hal-mailbox hal-portal
+# Object Files
+OBJ = $(SRC:.c=.o)
 
-# Builds Native Portal Microbenchmarks
-arch-portal:
+# Binary Files
+export ELFBIN = $(BINDIR)/hal-sync-master
+
+#===============================================================================
+
+# Builds the kernel.
+all: $(OBJ)
 	mkdir -p $(BINDIR)
-	cd arch/portal && $(MAKE) all
+	$(CC) $(LDFLAGS) $(OBJ) -o $(ELFBIN) $(LIBKERNEL) $(LIBS)
 
-# Builds Native Rqueue Microbenchmarks
-arch-rqueue:
-	mkdir -p $(BINDIR)
-	cd arch/rqueue && $(MAKE) all
-
-# Builds HAL Sync Benchmark
-hal-sync:
-	mkdir -p $(BINDIR)
-	cd hal/sync && $(MAKE) all
-
-# Builds HAL Mailbox Benchmark
-hal-mailbox:
-	mkdir -p $(BINDIR)
-	cd hal/mailbox && $(MAKE) all
-
-# Builds HAL Portal Benchmark
-hal-portal:
-	mkdir -p $(BINDIR)
-	cd hal/portal && $(MAKE) all
+# Builds object files.
+%.o: %.c
+	$(CC) $(CFLAGS) $< -c -o $@
 
 # Cleans compilation files.
 clean:
-	cd arch/rqueue && $(MAKE) clean
-	cd arch/portal && $(MAKE) clean
-	cd hal/mailbox && $(MAKE) clean
-	cd hal/portal  && $(MAKE) clean
+	rm -rf $(OBJ)
 
 # Cleans everything.
-distclean:
-	cd arch/rqueue && $(MAKE) distclean
-	cd arch/portal && $(MAKE) distclean
-	cd hal/sync    && $(MAKE) distclean
-	cd hal/mailbox && $(MAKE) distclean
-	cd hal/portal  && $(MAKE) distclean
+distclean: clean
+	rm -rf $(ELFBIN)
 
