@@ -23,29 +23,64 @@
 #ifndef NANVIX_SPAWNER_H_
 #define NANVIX_SPAWNER_H_
 
+	/**
+	 * @brief Server information,
+	 */
 	struct serverinfo
 	{
-		int (*main) (int);
-		int nodenum;
+		int (*main) (int); /**< Main function. */
+		int nodenum;       /**< Node number.   */
 	};
 
 	/* Forward definitions. */
-	extern void spawners_sync(void);
-
-	/* Forward definitions. */
 	extern const char *spawner_name;
-	extern const int spawner_usermode;
-	extern const int NR_SERVERS;
+	extern const int spawner_nservers;
 	extern struct serverinfo spawner_servers[];
 	extern void (*test_kernel_fn)(const char *);
 	extern void (*test_runtime_fn)(const char *);
 	extern int (*main2_fn)(int, const char **);
+	extern void spawners_sync(void);
 
-	#define SPAWNER_NAME(x) const char *spawner_name = x;
+	/**
+	 * @brief Declares the name of the spawner.
+	 *
+	 * @param x Spawner name.
+	 */
+	#define SPAWNER_NAME(x) \
+		const char *spawner_name = x;
+
+	/**
+	 * @brief Declares the user-level main function.
+	 *
+	 * @param x User-level main function.
+	 */
 	#define SPAWNER_MAIN2(x) int (*main2_fn)(int, const char **) = x;
-	#define SPAWNER_SERVERS(x, ...) const int NR_SERVERS = x; struct serverinfo spawner_servers[x] = { __VA_ARGS__ }; 
-	#define SPAWNER_KERNEL_TESTS(x) void (*test_kernel_fn)(const char *) = x;
-	#define SPAWNER_RUNTIME_TESTS(x) void (*test_runtime_fn)(const char *) = x;
+
+	/**
+	 * @brief Declares the servers table.
+	 *
+	 * @param x    Number of servers.
+	 * @param ... Table entries.
+	 */
+	#define SPAWNER_SERVERS(x, ...)       \
+		const int spawner_nservers = x;   \
+		struct serverinfo spawner_servers[x] = { __VA_ARGS__ };
+
+	/**
+	 * @brief Declares test-driver for the kernel.
+	 *
+	 * @param x Kernel test-driver.
+	 */
+	#define SPAWNER_KERNEL_TESTS(x) \
+		void (*test_kernel_fn)(const char *) = x;
+
+	/**
+	 * @brief Declares test-driver for the runtime system.
+	 *
+	 * @param x Runtime system test-driver.
+	 */
+	#define SPAWNER_RUNTIME_TESTS(x) \
+		void (*test_runtime_fn)(const char *) = x;
 
 #endif /* NANVIX_SPAWNER_H_*/
 

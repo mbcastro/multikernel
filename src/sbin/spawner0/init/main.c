@@ -21,13 +21,17 @@
  */
 
 #include <assert.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include <stddef.h>
 #include <string.h>
 
 #include <nanvix/const.h>
 #include <nanvix/syscalls.h>
 #include <nanvix/spawner.h>
+
+/**
+ * @brief Number of servers launched from this spawner.
+ */
+#define NR_SERVERS 0 
 
 /* Forward definitions. */
 extern int main2(int, const char **);
@@ -100,7 +104,7 @@ void spawners_sync(void)
 
 
 SPAWNER_NAME("spawner0")
-SPAWNER_SERVERS(0, )
+SPAWNER_SERVERS(NR_SERVERS, )
 SPAWNER_MAIN2(main2)
 SPAWNER_KERNEL_TESTS(test_kernel)
 SPAWNER_RUNTIME_TESTS(test_runtime)

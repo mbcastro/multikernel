@@ -71,8 +71,8 @@ int main(int argc, const char **argv)
 {
 	int ret = EXIT_SUCCESS;
 	int debug = 0;
-	int args[NR_SERVERS];
-	pthread_t tids[NR_SERVERS];
+	int args[spawner_nservers];
+	pthread_t tids[spawner_nservers];
 
 	/* Debug mode? */
 	if (argc >= 2)
@@ -92,10 +92,10 @@ int main(int argc, const char **argv)
 
 	printf("[nanvix][%s] server alive\n", spawner_name);
 
-	pthread_barrier_init(&barrier, NULL, NR_SERVERS + 1);
+	pthread_barrier_init(&barrier, NULL, spawner_nservers + 1);
 
 	/* Spawn servers. */
-	for (int i = 0; i < NR_SERVERS; i++)
+	for (int i = 0; i < spawner_nservers; i++)
 	{
 		args[i] = 0;
 		assert((pthread_create(&tids[i],
@@ -129,7 +129,7 @@ int main(int argc, const char **argv)
 	}
 
 	/* Wait for name server thread. */
-	for (int i = 0; i < NR_SERVERS; i++)
+	for (int i = 0; i < spawner_nservers; i++)
 		pthread_join(tids[i], NULL);
 
 	printf("[nanvix][%s] shutting down\n", spawner_name);
