@@ -50,7 +50,7 @@ case "$1" in
 	;;
 	nanvix-sync)
 		echo "Running Nanvix Sync Microbenchmarks"
-		for kernel in broadcast;
+		for kernel in barrier;
 		do
 			run1 "benchmark-hal-sync.img"      \
 				"/benchmark/hal-sync-master"   \

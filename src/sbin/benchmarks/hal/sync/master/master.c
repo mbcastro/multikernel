@@ -52,6 +52,11 @@ static int pids[NANVIX_PROC_MAX];
  */
 static int nodenum;
 
+/**
+ * @brief Input synchronization point.
+ */
+static int insync;
+
 /*============================================================================*
  * Utility                                                                    *
  *============================================================================*/
@@ -61,12 +66,10 @@ static int nodenum;
  */
 static void spawn_remotes(void)
 {
-	int syncid;
 	char master_node[4];
 	char first_remote[4];
 	char last_remote[4];
 	char niterations_str[4];
-	int nodes[nclusters + 1];
 	const char *argv[] = {
 		"/benchmark/hal-sync-slave",
 		master_node,
@@ -77,14 +80,6 @@ static void spawn_remotes(void)
 		NULL
 	};
 
-	/* Build nodes list. */
-	nodes[0] = nodenum;
-	for (int i = 0; i < nclusters; i++)
-		nodes[i + 1] = i;
-
-	/* Create synchronization point. */
-	assert((syncid = sys_sync_create(nodes, nclusters + 1, SYNC_ALL_TO_ONE)) >= 0);
-
 	/* Spawn remotes. */
 	sprintf(master_node, "%d", nodenum);
 	sprintf(first_remote, "%d", 0);
@@ -94,10 +89,7 @@ static void spawn_remotes(void)
 		assert((pids[i] = mppa_spawn(i, NULL, argv[0], argv, NULL)) != -1);
 
 	/* Sync. */
-	assert(sys_sync_wait(syncid) == 0);
-
-	/* House keeping. */
-	assert(sys_sync_unlink(syncid) == 0);
+	assert(sys_sync_wait(insync) == 0);
 }
 
 /**
@@ -110,13 +102,13 @@ static void join_remotes(void)
 }
 
 /*============================================================================*
- * Kernels                                                                    *
+ * Kernel                                                                     *
  *============================================================================*/
 
 /**
- * @brief Broadcast kernel.
+ * @brief Barrier kernel.
  */
-static void kernel_broadcast(void)
+static void kernel_barrier(void)
 {
 	int syncid;
 	int nodes[nclusters + 1];
@@ -137,6 +129,7 @@ static void kernel_broadcast(void)
 
 		t1 = sys_timer_get();
 			assert(sys_sync_signal(syncid) == 0);
+			assert(sys_sync_wait(insync) == 0);
 		t2 = sys_timer_get();
 
 		total = sys_timer_diff(t1, t2)/((double) sys_get_core_freq());
@@ -145,12 +138,10 @@ static void kernel_broadcast(void)
 		if (((k == 0) || (k == (niterations + 1))))
 			continue;
 
-		printf("nanvix;%s;%d;%d;%.2lf;%.2lf\n",
+		printf("nanvix;%s;%d;%.2lf\n",
 			kernel,
-			4,
 			nclusters,
-			(total*MEGA)/nclusters,
-			(nclusters*MAILBOX_MSG_SIZE)/total
+			(total*MEGA)/nclusters
 		);
 	}
 	
@@ -164,13 +155,27 @@ static void kernel_broadcast(void)
  */
 static void benchmark(void)
 {
+	int nodes[nclusters + 1];
+
 	/* Initialization. */
 	kernel_setup();
 	nodenum = sys_get_node_num();
+
+	/* Build nodes list. */
+	nodes[0] = nodenum;
+	for (int i = 0; i < nclusters; i++)
+		nodes[i + 1] = i;
+
+	/* Create synchronization point. */
+	assert((insync = sys_sync_create(nodes, nclusters + 1, SYNC_ALL_TO_ONE)) >= 0);
+
 	spawn_remotes();
 
-	if (!strcmp(kernel, "broadcast"))
-		kernel_broadcast();
+	if (!strcmp(kernel, "barrier"))
+		kernel_barrier();
+
+	/* House keeping. */
+	assert(sys_sync_unlink(insync) == 0);
 	
 	/* House keeping. */
 	join_remotes();

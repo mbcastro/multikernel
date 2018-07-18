@@ -23,6 +23,7 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include <mppa/osconfig.h>
 
@@ -50,14 +51,19 @@ static int niterations = 0;
  */
 static int nclusters = 0;
 
+/**
+ * @brief Output synchronization point.
+ */
+static int outsync;
+
 /*============================================================================*
- * Broadcast Kernel                                                           *
+ * Barrier Kernel                                                              *
  *============================================================================*/
 
 /**
- * @brief Broadcast kernel. 
+ * @brief Barrier kernel. 
  */
-static void kernel_broadcast(void)
+static void kernel_barrier(void)
 {
 	int syncid;
 	int nodes[nclusters + 1];
@@ -72,12 +78,14 @@ static void kernel_broadcast(void)
 
 	/* Benchmark. */
 	for (int k = 0; k <= (niterations + 1); k++)
+	{
 		assert(sys_sync_wait(syncid) == 0);
+		assert(sys_sync_signal(outsync) == 0);
+	}
 
 	/* House keeping. */
 	assert(sys_sync_unlink(syncid) == 0);
 }
-
 
 /*============================================================================*
  * HAL Sync Microbenchmark Driver                                             *
@@ -88,18 +96,7 @@ static void kernel_broadcast(void)
  */
 static void sync_master(void)
 {
-	int syncid;
-	int nodes[nclusters + 1];
-
-	/* Build nodes list. */
-	nodes[0] = masternode;
-	for (int i = 0; i < nclusters; i++)
-		nodes[i + 1] = i;
-
-	/* Sync. */
-	assert((syncid = sys_sync_open(nodes, nclusters + 1, SYNC_ALL_TO_ONE)) >= 0);
-	assert(sys_sync_signal(syncid) == 0);
-	assert(sys_sync_close(syncid) == 0);
+	assert(sys_sync_signal(outsync) == 0);
 }
 
 /**
@@ -107,7 +104,7 @@ static void sync_master(void)
  */
 int main(int argc, const char **argv)
 {
-	const char *mode;
+	const char *kernel;
 	int first_remote;
 	int last_remote;
 	
@@ -121,15 +118,27 @@ int main(int argc, const char **argv)
 	first_remote = atoi(argv[2]);
 	last_remote = atoi(argv[3]);
 	niterations = atoi(argv[4]);
-	mode = argv[5];
+	kernel = argv[5];
 
 	nclusters = last_remote - first_remote;
+
+	int nodes[nclusters + 1];
+
+	/* Build nodes list. */
+	nodes[0] = masternode;
+	for (int i = 0; i < nclusters; i++)
+		nodes[i + 1] = i;
+
+	/* Create synchronization point. */
+	assert((outsync = sys_sync_open(nodes, nclusters + 1, SYNC_ALL_TO_ONE)) >= 0);
 
 	sync_master();
 
 	/* Run kernel. */
-	if (!strcmp(mode, "broadcast"))
-		kernel_broadcast();
+	if (!strcmp(kernel, "barrier"))
+		kernel_barrier();
+
+	assert(sys_sync_close(outsync) == 0);
 
 	/* House keeping. */
 	kernel_cleanup();
