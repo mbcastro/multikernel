@@ -27,6 +27,7 @@
 
 #include <nanvix/const.h>
 #include <nanvix/syscalls.h>
+#include <nanvix/spawner.h>
 
 /* Forward definitions. */
 extern int name_server(int);
@@ -41,23 +42,17 @@ int NR_SERVERS = 1;
 
 int usermode = 0;
 
-struct server
-{
-	int (*main) (int);
-	int nodenum;
-};
-
 /**
  * @brief Servers.
  */
-struct server servers[] = {
+struct serverinfo servers[] = {
 	{ name_server, NAME_SERVER_NODE },
 };
 
 /**
  * @brief Generic test driver.
  */
-void test_kernel(const char *module)
+static void test_kernel(const char *module)
 {
 	if (!strcmp(module, "--hal-sync"))
 		test_kernel_sys_sync();
@@ -68,7 +63,7 @@ void test_kernel(const char *module)
 /**
  * @brief Generic test driver.
  */
-void test_runtime(const char *module)
+static void test_runtime(const char *module)
 {
 	if (!strcmp(module, "--barrier"))
 		test_kernel_barrier();
@@ -100,17 +95,20 @@ void spawners_sync(void)
 	assert(sys_sync_wait(syncid_local) == 0);
 	assert(sys_sync_signal(syncid) == 0);
 
-	printf("[nanvix][spawner1] synced\n");
-
 	/* House keeping. */
 	assert(sys_sync_unlink(syncid_local) == 0);
 	assert(sys_sync_close(syncid) == 0);
 }
 
-int main2(int argc, const char *argv)
+int main2(int argc, const char **argv)
 {
 	((void) argc);
 	((void) argv);
 
 	return (EXIT_SUCCESS);
 }
+
+SPAWNER_NAME("spawner1")
+SPAWNER_MAIN2(NULL)
+SPAWNER_KERNEL_TESTS(test_kernel)
+SPAWNER_RUNTIME_TESTS(test_runtime)

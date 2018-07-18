@@ -26,24 +26,8 @@
 
 #include <mppa/osconfig.h>
 
-#include <nanvix/const.h>
 #include <nanvix/syscalls.h>
-
-struct server
-{
-	int (*main) (int);
-	int nodenum;
-};
-
-extern int usermode;
-extern int NR_SERVERS;
-extern struct server servers[];
-
-/* Forward definitions. */
-extern int main2(int, const char **);
-extern void test_kernel(const char *module);
-extern void test_runtime(const char *module, int nservers);
-extern void spawners_sync(void);
+#include <nanvix/spawner.h>
 
 /**
  * @brief Barrier for synchronization.
@@ -100,13 +84,13 @@ int main(int argc, const char **argv)
 	/* Initialization. */
 	assert(kernel_setup() == 0);
 
-	printf("[nanvix][spawner] booting up server\n");
+	printf("[nanvix][%s] booting up server\n", spawner_name);
 
 	/* Run self-tests. */
-	if (debug)
-		test_kernel(argv[2]);
+	if ((debug) && (test_kernel_fn != NULL))
+		test_kernel_fn(argv[2]);
 
-	printf("[nanvix][spawner] server alive\n");
+	printf("[nanvix][%s] server alive\n", spawner_name);
 
 	pthread_barrier_init(&barrier, NULL, NR_SERVERS + 1);
 
@@ -125,28 +109,30 @@ int main(int argc, const char **argv)
 
 	spawners_sync();
 
-	/* Run self-tests. */
-	if (debug)
-		test_runtime(argv[2], 0);
+	printf("[nanvix][%s] synced\n", spawner_name);
 
-	if (usermode)
+	/* Run self-tests. */
+	if ((debug) && (test_runtime_fn != NULL))
+		test_runtime_fn(argv[2]);
+
+	if (main2_fn != NULL)
 	{
-		printf("[nanvix][spawner] switching to user mode\n");
+		printf("[nanvix][%s] switching to user mode\n", spawner_name);
 
 		/* Initialization. */
 		assert(runtime_setup() == 0);
 
-		ret = main2(argc, argv);	
+		ret = main2_fn(argc, argv);	
 
 		/* Cleanup. */
 		assert(runtime_cleanup() == 0);
-
-		printf("[nanvix][spawner] shutting down\n");
 	}
 
 	/* Wait for name server thread. */
 	for (int i = 0; i < NR_SERVERS; i++)
 		pthread_join(tids[i], NULL);
+
+	printf("[nanvix][%s] shutting down\n", spawner_name);
 
 	/* Cleanup. */
 	assert(kernel_cleanup() == 0);
