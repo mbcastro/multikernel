@@ -85,5 +85,6 @@ build2 $BINDIR/test-driver $BINDIR/servers1 "$BINARIES" nanvix-debug.img
 # Benchmarks
 build0 $BINDIR/benchmark/mppa256-portal-master $BINDIR/benchmark/mppa256-portal-slave benchmark-mppa256-portal.img
 build0 $BINDIR/benchmark/mppa256-rqueue-master $BINDIR/benchmark/mppa256-rqueue-slave benchmark-mppa256-rqueue.img
+build0 $BINDIR/benchmark/hal-sync-master $BINDIR/benchmark/hal-sync-slave benchmark-hal-sync.img
 build0 $BINDIR/benchmark/hal-mailbox-master $BINDIR/benchmark/hal-mailbox-slave benchmark-hal-mailbox.img
 build0 $BINDIR/benchmark/hal-portal-master $BINDIR/benchmark/hal-portal-slave benchmark-hal-portal.img
