@@ -28,7 +28,8 @@
 #include <nanvix/syscalls.h>
 #include <nanvix/const.h>
 
-extern int name_init(void); 
+extern int name_init(void);
+extern int sem_init(void);
 
 /**
  * @brief Global runtime lock.
@@ -72,13 +73,15 @@ int runtime_setup(void)
 		if (initialized[index])
 			goto error;
 
-		 /* Create underlying input mailbox. */		
+		 /* Create underlying input mailbox. */
 		if (initialize_inbox(index) != 0)
 			goto error;
 
 		initialized[index] = 1;
 
 		name_init();
+
+		sem_init();
 
 	runtime_unlock();
 
