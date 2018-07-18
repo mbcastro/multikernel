@@ -40,6 +40,7 @@
 
 	/* Forward definitions .*/
 	extern int get_inbox(void);
+	extern int get_named_inbox(void);
 	extern int initialize_inbox(int);
 	extern int destroy_inbox(int);
 	extern int mailbox_create(char *);
@@ -62,6 +63,11 @@
 	extern int portal_close(int);
 	extern int portal_unlink(int);
 
-	extern int name_init(void);
+/*============================================================================*
+ * Name                                                                       *
+ *============================================================================*/
+
+	/* Forward definitions. */
+	extern int get_name(char *);
 
 #endif /* NANVIX_PM_H_ */

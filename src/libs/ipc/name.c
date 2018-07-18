@@ -41,6 +41,11 @@ static int server;
 static int initialized = 0;
 
 /**
+* @brief Name linked to the process.
+*/
+static char process_name[HAL_NR_NOC_IONODES][NANVIX_PROC_NAME_MAX];
+
+/**
  * @brief Mailbox module lock.
  */
 static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
@@ -81,6 +86,37 @@ int name_init(void)
  */
 void name_finalize(void)
 {
+}
+
+/*============================================================================*
+ * get_name()                                                                 *
+ *============================================================================*/
+
+/**
+ * @brief Get the name of the running process.
+ *
+ * @param name Address where the name will be written.
+ *
+ * @returns Upon successful zero is returned.
+ * Upon failure, a negative error code is returned instead.
+ */
+int get_name(char *name)
+{
+	int index;
+
+	/* Sanity check. */
+	if (name == NULL)
+		return (-EINVAL);
+
+	index = sys_get_core_id();
+
+	/* Name was not initialized. */
+	if (!strcmp(process_name[index], ""))
+		return (-EAGAIN);
+
+	strcpy(name, process_name[index]);
+
+	return (0);
 }
 
 /*============================================================================*
@@ -190,7 +226,11 @@ int name_link(int nodenum, const char *name)
 		return (-EAGAIN);
 
 	if (msg.op == NAME_SUCCESS)
+	{
+		strcpy(process_name[sys_get_core_id()], name);
+
 		return (0);
+	}
 
 	return (-1);
 
@@ -256,4 +296,3 @@ error1:
 	pthread_mutex_unlock(&lock);
 	return (-EAGAIN);
 }
-

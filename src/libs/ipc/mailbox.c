@@ -44,6 +44,11 @@
 static int inboxes[NANVIX_NR_NODES];
 
 /**
+ * @brief Input named mailbox.
+ */
+static int named_inboxes[HAL_NR_NOC_IONODES];
+
+/**
  *
  * @brief Is the inbox initialized ?
  */
@@ -150,6 +155,18 @@ int get_inbox(void)
 		return (-EINVAL);
 
 	return (inboxes[index]);
+}
+
+/**
+ * @brief Get named input mailbox.
+ */
+int get_named_inbox(void)
+{
+	int index;
+
+	index = sys_get_core_id();
+
+	return (named_inboxes[index]);
 }
 
 /*============================================================================*
@@ -333,6 +350,10 @@ int mailbox_create(char *name)
 	if (strlen(name) > MAILBOX_MSG_SIZE)
 		return (-EINVAL);
 
+	/* Inbox should be initialized. */
+	if (initialize_inbox(sys_get_core_id()) != 0)
+		return (-EAGAIN);
+
 	/* Allocate mailbox. */
 	if ((mbxid = mailbox_alloc()) < 0)
 		return (-EAGAIN);
@@ -350,6 +371,9 @@ int mailbox_create(char *name)
 	/* Initialize mailbox. */
 	mailboxes[mbxid].fd = fd;
 	strcpy(mailboxes[mbxid].name, name);
+
+	/* Initialize named inbox. */
+	named_inboxes[sys_get_core_id()] = mbxid;
 
 	return (mbxid);
 
