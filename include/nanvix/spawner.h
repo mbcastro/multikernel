@@ -28,21 +28,22 @@
 		int (*main) (int);
 		int nodenum;
 	};
+
 	/* Forward definitions. */
-	extern int main2(int, const char **);
 	extern void spawners_sync(void);
 
 	/* Forward definitions. */
 	extern const char *spawner_name;
 	extern const int spawner_usermode;
-	extern int NR_SERVERS;
-	extern struct serverinfo servers[];
+	extern const int NR_SERVERS;
+	extern struct serverinfo spawner_servers[];
 	extern void (*test_kernel_fn)(const char *);
 	extern void (*test_runtime_fn)(const char *);
 	extern int (*main2_fn)(int, const char **);
 
 	#define SPAWNER_NAME(x) const char *spawner_name = x;
 	#define SPAWNER_MAIN2(x) int (*main2_fn)(int, const char **) = x;
+	#define SPAWNER_SERVERS(x, ...) const int NR_SERVERS = x; struct serverinfo spawner_servers[x] = { __VA_ARGS__ }; 
 	#define SPAWNER_KERNEL_TESTS(x) void (*test_kernel_fn)(const char *) = x;
 	#define SPAWNER_RUNTIME_TESTS(x) void (*test_runtime_fn)(const char *) = x;
 

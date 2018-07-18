@@ -36,20 +36,6 @@ extern void test_kernel_sys_mailbox(void);
 extern void test_kernel_barrier(void);
 
 /**
- * @brief Number of servers.
- */
-int NR_SERVERS = 1;
-
-int usermode = 0;
-
-/**
- * @brief Servers.
- */
-struct serverinfo servers[] = {
-	{ name_server, NAME_SERVER_NODE },
-};
-
-/**
  * @brief Generic test driver.
  */
 static void test_kernel(const char *module)
@@ -100,15 +86,8 @@ void spawners_sync(void)
 	assert(sys_sync_close(syncid) == 0);
 }
 
-int main2(int argc, const char **argv)
-{
-	((void) argc);
-	((void) argv);
-
-	return (EXIT_SUCCESS);
-}
-
 SPAWNER_NAME("spawner1")
+SPAWNER_SERVERS(1, { name_server, NAME_SERVER_NODE }, )
 SPAWNER_MAIN2(NULL)
 SPAWNER_KERNEL_TESTS(test_kernel)
 SPAWNER_RUNTIME_TESTS(test_runtime)

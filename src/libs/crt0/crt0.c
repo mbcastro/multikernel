@@ -48,8 +48,8 @@ static void *server(void *args)
 
 	servernum = ((int *)args)[0];
 
-	nodenum = servers[servernum].nodenum;
-	main_fn = servers[servernum].main;
+	nodenum = spawner_servers[servernum].nodenum;
+	main_fn = spawner_servers[servernum].main;
 
 	/* Open server mailbox. */
 	inbox = sys_mailbox_create(nodenum);

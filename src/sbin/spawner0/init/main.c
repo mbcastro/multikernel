@@ -30,6 +30,7 @@
 #include <nanvix/spawner.h>
 
 /* Forward definitions. */
+extern int main2(int, const char **);
 extern void test_kernel_sys_core(void);
 extern void test_kernel_sys_sync(void);
 extern void test_kernel_sys_mailbox(void);
@@ -37,17 +38,6 @@ extern void test_kernel_sys_portal(void);
 extern void test_kernel_name(int);
 extern void test_kernel_ipc_mailbox(int);
 extern void test_kernel_ipc_barrier(int);
-
-/**
- * @brief Number of servers.
- */
-int NR_SERVERS = 0;
-
-/**
- * @brief Servers.
- */
-struct serverinfo servers[] = {
-};
 
 /**
  * @brief Generic kernel test driver.
@@ -110,6 +100,7 @@ void spawners_sync(void)
 
 
 SPAWNER_NAME("spawner0")
+SPAWNER_SERVERS(0, )
 SPAWNER_MAIN2(main2)
 SPAWNER_KERNEL_TESTS(test_kernel)
 SPAWNER_RUNTIME_TESTS(test_runtime)
