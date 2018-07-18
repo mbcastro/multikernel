@@ -61,7 +61,7 @@ static void runtime_unlock(void)
 /**
  * @brief Initializes the runtime.
  */
-int runtime_setup(void)
+int runtime_setup(int level)
 {
 	int index;
 
@@ -73,15 +73,41 @@ int runtime_setup(void)
 		if (initialized[index])
 			goto error;
 
-		 /* Create underlying input mailbox. */
-		if (initialize_inbox(index) != 0)
-			goto error;
+		switch (level)
+		{
+			case 0:
+				/* Create underlying input mailbox. */
+				if (initialize_inbox(index) != 0)
+					goto error;
+
+				break;
+
+			case 1:
+				/* Create underlying input mailbox. */
+				if (initialize_inbox(index) != 0)
+					goto error;
+
+				name_init();
+
+				break;
+
+			case 2:
+				/* Create underlying input mailbox. */
+				if (initialize_inbox(index) != 0)
+					goto error;
+
+				name_init();
+
+				sem_init();
+
+				break;
+
+			default:
+
+				break;
+		}
 
 		initialized[index] = 1;
-
-		name_init();
-
-		sem_init();
 
 	runtime_unlock();
 

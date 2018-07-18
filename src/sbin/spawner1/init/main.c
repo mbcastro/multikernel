@@ -91,7 +91,7 @@ void spawners_sync(void)
 }
 
 SPAWNER_NAME("spawner1")
-SPAWNER_SERVERS(1, { name_server, NAME_SERVER_NODE }, )
+SPAWNER_SERVERS(1, { name_server, NAME_SERVER_NODE, 0 }, )
 SPAWNER_MAIN2(NULL)
 SPAWNER_KERNEL_TESTS(test_kernel)
 SPAWNER_RUNTIME_TESTS(test_runtime)

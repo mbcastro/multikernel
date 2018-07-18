@@ -50,7 +50,7 @@ pthread_barrier_t ipc_semaphore_barrier;
  */
 void test_kernel_semaphore(int nbusycores)
 {
-	TEST_ASSERT(runtime_setup() == 0);
+	TEST_ASSERT(runtime_setup(2) == 0);
 
 	ipc_semaphore_ncores = sys_get_num_cores() - nbusycores;
 

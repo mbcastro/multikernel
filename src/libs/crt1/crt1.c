@@ -40,9 +40,9 @@ int main(int argc, const char **argv)
 
 	/* Initialization. */
 	assert(kernel_setup() == 0);
-	assert(runtime_setup() == 0);
+	assert(runtime_setup(2) == 0);
 
-	ret = main2(argc, argv);	
+	ret = main2(argc, argv);
 
 	/* Cleanup. */
 	assert(runtime_cleanup() == 0);

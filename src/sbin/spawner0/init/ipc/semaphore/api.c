@@ -52,7 +52,7 @@ static void *test_semaphore_thread_create_unlink(void *args)
 	((void) args);
 
 	TEST_ASSERT(kernel_setup() == 0);
-	TEST_ASSERT(runtime_setup() == 0);
+	TEST_ASSERT(runtime_setup(2) == 0);
 
 	pthread_barrier_wait(&ipc_semaphore_barrier);
 
@@ -122,7 +122,7 @@ static void *test_semaphore_thread_open_close(void *args)
 	int inbox;
 
 	TEST_ASSERT(kernel_setup() == 0);
-	TEST_ASSERT(runtime_setup() == 0);
+	TEST_ASSERT(runtime_setup(2) == 0);
 
 	pthread_barrier_wait(&ipc_semaphore_barrier);
 
@@ -201,7 +201,7 @@ static void *test_semaphore_thread_wait_post(void *args)
 	int inbox;
 
 	TEST_ASSERT(kernel_setup() == 0);
-	TEST_ASSERT(runtime_setup() == 0);
+	TEST_ASSERT(runtime_setup(2) == 0);
 
 	pthread_barrier_wait(&ipc_semaphore_barrier);
 

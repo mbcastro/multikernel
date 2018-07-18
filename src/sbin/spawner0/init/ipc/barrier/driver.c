@@ -36,7 +36,7 @@ int ipc_barrier_ncores = 0;
  */
 void test_kernel_ipc_barrier(int nbusycores)
 {
-	TEST_ASSERT(runtime_setup() == 0);
+	TEST_ASSERT(runtime_setup(0) == 0);
 
 	ipc_barrier_ncores = sys_get_num_cores() - nbusycores;
 
@@ -49,4 +49,3 @@ void test_kernel_ipc_barrier(int nbusycores)
 
 	TEST_ASSERT(runtime_cleanup() == 0);
 }
-

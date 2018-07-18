@@ -41,16 +41,18 @@ static pthread_barrier_t barrier;
 static void *server(void *args)
 {
 	int servernum;
+	int runlevel;
 	int (*main_fn) (int);
 
 	kernel_setup();
 
 	servernum = ((int *)args)[0];
 
+	runlevel = spawner_servers[servernum].runlevel;
 	main_fn = spawner_servers[servernum].main;
 
-	/* Initialize server inbox. */
-	assert(initialize_inbox(sys_get_core_id()) == 0);
+	/* Initialize runtime. */
+	assert(runtime_setup(runlevel) == 0);
 
 	/* Wait for other servers. */
 	pthread_barrier_wait(&barrier);
@@ -118,9 +120,9 @@ int main(int argc, const char **argv)
 		printf("[nanvix][%s] switching to user mode\n", spawner_name);
 
 		/* Initialization. */
-		assert(runtime_setup() == 0);
+		assert(runtime_setup(2) == 0);
 
-		ret = main2_fn(argc, argv);	
+		ret = main2_fn(argc, argv);
 
 		/* Cleanup. */
 		assert(runtime_cleanup() == 0);

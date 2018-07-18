@@ -28,8 +28,9 @@
 	 */
 	struct serverinfo
 	{
-		int (*main) (int); /**< Main function. */
-		int nodenum;       /**< Node number.   */
+		int (*main) (int); /**< Main function.   */
+		int nodenum;       /**< Node number.     */
+		int runlevel;      /**< Server runlevel. */
 	};
 
 	/* Forward definitions. */
@@ -83,4 +84,3 @@
 		void (*test_runtime_fn)(const char *) = x;
 
 #endif /* NANVIX_SPAWNER_H_*/
-

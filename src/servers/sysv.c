@@ -848,9 +848,6 @@ int semaphore_server(int inbox)
 
 	printf("[nanvix][semaphore] booting up server\n");
 
-	/* Initialize name client. */
-	assert(name_init() == 0);
-
 	/* Create input mailbox. */
 	inbox = mailbox_create("/sem-server");
 

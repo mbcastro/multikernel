@@ -108,7 +108,7 @@ void spawners_sync(void)
 
 
 SPAWNER_NAME("spawner0")
-SPAWNER_SERVERS(NR_SERVERS, { semaphore_server, SEMAPHORES_SERVER_NODE })
+SPAWNER_SERVERS(NR_SERVERS, { semaphore_server, SEMAPHORES_SERVER_NODE, 1 })
 SPAWNER_MAIN2(main2)
 SPAWNER_KERNEL_TESTS(test_kernel)
 SPAWNER_RUNTIME_TESTS(test_runtime)
