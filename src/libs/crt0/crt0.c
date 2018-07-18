@@ -28,6 +28,7 @@
 
 #include <nanvix/syscalls.h>
 #include <nanvix/spawner.h>
+#include <nanvix/pm.h>
 
 /**
  * @brief Barrier for synchronization.
@@ -39,8 +40,6 @@ static pthread_barrier_t barrier;
  */
 static void *server(void *args)
 {
-	int inbox;
-	int nodenum;
 	int servernum;
 	int (*main_fn) (int);
 
@@ -48,17 +47,16 @@ static void *server(void *args)
 
 	servernum = ((int *)args)[0];
 
-	nodenum = spawner_servers[servernum].nodenum;
 	main_fn = spawner_servers[servernum].main;
 
-	/* Open server mailbox. */
-	inbox = sys_mailbox_create(nodenum);
+	/* Initialize server inbox. */
+	assert(initialize_inbox(sys_get_core_id()) == 0);
 
 	/* Wait for other servers. */
 	pthread_barrier_wait(&barrier);
 
 	/* Spawn server. */
-	main_fn(inbox);
+	main_fn(get_inbox());
 
 	kernel_cleanup();
 	return (NULL);
