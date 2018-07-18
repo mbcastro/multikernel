@@ -43,6 +43,7 @@ extern void test_kernel_sys_portal(void);
 extern void test_kernel_name(int);
 extern void test_kernel_ipc_mailbox(int);
 extern void test_kernel_ipc_barrier(int);
+extern void test_kernel_semaphore(int);
 
 /**
  * @brief Generic kernel test driver.
@@ -70,6 +71,8 @@ static void test_runtime(const char *module)
 		test_kernel_ipc_mailbox(NR_SERVERS);
 	else if (!strcmp(module, "--barrier"))
 		test_kernel_ipc_barrier(NR_SERVERS);
+	else if (!strcmp(module, "--semaphore"))
+		test_kernel_semaphore(NR_SERVERS);
 }
 
 /**

@@ -21,13 +21,14 @@
 #
 
 # C Source Files
-export INIT_SRC = $(wildcard $(CURDIR)/init/hal/core/*.c)    \
-                  $(wildcard $(CURDIR)/init/hal/sync/*.c)    \
-                  $(wildcard $(CURDIR)/init/hal/mailbox/*.c) \
-                  $(wildcard $(CURDIR)/init/hal/portal/*.c)  \
-                  $(wildcard $(CURDIR)/init/ipc/barrier/*.c) \
-                  $(wildcard $(CURDIR)/init/ipc/name/*.c)    \
-                  $(wildcard $(CURDIR)/init/ipc/mailbox/*.c) \
+export INIT_SRC = $(wildcard $(CURDIR)/init/hal/core/*.c)      \
+                  $(wildcard $(CURDIR)/init/hal/sync/*.c)      \
+                  $(wildcard $(CURDIR)/init/hal/mailbox/*.c)   \
+                  $(wildcard $(CURDIR)/init/hal/portal/*.c)    \
+                  $(wildcard $(CURDIR)/init/ipc/barrier/*.c)   \
+                  $(wildcard $(CURDIR)/init/ipc/name/*.c)      \
+                  $(wildcard $(CURDIR)/init/ipc/mailbox/*.c)   \
+                  $(wildcard $(CURDIR)/init/ipc/semaphore/*.c) \
                   $(wildcard $(CURDIR)/init/main.c)
 
 # Conflicts
@@ -39,7 +40,7 @@ export INIT_SRC = $(wildcard $(CURDIR)/init/hal/core/*.c)    \
 all: test
 
 # Builds Test-Driver Utilitiy
-test: 
+test:
 	cd test && $(MAKE) all
 
 # Cleans compilation files.
