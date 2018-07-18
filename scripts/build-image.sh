@@ -77,10 +77,13 @@ function build2
 BINARIES="$BINDIR/test/hal-sync-slave"
 BINARIES="$BINARIES,$BINDIR/test/hal-mailbox-slave"
 BINARIES="$BINARIES,$BINDIR/test/hal-portal-slave"
+build2 $BINDIR/test-driver $BINDIR/servers1 "$BINARIES" nanvix-kernel-debug.img
+
+BINARIES="$BINDIR/test/semaphore-slave"
 BINARIES="$BINARIES,$BINDIR/test/barrier-slave"
 BINARIES="$BINARIES,$BINDIR/test/mailbox-slave"
 BINARIES="$BINARIES,$BINDIR/test/name-slave"
-build2 $BINDIR/test-driver $BINDIR/servers1 "$BINARIES" nanvix-debug.img
+build2 $BINDIR/test-driver $BINDIR/servers1 "$BINARIES" nanvix-runtime-debug.img
 
 # Benchmarks
 build0 $BINDIR/benchmark/mppa256-portal-master $BINDIR/benchmark/mppa256-portal-slave benchmark-mppa256-portal.img
