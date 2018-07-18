@@ -70,16 +70,9 @@ static void test_semaphore_slave(int nclusters)
 	assert(barrier_wait(barrier) == 0);
 
 	if ((nodenum%2) == 0)
-	{
-		printf("Slave %d waits...\n", nodenum);
 		assert(nanvix_sem_wait(semid) == 0);
-		printf("Slave %d unblocked!\n", nodenum);
-	}
 	else
-	{
 		assert(nanvix_sem_post(semid) == 0);
-		printf("Slave %d posts!\n", nodenum);
-	}
 
 	/* House keeping. */
 	assert(barrier_wait(barrier) == 0);
