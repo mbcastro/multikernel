@@ -49,6 +49,7 @@
 	};
 
 	/* Forward definitions. */
+	extern int name_init(void);
 	extern int name_lookup(char *);
 	extern int name_link(int, const char *);
 	extern int name_unlink(const char *);
