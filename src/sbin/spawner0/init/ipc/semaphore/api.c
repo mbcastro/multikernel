@@ -317,6 +317,7 @@ struct test ipc_semaphore_tests_api[] = {
 	{ test_semaphore_create_unlink, "Create Unlink" },
 	{ test_semaphore_open_close,    "Open Close"    },
 	{ test_semaphore_wait_post ,    "Wait Post"     },
+	{ NULL,                         NULL            },
 	{ test_semaphore_slave,         "Slaves Test"   },
 	{ NULL,                         NULL            },
 };

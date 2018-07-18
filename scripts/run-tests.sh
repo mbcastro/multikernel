@@ -43,5 +43,5 @@ run2 "nanvix-runtime-debug.img" "/test-driver" "/servers1" "--debug --mailbox"
 echo "=== Running Barrier Tests"
 run2 "nanvix-runtime-debug.img" "/test-driver" "/servers1" "--debug --barrier"
 
-#echo "=== Running Semaphore Tests"
-#run2 "nanvix-runtime-debug.img" "/test-driver" "/servers1" "--debug --semaphore"
+echo "=== Running Semaphore Tests"
+run2 "nanvix-runtime-debug.img" "/test-driver" "/servers1" "--debug --semaphore"
