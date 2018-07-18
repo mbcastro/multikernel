@@ -130,9 +130,12 @@ int main(int argc, const char **argv)
 		assert(runtime_cleanup() == 0);
 	}
 
-	/* Wait for name server thread. */
-	for (int i = 0; i < spawner_nservers; i++)
-		pthread_join(tids[i], NULL);
+	/* Wait for servers. */
+	if (!spawner_shutdown)
+	{
+		for (int i = 0; i < spawner_nservers; i++)
+			pthread_join(tids[i], NULL);
+	}
 
 	printf("[nanvix][%s] shutting down\n", spawner_name);
 

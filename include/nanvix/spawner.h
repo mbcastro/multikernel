@@ -35,6 +35,7 @@
 
 	/* Forward definitions. */
 	extern const char *spawner_name;
+	extern const int spawner_shutdown;
 	extern const int spawner_nservers;
 	extern struct serverinfo spawner_servers[];
 	extern void (*test_kernel_fn)(const char *);
@@ -43,12 +44,28 @@
 	extern void spawners_sync(void);
 
 	/**
+	 * @brief Shutdown flags.
+	 */
+	/**@{*/
+	#define SHUTDOWN_DISABLE 0 /**< Disable shutdown. */
+	#define SHUTDOWN_ENABLE  1 /**< Enable shutdown.  */
+	/**@}*/
+
+	/**
 	 * @brief Declares the name of the spawner.
 	 *
 	 * @param x Spawner name.
 	 */
 	#define SPAWNER_NAME(x) \
 		const char *spawner_name = x;
+
+	/**
+	 * @brief Declares shutdown flag in the spawner.
+	 *
+	 * @param x Enable shutdown?
+	 */
+	#define SPAWNER_SHUTDOWN(x) \
+		const int spawner_shutdown = x;
 
 	/**
 	 * @brief Declares the user-level main function.
