@@ -62,4 +62,6 @@
 	extern int portal_close(int);
 	extern int portal_unlink(int);
 
+	extern int name_init(void);
+
 #endif /* NANVIX_PM_H_ */
