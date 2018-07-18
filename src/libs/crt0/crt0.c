@@ -60,6 +60,8 @@ static void *server(void *args)
 	/* Spawn server. */
 	main_fn(get_inbox());
 
+	assert(runtime_cleanup() == 0);
+
 	kernel_cleanup();
 	return (NULL);
 }
