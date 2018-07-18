@@ -20,17 +20,31 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
+# C Source Files
+SRC = $(wildcard *.c) \
+	  $(INIT_SRC)
+
+# Object Files
+OBJ = $(SRC:.c=.o)
+
+# Binary Files
+export ELFBIN = $(BINDIR)/test-driver
+
 #===============================================================================
 
-# Builds startup routines for Compute Cluster.
-all: 
-	mkdir -p $(LIBDIR)
-	$(CC) $(CFLAGS) crt1.c -c -o $(CRT1)
+# Builds the kernel.
+all: $(OBJ)
+	$(CC) $(LDFLAGS) $(OBJ) $(CRT0) -o $(ELFBIN) $(LIBUSER) $(LIBKERNEL) $(LIBSERVERS) $(LIBS)
+
+# Builds object files.
+%.o: %.c
+	$(CC) $(CFLAGS) $< -c -o $@
 
 # Cleans compilation files.
 clean:
-	rm -rf $(CRT1)
+	rm -rf $(OBJ)
 
 # Cleans everything.
 distclean: clean
+	rm -rf $(ELFBIN)
 

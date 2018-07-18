@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# Copyright (c) 2011-2018 Pedro Henrique Penna <pedrohenriquepenna@gmail.com>
+# Copyright (c) 211-218 Pedro Henrique Penna <pedrohenriquepenna@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,17 +20,32 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
+# C Source Files
+export INIT_SRC = $(wildcard $(CURDIR)/init/hal/core/*.c)    \
+                  $(wildcard $(CURDIR)/init/hal/sync/*.c)    \
+                  $(wildcard $(CURDIR)/init/hal/mailbox/*.c) \
+                  $(wildcard $(CURDIR)/init/hal/portal/*.c)  \
+                  $(wildcard $(CURDIR)/init/ipc/barrier/*.c) \
+                  $(wildcard $(CURDIR)/init/ipc/name/*.c)    \
+                  $(wildcard $(CURDIR)/init/ipc/mailbox/*.c) \
+                  $(wildcard $(CURDIR)/init/main.c)
+
+# Conflicts
+.PHONY: test
+
 #===============================================================================
 
-# Builds startup routines for Compute Cluster.
-all: 
-	mkdir -p $(LIBDIR)
-	$(CC) $(CFLAGS) crt1.c -c -o $(CRT1)
+# Builds everything.
+all: test
+
+# Builds Test-Driver Utilitiy
+test: 
+	cd test && $(MAKE) all
 
 # Cleans compilation files.
 clean:
-	rm -rf $(CRT1)
+	cd test && $(MAKE) clean
 
 # Cleans everything.
 distclean: clean
-
+	cd test && $(MAKE) distclean

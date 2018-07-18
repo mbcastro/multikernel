@@ -52,6 +52,9 @@ export ARFLAGS = rcs
 export CRT0 = $(LIBDIR)/crt0.o
 export CRT1 = $(LIBDIR)/crt1.o
 
+# Servers
+export LIBSERVERS = $(LIBDIR)/libservers.a
+
 # System Services
 export SERVERSBIN1 = $(BINDIR)/servers1
 
@@ -83,7 +86,7 @@ endif
 # Builds testing system.
 test: kernel servers libs
 	mkdir -p $(BINDIR)
-	cd sbin/test && $(MAKE) all
+	cd sbin && $(MAKE) all
 
 # Builds benchmarks.
 benchmarks: kernel servers libs
@@ -95,14 +98,14 @@ clean:
 	cd kernel && $(MAKE) clean
 	cd servers && $(MAKE) clean
 	cd libs && $(MAKE) clean
-	cd sbin/test && $(MAKE) clean
-	cd sbin/benchmarks && $(MAKE) clean
+	cd sbin && $(MAKE) clean
+	cd sbin && $(MAKE) clean
 
 # Cleans everything.
 distclean:
 	cd kernel && $(MAKE) distclean
 	cd servers && $(MAKE) distclean
 	cd libs && $(MAKE) distclean
-	cd sbin/test && $(MAKE) distclean
-	cd sbin/benchmarks && $(MAKE) distclean
+	cd sbin && $(MAKE) distclean
+	cd sbin && $(MAKE) distclean
 

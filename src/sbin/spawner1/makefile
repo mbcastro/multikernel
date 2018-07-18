@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# Copyright (c) 2011-2018 Pedro Henrique Penna <pedrohenriquepenna@gmail.com>
+# Copyright (c) 211-218 Pedro Henrique Penna <pedrohenriquepenna@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -21,19 +21,17 @@
 #
 
 # C Source Files
-SRC = $(wildcard *.c)
+SRC = $(wildcard init/*.c)
 
 # Object Files
 OBJ = $(SRC:.c=.o)
 
-# Binary Files
-export ELFBIN = $(BINDIR)/test-driver
-
 #===============================================================================
 
-# Builds the kernel.
+# Builds everything.
 all: $(OBJ)
-	$(CC) $(LDFLAGS) $(OBJ) $(CRT0) -o $(ELFBIN) $(LIBUSER) $(LIBKERNEL) $(LIBS)
+	mkdir -p $(BINDIR)
+	$(CC) $(LDFLAGS) $(OBJ) $(CRT0) -o $(SERVERSBIN1) $(LIBKERNEL) $(LIBSERVERS) $(LIBUSER) $(LIBS)
 
 # Builds object files.
 %.o: %.c
@@ -45,5 +43,4 @@ clean:
 
 # Cleans everything.
 distclean: clean
-	rm -rf $(ELFBIN)
-
+	rm -rf $(SERVERSBIN1)

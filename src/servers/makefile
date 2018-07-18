@@ -21,9 +21,7 @@
 #
 
 # C Source Files
-SRC = $(wildcard spawner1/*.c)      \
-      $(wildcard spawner1/test/*.c) \
-	   name.c sysv.c
+SRC = name.c sysv.c
 
 # Object Files
 OBJ = $(SRC:.c=.o)
@@ -31,14 +29,9 @@ OBJ = $(SRC:.c=.o)
 #===============================================================================
 
 # Builds everything.
-all: servers
-
-#
-# Server fleet.
-#
-servers: $(OBJ)
-	mkdir -p $(BINDIR)
-	$(CC) $(LDFLAGS) $(OBJ) -o $(SERVERSBIN1) $(LIBKERNEL) $(LIBUSER) $(LIBS)
+all: $(OBJ)
+	mkdir -p $(LIBDIR)
+	$(AR) $(ARFLAGS) $(LIBSERVERS) $(OBJ)
 
 # Builds object files.
 %.o: %.c
@@ -50,4 +43,5 @@ clean:
 
 # Cleans everything.
 distclean: clean
-	rm -rf $(SERVERSBIN1)
+	rm -rf $(LIBSERVERS)
+
