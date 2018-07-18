@@ -21,7 +21,8 @@
 #
 
 # C Source Files
-SRC = $(wildcard *.c)
+SRC = $(wildcard *.c) \
+	  $(INIT_SRC)
 
 # Object Files
 OBJ = $(SRC:.c=.o)
@@ -33,7 +34,7 @@ export ELFBIN = $(BINDIR)/test-driver
 
 # Builds the kernel.
 all: $(OBJ)
-	$(CC) $(LDFLAGS) $(OBJ) $(CRT0) -o $(ELFBIN) $(LIBUSER) $(LIBKERNEL) $(LIBS)
+	$(CC) $(LDFLAGS) $(OBJ) $(CRT0) -o $(ELFBIN) $(LIBUSER) $(LIBKERNEL) $(LIBSERVERS) $(LIBS)
 
 # Builds object files.
 %.o: %.c

@@ -20,17 +20,30 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
+# C Source Files
+SRC = $(wildcard *.c)
+
+# Object Files
+OBJ = $(SRC:.c=.o)
+
+# Binary Files
+export ELFBIN = $(BINDIR)/test/semaphore-slave
+
 #===============================================================================
 
-# Builds startup routines for Compute Cluster.
-all: 
-	mkdir -p $(LIBDIR)
-	$(CC) $(CFLAGS) crt1.c -c -o $(CRT1)
+# Builds the kernel.
+all: $(OBJ)
+	mkdir -p $(BINDIR)/test/
+	$(CC) $(LDFLAGS) $(OBJ) $(CRT1) -o $(ELFBIN) $(LIBUSER) $(LIBKERNEL) $(LIBS)
+
+# Builds object files.
+%.o: %.c
+	$(CC) $(CFLAGS) $< -c -o $@
 
 # Cleans compilation files.
 clean:
-	rm -rf $(CRT1)
+	rm -rf $(OBJ)
 
 # Cleans everything.
 distclean: clean
-
+	rm -rf $(ELFBIN)

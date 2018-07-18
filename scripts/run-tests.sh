@@ -23,22 +23,25 @@
 source "scripts/arch/mppa256.sh"
 
 echo "=== Running Core and NoC Interface Tests"
-run2 "nanvix-debug.img" "/test-driver" "/servers1" "--debug --hal-core" | grep nanvix
+run2 "nanvix-kernel-debug.img" "/test-driver" "/servers1" "--debug --hal-core"
 
 echo "=== Running Unnamed Sync Tests"
-run2 "nanvix-debug.img" "/test-driver" "/servers1" "--debug --hal-sync" | grep nanvix
+run2 "nanvix-kernel-debug.img" "/test-driver" "/servers1" "--debug --hal-sync"
 
 echo "=== Running Unnamed Mailbox Tests"
-run2 "nanvix-debug.img" "/test-driver" "/servers1" "--debug --hal-mailbox" | grep nanvix
+run2 "nanvix-kernel-debug.img" "/test-driver" "/servers1" "--debug --hal-mailbox"
 
 echo "=== Running Unnamed Portal Tests"
-run2 "nanvix-debug.img" "/test-driver" "/servers1" "--debug --hal-portal" | grep nanvix
+run2 "nanvix-kernel-debug.img" "/test-driver" "/servers1" "--debug --hal-portal"
 
 echo "=== Running Naming Service Tests"
-run2 "nanvix-debug.img" "/test-driver" "/servers1" "--debug --name" | grep nanvix
+run2 "nanvix-runtime-debug.img" "/test-driver" "/servers1" "--debug --name"
 
 echo "=== Running Nammed Mailbox Tests"
-run2 "nanvix-debug.img" "/test-driver" "/servers1" "--debug --mailbox" | grep nanvix
+run2 "nanvix-runtime-debug.img" "/test-driver" "/servers1" "--debug --mailbox"
 
 echo "=== Running Barrier Tests"
-run2 "nanvix-debug.img" "/test-driver" "/servers1" "--debug --barrier" | grep nanvix
+run2 "nanvix-runtime-debug.img" "/test-driver" "/servers1" "--debug --barrier"
+
+#echo "=== Running Semaphore Tests"
+#run2 "nanvix-runtime-debug.img" "/test-driver" "/servers1" "--debug --semaphore"

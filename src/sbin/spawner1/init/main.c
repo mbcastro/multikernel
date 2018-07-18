@@ -21,16 +21,15 @@
  */
 
 #include <assert.h>
-#include <pthread.h>
-#include <stdlib.h>
-
-#include <mppa/osconfig.h>
+#include <stddef.h>
+#include <string.h>
 
 #include <nanvix/const.h>
 #include <nanvix/syscalls.h>
+#include <nanvix/spawner.h>
 
 /**
- * @brief Number of servers.
+ * @brief Number of servers launched from this spawner.
  */
 #define NR_SERVERS 1
 
@@ -39,52 +38,6 @@ extern int name_server(int);
 extern void test_kernel_sys_sync(void);
 extern void test_kernel_sys_mailbox(void);
 extern void test_kernel_barrier(void);
-
-/**
- * @brief Servers.
- */
-static struct
-{
-	int (*main) (int);
-	int nodenum;
-} servers[NR_SERVERS] = {
-	{ name_server, NAME_SERVER_NODE },
-};
-
-/**
- * @brief Barrier for synchronization.
- */
-static pthread_barrier_t barrier;
-
-/**
- * @brief Server wrapper.
- */
-static void *server(void *args)
-{
-	int inbox;
-	int nodenum;
-	int servernum;
-	int (*main_fn) (int);
-
-	kernel_setup();
-
-	servernum = ((int *)args)[0];
-
-	nodenum = servers[servernum].nodenum;
-	main_fn = servers[servernum].main;
-
-	/* Open server mailbox. */
-	inbox = sys_mailbox_create(nodenum);
-
-	/* Wait for other servers. */
-	pthread_barrier_wait(&barrier);
-
-	/* Spawn server. */
-	main_fn(inbox);
-
-	kernel_cleanup();
-	return (NULL);
-}
 
 /**
  * @brief Generic test driver.
@@ -109,7 +62,7 @@ static void test_runtime(const char *module)
 /**
  * @brief Sync spawners.
  */
-static void spawners_sync(void)
+void spawners_sync(void)
 {
 	int nodenum;
 	int syncid;
@@ -132,64 +85,13 @@ static void spawners_sync(void)
 	assert(sys_sync_wait(syncid_local) == 0);
 	assert(sys_sync_signal(syncid) == 0);
 
-	printf("[nanvix][spawner1] synced\n");
-
 	/* House keeping. */
 	assert(sys_sync_unlink(syncid_local) == 0);
 	assert(sys_sync_close(syncid) == 0);
 }
 
-/**
- * @brief Resolves process names.
- */
-int main(int argc, char **argv)
-{
-	int debug = 0;
-	int args[NR_SERVERS];
-	pthread_t tids[NR_SERVERS];
-
-	/* Debug mode? */
-	if (argc >= 2)
-	{
-		if (!strcmp(argv[1] , "--debug"))
-			debug = 1;
-	}
-
-	kernel_setup();
-
-	printf("[nanvix][spawner1] booting up server\n");
-
-	pthread_barrier_init(&barrier, NULL, NR_SERVERS + 1);
-
-	/* Run self-tests. */
-	if (debug)
-		test_kernel(argv[2]);
-
-	printf("[nanvix][spawner1] server alive\n");
-
-	/* Spawn servers. */
-	for (int i = 0; i < NR_SERVERS; i++)
-	{
-		args[i] = 0;
-		assert((pthread_create(&tids[i],
-			NULL,
-			server,
-			&args[i])) == 0
-		);
-	}
-
-	pthread_barrier_wait(&barrier);
-
-	spawners_sync();
-
-	/* Run self-tests. */
-	if (debug)
-		test_runtime(argv[2]);
-
-	/* Wait for name server thread. */
-	for (int i = 0; i < NR_SERVERS; i++)
-		pthread_join(tids[i], NULL);
-
-	kernel_cleanup();
-	return (EXIT_SUCCESS);
-}
+SPAWNER_NAME("spawner1")
+SPAWNER_SERVERS(NR_SERVERS, { name_server, NAME_SERVER_NODE, 0 }, )
+SPAWNER_MAIN2(NULL)
+SPAWNER_KERNEL_TESTS(test_kernel)
+SPAWNER_RUNTIME_TESTS(test_runtime)

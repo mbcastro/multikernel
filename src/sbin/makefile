@@ -20,17 +20,38 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
+# Conflicts
+.PHONY: benchmarks
+.PHONY: spawner0
+.PHONY: spawner1
+
 #===============================================================================
 
-# Builds startup routines for Compute Cluster.
-all: 
-	mkdir -p $(LIBDIR)
-	$(CC) $(CFLAGS) crt1.c -c -o $(CRT1)
+# Builds everything.
+all: benchmarks spawner0 spawner1
+
+# Builds benchmarks.
+benchamrks:
+	cd benchmarks && $(MAKE) all
+
+# Builds spawner0 binaries.
+spawner0:
+	cd spawner0 && $(MAKE) all
+
+# Builds spawner1 binaries.
+spawner1:
+ifeq ($(BUILD_SERVERS),true)
+	cd spawner1 && $(MAKE) all
+endif
 
 # Cleans compilation files.
 clean:
-	rm -rf $(CRT1)
+	cd benchmarks && $(MAKE) clean
+	cd spawner0 && $(MAKE) clean
+	cd spawner1 && $(MAKE) clean
 
 # Cleans everything.
 distclean: clean
-
+	cd benchmarks && $(MAKE) distclean
+	cd spawner0 && $(MAKE) distclean
+	cd spawner1 && $(MAKE) distclean

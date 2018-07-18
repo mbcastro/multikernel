@@ -46,5 +46,10 @@
 	 */
 	#define NAME_SERVER_NODE 21
 
+	/**
+	 * @brief Semaphores server NoC node num.
+	 */
+	#define SEMAPHORES_SERVER_NODE 17
+
 #endif /* CONST_H_ */
 

@@ -82,7 +82,7 @@
 	extern int sys_sync_unlink(int);
 	extern int kernel_setup(void);
 	extern int kernel_cleanup(void);
-	extern int runtime_setup(void);
+	extern int runtime_setup(int);
 	extern int runtime_cleanup(void);
 
 #endif /* NANVIX_SYSCALLS_H_ */

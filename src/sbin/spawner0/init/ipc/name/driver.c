@@ -20,33 +20,53 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <pthread.h>
 #include <stdio.h>
 
 #include <nanvix/syscalls.h>
 
 #include "test.h"
 
+
+/**
+ * @brief Number of remote clusters.
+ */
+int ipc_name_nclusters = 0;
+
 /**
  * @brief Number of cores in the underlying cluster.
  */
-int ipc_barrier_ncores = 0;
+int ipc_name_ncores = 0;
 
 /**
- * @brief Barrier Test Driver
+ * @brief Global barrier for synchronization.
  */
-void test_kernel_ipc_barrier(int nbusycores)
-{
-	TEST_ASSERT(runtime_setup() == 0);
+pthread_barrier_t ipc_name_barrier;
 
-	ipc_barrier_ncores = sys_get_num_cores() - nbusycores;
+/**
+ * @brief Synchronization Point Test Driver
+ */
+void test_kernel_name(int nbusycores)
+{
+	TEST_ASSERT(runtime_setup(1) == 0);
+
+	ipc_name_ncores = sys_get_num_cores() - nbusycores;
+
+	pthread_barrier_init(&ipc_name_barrier, NULL, ipc_name_ncores - 1);
 
 	/* Run API tests. */
-	for (int i = 0; ipc_barrier_tests_api[i].test_fn != NULL; i++)
+	for (int i = 0; ipc_name_tests_api[i].test_fn != NULL; i++)
 	{
-		printf("[nanvix][test][api][ipc][barrier] %s\n", ipc_barrier_tests_api[i].name);
-		ipc_barrier_tests_api[i].test_fn();
+		printf("[nanvix][test][api][ipc][name] %s\n", ipc_name_tests_api[i].name);
+		ipc_name_tests_api[i].test_fn();
+	}
+
+	/* Run fault injection tests. */
+	for (int i = 0; ipc_name_tests_fault[i].test_fn != NULL; i++)
+	{
+		printf("[nanvix][test][fault][ipc][name] %s\n", ipc_name_tests_fault[i].name);
+		ipc_name_tests_fault[i].test_fn();
 	}
 
 	TEST_ASSERT(runtime_cleanup() == 0);
 }
-
