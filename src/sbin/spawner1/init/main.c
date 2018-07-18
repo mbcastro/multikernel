@@ -36,7 +36,6 @@
 /* Forward definitions. */
 extern int name_server(int);
 extern void test_kernel_sys_sync(void);
-extern void test_kernel_sys_mailbox(void);
 extern void test_kernel_barrier(void);
 
 /**
@@ -46,8 +45,6 @@ static void test_kernel(const char *module)
 {
 	if (!strcmp(module, "--hal-sync"))
 		test_kernel_sys_sync();
-	else if (!strcmp(module, "--hal-mailbox"))
-		test_kernel_sys_mailbox();
 }
 
 /**
