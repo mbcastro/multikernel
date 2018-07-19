@@ -179,7 +179,7 @@ static void test_ipc_barrier_wait2_cc(void)
 /*============================================================================*/
 
 /**
- * @brief Automated test driver for Naming Service.
+ * @brief Automated test driver for Barriers.
  */
 void test_ipc_barrier(void)
 {

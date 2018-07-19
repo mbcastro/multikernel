@@ -20,41 +20,44 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <stdio.h>
+#include <stdlib.h>
 
+#include <mppaipc.h>
+
+#include <nanvix/const.h>
 #include <nanvix/syscalls.h>
+#include <nanvix/pm.h>
+#include <nanvix/limits.h>
 
 #include "test.h"
 
-/**
- * @brief Number of cores in the underlying cluster.
- */
-int ipc_barrier_ncores = 0;
+/*============================================================================*
+ * API Test: Invalid Create                                                   *
+ *============================================================================*/
 
 /**
- * @brief Barrier Test Driver
- *
- * @param nbusycores Number of busy cores.
+ * @brief API Test: Invalid Create
  */
-void test_kernel_ipc_barrier(int nbusycores)
+static void test_ipc_barrier_invalid_create(void)
 {
-	TEST_ASSERT(runtime_setup(0) == 0);
+	int nodes[NANVIX_PROC_MAX];
+	
+	/* Build nodes list. */
+	nodes[0] = sys_get_node_num();
+	for (int i = 0; i < 0; i++)
+		nodes[i] = i;
 
-	ipc_barrier_ncores = sys_get_num_cores() - nbusycores;
-
-	/* Run API tests. */
-	for (int i = 0; ipc_barrier_tests_api[i].test_fn != NULL; i++)
-	{
-		printf("[nanvix][test][api][ipc][barrier] %s\n", ipc_barrier_tests_api[i].name);
-		ipc_barrier_tests_api[i].test_fn();
-	}
-
-	/* Run fault injection tests. */
-	for (int i = 0; ipc_barrier_tests_fault[i].test_fn != NULL; i++)
-	{
-		printf("[nanvix][test][fault][ipc][barrier] %s\n", ipc_barrier_tests_fault[i].name);
-		ipc_barrier_tests_fault[i].test_fn();
-	}
-
-	TEST_ASSERT(runtime_cleanup() == 0);
+	TEST_ASSERT(barrier_create(NULL, NANVIX_PROC_MAX + 1) < 0);
+	TEST_ASSERT(barrier_create(nodes, -1) < 0);
+	TEST_ASSERT(barrier_create(nodes,  1000000) < 0);
 }
+
+/*============================================================================*/
+
+/**
+ * @brief Unit tests.
+ */
+struct test ipc_barrier_tests_fault[] = {
+	{ test_ipc_barrier_invalid_create, "Invalid Create" },
+	{ NULL,                            NULL             },
+};
