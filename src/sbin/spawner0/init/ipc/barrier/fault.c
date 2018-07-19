@@ -52,6 +52,43 @@ static void test_ipc_barrier_invalid_create(void)
 	TEST_ASSERT(barrier_create(nodes,  1000000) < 0);
 }
 
+/*============================================================================*
+ * API Test: Bad Create                                                       *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Bad Create
+ */
+static void test_ipc_barrier_bad_create(void)
+{
+	int nodes[NANVIX_PROC_MAX];
+	
+	/* Build nodes list. */
+	nodes[0] = sys_get_node_num();
+	for (int i = 0; i < 0; i++)
+		nodes[i] = 1000000;
+
+	TEST_ASSERT(barrier_create(nodes, NANVIX_PROC_MAX + 1) < 0);
+	
+	/* Build nodes list. */
+	for (int i = 0; i < 0; i++)
+		nodes[i] = -1;
+
+	TEST_ASSERT(barrier_create(nodes, NANVIX_PROC_MAX + 1) < 0);
+
+	/* Build nodes list. */
+	nodes[0] = 1000000;
+	for (int i = 0; i < 0; i++)
+		nodes[i] = i;
+
+	TEST_ASSERT(barrier_create(nodes, NANVIX_PROC_MAX + 1) < 0);
+
+	/* Build nodes list. */
+	nodes[0] = -1;
+
+	TEST_ASSERT(barrier_create(nodes, NANVIX_PROC_MAX + 1) < 0);
+}
+
 /*============================================================================*/
 
 /**
@@ -59,5 +96,6 @@ static void test_ipc_barrier_invalid_create(void)
  */
 struct test ipc_barrier_tests_fault[] = {
 	{ test_ipc_barrier_invalid_create, "Invalid Create" },
+	{ test_ipc_barrier_bad_create,     "Bad Create"     },
 	{ NULL,                            NULL             },
 };
