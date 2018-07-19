@@ -118,6 +118,19 @@ static void test_ipc_barrier_double_create(void)
 	TEST_ASSERT(barrier_unlink(barrier) == 0);
 }
 
+/*============================================================================*
+ * API Test: Invalid Unlink                                                   *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Invalid Unlink
+ */
+static void test_ipc_barrier_invalid_unlink(void)
+{
+	TEST_ASSERT(barrier_unlink(-1) < 0);
+	TEST_ASSERT(barrier_unlink(1000000) < 0);
+}
+
 /*============================================================================*/
 
 /**
@@ -127,5 +140,6 @@ struct test ipc_barrier_tests_fault[] = {
 	{ test_ipc_barrier_invalid_create, "Invalid Create" },
 	{ test_ipc_barrier_bad_create,     "Bad Create"     },
 	{ test_ipc_barrier_double_create,  "Double Create"  },
+	{ test_ipc_barrier_invalid_unlink, "Invalid Unlink" },
 	{ NULL,                            NULL             },
 };
