@@ -178,6 +178,18 @@ static void test_ipc_barrier_invalid_wait(void)
 	TEST_ASSERT(barrier_wait(1000000) < 0);
 }
 
+/*============================================================================*
+ * API Test: Bad Wait                                                         *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Bad Wait
+ */
+static void test_ipc_barrier_bad_wait(void)
+{
+	TEST_ASSERT(barrier_wait(0) < 0);
+}
+
 /*============================================================================*/
 
 /**
@@ -191,5 +203,6 @@ struct test ipc_barrier_tests_fault[] = {
 	{ test_ipc_barrier_bad_unlink,     "Bad Unlink"     },
 	{ test_ipc_barrier_double_unlink,  "Double Unlink"  },
 	{ test_ipc_barrier_invalid_wait,   "Invalid Wait"   },
+	{ test_ipc_barrier_bad_wait,       "Bad Wait"       },
 	{ NULL,                            NULL             },
 };
