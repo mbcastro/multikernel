@@ -27,7 +27,6 @@
 
 #include "test.h"
 
-
 /**
  * @brief Number of remote clusters.
  */
