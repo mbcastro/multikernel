@@ -558,8 +558,6 @@ int mailbox_close(int mbxid)
  */
 int mailbox_unlink(int mbxid)
 {
-	int r;		/* Return value. */
-
 	/* Invalid mailbox ID.*/
 	if (!mailbox_is_valid(mbxid))
 		return (-EINVAL);
@@ -575,12 +573,6 @@ int mailbox_unlink(int mbxid)
 	/* Unlink name. */
 	if (name_unlink(mailboxes[mbxid].name) != 0)
 		return (-EAGAIN);
-
-	/* Unset inbox in the kernel. */
-	unset_inbox();
-
-	if ((r = sys_mailbox_unlink(mailboxes[mbxid].fd)) != 0)
-		return (r);
 
 	mailbox_free(mbxid);
 
