@@ -20,36 +20,17 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-# C Source Files
-SRC = $(wildcard hal/core/*.c)    \
-      $(wildcard hal/sync/*.c)    \
-      $(wildcard hal/mailbox/*.c) \
-      $(wildcard hal/portal/*.c)  \
-      $(wildcard ipc/barrier/*.c) \
-      $(wildcard ipc/name/*.c)    \
-      $(wildcard ipc/mailbox/*.c)
-
-# Object Files
-OBJ = $(SRC:.c=.o)
-
 #===============================================================================
 
 # Builds startup routines for IO Cluster.
-all: libuser
+all: 
+	mkdir -p $(LIBDIR)
 	$(CC) $(CFLAGS) crt0.c -c -o $(CRT0)
-
-libuser: $(OBJ)
-	$(AR) $(ARFLAGS) $(LIBUSER) $(OBJ)
-
-# Builds object files.
-%.o: %.c
-	$(CC) $(CFLAGS) $< -c -o $@
 
 # Cleans compilation files.
 clean:
-	rm -rf $(OBJ) $(CRT0)
+	rm -rf $(CRT0)
 
 # Cleans everything.
 distclean: clean
-	rm -rf $(LIBUSER)
 

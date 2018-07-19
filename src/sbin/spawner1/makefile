@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# Copyright (c) 2011-2018 Pedro Henrique Penna <pedrohenriquepenna@gmail.com>
+# Copyright (c) 211-218 Pedro Henrique Penna <pedrohenriquepenna@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,28 +20,27 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-source "scripts/arch/mppa256.sh"
+# C Source Files
+SRC = $(wildcard init/*.c)
 
-echo "=== Running Core and NoC Interface Tests"
-run2 "nanvix-kernel-debug.img" "/test-driver" "/servers1" "--debug --hal-core"
+# Object Files
+OBJ = $(SRC:.c=.o)
 
-echo "=== Running Unnamed Sync Tests"
-run2 "nanvix-kernel-debug.img" "/test-driver" "/servers1" "--debug --hal-sync"
+#===============================================================================
 
-echo "=== Running Unnamed Mailbox Tests"
-run2 "nanvix-kernel-debug.img" "/test-driver" "/servers1" "--debug --hal-mailbox"
+# Builds everything.
+all: $(OBJ)
+	mkdir -p $(BINDIR)
+	$(CC) $(LDFLAGS) $(OBJ) $(CRT0) -o $(SERVERSBIN1) $(LIBSERVERS) $(LIBUSER) $(LIBKERNEL) $(LIBS)
 
-echo "=== Running Unnamed Portal Tests"
-run2 "nanvix-kernel-debug.img" "/test-driver" "/servers1" "--debug --hal-portal"
+# Builds object files.
+%.o: %.c
+	$(CC) $(CFLAGS) $< -c -o $@
 
-echo "=== Running Naming Service Tests"
-run2 "nanvix-runtime-debug.img" "/test-driver" "/servers1" "--debug --name"
+# Cleans compilation files.
+clean:
+	rm -rf $(OBJ)
 
-echo "=== Running Nammed Mailbox Tests"
-run2 "nanvix-runtime-debug.img" "/test-driver" "/servers1" "--debug --mailbox"
-
-echo "=== Running Barrier Tests"
-run2 "nanvix-runtime-debug.img" "/test-driver" "/servers1" "--debug --barrier"
-
-echo "=== Running Semaphore Tests"
-run2 "nanvix-runtime-debug.img" "/test-driver" "/servers1" "--debug --semaphore"
+# Cleans everything.
+distclean: clean
+	rm -rf $(SERVERSBIN1)

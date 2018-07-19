@@ -53,7 +53,7 @@ static void *test_mailbox_thread_create_unlink(void *args)
 	int inbox;
 
 	TEST_ASSERT(kernel_setup() == 0);
-	TEST_ASSERT(runtime_setup() == 0);
+	TEST_ASSERT(runtime_setup(1) == 0);
 
 	pthread_barrier_wait(&barrier);
 
@@ -116,7 +116,7 @@ static void *test_mailbox_thread_open_close(void *args)
 	int outbox;
 
 	TEST_ASSERT(kernel_setup() == 0);
-	TEST_ASSERT(runtime_setup() == 0);
+	TEST_ASSERT(runtime_setup(1) == 0);
 
 	pthread_barrier_wait(&barrier);
 
@@ -195,7 +195,7 @@ static void *test_mailbox_thread_read_write(void *args)
 	int outbox;
 
 	TEST_ASSERT(kernel_setup() == 0);
-	TEST_ASSERT(runtime_setup() == 0);
+	TEST_ASSERT(runtime_setup(1) == 0);
 
 	pthread_barrier_wait(&barrier);
 

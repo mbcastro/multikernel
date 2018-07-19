@@ -20,33 +20,57 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <assert.h>
-#include <stdlib.h>
+#include <pthread.h>
 #include <stdio.h>
 
-#include <mppa/osconfig.h>
-
+#define __NEED_HAL_CORE_
+#define __NEED_HAL_NOC_
 #include <nanvix/syscalls.h>
+#include <nanvix/limits.h>
 
-/* Forward definitions. */
-extern int main2(int, const char **);
+#include "test.h"
 
 /**
- * @brief Bootstrap for a user application.
+ * @brief Number of remote clusters.
  */
-int main(int argc, const char **argv)
+int ipc_semaphore_nclusters = NANVIX_PROC_MAX;
+
+/**
+ * @brief Number of cores in the underlying cluster.
+ */
+int ipc_semaphore_ncores = 0;
+
+/**
+ * @brief Global barrier for synchronization.
+ */
+pthread_barrier_t ipc_semaphore_barrier;
+
+/**
+ * @brief Synchronization Point Test Driver
+ *
+ * @param nbusycores Number of busy cores.
+ */
+void test_kernel_semaphore(int nbusycores)
 {
-	int ret;
+	TEST_ASSERT(runtime_setup(2) == 0);
 
-	/* Initialization. */
-	assert(kernel_setup() == 0);
-	assert(runtime_setup(2) == 0);
+	ipc_semaphore_ncores = sys_get_num_cores() - nbusycores;
 
-	ret = main2(argc, argv);
+	pthread_barrier_init(&ipc_semaphore_barrier, NULL, ipc_semaphore_ncores - 1);
 
-	/* Cleanup. */
-	assert(runtime_cleanup() == 0);
-	assert(kernel_cleanup() == 0);
+	/* Run API tests. */
+	for (int i = 0; ipc_semaphore_tests_api[i].test_fn != NULL; i++)
+	{
+		printf("[nanvix][test][api][ipc][semaphore] %s\n", ipc_semaphore_tests_api[i].name);
+		ipc_semaphore_tests_api[i].test_fn();
+	}
 
-	return (ret);
+	/* Run fault injection tests. */
+	for (int i = 0; ipc_semaphore_tests_fault[i].test_fn != NULL; i++)
+	{
+		printf("[nanvix][test][fault][ipc][semaphore] %s\n", ipc_semaphore_tests_fault[i].name);
+		ipc_semaphore_tests_fault[i].test_fn();
+	}
+
+	TEST_ASSERT(runtime_cleanup() == 0);
 }

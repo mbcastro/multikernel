@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# Copyright (c) 2011-2018 Pedro Henrique Penna <pedrohenriquepenna@gmail.com>
+# Copyright (c) 211-218 Pedro Henrique Penna <pedrohenriquepenna@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -21,29 +21,32 @@
 #
 
 # C Source Files
-SRC = $(wildcard *.c)
+export INIT_SRC = $(wildcard $(CURDIR)/init/hal/core/*.c)      \
+                  $(wildcard $(CURDIR)/init/hal/sync/*.c)      \
+                  $(wildcard $(CURDIR)/init/hal/mailbox/*.c)   \
+                  $(wildcard $(CURDIR)/init/hal/portal/*.c)    \
+                  $(wildcard $(CURDIR)/init/ipc/barrier/*.c)   \
+                  $(wildcard $(CURDIR)/init/ipc/name/*.c)      \
+                  $(wildcard $(CURDIR)/init/ipc/mailbox/*.c)   \
+                  $(wildcard $(CURDIR)/init/ipc/semaphore/*.c) \
+                  $(wildcard $(CURDIR)/init/main.c)
 
-# Object Files
-OBJ = $(SRC:.c=.o)
-
-# Binary Files
-export ELFBIN = $(BINDIR)/test-driver
+# Conflicts
+.PHONY: test
 
 #===============================================================================
 
-# Builds the kernel.
-all: $(OBJ)
-	$(CC) $(LDFLAGS) $(OBJ) $(CRT0) -o $(ELFBIN) $(LIBUSER) $(LIBKERNEL) $(LIBS)
+# Builds everything.
+all: test
 
-# Builds object files.
-%.o: %.c
-	$(CC) $(CFLAGS) $< -c -o $@
+# Builds Test-Driver Utilitiy
+test:
+	cd test && $(MAKE) all
 
 # Cleans compilation files.
 clean:
-	rm -rf $(OBJ)
+	cd test && $(MAKE) clean
 
 # Cleans everything.
 distclean: clean
-	rm -rf $(ELFBIN)
-
+	cd test && $(MAKE) distclean

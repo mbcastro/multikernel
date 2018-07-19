@@ -48,7 +48,7 @@ static void *test_name_thread_link_unlink(void *args)
 	int nodenum;
 
 	TEST_ASSERT(kernel_setup() == 0);
-	TEST_ASSERT(runtime_setup() == 0);
+	TEST_ASSERT(runtime_setup(1) == 0);
 
 	pthread_barrier_wait(&ipc_name_barrier);
 
@@ -109,7 +109,7 @@ static void *test_name_thread_lookup(void *args)
 	int nodenum;
 
 	TEST_ASSERT(kernel_setup() == 0);
-	TEST_ASSERT(runtime_setup() == 0);
+	TEST_ASSERT(runtime_setup(1) == 0);
 
 	pthread_barrier_wait(&ipc_name_barrier);
 

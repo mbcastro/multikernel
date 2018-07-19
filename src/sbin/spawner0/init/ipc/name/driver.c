@@ -45,10 +45,12 @@ pthread_barrier_t ipc_name_barrier;
 
 /**
  * @brief Synchronization Point Test Driver
+ *
+ * @param nbusycores Number of busy cores.
  */
 void test_kernel_name(int nbusycores)
 {
-	TEST_ASSERT(runtime_setup() == 0);
+	TEST_ASSERT(runtime_setup(1) == 0);
 
 	ipc_name_ncores = sys_get_num_cores() - nbusycores;
 
@@ -70,4 +72,3 @@ void test_kernel_name(int nbusycores)
 
 	TEST_ASSERT(runtime_cleanup() == 0);
 }
-

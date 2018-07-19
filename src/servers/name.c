@@ -46,13 +46,13 @@ static struct {
 } names[NANVIX_NR_NODES];
 
 /*===================================================================*
- * name_init()                                                       *
+ * _name_init()                                                       *
  *===================================================================*/
 
 /**
  * @brief Initializes the name server.
  */
-static void name_init(void)
+static void _name_init(void)
 {
 	/* Initialize lookup table. */
 	for (int i = 0; i < NANVIX_NR_NODES; i++)
@@ -196,7 +196,7 @@ int name_server(int inbox)
 
 	printf("[nanvix][name] booting up server\n");
 
-	name_init();
+	_name_init();
 
 	printf("[nanvix][name] server alive\n");
 

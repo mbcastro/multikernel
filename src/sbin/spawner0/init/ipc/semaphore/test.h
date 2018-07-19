@@ -20,33 +20,31 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <stdio.h>
+#ifndef _TEST_H_
+#define _TEST_H_
 
-#include <nanvix/syscalls.h>
+	#include <stdlib.h>
+	#include <pthread.h>
 
-#include "test.h"
+	/**
+	 * @brief Asserts a logic expression.
+	 */
+	#define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
 
-/**
- * @brief Number of cores in the underlying cluster.
- */
-int ipc_barrier_ncores = 0;
-
-/**
- * @brief Barrier Test Driver
- */
-void test_kernel_ipc_barrier(int nbusycores)
-{
-	TEST_ASSERT(runtime_setup() == 0);
-
-	ipc_barrier_ncores = sys_get_num_cores() - nbusycores;
-
-	/* Run API tests. */
-	for (int i = 0; ipc_barrier_tests_api[i].test_fn != NULL; i++)
+	/**
+	 * @brief Unit test.
+	 */
+	struct test
 	{
-		printf("[nanvix][test][api][ipc][barrier] %s\n", ipc_barrier_tests_api[i].name);
-		ipc_barrier_tests_api[i].test_fn();
-	}
+		void (*test_fn)(void); /**< Test function. */
+		const char *name;      /**< Test name.     */
+	};
 
-	TEST_ASSERT(runtime_cleanup() == 0);
-}
+	/* Forward definitions. */
+	extern int ipc_semaphore_nclusters;
+	extern int ipc_semaphore_ncores;
+	extern pthread_barrier_t ipc_semaphore_barrier;
+	extern struct test ipc_semaphore_tests_api[];
+	extern struct test ipc_semaphore_tests_fault[];
 
+#endif /* _TEST_H_ */

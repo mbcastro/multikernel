@@ -20,28 +20,38 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-source "scripts/arch/mppa256.sh"
+# Conflicts
+.PHONY: benchmarks
+.PHONY: spawner0
+.PHONY: spawner1
 
-echo "=== Running Core and NoC Interface Tests"
-run2 "nanvix-kernel-debug.img" "/test-driver" "/servers1" "--debug --hal-core"
+#===============================================================================
 
-echo "=== Running Unnamed Sync Tests"
-run2 "nanvix-kernel-debug.img" "/test-driver" "/servers1" "--debug --hal-sync"
+# Builds everything.
+all: benchmarks spawner0 spawner1
 
-echo "=== Running Unnamed Mailbox Tests"
-run2 "nanvix-kernel-debug.img" "/test-driver" "/servers1" "--debug --hal-mailbox"
+# Builds benchmarks.
+benchamrks:
+	cd benchmarks && $(MAKE) all
 
-echo "=== Running Unnamed Portal Tests"
-run2 "nanvix-kernel-debug.img" "/test-driver" "/servers1" "--debug --hal-portal"
+# Builds spawner0 binaries.
+spawner0:
+	cd spawner0 && $(MAKE) all
 
-echo "=== Running Naming Service Tests"
-run2 "nanvix-runtime-debug.img" "/test-driver" "/servers1" "--debug --name"
+# Builds spawner1 binaries.
+spawner1:
+ifeq ($(BUILD_SERVERS),true)
+	cd spawner1 && $(MAKE) all
+endif
 
-echo "=== Running Nammed Mailbox Tests"
-run2 "nanvix-runtime-debug.img" "/test-driver" "/servers1" "--debug --mailbox"
+# Cleans compilation files.
+clean:
+	cd benchmarks && $(MAKE) clean
+	cd spawner0 && $(MAKE) clean
+	cd spawner1 && $(MAKE) clean
 
-echo "=== Running Barrier Tests"
-run2 "nanvix-runtime-debug.img" "/test-driver" "/servers1" "--debug --barrier"
-
-echo "=== Running Semaphore Tests"
-run2 "nanvix-runtime-debug.img" "/test-driver" "/servers1" "--debug --semaphore"
+# Cleans everything.
+distclean: clean
+	cd benchmarks && $(MAKE) distclean
+	cd spawner0 && $(MAKE) distclean
+	cd spawner1 && $(MAKE) distclean

@@ -22,81 +22,48 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <pthread.h>
 
 #include <mppa/osconfig.h>
 
-#include <nanvix/const.h>
 #include <nanvix/syscalls.h>
-
-/* Forward definitions. */
-extern int main2(int, const char **);
-extern void test_kernel_sys_core(void);
-extern void test_kernel_sys_sync(void);
-extern void test_kernel_sys_mailbox(void);
-extern void test_kernel_sys_portal(void);
-extern void test_kernel_name(int);
-extern void test_kernel_ipc_mailbox(int);
-extern void test_kernel_ipc_barrier(int);
+#include <nanvix/spawner.h>
+#include <nanvix/pm.h>
 
 /**
- * @brief Generic kernel test driver.
+ * @brief Barrier for synchronization.
  */
-static void test_kernel(const char *module)
-{
-	if (!strcmp(module, "--hal-core"))
-		test_kernel_sys_core();
-	else if (!strcmp(module, "--hal-sync"))
-		test_kernel_sys_sync();
-	else if (!strcmp(module, "--hal-mailbox"))
-		test_kernel_sys_mailbox();
-	else if (!strcmp(module, "--hal-portal"))
-		test_kernel_sys_portal();
-}
+static pthread_barrier_t barrier;
 
 /**
- * @brief Generic runtime test driver.
+ * @brief Server wrapper.
  */
-static void test_runtime(const char *module, int nservers)
+static void *server(void *args)
 {
-	if (!strcmp(module, "--name"))
-		test_kernel_name(nservers);
-	else if (!strcmp(module, "--mailbox"))
-		test_kernel_ipc_mailbox(nservers);
-	else if (!strcmp(module, "--barrier"))
-		test_kernel_ipc_barrier(nservers);
-}
+	int servernum;
+	int runlevel;
+	int (*main_fn) (int);
 
-/**
- * @brief Sync spawners.
- */
-static void spawners_sync(void)
-{
-	int nodenum;
-	int syncid;
-	int syncid_local;
-	int nodes[2];
-	int nodes_local[2];
+	kernel_setup();
 
-	nodenum = sys_get_node_num();
+	servernum = ((int *)args)[0];
 
-	nodes[0] = nodenum;
-	nodes[1] = SPAWNER1_SERVER_NODE;
+	runlevel = spawner_servers[servernum].runlevel;
+	main_fn = spawner_servers[servernum].main;
 
-	nodes_local[0] = SPAWNER1_SERVER_NODE;
-	nodes_local[1] = nodenum;
+	/* Initialize runtime. */
+	assert(runtime_setup(runlevel) == 0);
 
-	/* Open synchronization points. */
-	assert((syncid_local = sys_sync_create(nodes_local, 2, SYNC_ONE_TO_ALL)) >= 0);
-	assert((syncid = sys_sync_open(nodes, 2, SYNC_ONE_TO_ALL)) >= 0);
+	/* Wait for other servers. */
+	pthread_barrier_wait(&barrier);
 
-	assert(sys_sync_signal(syncid) == 0);
-	assert(sys_sync_wait(syncid_local) == 0);
+	/* Spawn server. */
+	main_fn(get_inbox());
 
-	printf("[nanvix][spawner0] synced\n");
+	assert(runtime_cleanup() == 0);
 
-	/* House keeping. */
-	assert(sys_sync_unlink(syncid_local) == 0);
-	assert(sys_sync_close(syncid) == 0);
+	kernel_cleanup();
+	return (NULL);
 }
 
 /**
@@ -104,8 +71,10 @@ static void spawners_sync(void)
  */
 int main(int argc, const char **argv)
 {
-	int ret;
+	int ret = EXIT_SUCCESS;
 	int debug = 0;
+	int args[spawner_nservers];
+	pthread_t tids[spawner_nservers];
 
 	/* Debug mode? */
 	if (argc >= 2)
@@ -117,31 +86,58 @@ int main(int argc, const char **argv)
 	/* Initialization. */
 	assert(kernel_setup() == 0);
 
-	printf("[nanvix][spawner0] booting up server\n");
+	printf("[nanvix][%s] booting up server\n", spawner_name);
 
 	/* Run self-tests. */
-	if (debug)
-		test_kernel(argv[2]);
+	if ((debug) && (test_kernel_fn != NULL))
+		test_kernel_fn(argv[2]);
 
-	printf("[nanvix][spawner0] server alive\n");
+	printf("[nanvix][%s] server alive\n", spawner_name);
+
+	pthread_barrier_init(&barrier, NULL, spawner_nservers + 1);
+
+	/* Spawn servers. */
+	for (int i = 0; i < spawner_nservers; i++)
+	{
+		args[i] = 0;
+		assert((pthread_create(&tids[i],
+			NULL,
+			server,
+			&args[i])) == 0
+		);
+	}
+
+	pthread_barrier_wait(&barrier);
 
 	spawners_sync();
 
+	printf("[nanvix][%s] synced\n", spawner_name);
+
 	/* Run self-tests. */
-	if (debug)
-		test_runtime(argv[2], 0);
+	if ((debug) && (test_runtime_fn != NULL))
+		test_runtime_fn(argv[2]);
 
-	printf("[nanvix][spawner0] switching to user mode\n");
+	if (main2_fn != NULL)
+	{
+		printf("[nanvix][%s] switching to user mode\n", spawner_name);
 
-	/* Initialization. */
-	assert(runtime_setup() == 0);
+		/* Initialization. */
+		assert(runtime_setup(2) == 0);
 
-	ret = main2(argc, argv);	
+		ret = main2_fn(argc, argv);
 
-	/* Cleanup. */
-	assert(runtime_cleanup() == 0);
+		/* Cleanup. */
+		assert(runtime_cleanup() == 0);
+	}
 
-	printf("[nanvix][spawner0] shutting down\n");
+	/* Wait for servers. */
+	if (!spawner_shutdown)
+	{
+		for (int i = 0; i < spawner_nservers; i++)
+			pthread_join(tids[i], NULL);
+	}
+
+	printf("[nanvix][%s] shutting down\n", spawner_name);
 
 	/* Cleanup. */
 	assert(kernel_cleanup() == 0);
