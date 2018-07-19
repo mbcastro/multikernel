@@ -115,7 +115,9 @@ static void test_ipc_mailbox_read_write_cc(int nclusters)
 	TEST_ASSERT((outbox = mailbox_open(pathname2)) >= 0);
 
 	/* Sync. */
+#ifndef _TEST_MAN_IN_THE_MIDDLE
 	TEST_ASSERT(barrier_wait(barrier) == 0);
+#endif
 
 	memset(buffer, 1, MAILBOX_MSG_SIZE);
 	TEST_ASSERT(mailbox_write(outbox, buffer, MAILBOX_MSG_SIZE) == 0);
