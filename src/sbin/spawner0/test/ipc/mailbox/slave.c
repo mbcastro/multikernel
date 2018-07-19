@@ -45,15 +45,35 @@
  */
 static void test_ipc_mailbox_create_unlink_cc(void)
 {
+	int inbox;
 	int nodenum;
-	int mailbox;
 	char pathname[NANVIX_PROC_NAME_MAX];
 
 	nodenum = sys_get_node_num();
 
 	sprintf(pathname, "inbox%d", nodenum);
-	TEST_ASSERT((mailbox = mailbox_create(pathname)) >= 0);
-	TEST_ASSERT(mailbox_unlink(mailbox) == 0);
+	TEST_ASSERT((inbox = mailbox_create(pathname)) >= 0);
+	TEST_ASSERT(mailbox_unlink(inbox) == 0);
+}
+
+/*============================================================================*
+ * API Test: Open Close CC                                                    *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Open Close CC
+ */
+static void test_ipc_mailbox_open_close_cc(int nclusters)
+{
+	int outbox;
+	int nodenum;
+	char pathname[NANVIX_PROC_NAME_MAX];
+
+	nodenum = sys_get_node_num();
+
+	sprintf(pathname, "inbox%d", (nodenum + 1)%nclusters);
+	TEST_ASSERT((outbox = mailbox_create(pathname)) >= 0);
+	TEST_ASSERT(mailbox_unlink(outbox) == 0);
 }
 
 /*===================================================================*
@@ -232,18 +252,22 @@ int main2(int argc, char **argv)
 			test_ipc_mailbox_create_unlink_cc();
 			break;
 
-		/* Compute clusters test. */
+		/* Open Close CC. */
 		case 1:
+			test_ipc_mailbox_open_close_cc(nclusters);
+			break;
+
+		case 2:
 			test_ipc_mailbox_cc(nclusters);
 			break;
 
 		/* IO cluster -> Compute cluster test. */
-		case 2:
+		case 3:
 			test_ipc_mailbox_io_cc(nclusters);
 			break;
 
 		/* Compute cluster -> IO cluster test. */
-		case 3:
+		case 4:
 			test_ipc_mailbox_cc_io(nclusters);
 			break;
 
