@@ -131,42 +131,6 @@ static void test_barrier_cc_io(int nclusters)
 }
 
 /*===================================================================*
- * API Test: Compute Cluster tests                                   *
- *===================================================================*/
-
-/**
-* @brief API Test: Compute Cluster - IO Cluster tests.
-*/
-static void test_barrier_cc(int nclusters)
-{
-	int status;
-	int pids[nclusters];
-
-	char nclusters_str[4];
-	char test_str[4];
-	const char *args[] = {
-		"/test/barrier-slave",
-		nclusters_str,
-		test_str,
-		NULL
-	};
-
-	printf("[test][api] Barrier Compute Clusters\n");
-
-	sprintf(nclusters_str, "%d", nclusters);
-	sprintf(test_str, "%d", 0);
-
-	for (int i = 0; i < nclusters; i++)
-		TEST_ASSERT((pids[i] = mppa_spawn(i, NULL, args[0], args, NULL)) != -1);
-
-	for (int i = 0; i < nclusters; i++)
-	{
-		TEST_ASSERT(mppa_waitpid(pids[i], &status, 0) != -1);
-		TEST_ASSERT(status == EXIT_SUCCESS);
-	}
-}
-
-/*===================================================================*
  * API Test: Barrier Driver                                          *
  *===================================================================*/
 
@@ -182,6 +146,5 @@ void test_kernel_barrier(void)
 	if (0)
 	{
 		test_barrier_cc_io(16);
-		test_barrier_cc(16);
 	}
 }

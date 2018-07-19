@@ -32,6 +32,26 @@
  */
 #define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
 
+/*============================================================================*
+ * API Test: Create Unlink                                                    *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Create Unlink
+ */
+static void test_ipc_barrier_create_unlink_cc(int nclusters)
+{
+	int barrier;
+	int nodes[nclusters];
+
+	/* Build nodes list. */
+	for (int i = 0; i < nclusters; i++)
+		nodes[i] = i;
+
+	TEST_ASSERT((barrier = barrier_create(nodes, nclusters)) >= 0);
+	TEST_ASSERT(barrier_unlink(barrier) == 0);
+}
+
 /*===================================================================*
  * API Test: Barrier Compute cluster tests                           *
  *===================================================================*/
@@ -39,7 +59,7 @@
 /**
  * @brief API Test: Barrier compute clusters tests.
  */
-static void test_barrier_cc(int nclusters)
+static void test_ipc_barrier_cc(int nclusters)
 {
 	int barrier;
 	int nodenum;
@@ -68,7 +88,7 @@ static void test_barrier_cc(int nclusters)
 /**
  * @brief API Test: Barrier Compute cluster - IO cluster tests.
  */
-static void test_barrier_cc_io(int nclusters)
+static void test_ipc_barrier_cc_io(int nclusters)
 {
 	int barrier;
 	int nodenum;
@@ -102,26 +122,29 @@ static void test_barrier_cc_io(int nclusters)
  */
 int main2(int argc, char **argv)
 {
-	int nclusters;
 	int test;
+	int nclusters;
 
 	/* Retrieve kernel parameters. */
-	TEST_ASSERT(argc == 3);
-	nclusters = atoi(argv[1]);
-	test = atoi(argv[2]);
+	TEST_ASSERT(argc == 4);
+	nclusters = atoi(argv[2]);
+	test = atoi(argv[3]);
 
 	switch(test)
 	{
-		/* Compute clusters test. */
+		/* Create Unlink CC */
 		case 0:
-			test_barrier_cc(nclusters);
+			test_ipc_barrier_create_unlink_cc(nclusters);
+			break;
 
+		/* Compute clusters test. */
+		case 1:
+			test_ipc_barrier_cc(nclusters);
 			break;
 
 		/* IO clusters - Compute clusters test. */
-		case 1:
-			test_barrier_cc_io(nclusters);
-
+		case 2:
+			test_ipc_barrier_cc_io(nclusters);
 			break;
 
 		/* Should not happen. */

@@ -37,7 +37,7 @@
 /**
  * @brief API Test: Create Unlink
  */
-static void test_barrier_create_unlink(void)
+static void test_ipc_barrier_create_unlink(void)
 {
 	int barrier;
 	int nodenum;
@@ -59,7 +59,7 @@ static void test_barrier_create_unlink(void)
 /**
  * @brief API Test: Wait
  */
-static void test_barrier_wait(void)
+static void test_ipc_barrier_wait(void)
 {
 	int barrier;
 	int nodenum;
@@ -81,7 +81,7 @@ static void test_barrier_wait(void)
  * @brief Unit tests.
  */
 struct test ipc_barrier_tests_api[] = {
-	{ test_barrier_create_unlink, "Create Unlink" },
-	{ test_barrier_wait,          "Wait"          },
-	{ NULL,                        NULL           },
+	{ test_ipc_barrier_create_unlink, "Create Unlink" },
+	{ test_ipc_barrier_wait,          "Wait"          },
+	{ NULL,                            NULL           },
 };

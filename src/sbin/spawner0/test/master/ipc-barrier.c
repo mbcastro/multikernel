@@ -67,50 +67,31 @@ static void join_slaves(void)
 }
 
 /*============================================================================*
- * API Test: Link Unlink CC                                                   *
+ * API Test: Create Unlink CC                                                 *
  *============================================================================*/
 
 /**
- * @brief API Test: Link Unlink CC
- */
-static void test_ipc_name_link_unlink_cc(void)
+* @brief API Test: Create Unlink CC
+*/
+static void test_ipc_barrier_create_unlink_cc(void)
 {
+	char masternode_str[4];
+	char barrier_nclusters_str[4];
 	char test_str[4];
 	const char *args[] = {
-		"/test/ipc-name-slave",
+		"/test/ipc-barrier-slave",
+		masternode_str,
+		barrier_nclusters_str,
 		test_str,
 		NULL
 	};
 
-	printf("[nanvix][test][api][ipc][name] Link Unlink CC\n");
+	printf("[nanvix][test][api][ipc][barrier] Create Unlink CC\n");
 
-	/* Build args. */
+	/* Build arguments. */
+	sprintf(masternode_str, "%d", sys_get_node_num());
+	sprintf(barrier_nclusters_str, "%d", NANVIX_PROC_MAX);
 	sprintf(test_str, "%d", 0);
-
-	spawn_slaves(args);
-	join_slaves();
-}
-
-/*============================================================================*
- * API Test: Lookup CC                                                        *
- *============================================================================*/
-
-/**
- * @brief API Test: Lookup CC
- */
-static void test_ipc_name_lookup_cc(void)
-{
-	char test_str[4];
-	const char *args[] = {
-		"/test/ipc-name-slave",
-		test_str,
-		NULL
-	};
-
-	printf("[nanvix][test][api][ipc][name] Lookup CC\n");
-
-	/* Build args. */
-	sprintf(test_str, "%d", 1);
 
 	spawn_slaves(args);
 	join_slaves();
@@ -119,11 +100,10 @@ static void test_ipc_name_lookup_cc(void)
 /*============================================================================*/
 
 /**
- * @brief Automated test driver for Naming.
+ * @brief Automated test driver for Naming Service.
  */
-void test_ipc_name(void)
+void test_ipc_barrier(void)
 {
-	test_ipc_name_link_unlink_cc();
-	test_ipc_name_lookup_cc();
+	test_ipc_barrier_create_unlink_cc();
 }
 
