@@ -138,57 +138,31 @@ static void test_ipc_mailbox_read_write_cc(int nclusters)
 	TEST_ASSERT(barrier_unlink(barrier) == 0);
 }
 
+/*============================================================================*
+ * API Test: Read Write 2 CC                                                  *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Read Write 2 CC
+ */
+static void test_ipc_mailbox_read_write2_cc(void)
+{
+	int outbox;
+	char buffer[MAILBOX_MSG_SIZE];
+
+	/* Open output mailbox. */
+	TEST_ASSERT((outbox = mailbox_open("master")) >= 0);
+
+	memset(buffer, 1, MAILBOX_MSG_SIZE);
+	TEST_ASSERT(mailbox_write(outbox, buffer, MAILBOX_MSG_SIZE) == 0);
+
+	/* House keeping. */
+	TEST_ASSERT(mailbox_close(outbox) == 0);
+}
+
 /*===================================================================*
  * API Test: Mailbox compute clusters test                           *
  *===================================================================*/
-
-/**
- * @brief API Test: Mailbox IO cluster -> Compute cluster test
- */
-static void test_ipc_mailbox_io_cc(int nclusters)
-{
-	char pathname_local[NANVIX_PROC_NAME_MAX];
-	char buf[MAILBOX_MSG_SIZE];
-	int nodenum;
-	int inbox;
-	int syncid_local;
-	int syncid;
-	int nodes[(nclusters + 1)];
-
-	nodenum = sys_get_node_num();
-
-	/* Build nodes list. */
-	for (int i = 0; i < nclusters; i++)
-		nodes[i + 1] = i;
-
-	nodes[0] = 192;
-
-	TEST_ASSERT((syncid_local = sys_sync_create(nodes, (nclusters + 1), SYNC_ONE_TO_ALL)) >= 0);
-
-	TEST_ASSERT((syncid = sys_sync_open(nodes, (nclusters + 1), SYNC_ALL_TO_ONE)) >= 0);
-
-	sprintf(pathname_local, "compute_cluster%d", nodenum);
-
-	TEST_ASSERT((inbox = mailbox_create(pathname_local)) >= 0);
-
-	/* Signal IO cluster. */
-	TEST_ASSERT(sys_sync_signal(syncid) == 0);
-
-	/* Wait for IO cluster. */
-	TEST_ASSERT(sys_sync_wait(syncid_local) == 0);
-
-	memset(buf, 0, MAILBOX_MSG_SIZE);
-	TEST_ASSERT(mailbox_read(inbox, buf, sizeof(buf)) == 0);
-
-	for (int i = 0; i < MAILBOX_MSG_SIZE; i++)
-		TEST_ASSERT(buf[i] == 1);
-
-	TEST_ASSERT(mailbox_unlink(inbox) == 0);
-
-	/* House keeping. */
-	TEST_ASSERT(sys_sync_unlink(syncid_local) == 0);
-	TEST_ASSERT(sys_sync_close(syncid) == 0);
-}
 
 /**
  * @brief API Test: Compute cluster test -> Mailbox IO cluster
@@ -261,14 +235,14 @@ int main2(int argc, char **argv)
 			test_ipc_mailbox_open_close_cc(nclusters);
 			break;
 
-		/* Read/Write CC */
+		/* Read Write CC */
 		case 2:
 			test_ipc_mailbox_read_write_cc(nclusters);
 			break;
 
-		/* IO cluster -> Compute cluster test. */
+		/* Read Write 2 CC */
 		case 3:
-			test_ipc_mailbox_io_cc(nclusters);
+			test_ipc_mailbox_read_write2_cc();
 			break;
 
 		/* Compute cluster -> IO cluster test. */

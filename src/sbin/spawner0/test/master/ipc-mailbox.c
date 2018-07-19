@@ -22,6 +22,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <mppaipc.h>
 
@@ -159,6 +160,57 @@ static void test_ipc_mailbox_read_write_cc(void)
 	join_slaves();
 }
 
+/*============================================================================*
+ * API Test: Read Write 2 CC                                                  *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Read Write 2 CC
+ */
+static void test_ipc_mailbox_read_write2_cc(void)
+{
+	int inbox;
+	char masternode_str[4];
+	char mailbox_nclusters_str[4];
+	char test_str[4];
+	char buffer[MAILBOX_MSG_SIZE];
+	const char *args[] = {
+		"/test/ipc-mailbox-slave",
+		masternode_str,
+		mailbox_nclusters_str,
+		test_str,
+		NULL
+	};
+
+	printf("[nanvix][test][api][ipc][mailbox] Read Write 2 CC\n");
+
+	/* Build arguments. */
+	sprintf(masternode_str, "%d", sys_get_node_num());
+	sprintf(mailbox_nclusters_str, "%d", NANVIX_PROC_MAX);
+	sprintf(test_str, "%d", 3);
+
+	/* Create input mailbox. */
+	TEST_ASSERT((inbox = mailbox_create("master")) >= 0);
+
+	spawn_slaves(args);
+
+	/* Receive messages. */
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
+	{
+		memset(buffer, 0, MAILBOX_MSG_SIZE);
+		TEST_ASSERT(mailbox_read(inbox, buffer, MAILBOX_MSG_SIZE) == 0);
+
+		/* Checksum. */
+		for (int j = 0; j < MAILBOX_MSG_SIZE; j++)
+			TEST_ASSERT(buffer[j] == 1);
+	}
+
+	join_slaves();
+
+	/* House keeping. */
+	TEST_ASSERT(mailbox_unlink(inbox) == 0);
+}
+
 /*============================================================================*/
 
 /**
@@ -169,5 +221,6 @@ void test_ipc_mailbox(void)
 	test_ipc_mailbox_create_unlink_cc();
 	test_ipc_mailbox_open_close_cc();
 	test_ipc_mailbox_read_write_cc();
+	test_ipc_mailbox_read_write2_cc();
 }
 
