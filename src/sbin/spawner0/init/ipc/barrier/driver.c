@@ -33,6 +33,8 @@ int ipc_barrier_ncores = 0;
 
 /**
  * @brief Barrier Test Driver
+ *
+ * @param nbusycores Number of busy cores.
  */
 void test_kernel_ipc_barrier(int nbusycores)
 {

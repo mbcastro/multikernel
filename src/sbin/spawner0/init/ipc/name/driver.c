@@ -45,6 +45,8 @@ pthread_barrier_t ipc_name_barrier;
 
 /**
  * @brief Synchronization Point Test Driver
+ *
+ * @param nbusycores Number of busy cores.
  */
 void test_kernel_name(int nbusycores)
 {
