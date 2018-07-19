@@ -39,10 +39,12 @@ pthread_barrier_t barrier;
 
 /**
  * @brief Unnamed Mailbox Test Driver
+ *
+ * @param nbusycores Number of busy cores.
  */
-void test_kernel_ipc_mailbox(void)
+void test_kernel_ipc_mailbox(int nbusycores)
 {
-	ipc_mailbox_ncores = sys_get_num_cores();
+	ipc_mailbox_ncores = sys_get_num_cores() - nbusycores;
 
 	pthread_barrier_init(&barrier, NULL, ipc_mailbox_ncores - 1);
 
