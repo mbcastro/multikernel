@@ -119,8 +119,14 @@ static void test_name_invalid_unlink(void)
  */
 static void test_name_bad_unlink(void)
 {
+	int nodenum;
+
+	nodenum = sys_get_node_num();
+
 	/* Unlink missing name. */
+	TEST_ASSERT(name_link(nodenum, "coolname") == 0);
 	TEST_ASSERT(name_unlink("missing_name") < 0);
+	TEST_ASSERT(name_unlink("coolname") == 0);
 }
 
 /*============================================================================*
