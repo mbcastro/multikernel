@@ -22,12 +22,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <pthread.h>
 
 #include <nanvix/syscalls.h>
 #include <nanvix/name.h>
-#include <nanvix/pm.h>
 
 /**
  * @brief Asserts a logic expression.
@@ -35,41 +32,22 @@
 #define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
 
 /*===================================================================*
- * API Test: Name Unlink                                             *
+ * API Test: Link Unlink CC                                          *
  *===================================================================*/
 
 /**
- * @brief API Test: Name Unlink
+ * @brief API Test: Link Unlink CC
  */
-static void test_name_unlink(void)
+static void test_name_link_unlink(void)
 {
-	int nodeid;
+	int nodenum;
 	char pathname[NANVIX_PROC_NAME_MAX];
 
-	nodeid = sys_get_node_num();
-	sprintf(pathname, "/cpu%d", nodeid);
+	nodenum = sys_get_node_num();
+	sprintf(pathname, "/cpu%d", nodenum);
 
-	/* Unregister this cluster. */
+	TEST_ASSERT(name_link(nodenum, pathname) == 0);
 	TEST_ASSERT(name_unlink(pathname) == 0);
-}
-
-/*===================================================================*
- * API Test: Name Link                                               *
- *===================================================================*/
-
-/**
- * @brief API Test: Name Link
- */
-static void test_name_link(void)
-{
-	int nodeid;
-	char pathname[NANVIX_PROC_NAME_MAX];
-
-	nodeid = sys_get_node_num();
-	sprintf(pathname, "/cpu%d", nodeid);
-
-	/* Register this cluster. */
-	TEST_ASSERT(name_link(nodeid, pathname) == 0);
 }
 
 /*===================================================================*
@@ -91,139 +69,32 @@ static void test_name_lookup(void)
 	TEST_ASSERT(name_lookup(pathname) == nodeid);
 }
 
-/*===================================================================*
- * Fault Injection Test: duplicate name                                 *
- *===================================================================*/
+/*============================================================================*/
 
 /**
- * @brief Fault Injection Test: link the same name twice
- */
-static void test_name_duplicate(void)
-{
-	int nodeid;
-	char pathname[NANVIX_PROC_NAME_MAX];
-
-	nodeid = sys_get_node_num();
-
-	sprintf(pathname, "/cpu%d", nodeid);
-
-	/* Link name. */
-	TEST_ASSERT(name_link(nodeid, pathname) == 0);
-	TEST_ASSERT(name_link(nodeid, pathname) < 0);
-	TEST_ASSERT(name_link(nodeid, "test") < 0);
-	TEST_ASSERT(name_unlink(pathname) == 0);
-}
-
-/*===================================================================*
-* Fault Injection Test: invalid link                                 *
-*====================================================================*/
-
-/**
-* @brief Fault Injection Test: Link invalid names
-*/
-static void test_name_invalid_link(void)
-{
-	int nodeid;
-	char pathname[NANVIX_PROC_NAME_MAX + 1];
-
-	nodeid = sys_get_node_num();
-
-	memset(pathname, 1, NANVIX_PROC_NAME_MAX + 1);
-
-	/* Link invalid names. */
-	TEST_ASSERT(name_link(nodeid, pathname) < 0);
-	TEST_ASSERT(name_link(nodeid, NULL) < 0);
-	TEST_ASSERT(name_link(nodeid, "") < 0);
-}
-
-/*===================================================================*
-* Fault Injection Test: invalid unlink                                 *
-*====================================================================*/
-
-/**
-* @brief Fault Injection Test: Unlink invalid names
-*/
-static void test_name_invalid_unlink(void)
-{
-	char pathname[NANVIX_PROC_NAME_MAX + 1];
-
-	memset(pathname, 1, NANVIX_PROC_NAME_MAX + 1);
-
-	/* Unlink invalid names. */
-	TEST_ASSERT(name_unlink(pathname) < 0);
-	TEST_ASSERT(name_unlink(NULL) < 0);
-	TEST_ASSERT(name_unlink("") < 0);
-}
-
-/*===================================================================*
-* Fault Injection Test: bad unlink                                 *
-*====================================================================*/
-
-/**
-* @brief Fault Injection Test: Unlink bad name
-*/
-static void test_name_bad_unlink(void)
-{
-	/* Unlink bad name. */
-	TEST_ASSERT(name_unlink("missing_name") < 0);
-}
-
-/*===================================================================*
-* Fault Injection Test: Bad lookup                                 *
-*====================================================================*/
-
-/**
-* @brief Fault Injection Test: Lookup missing name
-*/
-static void test_name_bad_lookup(void)
-{
-	/* Lookup missing name. */
-	TEST_ASSERT(name_lookup("missing_name") < 0);
-}
-
-/*===================================================================*
-* Fault Injection Test: Invalid lookup                                 *
-*====================================================================*/
-
-/**
-* @brief Fault Injection Test: Lookup invalid names
-*/
-static void test_name_invalid_lookup(void)
-{
-	char pathname[NANVIX_PROC_NAME_MAX + 1];
-
-	memset(pathname, 1, NANVIX_PROC_NAME_MAX + 1);
-
-	/* Lookup invalid names. */
-	TEST_ASSERT(name_lookup(pathname) < 0);
-	TEST_ASSERT(name_lookup(NULL) < 0);
-	TEST_ASSERT(name_lookup("") < 0);
-}
-
-/*====================================================================*
- * main                                                               *
- *====================================================================*/
-
-/**
- * @brief Remote name unit test.
+ * @brief Naming Service Test Driver
  */
 int main2(int argc, char **argv)
 {
+	int test;
 	int nclusters;
 
-	/* Retrieve parameters. */
-	TEST_ASSERT(argc == 2);
-	TEST_ASSERT((nclusters = atoi(argv[1])) > 0);
+	/* Retrieve kernel parameters. */
+	TEST_ASSERT(argc == 3);
+	nclusters = atoi(argv[1]);
+	test = atoi(argv[2]);
 
-	test_name_link();
-	test_name_lookup();
-	test_name_unlink();
-	test_name_duplicate();
-	test_name_invalid_link();
-	test_name_invalid_unlink();
-	test_name_bad_unlink();
-	test_name_bad_lookup();
-	test_name_invalid_lookup();
+	switch (test)
+	{
+		case 0:
+			test_name_link_unlink();
+			break;
+		case 1:
+			test_name_lookup();
+			break;
+		default:
+			exit(EXIT_FAILURE);
+	}
 
 	return (EXIT_SUCCESS);
 }
