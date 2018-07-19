@@ -40,11 +40,11 @@
 static int ncores = 0;
 
 /*============================================================================*
- * API Test: Barrier Wait IO Clusters                                         *
+ * API Test: Wait                                                             *
  *============================================================================*/
 
 /**
- * @brief API Test: Barrier Wait IO Clusters
+ * @brief API Test: Wait
  */
 static void test_barrier_io(void)
 {

@@ -97,6 +97,37 @@ static void test_ipc_barrier_create_unlink_cc(void)
 	join_slaves();
 }
 
+/*============================================================================*
+ * API Test: Wait CC                                                          *
+ *============================================================================*/
+
+/**
+* @brief API Test: Wait CC
+*/
+static void test_ipc_barrier_wait_cc(void)
+{
+	char masternode_str[4];
+	char barrier_nclusters_str[4];
+	char test_str[4];
+	const char *args[] = {
+		"/test/ipc-barrier-slave",
+		masternode_str,
+		barrier_nclusters_str,
+		test_str,
+		NULL
+	};
+
+	printf("[nanvix][test][api][ipc][barrier] Wait CC\n");
+
+	/* Build arguments. */
+	sprintf(masternode_str, "%d", sys_get_node_num());
+	sprintf(barrier_nclusters_str, "%d", NANVIX_PROC_MAX);
+	sprintf(test_str, "%d", 1);
+
+	spawn_slaves(args);
+	join_slaves();
+}
+
 /*============================================================================*/
 
 /**
@@ -105,5 +136,6 @@ static void test_ipc_barrier_create_unlink_cc(void)
 void test_ipc_barrier(void)
 {
 	test_ipc_barrier_create_unlink_cc();
+	test_ipc_barrier_wait_cc();
 }
 
