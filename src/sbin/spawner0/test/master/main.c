@@ -29,15 +29,13 @@ extern void test_sys_mailbox(void);
 extern void test_sys_portal(void);
 extern void test_ipc_name(void);
 extern void test_ipc_barrier(void);
+extern void test_ipc_mailbox(void);
 
 /**
  * @brief Launches automated tests.
  */
 int main2(int argc, const char **argv)
 {
-	((void) argc);
-	((void) argv);
-
 	/* Missing parameters. */
 	if (argc != 3)
 		return (EXIT_FAILURE);
@@ -57,6 +55,8 @@ int main2(int argc, const char **argv)
 		test_ipc_name();
 	else if (!strcmp(argv[2], "--barrier"))
 		test_ipc_barrier();
+	else if (!strcmp(argv[2], "--mailbox"))
+		test_ipc_mailbox();
 
 	return (EXIT_SUCCESS);
 }

@@ -36,6 +36,26 @@
  */
 #define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
 
+/*============================================================================*
+ * API Test: Create Unlink CC                                                 *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Create Unlink CC
+ */
+static void test_ipc_mailbox_create_unlink_cc(void)
+{
+	int nodenum;
+	int mailbox;
+	char pathname[NANVIX_PROC_NAME_MAX];
+
+	nodenum = sys_get_node_num();
+
+	sprintf(pathname, "inbox%d", nodenum);
+	TEST_ASSERT((mailbox = mailbox_create(pathname)) >= 0);
+	TEST_ASSERT(mailbox_unlink(mailbox) == 0);
+}
+
 /*===================================================================*
  * API Test: Mailbox compute clusters test                           *
  *===================================================================*/
@@ -43,7 +63,7 @@
 /**
  * @brief API Test: Mailbox compute clusters test
  */
-static void test_mailbox_cc(int nclusters)
+static void test_ipc_mailbox_cc(int nclusters)
 {
 	char pathname_local[NANVIX_PROC_NAME_MAX];
 	char pathname_remote[NANVIX_PROC_NAME_MAX];
@@ -101,7 +121,7 @@ static void test_mailbox_cc(int nclusters)
 /**
  * @brief API Test: Mailbox IO cluster -> Compute cluster test
  */
-static void test_mailbox_io_cc(int nclusters)
+static void test_ipc_mailbox_io_cc(int nclusters)
 {
 	char pathname_local[NANVIX_PROC_NAME_MAX];
 	char buf[MAILBOX_MSG_SIZE];
@@ -149,7 +169,7 @@ static void test_mailbox_io_cc(int nclusters)
 /**
  * @brief API Test: Compute cluster test -> Mailbox IO cluster
  */
-static void test_mailbox_cc_io(int nclusters)
+static void test_ipc_mailbox_cc_io(int nclusters)
 {
 	char pathname_remote[NANVIX_PROC_NAME_MAX];
 	char buf[MAILBOX_MSG_SIZE];
@@ -201,29 +221,35 @@ int main2(int argc, char **argv)
 	int test;
 
 	/* Retrieve kernel parameters. */
-	TEST_ASSERT(argc == 3);
-	nclusters = atoi(argv[1]);
-	test = atoi(argv[2]);
+	TEST_ASSERT(argc == 4);
+	nclusters = atoi(argv[2]);
+	test = atoi(argv[3]);
 
 	switch(test)
 	{
-		/* Compute clusters test. */
+		/* Create Unlink CC */
 		case 0:
-			test_mailbox_cc(nclusters);
+			test_ipc_mailbox_create_unlink_cc();
+			break;
+
+		/* Compute clusters test. */
+		case 1:
+			test_ipc_mailbox_cc(nclusters);
 			break;
 
 		/* IO cluster -> Compute cluster test. */
-		case 1:
-			test_mailbox_io_cc(nclusters);
+		case 2:
+			test_ipc_mailbox_io_cc(nclusters);
 			break;
 
 		/* Compute cluster -> IO cluster test. */
-		case 2:
-			test_mailbox_cc_io(nclusters);
+		case 3:
+			test_ipc_mailbox_cc_io(nclusters);
 			break;
 
 		/* Should not happen. */
 		default:
+			return (-EXIT_FAILURE);
 			break;
 	}
 
