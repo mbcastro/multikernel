@@ -31,11 +31,11 @@
 #include "test.h"
 
 /*============================================================================*
- * API Test: Barrier Wait IO Clusters                                         *
+ * API Test: Wait                                                             *
  *============================================================================*/
 
 /**
- * @brief API Test: Barrier IO Clusters
+ * @brief API Test: Wait
  */
 static void test_barrier_wait(void)
 {
@@ -54,40 +54,12 @@ static void test_barrier_wait(void)
 	TEST_ASSERT(barrier_unlink(barrier) == 0);
 }
 
-/*============================================================================*
- * API Test: Compute Cluster - IO Cluster tests                               *
- *============================================================================*/
-
-/**
- * @brief API Test: Barrier Compute Cluster - IO Cluster tests.
- */
-static void test_barrier_cc()
-{
-	int barrier;
-	int nodenum;
-	int nodes[(16 + 2)];
-
-	nodenum = sys_get_node_num();
-
-	for (int i = 0; i < 16; i++)
-		nodes[i + 2] = i;
-
-	nodes[0] = SPAWNER1_SERVER_NODE;
-	nodes[1] = nodenum;
-
-	TEST_ASSERT((barrier = barrier_create(nodes, (16 + 2))) >= 0);
-	TEST_ASSERT(barrier_wait(barrier) == 0);
-	TEST_ASSERT(barrier_unlink(barrier) == 0);
-}
-
 /*============================================================================*/
 
 /**
  * @brief Unit tests.
  */
 struct test ipc_barrier_tests_api[] = {
-	{ test_barrier_wait, "Wait"         },
-	{ NULL,              NULL           },
-	{ test_barrier_cc,   "Slaves Tests" },
-	{ NULL,              NULL           },
+	{ test_barrier_wait, "Wait" },
+	{ NULL,               NULL  },
 };
