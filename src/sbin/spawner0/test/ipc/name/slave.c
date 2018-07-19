@@ -59,14 +59,16 @@ static void test_name_link_unlink(void)
  */
 static void test_name_lookup(void)
 {
-	int nodeid;
+	int nodenum;
 	char pathname[NANVIX_PROC_NAME_MAX];
 
-	nodeid = sys_get_node_num();
+	nodenum = sys_get_node_num();
 
-	sprintf(pathname, "/cpu%d", nodeid);
+	sprintf(pathname, "/cpu%d", nodenum);
 
-	TEST_ASSERT(name_lookup(pathname) == nodeid);
+	TEST_ASSERT(name_link(nodenum, pathname) == 0);
+	TEST_ASSERT(name_lookup(pathname) == nodenum);
+	TEST_ASSERT(name_unlink(pathname) == 0);
 }
 
 /*============================================================================*/
@@ -77,12 +79,10 @@ static void test_name_lookup(void)
 int main2(int argc, char **argv)
 {
 	int test;
-	int nclusters;
 
 	/* Retrieve kernel parameters. */
-	TEST_ASSERT(argc == 3);
-	nclusters = atoi(argv[1]);
-	test = atoi(argv[2]);
+	TEST_ASSERT(argc == 2);
+	test = atoi(argv[1]);
 
 	switch (test)
 	{

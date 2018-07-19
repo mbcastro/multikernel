@@ -71,15 +71,13 @@ static void join_slaves(void)
  *============================================================================*/
 
 /**
- * @brief API Test: Link Unklink CC
+ * @brief API Test: Link Unlink CC
  */
 static void test_ipc_name_link_unlink_cc(void)
 {
-	char ipc_name_nclusters_str[4];
 	char test_str[4];
 	const char *args[] = {
 		"/test/ipc-name-slave",
-		ipc_name_nclusters_str,
 		test_str,
 		NULL
 	};
@@ -87,8 +85,32 @@ static void test_ipc_name_link_unlink_cc(void)
 	printf("[nanvix][test][api][ipc][name] Link Unlink CC\n");
 
 	/* Build args. */
-	sprintf(ipc_name_nclusters_str, "%d", NANVIX_PROC_MAX);
 	sprintf(test_str, "%d", 0);
+
+	spawn_slaves(args);
+	join_slaves();
+}
+
+/*============================================================================*
+ * API Test: Lookup CC                                                        *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Lookup CC
+ */
+static void test_ipc_name_lookup_cc(void)
+{
+	char test_str[4];
+	const char *args[] = {
+		"/test/ipc-name-slave",
+		test_str,
+		NULL
+	};
+
+	printf("[nanvix][test][api][ipc][name] Lookup CC\n");
+
+	/* Build args. */
+	sprintf(test_str, "%d", 1);
 
 	spawn_slaves(args);
 	join_slaves();
@@ -102,5 +124,6 @@ static void test_ipc_name_link_unlink_cc(void)
 void test_ipc_name(void)
 {
 	test_ipc_name_link_unlink_cc();
+	test_ipc_name_lookup_cc();
 }
 
