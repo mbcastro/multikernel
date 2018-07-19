@@ -40,11 +40,11 @@
  */
 static void test_ipc_barrier_invalid_create(void)
 {
-	int nodes[NANVIX_PROC_MAX];
+	int nodes[NANVIX_PROC_MAX + 1];
 	
 	/* Build nodes list. */
 	nodes[0] = sys_get_node_num();
-	for (int i = 0; i < 0; i++)
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
 		nodes[i] = i;
 
 	TEST_ASSERT(barrier_create(NULL, NANVIX_PROC_MAX + 1) < 0);
@@ -61,25 +61,32 @@ static void test_ipc_barrier_invalid_create(void)
  */
 static void test_ipc_barrier_bad_create(void)
 {
-	int nodes[NANVIX_PROC_MAX];
+	int nodes[NANVIX_PROC_MAX + 1];
 	
 	/* Build nodes list. */
 	nodes[0] = sys_get_node_num();
-	for (int i = 0; i < 0; i++)
-		nodes[i] = 1000000;
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
+		nodes[i + 1] = i;
+
+	TEST_ASSERT(barrier_create(&nodes[1], NANVIX_PROC_MAX) < 0);
+	
+	/* Build nodes list. */
+	nodes[0] = sys_get_node_num();
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
+		nodes[i + 1] = 1000000;
 
 	TEST_ASSERT(barrier_create(nodes, NANVIX_PROC_MAX + 1) < 0);
 	
 	/* Build nodes list. */
-	for (int i = 0; i < 0; i++)
-		nodes[i] = -1;
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
+		nodes[i + 1] = -1;
 
 	TEST_ASSERT(barrier_create(nodes, NANVIX_PROC_MAX + 1) < 0);
 
 	/* Build nodes list. */
 	nodes[0] = 1000000;
-	for (int i = 0; i < 0; i++)
-		nodes[i] = i;
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
+		nodes[i + 1 ] = i;
 
 	TEST_ASSERT(barrier_create(nodes, NANVIX_PROC_MAX + 1) < 0);
 
