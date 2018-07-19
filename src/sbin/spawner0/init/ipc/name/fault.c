@@ -35,13 +35,13 @@
 #include "test.h"
 
 /*============================================================================*
- * Fault Injection Test: Duplicate Name                                       *
+ * Fault Injection Test: Double Link                                          *
  *============================================================================*/
 
 /**
- * @brief Fault Injection Test: Link the Same Name Twice
+ * @brief Fault Injection Test: Double Link
  */
-static void test_name_double(void)
+static void test_name_double_link(void)
 {
 	int nodenum;
 	char pathname[NANVIX_PROC_NAME_MAX];
@@ -96,7 +96,7 @@ static void test_name_bad_link(void)
  *============================================================================*/
 
 /**
- * @brief Fault Injection Test: Unlink Invalid Name
+ * @brief Fault Injection Test: Invalid Unlink
  */
 static void test_name_invalid_unlink(void)
 {
@@ -115,7 +115,7 @@ static void test_name_invalid_unlink(void)
  *============================================================================*/
 
 /**
- * @brief Fault Injection Test: Unlink Bad Name
+ * @brief Fault Injection Test: Bad Unlink
  */
 static void test_name_bad_unlink(void)
 {
@@ -124,9 +124,28 @@ static void test_name_bad_unlink(void)
 	nodenum = sys_get_node_num();
 
 	/* Unlink missing name. */
-	TEST_ASSERT(name_link(nodenum, "coolname") == 0);
+	TEST_ASSERT(name_link(nodenum, "cool-name") == 0);
 	TEST_ASSERT(name_unlink("missing_name") < 0);
-	TEST_ASSERT(name_unlink("coolname") == 0);
+	TEST_ASSERT(name_unlink("cool-name") == 0);
+}
+
+/*============================================================================*
+ * Fault Injection Test: Double Unlink                                        *
+ *============================================================================*/
+
+/**
+ * @brief Fault Injection Test: Double Unlink
+ */
+static void test_name_double_unlink(void)
+{
+	int nodenum;
+
+	nodenum = sys_get_node_num();
+
+	/* Unlink missing name. */
+	TEST_ASSERT(name_link(nodenum, "cool-name") == 0);
+	TEST_ASSERT(name_unlink("cool-name") == 0);
+	TEST_ASSERT(name_unlink("cool-name") < 0);
 }
 
 /*============================================================================*
@@ -134,7 +153,7 @@ static void test_name_bad_unlink(void)
  *============================================================================*/
 
 /**
- * @brief Fault Injection Test: Lookup Missing Name
+ * @brief Fault Injection Test: Bad Lookup
  */
 static void test_name_bad_lookup(void)
 {
@@ -169,10 +188,11 @@ static void test_name_invalid_lookup(void)
 struct test ipc_name_tests_fault[] = {
 	{ test_name_invalid_link,   "Invalid Link"   },
 	{ test_name_bad_link,       "Bad Link"       },
-	{ test_name_double,         "Double Link"    },
+	{ test_name_double_link,    "Double Link"    },
 	{ test_name_invalid_unlink, "Invalid Unlink" },
 	{ test_name_bad_unlink,     "Bad Unlink"     },
-	{ test_name_bad_lookup,     "Bad Lookup"     },
+	{ test_name_double_unlink,  "Double Unlink"  },
 	{ test_name_invalid_lookup, "Invalid Lookup" },
+	{ test_name_bad_lookup,     "Bad Lookup"     },
 	{ NULL,                     NULL             },
 };
