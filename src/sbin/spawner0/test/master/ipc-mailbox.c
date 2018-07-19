@@ -211,6 +211,76 @@ static void test_ipc_mailbox_read_write2_cc(void)
 	TEST_ASSERT(mailbox_unlink(inbox) == 0);
 }
 
+/*============================================================================*
+ * API Test: Read Write 3 CC                                                  *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Read Write 3 CC
+ */
+static void test_ipc_mailbox_read_write3_cc(void)
+{
+	int nodenum;
+	int barrier;
+	int nodes[NANVIX_PROC_MAX + 1];
+	char masternode_str[4];
+	char mailbox_nclusters_str[4];
+	char test_str[4];
+	const char *args[] = {
+		"/test/ipc-mailbox-slave",
+		masternode_str,
+		mailbox_nclusters_str,
+		test_str,
+		NULL
+	};
+
+	printf("[nanvix][test][api][ipc][mailbox] Read Write 3 CC\n");
+
+	nodenum = sys_get_node_num();
+
+	/* Build arguments. */
+	sprintf(masternode_str, "%d", nodenum);
+	sprintf(mailbox_nclusters_str, "%d", NANVIX_PROC_MAX);
+	sprintf(test_str, "%d", 4);
+
+	/* Build nodes list. */
+	nodes[0] = nodenum;
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
+		nodes[i + 1] = i;
+
+	/* Create barrier. */
+	TEST_ASSERT((barrier = barrier_create(nodes, NANVIX_PROC_MAX + 1)) >= 0);
+
+	spawn_slaves(args);
+
+	/* Wait for slaves. */
+	TEST_ASSERT(barrier_wait(barrier) == 0);
+
+	/* Send messages. */
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
+	{
+		int outbox;
+		char buffer[MAILBOX_MSG_SIZE];
+		char pathname[NANVIX_PROC_NAME_MAX];
+
+		/* Open output mailbox. */
+		sprintf(pathname, "cluster%d", i);
+		TEST_ASSERT((outbox = mailbox_open(pathname)) >= 0);
+
+		/* Send messages. */
+		memset(buffer, 1, MAILBOX_MSG_SIZE);
+		TEST_ASSERT(mailbox_write(outbox, buffer, MAILBOX_MSG_SIZE) == 0);
+
+		/* Close output mailbox. */
+		TEST_ASSERT(mailbox_close(outbox) == 0);
+	}
+
+	join_slaves();
+
+	/* House keeping. */
+	TEST_ASSERT(barrier_unlink(barrier) == 0);
+}
+
 /*============================================================================*/
 
 /**
@@ -222,5 +292,6 @@ void test_ipc_mailbox(void)
 	test_ipc_mailbox_open_close_cc();
 	test_ipc_mailbox_read_write_cc();
 	test_ipc_mailbox_read_write2_cc();
+	test_ipc_mailbox_read_write3_cc();
 }
 
