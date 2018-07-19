@@ -80,7 +80,7 @@ BINARIES="$BINARIES,$BINDIR/test/hal-portal-slave"
 build2 $BINDIR/test-driver $BINDIR/servers1 "$BINARIES" nanvix-kernel-debug.img
 
 BINARIES="$BINDIR/test/ipc-name-slave"
-BINARIES="$BINARIES,$BINDIR/test/barrier-slave"
+BINARIES="$BINARIES,$BINDIR/test/ipc-barrier-slave"
 BINARIES="$BINARIES,$BINDIR/test/mailbox-slave"
 BINARIES="$BINARIES,$BINDIR/test/semaphore-slave"
 build2 $BINDIR/test-driver $BINDIR/servers1 "$BINARIES" nanvix-runtime-debug.img

@@ -183,7 +183,7 @@ int barrier_create(int *nodes, int nnodes)
 		return (-EINVAL);
 
 	/* Number of nodes Invalid. */
-	if ((nnodes < 0) && (nnodes >= NANVIX_NR_NODES))
+	if ((nnodes < 0) || (nnodes >= NANVIX_NR_NODES))
 		return (-EINVAL);
 
 	nodenum = sys_get_node_num();
