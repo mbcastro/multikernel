@@ -35,13 +35,13 @@
 #include "test.h"
 
 /*============================================================================*
-* Fault Injection Test: Duplicate Name                                        *
+ * Fault Injection Test: Duplicate Name                                       *
  *============================================================================*/
 
 /**
-* @brief Fault Injection Test: Link the Same Name Twice
-*/
-static void test_name_duplicate(void)
+ * @brief Fault Injection Test: Link the Same Name Twice
+ */
+static void test_name_double(void)
 {
 	int nodenum;
 	char pathname[NANVIX_PROC_NAME_MAX];
@@ -56,13 +56,27 @@ static void test_name_duplicate(void)
 }
 
 /*============================================================================*
-* Fault Injection Test: Invalid Link                                          *
+ * Fault Injection Test: Invalid Link                                         *
  *============================================================================*/
 
 /**
-* @brief Fault Injection Test: Link Invalid Names
-*/
+ * @brief Fault Injection Test: Invalid Link 
+ */
 static void test_name_invalid_link(void)
+{
+	/* Link invalid names. */
+	TEST_ASSERT(name_link(-1, "missing_name") < 0);
+	TEST_ASSERT(name_link(1000000, "missing_name") < 0);
+}
+
+/*============================================================================*
+ * Fault Injection Test: Bad Link                                             *
+ *============================================================================*/
+
+/**
+ * @brief Fault Injection Test: Bad Link
+ */
+static void test_name_bad_link(void)
 {
 	int nodenum;
 	char pathname[NANVIX_PROC_NAME_MAX + 1];
@@ -78,12 +92,12 @@ static void test_name_invalid_link(void)
 }
 
 /*============================================================================*
-* Fault Injection Test: Invalid Unlink                                        *
+ * Fault Injection Test: Invalid Unlink                                       *
  *============================================================================*/
 
 /**
-* @brief Fault Injection Test: Unlink Invalid Name
-*/
+ * @brief Fault Injection Test: Unlink Invalid Name
+ */
 static void test_name_invalid_unlink(void)
 {
 	char pathname[NANVIX_PROC_NAME_MAX + 1];
@@ -97,12 +111,12 @@ static void test_name_invalid_unlink(void)
 }
 
 /*============================================================================*
-* Fault Injection Test: Bad Unlink                                            *
+ * Fault Injection Test: Bad Unlink                                           *
  *============================================================================*/
 
 /**
-* @brief Fault Injection Test: Unlink Bad Name
-*/
+ * @brief Fault Injection Test: Unlink Bad Name
+ */
 static void test_name_bad_unlink(void)
 {
 	/* Unlink missing name. */
@@ -110,12 +124,12 @@ static void test_name_bad_unlink(void)
 }
 
 /*============================================================================*
-* Fault Injection Test: Bad Lookup                                            *
+ * Fault Injection Test: Bad Lookup                                           *
  *============================================================================*/
 
 /**
-* @brief Fault Injection Test: Lookup Missing Name
-*/
+ * @brief Fault Injection Test: Lookup Missing Name
+ */
 static void test_name_bad_lookup(void)
 {
 	/* Lookup missing name. */
@@ -123,12 +137,12 @@ static void test_name_bad_lookup(void)
 }
 
 /*============================================================================*
-* Fault Injection Test: Invalid Lookup                                        *
+ * Fault Injection Test: Invalid Lookup                                       *
  *============================================================================*/
 
 /**
-* @brief Fault Injection Test: Lookup Invalid Name
-*/
+ * @brief Fault Injection Test: Lookup Invalid Name
+ */
 static void test_name_invalid_lookup(void)
 {
 	char pathname[NANVIX_PROC_NAME_MAX + 1];
@@ -147,11 +161,12 @@ static void test_name_invalid_lookup(void)
  * @brief Unit tests.
  */
 struct test ipc_name_tests_fault[] = {
-	{ test_name_duplicate,      "Link Duplicate Name" },
-	{ test_name_invalid_link,   "Invalid Link"        },
-	{ test_name_invalid_unlink, "Invalid Unlink"      },
-	{ test_name_bad_unlink,     "Bad Unlink"          },
-	{ test_name_bad_lookup,     "Bad Lookup"          },
-	{ test_name_invalid_lookup, "Invalid Lookup"      },
-	{ NULL,                     NULL                  },
+	{ test_name_invalid_link,   "Invalid Link"   },
+	{ test_name_bad_link,       "Bad Link"       },
+	{ test_name_double,         "Double Link"    },
+	{ test_name_invalid_unlink, "Invalid Unlink" },
+	{ test_name_bad_unlink,     "Bad Unlink"     },
+	{ test_name_bad_lookup,     "Bad Lookup"     },
+	{ test_name_invalid_lookup, "Invalid Lookup" },
+	{ NULL,                     NULL             },
 };
