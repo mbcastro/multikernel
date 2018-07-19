@@ -32,64 +32,66 @@
  */
 #define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
 
-/*===================================================================*
- * API Test: Barrier Compute cluster tests                           *
- *===================================================================*/
+/*============================================================================*
+ * API Test: Create Unlink CC                                                 *
+ *============================================================================*/
 
 /**
- * @brief API Test: Barrier compute clusters tests.
+ * @brief API Test: Create Unlink CC
  */
-static void test_barrier_cc(int nclusters)
+static void test_ipc_barrier_create_unlink_cc(int nclusters)
 {
 	int barrier;
-	int nodenum;
 	int nodes[nclusters];
 
-	nodenum = sys_get_node_num();
-
+	/* Build nodes list. */
 	for (int i = 0; i < nclusters; i++)
 		nodes[i] = i;
 
 	TEST_ASSERT((barrier = barrier_create(nodes, nclusters)) >= 0);
-
-	printf("%d waits...\n", nodenum);
-
-	TEST_ASSERT(barrier_wait(barrier) == 0);
-
-	printf("%d passed the barrier.\n", nodenum);
-
 	TEST_ASSERT(barrier_unlink(barrier) == 0);
 }
 
-/*===================================================================*
- * API Test: Compute Cluster - IO Cluster tests                      *
- *===================================================================*/
+/*============================================================================*
+ * API Test: Wait CC                                                          *
+ *============================================================================*/
 
 /**
- * @brief API Test: Barrier Compute cluster - IO cluster tests.
+ * @brief API Test: Wait CC
  */
-static void test_barrier_cc_io(int nclusters)
+static void test_ipc_barrier_wait_cc(int nclusters)
 {
 	int barrier;
-	int nodenum;
-	int nodes[(nclusters + 2)];
+	int nodes[nclusters];
 
-	nodenum = sys_get_node_num();
-
+	/* Build nodes list. */
 	for (int i = 0; i < nclusters; i++)
-		nodes[i + 2] = i;
+		nodes[i] = i;
 
-	nodes[0] = SPAWNER1_SERVER_NODE;
-	nodes[1] = SPAWNER_SERVER_NODE;
-
-	TEST_ASSERT((barrier = barrier_create(nodes, (nclusters + 2))) >= 0);
-
-	printf("%d waits...\n", nodenum);
-
+	TEST_ASSERT((barrier = barrier_create(nodes, nclusters)) >= 0);
 	TEST_ASSERT(barrier_wait(barrier) == 0);
+	TEST_ASSERT(barrier_unlink(barrier) == 0);
+}
 
-	printf("%d passed the barrier.\n", nodenum);
+/*============================================================================*
+ * API Test: Wait 2 CC                                                        *
+ *============================================================================*/
 
+/**
+ * @brief API Test: Wait 2 CC
+ */
+static void test_ipc_barrier_wait2_cc(int masternode, int nclusters)
+{
+	int barrier;
+	int nodes[nclusters + 1];
+
+	/* Build nodes list. */
+	nodes[0] = masternode;
+	for (int i = 0; i < nclusters; i++)
+		nodes[i + 1] = i;
+
+	TEST_ASSERT((barrier = barrier_create(nodes, nclusters + 1)) >= 0);
+	TEST_ASSERT(barrier_wait(barrier) == 0);
 	TEST_ASSERT(barrier_unlink(barrier) == 0);
 }
 
@@ -102,26 +104,31 @@ static void test_barrier_cc_io(int nclusters)
  */
 int main2(int argc, char **argv)
 {
-	int nclusters;
 	int test;
+	int nclusters;
+	int masternode;
 
 	/* Retrieve kernel parameters. */
-	TEST_ASSERT(argc == 3);
-	nclusters = atoi(argv[1]);
-	test = atoi(argv[2]);
+	TEST_ASSERT(argc == 4);
+	masternode = atoi(argv[1]);
+	nclusters = atoi(argv[2]);
+	test = atoi(argv[3]);
 
 	switch(test)
 	{
-		/* Compute clusters test. */
+		/* Create Unlink CC */
 		case 0:
-			test_barrier_cc(nclusters);
+			test_ipc_barrier_create_unlink_cc(nclusters);
+			break;
 
+		/* Compute clusters test. */
+		case 1:
+			test_ipc_barrier_wait_cc(nclusters);
 			break;
 
 		/* IO clusters - Compute clusters test. */
-		case 1:
-			test_barrier_cc_io(nclusters);
-
+		case 2:
+			test_ipc_barrier_wait2_cc(masternode, nclusters);
 			break;
 
 		/* Should not happen. */

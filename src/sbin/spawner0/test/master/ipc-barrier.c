@@ -67,24 +67,30 @@ static void join_slaves(void)
 }
 
 /*============================================================================*
- * API Test: Link Unlink CC                                                   *
+ * API Test: Create Unlink CC                                                 *
  *============================================================================*/
 
 /**
- * @brief API Test: Link Unlink CC
- */
-static void test_ipc_name_link_unlink_cc(void)
+* @brief API Test: Create Unlink CC
+*/
+static void test_ipc_barrier_create_unlink_cc(void)
 {
+	char masternode_str[4];
+	char barrier_nclusters_str[4];
 	char test_str[4];
 	const char *args[] = {
-		"/test/ipc-name-slave",
+		"/test/ipc-barrier-slave",
+		masternode_str,
+		barrier_nclusters_str,
 		test_str,
 		NULL
 	};
 
-	printf("[nanvix][test][api][ipc][name] Link Unlink CC\n");
+	printf("[nanvix][test][api][ipc][barrier] Create Unlink CC\n");
 
-	/* Build args. */
+	/* Build arguments. */
+	sprintf(masternode_str, "%d", sys_get_node_num());
+	sprintf(barrier_nclusters_str, "%d", NANVIX_PROC_MAX);
 	sprintf(test_str, "%d", 0);
 
 	spawn_slaves(args);
@@ -92,38 +98,93 @@ static void test_ipc_name_link_unlink_cc(void)
 }
 
 /*============================================================================*
- * API Test: Lookup CC                                                        *
+ * API Test: Wait CC                                                          *
  *============================================================================*/
 
 /**
- * @brief API Test: Lookup CC
- */
-static void test_ipc_name_lookup_cc(void)
+* @brief API Test: Wait CC
+*/
+static void test_ipc_barrier_wait_cc(void)
 {
+	char masternode_str[4];
+	char barrier_nclusters_str[4];
 	char test_str[4];
 	const char *args[] = {
-		"/test/ipc-name-slave",
+		"/test/ipc-barrier-slave",
+		masternode_str,
+		barrier_nclusters_str,
 		test_str,
 		NULL
 	};
 
-	printf("[nanvix][test][api][ipc][name] Lookup CC\n");
+	printf("[nanvix][test][api][ipc][barrier] Wait CC\n");
 
-	/* Build args. */
+	/* Build arguments. */
+	sprintf(masternode_str, "%d", sys_get_node_num());
+	sprintf(barrier_nclusters_str, "%d", NANVIX_PROC_MAX);
 	sprintf(test_str, "%d", 1);
 
 	spawn_slaves(args);
 	join_slaves();
 }
 
+/*============================================================================*
+ * API Test: Wait 2 CC                                                        *
+ *============================================================================*/
+
+/**
+* @brief API Test: Wait 2 CC
+*/
+static void test_ipc_barrier_wait2_cc(void)
+{
+	int nodenum;
+	int barrier;
+	int nodes[NANVIX_PROC_MAX + 1];
+	char masternode_str[4];
+	char barrier_nclusters_str[4];
+	char test_str[4];
+	const char *args[] = {
+		"/test/ipc-barrier-slave",
+		masternode_str,
+		barrier_nclusters_str,
+		test_str,
+		NULL
+	};
+
+	printf("[nanvix][test][api][ipc][barrier] Wait 2 CC\n");
+
+	nodenum = sys_get_node_num();
+
+	/* Build nodes list. */
+	nodes[0] = nodenum;
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
+		nodes[i + 1] = i;
+
+	/* Build arguments. */
+	sprintf(masternode_str, "%d", sys_get_node_num());
+	sprintf(barrier_nclusters_str, "%d", NANVIX_PROC_MAX);
+	sprintf(test_str, "%d", 2);
+
+	TEST_ASSERT((barrier = barrier_create(nodes, NANVIX_PROC_MAX + 1)) >= 0);
+
+	spawn_slaves(args);
+
+	TEST_ASSERT(barrier_wait(barrier) == 0);
+
+	join_slaves();
+
+	TEST_ASSERT(barrier_unlink(barrier) == 0);
+}
+
 /*============================================================================*/
 
 /**
- * @brief Automated test driver for Naming.
+ * @brief Automated test driver for Barriers.
  */
-void test_ipc_name(void)
+void test_ipc_barrier(void)
 {
-	test_ipc_name_link_unlink_cc();
-	test_ipc_name_lookup_cc();
+	test_ipc_barrier_create_unlink_cc();
+	test_ipc_barrier_wait_cc();
+	test_ipc_barrier_wait2_cc();
 }
 

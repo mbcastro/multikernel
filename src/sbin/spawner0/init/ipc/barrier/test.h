@@ -43,5 +43,6 @@
 	/* Forward definitions. */
 	extern int ipc_barrier_ncores;
 	extern struct test ipc_barrier_tests_api[];
+	extern struct test ipc_barrier_tests_fault[];
 
 #endif /* _TEST_H_ */
