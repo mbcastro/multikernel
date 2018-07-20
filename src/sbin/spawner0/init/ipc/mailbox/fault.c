@@ -20,30 +20,44 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef _TEST_H_
-#define _TEST_H_
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <pthread.h>
 
-	#include <stdlib.h>
-	#include <pthread.h>
+#include <mppaipc.h>
 
-	/**
-	 * @brief Asserts a logic expression.
-	 */
-	#define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
+#include <nanvix/syscalls.h>
+#include <nanvix/name.h>
+#include <nanvix/limits.h>
+#include <nanvix/pm.h>
 
-	/**
-	 * @brief Unit test.
-	 */
-	struct test
-	{
-		void (*test_fn)(void); /**< Test function. */
-		const char *name;      /**< Test name.     */
-	};
+#include "test.h"
 
-	/* Forward definitions. */
-	extern int ipc_mailbox_ncores;
-	extern pthread_barrier_t barrier;
-	extern struct test ipc_mailbox_tests_api[];
-	extern struct test ipc_mailbox_tests_fault[];
+/*============================================================================*
+ * API Test: Invalid Create                                                   *
+ *============================================================================*/
 
-#endif /* _TEST_H_ */
+/**
+ * @brief API Test: Invalid Create
+ */
+static void test_ipc_mailbox_invalid_create(void)
+{
+	char pathname[NANVIX_PROC_NAME_MAX + 1];
+
+	memset(pathname, 1, NANVIX_PROC_NAME_MAX + 1);
+
+	TEST_ASSERT(mailbox_create(NULL) < 0);
+	TEST_ASSERT(mailbox_create("") < 0);
+	TEST_ASSERT(mailbox_create(pathname) < 0);
+}
+
+/*============================================================================*/
+
+/**
+ * @brief Unit tests.
+ */
+struct test ipc_mailbox_tests_fault[] = {
+	{ test_ipc_mailbox_invalid_create, "Invalid Create" },
+	{ NULL,                            NULL             },
+};

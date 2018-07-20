@@ -54,5 +54,12 @@ void test_kernel_ipc_mailbox(int nbusycores)
 		printf("[nanvix][test][api][ipc][mailbox] %s\n", ipc_mailbox_tests_api[i].name);
 		ipc_mailbox_tests_api[i].test_fn();
 	}
+
+	/* Run fault injection tests. */
+	for (int i = 0; ipc_mailbox_tests_fault[i].test_fn != NULL; i++)
+	{
+		printf("[nanvix][test][fault][ipc][mailbox] %s\n", ipc_mailbox_tests_fault[i].name);
+		ipc_mailbox_tests_fault[i].test_fn();
+	}
 }
 
