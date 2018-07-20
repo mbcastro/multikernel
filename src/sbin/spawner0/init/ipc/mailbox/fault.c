@@ -52,17 +52,50 @@ static void test_ipc_mailbox_invalid_create(void)
 
 /**
  * @brief API Test: Bad Create
- *
- * @todo Create a mailbox using an existing name.
+ */
+static void *test_ipc_mailbox_bad_create_thread(void *args)
+{
+	((void) args);
+
+	TEST_ASSERT(mailbox_create("existing-name") < 0);
+
+	return (NULL);
+}
+
+/**
+ * @brief API Test: Bad Create
  */
 static void test_ipc_mailbox_bad_create(void)
 {
+	int inbox;
+	int tids[ipc_mailbox_ncores];
+	pthread_t threads[ipc_mailbox_ncores];
 	char pathname[NANVIX_PROC_NAME_MAX + 1];
 
 	memset(pathname, 1, NANVIX_PROC_NAME_MAX + 1);
 
 	TEST_ASSERT(mailbox_create("") < 0);
 	TEST_ASSERT(mailbox_create(pathname) < 0);
+
+	TEST_ASSERT((inbox = mailbox_create("existing-name")) >= 0);
+
+	/* Spawn driver threads. */
+	for (int i = 1; i < ipc_mailbox_ncores; i++)
+	{
+		tids[i] = i;
+		TEST_ASSERT((pthread_create(&threads[i],
+			NULL,
+			test_ipc_mailbox_bad_create_thread,
+			&tids[i])) == 0
+		);
+	}
+
+	/* Wait for driver threads. */
+	for (int i = 1; i < ipc_mailbox_ncores; i++)
+		pthread_join(threads[i], NULL);
+
+	/* House keeping. */
+	TEST_ASSERT(mailbox_unlink(inbox) == 0);
 }
 
 /*============================================================================*
