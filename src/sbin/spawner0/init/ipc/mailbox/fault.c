@@ -52,6 +52,8 @@ static void test_ipc_mailbox_invalid_create(void)
 
 /**
  * @brief API Test: Bad Create
+ *
+ * @todo Create a mailbox using an existing name.
  */
 static void test_ipc_mailbox_bad_create(void)
 {
@@ -100,6 +102,8 @@ static void test_ipc_mailbox_invalid_unlink(void)
 
 /**
  * @brief API Test: Bad Unlink
+ *
+ * @todo Unlink an output mailbox.
  */
 static void test_ipc_mailbox_bad_unlink(void)
 {
@@ -144,6 +148,8 @@ static void test_ipc_mailbox_invalid_open(void)
 
 /**
  * @brief API Test: Bad Open
+ *
+ * @todo Open input mailbox.
  */
 static void test_ipc_mailbox_bad_open(void)
 {
@@ -211,6 +217,8 @@ static void test_ipc_mailbox_invalid_read(void)
 
 /**
  * @brief API Test: Bad Read
+ *
+ * @todo Read from an output mailbox.
  */
 static void test_ipc_mailbox_bad_read(void)
 {
