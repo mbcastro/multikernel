@@ -235,8 +235,6 @@ static void test_ipc_mailbox_invalid_open(void)
 
 /**
  * @brief API Test: Bad Open
- *
- * @todo Open input mailbox.
  */
 static void test_ipc_mailbox_bad_open(void)
 {
@@ -432,21 +430,69 @@ static void test_ipc_mailbox_invalid_read(void)
  * API Test: Bad Read                                                         *
  *============================================================================*/
 
-#ifdef _TEST_IPC_MAILBOX_BAD_READ_
+/**
+ * @brief API Test: Bad Read
+ */
+static void *test_ipc_mailbox_bad_read_thread(void *args)
+{
+	int tid;
+	int inbox;
+
+	TEST_ASSERT(kernel_setup() == 0);
+	TEST_ASSERT(runtime_setup(1) == 0);
+
+	tid = ((int *)args)[0];
+
+	if (tid == 1)
+		TEST_ASSERT((inbox = mailbox_create("existing-name")) >= 0);
+
+	pthread_barrier_wait(&barrier);
+	pthread_barrier_wait(&barrier);
+
+	/* House keeping. */
+	if (tid == 1)
+		TEST_ASSERT(mailbox_unlink(inbox) == 0);
+
+	TEST_ASSERT(runtime_cleanup() == 0);
+	TEST_ASSERT(kernel_cleanup() == 0);
+	return (NULL);
+}
 
 /**
  * @brief API Test: Bad Read
- *
- * @todo Read from an output mailbox.
  */
 static void test_ipc_mailbox_bad_read(void)
 {
+	int outbox;
+	int tids[ipc_mailbox_ncores];
 	char buffer[MAILBOX_MSG_SIZE];
+	pthread_t threads[ipc_mailbox_ncores];
 
-	TEST_ASSERT(mailbox_read(0, buffer, MAILBOX_MSG_SIZE) < 0);
+	TEST_ASSERT(mailbox_read(1, buffer, MAILBOX_MSG_SIZE) < 0);
+
+	/* Spawn driver threads. */
+	for (int i = 1; i < ipc_mailbox_ncores; i++)
+	{
+		tids[i] = i;
+		TEST_ASSERT((pthread_create(&threads[i],
+			NULL,
+			test_ipc_mailbox_bad_read_thread,
+			&tids[i])) == 0
+		);
+	}
+
+	pthread_barrier_wait(&barrier);
+
+	TEST_ASSERT((outbox = mailbox_open("existing-name")) >= 0);
+	TEST_ASSERT(mailbox_read(outbox, buffer, MAILBOX_MSG_SIZE) < 0);
+	TEST_ASSERT(mailbox_close(outbox) == 0);
+
+	pthread_barrier_wait(&barrier);
+
+	/* Wait for driver threads. */
+	for (int i = 1; i < ipc_mailbox_ncores; i++)
+		pthread_join(threads[i], NULL);
 }
-
-#endif /* _TEST_IPC_MAILBOX_BAD_READ_ */
 
 /*============================================================================*
  * API Test: Invalid Read Size                                                *
@@ -670,9 +716,7 @@ struct test ipc_mailbox_tests_fault[] = {
 	{ test_ipc_mailbox_bad_close,          "Bad Close"          },
 	{ test_ipc_mailbox_double_close,       "Double Close"       },
 	{ test_ipc_mailbox_invalid_read,       "Invalid Read"       },
-#ifdef _TEST_IPC_MAILBOX_BAD_READ_
 	{ test_ipc_mailbox_bad_read,           "Bad Read"           },
-#endif /* _TEST_IPC_MAILBOX_BAD_READ_ */
 	{ test_ipc_mailbox_invalid_read_size,  "Invalid Read Size"  },
 	{ test_ipc_mailbox_null_read,          "Null Read"          },
 	{ test_ipc_mailbox_invalid_write,      "Invalid Write"      },
