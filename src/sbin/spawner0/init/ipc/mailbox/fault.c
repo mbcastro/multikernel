@@ -140,6 +140,8 @@ static void test_ipc_mailbox_invalid_open(void)
  * API Test: Bad Open                                                         *
  *============================================================================*/
 
+#ifdef _TEST_IPC_MAILBOX_BAD_OPEN_
+
 /**
  * @brief API Test: Bad Open
  */
@@ -151,8 +153,10 @@ static void test_ipc_mailbox_bad_open(void)
 
 	TEST_ASSERT(mailbox_open("") < 0);
 	TEST_ASSERT(mailbox_open(pathname) < 0);
-	TEST_ASSERT(mailbox_open("missin-name") < 0);
+	TEST_ASSERT(mailbox_open("missing-name") < 0);
 }
+
+#endif /* _TEST_IPC_MAILBOX_BAD_OPEN_ */
 
 /*============================================================================*/
 
@@ -169,6 +173,8 @@ struct test ipc_mailbox_tests_fault[] = {
 #endif /* _TEST_IPC_MAILBOX_BAD_UNLINK_ */
 	{ test_ipc_mailbox_double_unlink,  "Double Unlink"  },
 	{ test_ipc_mailbox_invalid_open,   "Invalid Open"   },
+#ifdef _TEST_IPC_MAILBOX_BAD_OPEN_
 	{ test_ipc_mailbox_bad_open,       "Bad Open"       },
+#endif /* _TEST_IPC_MAILBOX_BAD_OPEN_ */
 	{ NULL,                            NULL             },
 };
