@@ -52,6 +52,22 @@ static void test_ipc_mailbox_invalid_create(void)
 	TEST_ASSERT(mailbox_create(pathname) < 0);
 }
 
+/*============================================================================*
+ * API Test: Double Create                                                    *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Double Create
+ */
+static void test_ipc_mailbox_double_create(void)
+{
+	int inbox;
+
+	TEST_ASSERT((inbox = mailbox_create("cool-name")) >=  0);
+	TEST_ASSERT(mailbox_create("cool-name") < 0);
+	TEST_ASSERT(mailbox_unlink(inbox) == 0);
+}
+
 /*============================================================================*/
 
 /**
@@ -59,5 +75,6 @@ static void test_ipc_mailbox_invalid_create(void)
  */
 struct test ipc_mailbox_tests_fault[] = {
 	{ test_ipc_mailbox_invalid_create, "Invalid Create" },
+	{ test_ipc_mailbox_double_create,  "Double Create"  },
 	{ NULL,                            NULL             },
 };
