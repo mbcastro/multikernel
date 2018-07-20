@@ -57,8 +57,13 @@ static void *test_ipc_mailbox_bad_create_thread(void *args)
 {
 	((void) args);
 
+	TEST_ASSERT(kernel_setup() == 0);
+	TEST_ASSERT(runtime_setup(1) == 0);
+
 	TEST_ASSERT(mailbox_create("existing-name") < 0);
 
+	TEST_ASSERT(runtime_cleanup() == 0);
+	TEST_ASSERT(kernel_cleanup() == 0);
 	return (NULL);
 }
 
@@ -196,6 +201,75 @@ static void test_ipc_mailbox_bad_open(void)
 }
 
 #endif /* _TEST_IPC_MAILBOX_BAD_OPEN_ */
+
+/*============================================================================*
+ * API Test: Double Open                                                      *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Double Open
+ */
+static void *test_ipc_mailbox_double_open_thread(void *args)
+{
+	int tid;
+	int inbox;
+
+	TEST_ASSERT(kernel_setup() == 0);
+	TEST_ASSERT(runtime_setup(1) == 0);
+
+	tid = ((int *)args)[0];
+
+	if (tid == 1)
+		TEST_ASSERT((inbox = mailbox_create("existing-name")) >= 0);
+
+	pthread_barrier_wait(&barrier);
+	pthread_barrier_wait(&barrier);
+
+	/* House keeping. */
+	if (tid == 1)
+		TEST_ASSERT(mailbox_unlink(inbox) == 0);
+
+	TEST_ASSERT(runtime_cleanup() == 0);
+	TEST_ASSERT(kernel_cleanup() == 0);
+	return (NULL);
+}
+
+/**
+ * @brief API Test: Double Open
+ */
+static void test_ipc_mailbox_double_open(void)
+{
+	int outbox;
+	int tids[ipc_mailbox_ncores];
+	pthread_t threads[ipc_mailbox_ncores];
+
+	TEST_ASSERT(runtime_setup(1) == 0);
+
+	/* Spawn driver threads. */
+	for (int i = 1; i < ipc_mailbox_ncores; i++)
+	{
+		tids[i] = i;
+		TEST_ASSERT((pthread_create(&threads[i],
+			NULL,
+			test_ipc_mailbox_double_open_thread,
+			&tids[i])) == 0
+		);
+	}
+
+	pthread_barrier_wait(&barrier);
+
+	TEST_ASSERT((outbox = mailbox_open("existing-name")) >= 0);
+	TEST_ASSERT(mailbox_open("existing-name") < 0);
+	TEST_ASSERT(mailbox_close(outbox) == 0);
+
+	pthread_barrier_wait(&barrier);
+
+	/* Wait for driver threads. */
+	for (int i = 1; i < ipc_mailbox_ncores; i++)
+		pthread_join(threads[i], NULL);
+
+	TEST_ASSERT(runtime_cleanup() == 0);
+}
 
 /*============================================================================*
  * API Test: Invalid Close                                                    *
@@ -346,6 +420,7 @@ struct test ipc_mailbox_tests_fault[] = {
 #endif /* _TEST_IPC_MAILBOX_BAD_UNLINK_ */
 	{ test_ipc_mailbox_double_unlink,     "Double Unlink"     },
 	{ test_ipc_mailbox_invalid_open,      "Invalid Open"      },
+	{ test_ipc_mailbox_double_open,       "Double Open"       },
 #ifdef _TEST_IPC_MAILBOX_BAD_OPEN_
 	{ test_ipc_mailbox_bad_open,          "Bad Open"          },
 #endif /* _TEST_IPC_MAILBOX_BAD_OPEN_ */

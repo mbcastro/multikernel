@@ -35,7 +35,7 @@
 #include "test.h"
 
 /**
- * @brief Global lock.
+ * @brief Local lock.
  */
 static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
