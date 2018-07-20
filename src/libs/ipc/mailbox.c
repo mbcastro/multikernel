@@ -311,13 +311,6 @@ static int mailbox_alloc(void)
  */
 static void mailbox_free(int mbxid)
 {
-	/* Sanity check. */
-	if (!mailbox_is_valid(mbxid))
-		return;
-
-	if (!mailbox_is_used(mbxid))
-		return;
-
 	mailbox_clear_flags(mbxid);
 }
 
