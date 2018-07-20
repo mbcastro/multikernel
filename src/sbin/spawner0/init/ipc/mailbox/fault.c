@@ -233,8 +233,6 @@ static void test_ipc_mailbox_invalid_open(void)
  * API Test: Bad Open                                                         *
  *============================================================================*/
 
-#ifdef _TEST_IPC_MAILBOX_BAD_OPEN_
-
 /**
  * @brief API Test: Bad Open
  *
@@ -242,6 +240,7 @@ static void test_ipc_mailbox_invalid_open(void)
  */
 static void test_ipc_mailbox_bad_open(void)
 {
+	int inbox;
 	char pathname[NANVIX_PROC_NAME_MAX + 1];
 
 	memset(pathname, 1, NANVIX_PROC_NAME_MAX + 1);
@@ -249,9 +248,10 @@ static void test_ipc_mailbox_bad_open(void)
 	TEST_ASSERT(mailbox_open("") < 0);
 	TEST_ASSERT(mailbox_open(pathname) < 0);
 	TEST_ASSERT(mailbox_open("missing-name") < 0);
+	TEST_ASSERT((inbox = mailbox_create("cool-name")) >= 0);
+	TEST_ASSERT(mailbox_open("cool-name") < 0);
+	TEST_ASSERT(mailbox_unlink(inbox) == 0);
 }
-
-#endif /* _TEST_IPC_MAILBOX_BAD_OPEN_ */
 
 /*============================================================================*
  * API Test: Double Open                                                      *
@@ -665,9 +665,7 @@ struct test ipc_mailbox_tests_fault[] = {
 	{ test_ipc_mailbox_double_unlink,      "Double Unlink"      },
 	{ test_ipc_mailbox_invalid_open,       "Invalid Open"       },
 	{ test_ipc_mailbox_double_open,        "Double Open"        },
-#ifdef _TEST_IPC_MAILBOX_BAD_OPEN_
 	{ test_ipc_mailbox_bad_open,           "Bad Open"           },
-#endif /* _TEST_IPC_MAILBOX_BAD_OPEN_ */
 	{ test_ipc_mailbox_invalid_close,      "Invalid Close"      },
 	{ test_ipc_mailbox_bad_close,          "Bad Close"          },
 	{ test_ipc_mailbox_double_close,       "Double Close"       },
