@@ -137,17 +137,69 @@ static void test_ipc_mailbox_invalid_unlink(void)
 
 /**
  * @brief API Test: Bad Unlink
- *
- * @todo Unlink an output mailbox.
+ */
+static void *test_ipc_mailbox_bad_unlink_thread(void *args)
+{
+	int tid;
+	int inbox;
+
+	TEST_ASSERT(kernel_setup() == 0);
+	TEST_ASSERT(runtime_setup(1) == 0);
+
+	tid = ((int *)args)[0];
+
+	if (tid == 1)
+		TEST_ASSERT((inbox = mailbox_create("existing-name")) >= 0);
+
+	pthread_barrier_wait(&barrier);
+	pthread_barrier_wait(&barrier);
+
+	/* House keeping. */
+	if (tid == 1)
+		TEST_ASSERT(mailbox_unlink(inbox) == 0);
+
+	TEST_ASSERT(runtime_cleanup() == 0);
+	TEST_ASSERT(kernel_cleanup() == 0);
+	return (NULL);
+}
+
+/**
+ * @brief API Test: Bad Unlink
  */
 static void test_ipc_mailbox_bad_unlink(void)
 {
+	int outbox;
+	int tids[ipc_mailbox_ncores];
+	pthread_t threads[ipc_mailbox_ncores];
+
 #ifdef _TEST_IPC_MAILBOX_BAD_INBOX_UNLINK_
 	TEST_ASSERT(mailbox_unlink(0) < 0);
 #endif /* _TEST_IPC_MAILBOX_BAD_INBOX_UNLINK_ */
 	TEST_ASSERT(mailbox_unlink(1) < 0);
-}
 
+	/* Spawn driver threads. */
+	for (int i = 1; i < ipc_mailbox_ncores; i++)
+	{
+		tids[i] = i;
+		TEST_ASSERT((pthread_create(&threads[i],
+			NULL,
+			test_ipc_mailbox_bad_unlink_thread,
+			&tids[i])) == 0
+		);
+	}
+
+	pthread_barrier_wait(&barrier);
+
+	TEST_ASSERT((outbox = mailbox_open("existing-name")) >= 0);
+	TEST_ASSERT(mailbox_unlink(outbox) < 0);
+	TEST_ASSERT(mailbox_close(outbox) == 0);
+
+	pthread_barrier_wait(&barrier);
+
+	/* Wait for driver threads. */
+	for (int i = 1; i < ipc_mailbox_ncores; i++)
+		pthread_join(threads[i], NULL);
+}
 
 /*============================================================================*
  * API Test: Double Unlink                                                    *
