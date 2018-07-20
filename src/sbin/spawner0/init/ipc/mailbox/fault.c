@@ -135,8 +135,6 @@ static void test_ipc_mailbox_invalid_unlink(void)
  * API Test: Bad Unlink                                                       *
  *============================================================================*/
 
-#ifdef _TEST_IPC_MAILBOX_BAD_UNLINK_
-
 /**
  * @brief API Test: Bad Unlink
  *
@@ -144,10 +142,12 @@ static void test_ipc_mailbox_invalid_unlink(void)
  */
 static void test_ipc_mailbox_bad_unlink(void)
 {
+#ifdef _TEST_IPC_MAILBOX_BAD_INBOX_UNLINK_
 	TEST_ASSERT(mailbox_unlink(0) < 0);
+#endif /* _TEST_IPC_MAILBOX_BAD_INBOX_UNLINK_ */
+	TEST_ASSERT(mailbox_unlink(1) < 0);
 }
 
-#endif /* _TEST_IPC_MAILBOX_BAD_UNLINK_ */
 
 /*============================================================================*
  * API Test: Double Unlink                                                    *
@@ -609,9 +609,7 @@ struct test ipc_mailbox_tests_fault[] = {
 	{ test_ipc_mailbox_bad_create,         "Bad Create"         },
 	{ test_ipc_mailbox_double_create,      "Double Create"      },
 	{ test_ipc_mailbox_invalid_unlink,     "Invalid Unlink"     },
-#ifdef _TEST_IPC_MAILBOX_BAD_UNLINK_
 	{ test_ipc_mailbox_bad_unlink,         "Bad Unlink"         },
-#endif /* _TEST_IPC_MAILBOX_BAD_UNLINK_ */
 	{ test_ipc_mailbox_double_unlink,      "Double Unlink"      },
 	{ test_ipc_mailbox_invalid_open,       "Invalid Open"       },
 	{ test_ipc_mailbox_double_open,        "Double Open"        },
