@@ -465,6 +465,71 @@ static void test_ipc_mailbox_bad_write(void)
 	TEST_ASSERT(mailbox_unlink(inbox) == 0);
 }
 
+/*============================================================================*
+ * API Test: Null Write                                                       *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Null Write
+ */
+static void *test_ipc_mailbox_null_write_thread(void *args)
+{
+	int tid;
+	int inbox;
+
+	TEST_ASSERT(kernel_setup() == 0);
+	TEST_ASSERT(runtime_setup(1) == 0);
+
+	tid = ((int *)args)[0];
+
+	if (tid == 1)
+		TEST_ASSERT((inbox = mailbox_create("existing-name")) >= 0);
+
+	pthread_barrier_wait(&barrier);
+	pthread_barrier_wait(&barrier);
+
+	/* House keeping. */
+	if (tid == 1)
+		TEST_ASSERT(mailbox_unlink(inbox) == 0);
+
+	TEST_ASSERT(runtime_cleanup() == 0);
+	TEST_ASSERT(kernel_cleanup() == 0);
+	return (NULL);
+}
+
+/**
+ * @brief API Test: Null Write
+ */
+static void test_ipc_mailbox_null_write(void)
+{
+	int outbox;
+	int tids[ipc_mailbox_ncores];
+	pthread_t threads[ipc_mailbox_ncores];
+
+	/* Spawn driver threads. */
+	for (int i = 1; i < ipc_mailbox_ncores; i++)
+	{
+		tids[i] = i;
+		TEST_ASSERT((pthread_create(&threads[i],
+			NULL,
+			test_ipc_mailbox_null_write_thread,
+			&tids[i])) == 0
+		);
+	}
+
+	pthread_barrier_wait(&barrier);
+
+	TEST_ASSERT((outbox = mailbox_open("existing-name")) >= 0);
+	TEST_ASSERT(mailbox_write(outbox, NULL, MAILBOX_MSG_SIZE) < 0);
+	TEST_ASSERT(mailbox_close(outbox) == 0);
+
+	pthread_barrier_wait(&barrier);
+
+	/* Wait for driver threads. */
+	for (int i = 1; i < ipc_mailbox_ncores; i++)
+		pthread_join(threads[i], NULL);
+}
+
 /*============================================================================*/
 
 /**
@@ -495,5 +560,6 @@ struct test ipc_mailbox_tests_fault[] = {
 	{ test_ipc_mailbox_null_read,         "Null Read"         },
 	{ test_ipc_mailbox_invalid_write,     "Invalid Write"     },
 	{ test_ipc_mailbox_bad_write,         "Bad Write"         },
+	{ test_ipc_mailbox_null_write,        "Null Write"        },
 	{ NULL,                               NULL                },
 };
