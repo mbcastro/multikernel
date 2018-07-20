@@ -347,8 +347,8 @@ int mailbox_create(char *name)
 	if (strlen(name) > MAILBOX_MSG_SIZE)
 		return (-EINVAL);
 
-	/* Inbox should be initialized. */
-	if (initialize_inbox(sys_get_core_id()) != 0)
+	/* Runtime not initialized. */
+	if ((fd = get_inbox()) < 0)
 		return (-EAGAIN);
 
 	/* Allocate mailbox. */
@@ -359,10 +359,6 @@ int mailbox_create(char *name)
 
 	/* Link name. */
 	if (name_link(nodenum, name) != 0)
-		return (-EAGAIN);
-
-	/* Get the client inbox. */
-	if ((fd = get_inbox()) < 0)
 		goto error0;
 
 	/* Initialize mailbox. */
@@ -375,7 +371,6 @@ int mailbox_create(char *name)
 	return (mbxid);
 
 error0:
-	name_unlink(name);
 	mailbox_free(mbxid);
 	return (-EAGAIN);
 }
