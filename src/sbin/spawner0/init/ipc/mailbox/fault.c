@@ -243,8 +243,6 @@ static void test_ipc_mailbox_double_open(void)
 	int tids[ipc_mailbox_ncores];
 	pthread_t threads[ipc_mailbox_ncores];
 
-	TEST_ASSERT(runtime_setup(1) == 0);
-
 	/* Spawn driver threads. */
 	for (int i = 1; i < ipc_mailbox_ncores; i++)
 	{
@@ -267,8 +265,6 @@ static void test_ipc_mailbox_double_open(void)
 	/* Wait for driver threads. */
 	for (int i = 1; i < ipc_mailbox_ncores; i++)
 		pthread_join(threads[i], NULL);
-
-	TEST_ASSERT(runtime_cleanup() == 0);
 }
 
 /*============================================================================*
