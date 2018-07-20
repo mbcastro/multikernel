@@ -204,6 +204,24 @@ static void test_ipc_mailbox_invalid_read(void)
 }
 
 /*============================================================================*
+ * API Test: Bad Read                                                         *
+ *============================================================================*/
+
+#ifdef _TEST_IPC_MAILBOX_BAD_READ_
+
+/**
+ * @brief API Test: Bad Read
+ */
+static void test_ipc_mailbox_bad_read(void)
+{
+	char buffer[MAILBOX_MSG_SIZE];
+
+	TEST_ASSERT(mailbox_read(0, buffer, MAILBOX_MSG_SIZE) < 0);
+}
+
+#endif /* _TEST_IPC_MAILBOX_BAD_READ_ */
+
+/*============================================================================*
  * API Test: Invalid Read Size                                                *
  *============================================================================*/
 
@@ -275,6 +293,9 @@ struct test ipc_mailbox_tests_fault[] = {
 	{ test_ipc_mailbox_invalid_close,     "Invalid Close"     },
 	{ test_ipc_mailbox_bad_close,         "Bad Close"         },
 	{ test_ipc_mailbox_invalid_read,      "Invalid Read"      },
+#ifdef _TEST_IPC_MAILBOX_BAD_READ_
+	{ test_ipc_mailbox_bad_read,          "Bad Read"          },
+#endif /* _TEST_IPC_MAILBOX_BAD_READ_ */
 	{ test_ipc_mailbox_invalid_read_size, "Invalid Read Size" },
 	{ test_ipc_mailbox_null_read,         "Null Read"         },
 	{ test_ipc_mailbox_invalid_write,     "Invalid Write"     },
