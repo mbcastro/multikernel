@@ -92,6 +92,18 @@ static void test_ipc_mailbox_invalid_unlink(void)
 	TEST_ASSERT(mailbox_unlink(1000000) < 0);
 }
 
+/*============================================================================*
+ * API Test: Bad Unlink                                                       *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Bad Unlink
+ */
+static void test_ipc_mailbox_bad_unlink(void)
+{
+	TEST_ASSERT(mailbox_unlink(0) < 0);
+}
+
 /*============================================================================*/
 
 /**
@@ -102,5 +114,6 @@ struct test ipc_mailbox_tests_fault[] = {
 	{ test_ipc_mailbox_bad_create,     "Bad Create"     },
 	{ test_ipc_mailbox_double_create,  "Double Create"  },
 	{ test_ipc_mailbox_invalid_unlink, "Invalid Unlink" },
+	{ test_ipc_mailbox_bad_unlink,     "Bad Unlink"     },
 	{ NULL,                            NULL             },
 };
