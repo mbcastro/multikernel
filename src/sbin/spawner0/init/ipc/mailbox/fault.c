@@ -136,6 +136,24 @@ static void test_ipc_mailbox_invalid_open(void)
 	TEST_ASSERT(mailbox_open(NULL) < 0);
 }
 
+/*============================================================================*
+ * API Test: Bad Open                                                         *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Bad Open
+ */
+static void test_ipc_mailbox_bad_open(void)
+{
+	char pathname[NANVIX_PROC_NAME_MAX + 1];
+
+	memset(pathname, 1, NANVIX_PROC_NAME_MAX + 1);
+
+	TEST_ASSERT(mailbox_open("") < 0);
+	TEST_ASSERT(mailbox_open(pathname) < 0);
+	TEST_ASSERT(mailbox_open("missin-name") < 0);
+}
+
 /*============================================================================*/
 
 /**
@@ -151,5 +169,6 @@ struct test ipc_mailbox_tests_fault[] = {
 #endif /* _TEST_IPC_MAILBOX_BAD_UNLINK_ */
 	{ test_ipc_mailbox_double_unlink,  "Double Unlink"  },
 	{ test_ipc_mailbox_invalid_open,   "Invalid Open"   },
+	{ test_ipc_mailbox_bad_open,       "Bad Open"       },
 	{ NULL,                            NULL             },
 };
