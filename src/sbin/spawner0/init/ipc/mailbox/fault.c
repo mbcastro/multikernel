@@ -239,6 +239,21 @@ static void test_ipc_mailbox_null_read(void)
 	TEST_ASSERT(mailbox_unlink(inbox) == 0);
 }
 
+/*============================================================================*
+ * API Test: Invalid Write                                                    *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Invalid Write
+ */
+static void test_ipc_mailbox_invalid_write(void)
+{
+	char buffer[MAILBOX_MSG_SIZE];
+
+	TEST_ASSERT(mailbox_write(-1, buffer, MAILBOX_MSG_SIZE) < 0);
+	TEST_ASSERT(mailbox_write(1000000, buffer, MAILBOX_MSG_SIZE) < 0);
+}
+
 /*============================================================================*/
 
 /**
@@ -262,5 +277,6 @@ struct test ipc_mailbox_tests_fault[] = {
 	{ test_ipc_mailbox_invalid_read,      "Invalid Read"      },
 	{ test_ipc_mailbox_invalid_read_size, "Invalid Read Size" },
 	{ test_ipc_mailbox_null_read,         "Null Read"         },
+	{ test_ipc_mailbox_invalid_write,     "Invalid Write"     },
 	{ NULL,                               NULL                },
 };
