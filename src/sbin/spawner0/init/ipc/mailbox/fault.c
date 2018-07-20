@@ -272,6 +272,24 @@ static void test_ipc_mailbox_invalid_write(void)
 	TEST_ASSERT(mailbox_write(1000000, buffer, MAILBOX_MSG_SIZE) < 0);
 }
 
+/*============================================================================*
+ * API Test: Bad Write                                                        *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Bad Write
+ */
+static void test_ipc_mailbox_bad_write(void)
+{
+	int inbox;
+	char buffer[MAILBOX_MSG_SIZE];
+
+	TEST_ASSERT(mailbox_write(0, buffer, MAILBOX_MSG_SIZE) < 0);
+	TEST_ASSERT((inbox = mailbox_create("cool-name")) >=  0);
+	TEST_ASSERT(mailbox_write(inbox, buffer, MAILBOX_MSG_SIZE) < 0);
+	TEST_ASSERT(mailbox_unlink(inbox) == 0);
+}
+
 /*============================================================================*/
 
 /**
@@ -299,5 +317,6 @@ struct test ipc_mailbox_tests_fault[] = {
 	{ test_ipc_mailbox_invalid_read_size, "Invalid Read Size" },
 	{ test_ipc_mailbox_null_read,         "Null Read"         },
 	{ test_ipc_mailbox_invalid_write,     "Invalid Write"     },
+	{ test_ipc_mailbox_bad_write,         "Bad Write"         },
 	{ NULL,                               NULL                },
 };
