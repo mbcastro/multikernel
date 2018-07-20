@@ -43,11 +43,22 @@
  */
 static void test_ipc_mailbox_invalid_create(void)
 {
+	TEST_ASSERT(mailbox_create(NULL) < 0);
+}
+
+/*============================================================================*
+ * API Test: Bad Create                                                       *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Bad Create
+ */
+static void test_ipc_mailbox_bad_create(void)
+{
 	char pathname[NANVIX_PROC_NAME_MAX + 1];
 
 	memset(pathname, 1, NANVIX_PROC_NAME_MAX + 1);
 
-	TEST_ASSERT(mailbox_create(NULL) < 0);
 	TEST_ASSERT(mailbox_create("") < 0);
 	TEST_ASSERT(mailbox_create(pathname) < 0);
 }
@@ -75,6 +86,7 @@ static void test_ipc_mailbox_double_create(void)
  */
 struct test ipc_mailbox_tests_fault[] = {
 	{ test_ipc_mailbox_invalid_create, "Invalid Create" },
+	{ test_ipc_mailbox_bad_create,     "Bad Create"     },
 	{ test_ipc_mailbox_double_create,  "Double Create"  },
 	{ NULL,                            NULL             },
 };
