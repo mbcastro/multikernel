@@ -103,18 +103,6 @@ int initialize_inbox(int index)
 	return (0);
 }
 
-/**
- * @brief Unset initialized flag.
- */
-static void unset_inbox()
-{
-	int index;
-
-	index = sys_get_core_id();
-
-	initialized[index] = 0;
-}
-
 /*============================================================================*
  * destroy_inbox()                                                            *
  *============================================================================*/
@@ -136,7 +124,7 @@ int destroy_inbox(int index)
 	if (sys_mailbox_unlink(inboxes[index]) != 0)
 		return (-EAGAIN);
 
-	unset_inbox(index);
+	initialized[index] = 0;
 
 	return (0);
 }
