@@ -124,6 +124,18 @@ static void test_ipc_mailbox_double_unlink(void)
 	TEST_ASSERT(mailbox_unlink(inbox) < 0);
 }
 
+/*============================================================================*
+ * API Test: Invalid Open                                                     *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Invalid Open
+ */
+static void test_ipc_mailbox_invalid_open(void)
+{
+	TEST_ASSERT(mailbox_open(NULL) < 0);
+}
+
 /*============================================================================*/
 
 /**
@@ -138,5 +150,6 @@ struct test ipc_mailbox_tests_fault[] = {
 	{ test_ipc_mailbox_bad_unlink,     "Bad Unlink"     },
 #endif /* _TEST_IPC_MAILBOX_BAD_UNLINK_ */
 	{ test_ipc_mailbox_double_unlink,  "Double Unlink"  },
+	{ test_ipc_mailbox_invalid_open,   "Invalid Open"   },
 	{ NULL,                            NULL             },
 };
