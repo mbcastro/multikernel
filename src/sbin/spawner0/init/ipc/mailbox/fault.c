@@ -203,26 +203,47 @@ static void test_ipc_mailbox_invalid_read(void)
 	TEST_ASSERT(mailbox_read(1000000, buffer, MAILBOX_MSG_SIZE) < 0);
 }
 
+/*============================================================================*
+ * API Test: Invalid Read Size                                                *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Invalid Read Size
+ */
+static void test_ipc_mailbox_invalid_read_size(void)
+{
+	int inbox;
+	char buffer[MAILBOX_MSG_SIZE];
+
+	TEST_ASSERT((inbox = mailbox_create("cool-name")) >=  0);
+	TEST_ASSERT(mailbox_read(inbox, buffer, -1) < 0);
+	TEST_ASSERT(mailbox_read(inbox, buffer, 0) < 0);
+	TEST_ASSERT(mailbox_read(inbox, buffer, MAILBOX_MSG_SIZE - 1) < 0);
+	TEST_ASSERT(mailbox_read(inbox, buffer, MAILBOX_MSG_SIZE + 1) < 0);
+	TEST_ASSERT(mailbox_unlink(inbox) == 0);
+}
+
 /*============================================================================*/
 
 /**
  * @brief Unit tests.
  */
 struct test ipc_mailbox_tests_fault[] = {
-	{ test_ipc_mailbox_invalid_create, "Invalid Create" },
-	{ test_ipc_mailbox_bad_create,     "Bad Create"     },
-	{ test_ipc_mailbox_double_create,  "Double Create"  },
-	{ test_ipc_mailbox_invalid_unlink, "Invalid Unlink" },
+	{ test_ipc_mailbox_invalid_create,    "Invalid Create"    },
+	{ test_ipc_mailbox_bad_create,        "Bad Create"        },
+	{ test_ipc_mailbox_double_create,     "Double Create"     },
+	{ test_ipc_mailbox_invalid_unlink,    "Invalid Unlink"    },
 #ifdef _TEST_IPC_MAILBOX_BAD_UNLINK_
-	{ test_ipc_mailbox_bad_unlink,     "Bad Unlink"     },
+	{ test_ipc_mailbox_bad_unlink,        "Bad Unlink"        },
 #endif /* _TEST_IPC_MAILBOX_BAD_UNLINK_ */
-	{ test_ipc_mailbox_double_unlink,  "Double Unlink"  },
-	{ test_ipc_mailbox_invalid_open,   "Invalid Open"   },
+	{ test_ipc_mailbox_double_unlink,     "Double Unlink"     },
+	{ test_ipc_mailbox_invalid_open,      "Invalid Open"      },
 #ifdef _TEST_IPC_MAILBOX_BAD_OPEN_
-	{ test_ipc_mailbox_bad_open,       "Bad Open"       },
+	{ test_ipc_mailbox_bad_open,          "Bad Open"          },
 #endif /* _TEST_IPC_MAILBOX_BAD_OPEN_ */
-	{ test_ipc_mailbox_invalid_close,  "Invalid Close"  },
-	{ test_ipc_mailbox_bad_close,      "Bad Close"      },
-	{ test_ipc_mailbox_invalid_read,   "Invalid Read"   },
-	{ NULL,                            NULL             },
+	{ test_ipc_mailbox_invalid_close,     "Invalid Close"     },
+	{ test_ipc_mailbox_bad_close,         "Bad Close"         },
+	{ test_ipc_mailbox_invalid_read,      "Invalid Read"      },
+	{ test_ipc_mailbox_invalid_read_size, "Invalid Read Size" },
+	{ NULL,                               NULL                },
 };
