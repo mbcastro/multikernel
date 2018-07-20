@@ -119,10 +119,16 @@ int destroy_inbox(int index)
 {
 	/* Nothing to do. */
 	if (!initialized[index])
-		return (0);
+	{
+		printf("[nanvix][runtime] no unnamed mailbox\n");
+		return (-EINVAL);
+	}
 
 	if (sys_mailbox_unlink(inboxes[index]) != 0)
-		return (-EAGAIN);
+	{
+		printf("[nanvix][runtime] failed to unlink unnamed mailbox\n");
+		return (-EINVAL);
+	}
 
 	initialized[index] = 0;
 
@@ -140,7 +146,10 @@ int get_inbox(void)
 
 	/* Inbox was not initialized. */
 	if (!initialized[index])
+	{
+		printf("[nanvix][runtime] no unnamed mailbox\n");
 		return (-EINVAL);
+	}
 
 	return (inboxes[index]);
 }
