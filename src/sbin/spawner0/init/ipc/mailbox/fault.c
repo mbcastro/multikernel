@@ -466,6 +466,75 @@ static void test_ipc_mailbox_bad_write(void)
 }
 
 /*============================================================================*
+ * API Test: Invalid Write Size                                               *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Invalid Write Size
+ */
+static void *test_ipc_mailbox_invalid_write_size_thread(void *args)
+{
+	int tid;
+	int inbox;
+
+	TEST_ASSERT(kernel_setup() == 0);
+	TEST_ASSERT(runtime_setup(1) == 0);
+
+	tid = ((int *)args)[0];
+
+	if (tid == 1)
+		TEST_ASSERT((inbox = mailbox_create("existing-name")) >= 0);
+
+	pthread_barrier_wait(&barrier);
+	pthread_barrier_wait(&barrier);
+
+	/* House keeping. */
+	if (tid == 1)
+		TEST_ASSERT(mailbox_unlink(inbox) == 0);
+
+	TEST_ASSERT(runtime_cleanup() == 0);
+	TEST_ASSERT(kernel_cleanup() == 0);
+	return (NULL);
+}
+
+/**
+ * @brief API Test: Invalid Write Size
+ */
+static void test_ipc_mailbox_invalid_write_size(void)
+{
+	int outbox;
+	int tids[ipc_mailbox_ncores];
+	char buffer[MAILBOX_MSG_SIZE];
+	pthread_t threads[ipc_mailbox_ncores];
+
+	/* Spawn driver threads. */
+	for (int i = 1; i < ipc_mailbox_ncores; i++)
+	{
+		tids[i] = i;
+		TEST_ASSERT((pthread_create(&threads[i],
+			NULL,
+			test_ipc_mailbox_invalid_write_size_thread,
+			&tids[i])) == 0
+		);
+	}
+
+	pthread_barrier_wait(&barrier);
+
+	TEST_ASSERT((outbox = mailbox_open("existing-name")) >= 0);
+	TEST_ASSERT(mailbox_write(outbox, buffer, -1) < 0);
+	TEST_ASSERT(mailbox_write(outbox, buffer, 0) < 0);
+	TEST_ASSERT(mailbox_write(outbox, buffer, MAILBOX_MSG_SIZE - 1) < 0);
+	TEST_ASSERT(mailbox_write(outbox, buffer, MAILBOX_MSG_SIZE + 1) < 0);
+	TEST_ASSERT(mailbox_close(outbox) == 0);
+
+	pthread_barrier_wait(&barrier);
+
+	/* Wait for driver threads. */
+	for (int i = 1; i < ipc_mailbox_ncores; i++)
+		pthread_join(threads[i], NULL);
+}
+
+/*============================================================================*
  * API Test: Null Write                                                       *
  *============================================================================*/
 
@@ -536,30 +605,31 @@ static void test_ipc_mailbox_null_write(void)
  * @brief Unit tests.
  */
 struct test ipc_mailbox_tests_fault[] = {
-	{ test_ipc_mailbox_invalid_create,    "Invalid Create"    },
-	{ test_ipc_mailbox_bad_create,        "Bad Create"        },
-	{ test_ipc_mailbox_double_create,     "Double Create"     },
-	{ test_ipc_mailbox_invalid_unlink,    "Invalid Unlink"    },
+	{ test_ipc_mailbox_invalid_create,     "Invalid Create"     },
+	{ test_ipc_mailbox_bad_create,         "Bad Create"         },
+	{ test_ipc_mailbox_double_create,      "Double Create"      },
+	{ test_ipc_mailbox_invalid_unlink,     "Invalid Unlink"     },
 #ifdef _TEST_IPC_MAILBOX_BAD_UNLINK_
-	{ test_ipc_mailbox_bad_unlink,        "Bad Unlink"        },
+	{ test_ipc_mailbox_bad_unlink,         "Bad Unlink"         },
 #endif /* _TEST_IPC_MAILBOX_BAD_UNLINK_ */
-	{ test_ipc_mailbox_double_unlink,     "Double Unlink"     },
-	{ test_ipc_mailbox_invalid_open,      "Invalid Open"      },
-	{ test_ipc_mailbox_double_open,       "Double Open"       },
+	{ test_ipc_mailbox_double_unlink,      "Double Unlink"      },
+	{ test_ipc_mailbox_invalid_open,       "Invalid Open"       },
+	{ test_ipc_mailbox_double_open,        "Double Open"        },
 #ifdef _TEST_IPC_MAILBOX_BAD_OPEN_
-	{ test_ipc_mailbox_bad_open,          "Bad Open"          },
+	{ test_ipc_mailbox_bad_open,           "Bad Open"           },
 #endif /* _TEST_IPC_MAILBOX_BAD_OPEN_ */
-	{ test_ipc_mailbox_invalid_close,     "Invalid Close"     },
-	{ test_ipc_mailbox_bad_close,         "Bad Close"         },
-	{ test_ipc_mailbox_double_close,      "Double Close"      },
-	{ test_ipc_mailbox_invalid_read,      "Invalid Read"      },
+	{ test_ipc_mailbox_invalid_close,      "Invalid Close"      },
+	{ test_ipc_mailbox_bad_close,          "Bad Close"          },
+	{ test_ipc_mailbox_double_close,       "Double Close"       },
+	{ test_ipc_mailbox_invalid_read,       "Invalid Read"       },
 #ifdef _TEST_IPC_MAILBOX_BAD_READ_
-	{ test_ipc_mailbox_bad_read,          "Bad Read"          },
+	{ test_ipc_mailbox_bad_read,           "Bad Read"           },
 #endif /* _TEST_IPC_MAILBOX_BAD_READ_ */
-	{ test_ipc_mailbox_invalid_read_size, "Invalid Read Size" },
-	{ test_ipc_mailbox_null_read,         "Null Read"         },
-	{ test_ipc_mailbox_invalid_write,     "Invalid Write"     },
-	{ test_ipc_mailbox_bad_write,         "Bad Write"         },
-	{ test_ipc_mailbox_null_write,        "Null Write"        },
-	{ NULL,                               NULL                },
+	{ test_ipc_mailbox_invalid_read_size,  "Invalid Read Size"  },
+	{ test_ipc_mailbox_null_read,          "Null Read"          },
+	{ test_ipc_mailbox_invalid_write,      "Invalid Write"      },
+	{ test_ipc_mailbox_bad_write,          "Bad Write"          },
+	{ test_ipc_mailbox_invalid_write_size, "Invalid Write Size" },
+	{ test_ipc_mailbox_null_write,         "Null Write"         },
+	{ NULL,                                NULL                 },
 };
