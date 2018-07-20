@@ -171,6 +171,23 @@ static void test_ipc_mailbox_invalid_close(void)
 	TEST_ASSERT(mailbox_close(1000000) < 0);
 }
 
+/*============================================================================*
+ * API Test: Bad Close                                                        *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Bad Close
+ */
+static void test_ipc_mailbox_bad_close(void)
+{
+	int inbox;
+
+	TEST_ASSERT(mailbox_close(0) < 0);
+	TEST_ASSERT((inbox = mailbox_create("cool-name")) >=  0);
+	TEST_ASSERT(mailbox_close(inbox) < 0);
+	TEST_ASSERT(mailbox_unlink(inbox) == 0);
+}
+
 /*============================================================================*/
 
 /**
@@ -190,5 +207,6 @@ struct test ipc_mailbox_tests_fault[] = {
 	{ test_ipc_mailbox_bad_open,       "Bad Open"       },
 #endif /* _TEST_IPC_MAILBOX_BAD_OPEN_ */
 	{ test_ipc_mailbox_invalid_close,  "Invalid Close"  },
+	{ test_ipc_mailbox_bad_close,      "Bad Close"      },
 	{ NULL,                            NULL             },
 };
