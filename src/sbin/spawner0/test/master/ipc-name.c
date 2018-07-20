@@ -119,7 +119,7 @@ static void test_ipc_name_lookup_cc(void)
 /*============================================================================*/
 
 /**
- * @brief Automated test driver for Naming.
+ * @brief Automated test driver for Naming Service.
  */
 void test_ipc_name(void)
 {

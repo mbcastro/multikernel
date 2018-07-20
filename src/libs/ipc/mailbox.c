@@ -103,18 +103,6 @@ int initialize_inbox(int index)
 	return (0);
 }
 
-/**
- * @brief Unset initialized flag.
- */
-static void unset_inbox()
-{
-	int index;
-
-	index = sys_get_core_id();
-
-	initialized[index] = 0;
-}
-
 /*============================================================================*
  * destroy_inbox()                                                            *
  *============================================================================*/
@@ -131,12 +119,18 @@ int destroy_inbox(int index)
 {
 	/* Nothing to do. */
 	if (!initialized[index])
-		return (0);
+	{
+		printf("[nanvix][runtime] no unnamed mailbox\n");
+		return (-EINVAL);
+	}
 
 	if (sys_mailbox_unlink(inboxes[index]) != 0)
-		return (-EAGAIN);
+	{
+		printf("[nanvix][runtime] failed to unlink unnamed mailbox\n");
+		return (-EINVAL);
+	}
 
-	unset_inbox(index);
+	initialized[index] = 0;
 
 	return (0);
 }
@@ -152,7 +146,10 @@ int get_inbox(void)
 
 	/* Inbox was not initialized. */
 	if (!initialized[index])
+	{
+		printf("[nanvix][runtime] no unnamed mailbox\n");
 		return (-EINVAL);
+	}
 
 	return (inboxes[index]);
 }
@@ -314,13 +311,6 @@ static int mailbox_alloc(void)
  */
 static void mailbox_free(int mbxid)
 {
-	/* Sanity check. */
-	if (!mailbox_is_valid(mbxid))
-		return;
-
-	if (!mailbox_is_used(mbxid))
-		return;
-
 	mailbox_clear_flags(mbxid);
 }
 
@@ -350,8 +340,8 @@ int mailbox_create(char *name)
 	if (strlen(name) > MAILBOX_MSG_SIZE)
 		return (-EINVAL);
 
-	/* Inbox should be initialized. */
-	if (initialize_inbox(sys_get_core_id()) != 0)
+	/* Runtime not initialized. */
+	if ((fd = get_inbox()) < 0)
 		return (-EAGAIN);
 
 	/* Allocate mailbox. */
@@ -362,10 +352,6 @@ int mailbox_create(char *name)
 
 	/* Link name. */
 	if (name_link(nodenum, name) != 0)
-		return (-EAGAIN);
-
-	/* Get the client inbox. */
-	if ((fd = get_inbox()) < 0)
 		goto error0;
 
 	/* Initialize mailbox. */
@@ -378,7 +364,6 @@ int mailbox_create(char *name)
 	return (mbxid);
 
 error0:
-	name_unlink(name);
 	mailbox_free(mbxid);
 	return (-EAGAIN);
 }
@@ -558,8 +543,6 @@ int mailbox_close(int mbxid)
  */
 int mailbox_unlink(int mbxid)
 {
-	int r;		/* Return value. */
-
 	/* Invalid mailbox ID.*/
 	if (!mailbox_is_valid(mbxid))
 		return (-EINVAL);
@@ -575,12 +558,6 @@ int mailbox_unlink(int mbxid)
 	/* Unlink name. */
 	if (name_unlink(mailboxes[mbxid].name) != 0)
 		return (-EAGAIN);
-
-	/* Unset inbox in the kernel. */
-	unset_inbox();
-
-	if ((r = sys_mailbox_unlink(mailboxes[mbxid].fd)) != 0)
-		return (r);
 
 	mailbox_free(mbxid);
 
