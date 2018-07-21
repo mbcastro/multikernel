@@ -44,6 +44,11 @@
 	#define NANVIX_MAILBOX_MAX HAL_NR_MAILBOX
 
 	/**
+	 * @brief Maximum number of portals.
+	 */
+	#define NANVIX_PORTAL_MAX HAL_NR_PORTAL
+
+	/**
 	 * @brief Maximum length of a sempahore name.
 	 *
 	 * @note The null character is included.
