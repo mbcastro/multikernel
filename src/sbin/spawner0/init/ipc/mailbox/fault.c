@@ -24,8 +24,6 @@
 #include <stdlib.h>
 #include <pthread.h>
 
-#include <mppaipc.h>
-
 #include <nanvix/syscalls.h>
 #include <nanvix/name.h>
 #include <nanvix/limits.h>
