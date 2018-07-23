@@ -102,6 +102,37 @@ static void test_ipc_portal_create_unlink_cc(void)
 	join_slaves();
 }
 
+/*============================================================================*
+ * API Test: Open Close CC                                                    *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Open Close CC
+ */
+static void test_ipc_portal_open_close_cc(void)
+{
+	char masternode_str[4];
+	char portal_nclusters_str[4];
+	char test_str[4];
+	const char *args[] = {
+		"/test/ipc-portal-slave",
+		masternode_str,
+		portal_nclusters_str,
+		test_str,
+		NULL
+	};
+
+	printf("[nanvix][test][api][ipc][portal] Open Close CC\n");
+
+	/* Build arguments. */
+	sprintf(masternode_str, "%d", sys_get_node_num());
+	sprintf(portal_nclusters_str, "%d", NANVIX_PROC_MAX);
+	sprintf(test_str, "%d", 1);
+
+	spawn_slaves(args);
+	join_slaves();
+}
+
 /*============================================================================*/
 
 /**
@@ -110,5 +141,6 @@ static void test_ipc_portal_create_unlink_cc(void)
 void test_ipc_portal(void)
 {
 	test_ipc_portal_create_unlink_cc();
+	test_ipc_portal_open_close_cc();
 }
 

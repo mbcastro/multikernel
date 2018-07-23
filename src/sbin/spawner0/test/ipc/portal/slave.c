@@ -66,6 +66,23 @@ static void test_sys_portal_create_unlink(int nclusters)
 	TEST_ASSERT(portal_unlink(inportal) == 0);
 }
 
+/*============================================================================*
+ * API Test: Open Close CC                                                    *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Open Close CC
+ */
+static void test_ipc_portal_open_close_cc(int nclusters)
+{
+	int outportal;
+	char pathname[NANVIX_PROC_NAME_MAX];
+
+	sprintf(pathname, "inportal%d", (nodenum + 1)%nclusters);
+	TEST_ASSERT((outportal = portal_create(pathname)) >= 0);
+	TEST_ASSERT(portal_unlink(outportal) == 0);
+}
+
 /*============================================================================*/
 
 /**
@@ -86,9 +103,17 @@ int main2(int argc, char **argv)
 
 	switch (test)
 	{
+		/* Create Unlink CC */
 		case 0:
 			test_sys_portal_create_unlink(nclusters);
 			break;
+
+		/* Open Close CC */
+		case 1:
+			test_ipc_portal_open_close_cc(nclusters);
+			break;
+
+		/* Should not happen. */
 		default:
 			exit(EXIT_FAILURE);
 	}
