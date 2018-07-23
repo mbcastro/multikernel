@@ -170,10 +170,8 @@ static void test_ipc_mailbox_bad_unlink(void)
 	int tids[ipc_mailbox_ncores];
 	pthread_t threads[ipc_mailbox_ncores];
 
-#ifdef _TEST_IPC_MAILBOX_BAD_INBOX_UNLINK_
-	TEST_ASSERT(mailbox_unlink(0) < 0);
-#endif /* _TEST_IPC_MAILBOX_BAD_INBOX_UNLINK_ */
-	TEST_ASSERT(mailbox_unlink(1) < 0);
+	for (int i = 0; i < NANVIX_MAILBOX_MAX; i++)
+		TEST_ASSERT(mailbox_unlink(i) < 0);
 
 	/* Spawn driver threads. */
 	for (int i = 1; i < ipc_mailbox_ncores; i++)
@@ -466,7 +464,8 @@ static void test_ipc_mailbox_bad_read(void)
 	char buffer[MAILBOX_MSG_SIZE];
 	pthread_t threads[ipc_mailbox_ncores];
 
-	TEST_ASSERT(mailbox_read(1, buffer, MAILBOX_MSG_SIZE) < 0);
+	for (int i = 0; i < NANVIX_MAILBOX_MAX; i++)
+		TEST_ASSERT(mailbox_read(i, buffer, MAILBOX_MSG_SIZE) < 0);
 
 	/* Spawn driver threads. */
 	for (int i = 1; i < ipc_mailbox_ncores; i++)
