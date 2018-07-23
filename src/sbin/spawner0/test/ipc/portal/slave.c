@@ -49,6 +49,38 @@ static int masternode;
  */
 static int nodenum;
 
+/**
+ * @brief Data buffer.
+ */
+static char buffer[DATA_SIZE];
+
+/*============================================================================*
+ * Utilities                                                                  *
+ *============================================================================*/
+
+/**
+ * @brief Sync slaves.
+ *
+ * @param nclusters Number of slaves.
+ */
+static void sync_slaves(int nclusters)
+{
+	int barrier;
+	int nodes[nclusters];
+
+	/* Build nodes list. */
+	for (int i = 0; i < nclusters; i++)
+		nodes[i] = i;
+
+	/* Create barrier. */
+	TEST_ASSERT((barrier = barrier_create(nodes, nclusters)) >= 0);
+
+	/* Sync. */
+	TEST_ASSERT(barrier_wait(barrier) == 0);
+
+	TEST_ASSERT(barrier_unlink(barrier) == 0);
+}
+
 /*============================================================================*
  * API Test: Create Unlink CC                                                 *
  *============================================================================*/
@@ -56,7 +88,7 @@ static int nodenum;
 /**
  * @brief API Test: Create Unlink CC
  */
-static void test_sys_portal_create_unlink(int nclusters)
+static void test_ipc_portal_create_unlink(int nclusters)
 {
 	int inportal;
 	char pathname[NANVIX_PROC_NAME_MAX];
@@ -83,6 +115,60 @@ static void test_ipc_portal_open_close_cc(int nclusters)
 	TEST_ASSERT(portal_unlink(outportal) == 0);
 }
 
+/*============================================================================*
+ * API Test: Read Write CC                                                    *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Read Write CC
+ */
+static void test_ipc_portal_read_write_cc(int nclusters)
+{
+	int inportal;
+	int outportal;
+	char pathname[NANVIX_PROC_NAME_MAX];
+
+	sprintf(pathname, "inportal%d", nodenum);
+	TEST_ASSERT((inportal = portal_create(pathname)) >= 0);
+
+	sync_slaves(nclusters);
+
+	sprintf(pathname, "inportal%d", (nodenum + 1)%nclusters);
+	TEST_ASSERT((outportal = portal_open(pathname)) >= 0);
+
+	if (nodenum != 0)
+	{
+		TEST_ASSERT((portal_allow(
+			inportal,
+			(nodenum == 0) ?
+				nclusters - 1 :
+				(nodenum - 1)%nclusters)) == 0
+		);
+	}
+
+	if (nodenum != (nclusters - 1))
+	{
+		TEST_ASSERT((portal_write(
+			outportal,
+			buffer,
+			DATA_SIZE) == DATA_SIZE)
+		);
+	}
+
+	if (nodenum != 0)
+	{
+		TEST_ASSERT((portal_read(
+			inportal,
+			buffer,
+			DATA_SIZE) == DATA_SIZE)
+		);
+	}
+
+	/* House keeping. */
+	TEST_ASSERT(portal_close(outportal) == 0);
+	TEST_ASSERT(portal_unlink(inportal) == 0);
+}
+
 /*============================================================================*/
 
 /**
@@ -105,12 +191,17 @@ int main2(int argc, char **argv)
 	{
 		/* Create Unlink CC */
 		case 0:
-			test_sys_portal_create_unlink(nclusters);
+			test_ipc_portal_create_unlink(nclusters);
 			break;
 
 		/* Open Close CC */
 		case 1:
 			test_ipc_portal_open_close_cc(nclusters);
+			break;
+
+		/* Read Write CC */
+		case 2:
+			test_ipc_portal_read_write_cc(nclusters);
 			break;
 
 		/* Should not happen. */
