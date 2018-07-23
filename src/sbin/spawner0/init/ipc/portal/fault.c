@@ -69,7 +69,7 @@ static void *test_ipc_portal_bad_create_thread(void *args)
  */
 static void test_ipc_portal_bad_create(void)
 {
-	int inbox;
+	int inportal;
 	int tids[ipc_portal_ncores];
 	pthread_t threads[ipc_portal_ncores];
 	char pathname[NANVIX_PROC_NAME_MAX + 1];
@@ -79,7 +79,7 @@ static void test_ipc_portal_bad_create(void)
 	TEST_ASSERT(portal_create("") < 0);
 	TEST_ASSERT(portal_create(pathname) < 0);
 
-	TEST_ASSERT((inbox = portal_create("existing-name")) >= 0);
+	TEST_ASSERT((inportal = portal_create("existing-name")) >= 0);
 
 	/* Spawn driver threads. */
 	for (int i = 1; i < ipc_portal_ncores; i++)
@@ -97,7 +97,7 @@ static void test_ipc_portal_bad_create(void)
 		pthread_join(threads[i], NULL);
 
 	/* House keeping. */
-	TEST_ASSERT(portal_unlink(inbox) == 0);
+	TEST_ASSERT(portal_unlink(inportal) == 0);
 }
 
 /*============================================================================*
@@ -109,11 +109,11 @@ static void test_ipc_portal_bad_create(void)
  */
 static void test_ipc_portal_double_create(void)
 {
-	int inbox;
+	int inportal;
 
-	TEST_ASSERT((inbox = portal_create("cool-name")) >=  0);
+	TEST_ASSERT((inportal = portal_create("cool-name")) >=  0);
 	TEST_ASSERT(portal_create("cool-name") < 0);
-	TEST_ASSERT(portal_unlink(inbox) == 0);
+	TEST_ASSERT(portal_unlink(inportal) == 0);
 }
 
 /*============================================================================*
@@ -139,7 +139,7 @@ static void test_ipc_portal_invalid_unlink(void)
 static void *test_ipc_portal_bad_unlink_thread(void *args)
 {
 	int tid;
-	int inbox;
+	int inportal;
 
 	TEST_ASSERT(kernel_setup() == 0);
 	TEST_ASSERT(runtime_setup(1) == 0);
@@ -147,14 +147,14 @@ static void *test_ipc_portal_bad_unlink_thread(void *args)
 	tid = ((int *)args)[0];
 
 	if (tid == 1)
-		TEST_ASSERT((inbox = portal_create("existing-name")) >= 0);
+		TEST_ASSERT((inportal = portal_create("existing-name")) >= 0);
 
 	pthread_barrier_wait(&barrier);
 	pthread_barrier_wait(&barrier);
 
 	/* House keeping. */
 	if (tid == 1)
-		TEST_ASSERT(portal_unlink(inbox) == 0);
+		TEST_ASSERT(portal_unlink(inportal) == 0);
 
 	TEST_ASSERT(runtime_cleanup() == 0);
 	TEST_ASSERT(kernel_cleanup() == 0);
@@ -166,7 +166,7 @@ static void *test_ipc_portal_bad_unlink_thread(void *args)
  */
 static void test_ipc_portal_bad_unlink(void)
 {
-	int outbox;
+	int outportal;
 	int tids[ipc_portal_ncores];
 	pthread_t threads[ipc_portal_ncores];
 
@@ -188,9 +188,9 @@ static void test_ipc_portal_bad_unlink(void)
 
 	pthread_barrier_wait(&barrier);
 
-	TEST_ASSERT((outbox = portal_open("existing-name")) >= 0);
-	TEST_ASSERT(portal_unlink(outbox) < 0);
-	TEST_ASSERT(portal_close(outbox) == 0);
+	TEST_ASSERT((outportal = portal_open("existing-name")) >= 0);
+	TEST_ASSERT(portal_unlink(outportal) < 0);
+	TEST_ASSERT(portal_close(outportal) == 0);
 
 	pthread_barrier_wait(&barrier);
 
@@ -208,11 +208,11 @@ static void test_ipc_portal_bad_unlink(void)
  */
 static void test_ipc_portal_double_unlink(void)
 {
-	int inbox;
+	int inportal;
 
-	TEST_ASSERT((inbox = portal_create("cool-name")) >=  0);
-	TEST_ASSERT(portal_unlink(inbox) == 0);
-	TEST_ASSERT(portal_unlink(inbox) < 0);
+	TEST_ASSERT((inportal = portal_create("cool-name")) >=  0);
+	TEST_ASSERT(portal_unlink(inportal) == 0);
+	TEST_ASSERT(portal_unlink(inportal) < 0);
 }
 
 /*============================================================================*
@@ -236,7 +236,7 @@ static void test_ipc_portal_invalid_open(void)
  */
 static void test_ipc_portal_bad_open(void)
 {
-	int inbox;
+	int inportal;
 	char pathname[NANVIX_PROC_NAME_MAX + 1];
 
 	memset(pathname, 1, NANVIX_PROC_NAME_MAX + 1);
@@ -244,9 +244,9 @@ static void test_ipc_portal_bad_open(void)
 	TEST_ASSERT(portal_open("") < 0);
 	TEST_ASSERT(portal_open(pathname) < 0);
 	TEST_ASSERT(portal_open("missing-name") < 0);
-	TEST_ASSERT((inbox = portal_create("cool-name")) >= 0);
+	TEST_ASSERT((inportal = portal_create("cool-name")) >= 0);
 	TEST_ASSERT(portal_open("cool-name") < 0);
-	TEST_ASSERT(portal_unlink(inbox) == 0);
+	TEST_ASSERT(portal_unlink(inportal) == 0);
 }
 
 /*============================================================================*
@@ -259,7 +259,7 @@ static void test_ipc_portal_bad_open(void)
 static void *test_ipc_portal_double_open_thread(void *args)
 {
 	int tid;
-	int inbox;
+	int inportal;
 
 	TEST_ASSERT(kernel_setup() == 0);
 	TEST_ASSERT(runtime_setup(1) == 0);
@@ -267,14 +267,14 @@ static void *test_ipc_portal_double_open_thread(void *args)
 	tid = ((int *)args)[0];
 
 	if (tid == 1)
-		TEST_ASSERT((inbox = portal_create("existing-name")) >= 0);
+		TEST_ASSERT((inportal = portal_create("existing-name")) >= 0);
 
 	pthread_barrier_wait(&barrier);
 	pthread_barrier_wait(&barrier);
 
 	/* House keeping. */
 	if (tid == 1)
-		TEST_ASSERT(portal_unlink(inbox) == 0);
+		TEST_ASSERT(portal_unlink(inportal) == 0);
 
 	TEST_ASSERT(runtime_cleanup() == 0);
 	TEST_ASSERT(kernel_cleanup() == 0);
@@ -286,7 +286,7 @@ static void *test_ipc_portal_double_open_thread(void *args)
  */
 static void test_ipc_portal_double_open(void)
 {
-	int outbox;
+	int outportal;
 	int tids[ipc_portal_ncores];
 	pthread_t threads[ipc_portal_ncores];
 
@@ -303,9 +303,9 @@ static void test_ipc_portal_double_open(void)
 
 	pthread_barrier_wait(&barrier);
 
-	TEST_ASSERT((outbox = portal_open("existing-name")) >= 0);
+	TEST_ASSERT((outportal = portal_open("existing-name")) >= 0);
 	TEST_ASSERT(portal_open("existing-name") < 0);
-	TEST_ASSERT(portal_close(outbox) == 0);
+	TEST_ASSERT(portal_close(outportal) == 0);
 
 	pthread_barrier_wait(&barrier);
 
@@ -336,12 +336,12 @@ static void test_ipc_portal_invalid_close(void)
  */
 static void test_ipc_portal_bad_close(void)
 {
-	int inbox;
+	int inportal;
 
 	TEST_ASSERT(portal_close(0) < 0);
-	TEST_ASSERT((inbox = portal_create("cool-name")) >=  0);
-	TEST_ASSERT(portal_close(inbox) < 0);
-	TEST_ASSERT(portal_unlink(inbox) == 0);
+	TEST_ASSERT((inportal = portal_create("cool-name")) >=  0);
+	TEST_ASSERT(portal_close(inportal) < 0);
+	TEST_ASSERT(portal_unlink(inportal) == 0);
 }
 
 /*============================================================================*
@@ -354,7 +354,7 @@ static void test_ipc_portal_bad_close(void)
 static void *test_ipc_portal_double_close_thread(void *args)
 {
 	int tid;
-	int inbox;
+	int inportal;
 
 	TEST_ASSERT(kernel_setup() == 0);
 	TEST_ASSERT(runtime_setup(1) == 0);
@@ -362,14 +362,14 @@ static void *test_ipc_portal_double_close_thread(void *args)
 	tid = ((int *)args)[0];
 
 	if (tid == 1)
-		TEST_ASSERT((inbox = portal_create("existing-name")) >= 0);
+		TEST_ASSERT((inportal = portal_create("existing-name")) >= 0);
 
 	pthread_barrier_wait(&barrier);
 	pthread_barrier_wait(&barrier);
 
 	/* House keeping. */
 	if (tid == 1)
-		TEST_ASSERT(portal_unlink(inbox) == 0);
+		TEST_ASSERT(portal_unlink(inportal) == 0);
 
 	TEST_ASSERT(runtime_cleanup() == 0);
 	TEST_ASSERT(kernel_cleanup() == 0);
@@ -381,7 +381,7 @@ static void *test_ipc_portal_double_close_thread(void *args)
  */
 static void test_ipc_portal_double_close(void)
 {
-	int outbox;
+	int outportal;
 	int tids[ipc_portal_ncores];
 	pthread_t threads[ipc_portal_ncores];
 
@@ -398,9 +398,9 @@ static void test_ipc_portal_double_close(void)
 
 	pthread_barrier_wait(&barrier);
 
-	TEST_ASSERT((outbox = portal_open("existing-name")) >= 0);
-	TEST_ASSERT(portal_close(outbox) == 0);
-	TEST_ASSERT(portal_close(outbox) < 0);
+	TEST_ASSERT((outportal = portal_open("existing-name")) >= 0);
+	TEST_ASSERT(portal_close(outportal) == 0);
+	TEST_ASSERT(portal_close(outportal) < 0);
 
 	pthread_barrier_wait(&barrier);
 
@@ -434,7 +434,7 @@ static void test_ipc_portal_invalid_read(void)
 static void *test_ipc_portal_bad_read_thread(void *args)
 {
 	int tid;
-	int inbox;
+	int inportal;
 
 	TEST_ASSERT(kernel_setup() == 0);
 	TEST_ASSERT(runtime_setup(1) == 0);
@@ -442,14 +442,14 @@ static void *test_ipc_portal_bad_read_thread(void *args)
 	tid = ((int *)args)[0];
 
 	if (tid == 1)
-		TEST_ASSERT((inbox = portal_create("existing-name")) >= 0);
+		TEST_ASSERT((inportal = portal_create("existing-name")) >= 0);
 
 	pthread_barrier_wait(&barrier);
 	pthread_barrier_wait(&barrier);
 
 	/* House keeping. */
 	if (tid == 1)
-		TEST_ASSERT(portal_unlink(inbox) == 0);
+		TEST_ASSERT(portal_unlink(inportal) == 0);
 
 	TEST_ASSERT(runtime_cleanup() == 0);
 	TEST_ASSERT(kernel_cleanup() == 0);
@@ -461,7 +461,7 @@ static void *test_ipc_portal_bad_read_thread(void *args)
  */
 static void test_ipc_portal_bad_read(void)
 {
-	int outbox;
+	int outportal;
 	int tids[ipc_portal_ncores];
 	char buffer[DATA_SIZE];
 	pthread_t threads[ipc_portal_ncores];
@@ -481,9 +481,9 @@ static void test_ipc_portal_bad_read(void)
 
 	pthread_barrier_wait(&barrier);
 
-	TEST_ASSERT((outbox = portal_open("existing-name")) >= 0);
-	TEST_ASSERT(portal_read(outbox, buffer, DATA_SIZE) < 0);
-	TEST_ASSERT(portal_close(outbox) == 0);
+	TEST_ASSERT((outportal = portal_open("existing-name")) >= 0);
+	TEST_ASSERT(portal_read(outportal, buffer, DATA_SIZE) < 0);
+	TEST_ASSERT(portal_close(outportal) == 0);
 
 	pthread_barrier_wait(&barrier);
 
@@ -501,15 +501,15 @@ static void test_ipc_portal_bad_read(void)
  */
 static void test_ipc_portal_invalid_read_size(void)
 {
-	int inbox;
+	int inportal;
 	char buffer[DATA_SIZE];
 
-	TEST_ASSERT((inbox = portal_create("cool-name")) >=  0);
-	TEST_ASSERT(portal_read(inbox, buffer, -1) < 0);
-	TEST_ASSERT(portal_read(inbox, buffer, 0) < 0);
-	TEST_ASSERT(portal_read(inbox, buffer, DATA_SIZE - 1) < 0);
-	TEST_ASSERT(portal_read(inbox, buffer, DATA_SIZE + 1) < 0);
-	TEST_ASSERT(portal_unlink(inbox) == 0);
+	TEST_ASSERT((inportal = portal_create("cool-name")) >=  0);
+	TEST_ASSERT(portal_read(inportal, buffer, -1) < 0);
+	TEST_ASSERT(portal_read(inportal, buffer, 0) < 0);
+	TEST_ASSERT(portal_read(inportal, buffer, DATA_SIZE - 1) < 0);
+	TEST_ASSERT(portal_read(inportal, buffer, DATA_SIZE + 1) < 0);
+	TEST_ASSERT(portal_unlink(inportal) == 0);
 }
 
 /*============================================================================*
@@ -521,11 +521,11 @@ static void test_ipc_portal_invalid_read_size(void)
  */
 static void test_ipc_portal_null_read(void)
 {
-	int inbox;
+	int inportal;
 
-	TEST_ASSERT((inbox = portal_create("cool-name")) >=  0);
-	TEST_ASSERT(portal_read(inbox, NULL, DATA_SIZE) < 0);
-	TEST_ASSERT(portal_unlink(inbox) == 0);
+	TEST_ASSERT((inportal = portal_create("cool-name")) >=  0);
+	TEST_ASSERT(portal_read(inportal, NULL, DATA_SIZE) < 0);
+	TEST_ASSERT(portal_unlink(inportal) == 0);
 }
 
 /*============================================================================*
@@ -552,13 +552,13 @@ static void test_ipc_portal_invalid_write(void)
  */
 static void test_ipc_portal_bad_write(void)
 {
-	int inbox;
+	int inportal;
 	char buffer[DATA_SIZE];
 
 	TEST_ASSERT(portal_write(0, buffer, DATA_SIZE) < 0);
-	TEST_ASSERT((inbox = portal_create("cool-name")) >=  0);
-	TEST_ASSERT(portal_write(inbox, buffer, DATA_SIZE) < 0);
-	TEST_ASSERT(portal_unlink(inbox) == 0);
+	TEST_ASSERT((inportal = portal_create("cool-name")) >=  0);
+	TEST_ASSERT(portal_write(inportal, buffer, DATA_SIZE) < 0);
+	TEST_ASSERT(portal_unlink(inportal) == 0);
 }
 
 /*============================================================================*
@@ -571,7 +571,7 @@ static void test_ipc_portal_bad_write(void)
 static void *test_ipc_portal_invalid_write_size_thread(void *args)
 {
 	int tid;
-	int inbox;
+	int inportal;
 
 	TEST_ASSERT(kernel_setup() == 0);
 	TEST_ASSERT(runtime_setup(1) == 0);
@@ -579,14 +579,14 @@ static void *test_ipc_portal_invalid_write_size_thread(void *args)
 	tid = ((int *)args)[0];
 
 	if (tid == 1)
-		TEST_ASSERT((inbox = portal_create("existing-name")) >= 0);
+		TEST_ASSERT((inportal = portal_create("existing-name")) >= 0);
 
 	pthread_barrier_wait(&barrier);
 	pthread_barrier_wait(&barrier);
 
 	/* House keeping. */
 	if (tid == 1)
-		TEST_ASSERT(portal_unlink(inbox) == 0);
+		TEST_ASSERT(portal_unlink(inportal) == 0);
 
 	TEST_ASSERT(runtime_cleanup() == 0);
 	TEST_ASSERT(kernel_cleanup() == 0);
@@ -598,7 +598,7 @@ static void *test_ipc_portal_invalid_write_size_thread(void *args)
  */
 static void test_ipc_portal_invalid_write_size(void)
 {
-	int outbox;
+	int outportal;
 	int tids[ipc_portal_ncores];
 	char buffer[DATA_SIZE];
 	pthread_t threads[ipc_portal_ncores];
@@ -616,12 +616,12 @@ static void test_ipc_portal_invalid_write_size(void)
 
 	pthread_barrier_wait(&barrier);
 
-	TEST_ASSERT((outbox = portal_open("existing-name")) >= 0);
-	TEST_ASSERT(portal_write(outbox, buffer, -1) < 0);
-	TEST_ASSERT(portal_write(outbox, buffer, 0) < 0);
-	TEST_ASSERT(portal_write(outbox, buffer, DATA_SIZE - 1) < 0);
-	TEST_ASSERT(portal_write(outbox, buffer, DATA_SIZE + 1) < 0);
-	TEST_ASSERT(portal_close(outbox) == 0);
+	TEST_ASSERT((outportal = portal_open("existing-name")) >= 0);
+	TEST_ASSERT(portal_write(outportal, buffer, -1) < 0);
+	TEST_ASSERT(portal_write(outportal, buffer, 0) < 0);
+	TEST_ASSERT(portal_write(outportal, buffer, DATA_SIZE - 1) < 0);
+	TEST_ASSERT(portal_write(outportal, buffer, DATA_SIZE + 1) < 0);
+	TEST_ASSERT(portal_close(outportal) == 0);
 
 	pthread_barrier_wait(&barrier);
 
@@ -640,7 +640,7 @@ static void test_ipc_portal_invalid_write_size(void)
 static void *test_ipc_portal_null_write_thread(void *args)
 {
 	int tid;
-	int inbox;
+	int inportal;
 
 	TEST_ASSERT(kernel_setup() == 0);
 	TEST_ASSERT(runtime_setup(1) == 0);
@@ -648,14 +648,14 @@ static void *test_ipc_portal_null_write_thread(void *args)
 	tid = ((int *)args)[0];
 
 	if (tid == 1)
-		TEST_ASSERT((inbox = portal_create("existing-name")) >= 0);
+		TEST_ASSERT((inportal = portal_create("existing-name")) >= 0);
 
 	pthread_barrier_wait(&barrier);
 	pthread_barrier_wait(&barrier);
 
 	/* House keeping. */
 	if (tid == 1)
-		TEST_ASSERT(portal_unlink(inbox) == 0);
+		TEST_ASSERT(portal_unlink(inportal) == 0);
 
 	TEST_ASSERT(runtime_cleanup() == 0);
 	TEST_ASSERT(kernel_cleanup() == 0);
@@ -667,7 +667,7 @@ static void *test_ipc_portal_null_write_thread(void *args)
  */
 static void test_ipc_portal_null_write(void)
 {
-	int outbox;
+	int outportal;
 	int tids[ipc_portal_ncores];
 	pthread_t threads[ipc_portal_ncores];
 
@@ -684,9 +684,9 @@ static void test_ipc_portal_null_write(void)
 
 	pthread_barrier_wait(&barrier);
 
-	TEST_ASSERT((outbox = portal_open("existing-name")) >= 0);
-	TEST_ASSERT(portal_write(outbox, NULL, DATA_SIZE) < 0);
-	TEST_ASSERT(portal_close(outbox) == 0);
+	TEST_ASSERT((outportal = portal_open("existing-name")) >= 0);
+	TEST_ASSERT(portal_write(outportal, NULL, DATA_SIZE) < 0);
+	TEST_ASSERT(portal_close(outportal) == 0);
 
 	pthread_barrier_wait(&barrier);
 
