@@ -1,0 +1,33 @@
+@startuml
+
+namespace barrier {
+
+	enum BarrierFlags {
+		~ BARRIER_USED
+	}
+
+	class Barrier {
+		~ local
+		~ remote
+		~ nnodes
+		~ nodes[HAL_NR_NOC_NODES]
+		~ flags
+		~ barrier_is_valid()
+		~ barrier_is_used()
+		~ barrier_sed_used()
+		~ barrier_clear_flags()
+	}
+
+	class BarrierOperations {
+		- barrier_alloc()
+		- barrier_free()
+		+ barrier_create()
+		+ barrier_wait()
+		+ barrier_unlink()
+	}
+
+	barrier.Barrier           .> barrier.BarrierFlags : <<use>>
+	barrier.BarrierOperations -* barrier.Barrier      : barriers
+}
+
+@enduml

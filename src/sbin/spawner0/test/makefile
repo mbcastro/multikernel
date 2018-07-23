@@ -41,8 +41,9 @@ ifeq ($(BUILDING_CCLUSTER),true)
 	cd hal/mailbox && $(MAKE) all
 	cd hal/portal && $(MAKE) all
 	cd ipc/barrier && $(MAKE) all
-	cd ipc/mailbox && $(MAKE) all
 	cd ipc/name && $(MAKE) all
+	cd ipc/mailbox && $(MAKE) all
+	cd ipc/portal&& $(MAKE) all
 	cd ipc/semaphore && $(MAKE) all
 endif
 
@@ -53,8 +54,9 @@ clean:
 	cd hal/mailbox && $(MAKE) clean
 	cd hal/portal && $(MAKE) clean
 	cd ipc/barrier && $(MAKE) clean
-	cd ipc/mailbox && $(MAKE) clean
 	cd ipc/name && $(MAKE) clean
+	cd ipc/mailbox && $(MAKE) clean
+	cd ipc/portal && $(MAKE) clean
 	cd ipc/semaphore && $(MAKE) clean
 
 # Cleans everything.
@@ -64,6 +66,7 @@ distclean: clean
 	cd hal/mailbox && $(MAKE) distclean
 	cd hal/portal && $(MAKE) distclean
 	cd ipc/barrier && $(MAKE) distclean
-	cd ipc/mailbox && $(MAKE) distclean
 	cd ipc/name && $(MAKE) distclean
+	cd ipc/mailbox && $(MAKE) distclean
+	cd ipc/portal && $(MAKE) distclean
 	cd ipc/semaphore && $(MAKE) distclean

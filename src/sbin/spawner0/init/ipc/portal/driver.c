@@ -20,40 +20,50 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef NANVIX_LIMITS_H_
-#define NANVIX_LIMITS_H_
+#include <pthread.h>
+#include <stdio.h>
 
-	#define __NEED_HAL_CONST_
-	#include <nanvix/hal.h>
+#include <nanvix/syscalls.h>
 
-	/**
-	 * @brief Maximum length of a process name.
-	 *
-	 * @note The null character is included.
-	 */
-	#define NANVIX_PROC_NAME_MAX 56
+#include "test.h"
 
-	/**
-	 * @brief Maximum number of processes.
-	 */
-	#define NANVIX_PROC_MAX HAL_NR_CCLUSTERS
+/**
+ * @brief Number of cores in the underlying cluster.
+ */
+int ipc_portal_ncores = 0;
 
-	/**
-	 * @brief Maximum number of mailboxes.
-	 */
-	#define NANVIX_MAILBOX_MAX HAL_NR_MAILBOX
+/**
+ * @brief Global barrier for synchronization.
+ */
+pthread_barrier_t barrier;
 
-	/**
-	 * @brief Maximum number of portals.
-	 */
-	#define NANVIX_PORTAL_MAX HAL_NR_PORTAL
+/**
+ * @brief Unnamed Mailbox Test Driver
+ *
+ * @param nbusycores Number of busy cores.
+ */
+void test_kernel_ipc_portal(int nbusycores)
+{
+	TEST_ASSERT(runtime_setup(1) == 0);
 
-	/**
-	 * @brief Maximum length of a sempahore name.
-	 *
-	 * @note The null character is included.
-	 */
-	#define NANVIX_SEM_NAME_MAX 56
+	ipc_portal_ncores = sys_get_num_cores() - nbusycores;
 
-#endif /* NANVIX_LIMITS_H_ */
+	pthread_barrier_init(&barrier, NULL, ipc_portal_ncores - 1);
+
+	/* Run API tests. */
+	for (int i = 0; ipc_portal_tests_api[i].test_fn != NULL; i++)
+	{
+		printf("[nanvix][test][api][ipc][portal] %s\n", ipc_portal_tests_api[i].name);
+		ipc_portal_tests_api[i].test_fn();
+	}
+
+	/* Run fault injection tests. */
+	for (int i = 0; ipc_portal_tests_fault[i].test_fn != NULL; i++)
+	{
+		printf("[nanvix][test][fault][ipc][portal] %s\n", ipc_portal_tests_fault[i].name);
+		ipc_portal_tests_fault[i].test_fn();
+	}
+
+	TEST_ASSERT(runtime_cleanup() == 0);
+}
 

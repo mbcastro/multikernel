@@ -55,19 +55,15 @@ static int named_inboxes[HAL_NR_NOC_IONODES];
 static int initialized[NANVIX_NR_NODES] = { 0, };
 
 /**
- * @brief Mailbox.
+ * @brief Table of mailboxes.
  */
-struct mailbox
+static struct 
 {
-	int fd;                          /* NoC connector. */
-	int flags;                       /* Flags.         */
-	char name[NANVIX_PROC_NAME_MAX]; /* Name.          */
-};
-
-/**
- * @brief table of mailboxes.
- */
-static struct mailbox mailboxes[NANVIX_MAILBOX_MAX];
+	int fd;                          /**< NoC connector. */
+	int flags;                       /**< Flags.         */
+	int owner;                       /**< Owner node.    */
+	char name[NANVIX_PROC_NAME_MAX]; /**< Name.          */
+} mailboxes[NANVIX_MAILBOX_MAX];
 
 /*============================================================================*
  * initialize_inbox()                                                         *
@@ -356,6 +352,7 @@ int mailbox_create(char *name)
 
 	/* Initialize mailbox. */
 	mailboxes[mbxid].fd = fd;
+	mailboxes[mbxid].owner = nodenum;
 	strcpy(mailboxes[mbxid].name, name);
 
 	/* Initialize named inbox. */
@@ -404,6 +401,7 @@ int mailbox_open(char *name)
 
 	/* Initialize mailbox. */
 	mailboxes[mbxid].fd = fd;
+	mailboxes[mbxid].owner = sys_get_node_num();
 	mailbox_set_wronly(mbxid);
 
 	return (mbxid);
@@ -436,6 +434,10 @@ int mailbox_read(int mbxid, void *buf, size_t n)
 	/*  Bad mailbox. */
 	if (!mailbox_is_used(mbxid))
 		return (-EINVAL);
+
+	/* Not the owner. */
+	if (mailboxes[mbxid].owner != sys_get_node_num())
+		return (-EPERM);
 
 	/* Operation no supported. */
 	if (mailbox_is_wronly(mbxid))
@@ -474,6 +476,10 @@ int mailbox_write(int mbxid, const void *buf, size_t n)
 	/* Bad mailbox. */
 	if (!mailbox_is_used(mbxid))
 		return (-EINVAL);
+
+	/* Not the owner. */
+	if (mailboxes[mbxid].owner != sys_get_node_num())
+		return (-EPERM);
 
 	/*  Invalid mailbox. */
 	if (!mailbox_is_wronly(mbxid))
@@ -515,6 +521,10 @@ int mailbox_close(int mbxid)
 	if (!mailbox_is_used(mbxid))
 		return (-EINVAL);
 
+	/* Not the owner. */
+	if (mailboxes[mbxid].owner != sys_get_node_num())
+		return (-EPERM);
+
 	/*  Invalid mailbox. */
 	if (!mailbox_is_wronly(mbxid))
 		return (-EINVAL);
@@ -550,6 +560,10 @@ int mailbox_unlink(int mbxid)
 	/* Bad mailbox. */
 	if (!mailbox_is_used(mbxid))
 		return (-EINVAL);
+
+	/* Not the owner. */
+	if (mailboxes[mbxid].owner != sys_get_node_num())
+		return (-EPERM);
 
 	/*  Invalid mailbox. */
 	if (mailbox_is_wronly(mbxid))

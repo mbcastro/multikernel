@@ -40,8 +40,11 @@ run2 "nanvix-runtime-debug.img" "/test-driver" "/servers1" "--debug --name"
 echo "=== Running Nammed Mailbox Tests"
 run2 "nanvix-runtime-debug.img" "/test-driver" "/servers1" "--debug --mailbox"
 
+echo "=== Running Nammed Portal Tests"
+run2 "nanvix-runtime-debug.img" "/test-driver" "/servers1" "--debug --portal"
+
 echo "=== Running Barrier Tests"
 run2 "nanvix-runtime-debug.img" "/test-driver" "/servers1" "--debug --barrier"
 
-echo "=== Running Semaphore Tests"
-run2 "nanvix-runtime-debug.img" "/test-driver" "/servers1" "--debug --semaphore"
+#echo "=== Running Semaphore Tests"
+#run2 "nanvix-runtime-debug.img" "/test-driver" "/servers1" "--debug --semaphore"

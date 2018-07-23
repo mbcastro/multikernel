@@ -30,6 +30,7 @@ extern void test_sys_portal(void);
 extern void test_ipc_name(void);
 extern void test_ipc_barrier(void);
 extern void test_ipc_mailbox(void);
+extern void test_ipc_portal(void);
 
 /**
  * @brief Launches automated tests.
@@ -57,6 +58,8 @@ int main2(int argc, const char **argv)
 		test_ipc_barrier();
 	else if (!strcmp(argv[2], "--mailbox"))
 		test_ipc_mailbox();
+	else if (!strcmp(argv[2], "--portal"))
+		test_ipc_portal();
 
 	return (EXIT_SUCCESS);
 }

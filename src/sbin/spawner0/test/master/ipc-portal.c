@@ -78,20 +78,20 @@ static void join_slaves(void)
 /**
  * @brief API Test: Create Unlink CC
  */
-static void test_sys_portal_create_unlink_cc(void)
+static void test_ipc_portal_create_unlink_cc(void)
 {
 	char masternode_str[4];
 	char portal_nclusters_str[4];
 	char test_str[4];
 	const char *args[] = {
-		"/test/hal-portal-slave",
+		"/test/ipc-portal-slave",
 		masternode_str,
 		portal_nclusters_str,
 		test_str,
 		NULL
 	};
 
-	printf("[nanvix][test][api][hal][portal] Create Unlink CC\n");
+	printf("[nanvix][test][api][ipc][portal] Create Unlink CC\n");
 
 	/* Build arguments. */
 	sprintf(masternode_str, "%d", sys_get_node_num());
@@ -109,20 +109,20 @@ static void test_sys_portal_create_unlink_cc(void)
 /**
  * @brief API Test: Open Close CC
  */
-static void test_sys_portal_open_close_cc(void)
+static void test_ipc_portal_open_close_cc(void)
 {
 	char masternode_str[4];
 	char portal_nclusters_str[4];
 	char test_str[4];
 	const char *args[] = {
-		"/test/hal-portal-slave",
+		"/test/ipc-portal-slave",
 		masternode_str,
 		portal_nclusters_str,
 		test_str,
 		NULL
 	};
 
-	printf("[nanvix][test][api][hal][portal] Open Close CC\n");
+	printf("[nanvix][test][api][ipc][portal] Open Close CC\n");
 
 	/* Build arguments. */
 	sprintf(masternode_str, "%d", sys_get_node_num());
@@ -140,20 +140,20 @@ static void test_sys_portal_open_close_cc(void)
 /**
  * @brief API Test: Read Write CC
  */
-static void test_sys_portal_read_write_cc(void)
+static void test_ipc_portal_read_write_cc(void)
 {
 	char masternode_str[4];
 	char portal_nclusters_str[4];
 	char test_str[4];
 	const char *args[] = {
-		"/test/hal-portal-slave",
+		"/test/ipc-portal-slave",
 		masternode_str,
 		portal_nclusters_str,
 		test_str,
 		NULL
 	};
 
-	printf("[nanvix][test][api][hal][portal] Read Write CC\n");
+	printf("[nanvix][test][api][ipc][portal] Read Write CC\n");
 
 	/* Build arguments. */
 	sprintf(masternode_str, "%d", sys_get_node_num());
@@ -171,22 +171,22 @@ static void test_sys_portal_read_write_cc(void)
 /**
  * @brief API Test: Read Write 2 CC
  */
-static void test_sys_portal_read_write2_cc(void)
+static void test_ipc_portal_read_write2_cc(void)
 {
-	int syncid;
+	int barrier;
 	int nodes[NANVIX_PROC_MAX + 1];
 	char masternode_str[4];
 	char portal_nclusters_str[4];
 	char test_str[4];
 	const char *args[] = {
-		"/test/hal-portal-slave",
+		"/test/ipc-portal-slave",
 		masternode_str,
 		portal_nclusters_str,
 		test_str,
 		NULL
 	};
 
-	printf("[nanvix][test][api][hal][portal] Read Write 2 CC\n");
+	printf("[nanvix][test][api][ipc][portal] Read Write 2 CC\n");
 
 	/* Build arguments. */
 	sprintf(masternode_str, "%d", sys_get_node_num());
@@ -198,37 +198,35 @@ static void test_sys_portal_read_write2_cc(void)
 	for (int i = 0; i < NANVIX_PROC_MAX; i++)
 		nodes[i + 1] = i;
 
-	/* Create synchronization point. */
-	TEST_ASSERT((syncid = sys_sync_create(
-		nodes,
-		NANVIX_PROC_MAX + 1,
-		SYNC_ALL_TO_ONE)) >= 0
-	);
+	/* Create barrier. */
+	TEST_ASSERT((barrier = barrier_create(nodes, NANVIX_PROC_MAX + 1)) >= 0);
 
 	spawn_slaves(args);
 
-	/* Wait. */
-	TEST_ASSERT(sys_sync_wait(syncid) == 0);
+	/* Sync. */
+	TEST_ASSERT(barrier_wait(barrier) == 0);
 
 	/* Send data. */
 	for (int i = 0; i < NANVIX_PROC_MAX; i++)
 	{
 		int outportal;
 		char buffer[DATA_SIZE];
+		char pathname[NANVIX_PROC_NAME_MAX];
 
-		TEST_ASSERT((outportal = sys_portal_open(i)) >=0);
-		TEST_ASSERT((sys_portal_write(
+		sprintf(pathname, "ccluster%d", i);
+		TEST_ASSERT((outportal = portal_open(pathname)) >= 0);
+		TEST_ASSERT((portal_write(
 			outportal,
 			buffer,
 			DATA_SIZE) == DATA_SIZE)
 		);
-		TEST_ASSERT(sys_portal_close(outportal) == 0);
+		TEST_ASSERT(portal_close(outportal) == 0);
 	}
 
 	join_slaves();
 
 	/* House keeping. */
-	TEST_ASSERT(sys_sync_unlink(syncid) == 0);
+	TEST_ASSERT(barrier_unlink(barrier) == 0);
 }
 
 /*============================================================================*
@@ -238,15 +236,16 @@ static void test_sys_portal_read_write2_cc(void)
 /**
  * @brief API Test: Read Write 2 CC
  */
-static void test_sys_portal_read_write3_cc(void)
+static void test_ipc_portal_read_write3_cc(void)
 {
 	int nodenum;
 	int inportal;
 	char masternode_str[4];
 	char portal_nclusters_str[4];
 	char test_str[4];
+	char pathname[NANVIX_PROC_NAME_MAX];
 	const char *args[] = {
-		"/test/hal-portal-slave",
+		"/test/ipc-portal-slave",
 		masternode_str,
 		portal_nclusters_str,
 		test_str,
@@ -262,7 +261,8 @@ static void test_sys_portal_read_write3_cc(void)
 	sprintf(portal_nclusters_str, "%d", NANVIX_PROC_MAX);
 	sprintf(test_str, "%d", 4);
 
-	TEST_ASSERT((inportal = get_inportal()) >= 0);
+	sprintf(pathname, "iocluster%d", nodenum);
+	TEST_ASSERT((inportal = portal_create(pathname)) >= 0);
 
 	spawn_slaves(args);
 
@@ -271,12 +271,12 @@ static void test_sys_portal_read_write3_cc(void)
 	{
 		char buffer[DATA_SIZE];
 
-		TEST_ASSERT((sys_portal_allow(
+		TEST_ASSERT((portal_allow(
 			inportal,
 			i) == 0)
 		);
 
-		TEST_ASSERT((sys_portal_read(
+		TEST_ASSERT((portal_read(
 			inportal,
 			buffer,
 			DATA_SIZE) == DATA_SIZE)
@@ -284,6 +284,9 @@ static void test_sys_portal_read_write3_cc(void)
 	}
 
 	join_slaves();
+
+	/* House keeping. */
+	TEST_ASSERT(portal_unlink(inportal) == 0);
 }
 
 /*============================================================================*/
@@ -291,12 +294,12 @@ static void test_sys_portal_read_write3_cc(void)
 /**
  * @brief Automated HAL portal test driver.
  */
-void test_sys_portal(void)
+void test_ipc_portal(void)
 {
-	test_sys_portal_create_unlink_cc();
-	test_sys_portal_open_close_cc();
-	test_sys_portal_read_write_cc();
-	test_sys_portal_read_write2_cc();
-	test_sys_portal_read_write3_cc();
+	test_ipc_portal_create_unlink_cc();
+	test_ipc_portal_open_close_cc();
+	test_ipc_portal_read_write_cc();
+	test_ipc_portal_read_write2_cc();
+	test_ipc_portal_read_write3_cc();
 }
 
