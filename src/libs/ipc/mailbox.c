@@ -57,12 +57,12 @@ static int initialized[NANVIX_NR_NODES] = { 0, };
 /**
  * @brief Table of mailboxes.
  */
-struct 
+static struct 
 {
-	int fd;                          /* NoC connector. */
-	int flags;                       /* Flags.         */
-	int owner;                       /* Owner node.    */
-	char name[NANVIX_PROC_NAME_MAX]; /* Name.          */
+	int fd;                          /**< NoC connector. */
+	int flags;                       /**< Flags.         */
+	int owner;                       /**< Owner node.    */
+	char name[NANVIX_PROC_NAME_MAX]; /**< Name.          */
 } mailboxes[NANVIX_MAILBOX_MAX];
 
 /*============================================================================*
