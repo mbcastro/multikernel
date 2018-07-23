@@ -35,6 +35,11 @@
 #include "test.h"
 
 /**
+ * @brief Buffer size (in bytes).
+ */
+#define DATA_SIZE 256
+
+/**
  * @brief Local lock.
  */
 static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
@@ -50,7 +55,7 @@ static void *test_portal_thread_create_unlink(void *args)
 {
 	char pathname[NANVIX_PROC_NAME_MAX];
 	int tid;
-	int inbox;
+	int inportal;
 
 	TEST_ASSERT(kernel_setup() == 0);
 	TEST_ASSERT(runtime_setup(1) == 0);
@@ -62,13 +67,13 @@ static void *test_portal_thread_create_unlink(void *args)
 	sprintf(pathname, "cool-name%d", tid);
 
 	pthread_mutex_lock(&lock);
-	TEST_ASSERT((inbox = portal_create(pathname)) >= 0);
+	TEST_ASSERT((inportal = portal_create(pathname)) >= 0);
 	pthread_mutex_unlock(&lock);
 
 	pthread_barrier_wait(&barrier);
 
 	pthread_mutex_lock(&lock);
-	TEST_ASSERT(portal_unlink(inbox) == 0);
+	TEST_ASSERT(portal_unlink(inportal) == 0);
 	pthread_mutex_unlock(&lock);
 
 	TEST_ASSERT(runtime_cleanup() == 0);
@@ -112,8 +117,8 @@ static void *test_portal_thread_open_close(void *args)
 	char pathname_local[NANVIX_PROC_NAME_MAX];
 	char pathname_remote[NANVIX_PROC_NAME_MAX];
 	int tid;
-	int inbox;
-	int outbox;
+	int inportal;
+	int outportal;
 
 	TEST_ASSERT(kernel_setup() == 0);
 	TEST_ASSERT(runtime_setup(1) == 0);
@@ -125,7 +130,7 @@ static void *test_portal_thread_open_close(void *args)
 	sprintf(pathname_local, "cool-name%d", tid);
 
 	pthread_mutex_lock(&lock);
-	TEST_ASSERT((inbox = portal_create(pathname_local)) >= 0);
+	TEST_ASSERT((inportal = portal_create(pathname_local)) >= 0);
 	pthread_mutex_unlock(&lock);
 
 	pthread_barrier_wait(&barrier);
@@ -136,17 +141,17 @@ static void *test_portal_thread_open_close(void *args)
 	);
 
 	pthread_mutex_lock(&lock);
-	TEST_ASSERT((outbox = portal_open(pathname_remote)) >= 0);
+	TEST_ASSERT((outportal = portal_open(pathname_remote)) >= 0);
 	pthread_mutex_unlock(&lock);
 
 	pthread_barrier_wait(&barrier);
 
 	pthread_mutex_lock(&lock);
-	TEST_ASSERT(portal_close(outbox) == 0);
+	TEST_ASSERT(portal_close(outportal) == 0);
 	pthread_mutex_unlock(&lock);
 
 	pthread_mutex_lock(&lock);
-	TEST_ASSERT(portal_unlink(inbox) == 0);
+	TEST_ASSERT(portal_unlink(inportal) == 0);
 	pthread_mutex_unlock(&lock);
 
 	TEST_ASSERT(runtime_cleanup() == 0);
@@ -178,6 +183,112 @@ static void test_portal_open_close(void)
 		pthread_join(threads[i], NULL);
 }
 
+/*============================================================================*
+ * API Test: Read Write                                                       *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Portal Read Write
+ */
+static void *test_portal_thread_read_write(void *args)
+{
+	int tnum;
+	int nodenum;
+	char buf[DATA_SIZE];
+	const int TID_READ = 1;
+	char pathname[NANVIX_PROC_NAME_MAX];
+
+	TEST_ASSERT(kernel_setup() == 0);
+	TEST_ASSERT(runtime_setup(1) == 0);
+
+	pthread_barrier_wait(&barrier);
+
+	tnum = ((int *)args)[0];
+
+	nodenum = sys_get_node_num();
+
+	/* Reader thread */
+	if (tnum == TID_READ)
+	{
+		int inportal;
+
+		sprintf(pathname, "cool-name%d", nodenum);
+
+		pthread_mutex_lock(&lock);
+		printf("%d %s\n", tnum, pathname);
+		TEST_ASSERT((inportal = portal_create(pathname)) >= 0);
+		pthread_mutex_unlock(&lock);
+
+		pthread_barrier_wait(&barrier);
+
+		for (int i = 1; i < ipc_portal_ncores - 1; i++)
+		{
+			/* Enables read operations. */
+			TEST_ASSERT(portal_allow(inportal, nodenum + i) == 0);
+
+			memset(buf, 0, DATA_SIZE);
+			TEST_ASSERT(portal_read(inportal, buf, DATA_SIZE) == DATA_SIZE);
+
+			for (int j = 0; j < DATA_SIZE; j++)
+				TEST_ASSERT(buf[j] == 1);
+		}
+
+		pthread_mutex_lock(&lock);
+		TEST_ASSERT(portal_unlink(inportal) == 0);
+		pthread_mutex_unlock(&lock);
+	}
+
+	/* Writer thread. */
+	else
+	{
+		int outportal;
+
+		sprintf(pathname, "cool-name%d", nodenum - tnum + TID_READ);
+
+		pthread_barrier_wait(&barrier);
+
+		pthread_mutex_lock(&lock);
+		printf("%d %s\n", tnum, pathname);
+		TEST_ASSERT((outportal = portal_open(pathname)) >= 0);
+		pthread_mutex_unlock(&lock);
+
+		memset(buf, 1, DATA_SIZE);
+		TEST_ASSERT(portal_write(outportal, buf, DATA_SIZE) == DATA_SIZE);
+
+		pthread_mutex_lock(&lock);
+		TEST_ASSERT(portal_close(outportal) == 0);
+		pthread_mutex_unlock(&lock);
+	}
+
+	TEST_ASSERT(runtime_cleanup() == 0);
+	TEST_ASSERT(kernel_cleanup() == 0);
+	return (NULL);
+}
+
+/**
+ * @brief API Test: Portal Read Write
+ */
+static void test_portal_read_write(void)
+{
+	int tids[ipc_portal_ncores];
+	pthread_t threads[ipc_portal_ncores];
+
+	/* Spawn driver threads. */
+	for (int i = 1; i < ipc_portal_ncores; i++)
+	{
+		tids[i] = i;
+		TEST_ASSERT((pthread_create(&threads[i],
+			NULL,
+			test_portal_thread_read_write,
+			&tids[i])) == 0
+		);
+	}
+
+	/* Wait for driver threads. */
+	for (int i = 1; i < ipc_portal_ncores; i++)
+		pthread_join(threads[i], NULL);
+}
+
 /*============================================================================*/
 
 /**
@@ -186,5 +297,6 @@ static void test_portal_open_close(void)
 struct test ipc_portal_tests_api[] = {
 	{ test_portal_create_unlink, "Create Unlink" },
 	{ test_portal_open_close,    "Open Close"    },
+	{ test_portal_read_write,    "Read Write"    },
 	{ NULL,                       NULL           },
 };
