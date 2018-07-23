@@ -703,8 +703,8 @@ static void test_ipc_portal_null_write(void)
 struct test ipc_portal_tests_fault[] = {
 	{ test_ipc_portal_invalid_create,     "Invalid Create"     },
 	{ test_ipc_portal_bad_create,         "Bad Create"         },
-	{ NULL,                                NULL                 },
 	{ test_ipc_portal_double_create,      "Double Create"      },
+	{ NULL,                                NULL                },
 	{ test_ipc_portal_invalid_unlink,     "Invalid Unlink"     },
 	{ test_ipc_portal_bad_unlink,         "Bad Unlink"         },
 	{ test_ipc_portal_double_unlink,      "Double Unlink"      },
@@ -722,5 +722,5 @@ struct test ipc_portal_tests_fault[] = {
 	{ test_ipc_portal_bad_write,          "Bad Write"          },
 	{ test_ipc_portal_invalid_write_size, "Invalid Write Size" },
 	{ test_ipc_portal_null_write,         "Null Write"         },
-	{ NULL,                                NULL                 },
+	{ NULL,                                NULL                },
 };
