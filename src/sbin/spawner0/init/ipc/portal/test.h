@@ -20,46 +20,29 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <stdlib.h>
-#include <string.h>
+#ifndef _TEST_H_
+#define _TEST_H_
 
-/* Forward definitions. */
-extern void test_sys_sync(void);
-extern void test_sys_mailbox(void);
-extern void test_sys_portal(void);
-extern void test_ipc_name(void);
-extern void test_ipc_barrier(void);
-extern void test_ipc_mailbox(void);
-extern void test_ipc_portal(void);
+	#include <stdlib.h>
+	#include <pthread.h>
 
-/**
- * @brief Launches automated tests.
- */
-int main2(int argc, const char **argv)
-{
-	/* Missing parameters. */
-	if (argc != 3)
-		return (EXIT_FAILURE);
+	/**
+	 * @brief Asserts a logic expression.
+	 */
+	#define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
 
-	/* Bad usage. */
-	if (strcmp(argv[1] , "--debug"))
-		return (EXIT_FAILURE);
+	/**
+	 * @brief Unit test.
+	 */
+	struct test
+	{
+		void (*test_fn)(void); /**< Test function. */
+		const char *name;      /**< Test name.     */
+	};
 
-	/* Launch test driver. */
-	if (!strcmp(argv[2], "--hal-sync"))
-		test_sys_sync();
-	else if (!strcmp(argv[2], "--hal-mailbox"))
-		test_sys_mailbox();
-	else if (!strcmp(argv[2], "--hal-portal"))
-		test_sys_portal();
-	else if (!strcmp(argv[2], "--name"))
-		test_ipc_name();
-	else if (!strcmp(argv[2], "--barrier"))
-		test_ipc_barrier();
-	else if (!strcmp(argv[2], "--mailbox"))
-		test_ipc_mailbox();
-	else if (!strcmp(argv[2], "--portal"))
-		test_ipc_portal();
+	/* Forward definitions. */
+	extern int ipc_portal_ncores;
+	extern pthread_barrier_t barrier;
+	extern struct test ipc_portal_tests_api[];
 
-	return (EXIT_SUCCESS);
-}
+#endif /* _TEST_H_ */

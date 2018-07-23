@@ -29,8 +29,6 @@
 #include <nanvix/name.h>
 #include <nanvix/pm.h>
 
-#define IO 192
-
 /**
  * @brief Asserts a logic expression.
  */

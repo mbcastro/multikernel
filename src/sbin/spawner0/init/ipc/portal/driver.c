@@ -20,46 +20,43 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <stdlib.h>
-#include <string.h>
+#include <pthread.h>
+#include <stdio.h>
 
-/* Forward definitions. */
-extern void test_sys_sync(void);
-extern void test_sys_mailbox(void);
-extern void test_sys_portal(void);
-extern void test_ipc_name(void);
-extern void test_ipc_barrier(void);
-extern void test_ipc_mailbox(void);
-extern void test_ipc_portal(void);
+#include <nanvix/syscalls.h>
+
+#include "test.h"
 
 /**
- * @brief Launches automated tests.
+ * @brief Number of cores in the underlying cluster.
  */
-int main2(int argc, const char **argv)
+int ipc_portal_ncores = 0;
+
+/**
+ * @brief Global barrier for synchronization.
+ */
+pthread_barrier_t barrier;
+
+/**
+ * @brief Unnamed Mailbox Test Driver
+ *
+ * @param nbusycores Number of busy cores.
+ */
+void test_kernel_ipc_portal(int nbusycores)
 {
-	/* Missing parameters. */
-	if (argc != 3)
-		return (EXIT_FAILURE);
+	TEST_ASSERT(runtime_setup(1) == 0);
 
-	/* Bad usage. */
-	if (strcmp(argv[1] , "--debug"))
-		return (EXIT_FAILURE);
+	ipc_portal_ncores = sys_get_num_cores() - nbusycores;
 
-	/* Launch test driver. */
-	if (!strcmp(argv[2], "--hal-sync"))
-		test_sys_sync();
-	else if (!strcmp(argv[2], "--hal-mailbox"))
-		test_sys_mailbox();
-	else if (!strcmp(argv[2], "--hal-portal"))
-		test_sys_portal();
-	else if (!strcmp(argv[2], "--name"))
-		test_ipc_name();
-	else if (!strcmp(argv[2], "--barrier"))
-		test_ipc_barrier();
-	else if (!strcmp(argv[2], "--mailbox"))
-		test_ipc_mailbox();
-	else if (!strcmp(argv[2], "--portal"))
-		test_ipc_portal();
+	pthread_barrier_init(&barrier, NULL, ipc_portal_ncores - 1);
 
-	return (EXIT_SUCCESS);
+	/* Run API tests. */
+	for (int i = 0; ipc_portal_tests_api[i].test_fn != NULL; i++)
+	{
+		printf("[nanvix][test][api][ipc][portal] %s\n", ipc_portal_tests_api[i].name);
+		ipc_portal_tests_api[i].test_fn();
+	}
+
+	TEST_ASSERT(runtime_cleanup() == 0);
 }
+

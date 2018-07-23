@@ -20,11 +20,14 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
+#include <string.h>
+#include <pthread.h>
 
 #include <nanvix/syscalls.h>
-#include <nanvix/limits.h>
+#include <nanvix/name.h>
+#include <nanvix/pm.h>
 
 /**
  * @brief Asserts a logic expression.
@@ -62,50 +65,21 @@ static char buffer[DATA_SIZE];
  */
 static void sync_slaves(int nclusters)
 {
-	int syncid1, syncid2;
-	int nodes[NANVIX_PROC_MAX];
+	int barrier;
+	int nodes[nclusters];
 
 	/* Build nodes list. */
 	for (int i = 0; i < nclusters; i++)
 		nodes[i] = i;
 
-	/* Open synchronization points. */
-	if (nodenum == 0)
-	{
-		TEST_ASSERT((syncid1 = sys_sync_create(nodes,
-			nclusters,
-			SYNC_ALL_TO_ONE)) >= 0
-		);
-		TEST_ASSERT((syncid2 = sys_sync_open(nodes,
-			nclusters,
-			SYNC_ONE_TO_ALL)) >= 0
-		);
+	/* Create barrier. */
+	TEST_ASSERT((barrier = barrier_create(nodes, nclusters)) >= 0);
 
-		TEST_ASSERT(sys_sync_wait(syncid1) == 0);
-		TEST_ASSERT(sys_sync_signal(syncid2) == 0);
+	/* Sync. */
+	TEST_ASSERT(barrier_wait(barrier) == 0);
 
-		/* House keeping. */
-		TEST_ASSERT(sys_sync_close(syncid2) == 0);
-		TEST_ASSERT(sys_sync_unlink(syncid1) == 0);
-	}
-	else
-	{
-		TEST_ASSERT((syncid2 = sys_sync_create(nodes,
-			nclusters,
-			SYNC_ONE_TO_ALL)) >= 0
-		);
-		TEST_ASSERT((syncid1 = sys_sync_open(nodes,
-			nclusters,
-			SYNC_ALL_TO_ONE)) >= 0
-		);
-
-		TEST_ASSERT(sys_sync_signal(syncid1) == 0);
-		TEST_ASSERT(sys_sync_wait(syncid2) == 0);
-
-		/* House keeping. */
-		TEST_ASSERT(sys_sync_unlink(syncid2) == 0);
-		TEST_ASSERT(sys_sync_close(syncid1) == 0);
-	}
+	/* House keeping. */
+	TEST_ASSERT(barrier_unlink(barrier) == 0);
 }
 
 /**
@@ -115,7 +89,7 @@ static void sync_slaves(int nclusters)
  */
 static void sync_master(int nclusters)
 {
-	int syncid;
+	int barrier;
 	int nodes[NANVIX_PROC_MAX + 1];
 
 	/* Build nodes list. */
@@ -123,13 +97,14 @@ static void sync_master(int nclusters)
 	for (int i = 0; i < nclusters; i++)
 		nodes[i + 1] = i;
 
-	TEST_ASSERT((syncid = sys_sync_open(nodes,
-		nclusters + 1,
-		SYNC_ALL_TO_ONE)) >= 0
-	);
+	/* Create barrier. */
+	TEST_ASSERT((barrier = barrier_create(nodes, nclusters + 1)) >= 0);
 
-	TEST_ASSERT(sys_sync_signal(syncid) == 0);
-	TEST_ASSERT(sys_sync_close(syncid) == 0);
+	/* Sync. */
+	TEST_ASSERT(barrier_wait(barrier) == 0);
+
+	/* House keeping. */
+	TEST_ASSERT(barrier_unlink(barrier) == 0);
 }
 
 /*============================================================================*
@@ -139,12 +114,14 @@ static void sync_master(int nclusters)
 /**
  * @brief API Test: Create Unlink CC
  */
-static void test_sys_portal_create_unlink(void)
+static void test_ipc_portal_create_unlink(int nclusters)
 {
 	int inportal;
+	char pathname[NANVIX_PROC_NAME_MAX];
 
-	TEST_ASSERT((inportal = sys_portal_create(nodenum)) >= 0);
-	TEST_ASSERT(sys_portal_unlink(inportal) == 0);
+	sprintf(pathname, "ccluster%d", (nodenum + 1)%nclusters);
+	TEST_ASSERT((inportal = portal_create(pathname)) >= 0);
+	TEST_ASSERT(portal_unlink(inportal) == 0);
 }
 
 /*============================================================================*
@@ -154,12 +131,25 @@ static void test_sys_portal_create_unlink(void)
 /**
  * @brief API Test: Open Close CC
  */
-static void test_sys_portal_open_close(void)
+static void test_ipc_portal_open_close_cc(int nclusters)
 {
+	int inportal;
 	int outportal;
+	char pathname[NANVIX_PROC_NAME_MAX];
 
-	TEST_ASSERT((outportal = sys_portal_open(masternode)) >= 0);
-	TEST_ASSERT(sys_portal_close(outportal) == 0);
+	sprintf(pathname, "ccluster%d", nodenum);
+	TEST_ASSERT((inportal = portal_create(pathname)) >= 0);
+
+	sync_slaves(nclusters);
+
+	sprintf(pathname, "ccluster%d", (nodenum + 1)%nclusters);
+	TEST_ASSERT((outportal = portal_open(pathname)) >= 0);
+
+	sync_slaves(nclusters);
+
+	/* House keeping. */
+	TEST_ASSERT(portal_close(outportal) == 0);
+	TEST_ASSERT(portal_unlink(inportal) == 0);
 }
 
 /*============================================================================*
@@ -169,20 +159,23 @@ static void test_sys_portal_open_close(void)
 /**
  * @brief API Test: Read Write CC
  */
-static void test_sys_portal_read_write(int nclusters)
+static void test_ipc_portal_read_write_cc(int nclusters)
 {
 	int inportal;
 	int outportal;
+	char pathname[NANVIX_PROC_NAME_MAX];
 
-	TEST_ASSERT((inportal = sys_portal_create(nodenum)) >= 0);
+	sprintf(pathname, "ccluster%d", nodenum);
+	TEST_ASSERT((inportal = portal_create(pathname)) >= 0);
 
 	sync_slaves(nclusters);
 
-	TEST_ASSERT((outportal = sys_portal_open((nodenum + 1)%nclusters)) >= 0);
+	sprintf(pathname, "ccluster%d", (nodenum + 1)%nclusters);
+	TEST_ASSERT((outportal = portal_open(pathname)) >= 0);
 
 	if (nodenum != 0)
 	{
-		TEST_ASSERT((sys_portal_allow(
+		TEST_ASSERT((portal_allow(
 			inportal,
 			(nodenum == 0) ?
 				nclusters - 1 :
@@ -192,7 +185,7 @@ static void test_sys_portal_read_write(int nclusters)
 
 	if (nodenum != (nclusters - 1))
 	{
-		TEST_ASSERT((sys_portal_write(
+		TEST_ASSERT((portal_write(
 			outportal,
 			buffer,
 			DATA_SIZE) == DATA_SIZE)
@@ -201,7 +194,7 @@ static void test_sys_portal_read_write(int nclusters)
 
 	if (nodenum != 0)
 	{
-		TEST_ASSERT((sys_portal_read(
+		TEST_ASSERT((portal_read(
 			inportal,
 			buffer,
 			DATA_SIZE) == DATA_SIZE)
@@ -209,8 +202,8 @@ static void test_sys_portal_read_write(int nclusters)
 	}
 
 	/* House keeping. */
-	TEST_ASSERT(sys_portal_close(outportal) == 0);
-	TEST_ASSERT(sys_portal_unlink(inportal) == 0);
+	TEST_ASSERT(portal_close(outportal) == 0);
+	TEST_ASSERT(portal_unlink(inportal) == 0);
 }
 
 /*============================================================================*
@@ -220,27 +213,29 @@ static void test_sys_portal_read_write(int nclusters)
 /**
  * @brief API Test: Read Write 2 CC
  */
-static void test_sys_portal_read_write2(int nclusters)
+static void test_ipc_portal_read_write2_cc(int nclusters)
 {
 	int inportal;
+	char pathname[NANVIX_PROC_NAME_MAX];
 
-	TEST_ASSERT((inportal = sys_portal_create(nodenum)) >= 0);
+	sprintf(pathname, "ccluster%d", (nodenum + 1)%nclusters);
+	TEST_ASSERT((inportal = portal_create(pathname)) >= 0);
 
 	sync_master(nclusters);
 
-	TEST_ASSERT((sys_portal_allow(
+	TEST_ASSERT((portal_allow(
 		inportal,
 		masternode) == 0)
 	);
 
-	TEST_ASSERT((sys_portal_read(
+	TEST_ASSERT((portal_read(
 		inportal,
 		buffer,
 		DATA_SIZE) == DATA_SIZE)
 	);
 
 	/* House keeping. */
-	TEST_ASSERT(sys_portal_unlink(inportal) == 0);
+	TEST_ASSERT(portal_unlink(inportal) == 0);
 }
 
 /*============================================================================*
@@ -250,20 +245,22 @@ static void test_sys_portal_read_write2(int nclusters)
 /**
  * @brief API Test: Read Write 3 CC
  */
-static void test_sys_portal_read_write3(void)
+static void test_ipc_portal_read_write3_cc(void)
 {
 	int outportal;
+	char pathname[NANVIX_PROC_NAME_MAX];
 
-	TEST_ASSERT((outportal = sys_portal_open(masternode)) >= 0);
+	sprintf(pathname, "iocluster%d", masternode);
+	TEST_ASSERT((outportal = portal_open(pathname)) >= 0);
 
-	TEST_ASSERT((sys_portal_write(
+	TEST_ASSERT((portal_write(
 		outportal,
 		buffer,
 		DATA_SIZE) == DATA_SIZE)
 	);
 
 	/* House keeping. */
-	TEST_ASSERT(sys_portal_close(outportal) == 0);
+	TEST_ASSERT(portal_close(outportal) == 0);
 }
 
 /*============================================================================*/
@@ -286,21 +283,32 @@ int main2(int argc, char **argv)
 
 	switch (test)
 	{
+		/* Create Unlink CC */
 		case 0:
-			test_sys_portal_create_unlink();
+			test_ipc_portal_create_unlink(nclusters);
 			break;
+
+		/* Open Close CC */
 		case 1:
-			test_sys_portal_open_close();
+			test_ipc_portal_open_close_cc(nclusters);
 			break;
+
+		/* Read Write CC */
 		case 2:
-			test_sys_portal_read_write(nclusters);
+			test_ipc_portal_read_write_cc(nclusters);
 			break;
+
+		/* Read Write 2 CC */
 		case 3:
-			test_sys_portal_read_write2(nclusters);
+			test_ipc_portal_read_write2_cc(nclusters);
 			break;
+
+		/* Read Write 3 CC */
 		case 4:
-			test_sys_portal_read_write3();
+			test_ipc_portal_read_write3_cc();
 			break;
+
+		/* Should not happen. */
 		default:
 			exit(EXIT_FAILURE);
 	}
