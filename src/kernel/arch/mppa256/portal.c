@@ -617,11 +617,11 @@ int hal_portal_read(int portalid, void *buf, size_t n)
 
 	/* Invalid buffer. */
 	if (buf == NULL)
-		goto error1;
+		goto error0;
 
 	/* Invalid read size. */
 	if (n < 1)
-		goto error1;
+		goto error0;
 
 again:
 
@@ -717,11 +717,11 @@ int hal_portal_write(int portalid, const void *buf, size_t n)
 
 	/* Invalid buffer. */
 	if (buf == NULL)
-		goto error1;
+		goto error0;
 
 	/* Invalid write size. */
 	if (n < 1)
-		goto error1;
+		goto error0;
 
 again:
 	
