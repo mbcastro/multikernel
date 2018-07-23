@@ -702,8 +702,8 @@ static void test_ipc_portal_null_write(void)
  */
 struct test ipc_portal_tests_fault[] = {
 	{ test_ipc_portal_invalid_create,     "Invalid Create"     },
-	{ NULL,                                NULL                 },
 	{ test_ipc_portal_bad_create,         "Bad Create"         },
+	{ NULL,                                NULL                 },
 	{ test_ipc_portal_double_create,      "Double Create"      },
 	{ test_ipc_portal_invalid_unlink,     "Invalid Unlink"     },
 	{ test_ipc_portal_bad_unlink,         "Bad Unlink"         },
