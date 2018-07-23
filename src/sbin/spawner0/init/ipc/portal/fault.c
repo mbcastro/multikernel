@@ -170,10 +170,7 @@ static void test_ipc_portal_bad_unlink(void)
 	int tids[ipc_portal_ncores];
 	pthread_t threads[ipc_portal_ncores];
 
-#ifdef _TEST_IPC_PORTAL_BAD_INBOX_UNLINK_
 	TEST_ASSERT(portal_unlink(0) < 0);
-#endif /* _TEST_IPC_PORTAL_BAD_INBOX_UNLINK_ */
-	TEST_ASSERT(portal_unlink(1) < 0);
 
 	/* Spawn driver threads. */
 	for (int i = 1; i < ipc_portal_ncores; i++)
@@ -556,7 +553,7 @@ static void test_ipc_portal_bad_read(void)
 	char buffer[DATA_SIZE];
 	pthread_t threads[ipc_portal_ncores];
 
-	TEST_ASSERT(portal_read(1, buffer, DATA_SIZE) < 0);
+	TEST_ASSERT(portal_read(0, buffer, DATA_SIZE) < 0);
 
 	/* Spawn driver threads. */
 	for (int i = 1; i < ipc_portal_ncores; i++)
