@@ -38,19 +38,15 @@
 /**@}*/
 
 /**
- * @brief Portal.
+ * @brief Table of portals.
  */
-struct portal
+static struct 
 {
 	int portalid;                    /**< Underlying unnamed portal. */
 	int flags;                       /**< Flags.                     */
+	int owner;                       /**< Owner node.                */
 	char name[NANVIX_PROC_NAME_MAX]; /**< Name.                      */
-};
-
-/**
- * @brief Table of portals.
- */
-static struct portal portals[NANVIX_PORTAL_MAX];
+} portals[NANVIX_PORTAL_MAX];
 
 /*============================================================================*
  * portal_is_valid()                                                          *
@@ -358,6 +354,7 @@ int portal_create(char *name)
 
 	/* Initialize portal. */
 	portals[id].portalid = portalid;
+	portals[id].owner = nodenum;
 	strcpy(portals[id].name, name);
 
 	return (id);
@@ -395,6 +392,10 @@ int portal_allow(int id, int nodenum)
 	/* Operation no supported. */
 	if (portal_is_wronly(id))
 		return (-ENOTSUP);
+
+	/* Not the owner. */
+	if (portals[id].owner != sys_get_node_num())
+		return (-EINVAL);
 
 	return (sys_portal_allow(portals[id].portalid, nodenum));
 }
@@ -435,6 +436,7 @@ int portal_open(char *name)
 
 	/* Initialize portal. */
 	portals[id].portalid = portalid;
+	portals[id].owner = sys_get_node_num();
 	portal_set_wronly(id);
 
 	return (id);
@@ -481,6 +483,10 @@ int portal_read(int id, void *buf, size_t n)
 	if (n < 1)
 		return (-EINVAL);
 
+	/* Not the owner. */
+	if (portals[id].owner != sys_get_node_num())
+		return (-EINVAL);
+
 	ret = sys_portal_read(portals[id].portalid, buf, n);
 
 	return (ret);
@@ -523,6 +529,10 @@ int portal_write(int id, const void *buf, size_t n)
 	if (n < 1)
 		return (-EINVAL);
 
+	/* Not the owner. */
+	if (portals[id].owner != sys_get_node_num())
+		return (-EINVAL);
+
 	ret = sys_portal_write(portals[id].portalid, buf, n);
 
 	return (ret);
@@ -556,6 +566,10 @@ int portal_close(int id)
 
 	/*  Invalid portal. */
 	if (!portal_is_wronly(id))
+		return (-EINVAL);
+
+	/* Not the owner. */
+	if (portals[id].owner != sys_get_node_num())
 		return (-EINVAL);
 
 	/* Close underlying unnamed portal. */
@@ -598,6 +612,10 @@ int portal_unlink(int id)
 	/* Unlink name. */
 	if (name_unlink(portals[id].name) != 0)
 		return (-EAGAIN);
+
+	/* Not the owner. */
+	if (portals[id].owner != sys_get_node_num())
+		return (-EINVAL);
 
 	/*
 	 * Underlying unnamed mailbox is
