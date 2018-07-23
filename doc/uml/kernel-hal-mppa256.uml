@@ -80,7 +80,7 @@ namespace mppa256 {
 		}
 
 		Sync           .> SyncFlags : <<use>>
-		SyncOperations *- Sync      : synctab
+		SyncOperations -* Sync      : synctab
 	}
 
 	namespace Mailbox {
@@ -110,8 +110,8 @@ namespace mppa256 {
 			- mailbox_ranks()
 		}
 
-		Mailbox               .> MailboxFlags : <<use>>
-		MailboxOperations *- Mailbox          : mailboxes
+		Mailbox           .> MailboxFlags : <<use>>
+		MailboxOperations -* Mailbox      : mailboxes
 	}
 
 	namespace Portal {
@@ -144,7 +144,7 @@ namespace mppa256 {
 		}
 
 		Portal           .> PortalFlags : <<use>>
-		PortalOperations *- Portal      : portals
+		PortalOperations -* Portal      : portals
 	}
 
 	mppa256.Sync    ..> mppa256.NoC  : <<use>>
