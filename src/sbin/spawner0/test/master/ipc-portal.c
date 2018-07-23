@@ -164,6 +164,71 @@ static void test_ipc_portal_read_write_cc(void)
 	join_slaves();
 }
 
+/*============================================================================*
+ * API Test: Read Write 2 CC                                                  *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Read Write 2 CC
+ */
+static void test_ipc_portal_read_write2_cc(void)
+{
+	int barrier;
+	int nodes[NANVIX_PROC_MAX + 1];
+	char masternode_str[4];
+	char portal_nclusters_str[4];
+	char test_str[4];
+	const char *args[] = {
+		"/test/ipc-portal-slave",
+		masternode_str,
+		portal_nclusters_str,
+		test_str,
+		NULL
+	};
+
+	printf("[nanvix][test][api][ipc][portal] Read Write 2 CC\n");
+
+	/* Build arguments. */
+	sprintf(masternode_str, "%d", sys_get_node_num());
+	sprintf(portal_nclusters_str, "%d", NANVIX_PROC_MAX);
+	sprintf(test_str, "%d", 3);
+
+	/* Build nodes list. */
+	nodes[0] = sys_get_node_num();
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
+		nodes[i + 1] = i;
+
+	/* Create barrier. */
+	TEST_ASSERT((barrier = barrier_create(nodes, NANVIX_PROC_MAX + 1)) >= 0);
+
+	spawn_slaves(args);
+
+	/* Sync. */
+	TEST_ASSERT(barrier_wait(barrier) == 0);
+
+	/* Send data. */
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
+	{
+		int outportal;
+		char buffer[DATA_SIZE];
+		char pathname[NANVIX_PROC_NAME_MAX];
+
+		sprintf(pathname, "ccluster%d", i);
+		TEST_ASSERT((outportal = portal_open(pathname)) >= 0);
+		TEST_ASSERT((portal_write(
+			outportal,
+			buffer,
+			DATA_SIZE) == DATA_SIZE)
+		);
+		TEST_ASSERT(portal_close(outportal) == 0);
+	}
+
+	join_slaves();
+
+	/* House keeping. */
+	TEST_ASSERT(barrier_unlink(barrier) == 0);
+}
+
 /*============================================================================*/
 
 /**
@@ -174,5 +239,6 @@ void test_ipc_portal(void)
 	test_ipc_portal_create_unlink_cc();
 	test_ipc_portal_open_close_cc();
 	test_ipc_portal_read_write_cc();
+	test_ipc_portal_read_write2_cc();
 }
 
