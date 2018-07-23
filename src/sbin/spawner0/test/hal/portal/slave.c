@@ -284,8 +284,6 @@ int main2(int argc, char **argv)
 
 	nodenum = sys_get_node_num();
 
-	((void) nclusters);
-
 	switch (test)
 	{
 		case 0:
