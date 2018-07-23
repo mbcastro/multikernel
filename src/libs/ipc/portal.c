@@ -477,6 +477,10 @@ int portal_read(int id, void *buf, size_t n)
 	if (buf == NULL)
 		return (-EINVAL);
 
+	/* Invalid buffer. */
+	if (n < 1)
+		return (-EINVAL);
+
 	ret = sys_portal_read(portals[id].portalid, buf, n);
 
 	return (ret);
@@ -513,6 +517,10 @@ int portal_write(int id, const void *buf, size_t n)
 
 	/* Invalid buffer. */
 	if (buf == NULL)
+		return (-EINVAL);
+
+	/* Invalid buffer. */
+	if (n < 1)
 		return (-EINVAL);
 
 	ret = sys_portal_write(portals[id].portalid, buf, n);
