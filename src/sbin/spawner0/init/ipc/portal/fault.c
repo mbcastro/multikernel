@@ -766,7 +766,7 @@ static void *test_ipc_portal_invalid_write_size_thread(void *args)
 	tid = ((int *)args)[0];
 
 	if (tid == 1)
-		TEST_ASSERT((inportal = portal_create("existing-name")) >= 0);
+		TEST_ASSERT((inportal = portal_create("cool-name")) >= 0);
 
 	pthread_barrier_wait(&barrier);
 	pthread_barrier_wait(&barrier);
@@ -786,8 +786,8 @@ static void *test_ipc_portal_invalid_write_size_thread(void *args)
 static void test_ipc_portal_invalid_write_size(void)
 {
 	int outportal;
-	int tids[ipc_portal_ncores];
 	char buffer[DATA_SIZE];
+	int tids[ipc_portal_ncores];
 	pthread_t threads[ipc_portal_ncores];
 
 	/* Spawn driver threads. */
@@ -802,14 +802,9 @@ static void test_ipc_portal_invalid_write_size(void)
 	}
 
 	pthread_barrier_wait(&barrier);
-
-	TEST_ASSERT((outportal = portal_open("existing-name")) >= 0);
-	TEST_ASSERT(portal_write(outportal, buffer, -1) < 0);
+	TEST_ASSERT((outportal = portal_open("cool-name")) >= 0);
 	TEST_ASSERT(portal_write(outportal, buffer, 0) < 0);
-	TEST_ASSERT(portal_write(outportal, buffer, DATA_SIZE - 1) < 0);
-	TEST_ASSERT(portal_write(outportal, buffer, DATA_SIZE + 1) < 0);
 	TEST_ASSERT(portal_close(outportal) == 0);
-
 	pthread_barrier_wait(&barrier);
 
 	/* Wait for driver threads. */
@@ -908,8 +903,8 @@ struct test ipc_portal_tests_fault[] = {
 	{ test_ipc_portal_null_read,          "Null Read"          },
 	{ test_ipc_portal_invalid_write,      "Invalid Write"      },
 	{ test_ipc_portal_bad_write,          "Bad Write"          },
-	{ NULL,                                NULL                },
 	{ test_ipc_portal_invalid_write_size, "Invalid Write Size" },
+	{ NULL,                                NULL                },
 	{ test_ipc_portal_null_write,         "Null Write"         },
 	{ NULL,                                NULL                },
 };
