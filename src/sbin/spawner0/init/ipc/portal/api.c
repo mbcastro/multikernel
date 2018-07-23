@@ -215,7 +215,6 @@ static void *test_portal_thread_read_write(void *args)
 		sprintf(pathname, "cool-name%d", nodenum);
 
 		pthread_mutex_lock(&lock);
-		printf("%d %s\n", tnum, pathname);
 		TEST_ASSERT((inportal = portal_create(pathname)) >= 0);
 		pthread_mutex_unlock(&lock);
 
@@ -248,7 +247,6 @@ static void *test_portal_thread_read_write(void *args)
 		pthread_barrier_wait(&barrier);
 
 		pthread_mutex_lock(&lock);
-		printf("%d %s\n", tnum, pathname);
 		TEST_ASSERT((outportal = portal_open(pathname)) >= 0);
 		pthread_mutex_unlock(&lock);
 
