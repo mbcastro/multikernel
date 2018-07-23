@@ -13,8 +13,8 @@ namespace libs {
 	namespace portal {
 	}
 
-	libs.mailbox ..> libs.name
-	libs.portal  ..> libs.name
+	libs.mailbox ..> libs.name : <<use>>
+	libs.portal  ..> libs.name : <<use>>
 }
 
 @enduml
