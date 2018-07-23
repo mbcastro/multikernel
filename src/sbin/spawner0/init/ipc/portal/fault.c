@@ -410,6 +410,26 @@ static void test_ipc_portal_double_close(void)
 }
 
 /*============================================================================*
+ * Fault Injection Test: Invalid Allow                                        *
+ *============================================================================*/
+
+/**
+ * @brief Fault Injection Test: Invalid Allow
+ */
+static void test_ipc_portal_invalid_allow(void)
+{
+	int inportal;
+
+	TEST_ASSERT(portal_allow(-1, 0) < 0);
+	TEST_ASSERT(portal_allow(1000000, 0) < 0);
+
+	TEST_ASSERT((inportal = portal_create("cool-name")) >= 0);
+	TEST_ASSERT(portal_allow(inportal, -1) < 0);
+	TEST_ASSERT(portal_allow(inportal, 1000000) < 0);
+	TEST_ASSERT((portal_unlink(inportal)) == 0);
+}
+
+/*============================================================================*
  * API Test: Invalid Read                                                     *
  *============================================================================*/
 
@@ -713,6 +733,7 @@ struct test ipc_portal_tests_fault[] = {
 	{ test_ipc_portal_invalid_close,      "Invalid Close"      },
 	{ test_ipc_portal_bad_close,          "Bad Close"          },
 	{ test_ipc_portal_double_close,       "Double Close"       },
+	{ test_ipc_portal_invalid_allow,      "Invalid Allow"      },
 	{ NULL,                                NULL                },
 	{ test_ipc_portal_invalid_read,       "Invalid Read"       },
 	{ test_ipc_portal_bad_read,           "Bad Read"           },
