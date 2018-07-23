@@ -623,7 +623,7 @@ static void *test_ipc_portal_invalid_read_size_thread(void *args)
 }
 
 /**
- * @brief API Test: Bad Read
+ * @brief API Test: Invalid Read Size
  */
 static void test_ipc_portal_invalid_read_size(void)
 {
@@ -907,8 +907,8 @@ struct test ipc_portal_tests_fault[] = {
 	{ test_ipc_portal_invalid_read_size,  "Invalid Read Size"  },
 	{ test_ipc_portal_null_read,          "Null Read"          },
 	{ test_ipc_portal_invalid_write,      "Invalid Write"      },
-	{ NULL,                                NULL                },
 	{ test_ipc_portal_bad_write,          "Bad Write"          },
+	{ NULL,                                NULL                },
 	{ test_ipc_portal_invalid_write_size, "Invalid Write Size" },
 	{ test_ipc_portal_null_write,         "Null Write"         },
 	{ NULL,                                NULL                },
