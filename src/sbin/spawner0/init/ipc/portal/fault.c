@@ -589,18 +589,66 @@ static void test_ipc_portal_bad_read(void)
 /**
  * @brief API Test: Invalid Read Size
  */
-static void test_ipc_portal_invalid_read_size(void)
+static void *test_ipc_portal_invalid_read_size_thread(void *args)
 {
+	int tid;
 	int inportal;
 	char buffer[DATA_SIZE];
 
-	TEST_ASSERT((inportal = portal_create("cool-name")) >=  0);
-	TEST_ASSERT(portal_read(inportal, buffer, -1) < 0);
-	TEST_ASSERT(portal_read(inportal, buffer, 0) < 0);
-	TEST_ASSERT(portal_read(inportal, buffer, DATA_SIZE - 1) < 0);
-	TEST_ASSERT(portal_read(inportal, buffer, DATA_SIZE + 1) < 0);
-	TEST_ASSERT(portal_unlink(inportal) == 0);
+	TEST_ASSERT(kernel_setup() == 0);
+	TEST_ASSERT(runtime_setup(1) == 0);
+
+	tid = ((int *)args)[0];
+
+	if (tid == 1)
+	{
+		TEST_ASSERT((inportal = portal_create("cool-name")) >= 0);
+		TEST_ASSERT(portal_allow(inportal, 0) >= 0);
+	}
+
+	pthread_barrier_wait(&barrier);
+
+	if (tid == 1)
+		TEST_ASSERT(portal_read(inportal, buffer, 0) < 0);
+	
+	pthread_barrier_wait(&barrier);
+
+	/* House keeping. */
+	if (tid == 1)
+		TEST_ASSERT(portal_unlink(inportal) == 0);
+
+	TEST_ASSERT(runtime_cleanup() == 0);
+	TEST_ASSERT(kernel_cleanup() == 0);
+	return (NULL);
 }
+
+/**
+ * @brief API Test: Bad Read
+ */
+static void test_ipc_portal_invalid_read_size(void)
+{
+	int tids[ipc_portal_ncores];
+	pthread_t threads[ipc_portal_ncores];
+
+	/* Spawn driver threads. */
+	for (int i = 1; i < ipc_portal_ncores; i++)
+	{
+		tids[i] = i;
+		TEST_ASSERT((pthread_create(&threads[i],
+			NULL,
+			test_ipc_portal_invalid_read_size_thread,
+			&tids[i])) == 0
+		);
+	}
+
+	pthread_barrier_wait(&barrier);
+	pthread_barrier_wait(&barrier);
+
+	/* Wait for driver threads. */
+	for (int i = 1; i < ipc_portal_ncores; i++)
+		pthread_join(threads[i], NULL);
+}
+
 
 /*============================================================================*
  * API Test: Null Read                                                        *
@@ -807,8 +855,8 @@ struct test ipc_portal_tests_fault[] = {
 	{ test_ipc_portal_bad_allow,          "Bad Allow"          },
 	{ test_ipc_portal_invalid_read,       "Invalid Read"       },
 	{ test_ipc_portal_bad_read,           "Bad Read"           },
-	{ NULL,                                NULL                },
 	{ test_ipc_portal_invalid_read_size,  "Invalid Read Size"  },
+	{ NULL,                                NULL                },
 	{ test_ipc_portal_null_read,          "Null Read"          },
 	{ test_ipc_portal_invalid_write,      "Invalid Write"      },
 	{ test_ipc_portal_bad_write,          "Bad Write"          },
