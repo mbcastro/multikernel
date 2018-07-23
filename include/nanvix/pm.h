@@ -55,6 +55,9 @@
  *============================================================================*/
 
 	/* Forward definitions .*/
+	extern int portal_setup(int);
+	extern int portal_cleanup(void);
+	extern int get_inportal(void);
 	extern int portal_allow(int, int);
 	extern int portal_create(char *);
 	extern int portal_open(char *);

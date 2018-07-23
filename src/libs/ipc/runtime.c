@@ -88,6 +88,7 @@ int runtime_setup(int level)
 					goto error;
 
 				name_init();
+				portal_setup(sys_get_node_num());
 
 				break;
 
@@ -97,7 +98,7 @@ int runtime_setup(int level)
 					goto error;
 
 				name_init();
-
+				portal_setup(sys_get_node_num());
 				sem_init();
 
 				break;
