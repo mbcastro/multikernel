@@ -229,6 +229,66 @@ static void test_ipc_portal_read_write2_cc(void)
 	TEST_ASSERT(barrier_unlink(barrier) == 0);
 }
 
+/*============================================================================*
+ * API Test: Read Write 3 CC                                                  *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Read Write 2 CC
+ */
+static void test_ipc_portal_read_write3_cc(void)
+{
+	int nodenum;
+	int inportal;
+	char masternode_str[4];
+	char portal_nclusters_str[4];
+	char test_str[4];
+	char pathname[NANVIX_PROC_NAME_MAX];
+	const char *args[] = {
+		"/test/ipc-portal-slave",
+		masternode_str,
+		portal_nclusters_str,
+		test_str,
+		NULL
+	};
+
+	printf("[nanvix][test][api][hal][portal] Read Write 3 CC\n");
+
+	nodenum = sys_get_node_num();
+
+	/* Build arguments. */
+	sprintf(masternode_str, "%d", nodenum);
+	sprintf(portal_nclusters_str, "%d", NANVIX_PROC_MAX);
+	sprintf(test_str, "%d", 4);
+
+	sprintf(pathname, "iocluster%d", nodenum);
+	TEST_ASSERT((inportal = portal_create(pathname)) >= 0);
+
+	spawn_slaves(args);
+
+	/* Receive data. */
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
+	{
+		char buffer[DATA_SIZE];
+
+		TEST_ASSERT((portal_allow(
+			inportal,
+			i) == 0)
+		);
+
+		TEST_ASSERT((portal_read(
+			inportal,
+			buffer,
+			DATA_SIZE) == DATA_SIZE)
+		);
+	}
+
+	join_slaves();
+
+	/* House keeping. */
+	TEST_ASSERT(portal_unlink(inportal) == 0);
+}
+
 /*============================================================================*/
 
 /**
@@ -240,5 +300,6 @@ void test_ipc_portal(void)
 	test_ipc_portal_open_close_cc();
 	test_ipc_portal_read_write_cc();
 	test_ipc_portal_read_write2_cc();
+	test_ipc_portal_read_write3_cc();
 }
 

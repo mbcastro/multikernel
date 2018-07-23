@@ -238,6 +238,31 @@ static void test_ipc_portal_read_write2_cc(int nclusters)
 	TEST_ASSERT(portal_unlink(inportal) == 0);
 }
 
+/*============================================================================*
+ * API Test: Read Write 3 CC                                                  *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Read Write 3 CC
+ */
+static void test_ipc_portal_read_write3_cc(void)
+{
+	int outportal;
+	char pathname[NANVIX_PROC_NAME_MAX];
+
+	sprintf(pathname, "iocluster%d", masternode);
+	TEST_ASSERT((outportal = portal_open(pathname)) >= 0);
+
+	TEST_ASSERT((portal_write(
+		outportal,
+		buffer,
+		DATA_SIZE) == DATA_SIZE)
+	);
+
+	/* House keeping. */
+	TEST_ASSERT(portal_close(outportal) == 0);
+}
+
 /*============================================================================*/
 
 /**
@@ -276,6 +301,11 @@ int main2(int argc, char **argv)
 		/* Read Write 2 CC */
 		case 3:
 			test_ipc_portal_read_write2_cc(nclusters);
+			break;
+
+		/* Read Write 3 CC */
+		case 4:
+			test_ipc_portal_read_write3_cc();
 			break;
 
 		/* Should not happen. */
