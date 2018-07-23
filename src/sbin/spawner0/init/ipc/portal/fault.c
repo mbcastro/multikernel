@@ -532,7 +532,7 @@ static void *test_ipc_portal_bad_read_thread(void *args)
 	tid = ((int *)args)[0];
 
 	if (tid == 1)
-		TEST_ASSERT((inportal = portal_create("existing-name")) >= 0);
+		TEST_ASSERT((inportal = portal_create("cool-name")) >= 0);
 
 	pthread_barrier_wait(&barrier);
 	pthread_barrier_wait(&barrier);
@@ -571,7 +571,7 @@ static void test_ipc_portal_bad_read(void)
 
 	pthread_barrier_wait(&barrier);
 
-	TEST_ASSERT((outportal = portal_open("existing-name")) >= 0);
+	TEST_ASSERT((outportal = portal_open("cool-name")) >= 0);
 	TEST_ASSERT(portal_read(outportal, buffer, DATA_SIZE) < 0);
 	TEST_ASSERT(portal_close(outportal) == 0);
 
@@ -806,8 +806,8 @@ struct test ipc_portal_tests_fault[] = {
 	{ test_ipc_portal_invalid_allow,      "Invalid Allow"      },
 	{ test_ipc_portal_bad_allow,          "Bad Allow"          },
 	{ test_ipc_portal_invalid_read,       "Invalid Read"       },
-	{ NULL,                                NULL                },
 	{ test_ipc_portal_bad_read,           "Bad Read"           },
+	{ NULL,                                NULL                },
 	{ test_ipc_portal_invalid_read_size,  "Invalid Read Size"  },
 	{ test_ipc_portal_null_read,          "Null Read"          },
 	{ test_ipc_portal_invalid_write,      "Invalid Write"      },
