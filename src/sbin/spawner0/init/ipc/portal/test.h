@@ -32,6 +32,11 @@
 	#define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
 
 	/**
+	 * @brief Buffer size (in bytes).
+	 */
+	#define DATA_SIZE 256
+
+	/**
 	 * @brief Unit test.
 	 */
 	struct test
@@ -44,5 +49,6 @@
 	extern int ipc_portal_ncores;
 	extern pthread_barrier_t barrier;
 	extern struct test ipc_portal_tests_api[];
+	extern struct test ipc_portal_tests_fault[];
 
 #endif /* _TEST_H_ */

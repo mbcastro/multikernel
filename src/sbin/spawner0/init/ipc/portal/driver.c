@@ -57,6 +57,13 @@ void test_kernel_ipc_portal(int nbusycores)
 		ipc_portal_tests_api[i].test_fn();
 	}
 
+	/* Run fault injection tests. */
+	for (int i = 0; ipc_portal_tests_fault[i].test_fn != NULL; i++)
+	{
+		printf("[nanvix][test][fault][ipc][portal] %s\n", ipc_portal_tests_fault[i].name);
+		ipc_portal_tests_fault[i].test_fn();
+	}
+
 	TEST_ASSERT(runtime_cleanup() == 0);
 }
 

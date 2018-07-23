@@ -35,11 +35,6 @@
 #include "test.h"
 
 /**
- * @brief Buffer size (in bytes).
- */
-#define DATA_SIZE 256
-
-/**
  * @brief Local lock.
  */
 static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
