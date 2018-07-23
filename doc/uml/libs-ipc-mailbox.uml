@@ -1,0 +1,40 @@
+@startuml
+
+namespace portal {
+
+	enum PortalFlags {
+		~ PORTAL_USED
+		~ PORTAL_WRONLY
+	}
+
+	class Portal {
+		~ portalid
+		~ flags
+		~ owner
+		~ name[NANVIX_PROC_NAME_MAX]
+		~ portal_is_valid()
+		~ portal_is_used()
+		~ portal_is_wronly()
+		~ portal_sed_used()
+		~ portal_sed_wronly()
+		~ portal_clear_flags()
+	}
+
+	class PortalOperations {
+		- portal_alloc()
+		- portal_free()
+		+ portal_create()
+		+ portal_open()
+		+ portal_unlink()
+		+ portal_close()
+		+ portal_allow()
+		+ portal_read()
+		+ portal_write()
+	}
+
+	portal.Portal           .> portal.PortalFlags : <<use>>
+	portal.PortalOperations -* portal.Portal      : portals
+}
+
+@enduml
+
