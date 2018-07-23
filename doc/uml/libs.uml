@@ -1,0 +1,21 @@
+@startuml
+
+namespace libs {
+	namespace barrier {
+	}
+
+	namespace name {
+	}
+
+	namespace mailbox {
+	}
+
+	namespace portal {
+	}
+
+	libs.mailbox ..> libs.name
+	libs.portal  ..> libs.name
+}
+
+@enduml
+
