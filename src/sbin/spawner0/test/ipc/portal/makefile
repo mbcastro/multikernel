@@ -20,53 +20,31 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-# Conflicts.
-.PHONY:master
+# C Source Files
+SRC = $(wildcard *.c)
+
+# Object Files
+OBJ = $(SRC:.c=.o)
+
+# Binary Files
+export ELFBIN = $(BINDIR)/test/ipc-portal-slave
 
 #===============================================================================
 
-# Builds automated test driver.
-all: master slaves
+# Builds the kernel.
+all: $(OBJ)
+	mkdir -p $(BINDIR)/test/
+	$(CC) $(LDFLAGS) $(OBJ) $(CRT1) -o $(ELFBIN) $(LIBUSER) $(LIBKERNEL) $(LIBS)
 
-# Builds Main Binary
-master:
-ifeq ($(BUILDING_IOCLUSTER),true)
-	cd master && $(MAKE) all
-endif
-
-# Builds Slave Binaries
-slaves:
-ifeq ($(BUILDING_CCLUSTER),true)
-	cd hal/sync && $(MAKE) all
-	cd hal/mailbox && $(MAKE) all
-	cd hal/portal && $(MAKE) all
-	cd ipc/barrier && $(MAKE) all
-	cd ipc/name && $(MAKE) all
-	cd ipc/mailbox && $(MAKE) all
-	cd ipc/portal&& $(MAKE) all
-	cd ipc/semaphore && $(MAKE) all
-endif
+# Builds object files.
+%.o: %.c
+	$(CC) $(CFLAGS) $< -c -o $@
 
 # Cleans compilation files.
 clean:
-	cd master && $(MAKE) clean
-	cd hal/sync && $(MAKE) clean
-	cd hal/mailbox && $(MAKE) clean
-	cd hal/portal && $(MAKE) clean
-	cd ipc/barrier && $(MAKE) clean
-	cd ipc/name && $(MAKE) clean
-	cd ipc/mailbox && $(MAKE) clean
-	cd ipc/portal && $(MAKE) clean
-	cd ipc/semaphore && $(MAKE) clean
+	rm -rf $(OBJ)
 
 # Cleans everything.
 distclean: clean
-	cd master && $(MAKE) distclean
-	cd hal/sync && $(MAKE) distclean
-	cd hal/mailbox && $(MAKE) distclean
-	cd hal/portal && $(MAKE) distclean
-	cd ipc/barrier && $(MAKE) distclean
-	cd ipc/name && $(MAKE) distclean
-	cd ipc/mailbox && $(MAKE) distclean
-	cd ipc/portal && $(MAKE) distclean
-	cd ipc/semaphore && $(MAKE) distclean
+	rm -rf $(ELFBIN)
+
