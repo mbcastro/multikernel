@@ -430,6 +430,76 @@ static void test_ipc_portal_invalid_allow(void)
 }
 
 /*============================================================================*
+ * Fault Injection Test: Bad Allow                                            *
+ *============================================================================*/
+
+/**
+ * @brief Fault Injection Test: Bad Allow
+ */
+static void *test_ipc_portal_bad_allow_thread(void *args)
+{
+	int tid;
+	int inportal;
+
+	TEST_ASSERT(kernel_setup() == 0);
+	TEST_ASSERT(runtime_setup(1) == 0);
+
+	tid = ((int *)args)[0];
+
+	if (tid == 1)
+		TEST_ASSERT((inportal = portal_create("cool-name")) >= 0);
+
+	pthread_barrier_wait(&barrier);
+	pthread_barrier_wait(&barrier);
+
+	/* House keeping. */
+	if (tid == 1)
+		TEST_ASSERT(portal_unlink(inportal) == 0);
+
+	TEST_ASSERT(runtime_cleanup() == 0);
+	TEST_ASSERT(kernel_cleanup() == 0);
+	return (NULL);
+}
+
+/**
+ * @brief Fault Injection Test: Bad Allow
+ */
+static void test_ipc_portal_bad_allow(void)
+{
+	int outportal;
+	int tids[ipc_portal_ncores];
+	pthread_t threads[ipc_portal_ncores];
+
+	/* Spawn driver threads. */
+	for (int i = 1; i < ipc_portal_ncores; i++)
+	{
+		tids[i] = i;
+		TEST_ASSERT((pthread_create(&threads[i],
+			NULL,
+			test_ipc_portal_bad_allow_thread,
+			&tids[i])) == 0
+		);
+	}
+
+	pthread_barrier_wait(&barrier);
+
+#ifdef _TEST_IPC_PORTAL_BAD_ALLOW_
+	TEST_ASSERT(portal_allow(0, 0) < 0);
+#else
+	TEST_ASSERT(portal_allow(1, 0) < 0);
+#endif
+	TEST_ASSERT((outportal = portal_open("cool-name")) >= 0);
+	TEST_ASSERT(portal_allow(outportal, 0) < 0);
+	TEST_ASSERT(portal_close(outportal) == 0);
+
+	pthread_barrier_wait(&barrier);
+
+	/* Wait for driver threads. */
+	for (int i = 1; i < ipc_portal_ncores; i++)
+		pthread_join(threads[i], NULL);
+}
+
+/*============================================================================*
  * API Test: Invalid Read                                                     *
  *============================================================================*/
 
@@ -734,6 +804,7 @@ struct test ipc_portal_tests_fault[] = {
 	{ test_ipc_portal_bad_close,          "Bad Close"          },
 	{ test_ipc_portal_double_close,       "Double Close"       },
 	{ test_ipc_portal_invalid_allow,      "Invalid Allow"      },
+	{ test_ipc_portal_bad_allow,          "Bad Allow"          },
 	{ NULL,                                NULL                },
 	{ test_ipc_portal_invalid_read,       "Invalid Read"       },
 	{ test_ipc_portal_bad_read,           "Bad Read"           },
