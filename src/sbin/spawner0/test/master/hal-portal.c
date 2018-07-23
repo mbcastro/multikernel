@@ -27,6 +27,7 @@
 
 #include <nanvix/syscalls.h>
 #include <nanvix/limits.h>
+#include <nanvix/pm.h>
 
 /**
  * @brief Asserts a logic expression.
@@ -261,7 +262,7 @@ static void test_sys_portal_read_write3_cc(void)
 	sprintf(portal_nclusters_str, "%d", NANVIX_PROC_MAX);
 	sprintf(test_str, "%d", 4);
 
-	TEST_ASSERT((inportal = sys_portal_create(nodenum)) >= 0);
+	TEST_ASSERT((inportal = get_inportal()) >= 0);
 
 	spawn_slaves(args);
 
@@ -283,9 +284,6 @@ static void test_sys_portal_read_write3_cc(void)
 	}
 
 	join_slaves();
-
-	/* House keeping. */
-	TEST_ASSERT(sys_portal_unlink(inportal) == 0);
 }
 
 /*============================================================================*/

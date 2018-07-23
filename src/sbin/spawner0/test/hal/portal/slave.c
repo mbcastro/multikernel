@@ -25,6 +25,7 @@
 
 #include <nanvix/syscalls.h>
 #include <nanvix/limits.h>
+#include <nanvix/pm.h>
 
 /**
  * @brief Asserts a logic expression.
@@ -143,8 +144,7 @@ static void test_sys_portal_create_unlink(void)
 {
 	int inportal;
 
-	TEST_ASSERT((inportal = sys_portal_create(nodenum)) >= 0);
-	TEST_ASSERT(sys_portal_unlink(inportal) == 0);
+	TEST_ASSERT((inportal = get_inportal()) >= 0);
 }
 
 /*============================================================================*
@@ -174,7 +174,7 @@ static void test_sys_portal_read_write(int nclusters)
 	int inportal;
 	int outportal;
 
-	TEST_ASSERT((inportal = sys_portal_create(nodenum)) >= 0);
+	TEST_ASSERT((inportal = get_inportal()) >= 0);
 
 	sync_slaves(nclusters);
 
@@ -210,7 +210,6 @@ static void test_sys_portal_read_write(int nclusters)
 
 	/* House keeping. */
 	TEST_ASSERT(sys_portal_close(outportal) == 0);
-	TEST_ASSERT(sys_portal_unlink(inportal) == 0);
 }
 
 /*============================================================================*
@@ -224,7 +223,7 @@ static void test_sys_portal_read_write2(int nclusters)
 {
 	int inportal;
 
-	TEST_ASSERT((inportal = sys_portal_create(nodenum)) >= 0);
+	TEST_ASSERT((inportal = get_inportal()) >= 0);
 
 	sync_master(nclusters);
 
@@ -238,9 +237,6 @@ static void test_sys_portal_read_write2(int nclusters)
 		buffer,
 		DATA_SIZE) == DATA_SIZE)
 	);
-
-	/* House keeping. */
-	TEST_ASSERT(sys_portal_unlink(inportal) == 0);
 }
 
 /*============================================================================*
