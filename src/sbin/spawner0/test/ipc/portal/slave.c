@@ -78,6 +78,7 @@ static void sync_slaves(int nclusters)
 	/* Sync. */
 	TEST_ASSERT(barrier_wait(barrier) == 0);
 
+	/* House keeping. */
 	TEST_ASSERT(barrier_unlink(barrier) == 0);
 }
 
@@ -107,12 +108,23 @@ static void test_ipc_portal_create_unlink(int nclusters)
  */
 static void test_ipc_portal_open_close_cc(int nclusters)
 {
+	int inportal;
 	int outportal;
 	char pathname[NANVIX_PROC_NAME_MAX];
 
+	sprintf(pathname, "inportal%d", nodenum);
+	TEST_ASSERT((inportal = portal_create(pathname)) >= 0);
+
+	sync_slaves(nclusters);
+
 	sprintf(pathname, "inportal%d", (nodenum + 1)%nclusters);
-	TEST_ASSERT((outportal = portal_create(pathname)) >= 0);
-	TEST_ASSERT(portal_unlink(outportal) == 0);
+	TEST_ASSERT((outportal = portal_open(pathname)) >= 0);
+
+	sync_slaves(nclusters);
+
+	/* House keeping. */
+	TEST_ASSERT(portal_close(outportal) == 0);
+	TEST_ASSERT(portal_unlink(inportal) == 0);
 }
 
 /*============================================================================*
