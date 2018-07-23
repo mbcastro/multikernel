@@ -100,6 +100,84 @@ static void test_portal_create_unlink(void)
 		pthread_join(threads[i], NULL);
 }
 
+/*============================================================================*
+ * API Test: Open Close                                                       *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Portal Open Close
+ */
+static void *test_portal_thread_open_close(void *args)
+{
+	char pathname_local[NANVIX_PROC_NAME_MAX];
+	char pathname_remote[NANVIX_PROC_NAME_MAX];
+	int tid;
+	int inbox;
+	int outbox;
+
+	TEST_ASSERT(kernel_setup() == 0);
+	TEST_ASSERT(runtime_setup(1) == 0);
+
+	pthread_barrier_wait(&barrier);
+
+	tid = ((int *)args)[0];
+
+	sprintf(pathname_local, "cool-name%d", tid);
+
+	pthread_mutex_lock(&lock);
+	TEST_ASSERT((inbox = portal_create(pathname_local)) >= 0);
+	pthread_mutex_unlock(&lock);
+
+	pthread_barrier_wait(&barrier);
+
+	sprintf(pathname_remote, "cool-name%d",
+		((tid + 1) == ipc_portal_ncores) ?
+		1:tid + 1
+	);
+
+	pthread_mutex_lock(&lock);
+	TEST_ASSERT((outbox = portal_open(pathname_remote)) >= 0);
+	pthread_mutex_unlock(&lock);
+
+	pthread_barrier_wait(&barrier);
+
+	pthread_mutex_lock(&lock);
+	TEST_ASSERT(portal_close(outbox) == 0);
+	pthread_mutex_unlock(&lock);
+
+	pthread_mutex_lock(&lock);
+	TEST_ASSERT(portal_unlink(inbox) == 0);
+	pthread_mutex_unlock(&lock);
+
+	TEST_ASSERT(runtime_cleanup() == 0);
+	TEST_ASSERT(kernel_cleanup() == 0);
+	return (NULL);
+}
+
+/**
+ * @brief API Test: Portal Open Close
+ */
+static void test_portal_open_close(void)
+{
+	int tids[ipc_portal_ncores];
+	pthread_t threads[ipc_portal_ncores];
+
+	/* Spawn driver threads. */
+	for (int i = 1; i < ipc_portal_ncores; i++)
+	{
+		tids[i] = i;
+		TEST_ASSERT((pthread_create(&threads[i],
+			NULL,
+			test_portal_thread_open_close,
+			&tids[i])) == 0
+		);
+	}
+
+	/* Wait for driver threads. */
+	for (int i = 1; i < ipc_portal_ncores; i++)
+		pthread_join(threads[i], NULL);
+}
+
 /*============================================================================*/
 
 /**
@@ -107,5 +185,6 @@ static void test_portal_create_unlink(void)
  */
 struct test ipc_portal_tests_api[] = {
 	{ test_portal_create_unlink, "Create Unlink" },
+	{ test_portal_open_close,    "Open Close"    },
 	{ NULL,                       NULL           },
 };
