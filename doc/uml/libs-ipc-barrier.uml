@@ -19,11 +19,11 @@ namespace barrier {
 	}
 
 	class BarrierOperations {
-		- barrier_alloc
-		- barrier_free
-		+ barrier_create
-		+ barrier_wait
-		+ barrier_unlink
+		- barrier_alloc()
+		- barrier_free()
+		+ barrier_create()
+		+ barrier_wait()
+		+ barrier_unlink()
 	}
 
 	barrier.Barrier           .> barrier.BarrierFlags : <<use>>
