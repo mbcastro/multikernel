@@ -649,7 +649,6 @@ static void test_ipc_portal_invalid_read_size(void)
 		pthread_join(threads[i], NULL);
 }
 
-
 /*============================================================================*
  * API Test: Null Read                                                        *
  *============================================================================*/
@@ -657,13 +656,63 @@ static void test_ipc_portal_invalid_read_size(void)
 /**
  * @brief API Test: Null Read
  */
-static void test_ipc_portal_null_read(void)
+static void *test_ipc_portal_null_read_thread(void *args)
 {
+	int tid;
 	int inportal;
 
-	TEST_ASSERT((inportal = portal_create("cool-name")) >=  0);
-	TEST_ASSERT(portal_read(inportal, NULL, DATA_SIZE) < 0);
-	TEST_ASSERT(portal_unlink(inportal) == 0);
+	TEST_ASSERT(kernel_setup() == 0);
+	TEST_ASSERT(runtime_setup(1) == 0);
+
+	tid = ((int *)args)[0];
+
+	if (tid == 1)
+	{
+		TEST_ASSERT((inportal = portal_create("cool-name")) >= 0);
+		TEST_ASSERT(portal_allow(inportal, 0) >= 0);
+	}
+
+	pthread_barrier_wait(&barrier);
+
+	if (tid == 1)
+		TEST_ASSERT(portal_read(inportal, NULL, DATA_SIZE) < 0);
+	
+	pthread_barrier_wait(&barrier);
+
+	/* House keeping. */
+	if (tid == 1)
+		TEST_ASSERT(portal_unlink(inportal) == 0);
+
+	TEST_ASSERT(runtime_cleanup() == 0);
+	TEST_ASSERT(kernel_cleanup() == 0);
+	return (NULL);
+}
+
+/**
+ * @brief API Test: Null Read
+ */
+static void test_ipc_portal_null_read(void)
+{
+	int tids[ipc_portal_ncores];
+	pthread_t threads[ipc_portal_ncores];
+
+	/* Spawn driver threads. */
+	for (int i = 1; i < ipc_portal_ncores; i++)
+	{
+		tids[i] = i;
+		TEST_ASSERT((pthread_create(&threads[i],
+			NULL,
+			test_ipc_portal_null_read_thread,
+			&tids[i])) == 0
+		);
+	}
+
+	pthread_barrier_wait(&barrier);
+	pthread_barrier_wait(&barrier);
+
+	/* Wait for driver threads. */
+	for (int i = 1; i < ipc_portal_ncores; i++)
+		pthread_join(threads[i], NULL);
 }
 
 /*============================================================================*
@@ -856,8 +905,8 @@ struct test ipc_portal_tests_fault[] = {
 	{ test_ipc_portal_invalid_read,       "Invalid Read"       },
 	{ test_ipc_portal_bad_read,           "Bad Read"           },
 	{ test_ipc_portal_invalid_read_size,  "Invalid Read Size"  },
-	{ NULL,                                NULL                },
 	{ test_ipc_portal_null_read,          "Null Read"          },
+	{ NULL,                                NULL                },
 	{ test_ipc_portal_invalid_write,      "Invalid Write"      },
 	{ test_ipc_portal_bad_write,          "Bad Write"          },
 	{ test_ipc_portal_invalid_write_size, "Invalid Write Size" },
