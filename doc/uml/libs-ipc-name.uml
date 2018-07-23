@@ -1,0 +1,29 @@
+@startuml
+
+namespace name {
+
+	interface NameOperations {
+		+ name_link()
+		+ name_lookup()
+		+ name_unlink()
+	}
+
+	class NameMessage {
+		+ source
+		+ nodenum
+		+ name[NANVIX_PROC_NAME_MAX]
+	}
+
+	enum NameMessageType {
+		+ const NAME_LOOKUP
+		+ const NAME_LINK
+		+ const NAME_UNLINK
+		+ const NAME_SUCCESS
+		+ const NAME_FAIL
+	}
+
+	NameMessage    *- NameMessageType : op
+	NameOperations -> NameMessage : <<use>>
+}
+
+@enduml
