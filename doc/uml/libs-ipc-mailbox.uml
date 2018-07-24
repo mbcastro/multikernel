@@ -1,40 +1,46 @@
 @startuml
 
-namespace portal {
+namespace mailbox {
 
-	enum PortalFlags {
-		~ PORTAL_USED
-		~ PORTAL_WRONLY
+	enum MailboxFlags {
+		+ const MAILBOX_USED
+		+ const MAILBOX_WRONLY
 	}
 
-	class Portal {
-		~ portalid
-		~ flags
-		~ owner
-		~ name[NANVIX_PROC_NAME_MAX]
-		~ portal_is_valid()
-		~ portal_is_used()
-		~ portal_is_wronly()
-		~ portal_sed_used()
-		~ portal_sed_wronly()
-		~ portal_clear_flags()
+	class Mailbox {
+		~ int fd
+		~ int flags
+		~ int owner
+		~ char name[NANVIX_PROC_NAME_MAX]
 	}
 
-	class PortalOperations {
-		- portal_alloc()
-		- portal_free()
-		+ portal_create()
-		+ portal_open()
-		+ portal_unlink()
-		+ portal_close()
-		+ portal_allow()
-		+ portal_read()
-		+ portal_write()
+	class MailboxOperations {
+		- int inboxes[NANVIX_NR_NODES]
+		- int named_inboxes[HAL_NR_NOC_IONODES]
+		- int initialized[NANVIX_NR_NODES] = { 0, }
+		- struct mailbox mailboxes[NANVIX_MAILBOX_MAX]
+		+ int initialize_inbox(int index)
+		+ int destroy_inbox(int index)
+		+ int get_inbox(void)
+		+ int get_named_inbox(void)
+		- int mailbox_is_valid(int mbxid)
+		- int mailbox_is_used(int mbxid)
+		- int mailbox_is_wronly(int mbxid)
+		- void mailbox_clear_flags(int mbxid)
+		- void mailbox_set_used(int mbxid)
+		- void mailbox_set_wronly(int mbxid)
+		- int mailbox_alloc(void)
+		- void mailbox_free(int mbxid)
+		+ int mailbox_create(char *name)
+		+ int mailbox_open(char *name)
+		+ int mailbox_read(int mbxid, void *buf, size_t n)
+		+ int mailbox_write(int mbxid, const void *buf, size_t n)
+		+ int mailbox_close(int mbxid)
+		+ int mailbox_unlink(int mbxid)
 	}
 
-	portal.Portal           .> portal.PortalFlags : <<use>>
-	portal.PortalOperations -* portal.Portal      : portals
+	mailbox.Mailbox           .> mailbox.MailboxFlags : <<use>>
+	mailbox.MailboxOperations -* mailbox.Mailbox      : mailboxes
 }
 
 @enduml
-
