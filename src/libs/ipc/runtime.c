@@ -63,52 +63,37 @@ static void runtime_unlock(void)
  */
 int runtime_setup(int level)
 {
-	int index;
+	int nodenum;
 
 	runtime_lock();
 
-		index = sys_get_core_id();
+		nodenum = sys_get_node_num();
 
 		/* Runtime was already initialized. */
-		if (initialized[index])
+		if (initialized[nodenum])
 			goto error;
 
-		switch (level)
+		/* Initialize unnamed IPC services. */
+		if (level >= 0)
 		{
-			case 0:
-				/* Create underlying input mailbox. */
-				if (initialize_inbox(index) != 0)
-					goto error;
-				portal_setup(sys_get_node_num());
-				break;
+			if (mailbox_setup(nodenum) != 0)
+				goto error;
+			if (portal_setup(nodenum) != 0)
+				goto error;
+		}	
+		
+		/* Initialize naming service. */
+		if (level >= 1)
+			name_init();
 
-			case 1:
-				/* Create underlying input mailbox. */
-				if (initialize_inbox(index) != 0)
-					goto error;
-
-				name_init();
-				portal_setup(sys_get_node_num());
-
-				break;
-
-			case 2:
-				/* Create underlying input mailbox. */
-				if (initialize_inbox(index) != 0)
-					goto error;
-
-				name_init();
-				portal_setup(sys_get_node_num());
-				sem_init();
-
-				break;
-
-			default:
-
-				break;
+		/* Initialize named services. */
+		if (level >= 2)
+		{
+			name_init();
+			sem_init();
 		}
 
-		initialized[index] = 1;
+		initialized[nodenum] = 1;
 
 	runtime_unlock();
 
@@ -125,21 +110,25 @@ error:
  */
 int runtime_cleanup(void)
 {
-	int index;
+	int nodenum;
 
 	runtime_lock();
 
-		index = sys_get_core_id();
+		nodenum = sys_get_node_num();
 
 		/* Runtime was not initialized. */
-		if (!initialized[index])
+		if (!initialized[nodenum])
 			goto error;
 
 		/* Destroy underlying input mailbox. */
-		if (destroy_inbox(index) != 0)
+		if (mailbox_cleanup() != 0)
 			goto error;
 
-		initialized[index] = 0;
+		/* Destroy underlying input portal. */
+		if (portal_cleanup() != 0)
+			goto error;
+
+		initialized[nodenum] = 0;
 
 	runtime_unlock();
 

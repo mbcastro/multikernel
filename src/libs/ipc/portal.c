@@ -216,7 +216,6 @@ int portal_setup(int local)
 		return (0);
 
 	/* Create underlying unnamed input portal. */
-	local = sys_get_node_num();
 	if ((portalid = sys_portal_create(local)) < 0)
 		return (portalid);
 

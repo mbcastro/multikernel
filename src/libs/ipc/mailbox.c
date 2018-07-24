@@ -39,20 +39,9 @@
 /**@}*/
 
 /**
- * @brief Input HAL mailbox.
- */
-static int inboxes[NANVIX_NR_NODES];
-
-/**
  * @brief Input named mailbox.
  */
 static int named_inboxes[HAL_NR_NOC_IONODES];
-
-/**
- *
- * @brief Is the inbox initialized ?
- */
-static int initialized[NANVIX_NR_NODES] = { 0, };
 
 /**
  * @brief Table of mailboxes.
@@ -66,88 +55,119 @@ static struct
 } mailboxes[NANVIX_MAILBOX_MAX];
 
 /*============================================================================*
- * initialize_inbox()                                                         *
+ * mailbox_setup()                                                            *
  *============================================================================*/
 
 /**
- * @brief Initializes the inbox.
- *
- * @param index Index where the mailbox will be stored.
- *
- * @returns Upon successful completion zero is returned.
- * A negative error code otherwise.
+ * @brief Input HAL mailbox.
  */
-int initialize_inbox(int index)
+static int inboxes[NANVIX_NR_NODES];
+
+/**
+ *
+ * @brief Is the inbox initialized ?
+ */
+static int initialized[NANVIX_NR_NODES] = { 0, };
+
+/**
+ * @brief Initializes named mailboxes facility.
+ *
+ * @param local ID of local node.
+ */
+int mailbox_setup(int local)
 {
-	int mailbox;
-	int nodenum;
+	int mbxid;
+
+	/* Invalid local. */
+	if ((local < 0) || (local > NANVIX_NR_NODES))
+		return (-EINVAL);
+
+	/* Bad local. */
+	if (local != sys_get_node_num())
+		return (-EINVAL);
 
 	/* Nothing to do. */
-	if (initialized[index])
+	if (initialized[local])
 		return (0);
 
-	nodenum = sys_get_node_num();
+	/* Create underlying unnamed input mailbox. */
+	if ((mbxid = sys_mailbox_create(local)) < 0)
+		return (mbxid);
 
-	mailbox = sys_mailbox_create(nodenum);
-
-	if (mailbox < 0)
-		return (-EAGAIN);
-
-	inboxes[index] = mailbox;
-	initialized[index] = 1;
+	/* Initialize named mailboxes facility. */
+	inboxes[local] = mbxid;
+	initialized[local] = 1;
 
 	return (0);
 }
 
 /*============================================================================*
- * destroy_inbox()                                                            *
+ * mailboxes_are_initialized()                                                *
  *============================================================================*/
 
 /**
- * @brief Destroy the inbox.
+ * @brief Asserts whether or not the named mailbox facility was
+ * initialized in the calling node.
  *
- * @param index Index of the mailbox to destroy.
+ * @returns One if the named mailbox facility was initialized, and zero 
+ * otherwise.
  *
- * @returns Upon successful completion zero is returned.
- * A negative error code otherwise.
+ * @note This function is @b NOT thread safe. 
  */
-int destroy_inbox(int index)
+static int mailboxes_are_initialized(void )
 {
-	/* Nothing to do. */
-	if (!initialized[index])
-	{
-		printf("[nanvix][runtime] no unnamed mailbox\n");
-		return (-EINVAL);
-	}
+	int nodenum;
 
-	if (sys_mailbox_unlink(inboxes[index]) != 0)
-	{
-		printf("[nanvix][runtime] failed to unlink unnamed mailbox\n");
-		return (-EINVAL);
-	}
+	nodenum = sys_get_node_num();
 
-	initialized[index] = 0;
-
-	return (0);
+	return (initialized[nodenum]);
 }
 
+/*============================================================================*
+ * get_inbox()                                                                *
+ *============================================================================*/
+
 /**
- * @brief Get input mailbox.
+ * @brief Returns the underlying unnamed input mailbox.
  */
 int get_inbox(void)
 {
-	int index;
+	int local;
 
-	index = sys_get_core_id();
-
-	/* Inbox was not initialized. */
-	if (!initialized[index])
-	{
-		printf("[nanvix][runtime] no unnamed mailbox\n");
+	/* Uninitialized named mailbox facility. */
+	if (!mailboxes_are_initialized())
 		return (-EINVAL);
-	}
 
-	return (inboxes[index]);
+	local = sys_get_node_num();
+
+	return (inboxes[local]);
+}
+
+/*============================================================================*
+ * mailbox_cleanup()                                                          *
+ *============================================================================*/
+
+/**
+ * @brief Deinitializes named mailboxes facility.
+ */
+int mailbox_cleanup(void)
+{
+	int ret;
+	int local;
+
+	/* Uninitialized named mailbox facility. */
+	if (!mailboxes_are_initialized())
+		return (-EINVAL);
+
+	local = sys_get_node_num();
+
+	/* Destroy underlying unnamed input mailbox. */
+	if ((ret = sys_mailbox_unlink(inboxes[local])) < 0)
+		return (ret);
+
+	initialized[local] = 0;
+
+	return (0);
 }
 
 /**

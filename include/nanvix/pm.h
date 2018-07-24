@@ -39,10 +39,10 @@
  *============================================================================*/
 
 	/* Forward definitions .*/
+	extern int mailbox_setup(int);
+	extern int mailbox_cleanup(void);
 	extern int get_inbox(void);
 	extern int get_named_inbox(void);
-	extern int initialize_inbox(int);
-	extern int destroy_inbox(int);
 	extern int mailbox_create(char *);
 	extern int mailbox_open(char *);
 	extern int mailbox_read(int, void *, size_t);
