@@ -95,7 +95,7 @@ static void mppa256_mailbox_unlock(void)
  */
 static int mailbox_is_valid(int mbxid)
 {
-	return ((mbxid >= 0) || (mbxid < HAL_NR_MAILBOX));
+	return ((mbxid >= 0) && (mbxid < HAL_NR_MAILBOX));
 }
 
 /*============================================================================*
