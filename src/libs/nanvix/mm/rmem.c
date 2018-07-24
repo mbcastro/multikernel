@@ -107,8 +107,6 @@ void memwrite(uint64_t addr, const void *buf, size_t n)
  */
 int meminit(void)
 {
-	int ret;
-
 	/* Nothing to do.  */
 	if (server.initialized)
 		return (0);
@@ -116,22 +114,18 @@ int meminit(void)
 	/* Open output mailbox */
 	if ((server.outbox = mailbox_open("/rmem")) < 0)
 	{
-		ret = server.outbox;
-		goto error;
+		printf("[nanvix][rmem] cannot open outbox to server\n");
+		return (server.outbox);
 	}
 
 	/* Open underlying IPC connectors. */
 	if ((server.outportal = portal_open("/rmem")) < 0)
 	{
-		ret = server.outportal;
-		goto error;
+		printf("[nanvix][rmem] cannot open outportal to server\n");
+		return (server.outportal);
 	}
 
 	server.initialized = 1;
 
 	return (0);
-
-error:
-	printf("[nanvix][rmem] cannot open connection to server\n");
-	return (ret);
 }

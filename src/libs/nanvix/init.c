@@ -28,7 +28,9 @@
 #include <nanvix/syscalls.h>
 #include <nanvix/const.h>
 
+/* Forward definitions. */
 extern int name_init(void);
+extern int meminit(void);
 extern int sem_init(void);
 
 /**
@@ -90,6 +92,8 @@ int runtime_setup(int level)
 		if (level >= 2)
 		{
 			name_init();
+			if (meminit() != 0)
+				goto error;
 			sem_init();
 		}
 

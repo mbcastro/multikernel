@@ -155,7 +155,7 @@ static int rmem_startup(int _inbox, int _inportal)
 	inportal = _inportal;
 
 	/* Link name. */
-	sprintf(pathname, "/rmem0");
+	sprintf(pathname, "/rmem");
 	if ((ret = name_link(nodenum, pathname)) < 0)
 		return (ret);
 
