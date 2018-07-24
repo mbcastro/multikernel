@@ -25,7 +25,7 @@ namespace NameServer {
 		- int _name_lookup(const char *name)
 		- int _name_link(int nodeid, char *name)
 		- int _name_unlink(char *name)
-		~ void *name_server(void *args)
+		~ int name_server(int inbox)
 	}
 
 	NameServer.NameServer "1" *-- "HAL_NR_NOC_NODES" NameServer.NameTable : names
@@ -33,7 +33,6 @@ namespace NameServer {
 	NameServer.NameServer ..> name.NameMessage      : <<uses>>
 	NameServer.NameServer ..> HAL.MailboxInterface : <<uses>>
 	NameServer.NameServer ..> HAL.NoCInterface     : <<uses>>
-	NameServer.NameServer ..> HAL.SetupInterface   : <<uses>>
 }
 
 @enduml
