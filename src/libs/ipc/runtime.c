@@ -79,7 +79,7 @@ int runtime_setup(int level)
 				/* Create underlying input mailbox. */
 				if (initialize_inbox(index) != 0)
 					goto error;
-
+				portal_setup(sys_get_node_num());
 				break;
 
 			case 1:
