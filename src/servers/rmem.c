@@ -135,13 +135,15 @@ static int rmem_loop(void)
 /**
  * @brief Initializes the memory server.
  *
- * @param _inbox Input mailbox.
+ * @param _inbox    Input mailbox.
+ * @param _inportal Input portal.
  *
  * @returns Upon successful completion zero is returned. Upon failure,
  * a negative error code is returned instead.
  */
-static int rmem_startup(int _inbox)
+static int rmem_startup(int _inbox, int _inportal)
 {
+	int ret;
 	char pathname[NANVIX_PROC_NAME_MAX];
 
 	nodenum = sys_get_node_num();
@@ -149,13 +151,13 @@ static int rmem_startup(int _inbox)
 	/* Assign input mailbox. */
 	inbox = _inbox;
 
-	/* Create input portal. */
-	if ((inportal = get_inportal()) < 0)
-		return (inportal);
+	/* Assign input portal. */
+	inportal = _inportal;
 
 	/* Link name. */
 	sprintf(pathname, "/rmem0");
-	name_link(nodenum, pathname);
+	if ((ret = name_link(nodenum, pathname)) < 0)
+		return (ret);
 
 	return (0);
 }
@@ -182,18 +184,19 @@ static int rmem_shutdown(void)
 /**
  * @brief Remote memory server.
  *
- * @param _inbox Input mailbox.
+ * @param _inbox    Input mailbox.
+ * @param _inportal Input portal.
  *
  * @returns Upon successful completion zero is returned. Upon failure,
  * a negative error code is returned instead.
  */
-int rmem_server(int _inbox)
+int rmem_server(int _inbox, int _inportal)
 {
 	int ret;
 
 	printf("[nanvix][rmem] booting up server\n");
 
-	ret = rmem_startup(_inbox);
+	ret = rmem_startup(_inbox, _inportal);
 	
 	printf("[nanvix][name] server alive\n");
 

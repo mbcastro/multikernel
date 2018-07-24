@@ -34,7 +34,7 @@
 #define NR_SERVERS 1
 
 /* Forward definitions. */
-extern int rmem_server(int);
+extern int rmem_server(int, int);
 extern int main2(int, const char **);
 extern void test_kernel_sys_core(void);
 extern void test_kernel_sys_sync(void);

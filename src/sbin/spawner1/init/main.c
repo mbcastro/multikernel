@@ -34,7 +34,7 @@
 #define NR_SERVERS 1
 
 /* Forward definitions. */
-extern int name_server(int);
+extern int name_server(int, int);
 extern void test_kernel_sys_sync(void);
 extern void test_kernel_barrier(void);
 

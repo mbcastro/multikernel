@@ -185,14 +185,17 @@ static int _name_unlink(char *name)
 /**
  * @brief Handles remote name requests.
  *
- * @param inbox Input mailbox.
+ * @param inbox    Input mailbox.
+ * @param inportal Input portal.
  *
  * @returns Always returns NULL.
  */
-int name_server(int inbox)
+int name_server(int inbox, int inportal)
 {
 	int tmp;
 	int source;
+
+	((void) inportal);
 
 	printf("[nanvix][name] booting up server\n");
 
