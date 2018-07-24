@@ -20,6 +20,7 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <assert.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -63,11 +64,11 @@ void memread(uint64_t addr, void *buf, size_t n)
 	msg.size = n;
 
 	/* Send operation header. */
-	mailbox_write(server.outbox, &msg, MAILBOX_MSG_SIZE);
+	assert(mailbox_write(server.outbox, &msg, MAILBOX_MSG_SIZE) == 0);
 
 	/* Send data. */
-	portal_allow(get_inportal(), RMEM_SERVER_NODE);
-	portal_read(get_inportal(), buf, n);
+	assert(sys_portal_allow(get_inportal(), RMEM_SERVER_NODE) == 0);
+	assert(sys_portal_read(get_inportal(), buf, n) == (int) n);
 }
 
 /*============================================================================*
@@ -92,10 +93,10 @@ void memwrite(uint64_t addr, const void *buf, size_t n)
 	msg.size = n;
 
 	/* Send operation header. */
-	mailbox_write(server.outbox, &msg, MAILBOX_MSG_SIZE);
+	assert(mailbox_write(server.outbox, &msg, MAILBOX_MSG_SIZE) == 0);
 
 	/* Send data. */
-	portal_write(server.outportal, buf, n);
+	assert(portal_write(server.outportal, buf, n) == (int) n);
 }
 
 /*============================================================================*
