@@ -7,12 +7,18 @@ namespace servers {
 
 	namespace name {
 	}
+
+	namespace semaphore {
+	}
 }
 
-libs      ..>  kernel : <<use>>
-servers   ..>  kernel : <<use>>
+libs    ..>  kernel : <<use>>
+servers ..>  kernel : <<use>>
+
 libs.name <|.. servers.name : <<implements>>
+
+libs.semaphore <|.. servers.semaphore : <<implements>>
+libs.name      <|.. servers.semaphore : <<use>>
 
 
 @enduml
-

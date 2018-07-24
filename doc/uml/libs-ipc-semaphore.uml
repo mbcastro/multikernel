@@ -1,0 +1,43 @@
+@startuml
+
+namespace semaphore {
+
+	interface SemaphoreOperations {
+		- int server
+		- int initialized = 0
+		+ int sem_init(void)
+		+ void sem_finalize(void)
+		- pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER
+		- int sem_name_is_valid(const char *name)
+		- int sem_is_valid(int sem)
+		+ int nanvix_sem_open(const char *name, int oflag, ...)
+		+ int nanvix_sem_post(int sem)
+		+ int nanvix_sem_wait(int sem)
+		+ int nanvix_sem_close(int sem)
+		+ int nanvix_sem_unlink(const char *name)
+	}
+
+	class SemaphoreMessage {
+		+ uint16_t seq
+		+ char name[NANVIX_SEM_NAME_MAX]
+		+ int16_t op
+		+ int value
+	}
+
+	enum SemaphoreMessageType {
+		+ const SEM_OPEN
+		+ const SEM_POST
+		+ const SEM_WAIT
+		+ const SEM_CLOSE
+		+ const SEM_UNLINK
+		+ const SEM_CREATE
+		+ const SEM_CREATE_EXCL
+		+ const SEM_SUCCESS
+		+ const SEM_FAILURE
+	}
+
+	SemaphoreMessage    *- SemaphoreMessageType : op
+	SemaphoreOperations -> SemaphoreMessage     : <<use>>
+}
+
+@enduml
