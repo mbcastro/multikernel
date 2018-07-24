@@ -66,8 +66,8 @@ void memread(uint64_t addr, void *buf, size_t n)
 	mailbox_write(server.outbox, &msg, MAILBOX_MSG_SIZE);
 
 	/* Send data. */
-	portal_allow(get_inbox(), RMEM_SERVER_NODE);
-	portal_read(get_inbox(), buf, n);
+	portal_allow(get_inportal(), RMEM_SERVER_NODE);
+	portal_read(get_inportal(), buf, n);
 }
 
 /*============================================================================*
