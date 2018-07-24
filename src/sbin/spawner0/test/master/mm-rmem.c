@@ -22,47 +22,51 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
-/* Forward definitions. */
-extern void test_sys_sync(void);
-extern void test_sys_mailbox(void);
-extern void test_sys_portal(void);
-extern void test_ipc_name(void);
-extern void test_ipc_barrier(void);
-extern void test_ipc_mailbox(void);
-extern void test_ipc_portal(void);
-extern void test_mm_rmem(void);
+#include <nanvix/mm.h>
 
 /**
- * @brief Launches automated tests.
+ * @brief Asserts a logic expression.
  */
-int main2(int argc, const char **argv)
+#define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
+
+/**
+ * @brief Data Size.
+ */
+#define DATA_SIZE 128
+
+/*============================================================================*
+ * API Test: Read Write                                                       *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Read Write
+ */
+static void test_mm_rmem_read_write(void)
 {
-	/* Missing parameters. */
-	if (argc != 3)
-		return (EXIT_FAILURE);
+	char buffer[DATA_SIZE];
 
-	/* Bad usage. */
-	if (strcmp(argv[1] , "--debug"))
-		return (EXIT_FAILURE);
+	printf("[nanvix][test][api][mm][rmem] Read Write\n");
 
-	/* Launch test driver. */
-	if (!strcmp(argv[2], "--hal-sync"))
-		test_sys_sync();
-	else if (!strcmp(argv[2], "--hal-mailbox"))
-		test_sys_mailbox();
-	else if (!strcmp(argv[2], "--hal-portal"))
-		test_sys_portal();
-	else if (!strcmp(argv[2], "--name"))
-		test_ipc_name();
-	else if (!strcmp(argv[2], "--barrier"))
-		test_ipc_barrier();
-	else if (!strcmp(argv[2], "--mailbox"))
-		test_ipc_mailbox();
-	else if (!strcmp(argv[2], "--portal"))
-		test_ipc_portal();
-	else if (!strcmp(argv[2], "--rmem"))
-		test_mm_rmem();
+	memset(buffer, 1, DATA_SIZE);
+	memwrite(0, buffer, DATA_SIZE);
 
-	return (EXIT_SUCCESS);
+	memset(buffer, 0, DATA_SIZE);
+	memread(0, buffer, DATA_SIZE);
+
+	/* Checksum. */
+	for (int i = 0; i < DATA_SIZE; i++)
+		TEST_ASSERT(buffer[i] == 1);
 }
+
+/*============================================================================*/
+
+/**
+ * @brief Automated test driver for Naming Service.
+ */
+void test_mm_rmem(void)
+{
+	test_mm_rmem_read_write();
+}
+
