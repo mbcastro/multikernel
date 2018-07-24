@@ -52,13 +52,10 @@ struct
  */
 void memread(uint64_t addr, void *buf, size_t n)
 {
-	int nodenum;           /* Cluster ID of the calling process. */
-	struct rmem_message msg; /* Remote memory operation.           */
-
-	nodenum = sys_get_node_num();
+	struct rmem_message msg;
 
 	/* Build operation header. */
-	msg.source = nodenum;
+	msg.source = sys_get_node_num();
 	msg.op = RMEM_READ;
 	msg.blknum = addr;
 	msg.size = n;
