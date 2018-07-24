@@ -66,8 +66,17 @@ static char rmem[RMEM_SIZE];
  */
 static inline void rmem_write(int remote, uint64_t blknum, int size)
 {
+#ifdef DEBUG_RMEM
+	printf("RMEM WRITE %d %d %d\n",
+		(int) remote,
+		(int) blknum,
+		(int) size
+	);
+#endif
 	sys_portal_allow(inportal, remote);
+	printf("debug 0\n");
 	sys_portal_read(inportal, &rmem[blknum], size);
+	printf("debug 1\n");
 }
 
 /*============================================================================*
@@ -84,6 +93,14 @@ static inline void rmem_write(int remote, uint64_t blknum, int size)
 static inline void rmem_read(int remote, uint64_t blknum, int size)
 {
 	int outportal;
+
+#ifdef DEBUG_RMEM
+	printf("RMEM READ %d %d %d\n",
+		(int) remote,
+		(int) blknum,
+		(int) size
+	);
+#endif
 
 	outportal = sys_portal_open(remote);
 	sys_portal_write(outportal, &rmem[blknum], size);
