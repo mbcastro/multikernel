@@ -20,48 +20,28 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-# Conflicts.
-.PHONY: crt0
-.PHONY: crt1
-.PHONY: ipc
-.PHONY: mm
+# C Source Files
+SRC = $(wildcard *.c)
+
+# Object Files
+OBJ = $(SRC:.c=.o)
 
 #===============================================================================
 
-# Builds startup routines.
-all: crt0 crt1
-
-# Builds startup routines for IO Cluster.
-crt0: ipc mm
-ifeq ($(BUILDING_IOCLUSTER),true)
-	cd crt0 && $(MAKE) all
-endif
-
-# Builds startup routines for Compute Cluster.
-crt1: ipc mm
-ifeq ($(BUILDING_CCLUSTER),true)
-	cd crt1 && $(MAKE) all
-endif
-
 # Builds IPC library.
-ipc:
-	cd ipc && $(MAKE) all
+all: $(OBJ)
+	mkdir -p $(LIBDIR)
+	$(AR) $(ARFLAGS) $(LIBUSER) $(OBJ)
 
-# Builds memory management library.
-mm:
-	cd mm && $(MAKE) all
+# Builds object files.
+%.o: %.c
+	$(CC) $(CFLAGS) $< -c -o $@
 
 # Cleans compilation files.
 clean:
-	cd crt0 && $(MAKE) clean
-	cd crt1 && $(MAKE) clean
-	cd ipc && $(MAKE) clean
-	cd mm && $(MAKE) clean
+	rm -rf $(OBJ)
 
 # Cleans everything.
 distclean: clean
-	cd crt0 && $(MAKE) distclean
-	cd crt1 && $(MAKE) distclean
-	cd ipc && $(MAKE) distclean
-	cd mm && $(MAKE) distclean
+	rm -rf $(LIBUSER)
 

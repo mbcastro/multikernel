@@ -57,6 +57,7 @@
 	};
 
 	/* Forward definitions. */
+	extern int meminit(void);
 	extern void memwrite(uint64_t, const void *, size_t);
 	extern void memread(uint64_t, void *, size_t);
 
