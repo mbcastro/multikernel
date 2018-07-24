@@ -286,7 +286,7 @@ int name_server(int inbox)
 	}
 
 	/* House keeping. */
-		sys_mailbox_unlink(inbox);
+	sys_mailbox_unlink(inbox);
 
 	return (EXIT_SUCCESS);
 }

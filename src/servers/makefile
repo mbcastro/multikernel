@@ -21,7 +21,7 @@
 #
 
 # C Source Files
-SRC = name.c sysv.c
+SRC = name.c sysv.c rmem.c
 
 # Object Files
 OBJ = $(SRC:.c=.o)

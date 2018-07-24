@@ -20,31 +20,39 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <mppa/osconfig.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <inttypes.h>
+
 #include <nanvix/syscalls.h>
 #include <nanvix/mm.h>
-#include <nanvix/pm.h>
 #include <nanvix/name.h>
-#include <assert.h>
-#include <pthread.h>
-#include <string.h>
+#include <nanvix/pm.h>
 
-#ifdef DEBUG
-#include <stdio.h>
-#endif
+/**
+ * @brief Node number.
+ */
+static int nodenum;
+
+/**
+ * @brief Input mailbox for small messages.
+ */
+static int inbox;
+
+/**
+ * @brief Input portal for receiving data.
+ */
+static int inportal;
 
 /**
  * @brief Remote memory.
  */
 static char rmem[RMEM_SIZE];
 
-static pthread_barrier_t barrier;
-
-static pthread_mutex_t lock;
-
-/*===================================================================*
- * rmem_write()                                                      *
- *===================================================================*/
+/*============================================================================*
+ * rmem_write()                                                               *
+ *============================================================================*/
 
 /**
  * @brief Handles a write request.
@@ -54,15 +62,15 @@ static pthread_mutex_t lock;
  * @param blknum   RMEM block.
  * @param size     Number of bytes to write.
  */
-static inline void rmem_write(int inportal, int remote, uint64_t blknum, int size)
+static inline void rmem_write(int remote, uint64_t blknum, int size)
 {
-	portal_allow(inportal, remote);
-	portal_read(inportal, &rmem[blknum], size);
+	sys_portal_allow(inportal, remote);
+	sys_portal_read(inportal, &rmem[blknum], size);
 }
 
-/*===================================================================*
- * rmem_read()                                                       *
- *===================================================================*/
+/*============================================================================*
+ * rmem_read()                                                                *
+ *============================================================================*/
 
 /**
  * @brief Handles a read request.
@@ -75,53 +83,35 @@ static inline void rmem_read(int remote, uint64_t blknum, int size)
 {
 	int outportal;
 
-	outportal = _portal_open(remote);
-	portal_write(outportal, &rmem[blknum], size);
-	portal_close(outportal);
+	outportal = sys_portal_open(remote);
+	sys_portal_write(outportal, &rmem[blknum], size);
+	sys_portal_close(outportal);
 }
 
-/*===================================================================*
- * rmem_server()                                                     *
- *===================================================================*/
+/*============================================================================*
+ * rmem_loop()                                                                *
+ *============================================================================*/
 
 /**
  * @brief Handles remote memory requests.
  *
- * @param args Server arguments.
- *
- * @returns Always returns NULL.
+ * @returns Upon successful completion zero is returned. Upon failure,
+ * a negative error code is returned instead.
  */
-static void *rmem_server(void *args)
+static int rmem_loop(void)
 {
-	int dma;           /* DMA channel to use.         */
-	int inbox;         /* Mailbox for small messages. */
-	int inportal;      /* Portal for receiving data.  */
-	char pathname[16]; /* RMEM bank.                  */
-
-	kernel_setup();
-
-	dma = ((int *)args)[0];
-
-	sprintf(pathname, "/rmem%d", dma);
-	pthread_mutex_lock(&lock);
-		inbox = sys_mailbox_create(IOCLUSTER1 + dma);
-		inportal = portal_create(pathname);
-	pthread_mutex_unlock(&lock);
-
-	pthread_barrier_wait(&barrier);
-
 	while(1)
 	{
 		struct rmem_message msg;
 
-		mailbox_read(inbox, &msg);
+		sys_mailbox_read(inbox, &msg, MAILBOX_MSG_SIZE);
 
 		/* handle write operation. */
 		switch (msg.op)
 		{
 			/* Write to RMEM. */
 			case RMEM_WRITE:
-				rmem_write(inportal, msg.source, msg.blknum, msg.size);
+				rmem_write(msg.source, msg.blknum, msg.size);
 				break;
 
 			/* Read from RMEM. */
@@ -135,77 +125,83 @@ static void *rmem_server(void *args)
 		}
 	}
 
-	/* House keeping. */
-	pthread_mutex_lock(&lock);
-		portal_unlink(inportal);
-		mailbox_unlink(inbox);
-	pthread_mutex_unlock(&lock);
-
-	kernel_cleanup();
-	return (NULL);
+	return (0);
 }
 
-/*===================================================================*
- * main()                                                            *
- *===================================================================*/
+/*============================================================================*
+ * rmem_startup()                                                             *
+ *============================================================================*/
+
+/**
+ * @brief Initializes the memory server.
+ *
+ * @param _inbox Input mailbox.
+ *
+ * @returns Upon successful completion zero is returned. Upon failure,
+ * a negative error code is returned instead.
+ */
+static int rmem_startup(int _inbox)
+{
+	char pathname[NANVIX_PROC_NAME_MAX];
+
+	nodenum = sys_get_node_num();
+
+	/* Assign input mailbox. */
+	inbox = _inbox;
+
+	/* Create input portal. */
+	if ((inportal = get_inportal()) < 0)
+		return (inportal);
+
+	/* Link name. */
+	sprintf(pathname, "/rmem0");
+	name_link(nodenum, pathname);
+
+	return (0);
+}
+
+/*============================================================================*
+ * rmem_shutdown()                                                            *
+ *============================================================================*/
+
+/**
+ * @brief Shutdowns the remote memory server.
+ *
+ * @returns Upon successful completion zero is returned. Upon failure,
+ * a negative error code is returned instead.
+ */
+static int rmem_shutdown(void)
+{
+	return (0);
+}
+
+/*============================================================================*
+ * rmem_server()                                                              *
+ *============================================================================*/
 
 /**
  * @brief Remote memory server.
+ *
+ * @param _inbox Input mailbox.
+ *
+ * @returns Upon successful completion zero is returned. Upon failure,
+ * a negative error code is returned instead.
  */
-int main(int argc, char **argv)
+int rmem_server(int _inbox)
 {
-	int global_barrier;               /* System barrier. */
-	int dmas[NR_IOCLUSTER_DMA];       /* DMA IDs.        */
-	pthread_t tids[NR_IOCLUSTER_DMA]; /* Thread IDs.     */
-	char pathname[16];
+	int ret;
 
-	((void) argc);
-	((void) argv);
+	printf("[nanvix][rmem] booting up server\n");
 
-	kernel_setup();
+	ret = rmem_startup(_inbox);
+	
+	printf("[nanvix][name] server alive\n");
 
-#ifdef DEBUG
-	printf("[RMEM] booting up server\n");
-#endif
+	ret = rmem_loop();
 
-	pthread_mutex_init(&lock, NULL);
-	pthread_barrier_init(&barrier, NULL, NR_IOCLUSTER_DMA + 1);
+	printf("[nanvix][rmem] shutting down server\n");
 
-	/* Register name processes */
-	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
-	{
-		sprintf(pathname, "/rmem%d", i);
-		name_link(IOCLUSTER1 + i, pathname);
-	}
+	ret = rmem_shutdown();
 
-	/* Spawn RMEM server threads. */
-	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
-	{
-		dmas[i] = i;
-		assert((pthread_create(&tids[i],
-			NULL,
-			rmem_server,
-			&dmas[i])) == 0
-		);
-	}
-
-	pthread_barrier_wait(&barrier);
-
-	/* Release master IO cluster. */
-	global_barrier = barrier_open(NR_IOCLUSTER);
-	barrier_wait(global_barrier);
-
-#ifdef DEBUG
-	printf("[RMEM] server alive\n");
-#endif
-
-	/* Wait for RMEM server threads. */
-	for (int i = 0; i < NR_IOCLUSTER_DMA; i++)
-		pthread_join(tids[i], NULL);
-
-	/* House keeping. */
-	barrier_close(global_barrier);
-
-	kernel_cleanup();
-	return (EXIT_SUCCESS);
+	return ((ret == 0) ? EXIT_SUCCESS : EXIT_FAILURE);
 }

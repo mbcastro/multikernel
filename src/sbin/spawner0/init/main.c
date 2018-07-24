@@ -34,7 +34,7 @@
 #define NR_SERVERS 1
 
 /* Forward definitions. */
-extern int semaphore_server(int);
+extern int rmem_server(int);
 extern int main2(int, const char **);
 extern void test_kernel_sys_core(void);
 extern void test_kernel_sys_sync(void);
@@ -112,7 +112,7 @@ void spawners_sync(void)
 
 SPAWNER_NAME("spawner0")
 SPAWNER_SHUTDOWN(SHUTDOWN_ENABLE)
-SPAWNER_SERVERS(NR_SERVERS, { semaphore_server, SEMAPHORES_SERVER_NODE, 1 }, )
+SPAWNER_SERVERS(NR_SERVERS, { rmem_server, RMEM_SERVER_NODE, 1 } )
 SPAWNER_MAIN2(main2)
 SPAWNER_KERNEL_TESTS(test_kernel)
 SPAWNER_RUNTIME_TESTS(test_runtime)
