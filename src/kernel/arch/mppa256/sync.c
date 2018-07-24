@@ -98,7 +98,7 @@ static void mppa256_sync_unlock(void)
  */
 static int sync_is_valid(int syncid)
 {
-	return ((syncid >= 0) || (syncid < HAL_NR_SYNC));
+	return ((syncid >= 0) && (syncid < HAL_NR_SYNC));
 }
 
 /*============================================================================*
