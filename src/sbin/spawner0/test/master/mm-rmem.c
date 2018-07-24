@@ -24,7 +24,12 @@
 #include <string.h>
 #include <stdio.h>
 
+#include <mppaipc.h>
+
+#include <nanvix/syscalls.h>
 #include <nanvix/mm.h>
+#include <nanvix/pm.h>
+#include <nanvix/limits.h>
 
 /**
  * @brief Asserts a logic expression.
@@ -35,6 +40,38 @@
  * @brief Data Size.
  */
 #define DATA_SIZE 128
+
+/*============================================================================*
+ * Utilities                                                                  *
+ *============================================================================*/
+
+/**
+ * @brief PID of slaves.
+ */
+static int pids[NANVIX_PROC_MAX];
+
+/**
+ * @brief Spawn slave processes.
+ */
+static void spawn_slaves(const char **args)
+{
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
+		TEST_ASSERT((pids[i] = mppa_spawn(i, NULL, args[0], args, NULL)) != -1);
+}
+
+/**
+ * @brief Wait for slaves to terminate.
+ */
+static void join_slaves(void)
+{
+	int status;
+
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
+	{
+		TEST_ASSERT(mppa_waitpid(pids[i], &status, 0) != -1);
+		TEST_ASSERT(status == EXIT_SUCCESS);
+	}
+}
 
 /*============================================================================*
  * API Test: Read Write                                                       *
@@ -60,6 +97,54 @@ static void test_mm_rmem_read_write(void)
 		TEST_ASSERT(buffer[i] == 1);
 }
 
+/*============================================================================*
+ * API Test: Read Write CC                                                    *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Read Write CC
+ */
+static void test_mm_rmem_read_write_cc(void)
+{
+	int nodenum;
+	int barrier;
+	int nodes[NANVIX_PROC_MAX + 1];
+	char masternode_str[4];
+	char mailbox_nclusters_str[4];
+	char test_str[4];
+	const char *args[] = {
+		"/test/ipc-mailbox-slave",
+		masternode_str,
+		mailbox_nclusters_str,
+		test_str,
+		NULL
+	};
+
+	printf("[nanvix][test][api][mm][rmem] Read Write CC\n");
+
+	nodenum = sys_get_node_num();
+
+	/* Build arguments. */
+	sprintf(masternode_str, "%d", nodenum);
+	sprintf(mailbox_nclusters_str, "%d", NANVIX_PROC_MAX);
+	sprintf(test_str, "%d", 0);
+
+	/* Build nodes list. */
+	nodes[0] = nodenum;
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
+		nodes[i + 1] = i;
+
+	/* Create barrier. */
+	TEST_ASSERT((barrier = barrier_create(nodes, NANVIX_PROC_MAX + 1)) >= 0);
+
+	spawn_slaves(args);
+
+	/* Wait for slaves. */
+	TEST_ASSERT(barrier_wait(barrier) == 0);
+
+	join_slaves();
+}
+
 /*============================================================================*/
 
 /**
@@ -68,5 +153,6 @@ static void test_mm_rmem_read_write(void)
 void test_mm_rmem(void)
 {
 	test_mm_rmem_read_write();
+	test_mm_rmem_read_write_cc();
 }
 

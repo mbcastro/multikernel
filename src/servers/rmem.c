@@ -74,9 +74,7 @@ static inline void rmem_write(int remote, uint64_t blknum, int size)
 	);
 #endif
 	sys_portal_allow(inportal, remote);
-	printf("debug 0\n");
 	sys_portal_read(inportal, &rmem[blknum], size);
-	printf("debug 1\n");
 }
 
 /*============================================================================*
