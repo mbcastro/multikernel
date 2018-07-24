@@ -21,14 +21,16 @@
 #
 
 # C Source Files
-SRC = $(wildcard *.c)
+SRC = $(wildcard *.c)     \
+      $(wildcard ipc/*.c) \
+      $(wildcard mm/*.c)
 
 # Object Files
 OBJ = $(SRC:.c=.o)
 
 #===============================================================================
 
-# Builds IPC library.
+# Builds Nanvix library.
 all: $(OBJ)
 	mkdir -p $(LIBDIR)
 	$(AR) $(ARFLAGS) $(LIBUSER) $(OBJ)

@@ -23,45 +23,38 @@
 # Conflicts.
 .PHONY: crt0
 .PHONY: crt1
-.PHONY: ipc
-.PHONY: mm
+.PHONY: nanvix
 
 #===============================================================================
 
 # Builds startup routines.
-all: crt0 crt1
+all: crt0 crt1 nanvix
 
 # Builds startup routines for IO Cluster.
-crt0: ipc mm
+crt0: nanvix
 ifeq ($(BUILDING_IOCLUSTER),true)
 	cd crt0 && $(MAKE) all
 endif
 
 # Builds startup routines for Compute Cluster.
-crt1: ipc mm
+crt1: nanvix
 ifeq ($(BUILDING_CCLUSTER),true)
 	cd crt1 && $(MAKE) all
 endif
 
-# Builds IPC library.
-ipc:
-	cd ipc && $(MAKE) all
-
-# Builds memory management library.
-mm:
-	cd mm && $(MAKE) all
+# Builds Nanvix library.
+nanvix:
+	cd nanvix && $(MAKE) all
 
 # Cleans compilation files.
 clean:
 	cd crt0 && $(MAKE) clean
 	cd crt1 && $(MAKE) clean
-	cd ipc && $(MAKE) clean
-	cd mm && $(MAKE) clean
+	cd nanvix && $(MAKE) clean
 
 # Cleans everything.
 distclean: clean
 	cd crt0 && $(MAKE) distclean
 	cd crt1 && $(MAKE) distclean
-	cd ipc && $(MAKE) distclean
-	cd mm && $(MAKE) distclean
+	cd nanvix && $(MAKE) distclean
 
