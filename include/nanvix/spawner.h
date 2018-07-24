@@ -28,9 +28,9 @@
 	 */
 	struct serverinfo
 	{
-		int (*main) (int); /**< Main function.   */
-		int nodenum;       /**< Node number.     */
-		int runlevel;      /**< Server runlevel. */
+		int (*main) (int, int); /**< Main function.   */
+		int nodenum;            /**< Node number.     */
+		int runlevel;           /**< Server runlevel. */
 	};
 
 	/* Forward definitions. */

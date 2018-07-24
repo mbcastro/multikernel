@@ -42,7 +42,7 @@ static void *server(void *args)
 {
 	int servernum;
 	int runlevel;
-	int (*main_fn) (int);
+	int (*main_fn) (int, int);
 
 	kernel_setup();
 
@@ -58,7 +58,7 @@ static void *server(void *args)
 	pthread_barrier_wait(&barrier);
 
 	/* Spawn server. */
-	main_fn(get_inbox());
+	main_fn(get_inbox(), get_inportal());
 
 	assert(runtime_cleanup() == 0);
 
