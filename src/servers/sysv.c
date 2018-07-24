@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#include <nanvix/spawner.h>
 #include <nanvix/syscalls.h>
 #include <nanvix/pm.h>
 #include <nanvix/name.h>
@@ -857,6 +858,9 @@ int semaphore_server(int inbox, int inportal)
 	_sem_init();
 
 	printf("[nanvix][semaphore] server alive\n");
+
+	/* Wait for other servers. */
+	pthread_barrier_wait(&spawner_barrier);
 
 	while(1)
 	{

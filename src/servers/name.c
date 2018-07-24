@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <nanvix/spawner.h>
 #include <nanvix/syscalls.h>
 #include <nanvix/const.h>
 #include <nanvix/pm.h>
@@ -202,6 +203,9 @@ int name_server(int inbox, int inportal)
 	_name_init();
 
 	printf("[nanvix][name] server alive\n");
+
+	/* Wait for other servers. */
+	pthread_barrier_wait(&spawner_barrier);
 
 	while(1)
 	{

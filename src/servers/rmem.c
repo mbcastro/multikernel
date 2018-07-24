@@ -20,11 +20,13 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <pthread.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
 
+#include <nanvix/spawner.h>
 #include <nanvix/syscalls.h>
 #include <nanvix/mm.h>
 #include <nanvix/name.h>
@@ -198,7 +200,10 @@ int rmem_server(int _inbox, int _inportal)
 
 	ret = rmem_startup(_inbox, _inportal);
 	
-	printf("[nanvix][name] server alive\n");
+	printf("[nanvix][rmem] server alive\n");
+
+	/* Wait for other servers. */
+	pthread_barrier_wait(&spawner_barrier);
 
 	ret = rmem_loop();
 

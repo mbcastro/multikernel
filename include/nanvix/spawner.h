@@ -23,6 +23,8 @@
 #ifndef NANVIX_SPAWNER_H_
 #define NANVIX_SPAWNER_H_
 
+	#include <pthread.h>
+
 	/**
 	 * @brief Server information,
 	 */
@@ -99,5 +101,8 @@
 	 */
 	#define SPAWNER_RUNTIME_TESTS(x) \
 		void (*test_runtime_fn)(const char *) = x;
+
+	/* Forward definitions. */
+	extern pthread_barrier_t spawner_barrier;
 
 #endif /* NANVIX_SPAWNER_H_*/
