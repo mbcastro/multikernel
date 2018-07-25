@@ -1,0 +1,34 @@
+@startuml
+
+namespace rmem {
+
+	enum RMemOperationTypes {
+		+ RMEM_READ
+		+ RMEM_WRITE
+	}
+
+	class RMemMessage {
+		+ source
+		+ op
+		+ blknum
+		+ size
+	}
+
+	class RMemLimits {
+		+ RMEM_SIZE
+		+ RMEM_BLOCK_SIZE
+	}
+
+	interface RMemOperations {
+		+ meminit()
+		+ memread()
+		+ memwrite()
+	}
+
+	rmem.RMemMessage    ..> rmem.RMemOperationTypes : <<use>>
+	rmem.RMemOperations ..> rmem.RMemMessage        : <<use>>
+	rmem.RMemOperations ..> rmem.RMemLimits         : <<use>>
+}
+
+@enduml
+

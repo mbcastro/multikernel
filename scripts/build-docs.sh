@@ -9,5 +9,6 @@ $PLATUML doc/uml/libs-ipc-barrier.uml   && mv doc/uml/libs-ipc-barrier.png doc/c
 $PLATUML doc/uml/libs-ipc-name.uml      && mv doc/uml/libs-ipc-name.png doc/class-diagrams/libs-ipc-name.png
 $PLATUML doc/uml/libs-ipc-mailbox.uml   && mv doc/uml/libs-ipc-mailbox.png doc/class-diagrams/libs-ipc-mailbox.png
 $PLATUML doc/uml/libs-ipc-portal.uml    && mv doc/uml/libs-ipc-portal.png doc/class-diagrams/libs-ipc-portal.png
+$PLATUML doc/uml/libs-mm-rmem.uml       && mv doc/uml/libs-mm-rmem.png doc/class-diagrams/libs-mm-rmem.png
 $PLATUML doc/uml/libs.uml               && mv doc/uml/libs.png doc/class-diagrams/libs.png
 $PLATUML doc/uml/nanvix.uml && mv doc/uml/nanvix.png doc/class-diagrams/nanvix.png
