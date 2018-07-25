@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# Copyright (c) 211-218 Pedro Henrique Penna <pedrohenriquepenna@gmail.com>
+# Copyright (c) 2011-2018 Pedro Henrique Penna <pedrohenriquepenna@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -21,39 +21,31 @@
 #
 
 # C Source Files
-export INIT_SRC = $(wildcard $(CURDIR)/init/hal/core/*.c)      \
-                  $(wildcard $(CURDIR)/init/hal/sync/*.c)      \
-                  $(wildcard $(CURDIR)/init/hal/mailbox/*.c)   \
-                  $(wildcard $(CURDIR)/init/hal/portal/*.c)    \
-                  $(wildcard $(CURDIR)/init/ipc/barrier/*.c)   \
-                  $(wildcard $(CURDIR)/init/ipc/name/*.c)      \
-                  $(wildcard $(CURDIR)/init/ipc/mailbox/*.c)   \
-                  $(wildcard $(CURDIR)/init/ipc/portal/*.c)    \
-                  $(wildcard $(CURDIR)/init/ipc/semaphore/*.c) \
-                  $(wildcard $(CURDIR)/init/main.c)
+SRC = $(wildcard *.c) \
+	  $(INIT_SRC)
 
-# Conflicts
-.PHONY: test
+# Object Files
+OBJ = $(SRC:.c=.o)
+
+# Binary Files
+export ELFBIN = $(BINDIR)/benchmarks
 
 #===============================================================================
 
-# Builds everything.
-all: test benchmark
+# Builds the kernel.
+all: $(OBJ)
+	mkdir -p $(BINDIR)
+	$(CC) $(LDFLAGS) $(OBJ) $(CRT0) -o $(ELFBIN) $(LIBSERVERS) $(LIBUSER) $(LIBKERNEL) $(LIBS)
 
-# Builds Test-Driver Utilitiy.
-test:
-	cd test && $(MAKE) all
-
-# Builds Synthetic Benchmarks.
-benchmark:
-	cd rmem-benchmark && $(MAKE) all
+# Builds object files.
+%.o: %.c
+	$(CC) $(CFLAGS) $< -c -o $@
 
 # Cleans compilation files.
 clean:
-	cd test && $(MAKE) clean
-	cd rmem-benchmark && $(MAKE) clean
+	rm -rf $(OBJ)
 
 # Cleans everything.
 distclean: clean
-	cd test && $(MAKE) distclean
-	cd rmem-benchmark && $(MAKE) distclean
+	rm -rf $(ELFBIN)
+

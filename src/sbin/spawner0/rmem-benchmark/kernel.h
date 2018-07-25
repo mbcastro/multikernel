@@ -23,9 +23,27 @@
 #ifndef _KERNEL_H_
 #define _KERNEL_H_
 
+	#include <nanvix/mm.h>
+
 	/**
-	 * @brief Number of benchmark iterations.
+	 * @brief Performance statistics.
+	 *
+	 * @note This structure shouldbe MAILBOX_MSG_SIZE long.
 	 */
-	#define NITERATIONS 30
+	struct message
+	{
+		char unused[56]; /**< Not used.              */
+		double time;     /**< Time (in microseconds) */
+	};
+
+	/**
+	 * @brief Mega (10^6).
+	 */
+	#define MEGA (1000000)
+
+	/**
+	 * @brief Maximum buffer size (in bytes).
+	 */
+	#define BUFFER_SIZE_MAX RMEM_BLOCK_SIZE
 
 #endif /* _KERNEL_H_ */
