@@ -26,13 +26,22 @@
 	#include <pthread.h>
 
 	/**
-	 * @brief Server information,
+	 * @brief Server information.
 	 */
 	struct serverinfo
 	{
 		int (*main) (int, int); /**< Main function.   */
 		int nodenum;            /**< Node number.     */
 		int runlevel;           /**< Server runlevel. */
+	};
+
+	/**
+	 * @brief Spawner message.
+	 */
+	struct spawner_message
+	{
+		char unused[60]; /**< Not used. */
+		int status;      /**< Status.   */
 	};
 
 	/* Forward definitions. */
@@ -43,7 +52,9 @@
 	extern void (*test_kernel_fn)(const char *);
 	extern void (*test_runtime_fn)(const char *);
 	extern int (*main2_fn)(int, const char **);
+	extern void spawner_init(void);
 	extern void spawners_sync(void);
+	extern void spawner_ack(void);
 
 	/**
 	 * @brief Shutdown flags.

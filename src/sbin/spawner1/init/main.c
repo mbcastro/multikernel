@@ -33,6 +33,21 @@
  */
 #define NR_SERVERS 1
 
+/**
+ * @brief Input mailbox.
+ */
+static int inbox = -1;
+
+/**
+ * @brief Spawner NoC node number.
+ */
+static int nodenum = -1;
+
+/**
+ * @brief Barrier for synchronization.
+ */
+pthread_barrier_t spawner_barrier;
+
 /* Forward definitions. */
 extern int name_server(int, int);
 extern void test_kernel_sys_sync(void);
@@ -57,17 +72,34 @@ static void test_runtime(const char *module)
 }
 
 /**
+ * @brief Acknowledges spawner.
+ */
+void spawner_ack(void)
+{
+	pthread_barrier_wait(&spawner_barrier);
+}
+
+/**
+ * @brief Initializes spawner.
+ */
+void spawner_init(void)
+{
+	nodenum = sys_get_node_num();
+
+	assert((inbox = sys_mailbox_create(nodenum);
+}
+
+/**
  * @brief Sync spawners.
  */
 void spawners_sync(void)
 {
-	int nodenum;
 	int syncid;
 	int syncid_local;
 	int nodes[2];
 	int nodes_local[2];
 
-	nodenum = sys_get_node_num();
+	pthread_barrier_wait(&spawner_barrier);
 
 	nodes[0] = nodenum;
 	nodes[1] = SPAWNER_SERVER_NODE;

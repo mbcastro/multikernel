@@ -22,7 +22,6 @@
 
 #include <assert.h>
 #include <assert.h>
-#include <pthread.h>
 #include <string.h>
 #include <errno.h>
 #include <stdio.h>
@@ -859,8 +858,7 @@ int semaphore_server(int inbox, int inportal)
 
 	printf("[nanvix][semaphore] server alive\n");
 
-	/* Wait for other servers. */
-	pthread_barrier_wait(&spawner_barrier);
+	spawner_ack();
 
 	while(1)
 	{

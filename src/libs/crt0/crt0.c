@@ -31,11 +31,6 @@
 #include <nanvix/pm.h>
 
 /**
- * @brief Barrier for synchronization.
- */
-pthread_barrier_t spawner_barrier;
-
-/**
  * @brief Server wrapper.
  */
 static void *server(void *args)
@@ -91,7 +86,7 @@ int main(int argc, const char **argv)
 
 	printf("[nanvix][%s] server alive\n", spawner_name);
 
-	pthread_barrier_init(&spawner_barrier, NULL, spawner_nservers + 1);
+	spawner_init();
 
 	/* Spawn servers. */
 	for (int i = 0; i < spawner_nservers; i++)
@@ -103,8 +98,6 @@ int main(int argc, const char **argv)
 			&args[i])) == 0
 		);
 	}
-
-	pthread_barrier_wait(&spawner_barrier);
 
 	spawners_sync();
 
