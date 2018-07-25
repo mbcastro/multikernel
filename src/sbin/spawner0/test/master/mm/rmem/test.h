@@ -46,5 +46,6 @@
 
 	/* Forward definitions. */
 	extern struct test mm_rmem_tests_api[];
+	extern struct test mm_rmem_tests_fault[];
 
 #endif /* _TEST_H_ */

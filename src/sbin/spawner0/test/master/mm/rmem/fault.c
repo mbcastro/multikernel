@@ -20,31 +20,45 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
 
 #include <nanvix/syscalls.h>
+#include <nanvix/mm.h>
+#include <nanvix/limits.h>
 
 #include "test.h"
 
 /**
- * @brief Remote Memory Test Driver
- *
- * @param nbusycores Number of busy cores.
+ * @brief Asserts a logic expression.
  */
-void test_mm_rmem(void)
-{
-	/* Run API tests. */
-	for (int i = 0; mm_rmem_tests_api[i].test_fn != NULL; i++)
-	{
-		printf("[nanvix][test][api][mm][rmem] %s\n", mm_rmem_tests_api[i].name);
-		mm_rmem_tests_api[i].test_fn();
-	}
+#define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
 
-	/* Run fault injection tests. */
-	for (int i = 0; mm_rmem_tests_fault[i].test_fn != NULL; i++)
-	{
-		printf("[nanvix][test][fault][mm][rmem] %s\n", mm_rmem_tests_fault[i].name);
-		mm_rmem_tests_fault[i].test_fn();
-	}
+/*============================================================================*
+ * API Test: Read Write                                                       *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Read Write
+ */
+static void test_mm_rmem_invalid_write(void)
+{
+	char buffer[DATA_SIZE];
+
+	memset(buffer, 1, DATA_SIZE);
+	memwrite(RMEM_SIZE, buffer, DATA_SIZE);
+	memwrite(RMEM_SIZE - DATA_SIZE/2, buffer, DATA_SIZE);
 }
 
+/*============================================================================*/
+
+/*============================================================================*/
+
+/**
+ * @brief Unit tests.
+ */
+struct test mm_rmem_tests_fault[] = {
+	{ test_mm_rmem_invalid_write, "Invalid Write" },
+	{ NULL,                       NULL            },
+};
