@@ -60,7 +60,22 @@ static void test_mm_rmem_invalid_write(void)
  */
 static void test_mm_rmem_null_write(void)
 {
-	TEST_ASSERT(memwrite(0, NULL, DATA_SIZE));
+	TEST_ASSERT(memwrite(0, NULL, DATA_SIZE) < 0);
+}
+
+/*============================================================================*
+ * API Test: Invalid Write Size                                               *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Invalid Write Size
+ */
+static void test_mm_rmem_invalid_write_size(void)
+{
+	char buffer[DATA_SIZE];
+
+	memset(buffer, 1, DATA_SIZE);
+	TEST_ASSERT(memwrite(0, buffer, RMEM_BLOCK_SIZE + 1) < 0);
 }
 
 /*============================================================================*/
@@ -71,7 +86,8 @@ static void test_mm_rmem_null_write(void)
  * @brief Unit tests.
  */
 struct test mm_rmem_tests_fault[] = {
-	{ test_mm_rmem_invalid_write, "Invalid Write" },
-	{ test_mm_rmem_null_write,    "Null Write"    },
-	{ NULL,                       NULL            },
+	{ test_mm_rmem_invalid_write,      "Invalid Write"      },
+	{ test_mm_rmem_null_write,         "Null Write"         },
+	{ test_mm_rmem_invalid_write_size, "Invalid Write Size" },
+	{ NULL,                            NULL                 },
 };
