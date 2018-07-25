@@ -116,10 +116,17 @@ static inline void rmem_read(int remote, uint64_t blknum, int size)
 	);
 #endif
 
-	/* Invalid write. */
+	/* Invalid read. */
 	if ((blknum >= RMEM_SIZE) || (blknum + size > RMEM_SIZE))
 	{
 		printf("[nanvix][rmem] invalid read\n");
+		return;
+	}
+
+	/* Invalid read size. */
+	if (size > RMEM_BLOCK_SIZE)
+	{
+		printf("[nanvix][rmem] invalid read size\n");
 		return;
 	}
 

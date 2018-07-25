@@ -66,6 +66,10 @@ int memread(uint64_t addr, void *buf, size_t n)
 	if (buf == NULL)
 		return (-EINVAL);
 
+	/* Invalid read size. */
+	if (n > RMEM_BLOCK_SIZE)
+		return (-EINVAL);
+
 	/* Build operation header. */
 	msg.source = sys_get_node_num();
 	msg.op = RMEM_READ;
