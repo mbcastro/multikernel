@@ -58,8 +58,12 @@ int memread(uint64_t addr, void *buf, size_t n)
 {
 	struct rmem_message msg;
 	
-	/* Invalid write. */
+	/* Invalid read. */
 	if ((addr >= RMEM_SIZE) || ((addr + n) > RMEM_SIZE))
+		return (-EINVAL);
+
+	/* Null read. */
+	if (buf == NULL)
 		return (-EINVAL);
 
 	/* Build operation header. */
