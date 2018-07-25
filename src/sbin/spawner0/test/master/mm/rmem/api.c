@@ -82,10 +82,10 @@ static void test_mm_rmem_read_write(void)
 	char buffer[DATA_SIZE];
 
 	memset(buffer, 1, DATA_SIZE);
-	memwrite(0, buffer, DATA_SIZE);
+	TEST_ASSERT(memwrite(0, buffer, DATA_SIZE) == 0);
 
 	memset(buffer, 0, DATA_SIZE);
-	memread(0, buffer, DATA_SIZE);
+	TEST_ASSERT(memread(0, buffer, DATA_SIZE) == 0);
 
 	/* Checksum. */
 	for (int i = 0; i < DATA_SIZE; i++)

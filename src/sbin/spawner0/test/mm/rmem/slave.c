@@ -63,10 +63,10 @@ static void test_mm_rmem_read_write_cc(int masternode, int nclusters)
 	TEST_ASSERT((barrier = barrier_create(nodes, nclusters + 1)) >= 0);
 
 	memset(buffer, 1, DATA_SIZE);
-	memwrite(nodenum*DATA_SIZE, buffer, DATA_SIZE);
+	TEST_ASSERT(memwrite(nodenum*DATA_SIZE, buffer, DATA_SIZE) == 0);
 
 	memset(buffer, 0, DATA_SIZE);
-	memread(nodenum*DATA_SIZE, buffer, DATA_SIZE);
+	TEST_ASSERT(memread(nodenum*DATA_SIZE, buffer, DATA_SIZE) == 0);
 
 	/* Checksum. */
 	for (int i = 0; i < DATA_SIZE; i++)

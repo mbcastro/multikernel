@@ -50,7 +50,7 @@ struct
  * @param bug  Location where the data should be written to.
  * @param n    Number of bytes to read.
  */
-void memread(uint64_t addr, void *buf, size_t n)
+int memread(uint64_t addr, void *buf, size_t n)
 {
 	struct rmem_message msg;
 
@@ -66,6 +66,8 @@ void memread(uint64_t addr, void *buf, size_t n)
 	/* Send data. */
 	assert(sys_portal_allow(get_inportal(), RMEM_SERVER_NODE) == 0);
 	assert(sys_portal_read(get_inportal(), buf, n) == (int) n);
+
+	return (0);
 }
 
 /*============================================================================*
@@ -79,7 +81,7 @@ void memread(uint64_t addr, void *buf, size_t n)
  * @param bug  Location where the data should be read from.
  * @param n    Number of bytes to write.
  */
-void memwrite(uint64_t addr, const void *buf, size_t n)
+int memwrite(uint64_t addr, const void *buf, size_t n)
 {
 	struct rmem_message msg;
 
@@ -94,6 +96,8 @@ void memwrite(uint64_t addr, const void *buf, size_t n)
 
 	/* Send data. */
 	assert(portal_write(server.outportal, buf, n) == (int) n);
+
+	return (0);
 }
 
 /*============================================================================*
