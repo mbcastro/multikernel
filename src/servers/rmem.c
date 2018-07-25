@@ -20,6 +20,7 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <errno.h>
 #include <pthread.h>
 #include <string.h>
 #include <stdio.h>
@@ -66,6 +67,28 @@ static char rmem[RMEM_SIZE];
  */
 static inline void rmem_write(int remote, uint64_t blknum, int size)
 {
+#ifdef DEBUG_RMEM
+	printf("RMEM WRITE %d %d %d\n",
+		(int) remote,
+		(int) blknum,
+		(int) size
+	);
+#endif
+
+	/* Invalid write. */
+	if ((blknum >= RMEM_SIZE) || (blknum + size > RMEM_SIZE))
+	{
+		printf("[nanvix][rmem] invalid write\n");
+		return;
+	}
+
+	/* Invalid write size. */
+	if (size > RMEM_BLOCK_SIZE)
+	{
+		printf("[nanvix][rmem] invalid write size\n");
+		return;
+	}
+
 	sys_portal_allow(inportal, remote);
 	sys_portal_read(inportal, &rmem[blknum], size);
 }
@@ -84,6 +107,28 @@ static inline void rmem_write(int remote, uint64_t blknum, int size)
 static inline void rmem_read(int remote, uint64_t blknum, int size)
 {
 	int outportal;
+
+#ifdef DEBUG_RMEM
+	printf("RMEM READ %d %d %d\n",
+		(int) remote,
+		(int) blknum,
+		(int) size
+	);
+#endif
+
+	/* Invalid read. */
+	if ((blknum >= RMEM_SIZE) || (blknum + size > RMEM_SIZE))
+	{
+		printf("[nanvix][rmem] invalid read\n");
+		return;
+	}
+
+	/* Invalid read size. */
+	if (size > RMEM_BLOCK_SIZE)
+	{
+		printf("[nanvix][rmem] invalid read size\n");
+		return;
+	}
 
 	outportal = sys_portal_open(remote);
 	sys_portal_write(outportal, &rmem[blknum], size);

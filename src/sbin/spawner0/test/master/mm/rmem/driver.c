@@ -20,45 +20,31 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef NANVIX_MM_H_
-#define NANVIX_MM_H_
-	
-	#include <inttypes.h>
-	#include <stddef.h>
-	
-	/**
-	 * @brief Remote memory block size (in bytes).
-	 */
-	#define RMEM_BLOCK_SIZE (1024*1024)
-	
-	/**
-	 * @brief Remote memory size (in bytes).
-	 */
-	#define RMEM_SIZE ((1024 + 256)*1024*1024)
+#include <stdio.h>
 
-	/**
-	 * @brief Operations on remote memory.
-	 */
-	/**@{*/
-	#define RMEM_READ   0 /**< Read.   */
-	#define RMEM_WRITE  1 /**< Write.  */
-	/**@}*/
+#include <nanvix/syscalls.h>
 
-	/**
-	 * @brief remote memory message.
-	 */
-	struct rmem_message
+#include "test.h"
+
+/**
+ * @brief Remote Memory Test Driver
+ *
+ * @param nbusycores Number of busy cores.
+ */
+void test_mm_rmem(void)
+{
+	/* Run API tests. */
+	for (int i = 0; mm_rmem_tests_api[i].test_fn != NULL; i++)
 	{
-		uint16_t source;     /**< Source cluster. */
-		uint16_t op;         /**< Operation.      */
-		uint64_t blknum;     /**< Block number.   */
-		uint32_t size;       /**< Size.           */
-		uint32_t unused[12]; /**< Not used.       */
-	};
+		printf("[nanvix][test][api][mm][rmem] %s\n", mm_rmem_tests_api[i].name);
+		mm_rmem_tests_api[i].test_fn();
+	}
 
-	/* Forward definitions. */
-	extern int meminit(void);
-	extern int memwrite(uint64_t, const void *, size_t);
-	extern int memread(uint64_t, void *, size_t);
+	/* Run fault injection tests. */
+	for (int i = 0; mm_rmem_tests_fault[i].test_fn != NULL; i++)
+	{
+		printf("[nanvix][test][fault][mm][rmem] %s\n", mm_rmem_tests_fault[i].name);
+		mm_rmem_tests_fault[i].test_fn();
+	}
+}
 
-#endif /* _MAILBOX_H_ */

@@ -20,45 +20,32 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef NANVIX_MM_H_
-#define NANVIX_MM_H_
-	
-	#include <inttypes.h>
-	#include <stddef.h>
-	
-	/**
-	 * @brief Remote memory block size (in bytes).
-	 */
-	#define RMEM_BLOCK_SIZE (1024*1024)
-	
-	/**
-	 * @brief Remote memory size (in bytes).
-	 */
-	#define RMEM_SIZE ((1024 + 256)*1024*1024)
+#ifndef _TEST_H_
+#define _TEST_H_
+
+	#include <stdlib.h>
 
 	/**
-	 * @brief Operations on remote memory.
+	 * @brief Asserts a logic expression.
 	 */
-	/**@{*/
-	#define RMEM_READ   0 /**< Read.   */
-	#define RMEM_WRITE  1 /**< Write.  */
-	/**@}*/
+	#define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
 
 	/**
-	 * @brief remote memory message.
+	 * @brief Buffer size (in bytes).
 	 */
-	struct rmem_message
+	#define DATA_SIZE 256
+
+	/**
+	 * @brief Unit test.
+	 */
+	struct test
 	{
-		uint16_t source;     /**< Source cluster. */
-		uint16_t op;         /**< Operation.      */
-		uint64_t blknum;     /**< Block number.   */
-		uint32_t size;       /**< Size.           */
-		uint32_t unused[12]; /**< Not used.       */
+		void (*test_fn)(void); /**< Test function. */
+		const char *name;      /**< Test name.     */
 	};
 
 	/* Forward definitions. */
-	extern int meminit(void);
-	extern int memwrite(uint64_t, const void *, size_t);
-	extern int memread(uint64_t, void *, size_t);
+	extern struct test mm_rmem_tests_api[];
+	extern struct test mm_rmem_tests_fault[];
 
-#endif /* _MAILBOX_H_ */
+#endif /* _TEST_H_ */

@@ -20,6 +20,8 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <errno.h>
+#include <assert.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -48,26 +50,40 @@ struct
  * @param addr Remote address.
  * @param bug  Location where the data should be written to.
  * @param n    Number of bytes to read.
+ *
+ * @returns Upon successful completion, zero is returned. Upon
+ * failure, a negative error code is returned instead.
  */
-void memread(uint64_t addr, void *buf, size_t n)
+int memread(uint64_t addr, void *buf, size_t n)
 {
-	int nodenum;           /* Cluster ID of the calling process. */
-	struct rmem_message msg; /* Remote memory operation.           */
+	struct rmem_message msg;
+	
+	/* Invalid read. */
+	if ((addr >= RMEM_SIZE) || ((addr + n) > RMEM_SIZE))
+		return (-EINVAL);
 
-	nodenum = sys_get_node_num();
+	/* Null read. */
+	if (buf == NULL)
+		return (-EINVAL);
+
+	/* Invalid read size. */
+	if (n > RMEM_BLOCK_SIZE)
+		return (-EINVAL);
 
 	/* Build operation header. */
-	msg.source = nodenum;
+	msg.source = sys_get_node_num();
 	msg.op = RMEM_READ;
 	msg.blknum = addr;
 	msg.size = n;
 
 	/* Send operation header. */
-	mailbox_write(server.outbox, &msg, MAILBOX_MSG_SIZE);
+	assert(mailbox_write(server.outbox, &msg, MAILBOX_MSG_SIZE) == 0);
 
 	/* Send data. */
-	portal_allow(get_inbox(), RMEM_SERVER_NODE);
-	portal_read(get_inbox(), buf, n);
+	assert(sys_portal_allow(get_inportal(), RMEM_SERVER_NODE) == 0);
+	assert(sys_portal_read(get_inportal(), buf, n) == (int) n);
+
+	return (0);
 }
 
 /*============================================================================*
@@ -80,10 +96,25 @@ void memread(uint64_t addr, void *buf, size_t n)
  * @param addr Remote address.
  * @param bug  Location where the data should be read from.
  * @param n    Number of bytes to write.
+ *
+ * @returns Upon successful completion, zero is returned. Upon
+ * failure, a negative error code is returned instead.
  */
-void memwrite(uint64_t addr, const void *buf, size_t n)
+int memwrite(uint64_t addr, const void *buf, size_t n)
 {
 	struct rmem_message msg;
+	
+	/* Invalid write. */
+	if ((addr >= RMEM_SIZE) || ((addr + n) > RMEM_SIZE))
+		return (-EINVAL);
+
+	/* Null write. */
+	if (buf == NULL)
+		return (-EINVAL);
+
+	/* Invalid write size. */
+	if (n > RMEM_BLOCK_SIZE)
+		return (-EINVAL);
 
 	/* Build operation header. */
 	msg.source = sys_get_node_num();
@@ -92,10 +123,12 @@ void memwrite(uint64_t addr, const void *buf, size_t n)
 	msg.size = n;
 
 	/* Send operation header. */
-	mailbox_write(server.outbox, &msg, MAILBOX_MSG_SIZE);
+	assert(mailbox_write(server.outbox, &msg, MAILBOX_MSG_SIZE) == 0);
 
 	/* Send data. */
-	portal_write(server.outportal, buf, n);
+	assert(portal_write(server.outportal, buf, n) == (int) n);
+
+	return (0);
 }
 
 /*============================================================================*

@@ -83,7 +83,7 @@ BINARIES="$BINDIR/test/ipc-name-slave"
 BINARIES="$BINARIES,$BINDIR/test/ipc-barrier-slave"
 BINARIES="$BINARIES,$BINDIR/test/ipc-mailbox-slave"
 BINARIES="$BINARIES,$BINDIR/test/ipc-portal-slave"
-BINARIES="$BINARIES,$BINDIR/test/semaphore-slave"
+BINARIES="$BINARIES,$BINDIR/test/mm-rmem-slave"
 build2 $BINDIR/test-driver $BINDIR/servers1 "$BINARIES" nanvix-runtime-debug.img
 
 # Benchmarks

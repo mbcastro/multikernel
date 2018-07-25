@@ -21,21 +21,20 @@
 #
 
 # C Source Files
-SRC = $(wildcard $(CURDIR)/mm/rmem/*.c) \
-	  $(wildcard *.c)                   \
-	  $(INIT_SRC)
+SRC = $(wildcard *.c)
 
 # Object Files
 OBJ = $(SRC:.c=.o)
 
 # Binary Files
-export ELFBIN = $(BINDIR)/test-driver
+export ELFBIN = $(BINDIR)/test/mm-rmem-slave
 
 #===============================================================================
 
 # Builds the kernel.
 all: $(OBJ)
-	$(CC) $(LDFLAGS) $(OBJ) $(CRT0) -o $(ELFBIN) $(LIBSERVERS) $(LIBUSER) $(LIBKERNEL) $(LIBS)
+	mkdir -p $(BINDIR)/test/
+	$(CC) $(LDFLAGS) $(OBJ) $(CRT1) -o $(ELFBIN) $(LIBUSER) $(LIBKERNEL) $(LIBS)
 
 # Builds object files.
 %.o: %.c
