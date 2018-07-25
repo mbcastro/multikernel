@@ -113,7 +113,7 @@ static void test_mm_rmem_read_write_cc(void)
 	char mailbox_nclusters_str[4];
 	char test_str[4];
 	const char *args[] = {
-		"/test/ipc-mailbox-slave",
+		"/test/mm-rmem-slave",
 		masternode_str,
 		mailbox_nclusters_str,
 		test_str,
