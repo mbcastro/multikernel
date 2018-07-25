@@ -31,15 +31,12 @@
 #include <nanvix/pm.h>
 #include <nanvix/limits.h>
 
+#include "test.h"
+
 /**
  * @brief Asserts a logic expression.
  */
 #define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
-
-/**
- * @brief Data Size.
- */
-#define DATA_SIZE 128
 
 /*============================================================================*
  * Utilities                                                                  *
@@ -84,8 +81,6 @@ static void test_mm_rmem_read_write(void)
 {
 	char buffer[DATA_SIZE];
 
-	printf("[nanvix][test][api][mm][rmem] Read Write\n");
-
 	memset(buffer, 1, DATA_SIZE);
 	memwrite(0, buffer, DATA_SIZE);
 
@@ -120,8 +115,6 @@ static void test_mm_rmem_read_write_cc(void)
 		NULL
 	};
 
-	printf("[nanvix][test][api][mm][rmem] Read Write CC\n");
-
 	nodenum = sys_get_node_num();
 
 	/* Build arguments. */
@@ -147,12 +140,13 @@ static void test_mm_rmem_read_write_cc(void)
 
 /*============================================================================*/
 
-/**
- * @brief Automated test driver for Naming Service.
- */
-void test_mm_rmem(void)
-{
-	test_mm_rmem_read_write();
-	test_mm_rmem_read_write_cc();
-}
+/*============================================================================*/
 
+/**
+ * @brief Unit tests.
+ */
+struct test mm_rmem_tests_api[] = {
+	{ test_mm_rmem_read_write,    "Read Write"    },
+	{ test_mm_rmem_read_write_cc, "Read Write CC" },
+	{ NULL,                       NULL            },
+};
