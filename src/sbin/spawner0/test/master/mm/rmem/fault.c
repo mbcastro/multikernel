@@ -94,6 +94,18 @@ static void test_mm_rmem_invalid_read(void)
 	TEST_ASSERT(memread(RMEM_SIZE - DATA_SIZE/2, buffer, DATA_SIZE) < 0);
 }
 
+/*============================================================================*
+ * API Test: Null Read                                                        *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Null Read
+ */
+static void test_mm_rmem_null_read(void)
+{
+	TEST_ASSERT(memread(0, NULL, DATA_SIZE) < 0);
+}
+
 /*============================================================================*/
 
 /*============================================================================*/
@@ -106,5 +118,6 @@ struct test mm_rmem_tests_fault[] = {
 	{ test_mm_rmem_null_write,         "Null Write"         },
 	{ test_mm_rmem_invalid_write_size, "Invalid Write Size" },
 	{ test_mm_rmem_invalid_read,       "Invalid Read"       },
+	{ test_mm_rmem_null_read,          "Null Read"          },
 	{ NULL,                            NULL                 },
 };
