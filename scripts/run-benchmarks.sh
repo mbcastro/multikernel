@@ -77,7 +77,7 @@ case "$1" in
 	;;
 	nanvix-rmem)
 		echo "Running Nanvix Portal Microbenchmarks"
-		for kernel in read;
+		for kernel in read write;
 		do
 			run2 "nanvix-benchmarks.img"                   \
 				"/benchmarks"                              \

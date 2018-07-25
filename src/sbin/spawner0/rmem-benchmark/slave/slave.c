@@ -93,6 +93,34 @@ static void kernel_read(int outbox)
 }
 
 /**
+ * @brief Write kernel.
+ *
+ * @param outbox Output mailbox for sending statistics.
+ */
+static void kernel_write(int outbox)
+{
+	/* Benchmark. */
+	for (int k = 0; k <= niterations; k++)
+	{
+		double total;
+		uint64_t t1, t2;
+		struct message msg;
+
+		assert(barrier_wait(barrier) == 0);
+		t1 = sys_timer_get();
+			assert(memwrite(nodenum*bufsize, buffer, bufsize) == 0);
+		t2 = sys_timer_get();
+		assert(barrier_wait(barrier) == 0);
+
+		total = sys_timer_diff(t1, t2)/((double) sys_get_core_freq());
+		msg.time = total;
+
+		/* Send statistics. */
+		assert(mailbox_write(outbox, &msg, sizeof(struct message)) == 0);
+	}
+}
+
+/**
  * @brief HAL RMem microbenchmark.
  *
  * @param kernel    Benchmark kernel.
@@ -113,6 +141,8 @@ static void benchmark(const char *kernel, int nclusters)
 
 	if (!strcmp(kernel, "read"))
 		kernel_read(outbox);
+	else if (!strcmp(kernel, "write"))
+		kernel_write(outbox);
 
 	assert(barrier_wait(barrier) == 0);
 

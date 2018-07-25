@@ -38,10 +38,10 @@
  * @brief Benchmark parameters.
  */
 /**@{*/
-static int nclusters = 0;         /**< Number of remotes processes.    */
-static int niterations = 0;       /**< Number of benchmark parameters. */
-static int bufsize = 0;           /**< Buffer size.                    */
-static const char *kernel = NULL; /**< Benchmark kernel.               */
+static int nclusters = 0;             /**< Number of remotes processes.    */
+static int niterations = 0;           /**< Number of benchmark parameters. */
+static int bufsize = 0;               /**< Buffer size.                    */
+static const char *kernelname = NULL; /**< Benchmark kernel.               */
 /**@}*/
 
 /**
@@ -80,7 +80,7 @@ static void spawn_remotes(void)
 		nclusters_str,
 		niterations_str,
 		bufsize_str,
-		kernel,
+		kernelname,
 		NULL
 	};
 
@@ -123,11 +123,11 @@ static void join_remotes(void)
  *============================================================================*/
 
 /**
- * @brief Read kernel.
+ * @brief Microbenchmark kernel.
  *
  * @param inbox Input box for receiving statistics.
  */
-static void kernel_read(int inbox)
+static void kernel(int inbox)
 {
 	/* Initialization. */
 	memset(buffer, 1, bufsize);
@@ -155,7 +155,7 @@ static void kernel_read(int inbox)
 
 		/* Dump statistics. */
 		printf("nanvix;%s;%d;%d;",
-			kernel,
+			kernelname,
 			bufsize,
 			nclusters
 		);
@@ -181,8 +181,10 @@ static void benchmark(void)
 	assert((inbox = mailbox_create("benchmark-driver")) >= 0);
 	spawn_remotes();
 
-	if (!strcmp(kernel, "read"))
-		kernel_read(inbox);
+	if (!strcmp(kernelname, "read"))
+		kernel(inbox);
+	else if (!strcmp(kernelname, "write"))
+		kernel(inbox);
 	
 	/* House keeping. */
 	assert(mailbox_unlink(inbox) == 0);
@@ -204,7 +206,7 @@ int main2(int argc, const char **argv)
 	nclusters = atoi(argv[1]);
 	niterations = atoi(argv[2]);
 	bufsize = atoi(argv[3]);
-	kernel = argv[4];
+	kernelname = argv[4];
 
 	/* Parameter checking. */
 	assert(niterations > 0);
