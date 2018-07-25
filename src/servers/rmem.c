@@ -116,6 +116,13 @@ static inline void rmem_read(int remote, uint64_t blknum, int size)
 	);
 #endif
 
+	/* Invalid write. */
+	if ((blknum >= RMEM_SIZE) || (blknum + size > RMEM_SIZE))
+	{
+		printf("[nanvix][rmem] invalid read\n");
+		return;
+	}
+
 	outportal = sys_portal_open(remote);
 	sys_portal_write(outportal, &rmem[blknum], size);
 	sys_portal_close(outportal);

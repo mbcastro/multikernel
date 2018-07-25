@@ -57,6 +57,10 @@ struct
 int memread(uint64_t addr, void *buf, size_t n)
 {
 	struct rmem_message msg;
+	
+	/* Invalid write. */
+	if ((addr >= RMEM_SIZE) || ((addr + n) > RMEM_SIZE))
+		return (-EINVAL);
 
 	/* Build operation header. */
 	msg.source = sys_get_node_num();
