@@ -92,8 +92,12 @@ int memwrite(uint64_t addr, const void *buf, size_t n)
 {
 	struct rmem_message msg;
 	
-	/* Invalid write size. */
+	/* Invalid write. */
 	if ((addr >= RMEM_SIZE) || ((addr + n) > RMEM_SIZE))
+		return (-EINVAL);
+
+	/* Null write. */
+	if (buf == NULL)
 		return (-EINVAL);
 
 	/* Build operation header. */
