@@ -75,8 +75,20 @@ case "$1" in
 				"$NCLUSTERS $NITERATIONS $BUFSIZE $kernel"
 		done
 	;;
+	nanvix-rmem)
+		echo "Running Nanvix Portal Microbenchmarks"
+		for kernel in read;
+		do
+			run2 "nanvix-benchmarks.img"                   \
+				"/benchmarks"                              \
+				"/servers1"                                \
+				"$NCLUSTERS $NITERATIONS $BUFSIZE $kernel"
+		done
+	;;
 	*)
-		echo "Usage: run.sh test {mppa256-portal|mppa256-rqueue|nanvix-sync|nanvix-mailbox|nanvix-portal}"
+		echo "Usage: run.sh test {mppa256-portal|mppa256-rqueue}"
+		echo "                   {nanvix-sync|nanvix-mailbox|nanvix-portal}"
+		echo "                   {nanvix-rmem}"
 		exit 1
 	;;
 esac
