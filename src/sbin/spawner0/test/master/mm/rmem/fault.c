@@ -36,19 +36,19 @@
 #define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
 
 /*============================================================================*
- * API Test: Read Write                                                       *
+ * API Test: Invalid Write                                                    *
  *============================================================================*/
 
 /**
- * @brief API Test: Read Write
+ * @brief API Test: Invalid Write
  */
 static void test_mm_rmem_invalid_write(void)
 {
 	char buffer[DATA_SIZE];
 
 	memset(buffer, 1, DATA_SIZE);
-	memwrite(RMEM_SIZE, buffer, DATA_SIZE);
-	memwrite(RMEM_SIZE - DATA_SIZE/2, buffer, DATA_SIZE);
+	TEST_ASSERT(memwrite(RMEM_SIZE, buffer, DATA_SIZE) < 0);
+	TEST_ASSERT(memwrite(RMEM_SIZE - DATA_SIZE/2, buffer, DATA_SIZE) < 0);
 }
 
 /*============================================================================*/

@@ -20,6 +20,7 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <errno.h>
 #include <pthread.h>
 #include <string.h>
 #include <stdio.h>
@@ -73,6 +74,14 @@ static inline void rmem_write(int remote, uint64_t blknum, int size)
 		(int) size
 	);
 #endif
+
+	/* Invalid write. */
+	if ((blknum >= RMEM_SIZE) || (blknum + size > RMEM_SIZE))
+	{
+		printf("[nanvix][rmem] invalid write\n");
+		return;
+	}
+
 	sys_portal_allow(inportal, remote);
 	sys_portal_read(inportal, &rmem[blknum], size);
 }

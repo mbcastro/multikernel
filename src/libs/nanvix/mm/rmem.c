@@ -20,6 +20,7 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <errno.h>
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
@@ -49,6 +50,9 @@ struct
  * @param addr Remote address.
  * @param bug  Location where the data should be written to.
  * @param n    Number of bytes to read.
+ *
+ * @returns Upon successful completion, zero is returned. Upon
+ * failure, a negative error code is returned instead.
  */
 int memread(uint64_t addr, void *buf, size_t n)
 {
@@ -80,10 +84,17 @@ int memread(uint64_t addr, void *buf, size_t n)
  * @param addr Remote address.
  * @param bug  Location where the data should be read from.
  * @param n    Number of bytes to write.
+ *
+ * @returns Upon successful completion, zero is returned. Upon
+ * failure, a negative error code is returned instead.
  */
 int memwrite(uint64_t addr, const void *buf, size_t n)
 {
 	struct rmem_message msg;
+	
+	/* Invalid write size. */
+	if ((addr >= RMEM_SIZE) || ((addr + n) > RMEM_SIZE))
+		return (-EINVAL);
 
 	/* Build operation header. */
 	msg.source = sys_get_node_num();
