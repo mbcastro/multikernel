@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <nanvix/spawner.h>
 #include <nanvix/syscalls.h>
 #include <nanvix/const.h>
 #include <nanvix/pm.h>
@@ -185,20 +186,26 @@ static int _name_unlink(char *name)
 /**
  * @brief Handles remote name requests.
  *
- * @param inbox Input mailbox.
+ * @param inbox    Input mailbox.
+ * @param inportal Input portal.
  *
  * @returns Always returns NULL.
  */
-int name_server(int inbox)
+int name_server(int inbox, int inportal)
 {
 	int tmp;
 	int source;
+
+	((void) inportal);
 
 	printf("[nanvix][name] booting up server\n");
 
 	_name_init();
 
 	printf("[nanvix][name] server alive\n");
+
+	/* Wait for other servers. */
+	pthread_barrier_wait(&spawner_barrier);
 
 	while(1)
 	{
@@ -286,7 +293,7 @@ int name_server(int inbox)
 	}
 
 	/* House keeping. */
-		sys_mailbox_unlink(inbox);
+	sys_mailbox_unlink(inbox);
 
 	return (EXIT_SUCCESS);
 }

@@ -20,12 +20,31 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef _KERNEL_H_
-#define _KERNEL_H_
+#include <stdio.h>
 
-	/**
-	 * @brief Number of benchmark iterations.
-	 */
-	#define NITERATIONS 30
+#include <nanvix/syscalls.h>
 
-#endif /* _KERNEL_H_ */
+#include "test.h"
+
+/**
+ * @brief Remote Memory Test Driver
+ *
+ * @param nbusycores Number of busy cores.
+ */
+void test_mm_rmem(void)
+{
+	/* Run API tests. */
+	for (int i = 0; mm_rmem_tests_api[i].test_fn != NULL; i++)
+	{
+		printf("[nanvix][test][api][mm][rmem] %s\n", mm_rmem_tests_api[i].name);
+		mm_rmem_tests_api[i].test_fn();
+	}
+
+	/* Run fault injection tests. */
+	for (int i = 0; mm_rmem_tests_fault[i].test_fn != NULL; i++)
+	{
+		printf("[nanvix][test][fault][mm][rmem] %s\n", mm_rmem_tests_fault[i].name);
+		mm_rmem_tests_fault[i].test_fn();
+	}
+}
+
