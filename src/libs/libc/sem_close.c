@@ -27,22 +27,14 @@
 #include <nanvix/semaphore.h>
 
 /**
- * @brief Unlinks a named semaphore.
+ * @brief Close a named semaphore.
  *
- * @param name	Target semaphore name.
+ * @param sem Target semaphore.
  *
  * @returns Upon successful completion, zero is returned. Upon
  * failure, a negative error code is returned instead.
  */
-int sem_unlink(const char *name)
+int sem_close(int sem)
 {
-	/* Invalid name. */
-	if ((name == NULL) || (!strcmp(name, "")))
-		return (-ENOENT);
-
-	/* Name too long. */
-	if (strlen(name) >= (NANVIX_SEM_NAME_MAX))
-		return (-ENAMETOOLONG);
-
-	return (nanvix_sem_unlink(name));
+	return (nanvix_sem_close(sem));
 }

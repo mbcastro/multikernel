@@ -432,26 +432,15 @@ error:
  *============================================================================*/
 
 /**
- * @brief Close a semaphore.
- *
- * @param sem	Target semaphore.
- *
- * @returns Upon successful completion, 0 is returned.
- * Upon failure, a negative error code is returned instead.
+ * @see nanvix_sem_close()
  */
-int nanvix_sem_close(int sem)
+static inline int _nanvix_sem_close(int sem)
 {
+	int ret;                                 /* Return value.                */
 	struct sem_message msg;                  /* Semaphore message.           */
 	int nodenum;                             /* NoC node number.             */
 	char process_name[NANVIX_PROC_NAME_MAX]; /* Name of the running process. */
 	int inbox;                               /* Mailbox for small messages.  */
-
-	if (!sem_is_valid(sem))
-		return (-EINVAL);
-
-	/* Initilize semaphore client. */
-	if (!initialized)
-		return (-EAGAIN);
 
 	nodenum = sys_get_node_num();
 
@@ -469,27 +458,40 @@ int nanvix_sem_close(int sem)
 
 	pthread_mutex_lock(&lock);
 
-	if (mailbox_write(server, &msg, sizeof(struct sem_message)) != 0)
-		goto error;
+		if ((ret = mailbox_write(server, &msg, sizeof(struct sem_message))) != 0)
+			goto error;
 
-	if (mailbox_read(inbox, &msg, sizeof(struct sem_message)) != 0)
-		goto error;
+		if ((ret = mailbox_read(inbox, &msg, sizeof(struct sem_message))) != 0)
+			goto error;
 
 	pthread_mutex_unlock(&lock);
-
-	if (msg.op < 0)
-	{
-		errno = msg.op;
-		return (SEM_FAILURE);
-	}
 
 	return (msg.op);
 
 error:
-
 	pthread_mutex_unlock(&lock);
+	return (ret);
+}
 
-	return (-EAGAIN);
+/**
+ * @brief Close a named semaphore.
+ *
+ * @param sem	Target semaphore.
+ *
+ * @returns Upon successful completion, zero is returned. Upon
+ * failure, a negative error code is returned instead.
+ */
+int nanvix_sem_close(int sem)
+{
+	/* Invalid semaphore. */
+	if (!sem_is_valid(sem))
+		return (-EINVAL);
+
+	/* Initilize semaphore client. */
+	if (!initialized)
+		return (-EAGAIN);
+
+	return (_nanvix_sem_close(sem));
 }
 
 /*============================================================================*
