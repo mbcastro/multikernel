@@ -24,6 +24,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <semaphore.h>
 
 #include <mppaipc.h>
 
@@ -66,7 +67,7 @@ static void *test_semaphore_thread_create_unlink(void *args)
 	TEST_ASSERT((inbox = mailbox_create(name)) >= 0);
 
 	/* Create and unlink semaphore. */
-	TEST_ASSERT((semid = nanvix_sem_open(semaphore_name, O_CREAT, 0, 0)) >= 0);
+	TEST_ASSERT((semid = sem_open(semaphore_name, O_CREAT, 0, 0)) >= 0);
 
 	pthread_barrier_wait(&ipc_semaphore_barrier);
 
@@ -138,7 +139,7 @@ static void *test_semaphore_thread_open_close(void *args)
 	TEST_ASSERT((inbox = mailbox_create(name)) >= 0);
 
 	/* Create and unlink semaphore. */
-	TEST_ASSERT((semid = nanvix_sem_open(semaphore_name, O_CREAT, 0, 0)) >= 0);
+	TEST_ASSERT((semid = sem_open(semaphore_name, O_CREAT, 0, 0)) >= 0);
 
 	pthread_barrier_wait(&ipc_semaphore_barrier);
 
@@ -146,7 +147,7 @@ static void *test_semaphore_thread_open_close(void *args)
 
 	pthread_barrier_wait(&ipc_semaphore_barrier);
 
-	TEST_ASSERT(nanvix_sem_open(semaphore_name, 0, 0, 0) == semid);
+	TEST_ASSERT(sem_open(semaphore_name, 0, 0, 0) == semid);
 
 	pthread_barrier_wait(&ipc_semaphore_barrier);
 
@@ -217,7 +218,7 @@ static void *test_semaphore_thread_wait_post(void *args)
 	TEST_ASSERT((inbox = mailbox_create(name)) >= 0);
 
 	/* Create and unlink semaphore. */
-	TEST_ASSERT((semid = nanvix_sem_open(semaphore_name, O_CREAT, 0,
+	TEST_ASSERT((semid = sem_open(semaphore_name, O_CREAT, 0,
 							 ((ipc_semaphore_ncores - 1)/2))) >= 0);
 
 	pthread_barrier_wait(&ipc_semaphore_barrier);

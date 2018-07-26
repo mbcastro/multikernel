@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <errno.h>
+#include <semaphore.h>
 
 #include <mppaipc.h>
 
@@ -60,11 +61,11 @@ static void test_semaphore_invalid_create(void)
 	memset(buf, 0, NANVIX_SEM_NAME_MAX + 1);
 
 	/* Create invalid semaphores. */
-	assert(nanvix_sem_open(NULL, O_CREAT, 0, 0) == (-EINVAL));
+	assert(sem_open(NULL, O_CREAT, 0, 0) == (-EINVAL));
 
-	assert(nanvix_sem_open(buf, O_CREAT, 0, 0) == (-EINVAL));
+	assert(sem_open(buf, O_CREAT, 0, 0) == (-EINVAL));
 
-	assert(nanvix_sem_open("cool-name", O_CREAT, 0, (SEM_MAX + 1)) == (-EINVAL));
+	assert(sem_open("cool-name", O_CREAT, 0, (SEM_MAX + 1)) == (-EINVAL));
 
 	/* Unlink named inbox. */
 	assert(mailbox_unlink(inbox) == 0);
@@ -91,7 +92,7 @@ static void test_semaphore_bad_create(void)
 	assert((inbox = mailbox_create(name)) >= 0);
 
 	/* Create bad semaphores. */
-	assert(nanvix_sem_open("", O_CREAT, 0, 0) == (-EINVAL));
+	assert(sem_open("", O_CREAT, 0, 0) == (-EINVAL));
 
 	/* Unlink named inbox. */
 	assert(mailbox_unlink(inbox) == 0);
@@ -118,9 +119,9 @@ static void test_semaphore_double_create(void)
 	assert((inbox = mailbox_create(name)) >= 0);
 
 	/* Create double semaphores. */
-	assert(nanvix_sem_open("cool-name", O_CREAT, 0, 0) >= 0);
-	assert(nanvix_sem_open("cool-name", O_CREAT, 0, 0) == SEM_FAILURE);
-	assert(nanvix_sem_open("cool-name", (O_CREAT | O_EXCL), 0, 0) == SEM_FAILURE);
+	assert(sem_open("cool-name", O_CREAT, 0, 0) >= 0);
+	assert(sem_open("cool-name", O_CREAT, 0, 0) == SEM_FAILURE);
+	assert(sem_open("cool-name", (O_CREAT | O_EXCL), 0, 0) == SEM_FAILURE);
 
 	assert(nanvix_sem_unlink("cool-name") == 0);
 
@@ -152,8 +153,8 @@ static void test_semaphore_invalid_open(void)
 	memset(buf, 0, NANVIX_SEM_NAME_MAX + 1);
 
 	/* Open invalid semaphores. */
-	assert(nanvix_sem_open(NULL, 0) == (-EINVAL));
-	assert(nanvix_sem_open(buf, 0) == (-EINVAL));
+	assert(sem_open(NULL, 0) == (-EINVAL));
+	assert(sem_open(buf, 0) == (-EINVAL));
 
 	/* Unlink named inbox. */
 	assert(mailbox_unlink(inbox) == 0);
@@ -180,7 +181,7 @@ static void test_semaphore_bad_open(void)
 	assert((inbox = mailbox_create(name)) >= 0);
 
 	/* Open bad semaphores. */
-	assert(nanvix_sem_open("", 0, 0, 0) == (-EINVAL));
+	assert(sem_open("", 0, 0, 0) == (-EINVAL));
 
 	/* Unlink named inbox. */
 	assert(mailbox_unlink(inbox) == 0);
@@ -208,13 +209,13 @@ static void test_semaphore_double_open(void)
 	assert((inbox = mailbox_create(name)) >= 0);
 
 	/* Open double semaphores. */
-	assert((semid = nanvix_sem_open("cool-name", O_CREAT, 0, 0)) >= 0);
+	assert((semid = sem_open("cool-name", O_CREAT, 0, 0)) >= 0);
 
 	assert(nanvix_sem_close(semid) == 0);
 
-	assert(nanvix_sem_open("cool-name", 0, 0, 0) == semid);
+	assert(sem_open("cool-name", 0, 0, 0) == semid);
 
-	assert(nanvix_sem_open("cool-name", 0, 0, 0) == SEM_FAILURE);
+	assert(sem_open("cool-name", 0, 0, 0) == SEM_FAILURE);
 
 	assert(nanvix_sem_unlink("cool-name") == 0);
 
@@ -307,7 +308,7 @@ static void test_semaphore_double_unlink(void)
 	assert((inbox = mailbox_create(name)) >= 0);
 
 	/* Unlink double semaphores. */
-	assert(nanvix_sem_open("cool-name", O_CREAT, 0, 0) >= 0);
+	assert(sem_open("cool-name", O_CREAT, 0, 0) >= 0);
 	assert(nanvix_sem_unlink("cool-name") == 0);
 	assert(nanvix_sem_unlink("cool-name") == SEM_FAILURE);
 
@@ -392,7 +393,7 @@ static void test_semaphore_double_close(void)
 	assert((inbox = mailbox_create(name)) >= 0);
 
 	/* Close double semaphore. */
-	assert((semid = nanvix_sem_open("cool-name", O_CREAT, 0, 0)) >= 0);
+	assert((semid = sem_open("cool-name", O_CREAT, 0, 0)) >= 0);
 	assert(nanvix_sem_close(semid) == 0);
 	assert(nanvix_sem_close(semid) == SEM_FAILURE);
 	assert(nanvix_sem_unlink("cool-name") == 0);

@@ -24,7 +24,7 @@
 #define SEMAPHORE_H_
 
 	#include <fcntl.h>
-	#include <sys/types.h>
+	#include <time.h>
 
 	/**
 	 * @brief Semaphore error.
@@ -36,17 +36,19 @@
 	 */
 	typedef int sem_t;
 
-	int sem_close(sem_t *);
-	int sem_destroy(sem_t *);
-	int sem_getvalue(sem_t *restrict, int *restrict);
-	int sem_init(sem_t *, int, unsigned);
-	sem_t *sem_open(const char *, int, ...);
-	int sem_post(sem_t *);
+	int sem_close(int);
+	int sem_destroy(int);
+	int sem_getvalue(int, int *);
+	int sem_init(int, int, unsigned);
+	int sem_open(const char *, int, ...);
+	int sem_post(int);
+#ifdef _POSIX_C_SOURCE 
 #if (_POSIX_C_SOURCE >= 200112L)
-	int sem_timedwait(sem_t *restrict, const struct timespec *restrict);
+	int sem_timedwait(intrestrict, const struct timespec *);
 #endif
-	int sem_trywait(sem_t *);
+#endif
+	int sem_trywait(int);
 	int sem_unlink(const char *);
-	int sem_wait(sem_t *);	
+	int sem_wait(int);	
 
 #endif /* SEMAPHORE_H_ */

@@ -27,11 +27,8 @@
 #include <stdio.h>
 #include <pthread.h>
 
-#define __NEED_HAL_NOC_
-#define __NEED_HAL_CORE_
-
-#include <nanvix/hal.h>
 #include <nanvix/semaphore.h>
+#include <nanvix/syscalls.h>
 #include <nanvix/pm.h>
 
 /**
@@ -134,125 +131,173 @@ static int sem_is_valid(int sem)
 }
 
 /*============================================================================*
- * nanvix_sem_open()                                                          *
+ * nanvix_sem_create()                                                        *
  *============================================================================*/
 
 /**
- * @brief Open a semaphore.
+ * @see nanvix_sem_create()
+ */
+static inline int _nanvix_sem_create(const char *name, mode_t mode, unsigned value, int excl)
+{
+	int ret;                             /* Return value.                */
+	int inbox;                           /* Mailbox for small messages.  */
+	int nodenum;                         /* NoC node number.             */
+	struct sem_message msg1;             /* Semaphore message 1.         */
+	struct sem_message msg2;             /* Semaphore message 2.         */
+	char procname[NANVIX_PROC_NAME_MAX]; /* Name of the running process. */
+
+	if (get_name(procname) != 0)
+		return (-EAGAIN);
+
+	if ((inbox = get_named_inbox()) < 0)
+		return (-EAGAIN);
+
+	nodenum = sys_get_node_num();
+
+	/* Build message 1. */
+	msg1.seq = ((nodenum << 4) | 0);
+	strcpy(msg1.name, procname);
+	msg1.op = (excl) ? SEM_CREATE_EXCL : SEM_CREATE;
+	msg1.value = mode;
+
+	/* Build operation header 2. */
+	msg2.seq = ((nodenum << 4) | 1);
+	strcpy(msg2.name, name);
+	msg2.op = (excl) ? SEM_CREATE_EXCL : SEM_CREATE;
+	msg2.value = value;
+
+	pthread_mutex_lock(&lock);
+
+		if ((ret = mailbox_write(server, &msg1, sizeof(struct sem_message))) != 0)
+			goto error;
+
+		if ((ret = mailbox_write(server, &msg2, sizeof(struct sem_message))) != 0)
+			goto error;
+
+		if ((ret = mailbox_read(inbox, &msg1, sizeof(struct sem_message))) != 0)
+			goto error;
+
+	pthread_mutex_unlock(&lock);
+
+	return (msg1.value);
+
+error:
+	pthread_mutex_unlock(&lock);
+	return (-EAGAIN);
+}
+
+/**
+ * @brief Creates a semaphore.
  *
  * @param name	Target name.
- * @param oflag	Creation flags.
  * @param mode	User permissions.
  * @param value	Semaphore count value.
+ * @param excl  Exclusive creation?
  *
- * @returns Upon successful completion, the semaphore is
- * returned. Upon failure, a negative error code is returned instead.
+ * @returns Upon successful completion, the ID of the newly created
+ * semaphore is returned. Upon failure, a negative error code is
+ * returned instead.
  */
-int nanvix_sem_open(const char *name, int oflag, ...)
+int nanvix_sem_create(const char *name, mode_t mode, unsigned value, int excl)
 {
-	int mode;                                /* Creation mode.               */
-	int value;                               /* semaphore value.             */
-	int nodeid;                              /* NoC node ID.                 */
-	va_list ap;                              /* Arguments pointer.           */
-	struct sem_message msg1;                 /* Semaphore message 1.         */
-	struct sem_message msg2;                 /* Semaphore message 2.         */
-	char process_name[NANVIX_PROC_NAME_MAX]; /* Name of the running process. */
-	int inbox;                               /* Mailbox for small messages.  */
+	/* Invalid name. */
+	if ((name == NULL) || (!strcmp(name, "")))
+		return (-EINVAL);
 
-	if (!sem_name_is_valid(name))
+	/* Name too long. */
+	if (strlen(name) >= (NANVIX_SEM_NAME_MAX))
+		return (-ENAMETOOLONG);
+
+	/* Invalid semaphore value. */
+	if (value > SEM_VALUE_MAX)
 		return (-EINVAL);
 
 	/* Initilize semaphore client. */
 	if (!initialized)
 		return (-EAGAIN);
 
-	nodeid = hal_get_node_id();
+	return (_nanvix_sem_create(name, mode, value, excl));
+}
 
-	if (get_name(process_name) != 0)
+/*============================================================================*
+ * nanvix_sem_open ()                                                         *
+ *============================================================================*/
+
+/**
+ * @see nanvix_sem_open().
+ */
+static inline int _nanvix_sem_open(const char *name)
+{
+	int ret;                             /* Return value.                */
+	int inbox;                           /* Mailbox for small messages.  */
+	int nodenum;                         /* NoC node number.             */
+	struct sem_message msg1;             /* Semaphore message 1.         */
+	struct sem_message msg2;             /* Semaphore message 2.         */
+	char procname[NANVIX_PROC_NAME_MAX]; /* Name of the running process. */
+
+	if (get_name(procname) != 0)
 		return (-EAGAIN);
 
 	if ((inbox = get_named_inbox()) < 0)
 		return (-EAGAIN);
 
-	/* Semaphore creation operation. */
-	if (oflag & O_CREAT)
-	{
-		/* Retrieve arguments. */
-		va_start(ap, oflag);
-		mode = va_arg(ap, int);
-		value = va_arg(ap, int);
-		va_end(ap);
+	nodenum = sys_get_node_num();
 
-		/* Invalid semaphore value. */
-		if (value > SEM_VALUE_MAX)
-			return (-EINVAL);
+	/* Build operation header 1. */
+	msg1.seq = ((nodenum << 4) | 0);
+	strcpy(msg1.name, procname);
+	msg1.op = SEM_OPEN;
+	msg1.value = -1;
 
-		/* Build operation header 1. */
-		msg1.seq = ((nodeid << 4) | 0);
-		strcpy(msg1.name, process_name);
-
-		/* Is the creation exclusive ? */
-		if (oflag & O_EXCL)
-			msg1.op = SEM_CREATE_EXCL;
-		else
-			msg1.op = SEM_CREATE;
-
-		msg1.value = mode;
-
-		/* Build operation header 2. */
-		msg2.seq = ((nodeid << 4) | 1);
-		strcpy(msg2.name, name);
-
-		/* Is the creation exclusive ? */
-		if (oflag & O_EXCL)
-			msg2.op = SEM_CREATE_EXCL;
-		else
-			msg2.op = SEM_CREATE;
-
-		msg2.value = value;
-	}
-	/* Semaphore opening operation. */
-	else
-	{
-		/* Build operation header 1. */
-		msg1.seq = ((nodeid << 4) | 0);
-		strcpy(msg1.name, process_name);
-		msg1.op = SEM_OPEN;
-		msg1.value = -1;
-
-		/* Build operation header 2. */
-		msg2.seq = ((nodeid << 4) | 1);
-		strcpy(msg2.name, name);
-		msg2.op = SEM_OPEN;
-		msg2.value = 0;
-	}
+	/* Build operation header 2. */
+	msg2.seq = ((nodenum << 4) | 1);
+	strcpy(msg2.name, name);
+	msg2.op = SEM_OPEN;
+	msg2.value = 0;
 
 	pthread_mutex_lock(&lock);
 
-	if (mailbox_write(server, &msg1, sizeof(struct sem_message)) != 0)
-		goto error;
+		if ((ret = mailbox_write(server, &msg1, sizeof(struct sem_message))) != 0)
+			goto error;
 
-	if (mailbox_write(server, &msg2, sizeof(struct sem_message)) != 0)
-		goto error;
+		if ((ret = mailbox_write(server, &msg2, sizeof(struct sem_message))) != 0)
+			goto error;
 
-	if (mailbox_read(inbox, &msg1, sizeof(struct sem_message)) != 0)
-		goto error;
+		if ((ret = mailbox_read(inbox, &msg1, sizeof(struct sem_message))) != 0)
+			goto error;
 
 	pthread_mutex_unlock(&lock);
-
-	if (msg1.value < 0)
-	{
-		errno = msg1.value;
-		return (SEM_FAILURE);
-	}
 
 	return (msg1.value);
 
 error:
-
 	pthread_mutex_unlock(&lock);
-
 	return (-EAGAIN);
+}
+
+/**
+ * @brief Opens a semaphore.
+ *
+ * @param name	Target name.
+ * @param mode	User permissions.
+ * @param value	Semaphore count value.
+ * @param excl  Exclusive creation?
+ *
+ * @returns Upon successful completion, the ID of the target semaphore
+ * is returned. Upon failure, a negative error code is returned
+ * instead.
+ */
+int nanvix_sem_open(const char *name)
+{
+	/* Invalid name. */
+	if ((name == NULL) || (!strcmp(name, "")))
+		return (-EINVAL);
+
+	/* Name too long. */
+	if (strlen(name) >= (NANVIX_SEM_NAME_MAX))
+		return (-ENAMETOOLONG);
+
+	return (_nanvix_sem_open(name));
 }
 
 /*============================================================================*
@@ -270,7 +315,7 @@ error:
 int nanvix_sem_post(int sem)
 {
 	struct sem_message msg;                  /* Semaphore message.           */
-	int nodeid;                              /* NoC node ID.                 */
+	int nodenum;                             /* NoC node number.             */
 	char process_name[NANVIX_PROC_NAME_MAX]; /* Name of the running process. */
 	int inbox;                               /* Mailbox for small messages.  */
 
@@ -281,7 +326,7 @@ int nanvix_sem_post(int sem)
 	if (!initialized)
 		return (-EAGAIN);
 
-	nodeid = hal_get_node_id();
+	nodenum = sys_get_node_num();
 
 	if (get_name(process_name) != 0)
 		return (-EAGAIN);
@@ -290,7 +335,7 @@ int nanvix_sem_post(int sem)
 		return (-EAGAIN);
 
 	/* Build operation header. */
-	msg.seq = ((nodeid << 4) | 0);
+	msg.seq = ((nodenum << 4) | 0);
 	strcpy(msg.name, process_name);
 	msg.op = SEM_POST;
 	msg.value = sem;
@@ -335,7 +380,7 @@ error:
 int nanvix_sem_wait(int sem)
 {
 	struct sem_message msg;                  /* Semaphore message.           */
-	int nodeid;                              /* NoC node ID.                 */
+	int nodenum;                             /* NoC node number.             */
 	char process_name[NANVIX_PROC_NAME_MAX]; /* Name of the running process. */
 	int inbox;                               /* Mailbox for small messages.  */
 
@@ -346,7 +391,7 @@ int nanvix_sem_wait(int sem)
 	if (!initialized)
 		return (-EAGAIN);
 
-	nodeid = hal_get_node_id();
+	nodenum = sys_get_node_num();
 
 	if (get_name(process_name) != 0)
 		return (-EAGAIN);
@@ -355,7 +400,7 @@ int nanvix_sem_wait(int sem)
 		return (-EAGAIN);
 
 	/* Build operation header. */
-	msg.seq = ((nodeid << 4) | 0);
+	msg.seq = ((nodenum << 4) | 0);
 	strcpy(msg.name, process_name);
 	msg.op = SEM_WAIT;
 	msg.value = sem;
@@ -411,7 +456,7 @@ error:
 int nanvix_sem_close(int sem)
 {
 	struct sem_message msg;                  /* Semaphore message.           */
-	int nodeid;                              /* NoC node ID.                 */
+	int nodenum;                             /* NoC node number.             */
 	char process_name[NANVIX_PROC_NAME_MAX]; /* Name of the running process. */
 	int inbox;                               /* Mailbox for small messages.  */
 
@@ -422,7 +467,7 @@ int nanvix_sem_close(int sem)
 	if (!initialized)
 		return (-EAGAIN);
 
-	nodeid = hal_get_node_id();
+	nodenum = sys_get_node_num();
 
 	if (get_name(process_name) != 0)
 		return (-EAGAIN);
@@ -431,7 +476,7 @@ int nanvix_sem_close(int sem)
 		return (-EAGAIN);
 
 	/* Build operation header. */
-	msg.seq = ((nodeid << 4) | 0);
+	msg.seq = ((nodenum << 4) | 0);
 	strcpy(msg.name, process_name);
 	msg.op = SEM_CLOSE;
 	msg.value = sem;
@@ -477,7 +522,7 @@ int nanvix_sem_unlink(const char *name)
 {
 	struct sem_message msg1;                 /* Semaphore message 1.         */
 	struct sem_message msg2;                 /* Semaphore message 2.         */
-	int nodeid;                              /* NoC node ID.                 */
+	int nodenum;                             /* NoC node number.             */
 	char process_name[NANVIX_PROC_NAME_MAX]; /* Name of the running process. */
 	int inbox;                               /* Mailbox for small messages.  */
 
@@ -488,7 +533,7 @@ int nanvix_sem_unlink(const char *name)
 	if (!initialized)
 		return (-EAGAIN);
 
-	nodeid = hal_get_node_id();
+	nodenum = sys_get_node_num();
 
 	if (get_name(process_name) != 0)
 		return (-EAGAIN);
@@ -497,13 +542,13 @@ int nanvix_sem_unlink(const char *name)
 		return (-EAGAIN);
 
 	/* Build operation header 1. */
-	msg1.seq = ((nodeid << 4) | 0);
+	msg1.seq = ((nodenum << 4) | 0);
 	strcpy(msg1.name, process_name);
 	msg1.op = SEM_UNLINK;
 	msg1.value = -1;
 
 	/* Build operation header 2. */
-	msg2.seq = ((nodeid << 4) | 1);
+	msg2.seq = ((nodenum << 4) | 1);
 	strcpy(msg2.name, name);
 	msg2.op = SEM_UNLINK;
 	msg2.value = -1;

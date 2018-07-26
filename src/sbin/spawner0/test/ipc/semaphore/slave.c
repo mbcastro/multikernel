@@ -25,6 +25,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <semaphore.h>
 
 #include <mppaipc.h>
 
@@ -65,7 +66,7 @@ static void test_semaphore_slave(int nclusters)
 	sprintf(semaphore_name, "/semaphore");
 
 	/* Create and unlink semaphore. */
-	assert((semid = nanvix_sem_open(semaphore_name, O_CREAT, 0, 0)) >= 0);
+	assert((semid = sem_open(semaphore_name, O_CREAT, 0, 0)) >= 0);
 
 	assert(barrier_wait(barrier) == 0);
 

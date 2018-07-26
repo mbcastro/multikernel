@@ -25,8 +25,8 @@
 
 	#include <stdlib.h>
 	#include <stdint.h>
+	#include <fcntl.h>
 
-	#include <nanvix/hal.h>
 	#include <nanvix/limits.h>
 
 	/**
@@ -58,14 +58,6 @@
 	/**@{*/
 	#define SEM_SUCCESS 0  /* Success acknowledgement. */
 	#define SEM_FAILURE -1 /* Failure acknowledgement. */
-	/**@}*/
-
-	/**
-	 * @brief Sempahore creation flag bits.
-	 */
-	/**@{*/
-	#define O_CREAT (1 << 0)
-	#define O_EXCL  (1 << 1)
 	/**@}*/
 
 	/**
@@ -124,7 +116,8 @@
 	};
 
 	/* Forward definitions. */
-	extern int nanvix_sem_open(const char *name, int oflag, ...);
+	int nanvix_sem_create(const char *, mode_t, unsigned, int);
+	extern int nanvix_sem_open(const char *name);
 	extern int nanvix_sem_post(int);
 	extern int nanvix_sem_wait(int);
 	extern int nanvix_sem_close(int);

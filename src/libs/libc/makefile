@@ -31,7 +31,7 @@ OBJ = $(SRC:.c=.o)
 # Builds Nanvix library.
 all: $(OBJ)
 	mkdir -p $(LIBDIR)
-	$(AR) $(ARFLAGS) $(LIBUSER) $(OBJ)
+	$(AR) rs $(LIBUSER) $(OBJ)
 
 # Builds object files.
 %.o: %.c
