@@ -43,11 +43,6 @@ static int inbox = -1;
  */
 static int nodenum = -1;
 
-/**
- * @brief Barrier for synchronization.
- */
-pthread_barrier_t spawner_barrier;
-
 /* Forward definitions. */
 extern int rmem_server(int, int);
 extern int main2(int, const char **);
@@ -100,15 +95,23 @@ void spawner_init(void)
 {
 	nodenum = sys_get_node_num();
 
-	assert((inbox = sys_mailbox_create(nodenum);
+	assert((inbox = sys_mailbox_create(nodenum)) >= 0);
 }
 
 /**
- * @brief Acknowledges the spawner about successful startup.
+ * @brief Acknowledges spawner.
  */
 void spawner_ack(void)
 {
-	pthread_barrier_wait(&spawner_barrier);
+	int outbox;
+	struct spawner_message msg;
+
+	msg.status = 0;
+
+	/* Send acknowledge message. */
+	assert((outbox = sys_mailbox_open(SPAWNER_SERVER_NODE)) >= 0);
+	assert(sys_mailbox_write(outbox, &msg, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
+	assert(sys_mailbox_close(outbox) == 0);
 }
 
 /**
@@ -120,8 +123,14 @@ void spawners_sync(void)
 	int syncid_local;
 	int nodes[2];
 	int nodes_local[2];
+	struct spawner_message msg;
 
-	pthread_barrier_wait(&spawner_barrier);
+	/* Wait for acknowledge message of all servers. */
+	for (int i = 0; i < NR_SERVERS; i++)
+	{
+		assert(sys_mailbox_read(inbox, &msg, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
+		assert(msg.status == 0);
+	}
 
 	nodes[0] = nodenum;
 	nodes[1] = SPAWNER1_SERVER_NODE;
@@ -137,6 +146,7 @@ void spawners_sync(void)
 	assert(sys_sync_wait(syncid_local) == 0);
 
 	/* House keeping. */
+	assert(sys_mailbox_unlink(inbox) == 0);
 	assert(sys_sync_unlink(syncid_local) == 0);
 	assert(sys_sync_close(syncid) == 0);
 }
