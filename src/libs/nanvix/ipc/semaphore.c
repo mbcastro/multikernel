@@ -32,14 +32,13 @@
 #include <nanvix/pm.h>
 
 /**
- * @brief Mailboxe for small messages.
+ * @brief Semaphores server connection.
  */
-static int server;
-
-/**
- * @brief Is the semaphore service initialized ?
- */
-static int initialized = 0;
+static struct
+{
+	int initialized; /**< Is the connection initialized? */
+	int outbox;      /**< Output mailbox for requests.   */
+} server = { 0, -1 };
 
 /**
  * @brief Mailbox module lock.
@@ -58,23 +57,20 @@ static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
  */
 int nanvix_sem_init(void)
 {
-	char server_name[NANVIX_PROC_NAME_MAX];
-
-	/* Nothing to do. */
-	if (initialized)
+	/* Nothing to do.  */
+	if (server.initialized)
 		return (0);
 
-	sprintf(server_name, "/sem-server");
-
-	server = mailbox_open(server_name);
-
-	if (server >= 0)
+	/* Open output mailbox */
+	if ((server.outbox = mailbox_open("/sem-server")) < 0)
 	{
-		initialized = 1;
-		return (0);
+		printf("[nanvix][semaphores] cannot open outbox to server\n");
+		return (server.outbox);
 	}
 
-	return (-1);
+	server.initialized = 1;
+
+	return (0);
 }
 
 /*============================================================================*
@@ -84,20 +80,25 @@ int nanvix_sem_init(void)
 /**
  * @brief Closes the semaphore client.
  */
-void sem_finalize(void)
+void nanvix_sem_finalize(void)
 {
 	/* Nothing to do. */
-	if (!initialized)
+	if (!server.initialized)
 		return;
 
-	mailbox_close(server);
+	/* Close output mailbox. */
+	if (mailbox_close(server.outbox) < 0)
+	{
+		printf("[nanvix][semaphores] cannot close outbox to server\n");
+		return;
+	}
 
-	initialized = 0;
+	server.initialized = 0;
 }
 
-/*=======================================================================*
- * sem_is_valid()                                                        *
- *=======================================================================*/
+/*============================================================================*
+ * nanvix_sem_is_valid()                                                      *
+ *============================================================================*/
 
 /**
  * @brief Asserts whether or not a semaphore is valid.
@@ -107,7 +108,7 @@ void sem_finalize(void)
  * @returns One if the target semaphore is valid, and false
  * otherwise.
  */
-static int sem_is_valid(sem_t sem)
+static int nanvix_sem_is_valid(sem_t sem)
 {
 	return ((sem >= 0) && (sem < SEM_MAX));
 }
@@ -150,10 +151,10 @@ static inline sem_t _nanvix_sem_create(const char *name, mode_t mode, unsigned v
 
 	pthread_mutex_lock(&lock);
 
-		if ((ret = mailbox_write(server, &msg1, sizeof(struct sem_message))) != 0)
+		if ((ret = mailbox_write(server.outbox, &msg1, sizeof(struct sem_message))) != 0)
 			goto error;
 
-		if ((ret = mailbox_write(server, &msg2, sizeof(struct sem_message))) != 0)
+		if ((ret = mailbox_write(server.outbox, &msg2, sizeof(struct sem_message))) != 0)
 			goto error;
 
 		if ((ret = mailbox_read(inbox, &msg1, sizeof(struct sem_message))) != 0)
@@ -195,7 +196,7 @@ sem_t nanvix_sem_create(const char *name, mode_t mode, unsigned value, int excl)
 		return (-EINVAL);
 
 	/* Initilize semaphore client. */
-	if (!initialized)
+	if (!server.initialized)
 		return (-EAGAIN);
 
 	return (_nanvix_sem_create(name, mode, value, excl));
@@ -239,10 +240,10 @@ static inline sem_t _nanvix_sem_open(const char *name)
 
 	pthread_mutex_lock(&lock);
 
-		if ((ret = mailbox_write(server, &msg1, sizeof(struct sem_message))) != 0)
+		if ((ret = mailbox_write(server.outbox, &msg1, sizeof(struct sem_message))) != 0)
 			goto error;
 
-		if ((ret = mailbox_write(server, &msg2, sizeof(struct sem_message))) != 0)
+		if ((ret = mailbox_write(server.outbox, &msg2, sizeof(struct sem_message))) != 0)
 			goto error;
 
 		if ((ret = mailbox_read(inbox, &msg1, sizeof(struct sem_message))) != 0)
@@ -280,7 +281,7 @@ sem_t nanvix_sem_open(const char *name)
 		return (-ENAMETOOLONG);
 
 	/* Initilize semaphore client. */
-	if (!initialized)
+	if (!server.initialized)
 		return (-EAGAIN);
 
 	return (_nanvix_sem_open(name));
@@ -317,7 +318,7 @@ static inline int _nanvix_sem_post(sem_t sem)
 
 	pthread_mutex_lock(&lock);
 
-		if ((ret = mailbox_write(server, &msg, sizeof(struct sem_message))) != 0)
+		if ((ret = mailbox_write(server.outbox, &msg, sizeof(struct sem_message))) != 0)
 			goto error;
 
 		if ((ret = mailbox_read(inbox, &msg, sizeof(struct sem_message))) != 0)
@@ -343,11 +344,11 @@ error:
 int nanvix_sem_post(sem_t sem)
 {
 	/* Invalid semaphore. */
-	if (!sem_is_valid(sem))
+	if (!nanvix_sem_is_valid(sem))
 		return (-EINVAL);
 
 	/* Initilize semaphore client. */
-	if (!initialized)
+	if (!server.initialized)
 		return (-EAGAIN);
 	
 	return (_nanvix_sem_post(sem));
@@ -384,7 +385,7 @@ static inline int _nanvix_sem_wait(sem_t sem)
 
 	pthread_mutex_lock(&lock);
 
-		if ((ret = mailbox_write(server, &msg, sizeof(struct sem_message))) != 0)
+		if ((ret = mailbox_write(server.outbox, &msg, sizeof(struct sem_message))) != 0)
 			goto error;
 
 		do
@@ -413,11 +414,11 @@ error:
 int nanvix_sem_wait(sem_t sem)
 {
 	/* Invalid semaphore. */
-	if (!sem_is_valid(sem))
+	if (!nanvix_sem_is_valid(sem))
 		return (-EINVAL);
 
 	/* Initilize semaphore client. */
-	if (!initialized)
+	if (!server.initialized)
 		return (-EAGAIN);
 
 	return (nanvix_sem_wait(sem));
@@ -454,7 +455,7 @@ static inline int _nanvix_sem_close(sem_t sem)
 
 	pthread_mutex_lock(&lock);
 
-		if ((ret = mailbox_write(server, &msg, sizeof(struct sem_message))) != 0)
+		if ((ret = mailbox_write(server.outbox, &msg, sizeof(struct sem_message))) != 0)
 			goto error;
 
 		if ((ret = mailbox_read(inbox, &msg, sizeof(struct sem_message))) != 0)
@@ -480,11 +481,11 @@ error:
 int nanvix_sem_close(sem_t sem)
 {
 	/* Invalid semaphore. */
-	if (!sem_is_valid(sem))
+	if (!nanvix_sem_is_valid(sem))
 		return (-EINVAL);
 
 	/* Initilize semaphore client. */
-	if (!initialized)
+	if (!server.initialized)
 		return (-EAGAIN);
 
 	return (_nanvix_sem_close(sem));
@@ -527,10 +528,10 @@ static inline int _nanvix_sem_unlink(const char *name)
 
 	pthread_mutex_lock(&lock);
 
-		if ((ret = mailbox_write(server, &msg1, sizeof(struct sem_message)) != 0))
+		if ((ret = mailbox_write(server.outbox, &msg1, sizeof(struct sem_message)) != 0))
 			goto error;
 
-		if ((ret = mailbox_write(server, &msg2, sizeof(struct sem_message)) != 0))
+		if ((ret = mailbox_write(server.outbox, &msg2, sizeof(struct sem_message)) != 0))
 			goto error;
 
 		if ((ret = mailbox_read(inbox, &msg1, sizeof(struct sem_message)) != 0))
@@ -564,7 +565,7 @@ int nanvix_sem_unlink(const char *name)
 		return (-ENAMETOOLONG);
 
 	/* Initilize semaphore client. */
-	if (!initialized)
+	if (!server.initialized)
 		return (-EAGAIN);
 
 	return (_nanvix_sem_unlink(name));

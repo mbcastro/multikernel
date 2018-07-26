@@ -33,11 +33,11 @@
 /**
  * @brief Remote memory server connection.
  */
-struct
+static struct
 {
 	int initialized; /**< Is the connection initialized? */
 	int outbox;      /**< Output mailbox for requests.   */
-	int outportal;   /**< Outpt portal for data.         */
+	int outportal;   /**< Output portal for data.        */
 } server;
 
 /*============================================================================*
