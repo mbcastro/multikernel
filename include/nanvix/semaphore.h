@@ -23,7 +23,6 @@
 #ifndef NANVIX_SEM_H_
 #define NANVIX_SEM_H_
 
-	#include <stdlib.h>
 	#include <stdint.h>
 	#include <fcntl.h>
 
@@ -53,29 +52,6 @@
 	/**@}*/
 
 	/**
-	 * @brief Acknowledgement for semaphore server.
-	 */
-	/**@{*/
-	#define SEM_SUCCESS 0  /* Success acknowledgement. */
-	#define SEM_FAILURE -1 /* Failure acknowledgement. */
-	/**@}*/
-
-	/**
-	 * @brief Sempahore flag bit.
-	 */
-	#define SEM_USED (1 << 0)
-
-	/**
-	 * @brief Waiting list element.
-	 */
-	struct element
-	{
-		char process[NANVIX_PROC_NAME_MAX]; /* Process name.              */
-		int next;                           /* Index of the next element. */
-		int used;                           /* Flag element used.         */
-	};
-
-	/**
 	 * @brief Semaphore message.
 	 */
 	struct sem_message
@@ -86,37 +62,8 @@
 		int value;                      /* Value.                        */
 	};
 
-	/**
-	 * @brief Message list element.
-	 */
-	struct msg_element
-	{
-		struct sem_message message; /* Message.                   */
-		int next;                   /* Index of the next element. */
-		int used;                   /* Flag element used.         */
-	};
-
-	/**
-	 * @brief Semaphore.
-	 */
-	struct semaphore
-	{
-		struct{
-			char name[NANVIX_PROC_NAME_MAX];  /**< Process name.             */
-			int use;                          /**< Number of ressource used. */
-		} processes[NANVIX_PROC_MAX];         /**< Process list.             */
-
-		char name[NANVIX_SEM_NAME_MAX];        /**< Semaphore name.           */
-		int flags;                             /**< Flags.                    */
-		int count;                             /**< Semaphore count.          */
-		int nr_proc;                           /**< Number of process.        */
-		struct element queue[NANVIX_PROC_MAX]; /**< Waiting list.             */
-		int head;                              /**< Head of the queue.        */
-		int tail;                              /**< Tail of the queue.        */
-	};
-
 	/* Forward definitions. */
-	int nanvix_sem_create(const char *, mode_t, unsigned, int);
+	extern int nanvix_sem_create(const char *, mode_t, unsigned, int);
 	extern int nanvix_sem_open(const char *name);
 	extern int nanvix_sem_post(int);
 	extern int nanvix_sem_wait(int);
