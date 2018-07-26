@@ -56,10 +56,10 @@
 	 */
 	struct sem_message
 	{
-		uint16_t seq;                   /* Sequence number.              */
-		char name[NANVIX_SEM_NAME_MAX]; /* Client or semaphore name.     */
-		int16_t op;                     /* Semaphore operation.          */
-		int value;                      /* Value.                        */
+		uint16_t seq;                   /**< Sequence number.          */
+		char name[NANVIX_SEM_NAME_MAX]; /**< Client or semaphore name. */
+		int16_t op;                     /**< Semaphore operation.      */
+		int value;                      /**< Value.                    */
 	};
 
 	/* Forward definitions. */

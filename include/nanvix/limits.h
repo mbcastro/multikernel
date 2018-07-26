@@ -53,7 +53,7 @@
 	 *
 	 * @note The null character is included.
 	 */
-	#define NANVIX_SEM_NAME_MAX 56
+	#define NANVIX_SEM_NAME_MAX (HAL_MAILBOX_MSG_SIZE - 8)
 
 #endif /* NANVIX_LIMITS_H_ */
 
