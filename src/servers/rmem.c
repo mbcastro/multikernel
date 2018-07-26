@@ -21,7 +21,6 @@
  */
 
 #include <errno.h>
-#include <pthread.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -247,8 +246,7 @@ int rmem_server(int _inbox, int _inportal)
 	
 	printf("[nanvix][rmem] server alive\n");
 
-	/* Wait for other servers. */
-	pthread_barrier_wait(&spawner_barrier);
+	spawner_ack();
 
 	ret = rmem_loop();
 
