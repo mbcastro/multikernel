@@ -21,12 +21,10 @@
  */
 
 #include <assert.h>
-#include <assert.h>
 #include <string.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 
 #include <nanvix/spawner.h>
 #include <nanvix/syscalls.h>
@@ -42,7 +40,7 @@ static struct semaphore semaphores[SEM_MAX];
 /**
  * @brief Messages queue.
  */
-static struct msg_element messages[NR_PROC];
+static struct msg_element messages[NANVIX_PROC_MAX];
 
 /**
  * @brief Tail of the messages queue.
@@ -71,7 +69,7 @@ static void _sem_init(void)
 		semaphores[i].count = 0;
 		strcpy(semaphores[i].name, "");
 
-		for (int j = 0; j < NR_PROC; j++)
+		for (int j = 0; j < NANVIX_PROC_MAX; j++)
 			semaphores[i].queue[j].used = 0;
 
 		semaphores[i].head = -1;
@@ -79,7 +77,7 @@ static void _sem_init(void)
 	}
 
 	/* Initilize message queue. */
-	for (int i = 0; i < NR_PROC; i++)
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
 		messages[i].used = 0;
 
 	head = -1;
@@ -274,7 +272,7 @@ static int _sem_put_message(struct sem_message *message)
 		return (-EINVAL);
 
 	/* Search for a place in the queue. */
-	for (i = 0; i < NR_PROC; i++)
+	for (i = 0; i < NANVIX_PROC_MAX; i++)
 		if (messages[i].used == 0)
 			goto found;
 
@@ -378,7 +376,7 @@ static int _sem_enqueue(char *name, int semid)
 		return (-EINVAL);
 
 	/* Search for a place in the queue. */
-	for (i = 0; i < NR_PROC; i++)
+	for (i = 0; i < NANVIX_PROC_MAX; i++)
 		if (semaphores[semid].queue[i].used == 0)
 			goto found;
 
@@ -489,14 +487,14 @@ static int _sem_open(char *source, char *name)
 found:
 
 	/* Is the semaphore already opened ? */
-	for (int j = 0; j < NR_PROC; j++)
+	for (int j = 0; j < NANVIX_PROC_MAX; j++)
 		if (!strcmp(semaphores[i].processes[j].name, source))
 			return (-EINVAL);
 
 	nr_proc = semaphores[i].nr_proc;
 
 	/* Add the process to the list. */
-	if (nr_proc >= (NR_PROC - 1))
+	if (nr_proc >= (NANVIX_PROC_MAX - 1))
 		return (-EAGAIN);
 
 	strcpy(semaphores[i].processes[nr_proc].name, source);
@@ -629,7 +627,7 @@ static int _sem_close(int semid, char *source)
 found:
 
 	/* Remove the process from the list. */
-	if (i != (NR_PROC - 1))
+	if (i != (NANVIX_PROC_MAX - 1))
 		for (int j = i; j < nr_proc; j++)
 			strcpy(semaphores[semid].processes[j].name,
 			  semaphores[semid].processes[j + 1].name);
@@ -723,7 +721,7 @@ static int _sem_wait(int semid, char *source)
 		return (-EINVAL);
 
 	/* The process should have opened the semaphore. */
-	for (i = 0; i < NR_PROC; i++)
+	for (i = 0; i < NANVIX_PROC_MAX; i++)
 		if (!strcmp(semaphores[semid].processes[i].name, source))
 			goto found;
 
@@ -780,7 +778,7 @@ static int _sem_post(int semid, char *source)
 	if (!_sem_is_valid(semid))
 		return (-EINVAL);
 	/* The process should have opened the semaphore. */
-	for (i = 0; i < NR_PROC; i++)
+	for (i = 0; i < NANVIX_PROC_MAX; i++)
 		if (!strcmp(semaphores[semid].processes[i].name, source))
 			goto found;
 
@@ -804,7 +802,7 @@ wakeup:
 	if (_sem_dequeue(name, semid) != 0)
 		return (-EAGAIN);
 
-	for (j = 0; j < NR_PROC; j++)
+	for (j = 0; j < NANVIX_PROC_MAX; j++)
 		if (!strcmp(semaphores[semid].processes[j].name, name))
 			goto found2;
 

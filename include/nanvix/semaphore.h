@@ -30,11 +30,6 @@
 	#include <nanvix/limits.h>
 
 	/**
-	 * @brief Maximal number of processes.
-	 */
-	#define NR_PROC 24
-
-	/**
 	 * @brief Maximal number of sempahores in the system.
 	 */
 	#define SEM_MAX 50
@@ -115,17 +110,17 @@
 	struct semaphore
 	{
 		struct{
-			char name[NANVIX_PROC_NAME_MAX]; /* Process name.             */
-			int use;                         /* Number of ressource used. */
-		} processes[NR_PROC];                /* Process list.             */
+			char name[NANVIX_PROC_NAME_MAX];  /**< Process name.             */
+			int use;                          /**< Number of ressource used. */
+		} processes[NANVIX_PROC_MAX];         /**< Process list.             */
 
-		char name[NANVIX_SEM_NAME_MAX];      /* Semaphore name.           */
-		int flags;                           /* Flags.                    */
-		int count;                           /* Semaphore count.          */
-		int nr_proc;                         /* Number of process.        */
-		struct element queue[NR_PROC];       /* Waiting list.             */
-		int head;                            /* Head of the queue.        */
-		int tail;                            /* Tail of the queue.        */
+		char name[NANVIX_SEM_NAME_MAX];        /**< Semaphore name.           */
+		int flags;                             /**< Flags.                    */
+		int count;                             /**< Semaphore count.          */
+		int nr_proc;                           /**< Number of process.        */
+		struct element queue[NANVIX_PROC_MAX]; /**< Waiting list.             */
+		int head;                              /**< Head of the queue.        */
+		int tail;                              /**< Tail of the queue.        */
 	};
 
 	/* Forward definitions. */
