@@ -335,7 +335,7 @@ error:
 /**
  * @brief Post on a named semaphore.
  *
- * @param semi Target semaphore.
+ * @param sem Target semaphore.
  *
  * @returns Upon successful completion, zero is returned. Upon
  * failure, a negative error code is returned instead.
@@ -358,26 +358,15 @@ int nanvix_sem_post(int sem)
  *============================================================================*/
 
 /**
- * @brief Wait a semaphore.
- *
- * @param sem	Target semaphore.
- *
- * @returns Upon successful completion, 0 is returned.
- * Upon failure, a negative error code is returned instead.
+ * @see nanvix_sem_wait()
  */
-int nanvix_sem_wait(int sem)
+static inline int _nanvix_sem_wait(int sem)
 {
+	int ret;                                 /* Return value.                */
 	struct sem_message msg;                  /* Semaphore message.           */
 	int nodenum;                             /* NoC node number.             */
 	char process_name[NANVIX_PROC_NAME_MAX]; /* Name of the running process. */
 	int inbox;                               /* Mailbox for small messages.  */
-
-	if (!sem_is_valid(sem))
-		return (-EINVAL);
-
-	/* Initilize semaphore client. */
-	if (!initialized)
-		return (-EAGAIN);
 
 	nodenum = sys_get_node_num();
 
@@ -395,38 +384,43 @@ int nanvix_sem_wait(int sem)
 
 	pthread_mutex_lock(&lock);
 
-	if (mailbox_write(server, &msg, sizeof(struct sem_message)) != 0)
-		goto error;
+		if ((ret = mailbox_write(server, &msg, sizeof(struct sem_message))) != 0)
+			goto error;
 
-	if (mailbox_read(inbox, &msg, sizeof(struct sem_message)) != 0)
-		goto error;
-
-	/* Wait for a semaphore ressource. */
-	if (msg.op == SEM_WAIT)
-	{
-		while (msg.op != SEM_SUCCESS)
-			if (mailbox_read(get_named_inbox(), &msg, sizeof(struct sem_message)) != 0)
+		do
+		{
+			if (mailbox_read(inbox, &msg, sizeof(struct sem_message)) != 0)
 				goto error;
+		} while (msg.op == SEM_WAIT);
 
-	}
-	else if (msg.op == SEM_SUCCESS)
-	{
-		pthread_mutex_unlock(&lock);
-	}
-
-	if (msg.op < 0)
-	{
-		errno = msg.op;
-		return (SEM_FAILURE);
-	}
+	pthread_mutex_unlock(&lock);
 
 	return (msg.op);
 
 error:
-
 	pthread_mutex_unlock(&lock);
+	return (ret);
+}
 
-	return (-EAGAIN);
+/**
+ * @brief Wait a named semaphore.
+ *
+ * @param sem Target semaphore.
+ *
+ * @returns Upon successful completion, zero is returned.  Upon
+ * failure, a negative error code is returned instead.
+ */
+int nanvix_sem_wait(int sem)
+{
+	/* Invalid semaphore. */
+	if (!sem_is_valid(sem))
+		return (-EINVAL);
+
+	/* Initilize semaphore client. */
+	if (!initialized)
+		return (-EAGAIN);
+
+	return (nanvix_sem_wait(sem));
 }
 
 /*============================================================================*

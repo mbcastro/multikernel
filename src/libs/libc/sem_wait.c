@@ -27,14 +27,14 @@
 #include <nanvix/semaphore.h>
 
 /**
- * @brief Post on a named semaphore.
+ * @brief Wait a named semaphore.
  *
  * @param sem Target semaphore.
  *
- * @returns Upon successful completion, zero is returned. Upon
+ * @returns Upon successful completion, zero is returned.  Upon
  * failure, a negative error code is returned instead.
  */
-int sem_post(int sem)
+int sem_wait(int sem)
 {
-	return (nanvix_sem_post(sem));
+	return (nanvix_sem_wait(sem));
 }
