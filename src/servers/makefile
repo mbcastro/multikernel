@@ -21,7 +21,7 @@
 #
 
 # C Source Files
-SRC = name.c sysv.c rmem.c
+SRC = name-server.c semaphore-server.c rmem-server.c
 
 # Object Files
 OBJ = $(SRC:.c=.o)
