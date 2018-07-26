@@ -22,60 +22,27 @@
 
 #include <errno.h>
 #include <semaphore.h>
-#include <stdarg.h>
 #include <string.h>
 
 #include <nanvix/semaphore.h>
 
 /**
- * @brief Initializes and opens a named semaphore.
+ * @brief Unlinks a named semaphore.
  *
- * @param name	Target name.
- * @param oflag	Creation flags.
- * @param mode	User permissions.
- * @param value	Semaphore count value.
+ * @param name	Target semaphore name.
  *
- * @returns Upon successful completion, the  address of the semaphore
- * is returned. Upon failure, SEM_FAILED is returned and errno is set
- * ot indicate the error.
- *
- * @todo Rename NANVIX_SEM_NAME_MAX to _POSIX_PATH_MAX
+ * @returns Upon successful completion, 0 is returned.
+ * Upon failure, a negative error code is returned instead.
  */
-int sem_open(const char *name, int oflag, ...)
+int sem_unlink(const char *name)
 {
-	int semid = -1;
-
 	/* Invalid name. */
 	if ((name == NULL) || (!strcmp(name, "")))
-		return (-EINVAL);
+		return (-ENOENT);
 
 	/* Name too long. */
 	if (strlen(name) >= (NANVIX_SEM_NAME_MAX))
 		return (-ENAMETOOLONG);
 
-	/* Create semaphore. */
-	if (oflag & O_CREAT)
-	{
-		va_list ap;     /* Arguments pointer. */
-		mode_t mode;    /* Creation mode.     */
-		unsigned value; /* Semaphore value.   */
-
-		/* Retrieve additional arguments. */
-		va_start(ap, oflag);
-		mode = va_arg(ap, mode_t);
-		value = va_arg(ap, unsigned);
-		va_end(ap);
-
-		/* Invalid semaphore value. */
-		if (value > SEM_VALUE_MAX)
-			return (-EINVAL);
-
-		semid = nanvix_sem_create(name, mode, value, (oflag & O_EXCL));
-	}
-
-	/* Open semaphore. */
-	else
-		semid = nanvix_sem_open(name);
-
-	return (semid);
+	return (nanvix_sem_unlink(name));
 }

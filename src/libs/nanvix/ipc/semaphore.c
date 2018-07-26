@@ -96,24 +96,6 @@ void sem_finalize(void)
 }
 
 /*=======================================================================*
- * sem_name_is_valid()                                                   *
- *=======================================================================*/
-
-/**
- * @brief Asserts whether or not a name is valid.
- *
- * @param name	Target name.
- *
- * @returns One if the target semaphore name is valid, and false
- * otherwise.
- */
-static int sem_name_is_valid(const char *name)
-{
-	return ((name != NULL) && (strlen(name) < (NANVIX_SEM_NAME_MAX - 1)) &&
-													   (strcmp(name, "")));
-}
-
-/*=======================================================================*
  * sem_is_valid()                                                        *
  *=======================================================================*/
 
@@ -183,11 +165,11 @@ static inline int _nanvix_sem_create(const char *name, mode_t mode, unsigned val
 
 error:
 	pthread_mutex_unlock(&lock);
-	return (-EAGAIN);
+	return (ret);
 }
 
 /**
- * @brief Creates a semaphore.
+ * @brief Creates a named semaphore.
  *
  * @param name	Target name.
  * @param mode	User permissions.
@@ -272,11 +254,11 @@ static inline int _nanvix_sem_open(const char *name)
 
 error:
 	pthread_mutex_unlock(&lock);
-	return (-EAGAIN);
+	return (ret);
 }
 
 /**
- * @brief Opens a semaphore.
+ * @brief Opens a named semaphore.
  *
  * @param name	Target name.
  * @param mode	User permissions.
@@ -296,6 +278,10 @@ int nanvix_sem_open(const char *name)
 	/* Name too long. */
 	if (strlen(name) >= (NANVIX_SEM_NAME_MAX))
 		return (-ENAMETOOLONG);
+
+	/* Initilize semaphore client. */
+	if (!initialized)
+		return (-EAGAIN);
 
 	return (_nanvix_sem_open(name));
 }
@@ -509,29 +495,17 @@ error:
 /*============================================================================*
  * nanvix_sem_unlink()                                                        *
  *============================================================================*/
-
 /**
- * @brief Unlink a semaphore.
- *
- * @param name	Target semaphore name.
- *
- * @returns Upon successful completion, 0 is returned.
- * Upon failure, a negative error code is returned instead.
+ * @see nanvix_sem_unlink()
  */
-int nanvix_sem_unlink(const char *name)
+static inline int _nanvix_sem_unlink(const char *name)
 {
+	int ret;                                 /* Return value.                */
 	struct sem_message msg1;                 /* Semaphore message 1.         */
 	struct sem_message msg2;                 /* Semaphore message 2.         */
 	int nodenum;                             /* NoC node number.             */
 	char process_name[NANVIX_PROC_NAME_MAX]; /* Name of the running process. */
 	int inbox;                               /* Mailbox for small messages.  */
-
-	if (!sem_name_is_valid(name))
-		return (-EINVAL);
-
-	/* Initilize semaphore client. */
-	if (!initialized)
-		return (-EAGAIN);
 
 	nodenum = sys_get_node_num();
 
@@ -555,28 +529,45 @@ int nanvix_sem_unlink(const char *name)
 
 	pthread_mutex_lock(&lock);
 
-	if (mailbox_write(server, &msg1, sizeof(struct sem_message)) != 0)
-		goto error;
+		if ((ret = mailbox_write(server, &msg1, sizeof(struct sem_message)) != 0))
+			goto error;
 
-	if (mailbox_write(server, &msg2, sizeof(struct sem_message)) != 0)
-		goto error;
+		if ((ret = mailbox_write(server, &msg2, sizeof(struct sem_message)) != 0))
+			goto error;
 
-	if (mailbox_read(inbox, &msg1, sizeof(struct sem_message)) != 0)
-		goto error;
+		if ((ret = mailbox_read(inbox, &msg1, sizeof(struct sem_message)) != 0))
+			goto error;
 
 	pthread_mutex_unlock(&lock);
-
-	if (msg1.value < 0)
-	{
-		errno = msg1.value;
-		return (SEM_FAILURE);
-	}
 
 	return (msg1.value);
 
 error:
-
 	pthread_mutex_unlock(&lock);
+	return (ret);
+}
 
-	return (-EAGAIN);
+/**
+ * @brief Unlinks a named semaphore.
+ *
+ * @param name	Target semaphore name.
+ *
+ * @returns Upon successful completion, 0 is returned.
+ * Upon failure, a negative error code is returned instead.
+ */
+int nanvix_sem_unlink(const char *name)
+{
+	/* Invalid name. */
+	if ((name == NULL) || (!strcmp(name, "")))
+		return (-ENOENT);
+
+	/* Name too long. */
+	if (strlen(name) >= (NANVIX_SEM_NAME_MAX))
+		return (-ENAMETOOLONG);
+
+	/* Initilize semaphore client. */
+	if (!initialized)
+		return (-EAGAIN);
+
+	return (_nanvix_sem_unlink(name));
 }
