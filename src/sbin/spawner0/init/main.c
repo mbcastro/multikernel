@@ -28,10 +28,31 @@
 #include <nanvix/syscalls.h>
 #include <nanvix/spawner.h>
 
+/* Forward definitions. */
+extern int rmem_server(int, int);
+extern int semaphore_server(int, int);
+extern int main2(int, const char **);
+extern void test_kernel_sys_core(void);
+extern void test_kernel_sys_sync(void);
+extern void test_kernel_sys_mailbox(void);
+extern void test_kernel_sys_portal(void);
+extern void test_kernel_name(int);
+extern void test_kernel_ipc_mailbox(int);
+extern void test_kernel_ipc_portal(int);
+extern void test_kernel_ipc_barrier(int);
+
 /**
  * @brief Number of servers launched from this spawner.
  */
-#define NR_SERVERS 1
+#define NR_SERVERS 2
+
+/**
+ * @brief Servers.
+ */
+static struct serverinfo servers[NR_SERVERS] = {
+	{ rmem_server,      RMEM_SERVER_NODE,      1 },
+	{ semaphore_server, SEMAPHORE_SERVER_NODE, 1 }
+};
 
 /**
  * @brief Input mailbox.
@@ -42,18 +63,6 @@ static int inbox = -1;
  * @brief Spawner NoC node number.
  */
 static int nodenum = -1;
-
-/* Forward definitions. */
-extern int rmem_server(int, int);
-extern int main2(int, const char **);
-extern void test_kernel_sys_core(void);
-extern void test_kernel_sys_sync(void);
-extern void test_kernel_sys_mailbox(void);
-extern void test_kernel_sys_portal(void);
-extern void test_kernel_name(int);
-extern void test_kernel_ipc_mailbox(int);
-extern void test_kernel_ipc_portal(int);
-extern void test_kernel_ipc_barrier(int);
 
 /**
  * @brief Generic kernel test driver.
@@ -151,7 +160,7 @@ void spawners_sync(void)
 
 SPAWNER_NAME("spawner0")
 SPAWNER_SHUTDOWN(SHUTDOWN_ENABLE)
-SPAWNER_SERVERS(NR_SERVERS, { rmem_server, RMEM_SERVER_NODE, 1 } )
+SPAWNER_SERVERS(NR_SERVERS, servers)
 SPAWNER_MAIN2(main2)
 SPAWNER_KERNEL_TESTS(test_kernel)
 SPAWNER_RUNTIME_TESTS(test_runtime)

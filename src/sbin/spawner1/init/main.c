@@ -28,10 +28,22 @@
 #include <nanvix/syscalls.h>
 #include <nanvix/spawner.h>
 
+/* Forward definitions. */
+extern int name_server(int, int);
+extern void test_kernel_sys_sync(void);
+extern void test_kernel_barrier(void);
+
 /**
  * @brief Number of servers launched from this spawner.
  */
 #define NR_SERVERS 1
+
+/**
+ * @brief Servers.
+ */
+static struct serverinfo servers[NR_SERVERS] = {
+	{ name_server, NAME_SERVER_NODE, 0 }
+};
 
 /**
  * @brief Input mailbox.
@@ -42,11 +54,6 @@ static int inbox = -1;
  * @brief Spawner NoC node number.
  */
 static int nodenum = -1;
-
-/* Forward definitions. */
-extern int name_server(int, int);
-extern void test_kernel_sys_sync(void);
-extern void test_kernel_barrier(void);
 
 /**
  * @brief Generic test driver.
@@ -131,7 +138,7 @@ void spawners_sync(void)
 
 SPAWNER_NAME("spawner1")
 SPAWNER_SHUTDOWN(SHUTDOWN_DISABLE)
-SPAWNER_SERVERS(NR_SERVERS, { name_server, NAME_SERVER_NODE, 0 } )
+SPAWNER_SERVERS(NR_SERVERS, servers)
 SPAWNER_MAIN2(NULL)
 SPAWNER_KERNEL_TESTS(test_kernel)
 SPAWNER_RUNTIME_TESTS(test_runtime)
