@@ -23,9 +23,9 @@
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include <stdio.h>
 #include <pthread.h>
+#include <semaphore.h>
 
 #include <nanvix/semaphore.h>
 #include <nanvix/syscalls.h>
@@ -47,7 +47,7 @@ static int initialized = 0;
 static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
 /*============================================================================*
- * sem_init()                                                                 *
+ * nanvix_sem_init()                                                          *
  *============================================================================*/
 
 /**
@@ -56,7 +56,7 @@ static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
  * @returns Upon successful completion, zero is returned. Upon
  * failure, a negative error code is returned instead.
  */
-int sem_init(void)
+int nanvix_sem_init(void)
 {
 	char server_name[NANVIX_PROC_NAME_MAX];
 
@@ -107,7 +107,7 @@ void sem_finalize(void)
  * @returns One if the target semaphore is valid, and false
  * otherwise.
  */
-static int sem_is_valid(int sem)
+static int sem_is_valid(sem_t sem)
 {
 	return ((sem >= 0) && (sem < SEM_MAX));
 }
@@ -119,7 +119,7 @@ static int sem_is_valid(int sem)
 /**
  * @see nanvix_sem_create()
  */
-static inline int _nanvix_sem_create(const char *name, mode_t mode, unsigned value, int excl)
+static inline sem_t _nanvix_sem_create(const char *name, mode_t mode, unsigned value, int excl)
 {
 	int ret;                             /* Return value.                */
 	int inbox;                           /* Mailbox for small messages.  */
@@ -180,7 +180,7 @@ error:
  * semaphore is returned. Upon failure, a negative error code is
  * returned instead.
  */
-int nanvix_sem_create(const char *name, mode_t mode, unsigned value, int excl)
+sem_t nanvix_sem_create(const char *name, mode_t mode, unsigned value, int excl)
 {
 	/* Invalid name. */
 	if ((name == NULL) || (!strcmp(name, "")))
@@ -208,7 +208,7 @@ int nanvix_sem_create(const char *name, mode_t mode, unsigned value, int excl)
 /**
  * @see nanvix_sem_open().
  */
-static inline int _nanvix_sem_open(const char *name)
+static inline sem_t _nanvix_sem_open(const char *name)
 {
 	int ret;                             /* Return value.                */
 	int inbox;                           /* Mailbox for small messages.  */
@@ -269,7 +269,7 @@ error:
  * is returned. Upon failure, a negative error code is returned
  * instead.
  */
-int nanvix_sem_open(const char *name)
+sem_t nanvix_sem_open(const char *name)
 {
 	/* Invalid name. */
 	if ((name == NULL) || (!strcmp(name, "")))
@@ -293,7 +293,7 @@ int nanvix_sem_open(const char *name)
 /**
  * @see nanvix_set_post()
  */
-static inline int _nanvix_sem_post(int sem)
+static inline int _nanvix_sem_post(sem_t sem)
 {
 	int ret;                                 /* Return value.                */
 	struct sem_message msg;                  /* Semaphore message.           */
@@ -340,7 +340,7 @@ error:
  * @returns Upon successful completion, zero is returned. Upon
  * failure, a negative error code is returned instead.
  */
-int nanvix_sem_post(int sem)
+int nanvix_sem_post(sem_t sem)
 {
 	/* Invalid semaphore. */
 	if (!sem_is_valid(sem))
@@ -360,7 +360,7 @@ int nanvix_sem_post(int sem)
 /**
  * @see nanvix_sem_wait()
  */
-static inline int _nanvix_sem_wait(int sem)
+static inline int _nanvix_sem_wait(sem_t sem)
 {
 	int ret;                                 /* Return value.                */
 	struct sem_message msg;                  /* Semaphore message.           */
@@ -410,7 +410,7 @@ error:
  * @returns Upon successful completion, zero is returned.  Upon
  * failure, a negative error code is returned instead.
  */
-int nanvix_sem_wait(int sem)
+int nanvix_sem_wait(sem_t sem)
 {
 	/* Invalid semaphore. */
 	if (!sem_is_valid(sem))
@@ -430,7 +430,7 @@ int nanvix_sem_wait(int sem)
 /**
  * @see nanvix_sem_close()
  */
-static inline int _nanvix_sem_close(int sem)
+static inline int _nanvix_sem_close(sem_t sem)
 {
 	int ret;                                 /* Return value.                */
 	struct sem_message msg;                  /* Semaphore message.           */
@@ -477,7 +477,7 @@ error:
  * @returns Upon successful completion, zero is returned. Upon
  * failure, a negative error code is returned instead.
  */
-int nanvix_sem_close(int sem)
+int nanvix_sem_close(sem_t sem)
 {
 	/* Invalid semaphore. */
 	if (!sem_is_valid(sem))

@@ -20,30 +20,26 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <errno.h>
-#include <semaphore.h>
+#ifndef _SEMAPHORE_H_
+#define _SEMAPHORE_H_
 
-#include <nanvix/semaphore.h>
+	#include <semaphore.h>
 
-#include "semaphore.h"
+	/**
+	 * @brief Semaphore.
+	 */
+	struct _semaphore
+	{
+		sem_t id; /**< Semaphore id. */
+		int used; /**< Used?         */
+	};
 
-/**
- * @brief Post on a named semaphore.
- *
- * @param semid ID of the target semaphore.
- *
- * @returns Upon successful completion, zero is returned. Upon
- * failure, a negative error code is returned instead.
- */
-int sem_post(sem_t *semid)
-{
-	/* Invalid semaphore. */
-	if (semid == NULL)
-		return (-EINVAL);
+	/* Forward definitions. */
+	extern struct _semaphore _semaphores[];
 
-	/* Invalid semaphore. */
-	if (!_sem_is_valid(*semid))
-		return (-EINVAL);
+	/* Forward definitions. */
+	extern int _sem_is_valid(int);
+	extern int _sem_alloc(void);
+	extern void _sem_free(int);
 
-	return (nanvix_sem_post(*semid));
-}
+#endif /* _SEMAPHORE_H_ */

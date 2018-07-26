@@ -29,26 +29,27 @@
 	/**
 	 * @brief Semaphore error.
 	 */
-	#define SEM_FAILED -1
+	#define SEM_FAILED NULL
 
 	/**
-	 * @brief Named semaphore ID.
+	 * @brief Named semaphore descriptor.
 	 */
-	typedef int sem_t;
+	typedef int  sem_t;
 
-	int sem_close(int);
-	int sem_destroy(int);
-	int sem_getvalue(int, int *);
-	int sem_init(int, int, unsigned);
-	int sem_open(const char *, int, ...);
-	int sem_post(int);
+	/* Forward definitions. */
+	int sem_close(sem_t *);
+	int sem_destroy(sem_t *);
+	int sem_getvalue(sem_t *restrict, int *restrict);
+	int sem_init(sem_t *, int, unsigned);
+	sem_t *sem_open(const char *, int, ...);
+	int sem_post(sem_t *);
 #ifdef _POSIX_C_SOURCE 
 #if (_POSIX_C_SOURCE >= 200112L)
-	int sem_timedwait(intrestrict, const struct timespec *);
+		int sem_timedwait(sem_t *restrict, const struct timespec *restrict);
 #endif
 #endif
-	int sem_trywait(int);
+	int sem_trywait(sem_t *);
 	int sem_unlink(const char *);
-	int sem_wait(int);	
+	int sem_wait(sem_t *);
 
 #endif /* SEMAPHORE_H_ */

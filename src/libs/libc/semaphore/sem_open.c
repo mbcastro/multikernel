@@ -27,6 +27,8 @@
 
 #include <nanvix/semaphore.h>
 
+#include "semaphore.h"
+
 /**
  * @brief Initializes and opens a named semaphore.
  *
@@ -36,22 +38,36 @@
  * @param value	Semaphore count value.
  *
  * @returns Upon successful completion, the  address of the semaphore
- * is returned. Upon failure, SEM_FAILED is returned and errno is set
+ * is returned. Upon failure, SEM_FAILEDED is returned and errno is set
  * ot indicate the error.
  *
  * @todo Rename NANVIX_SEM_NAME_MAX to _POSIX_PATH_MAX
  */
-int sem_open(const char *name, int oflag, ...)
+sem_t *sem_open(const char *name, int oflag, ...)
 {
-	int semid = -1;
+	int sem;
+	sem_t semid = -1;
 
 	/* Invalid name. */
 	if ((name == NULL) || (!strcmp(name, "")))
-		return (-EINVAL);
+	{
+		errno = EINVAL;
+		return (SEM_FAILED);
+	}
 
 	/* Name too long. */
 	if (strlen(name) >= (NANVIX_SEM_NAME_MAX))
-		return (-ENAMETOOLONG);
+	{
+		errno = ENAMETOOLONG;
+		return (SEM_FAILED);
+	}
+
+	/* Allocate semaphore. */
+	if ((sem = _sem_alloc()) < 0)
+	{
+		errno = EINVAL;
+		return (SEM_FAILED);
+	}
 
 	/* Create semaphore. */
 	if (oflag & O_CREAT)
@@ -68,7 +84,7 @@ int sem_open(const char *name, int oflag, ...)
 
 		/* Invalid semaphore value. */
 		if (value > SEM_VALUE_MAX)
-			return (-EINVAL);
+			goto error;
 
 		semid = nanvix_sem_create(name, mode, value, (oflag & O_EXCL));
 	}
@@ -77,5 +93,11 @@ int sem_open(const char *name, int oflag, ...)
 	else
 		semid = nanvix_sem_open(name);
 
-	return (semid);
+	_semaphores[sem].id = semid;
+	return (&_semaphores[sem].id);
+
+error:
+	_sem_free(sem);
+	errno = EINVAL;
+	return (SEM_FAILED);
 }

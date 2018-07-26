@@ -22,19 +22,28 @@
 
 #include <errno.h>
 #include <semaphore.h>
-#include <string.h>
 
 #include <nanvix/semaphore.h>
+
+#include "semaphore.h"
 
 /**
  * @brief Wait a named semaphore.
  *
- * @param sem Target semaphore.
+ * @param semid ID of the target semaphore.
  *
  * @returns Upon successful completion, zero is returned.  Upon
  * failure, a negative error code is returned instead.
  */
-int sem_wait(int sem)
+int sem_wait(sem_t *semid)
 {
-	return (nanvix_sem_wait(sem));
+	/* Invalid semaphore. */
+	if (semid == NULL)
+		return (-EINVAL);
+
+	/* Invalid semaphore. */
+	if (!_sem_is_valid(*semid))
+		return (-EINVAL);
+
+	return (nanvix_sem_wait(*semid));
 }
