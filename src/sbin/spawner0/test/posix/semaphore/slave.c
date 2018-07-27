@@ -106,6 +106,36 @@ static void test_posix_semaphore_open_close_cc(int masternode, int nclusters)
 	TEST_ASSERT(barrier_unlink(barrier) == 0);
 }
 
+/*============================================================================*
+ * API Test: Open Close 2 CC                                                    *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Open Close 2 CC
+ */
+static void test_posix_semaphore_open_close2_cc(int masternode, int nclusters)
+{
+	sem_t *sem;
+	int barrier;
+	int nodes[nclusters + 1];
+
+	/* Build nodes list. */
+	nodes[0] = masternode;
+	for (int i = 0; i < nclusters; i++)
+		nodes[i + 1] = i;
+
+	/* Create barrier. */
+	TEST_ASSERT((barrier = barrier_create(nodes, nclusters + 1)) >= 0);
+
+	/* Create and unlink semaphore. */
+	TEST_ASSERT((sem = sem_open("/semaphore", 0)) != SEM_FAILED);
+	TEST_ASSERT(sem_close(sem) == 0);
+
+	/* Sync. */
+	TEST_ASSERT(barrier_wait(barrier) == 0);
+	TEST_ASSERT(barrier_unlink(barrier) == 0);
+}
+
 /*============================================================================*/
 
 /**
@@ -133,6 +163,11 @@ int main2(int argc, char **argv)
 		/* Open Close CC */
 		case 1:
 			test_posix_semaphore_open_close_cc(masternode, nclusters);
+			break;
+
+		/* Open Close 2 CC */
+		case 2:
+			test_posix_semaphore_open_close2_cc(masternode, nclusters);
 			break;
 
 		/* Should not happen. */

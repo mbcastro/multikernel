@@ -200,15 +200,72 @@ static void test_posix_semaphore_open_close_cc(void)
 	TEST_ASSERT(barrier_unlink(barrier) == 0);
 }
 
+/*============================================================================*
+ * API Test: Open Close 2 CC                                                  *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Open Close CC
+ */
+static void test_posix_semaphore_open_close2_cc(void)
+{
+	int nodenum;
+	int barrier;
+	int nodes[NANVIX_PROC_MAX + 1];
+	char masternode_str[4];
+	char mailbox_nclusters_str[4];
+	char test_str[4];
+	sem_t *sem;
+	char semaphore_name[NANVIX_SEM_NAME_MAX];
+	const char *args[] = {
+		"/test/posix-semaphore-slave",
+		masternode_str,
+		mailbox_nclusters_str,
+		test_str,
+		NULL
+	};
+
+	nodenum = sys_get_node_num();
+
+	/* Build arguments. */
+	sprintf(masternode_str, "%d", nodenum);
+	sprintf(mailbox_nclusters_str, "%d", NANVIX_PROC_MAX);
+	sprintf(test_str, "%d", 2);
+
+	/* Build nodes list. */
+	nodes[0] = nodenum;
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
+		nodes[i + 1] = i;
+
+	/* Create semaphore. */
+	sprintf(semaphore_name, "/semaphore");
+	TEST_ASSERT((sem = sem_open(semaphore_name, O_CREAT, 0, 0)) != SEM_FAILED);
+
+	/* Create barrier. */
+	TEST_ASSERT((barrier = barrier_create(nodes, NANVIX_PROC_MAX + 1)) >= 0);
+
+	spawn_slaves(args);
+
+	/* Wait for slaves. */
+	TEST_ASSERT(barrier_wait(barrier) == 0);
+
+	join_slaves();
+
+	/* House keeping. */
+	TEST_ASSERT(sem_unlink(semaphore_name) == 0);
+	TEST_ASSERT(barrier_unlink(barrier) == 0);
+}
+
 /*============================================================================*/
 
 /**
  * @brief Unit tests.
  */
 struct test posix_semaphore_tests_api[] = {
-	{ test_posix_semaphore_create_unlink,    "Create Unlink" },
-	{ test_posix_semaphore_open_close,       "Open Close"    },
-	{ test_posix_semaphore_create_unlink_cc, "Create Unlink" },
-	{ test_posix_semaphore_open_close_cc,    "Open Close"    },
-	{ NULL,                                  NULL            },
+	{ test_posix_semaphore_create_unlink,    "Create Unlink"    },
+	{ test_posix_semaphore_open_close,       "Open Close"       },
+	{ test_posix_semaphore_create_unlink_cc, "Create Unlink CC" },
+	{ test_posix_semaphore_open_close_cc,    "Open Close CC"    },
+	{ test_posix_semaphore_open_close2_cc,   "Open Close 2 CC"  },
+	{ NULL,                                  NULL               },
 };
