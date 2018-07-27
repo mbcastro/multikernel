@@ -86,6 +86,9 @@ BINARIES="$BINARIES,$BINDIR/test/ipc-portal-slave"
 BINARIES="$BINARIES,$BINDIR/test/mm-rmem-slave"
 build2 $BINDIR/test-driver $BINDIR/servers1 "$BINARIES" nanvix-runtime-debug.img
 
+BINARIES="$BINDIR/test/mm-rmem-slave"
+build2 $BINDIR/test-driver $BINDIR/servers1 "$BINARIES" nanvix-posix-debug.img
+
 BINARIES="$BINDIR/benchmark/rmem-slave"
 build2 $BINDIR/benchmarks $BINDIR/servers1 "$BINARIES" nanvix-benchmarks.img
 

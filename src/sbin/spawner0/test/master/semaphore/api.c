@@ -20,31 +20,40 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef _TEST_H_
-#define _TEST_H_
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <semaphore.h>
 
-	#include <stdlib.h>
-	#include <pthread.h>
+#include <mppaipc.h>
 
-	/**
-	 * @brief Asserts a logic expression.
-	 */
-	#define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
+#include <nanvix/limits.h>
 
-	/**
-	 * @brief Unit test.
-	 */
-	struct test
-	{
-		void (*test_fn)(void); /**< Test function. */
-		const char *name;      /**< Test name.     */
-	};
+#include "test.h"
 
-	/* Forward definitions. */
-	extern int ipc_semaphore_nclusters;
-	extern int ipc_semaphore_ncores;
-	extern pthread_barrier_t ipc_semaphore_barrier;
-	extern struct test ipc_semaphore_tests_api[];
-	extern struct test ipc_semaphore_tests_fault[];
+/*==========================================================================*
+ * API Test: Create Unlink                                                  *
+ *==========================================================================*/
 
-#endif /* _TEST_H_ */
+/**
+ * @brief API Test: Create Unlink
+ */
+static void test_posix_semaphore_create_unlink(void)
+{
+	sem_t *sem;
+	char semaphore_name[NANVIX_SEM_NAME_MAX];
+
+	/* Create and unlink semaphore. */
+	sprintf(semaphore_name, "/semaphore");
+	TEST_ASSERT((sem = sem_open(semaphore_name, O_CREAT, 0, 0)) != SEM_FAILED);
+	TEST_ASSERT(sem_unlink(semaphore_name) == 0);
+}
+
+/*============================================================================*/
+
+/**
+ * @brief Unit tests.
+ */
+struct test posix_semaphore_tests_api[] = {
+	{ test_posix_semaphore_create_unlink, "Create Unlink" },
+};

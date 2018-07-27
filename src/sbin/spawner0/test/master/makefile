@@ -21,8 +21,9 @@
 #
 
 # C Source Files
-SRC = $(wildcard $(CURDIR)/mm/rmem/*.c) \
-	  $(wildcard *.c)                   \
+SRC = $(wildcard mm/rmem/*.c)   \
+	  $(wildcard semaphore/*.c) \
+	  $(wildcard *.c)           \
 	  $(INIT_SRC)
 
 # Object Files
