@@ -122,47 +122,43 @@ static int nanvix_sem_is_valid(sem_t sem)
  */
 static inline sem_t _nanvix_sem_create(const char *name, mode_t mode, unsigned value, int excl)
 {
-	int ret;                             /* Return value.                */
-	int inbox;                           /* Mailbox for small messages.  */
-	int nodenum;                         /* NoC node number.             */
-	struct sem_message msg1;             /* Semaphore message 1.         */
-	struct sem_message msg2;             /* Semaphore message 2.         */
-	char procname[NANVIX_PROC_NAME_MAX]; /* Name of the running process. */
+	int ret;                /* Return value.                */
+	int inbox;              /* Mailbox for small messages.  */
+	int nodenum;            /* NoC node number.             */
+	struct sem_message msg; /* Semaphore message.         */
 
-	if (get_name(procname) != 0)
-		return (-EAGAIN);
-
-	if ((inbox = get_named_inbox()) < 0)
+	if ((inbox = get_inbox()) < 0)
 		return (-EAGAIN);
 
 	nodenum = sys_get_node_num();
 
-	/* Build message 1. */
-	msg1.seq = ((nodenum << 4) | 0);
-	strcpy(msg1.name, procname);
-	msg1.op = (excl) ? SEM_CREATE_EXCL : SEM_CREATE;
-	msg1.value = mode;
-
-	/* Build operation header 2. */
-	msg2.seq = ((nodenum << 4) | 1);
-	strcpy(msg2.name, name);
-	msg2.op = (excl) ? SEM_CREATE_EXCL : SEM_CREATE;
-	msg2.value = value;
+	/* Build message header. */
+	msg.source = nodenum;
+	msg.opcode = (excl) ? SEM_CREATE_EXCL : SEM_CREATE;
 
 	pthread_mutex_lock(&lock);
 
-		if ((ret = mailbox_write(server.outbox, &msg1, sizeof(struct sem_message))) != 0)
+		/* Build message 1.*/
+		msg.seq = ((nodenum << 4) | 0);
+		msg.op.create1.mode = mode;
+		msg.op.create1.value = value;
+
+		if ((ret = mailbox_write(server.outbox, &msg, sizeof(struct sem_message))) != 0)
 			goto error;
 
-		if ((ret = mailbox_write(server.outbox, &msg2, sizeof(struct sem_message))) != 0)
+		/* Build message 2. */
+		msg.seq = ((nodenum << 4) | 1);
+		strcpy(msg.op.create2.name, name);
+
+		if ((ret = mailbox_write(server.outbox, &msg, sizeof(struct sem_message))) != 0)
 			goto error;
 
-		if ((ret = mailbox_read(inbox, &msg1, sizeof(struct sem_message))) != 0)
+		if ((ret = sys_mailbox_read(inbox, &msg, sizeof(struct sem_message))) != MAILBOX_MSG_SIZE)
 			goto error;
 
 	pthread_mutex_unlock(&lock);
 
-	return (msg1.value);
+	return (msg.op.ret);
 
 error:
 	pthread_mutex_unlock(&lock);
@@ -211,47 +207,33 @@ sem_t nanvix_sem_create(const char *name, mode_t mode, unsigned value, int excl)
  */
 static inline sem_t _nanvix_sem_open(const char *name)
 {
-	int ret;                             /* Return value.                */
-	int inbox;                           /* Mailbox for small messages.  */
-	int nodenum;                         /* NoC node number.             */
-	struct sem_message msg1;             /* Semaphore message 1.         */
-	struct sem_message msg2;             /* Semaphore message 2.         */
-	char procname[NANVIX_PROC_NAME_MAX]; /* Name of the running process. */
+	int ret;                /* Return value.                */
+	int inbox;              /* Mailbox for small messages.  */
+	int nodenum;            /* NoC node number.             */
+	struct sem_message msg; /* Semaphore message.           */
 
-	if (get_name(procname) != 0)
-		return (-EAGAIN);
-
-	if ((inbox = get_named_inbox()) < 0)
+	if ((inbox = get_inbox()) < 0)
 		return (-EAGAIN);
 
 	nodenum = sys_get_node_num();
 
-	/* Build operation header 1. */
-	msg1.seq = ((nodenum << 4) | 0);
-	strcpy(msg1.name, procname);
-	msg1.op = SEM_OPEN;
-	msg1.value = -1;
-
-	/* Build operation header 2. */
-	msg2.seq = ((nodenum << 4) | 1);
-	strcpy(msg2.name, name);
-	msg2.op = SEM_OPEN;
-	msg2.value = 0;
+	/* Build message header. */
+	msg.source = nodenum;
+	msg.opcode = SEM_OPEN;
+	msg.seq = ((nodenum << 4) | 0);
+	strcpy(msg.op.open.name, name);
 
 	pthread_mutex_lock(&lock);
 
-		if ((ret = mailbox_write(server.outbox, &msg1, sizeof(struct sem_message))) != 0)
+		if ((ret = mailbox_write(server.outbox, &msg, sizeof(struct sem_message))) != 0)
 			goto error;
 
-		if ((ret = mailbox_write(server.outbox, &msg2, sizeof(struct sem_message))) != 0)
-			goto error;
-
-		if ((ret = mailbox_read(inbox, &msg1, sizeof(struct sem_message))) != 0)
+		if ((ret = sys_mailbox_read(inbox, &msg, sizeof(struct sem_message))) != MAILBOX_MSG_SIZE)
 			goto error;
 
 	pthread_mutex_unlock(&lock);
 
-	return (msg1.value);
+	return (msg.op.ret);
 
 error:
 	pthread_mutex_unlock(&lock);
@@ -296,37 +278,33 @@ sem_t nanvix_sem_open(const char *name)
  */
 static inline int _nanvix_sem_post(sem_t sem)
 {
-	int ret;                                 /* Return value.                */
-	struct sem_message msg;                  /* Semaphore message.           */
-	int nodenum;                             /* NoC node number.             */
-	char process_name[NANVIX_PROC_NAME_MAX]; /* Name of the running process. */
-	int inbox;                               /* Mailbox for small messages.  */
+	int ret;                /* Return value.                */
+	struct sem_message msg; /* Semaphore message.           */
+	int nodenum;            /* NoC node number.             */
+	int inbox;              /* Mailbox for small messages.  */
+
+	if ((inbox = get_inbox()) < 0)
+		return (-EAGAIN);
 
 	nodenum = sys_get_node_num();
 
-	if (get_name(process_name) != 0)
-		return (-EAGAIN);
-
-	if ((inbox = get_named_inbox()) < 0)
-		return (-EAGAIN);
-
-	/* Build operation header. */
+	/* Build message. */
+	msg.source = nodenum;
+	msg.opcode = SEM_POST;
 	msg.seq = ((nodenum << 4) | 0);
-	strcpy(msg.name, process_name);
-	msg.op = SEM_POST;
-	msg.value = sem;
+	msg.op.post.semid = sem;
 
 	pthread_mutex_lock(&lock);
 
 		if ((ret = mailbox_write(server.outbox, &msg, sizeof(struct sem_message))) != 0)
 			goto error;
 
-		if ((ret = mailbox_read(inbox, &msg, sizeof(struct sem_message))) != 0)
+		if ((ret = sys_mailbox_read(inbox, &msg, sizeof(struct sem_message))) != MAILBOX_MSG_SIZE)
 			goto error;
 
 	pthread_mutex_unlock(&lock);
 
-	return (msg.op);
+	return (msg.op.ret);
 
 error:
 	pthread_mutex_unlock(&lock);
@@ -363,25 +341,21 @@ int nanvix_sem_post(sem_t sem)
  */
 static inline int _nanvix_sem_wait(sem_t sem)
 {
-	int ret;                                 /* Return value.                */
-	struct sem_message msg;                  /* Semaphore message.           */
-	int nodenum;                             /* NoC node number.             */
-	char process_name[NANVIX_PROC_NAME_MAX]; /* Name of the running process. */
-	int inbox;                               /* Mailbox for small messages.  */
+	int ret;                /* Return value.               */
+	struct sem_message msg; /* Semaphore message.          */
+	int nodenum;            /* NoC node number.            */
+	int inbox;              /* Mailbox for small messages. */
+
+	if ((inbox = get_inbox()) < 0)
+		return (-EAGAIN);
 
 	nodenum = sys_get_node_num();
 
-	if (get_name(process_name) != 0)
-		return (-EAGAIN);
-
-	if ((inbox = get_named_inbox()) < 0)
-		return (-EAGAIN);
-
-	/* Build operation header. */
+	/* Build message. */
+	msg.source = nodenum;
+	msg.opcode = SEM_WAIT;
 	msg.seq = ((nodenum << 4) | 0);
-	strcpy(msg.name, process_name);
-	msg.op = SEM_WAIT;
-	msg.value = sem;
+	msg.op.wait.semid = sem;
 
 	pthread_mutex_lock(&lock);
 
@@ -390,13 +364,13 @@ static inline int _nanvix_sem_wait(sem_t sem)
 
 		do
 		{
-			if (mailbox_read(inbox, &msg, sizeof(struct sem_message)) != 0)
+			if ((ret = sys_mailbox_read(inbox, &msg, sizeof(struct sem_message))) != MAILBOX_MSG_SIZE)
 				goto error;
-		} while (msg.op == SEM_WAIT);
+		} while (msg.opcode == SEM_WAIT);
 
 	pthread_mutex_unlock(&lock);
 
-	return (msg.op);
+	return (msg.op.ret);
 
 error:
 	pthread_mutex_unlock(&lock);
@@ -433,37 +407,33 @@ int nanvix_sem_wait(sem_t sem)
  */
 static inline int _nanvix_sem_close(sem_t sem)
 {
-	int ret;                                 /* Return value.                */
-	struct sem_message msg;                  /* Semaphore message.           */
-	int nodenum;                             /* NoC node number.             */
-	char process_name[NANVIX_PROC_NAME_MAX]; /* Name of the running process. */
-	int inbox;                               /* Mailbox for small messages.  */
+	int ret;                /* Return value.               */
+	struct sem_message msg; /* Semaphore message.          */
+	int nodenum;            /* NoC node number.            */
+	int inbox;              /* Mailbox for small messages. */
+
+	if ((inbox = get_inbox()) < 0)
+		return (-EAGAIN);
 
 	nodenum = sys_get_node_num();
 
-	if (get_name(process_name) != 0)
-		return (-EAGAIN);
-
-	if ((inbox = get_named_inbox()) < 0)
-		return (-EAGAIN);
-
-	/* Build operation header. */
+	/* Build message. */
+	msg.source = nodenum;
+	msg.opcode = SEM_CLOSE;
 	msg.seq = ((nodenum << 4) | 0);
-	strcpy(msg.name, process_name);
-	msg.op = SEM_CLOSE;
-	msg.value = sem;
+	msg.op.close.semid = sem;
 
 	pthread_mutex_lock(&lock);
 
 		if ((ret = mailbox_write(server.outbox, &msg, sizeof(struct sem_message))) != 0)
 			goto error;
 
-		if ((ret = mailbox_read(inbox, &msg, sizeof(struct sem_message))) != 0)
+		if ((ret = sys_mailbox_read(inbox, &msg, sizeof(struct sem_message))) != MAILBOX_MSG_SIZE)
 			goto error;
 
 	pthread_mutex_unlock(&lock);
 
-	return (msg.op);
+	return (msg.op.ret);
 
 error:
 	pthread_mutex_unlock(&lock);
@@ -499,47 +469,33 @@ int nanvix_sem_close(sem_t sem)
  */
 static inline int _nanvix_sem_unlink(const char *name)
 {
-	int ret;                                 /* Return value.                */
-	struct sem_message msg1;                 /* Semaphore message 1.         */
-	struct sem_message msg2;                 /* Semaphore message 2.         */
-	int nodenum;                             /* NoC node number.             */
-	char process_name[NANVIX_PROC_NAME_MAX]; /* Name of the running process. */
-	int inbox;                               /* Mailbox for small messages.  */
+	int ret;                /* Return value.               */
+	struct sem_message msg; /* Semaphore message.          */
+	int nodenum;            /* NoC node number.            */
+	int inbox;              /* Mailbox for small messages. */
+
+	if ((inbox = get_inbox()) < 0)
+		return (-EAGAIN);
 
 	nodenum = sys_get_node_num();
 
-	if (get_name(process_name) != 0)
-		return (-EAGAIN);
-
-	if ((inbox = get_named_inbox()) < 0)
-		return (-EAGAIN);
-
-	/* Build operation header 1. */
-	msg1.seq = ((nodenum << 4) | 0);
-	strcpy(msg1.name, process_name);
-	msg1.op = SEM_UNLINK;
-	msg1.value = -1;
-
-	/* Build operation header 2. */
-	msg2.seq = ((nodenum << 4) | 1);
-	strcpy(msg2.name, name);
-	msg2.op = SEM_UNLINK;
-	msg2.value = -1;
+	/* Build message. */
+	msg.source = nodenum;
+	msg.opcode = SEM_UNLINK;
+	msg.seq = ((nodenum << 4) | 0);
+	strcpy(msg.op.unlink.name, name);
 
 	pthread_mutex_lock(&lock);
 
-		if ((ret = mailbox_write(server.outbox, &msg1, sizeof(struct sem_message)) != 0))
+		if ((ret = mailbox_write(server.outbox, &msg, sizeof(struct sem_message))) != 0)
 			goto error;
 
-		if ((ret = mailbox_write(server.outbox, &msg2, sizeof(struct sem_message)) != 0))
-			goto error;
-
-		if ((ret = mailbox_read(inbox, &msg1, sizeof(struct sem_message)) != 0))
+		if ((ret = sys_mailbox_read(inbox, &msg, sizeof(struct sem_message))) != MAILBOX_MSG_SIZE)
 			goto error;
 
 	pthread_mutex_unlock(&lock);
 
-	return (msg1.value);
+	return (msg.op.ret);
 
 error:
 	pthread_mutex_unlock(&lock);

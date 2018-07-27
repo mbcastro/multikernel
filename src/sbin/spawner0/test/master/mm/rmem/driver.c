@@ -28,8 +28,6 @@
 
 /**
  * @brief Remote Memory Test Driver
- *
- * @param nbusycores Number of busy cores.
  */
 void test_mm_rmem(void)
 {

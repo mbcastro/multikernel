@@ -93,6 +93,23 @@ sem_t *sem_open(const char *name, int oflag, ...)
 	else
 		semid = nanvix_sem_open(name);
 
+	if (semid < 0)
+		goto error;
+
+	/*
+	 * Check if we are re-opening.
+	 * If so, return same address.
+	 */
+	for (int i = 0; i < SEM_MAX; i++)
+	{
+		if (_semaphores[i].id == semid)
+		{
+			_sem_free(sem);
+			sem = i;
+			break;
+		}
+	}
+
 	_semaphores[sem].id = semid;
 	return (&_semaphores[sem].id);
 

@@ -35,58 +35,38 @@
 #define DEBUG_SEMAPHORE
 
 /**
- * @brief Acknowledgement for semaphore server.
- */
-/**@{*/
-#define SEM_SUCCESS 0  /* Success acknowledgement. */
-#define SEM_FAILURE -1 /* Failure acknowledgement. */
-/**@}*/
-
-/**
  * @brief Semaphore flags.
  */
 /**@{*/
-#define SEM_USED (1 << 0) /**< Used? */
+#define SEMAPHORE_USED   (1 << 0) /**< Used?   */
+#define SEMAPHORE_REMOVE (1 << 1) /**< Remove? */
 /**@}*/
 
 /**
- * @brief Waiting list element.
+ * @brief Table of named semaphores.
  */
-struct element
+static struct
 {
-	char process[NANVIX_PROC_NAME_MAX]; /* Process name.              */
-	int next;                           /* Index of the next element. */
-	int used;                           /* Flag element used.         */
-};
+	char name[NANVIX_SEM_NAME_MAX]; /**< Semaphore name.       */
+	int flags;                      /**< Flags.                */
+	int owner;                      /**< ID of owner process.  */
+	int count;                      /**< Semaphore count.      */
+	int refcount;                   /**< Number of references. */
+	mode_t mode;                    /**< Access permissions.   */
+	int nodes[HAL_NR_NOC_NODES];    /**< Process list.         */
+	int head;                       /**< First element.        */
+	int tail;                       /**< Last element.         */
+	int queue[HAL_NR_NOC_NODES];    /**< Waiting list.         */
+} semaphores[SEM_MAX];
 
 /**
- * @brief Message list element.
+ * @brief Buffer of messages.
  */
-struct msg_element
+static struct
 {
-	struct sem_message message; /* Message.                   */
-	int next;                   /* Index of the next element. */
-	int used;                   /* Flag element used.         */
-};
-
-	/**
-	 * @brief Semaphore.
-	 */
-	struct semaphore
-	{
-		struct {
-			char name[NANVIX_PROC_NAME_MAX];  /**< Process name.             */
-			int use;                          /**< Number of ressource used. */
-		} processes[NANVIX_PROC_MAX];         /**< Process list.             */
-
-		char name[NANVIX_SEM_NAME_MAX];        /**< Semaphore name.           */
-		int flags;                             /**< Flags.                    */
-		int count;                             /**< Semaphore count.          */
-		int nr_proc;                           /**< Number of process.        */
-		struct element queue[NANVIX_PROC_MAX]; /**< Waiting list.             */
-		int head;                              /**< Head of the queue.        */
-		int tail;                              /**< Tail of the queue.        */
-	};
+	int valid;              /**< Valid slot?     */
+	struct sem_message msg; /**< Bufferd message. */
+} buffer[HAL_NR_NOC_NODES];
 
 /**
  * @brief Node number.
@@ -97,44 +77,6 @@ static int nodenum;
  * @brief Input mailbox for small messages.
  */
 static int inbox;
-
-/**
- * @brief Table of named semaphores.
- */
-static struct semaphore semaphores[SEM_MAX];
-
-/**
- * @brief Messages queue.
- */
-static struct msg_element messages[NANVIX_PROC_MAX];
-
-/**
- * @brief Tail of the messages queue.
- */
-static int tail = 0;
-
-/**
- * @brief Head of the messages queue.
- */
-static int head = 0;
-
-/*============================================================================*
- * semaphore_procname_is_valid()                                              *
- *============================================================================*/
-
-/**
- * @brief Asserts whether or not a process name is valid.
- *
- * @param name Target name.
- *
- * @returns One if the target semaphore name is valid, and zero
- * otherwise.
- */
-static int semaphore_procname_is_valid(const char *name)
-{
-	return ((name != NULL) && (strlen(name) < (NANVIX_PROC_NAME_MAX - 1)) &&
-														(strcmp(name, "")));
-}
 
 /*============================================================================*
  * semaphore_name_is_valid()                                                  *
@@ -150,8 +92,10 @@ static int semaphore_procname_is_valid(const char *name)
  */
 static int semaphore_name_is_valid(const char *name)
 {
-	return ((name != NULL) && (strlen(name) < (NANVIX_SEM_NAME_MAX - 1)) &&
-													   (strcmp(name, "")));
+	return ((name != NULL) &&
+			(strlen(name) < (NANVIX_SEM_NAME_MAX - 1)) &&
+			(strcmp(name, ""))
+	);
 }
 
 /*============================================================================*
@@ -161,9 +105,9 @@ static int semaphore_name_is_valid(const char *name)
 /**
  * @brief Asserts whether or not a semaphore Id is valid.
  *
- * @param semid Target semaphore Id.
+ * @param semid ID of the target named semaphore.
  *
- * @returns One if the semaphore Id is valid, and zero otherwise.
+ * @returns Non-zero if the semaphore valid, and zero otherwise.
  */
 static int semaphore_is_valid(int semid)
 {
@@ -174,31 +118,62 @@ static int semaphore_is_valid(int semid)
  * semaphore_is_used()                                                        *
  *============================================================================*/
 
- /**
-  * @brief Asserts whether or not a semaphore name is used.
-  *
-  * @param semid Target semaphore id.
-  *
-  * @returns One if the target semaphore name is used, and zero
-  * otherwise.
-  */
-static int semaphore_is_used(int semid)
+/**
+ * @brief Asserts whether or not a named semaphore is used.
+ *
+ * @param semid ID of the target named semaphore.
+ *
+ * @returns Non-zero if the semaphore is marked as used, and zero
+ * otherwise.
+ */
+static inline int semaphore_is_used(int semid)
 {
-	return (semaphores[semid].flags & SEM_USED);
+	return (semaphores[semid].flags & SEMAPHORE_USED);
 }
 
 /*============================================================================*
- * semaphore_set_used()                                                       *
+ * semaphore_is_remove()                                                      *
  *============================================================================*/
 
 /**
- * @brief Set a semaphore as used.
+ * @brief Asserts whether or not a named semaphore is remove.
  *
- * @param semid Target semaphore Id.
+ * @param semid ID of the target named semaphore.
+ *
+ * @returns Non-zero if the semaphore is marked to be removed, and
+ * zero otherwise.
  */
-static void semaphore_set_used(int semid)
+static inline int semaphore_is_remove(int semid)
 {
-	semaphores[semid].flags |= SEM_USED;
+	return (semaphores[semid].flags & SEMAPHORE_REMOVE);
+}
+
+/*============================================================================*
+ * semaphore_set_used()                                                        *
+ *============================================================================*/
+
+/**
+ * @brief Sets a named semaphore as used.
+ *
+ * @param semid ID of the target named semaphore.
+ */
+static inline void semaphore_set_used(int semid)
+{
+	semaphores[semid].flags |= SEMAPHORE_USED;
+}
+
+/*============================================================================*
+ * semaphore_set_remove()                                                     *
+ *============================================================================*/
+
+/**
+ * @brief Marks a named semaphore to be removed.
+ *
+ * @param semid ID of the target named semaphore.
+ */
+static inline void semaphore_set_remove(int semid)
+{
+	semaphores[semid].flags |= SEMAPHORE_REMOVE;
 }
 
 /*============================================================================*
@@ -206,33 +181,13 @@ static void semaphore_set_used(int semid)
  *============================================================================*/
 
 /**
- * @brief Clear semaphore flags.
+ * @brief Clears the flags of a semaphore.
  *
- * @param semid Target semaphore Id.
+ * @param semid ID of the target named semaphore.
  */
-static void semaphore_clear_flags(int semid)
+static inline void semaphore_clear_flags(int semid)
 {
 	semaphores[semid].flags = 0;
-}
-
-/*============================================================================*
- * semaphore_set_permission()                                                 *
- *============================================================================*/
-
-/**
- * @brief Set semaphore permission.
- *
- * @param semid Target semaphore Id.
- * @param mode Permission mode.
- */
-static void semaphore_set_permission(int semid, int mode)
-{
-	mode &= 0xf0000000;
-
-	semaphores[semid].flags &= 0x0fffffff;
-
-	/* Write the four lower bits of mode on the semaphore flags. */
-	semaphores[semid].flags |= mode;
 }
 
 /*============================================================================*
@@ -240,11 +195,11 @@ static void semaphore_set_permission(int semid, int mode)
  *============================================================================*/
 
 /**
- * @brief Allocates a semaphore.
+ * @brief Allocates a named semaphore.
  *
- * @return Upon successful completion the ID of the newly allocated
- * semaphore is returned. Upon failure, a negative error code is returned
- * instead.
+ * @return Upon successful completion, the ID of the newly allocated
+ * semaphore is returned. Upon failure, a negative error code is
+ * returned instead.
  */
 static int semaphore_alloc(void)
 {
@@ -252,7 +207,7 @@ static int semaphore_alloc(void)
 	for (int i = 0; i < SEM_MAX; i++)
 	{
 		/* Found. */
-		if (!semaphore_is_used(i))
+		if (semaphore_is_used(i))
 		{
 			semaphore_set_used(i);
 			return (i);
@@ -267,22 +222,11 @@ static int semaphore_alloc(void)
  *============================================================================*/
 
 /**
- * @brief Free a semaphore.
- *
- * @param semid Targeted semaphore Id
+ * @brief Free a named semaphore.
  */
-static int semaphore_free(int semid)
+static void semaphore_free(int semid)
 {
-	/* Sanity check. */
-	if (!semaphore_is_valid(semid))
-		return (-EINVAL);
-
-	if (!semaphore_is_used(semid))
-		return (-EINVAL);
-
 	semaphore_clear_flags(semid);
-
-	return (0);
 }
 
 /*============================================================================*
@@ -290,40 +234,25 @@ static int semaphore_free(int semid)
  *============================================================================*/
 
 /**
- * @brief Enqueue a message.
+ * @brief Puts a message in the messages buffer.
  *
- * @param message Targeted message
+ * @param msg Targeted message
  *
- * @return Upon successful completion zero is returned.
- * Upon failure, a negative error code is returned instead.
+ * @return Upon successful completion zero is returned.  Upon failure,
+ * a negative error code is returned instead.
  */
-static int semaphore_put_message(struct sem_message *message)
+static int semaphore_put_message(struct sem_message *msg)
 {
-	int i;   /* Place in the queue. */
+	int i;
 
 	/* Invalid message. */
-	if (message == NULL)
-		return (-EINVAL);
+	if (msg->source >= HAL_NR_NOC_NODES)
+		return (-EAGAIN);
 
-	/* Search for a place in the queue. */
-	for (i = 0; i < NANVIX_PROC_MAX; i++)
-		if (messages[i].used == 0)
-			goto found;
+	i = msg->source;
 
-	/* The queue is full. */
-	return (-EAGAIN);
-
-found:
-
-	messages[i].message.seq = message->seq;
-	strcpy(messages[i].message.name, message->name);
-	messages[i].message.op = message->op;
-	messages[i].message.value = message->value;
-
-	messages[i].next = head;
-	head = i;
-
-	messages[i].used = 1;
+	buffer[i].valid = 1;
+	memcpy(&buffer[i].msg, msg, sizeof(struct sem_message));
 
 	return (0);
 }
@@ -333,53 +262,27 @@ found:
  *============================================================================*/
 
 /**
- * @brief Get a message.
+ * @brief Gets a message from the message buffer.
  *
  * @param message Address where the message will be stored.
- * @param seq Sequence number of the targeted message.
+ * @param i       Buffer slot.
  *
  * @return Upon successful completion zero is returned.
  * Upon failure, a negative error code is returned instead.
  */
-static int semaphore_get_message(struct sem_message *message, uint16_t seq)
+static int semaphore_get_message(struct sem_message *msg, int i)
 {
-	int pred; /* Predecessor. */
-	int i;
-
-	/* Invalid message. */
-	if (message == NULL)
+	/* Invalid slot. */
+	if ((i < 0) || (i >= HAL_NR_NOC_NODES))
 		return (-EINVAL);
 
-	/* Invalid sequence number. */
-	if ((seq & 1) == 1)
-		return (-EINVAL);
-
-	/* The queue should not be empty. */
-	if (head == tail)
-		return (-EAGAIN);
-
-	/* Look for the message. */
-	pred = head;
-	i = head;
-	while ((i != (-1)) && (messages[i].message.seq != seq))
-	{
-		pred = i;
-		i = messages[i].next;
-	}
-
-	/* Message not found. */
-	if (i == (-1))
-		return (-EINVAL);
+	/* Bad slot. */
+	if (!buffer[i].valid)
+		return (-ENOENT);
 
 	/* Get message. */
-	message->seq = messages[i].message.seq;
-	strcpy(message->name, messages[i].message.name);
-	message->op = messages[i].message.op;
-	message->value = messages[i].message.value;
-
-	/* Update chain. */
-	messages[i].used = 0;
-	messages[pred].next = messages[i].next;
+	buffer[i].valid = 0;
+	memcpy(msg, &buffer[i].msg, sizeof(struct sem_message));
 
 	return (0);
 }
@@ -391,44 +294,19 @@ static int semaphore_get_message(struct sem_message *message, uint16_t seq)
 /**
  * @brief Enqueue a process name.
  *
- * @param name Process name
- * @param semid Targeted semaphore Id
+ * @param node   ID of the target process.
+ * @param semid ID of the targeted semaphore.
  *
- * @return Upon successful completion zero is returned.
- * Upon failure, a negative error code is returned instead.
+ * @return Upon successful completion zero is returned. Upon failure,
+ * a negative error code is returned instead.
  */
-static int semaphore_enqueue(char *name, int semid)
+void semaphore_enqueue(int node, int semid)
 {
-	int i;   /* Place in the queue. */
+	int tail;
 
-	/* Invalid name. */
-	if (!semaphore_procname_is_valid(name))
-		return (-EINVAL);
-
-	/* Invalid semaphore Id. */
-	if (!semaphore_is_valid(semid))
-		return (-EINVAL);
-
-	/* Search for a place in the queue. */
-	for (i = 0; i < NANVIX_PROC_MAX; i++)
-		if (semaphores[semid].queue[i].used == 0)
-			goto found;
-
-	/* The queue is full. */
-	return (-EAGAIN);
-
-found:
-
-	strcpy(semaphores[semid].queue[i].process, name);
-	semaphores[semid].queue[i].next = semaphores[semid].head;
-	semaphores[semid].head = i;
-	semaphores[semid].queue[i].used = 1;
-
-	/* Set the tail. */
-	if (semaphores[semid].tail == (-1))
-		semaphores[semid].tail = i;
-
-	return (0);
+	tail = semaphores[semid].tail;
+	semaphores[semid].queue[tail] = node;
+	semaphores[semid].tail += (semaphores[semid].tail + 1)%HAL_NR_NOC_NODES;
 }
 
 /*============================================================================*
@@ -438,106 +316,21 @@ found:
 /**
  * @brief Dequeue a process name.
  *
- * @param name Address where the process name will be stored.
- * @param semid Targeted semaphore Id
+ * @param node   ID of the target process.
+ * @param semid ID of the targeted semaphore.
  *
- * @return Upon successful completion zero is returned.
- * Upon failure, a negative error code is returned instead.
+ * @returns The ID of the first process in the sleeping queue.
  */
-static int semaphore_dequeue(char *name, int semid)
+int semaphore_dequeue(int semid)
 {
-	int pred;       /* Predecessor.       */
-	int t;          /* Tail of the queue. */
+	int node;
+	int head;
 
-	/* Invalid name. */
-	if (!semaphore_procname_is_valid(name))
-		return (-EINVAL);
+	head = semaphores[semid].head;
+	node = semaphores[semid].queue[head];
+	semaphores[semid].head = (semaphores[semid].head +1)%HAL_NR_NOC_NODES;
 
-	/* Invalid semaphore Id. */
-	if (!semaphore_is_valid(semid))
-		return (-EINVAL);
-
-	t = semaphores[semid].tail;
-
-	/* The queue should not be empty. */
-	if (t == (-1))
-		return (-EAGAIN);
-
-	/* One element left. */
-	if (semaphores[semid].head == semaphores[semid].tail)
-	{
-		strcpy(name, semaphores[semid].queue[t].process);
-
-		semaphores[semid].head = (-1);
-		semaphores[semid].tail = (-1);
-
-		return (0);
-	}
-
-	/* Search for the predecessor of the tail. */
-	pred = semaphores[semid].head;
-
-	while ((pred >= 0) && (semaphores[semid].queue[pred].next != t))
-		pred = semaphores[semid].queue[pred].next;
-
-	semaphores[semid].queue[t].used = 0;
-
-	strcpy(name, semaphores[semid].queue[t].process);
-
-	semaphores[semid].tail = pred;
-
-	return (0);
-}
-
-/*============================================================================*
- * semaphore_open()                                                           *
- *============================================================================*/
-
-/**
- * @brief Open a semaphore
- *
- * @param source Name of the client.
- * @param name Name of the targeted semaphore.
- *
- * @returns Upon successful completion, the semaphore Id is
- * returned. Upon failure, a negative error code is returned instead.
- */
-static int semaphore_open(char *source, char *name)
-{
-	int i;       /* Semaphore Id.      */
-	int nr_proc; /* Number of process. */
-
-	/* Invalid name. */
-	if ((!semaphore_procname_is_valid(source)) || (!semaphore_name_is_valid(name)))
-		return (-EINVAL);
-
-	/* The semaphore should exist. */
-	for (i = 0; i < SEM_MAX; i++)
-		if ((semaphore_is_used(i)) && (!strcmp(semaphores[i].name, name)))
-			goto found;
-
-	return (-EINVAL);
-
-found:
-
-	/* Is the semaphore already opened ? */
-	for (int j = 0; j < NANVIX_PROC_MAX; j++)
-		if (!strcmp(semaphores[i].processes[j].name, source))
-			return (-EINVAL);
-
-	nr_proc = semaphores[i].nr_proc;
-
-	/* Add the process to the list. */
-	if (nr_proc >= (NANVIX_PROC_MAX - 1))
-		return (-EAGAIN);
-
-	strcpy(semaphores[i].processes[nr_proc].name, source);
-
-	semaphores[i].processes[nr_proc].use = 0;
-
-	semaphores[i].nr_proc++;
-
-	return (i);
+	return (node);
 }
 
 /*============================================================================*
@@ -545,62 +338,68 @@ found:
  *============================================================================*/
 
 /**
- * @brief Create a semaphore
+ * @brief Creates a named semaphore
  *
- * @param source Name of the client.
- * @param name Name of the targeted semaphore.
- * @param mode	User permissions.
+ * @param owner ID of owner process.
+ * @param name  Name of the targeted semaphore.
+ * @param mode  Access permissions.
  * @param value	Semaphore count value.
  *
- * @returns Upon successful completion, the newly created semaphore Id is
- * returned. Upon failure, a negative error code is returned instead.
+ * @returns Upon successful completion, the ID of the newly created
+ * semaphore is returned. Upon failure, a negative error code is
+ * returned instead.
  */
-static int semaphore_create(char *source, char *name, int mode, int value)
+static int semaphore_create(int owner, char *name, mode_t mode, int value)
 {
-	int i;       /* Semaphore Id.      */
-	int nr_proc; /* Number of process. */
+	int semid;
 
 #ifdef DEBUG_SEMAPHORE
-	printf("SEMAPHORE CREATE %s %s %d %d\n",
-		source,
+	printf("SEMAPHORE CREATE %d %s %d %d\n",
+		owner,
 		name,
-		mode,
+		(int) mode,
 		value
 	);
 #endif
 
-	/* Invalid name. */
-	if ((!semaphore_procname_is_valid(source)) || (!semaphore_name_is_valid(name)))
+	/* Invalid process. */
+	if ((owner < 0) || (owner >= HAL_NR_NOC_NODES))
 		return (-EINVAL);
 
-	/* Check if the semaphore already exist. */
-	for (i = 0; i < SEM_MAX; i++)
-		if ((semaphore_is_used(i)) && (!strcmp(semaphores[i].name, name)))
-			goto open;
+	/* Invalid semaphore name. */
+	if (!semaphore_name_is_valid(name))
+		return (-EINVAL);
 
-	/* Invalid semaphore value. */
+	/* Invalid value. */
 	if (value > SEM_VALUE_MAX)
 		return (-EINVAL);
 
+	/* Look for semaphore. */
+	for (int i = 0; i < SEM_MAX; i++)
+	{
+		/* Semaphore not in use. */
+		if (!semaphore_is_used(i))
+			continue;
+
+		/* Found.*/
+		if (!strcmp(semaphores[i].name, name))
+			return (-EEXIST);
+	}
+
 	/* Allocate a new semaphore. */
-	i = semaphore_alloc();
+	semid = semaphore_alloc();
 
-	/* Initialize the semaphore. */
-	nr_proc = semaphores[i].nr_proc;
+	/* Initialize semaphore. */
+	semaphores[semid].count = value;
+	semaphores[semid].head = 0;
+	semaphores[semid].tail = 1;
+	semaphores[semid].refcount = 1;
+	semaphores[semid].owner = owner;
+	semaphores[semid].nodes[0] = owner;
+	semaphores[semid].mode =  mode;
+	strcpy(semaphores[semid].name, name);
 
-	semaphores[i].count = value;
-	strcpy(semaphores[i].processes[nr_proc].name, source);
-	semaphores[i].processes[nr_proc].use = 0;
-	strcpy(semaphores[i].name, name);
-	semaphores[i].nr_proc++;
-
-	semaphore_set_permission(i, mode);
-
-	return (i);
-
-open:
-
-	return (semaphore_open(source, name));
+	return (semid);
 }
 
 /*============================================================================*
@@ -610,26 +409,104 @@ open:
 /**
  * @brief Open a semaphore with existence check
  *
- * @param source Name of the client.
- * @param name Name of the targeted semaphore.
- * @param mode	User permissions.
+ * @param owner ID of owner process.
+ * @param name  Name of the targeted semaphore.
+ * @param mode  Access permissions.
  * @param value	Semaphore count value.
  *
  * @returns Upon successful completion, the newly created semaphore Id is
  * returned. Upon failure, a negative error code is returned instead.
  */
-static int semaphore_create_exclusive(char *source, char *name, int mode, int value)
+static int semaphore_create_exclusive(int owner, char *name, int mode, int value)
 {
-	/* Invalid name. */
-	if ((!semaphore_procname_is_valid(source)) || (!semaphore_name_is_valid(name)))
+	/* Invalid process. */
+	if ((owner < 0) || (owner >= HAL_NR_NOC_NODES))
 		return (-EINVAL);
 
-	/* The semaphore should not already exist. */
-	for (int i = 0; i < SEM_MAX; i++)
-		if (!strcmp(semaphores[i].name, name))
-			return (-1);
+	/* Invalid semaphore name. */
+	if (!semaphore_name_is_valid(name))
+		return (-EINVAL);
 
-	return (semaphore_create(source, name, mode, value));
+	/* Invalid value. */
+	if (value > SEM_VALUE_MAX)
+		return (-EINVAL);
+
+	/* Look for semaphore. */
+	for (int i = 0; i < SEM_MAX; i++)
+	{
+		/* Semaphore not in use. */
+		if (!semaphore_is_used(i))
+			continue;
+
+		/* Found.*/
+		if (!strcmp(semaphores[i].name, name))
+			return (-EEXIST);
+	}
+
+	return (semaphore_create(owner, name, mode, value));
+}
+
+/*============================================================================*
+ * semaphore_open()                                                           *
+ *============================================================================*/
+
+/**
+ * @brief Opens a named semaphore
+ *
+ * @param node  ID of opening process.
+ * @param name  Name of the targeted semaphore.
+ *
+ * @returns Upon successful completion, the semaphore Id is
+ * returned. Upon failure, a negative error code is returned instead.
+ */
+static int semaphore_open(int node, char *name)
+{
+	int semid;  /* Semaphore Id.      */
+	int refcount; /* Number of process. */
+
+	/* Invalid process. */
+	if ((node < 0) || (node >= HAL_NR_NOC_NODES))
+		return (-EINVAL);
+
+	/* Invalid semaphore name. */
+	if (!semaphore_name_is_valid(name))
+		return (-EINVAL);
+
+	/* Look for semaphore. */
+	for (int i = 0; i < SEM_MAX; i++)
+	{
+		/* Semaphore not in use. */
+		if (!semaphore_is_used(i))
+			continue;
+
+		/* Found.*/
+		if (!strcmp(semaphores[i].name, name))
+		{
+			semid = i;
+			goto found;
+		}
+	}
+
+	return (-EINVAL);
+
+found:
+
+	refcount = semaphores[semid].refcount;
+
+	/*
+	 * Check if we had opened this semaphore before.
+	 * If so, there is nothing else to do.
+	 */
+	for (int i = 0; i < refcount; i++)
+	{
+		if (semaphores[semid].nodes[i] == node)
+			return (semid);
+	}
+
+	semaphores[semid].nodes[refcount] = node;
+	semaphores[semid].refcount++;
+
+	return (semid);
 }
 
 /*============================================================================*
@@ -639,43 +516,54 @@ static int semaphore_create_exclusive(char *source, char *name, int mode, int va
 /**
  * @brief Close a semaphore
  *
+ * @param node   ID of opening process.
  * @param semid Targeted semaphore.
- * @param source Name of the client.
  *
- * @returns Upon successful completion, 0 is returned.
- * Upon failure, a negative error code is returned instead.
+ * @returns Upon successful completion, zero is returned. Upon
+ * failure, a negative error code is returned instead.
  */
-static int semaphore_close(int semid, char *source)
+static int semaphore_close(int node, int semid)
 {
 	int i;
-	int nr_proc;
+	int refcount;
 
-	/* Sanity check. */
-	if ((!semaphore_is_valid(semid)) || (!semaphore_procname_is_valid(source)))
+	/* Invalid process. */
+	if ((node < 0) || (node >= HAL_NR_NOC_NODES))
 		return (-EINVAL);
 
-	/* The semaphore should be used. */
+	/* Invalid semaphore ID. */
+	if (!semaphore_is_valid(semid))
+		return (-EINVAL);
+
+	/* Semaphore not in use. */
 	if (!semaphore_is_used(semid))
 		return (-EINVAL);
 
-	nr_proc = semaphores[semid].nr_proc;
+	refcount = semaphores[semid].refcount;
 
-	/* The process should have opened the semaphore. */
-	for (i = 0; i < nr_proc; i++)
-		if (!strcmp(semaphores[semid].processes[i].name, source))
+	/*
+	 * The process should have opened
+	 * the semaphore before.
+	 */
+	for (i = 0; i < refcount; i++)
+	{
+		if (semaphores[semid].nodes[i] == node)
 			goto found;
+	}
 
 	return (-EINVAL);
 
 found:
 
 	/* Remove the process from the list. */
-	if (i != (NANVIX_PROC_MAX - 1))
-		for (int j = i; j < nr_proc; j++)
-			strcpy(semaphores[semid].processes[j].name,
-			  semaphores[semid].processes[j + 1].name);
+	for (int j = i; j < refcount; j++)
+		semaphores[semid].nodes[j] = semaphores[semid].nodes[j + 1];
 
-	semaphores[semid].nr_proc--;
+	semaphores[semid].refcount--;
+
+	/* Unlink the semaphore if no process is using it anymore. */
+	if ((semaphores[semid].refcount == 0) && (semaphore_is_remove(semid)))
+		semaphore_free(semid);
 
 	return (0);
 }
@@ -687,197 +575,53 @@ found:
 /**
  * @brief Unlink a semaphore
  *
- * @param name Targeted semaphore name.
- * @param source Name of the client.
+ * @param node   ID the calling process.
+ * @param semid Targeted semaphore.
  *
- * @returns Upon successful completion, 0 is returned.
- * Upon failure, a negative error code is returned instead.
+ * @returns Upon successful completion, zero is returned. Upon
+ * failure, a negative error code is returned instead.
  */
-static int semaphore_unlink(char *name, char *source)
+static int semaphore_unlink(int node, const char *name)
 {
-	int r;     /* Return value. */
-	int semid; /* Semaphore Id. */
-	int i;
+	int semid;
 
 #ifdef DEBUG_SEMAPHORE
-	printf("SEMAPHORE UNLINK %s %s\n",
-		name,
-		source
+	printf("SEMAPHORE UNLINK %d %s\n",
+		node,
+		name
 	);
 #endif
 
-	/* Sanity check. */
-	if ((!semaphore_name_is_valid(name)) || (!semaphore_procname_is_valid(source)))
+	/* Invalid process ID. */
+	if ((node < 0) || (node >= HAL_NR_NOC_NODES))
 		return (-EINVAL);
 
-	/* Search for semaphore Id. */
+	/* Look for semaphore. */
 	for (semid = 0; semid < SEM_MAX; semid++)
+	{
+		/* Semaphore not in use. */
+		if (!semaphore_is_used(semid))
+			continue;
+
 		if (!strcmp(semaphores[semid].name, name))
 			goto found;
+	}
 
 	return (-EAGAIN);
 
 found:
 
-	/* The semaphore should be used. */
-	if (!semaphore_is_used(semid))
-		return (-EINVAL);
+	/* Do I own the semaphore? */
+	if (semaphores[semid].owner != node)
+		return (-EPERM);
 
-	/* Is the semaphore opened ? */
-	for (i = 0; i < SEM_MAX; i++)
-		if (!strcmp(semaphores[semid].processes[i].name, source))
-			goto found2;
+	semaphore_set_remove(semid);
 
-	goto notfound;
-
-found2:
-
-	/* Close the semaphore for the process. */
-	if ((r = semaphore_close(semid, source)) < 0)
-		return (r);
-
-notfound:
-
-	/* Unlink semaphore if no process use it anymore. */
-	if (semaphores[semid].nr_proc == 0)
-		semaphore_free(semid);
-
-	return (0);
+	return (semaphore_close(node, semid));
 }
 
 /*============================================================================*
- * semaphore_wait()                                                           *
- *============================================================================*/
-
-/**
- * @brief Wait a semaphore
- *
- * @param semid Targeted semaphore Id.
- * @param source Name of the client.
- *
- * @returns Upon successful completion, 0 is returned.
- * Upon failure, a negative error code is returned instead.
- */
-static int semaphore_wait(int semid, char *source)
-{
-	int i;
-
-	/* Invalid name. */
-	if (!semaphore_procname_is_valid(source))
-		return (-EINVAL);
-
-	/* Invalid semaphore Id. */
-	if (!semaphore_is_valid(semid))
-		return (-EINVAL);
-
-	/* The process should have opened the semaphore. */
-	for (i = 0; i < NANVIX_PROC_MAX; i++)
-		if (!strcmp(semaphores[semid].processes[i].name, source))
-			goto found;
-
-	return (-EINVAL);
-
-found:
-
-	semaphores[semid].count--;
-
-	/* Is there a ressource available ? */
-	if (semaphores[semid].count >= 0)
-	{
-		semaphores[semid].processes[i].use++;
-
-		return (SEM_SUCCESS);
-	}
-	else
-	{
-		/* Add the process in the queue. */
-		if (semaphore_enqueue(source, semid) != 0)
-			return (-EAGAIN);
-
-		/* Send wait signal to the process. */
-		return (SEM_WAIT);
-	}
-}
-
-/*============================================================================*
- * semaphore_post()                                                           *
- *============================================================================*/
-
-/**
- * @brief Post a semaphore
- *
- * @param semid Targeted semaphore Id.
- * @param source Name of the client.
- *
- * @returns Upon successful completion, 0 is returned.
- * Upon failure, a negative error code is returned instead.
- */
-static int semaphore_post(int semid, char *source)
-{
-	char name[NANVIX_PROC_NAME_MAX]; /* Name of the process to wake up. */
-	int outbox;                      /* Mailbox for small messages.     */
-	struct sem_message msg;          /* Semaphore message.              */
-	int i;
-	int j;
-
-	/* Invalid name. */
-	if (!semaphore_procname_is_valid(source))
-		return (-EINVAL);
-
-	/* Invalid semaphore Id. */
-	if (!semaphore_is_valid(semid))
-		return (-EINVAL);
-	/* The process should have opened the semaphore. */
-	for (i = 0; i < NANVIX_PROC_MAX; i++)
-		if (!strcmp(semaphores[semid].processes[i].name, source))
-			goto found;
-
-	return (-EINVAL);
-
-found:
-
-	semaphores[semid].processes[i].use--;
-
-	semaphores[semid].count++;
-
-	/* Wake up a process. */
-	if (semaphores[semid].count <= 0)
-		goto wakeup;
-
-	return (0);
-
-wakeup:
-
-	/* Get the process to wakeup. */
-	if (semaphore_dequeue(name, semid) != 0)
-		return (-EAGAIN);
-
-	for (j = 0; j < NANVIX_PROC_MAX; j++)
-		if (!strcmp(semaphores[semid].processes[j].name, name))
-			goto found2;
-
-	return (-EAGAIN);
-
-found2:
-
-	/* Increment the number of ressource used by the woken up process. */
-	semaphores[semid].processes[j].use++;
-
-	/* Send wake up signal. */
-	assert((outbox = mailbox_open(name)) >= 0);
-
-	strcpy(msg.name, "/sem-server");
-	msg.op = SEM_SUCCESS;
-
-	assert(mailbox_write(outbox, &msg, sizeof(struct sem_message)) == 0);
-
-	assert(mailbox_close(outbox) == 0);
-
-	return (0);
-}
-
-/*============================================================================*
- * rmem_loop()                                                                *
+ * semaphore_loop()                                                           *
  *============================================================================*/
 
 /**
@@ -890,32 +634,31 @@ static int semaphore_loop(void)
 {
 	while(1)
 	{
-		int send_response = 0;   /* Reply?               */
-		struct sem_message msg1; /* Semaphore message 1. */
-		struct sem_message msg2; /* Semaphore message 2. */
+		int send_response = 0;  /* Reply?             */
+		struct sem_message msg; /* Semaphore message. */
 
-		assert(sys_mailbox_read(inbox, &msg1, sizeof(struct sem_message)) == 0);
+		assert(sys_mailbox_read(inbox, &msg, sizeof(struct sem_message)) == MAILBOX_MSG_SIZE);
 
 		/* Handle semaphore requests. */
-		switch (msg1.op)
+		switch (msg.opcode)
 		{
 			/* Create a named semaphore. */
 			case SEM_CREATE:
 			{
-				/* First message. */
-				if (!(msg1.seq & 1))
-				{
-					assert(semaphore_put_message(&msg1) == 0);
-				}
-				/* Second message. */
+				/* Persist first message. */
+				if (!(msg.seq & 1))
+					assert(semaphore_put_message(&msg) == 0);
+				/* Parse second message.*/
 				else
 				{
-					/* Get second message. */
-					assert(semaphore_get_message(&msg2, (msg1.seq & 0xfffe)) == 0);
-					assert(msg1.seq == (msg2.seq | 1));
+					struct sem_message msg1;
 
-					msg1.value = semaphore_create(msg2.name, msg1.name, msg2.value, msg1.value);
-					msg1.op = (msg1.value >= 0) ? SEM_SUCCESS : SEM_FAILURE;
+					/* Get first message. */
+					assert(semaphore_get_message(&msg1, msg.source) == 0);
+					assert(msg.seq == (msg1.seq | 1));
+
+					msg.op.ret = semaphore_create(msg.source, msg.op.create2.name, msg1.op.create1.mode, msg1.op.create1.value);
+					msg.opcode = SEM_RETURN;
 					send_response = 1;
 				}
 			} break;
@@ -923,20 +666,20 @@ static int semaphore_loop(void)
 			/* Create a semaphore with existence check. */
 			case SEM_CREATE_EXCL:
 			{
-				/* First message. */
-				if (!(msg1.seq & 1))
-				{
-					assert(semaphore_put_message(&msg1) == 0);
-				}
-				/* Second message. */
+				/* Persist first message. */
+				if (!(msg.seq & 1))
+					assert(semaphore_put_message(&msg) == 0);
+				/* Parse second message.*/
 				else
 				{
-					/* Get second message. */
-					assert(semaphore_get_message(&msg2, (msg1.seq & 0xfffe)) == 0);
-					assert(msg1.seq == (msg2.seq | 1));
+					struct sem_message msg1;
 
-					msg1.value = semaphore_create_exclusive(msg2.name, msg1.name, msg2.value, msg1.value);
-					msg1.op = (msg1.value >= 0) ? SEM_SUCCESS : SEM_FAILURE;
+					/* Get first message. */
+					assert(semaphore_get_message(&msg1, msg.source) == 0);
+					assert(msg.seq == (msg1.seq | 1));
+
+					msg.op.ret = semaphore_create_exclusive(msg.source, msg.op.create2.name, msg1.op.create1.mode, msg1.op.create1.value);
+					msg.opcode = SEM_RETURN;
 					send_response = 1;
 				}
 
@@ -944,67 +687,32 @@ static int semaphore_loop(void)
 
 			/* Open a semaphore. */
 			case SEM_OPEN:
-			{
-				/* First message. */
-				if (!(msg1.seq & 1))
-				{
-					assert(semaphore_put_message(&msg1) == 0);
-				}
-				/* Second message. */
-				else
-				{
-					/* Get second message. */
-					assert(semaphore_get_message(&msg2, (msg1.seq & 0xfffe)) == 0);
-					assert(msg1.seq == (msg2.seq | 1));
-
-					msg1.value = semaphore_open(msg2.name, msg1.name);
-					msg1.op = (msg1.value >= 0) ? SEM_SUCCESS : SEM_FAILURE;
-					send_response = 1;
-				}
-			} break;
+				msg.op.ret = semaphore_open(msg.source, msg.op.open.name);
+				msg.opcode = SEM_RETURN;
+				send_response = 1;
+			break;
 
 			/* Close a semaphore. */
 			case SEM_CLOSE:
-			{
-				msg1.value = semaphore_close(msg1.value, msg1.name);
-				msg1.op = (msg1.value >= 0) ? SEM_SUCCESS : SEM_FAILURE;
+				msg.op.ret = semaphore_close(msg.source, msg.op.close.semid);
+				msg.opcode = SEM_RETURN;
 				send_response = 1;
-			} break;
+			break;
 
 			/* Unlink a semaphore. */
 			case SEM_UNLINK:
-			{
-				/* First message. */
-				if (!(msg1.seq & 1))
-				{
-					assert(semaphore_put_message(&msg1) == 0);
-				}
-				/* Second message. */
-				else
-				{
-					/* Get second message. */
-					assert(semaphore_get_message(&msg2, (msg1.seq & 0xfffe)) == 0);
-					assert(msg1.seq == (msg2.seq | 1));
-
-					msg1.value = semaphore_unlink(msg1.name, msg2.name);
-					msg1.op = (msg1.value >= 0) ? SEM_SUCCESS : SEM_FAILURE;
-					send_response = 1;
-				}
-			} break;
+				msg.op.ret = semaphore_unlink(msg.source, msg.op.unlink.name);
+				msg.opcode = SEM_RETURN;
+				send_response = 1;
+			break;
 
 			/* Wait a semaphore. */
 			case SEM_WAIT:
-			{
-				msg1.op = semaphore_wait(msg1.value, msg1.name);
-				send_response = 1;
-			} break;
+			 break;
 
 			/* Post a semaphore. */
 			case SEM_POST:
-			{
-				msg1.op = semaphore_post(msg1.value, msg1.name);
-				send_response = 1;
-			} break;
+			break;
 
 			/* Should not happen. */
 			default:
@@ -1015,8 +723,8 @@ static int semaphore_loop(void)
 		if (send_response)
 		{
 			int outbox;
-			assert((outbox = sys_mailbox_open(atoi(msg2.name))) >= 0);
-			assert(sys_mailbox_write(outbox, &msg1, sizeof(struct sem_message)) == sizeof(struct sem_message));
+			assert((outbox = sys_mailbox_open(msg.source)) >= 0);
+			assert(sys_mailbox_write(outbox, &msg, sizeof(struct sem_message)) == MAILBOX_MSG_SIZE);
 			assert(sys_mailbox_close(outbox) == 0);
 		}
 	}
@@ -1054,24 +762,14 @@ static int semaphore_startup(int _inbox)
 	/* Initialize semaphores table. */
 	for (int i = 0; i < SEM_MAX; i++)
 	{
-		semaphores[i].nr_proc = 0;
-		semaphores[i].flags = 0;
-		semaphores[i].count = 0;
-		strcpy(semaphores[i].name, "");
-
-		for (int j = 0; j < NANVIX_PROC_MAX; j++)
-			semaphores[i].queue[j].used = 0;
-
-		semaphores[i].head = -1;
-		semaphores[i].tail = -1;
+		semaphores[i].refcount = 0;
+		semaphores[i].head = 0;
+		semaphores[i].tail = 0;
 	}
 
-	/* Initialize message queue. */
-	for (int i = 0; i < NANVIX_PROC_MAX; i++)
-		messages[i].used = 0;
-
-	head = -1;
-	tail = -1;
+	/* Initialize message buffer. */
+	for (int i = 0; i < HAL_NR_NOC_NODES; i++)
+		buffer[i].valid = 0;
 
 	return (0);
 }
@@ -1086,7 +784,7 @@ static int semaphore_startup(int _inbox)
  * @returns Upon successful completion zero is returned. Upon failure,
  * a negative error code is returned instead.
  */
-static int rmem_shutdown(void)
+static int semaphore_shutdown(void)
 {
 	return (0);
 }
@@ -1124,7 +822,7 @@ int semaphore_server(int _inbox, int _inportal)
 
 	printf("[nanvix][semaphore] shutting down server\n");
 
-	if ((ret = rmem_shutdown()) < 0)
+	if ((ret = semaphore_shutdown()) < 0)
 		goto error;
 
 	return (0);
@@ -1132,3 +830,4 @@ int semaphore_server(int _inbox, int _inportal)
 error:
 	return (ret);
 }
+

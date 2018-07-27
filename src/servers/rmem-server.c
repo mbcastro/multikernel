@@ -179,7 +179,7 @@ static int rmem_loop(void)
  *============================================================================*/
 
 /**
- * @brief Initializes the memory server.
+ * @brief Initializes the remote memory server.
  *
  * @param _inbox    Input mailbox.
  * @param _inportal Input portal.
@@ -242,17 +242,23 @@ int rmem_server(int _inbox, int _inportal)
 
 	printf("[nanvix][rmem] booting up server\n");
 
-	ret = rmem_startup(_inbox, _inportal);
+	if ((ret = rmem_startup(_inbox, _inportal)) < 0)
+		goto error;
 	
 	printf("[nanvix][rmem] server alive\n");
 
 	spawner_ack();
 
-	ret = rmem_loop();
+	if ((ret = rmem_loop()) < 0)
+		goto error;
 
 	printf("[nanvix][rmem] shutting down server\n");
 
-	ret = rmem_shutdown();
+	if ((ret = rmem_shutdown()) < 0)
+		goto error;
 
-	return ((ret == 0) ? EXIT_SUCCESS : EXIT_FAILURE);
+	return (0);
+
+error:
+	return (ret);
 }
