@@ -380,6 +380,71 @@ static void test_posix_semaphore_wait_post2_cc(void)
 	TEST_ASSERT(barrier_unlink(barrier) == 0);
 }
 
+/*============================================================================*
+ * API Test: Wait Post 3 CC                                                   *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Wait Post 3 CC
+ */
+static void test_posix_semaphore_wait_post3_cc(void)
+{
+	int nodenum;
+	int barrier;
+	int nodes[NANVIX_PROC_MAX + 1];
+	char masternode_str[4];
+	char mailbox_nclusters_str[4];
+	char test_str[4];
+	sem_t *sem;
+	char semaphore_name[NANVIX_SEM_NAME_MAX];
+	const char *args[] = {
+		"/test/posix-semaphore-slave",
+		masternode_str,
+		mailbox_nclusters_str,
+		test_str,
+		NULL
+	};
+
+	nodenum = sys_get_node_num();
+
+	/* Build arguments. */
+	sprintf(masternode_str, "%d", nodenum);
+	sprintf(mailbox_nclusters_str, "%d", NANVIX_PROC_MAX);
+	sprintf(test_str, "%d", 5);
+
+	/* Build nodes list. */
+	nodes[0] = nodenum;
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
+		nodes[i + 1] = i;
+
+	/* Create barrier. */
+	TEST_ASSERT((barrier = barrier_create(nodes, NANVIX_PROC_MAX + 1)) >= 0);
+
+	spawn_slaves(args);
+
+	/* Wait for slaves. */
+	TEST_ASSERT(barrier_wait(barrier) == 0);
+
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
+	{
+		sprintf(semaphore_name, "/semaphore%d", i);
+		TEST_ASSERT((sem = sem_open(semaphore_name, 0)) != SEM_FAILED);
+		TEST_ASSERT(sem_wait(sem) == 0);
+		TEST_ASSERT(sem_close(sem) == 0);
+	}
+
+	/* Wait for slaves. */
+	TEST_ASSERT(barrier_wait(barrier) == 0);
+
+	/* Wait for slaves. */
+	TEST_ASSERT(barrier_wait(barrier) == 0);
+
+	join_slaves();
+
+	/* House keeping. */
+	TEST_ASSERT(barrier_unlink(barrier) == 0);
+}
+
 /*============================================================================*/
 
 /**
@@ -393,5 +458,6 @@ struct test posix_semaphore_tests_api[] = {
 	{ test_posix_semaphore_open_close2_cc,   "Open Close 2 CC"  },
 	{ test_posix_semaphore_open_close3_cc,   "Open Close 3 CC"  },
 	{ test_posix_semaphore_wait_post2_cc,    "Wait Post 2 CC"   },
+	{ test_posix_semaphore_wait_post3_cc,    "Wait Post 3 CC"   },
 	{ NULL,                                  NULL               },
 };
