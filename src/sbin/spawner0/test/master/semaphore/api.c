@@ -64,8 +64,8 @@ static void test_posix_semaphore_open_close(void)
 	sprintf(semaphore_name, "/semaphore");
 	TEST_ASSERT((sem = sem_open(semaphore_name, O_CREAT, 0, 0)) != SEM_FAILED);
 	TEST_ASSERT((sem = sem_open(semaphore_name, 0)) != SEM_FAILED);
-	TEST_ASSERT(sem_unlink(semaphore_name) == 0);
 	TEST_ASSERT(sem_close(sem) == 0);
+	TEST_ASSERT(sem_unlink(semaphore_name) == 0);
 }
 
 /*============================================================================*/
