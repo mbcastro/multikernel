@@ -49,6 +49,25 @@ static void test_posix_semaphore_create_unlink(void)
 	TEST_ASSERT(sem_unlink(semaphore_name) == 0);
 }
 
+/*==========================================================================*
+ * API Test: Open Close                                                     *
+ *==========================================================================*/
+
+/**
+ * @brief API Test: Open Close
+ */
+static void test_posix_semaphore_open_close(void)
+{
+	sem_t *sem;
+	char semaphore_name[NANVIX_SEM_NAME_MAX];
+
+	sprintf(semaphore_name, "/semaphore");
+	TEST_ASSERT((sem = sem_open(semaphore_name, O_CREAT, 0, 0)) != SEM_FAILED);
+	TEST_ASSERT((sem = sem_open(semaphore_name, 0)) != SEM_FAILED);
+	TEST_ASSERT(sem_unlink(semaphore_name) == 0);
+	TEST_ASSERT(sem_close(sem) == 0);
+}
+
 /*============================================================================*/
 
 /**
@@ -56,4 +75,6 @@ static void test_posix_semaphore_create_unlink(void)
  */
 struct test posix_semaphore_tests_api[] = {
 	{ test_posix_semaphore_create_unlink, "Create Unlink" },
+	{ test_posix_semaphore_open_close,    "Open Close"    },
+	{ NULL,                               NULL            },
 };
