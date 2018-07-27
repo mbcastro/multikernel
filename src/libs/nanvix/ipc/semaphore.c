@@ -395,7 +395,7 @@ int nanvix_sem_wait(sem_t sem)
 	if (!server.initialized)
 		return (-EAGAIN);
 
-	return (nanvix_sem_wait(sem));
+	return (_nanvix_sem_wait(sem));
 }
 
 /*============================================================================*

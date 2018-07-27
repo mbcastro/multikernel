@@ -306,7 +306,7 @@ void semaphore_enqueue(int node, int semid)
 
 	tail = semaphores[semid].tail;
 	semaphores[semid].queue[tail] = node;
-	semaphores[semid].tail += (semaphores[semid].tail + 1)%HAL_NR_NOC_NODES;
+	semaphores[semid].tail = (tail + 1)%HAL_NR_NOC_NODES;
 }
 
 /*============================================================================*
@@ -328,7 +328,7 @@ int semaphore_dequeue(int semid)
 
 	head = semaphores[semid].head;
 	node = semaphores[semid].queue[head];
-	semaphores[semid].head = (semaphores[semid].head +1)%HAL_NR_NOC_NODES;
+	semaphores[semid].head = (head + 1)%HAL_NR_NOC_NODES;
 
 	return (node);
 }
@@ -464,6 +464,13 @@ static int semaphore_open(int node, char *name)
 	int semid;  /* Semaphore Id.      */
 	int refcount; /* Number of process. */
 
+#ifdef DEBUG_SEMAPHORE
+	printf("SEMAPHORE OPEN %d %s\n",
+		node,
+		name
+	);
+#endif
+
 	/* Invalid process. */
 	if ((node < 0) || (node >= HAL_NR_NOC_NODES))
 		return (-EINVAL);
@@ -563,7 +570,7 @@ static int semaphore_close(int node, int semid)
 found:
 
 	/* Remove the process from the list. */
-	for (int j = i; j < refcount; j++)
+	for (int j = i; j < refcount - 1; j++)
 		semaphores[semid].nodes[j] = semaphores[semid].nodes[j + 1];
 
 	semaphores[semid].refcount--;
@@ -660,7 +667,7 @@ static int semaphore_wait(int node, int semid)
 	int refcount;
 
 #ifdef DEBUG_SEMAPHORE
-	printf("SEMAPHORE CLOSE %d %d\n",
+	printf("SEMAPHORE WAIT %d %d\n",
 		node,
 		semid
 	);
@@ -728,7 +735,7 @@ static int semaphore_post(int node, int semid)
 	struct sem_message msg;
 
 #ifdef DEBUG_SEMAPHORE
-	printf("SEMAPHORE CLOSE %d %d\n",
+	printf("SEMAPHORE POST %d %d\n",
 		node,
 		semid
 	);
@@ -762,22 +769,18 @@ static int semaphore_post(int node, int semid)
 
 found:
 
-	semaphores[semid].count++;
-
-	/* Nothing else to do. */
-	if (semaphores[semid].count > 1)
-		return (0);
-
 	/* Empty sleeping queue. */
 	if (semaphores[semid].head == semaphores[semid].tail)
+	{
+		semaphores[semid].count++;
 		return (0);
+	}
 
 	/* Send wake up signal. */
 	remote = semaphore_dequeue(semid);
-	assert((outbox = sys_mailbox_open(remote)) >= 0);
-	   
 	msg.opcode = SEM_RETURN;
 	msg.op.ret = 0;
+	assert((outbox = sys_mailbox_open(remote)) >= 0);
 	assert(sys_mailbox_write(outbox, &msg, sizeof(struct sem_message)) == MAILBOX_MSG_SIZE);
 	assert(sys_mailbox_close(outbox) == 0);
 
