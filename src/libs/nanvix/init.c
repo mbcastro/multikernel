@@ -94,6 +94,7 @@ int runtime_setup(int level)
 			name_init();
 			if (meminit() != 0)
 				goto error;
+			nanvix_sem_init();
 		}
 
 		initialized[nodenum] = 1;
