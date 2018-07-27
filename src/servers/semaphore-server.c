@@ -236,7 +236,7 @@ static void semaphore_free(int semid)
 /**
  * @brief Puts a message in the messages buffer.
  *
- * @param msg Targeted message
+ * @param msg Target message
  *
  * @return Upon successful completion zero is returned.  Upon failure,
  * a negative error code is returned instead.
@@ -392,7 +392,7 @@ static int semaphore_create(int owner, char *name, mode_t mode, int value)
 	/* Initialize semaphore. */
 	semaphores[semid].count = value;
 	semaphores[semid].head = 0;
-	semaphores[semid].tail = 1;
+	semaphores[semid].tail = 0;
 	semaphores[semid].refcount = 1;
 	semaphores[semid].owner = owner;
 	semaphores[semid].nodes[0] = owner;
@@ -516,8 +516,8 @@ found:
 /**
  * @brief Close a semaphore
  *
- * @param node   ID of opening process.
- * @param semid Targeted semaphore.
+ * @param node  ID of opening process.
+ * @param semid Target semaphore.
  *
  * @returns Upon successful completion, zero is returned. Upon
  * failure, a negative error code is returned instead.
@@ -582,8 +582,8 @@ found:
 /**
  * @brief Unlink a semaphore
  *
- * @param node   ID the calling process.
- * @param semid Targeted semaphore.
+ * @param node  ID the calling process.
+ * @param semid Target semaphore.
  *
  * @returns Upon successful completion, zero is returned. Upon
  * failure, a negative error code is returned instead.
@@ -635,6 +635,151 @@ found:
 
 	semaphores[semid].refcount = 0;
 	semaphore_clear_flags(semid);
+
+	return (0);
+}
+
+/*============================================================================*
+ * semaphore_wait()                                                           *
+ *============================================================================*/
+ 
+/**
+ * @brief Waits on a named semaphore
+ * 
+ * @param node  ID the calling process.
+ * @param semid Target semaphore.
+ * 
+ * @returns Upon successful completion, either zero is returned, thus
+ * signalling that the process has acquired the semaphore lock, or
+ * zero, which means that the process has blocked. Upon failure, a
+ * negative error code is returned instead.
+ */ 
+static int semaphore_wait(int node, int semid)
+{
+	int i;
+	int refcount;
+
+#ifdef DEBUG_SEMAPHORE
+	printf("SEMAPHORE CLOSE %d %d\n",
+		node,
+		semid
+	);
+#endif
+
+	/* Invalid process. */
+	if ((node < 0) || (node >= HAL_NR_NOC_NODES))
+		return (-EINVAL);
+
+	/* Invalid semaphore ID. */
+	if (!semaphore_is_valid(semid))
+		return (-EINVAL);
+
+	/* Semaphore not in use. */
+	if (!semaphore_is_used(semid))
+		return (-EINVAL);
+
+	refcount = semaphores[semid].refcount;
+
+	/*
+	 * The process should have opened
+	 * the semaphore before.
+	 */
+	for (i = 0; i < refcount; i++)
+	{
+		if (semaphores[semid].nodes[i] == node)
+			goto found;
+	}
+
+	return (-EINVAL);
+
+found:
+
+	/* Nothing to wait for. */
+	if (semaphores[semid].count > 0)
+	{
+		semaphores[semid].count--;
+		return (0);
+	}
+
+	semaphore_enqueue(node, semid);
+	return (1);
+}
+
+/*============================================================================*
+ * semaphore_post()                                                           *
+ *============================================================================*/
+ 
+/**
+ * @brief Posts on a named semaphore
+ * 
+ * @param node  ID the calling process.
+ * @param semid Target semaphore.
+ * 
+ *
+ * @returns Upon successful completion zero is returned. Upon failure,
+ * a negative error code is returned instead.
+ */ 
+static int semaphore_post(int node, int semid)
+{
+	int i;
+	int outbox;
+	int remote;
+	int refcount;
+	struct sem_message msg;
+
+#ifdef DEBUG_SEMAPHORE
+	printf("SEMAPHORE CLOSE %d %d\n",
+		node,
+		semid
+	);
+#endif
+
+	/* Invalid process. */
+	if ((node < 0) || (node >= HAL_NR_NOC_NODES))
+		return (-EINVAL);
+
+	/* Invalid semaphore ID. */
+	if (!semaphore_is_valid(semid))
+		return (-EINVAL);
+
+	/* Semaphore not in use. */
+	if (!semaphore_is_used(semid))
+		return (-EINVAL);
+
+	refcount = semaphores[semid].refcount;
+
+	/*
+	 * The process should have opened
+	 * the semaphore before.
+	 */
+	for (i = 0; i < refcount; i++)
+	{
+		if (semaphores[semid].nodes[i] == node)
+			goto found;
+	}
+
+	return (-EINVAL);
+
+found:
+
+	semaphores[semid].count++;
+
+	/* Nothing else to do. */
+	if (semaphores[semid].count > 1)
+		return (0);
+
+	/* Empty sleeping queue. */
+	if (semaphores[semid].head == semaphores[semid].tail)
+		return (0);
+
+	/* Send wake up signal. */
+	remote = semaphore_dequeue(semid);
+	assert((outbox = sys_mailbox_open(remote)) >= 0);
+	   
+	msg.opcode = SEM_RETURN;
+	msg.op.ret = 0;
+	assert(sys_mailbox_write(outbox, &msg, sizeof(struct sem_message)) == MAILBOX_MSG_SIZE);
+	assert(sys_mailbox_close(outbox) == 0);
 
 	return (0);
 }
@@ -727,10 +872,16 @@ static int semaphore_loop(void)
 
 			/* Wait a semaphore. */
 			case SEM_WAIT:
-			 break;
+				msg.op.ret = semaphore_wait(msg.source, msg.op.close.semid);
+				msg.opcode = (msg.op.ret == 1) ? SEM_WAIT: SEM_RETURN;
+				send_response = 1;
+			break;
 
 			/* Post a semaphore. */
 			case SEM_POST:
+				msg.op.ret = semaphore_post(msg.source, msg.op.close.semid);
+				msg.opcode = SEM_RETURN;
+				send_response = 1;
 			break;
 
 			/* Should not happen. */
