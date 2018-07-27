@@ -207,7 +207,7 @@ static int semaphore_alloc(void)
 	for (int i = 0; i < SEM_MAX; i++)
 	{
 		/* Found. */
-		if (semaphore_is_used(i))
+		if (!semaphore_is_used(i))
 		{
 			semaphore_set_used(i);
 			return (i);
@@ -527,6 +527,13 @@ static int semaphore_close(int node, int semid)
 	int i;
 	int refcount;
 
+#ifdef DEBUG_SEMAPHORE
+	printf("SEMAPHORE CLOSE %d %d\n",
+		node,
+		semid
+	);
+#endif
+
 	/* Invalid process. */
 	if ((node < 0) || (node >= HAL_NR_NOC_NODES))
 		return (-EINVAL);
@@ -615,9 +622,21 @@ found:
 	if (semaphores[semid].owner != node)
 		return (-EPERM);
 
-	semaphore_set_remove(semid);
+	/*
+	 * We cannot remote the semaphore now,
+	 * so let us just close it and schedule the
+	 * operation.
+	 **/
+	if (semaphores[semid].refcount > 1)
+	{
+		semaphore_set_remove(semid);
+		return (semaphore_close(node, semid));
+	}
 
-	return (semaphore_close(node, semid));
+	semaphores[semid].refcount = 0;
+	semaphore_clear_flags(semid);
+
+	return (0);
 }
 
 /*============================================================================*
@@ -765,6 +784,7 @@ static int semaphore_startup(int _inbox)
 		semaphores[i].refcount = 0;
 		semaphores[i].head = 0;
 		semaphores[i].tail = 0;
+		semaphore_clear_flags(i);
 	}
 
 	/* Initialize message buffer. */
