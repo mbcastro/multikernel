@@ -45,6 +45,7 @@ ifeq ($(BUILDING_CCLUSTER),true)
 	cd ipc/mailbox && $(MAKE) all
 	cd ipc/portal&& $(MAKE) all
 	cd mm/rmem && $(MAKE) all
+	cd posix/semaphore && $(MAKE) all
 endif
 
 # Cleans compilation files.
@@ -58,6 +59,7 @@ clean:
 	cd ipc/mailbox && $(MAKE) clean
 	cd ipc/portal && $(MAKE) clean
 	cd mm/rmem && $(MAKE) clean
+	cd posix/semaphore && $(MAKE) clean
 
 # Cleans everything.
 distclean: clean
@@ -70,4 +72,5 @@ distclean: clean
 	cd ipc/mailbox && $(MAKE) distclean
 	cd ipc/portal && $(MAKE) distclean
 	cd mm/rmem && $(MAKE) distclean
+	cd posix/semaphore && $(MAKE) distclean
 

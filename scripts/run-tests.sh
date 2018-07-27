@@ -21,33 +21,33 @@
 #
 
 source "scripts/arch/mppa256.sh"
-
-echo "=== Running Core and NoC Interface Tests"
-run2 "nanvix-kernel-debug.img" "/test-driver" "/servers1" "--debug --hal-core"
-
-echo "=== Running Unnamed Sync Tests"
-run2 "nanvix-kernel-debug.img" "/test-driver" "/servers1" "--debug --hal-sync"
-
-echo "=== Running Unnamed Mailbox Tests"
-run2 "nanvix-kernel-debug.img" "/test-driver" "/servers1" "--debug --hal-mailbox"
-
-echo "=== Running Unnamed Portal Tests"
-run2 "nanvix-kernel-debug.img" "/test-driver" "/servers1" "--debug --hal-portal"
-
-echo "=== Running Naming Service Tests"
-run2 "nanvix-runtime-debug.img" "/test-driver" "/servers1" "--debug --name"
-
-echo "=== Running Nammed Mailbox Tests"
-run2 "nanvix-runtime-debug.img" "/test-driver" "/servers1" "--debug --mailbox"
-
-echo "=== Running Nammed Portal Tests"
-run2 "nanvix-runtime-debug.img" "/test-driver" "/servers1" "--debug --portal"
-
-echo "=== Running Barrier Tests"
-run2 "nanvix-runtime-debug.img" "/test-driver" "/servers1" "--debug --barrier"
-
-echo "=== Running RMem Tests"
-run2 "nanvix-runtime-debug.img" "/test-driver" "/servers1" "--debug --rmem"
-
+#
+#echo "=== Running Core and NoC Interface Tests"
+#run2 "nanvix-kernel-debug.img" "/test-driver" "/servers1" "--debug --hal-core"
+#
+#echo "=== Running Unnamed Sync Tests"
+#run2 "nanvix-kernel-debug.img" "/test-driver" "/servers1" "--debug --hal-sync"
+#
+#echo "=== Running Unnamed Mailbox Tests"
+#run2 "nanvix-kernel-debug.img" "/test-driver" "/servers1" "--debug --hal-mailbox"
+#
+#echo "=== Running Unnamed Portal Tests"
+#run2 "nanvix-kernel-debug.img" "/test-driver" "/servers1" "--debug --hal-portal"
+#
+#echo "=== Running Naming Service Tests"
+#run2 "nanvix-runtime-debug.img" "/test-driver" "/servers1" "--debug --name"
+#
+#echo "=== Running Nammed Mailbox Tests"
+#run2 "nanvix-runtime-debug.img" "/test-driver" "/servers1" "--debug --mailbox"
+#
+#echo "=== Running Nammed Portal Tests"
+#run2 "nanvix-runtime-debug.img" "/test-driver" "/servers1" "--debug --portal"
+#
+#echo "=== Running Barrier Tests"
+#run2 "nanvix-runtime-debug.img" "/test-driver" "/servers1" "--debug --barrier"
+#
+#echo "=== Running RMem Tests"
+#run2 "nanvix-runtime-debug.img" "/test-driver" "/servers1" "--debug --rmem"
+#
 echo "=== Running Semaphore Tests"
 run2 "nanvix-posix-debug.img" "/test-driver" "/servers1" "--debug --semaphore"
