@@ -20,40 +20,36 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef NANVIX_LIMITS_H_
-#define NANVIX_LIMITS_H_
+#ifndef SEMAPHORE_H_
+#define SEMAPHORE_H_
 
-	#define __NEED_HAL_CONST_
-	#include <nanvix/hal.h>
-
-	/**
-	 * @brief Maximum length of a process name.
-	 *
-	 * @note The null character is included.
-	 */
-	#define NANVIX_PROC_NAME_MAX 56
+	#include <fcntl.h>
+	#include <time.h>
 
 	/**
-	 * @brief Maximum number of processes.
+	 * @brief Semaphore error.
 	 */
-	#define NANVIX_PROC_MAX HAL_NR_CCLUSTERS
+	#define SEM_FAILED NULL
 
 	/**
-	 * @brief Maximum number of mailboxes.
+	 * @brief Named semaphore descriptor.
 	 */
-	#define NANVIX_MAILBOX_MAX HAL_NR_MAILBOX
+	typedef int  sem_t;
 
-	/**
-	 * @brief Maximum number of portals.
-	 */
-	#define NANVIX_PORTAL_MAX HAL_NR_PORTAL
+	/* Forward definitions. */
+	int sem_close(sem_t *);
+	int sem_destroy(sem_t *);
+	int sem_getvalue(sem_t *restrict, int *restrict);
+	int sem_init(sem_t *, int, unsigned);
+	sem_t *sem_open(const char *, int, ...);
+	int sem_post(sem_t *);
+#ifdef _POSIX_C_SOURCE 
+#if (_POSIX_C_SOURCE >= 200112L)
+		int sem_timedwait(sem_t *restrict, const struct timespec *restrict);
+#endif
+#endif
+	int sem_trywait(sem_t *);
+	int sem_unlink(const char *);
+	int sem_wait(sem_t *);
 
-	/**
-	 * @brief Maximum length of a sempahore name.
-	 *
-	 * @note The null character is included.
-	 */
-	#define NANVIX_SEM_NAME_MAX (HAL_MAILBOX_MSG_SIZE - 10)
-
-#endif /* NANVIX_LIMITS_H_ */
-
+#endif /* SEMAPHORE_H_ */

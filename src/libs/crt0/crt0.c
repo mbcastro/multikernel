@@ -23,6 +23,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <stdio.h>
 
 #include <mppa/osconfig.h>
 
@@ -91,7 +92,7 @@ int main(int argc, const char **argv)
 	/* Spawn servers. */
 	for (int i = 0; i < spawner_nservers; i++)
 	{
-		args[i] = 0;
+		args[i] = i;
 		assert((pthread_create(&tids[i],
 			NULL,
 			server,

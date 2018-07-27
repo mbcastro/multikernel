@@ -44,7 +44,7 @@
 	/**
 	 * @brief Semaphores server NoC node num.
 	 */
-	#define SEMAPHORES_SERVER_NODE 18
+	#define SEMAPHORE_SERVER_NODE 18
 
 	/**
 	 * @brief Name server NoC node num.

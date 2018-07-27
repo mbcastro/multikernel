@@ -23,16 +23,10 @@
 #ifndef NANVIX_SEM_H_
 #define NANVIX_SEM_H_
 
-	#include <stdlib.h>
 	#include <stdint.h>
+	#include <fcntl.h>
 
-	#include <nanvix/hal.h>
 	#include <nanvix/limits.h>
-
-	/**
-	 * @brief Maximal number of processes.
-	 */
-	#define NR_PROC 24
 
 	/**
 	 * @brief Maximal number of sempahores in the system.
@@ -48,88 +42,72 @@
 	 * @brief Operation types for semaphore server.
 	 */
 	/**@{*/
-	#define SEM_OPEN        1 /* Open a semaphore.                        */
-	#define SEM_POST        2 /* Post a semaphore.                        */
-	#define SEM_WAIT        3 /* Wait a semaphore.                        */
-	#define SEM_CLOSE       4 /* Close a semaphore.                       */
-	#define SEM_UNLINK      5 /* Unlink a semaphore.                      */
-	#define SEM_CREATE      6 /* Create a semaphore.                      */
-	#define SEM_CREATE_EXCL 7 /* Create a semaphore with existence check. */
+	#define SEM_OPEN        1 /* Open a semaphore.              */
+	#define SEM_POST        2 /* Post a semaphore.              */
+	#define SEM_WAIT        3 /* Wait a semaphore.              */
+	#define SEM_CLOSE       4 /* Close a semaphore.             */
+	#define SEM_UNLINK      5 /* Unlink a semaphore.            */
+	#define SEM_CREATE      6 /* Create a semaphore.            */
+	#define SEM_CREATE_EXCL 7 /* Create an exclusive semaphore. */
+	#define SEM_RETURN      8 /* Return.                        */
 	/**@}*/
-
-	/**
-	 * @brief Acknowledgement for semaphore server.
-	 */
-	/**@{*/
-	#define SEM_SUCCESS 0  /* Success acknowledgement. */
-	#define SEM_FAILURE -1 /* Failure acknowledgement. */
-	/**@}*/
-
-	/**
-	 * @brief Sempahore creation flag bits.
-	 */
-	/**@{*/
-	#define O_CREAT (1 << 0)
-	#define O_EXCL  (1 << 1)
-	/**@}*/
-
-	/**
-	 * @brief Sempahore flag bit.
-	 */
-	#define SEM_USED (1 << 0)
-
-	/**
-	 * @brief Waiting list element.
-	 */
-	struct element
-	{
-		char process[NANVIX_PROC_NAME_MAX]; /* Process name.              */
-		int next;                           /* Index of the next element. */
-		int used;                           /* Flag element used.         */
-	};
 
 	/**
 	 * @brief Semaphore message.
 	 */
 	struct sem_message
 	{
-		uint16_t seq;                   /* Sequence number.              */
-		char name[NANVIX_SEM_NAME_MAX]; /* Client or semaphore name.     */
-		int16_t op;                     /* Semaphore operation.          */
-		int value;                      /* Value.                        */
-	};
+		uint16_t source; /**< Source cluster.      */
+		int16_t opcode;  /**< Semaphore operation. */
+		uint16_t seq;    /**< Sequence number.     */
 
-	/**
-	 * @brief Message list element.
-	 */
-	struct msg_element
-	{
-		struct sem_message message; /* Message.                   */
-		int next;                   /* Index of the next element. */
-		int used;                   /* Flag element used.         */
-	};
+		/* Operation-specific fields. */
+		union 
+		{
+			/* Create message 1. */
+			struct {
+				mode_t mode; /**< Access permissions. */
+				int value;   /**< Value.              */
+			} create1;
 
-	/**
-	 * @brief Semaphore.
-	 */
-	struct semaphore
-	{
-		struct{
-			char name[NANVIX_PROC_NAME_MAX]; /* Process name.             */
-			int use;                         /* Number of ressource used. */
-		} processes[NR_PROC];                /* Process list.             */
+			/* Create message 2. */
+			struct {
+				char name[NANVIX_SEM_NAME_MAX]; /**< Semaphore name. */
+			} create2;
 
-		char name[NANVIX_SEM_NAME_MAX];      /* Semaphore name.           */
-		int flags;                           /* Flags.                    */
-		int count;                           /* Semaphore count.          */
-		int nr_proc;                         /* Number of process.        */
-		struct element queue[NR_PROC];       /* Waiting list.             */
-		int head;                            /* Head of the queue.        */
-		int tail;                            /* Tail of the queue.        */
+			/* Open message. */
+			struct {
+				char name[NANVIX_SEM_NAME_MAX]; /**< Semaphore name. */
+			} open;
+
+			/* Post message. */
+			struct {
+				int semid; /**< ID of target semaphore. */ 
+			} post;
+
+			/* Wait message. */
+			struct {
+				int semid; /**< ID of target semaphore. */ 
+			} wait;
+
+			/* Close message. */
+			struct {
+				int semid; /**< ID of target semaphore. */ 
+			} close;
+
+			/* Unlink message. */
+			struct {
+				char name[NANVIX_SEM_NAME_MAX]; /**< Semaphore name. */
+			} unlink;
+
+			/* Return value. */
+			int ret;
+		} op;
 	};
 
 	/* Forward definitions. */
-	extern int nanvix_sem_open(const char *name, int oflag, ...);
+	extern int nanvix_sem_create(const char *, mode_t, unsigned, int);
+	extern int nanvix_sem_open(const char *name);
 	extern int nanvix_sem_post(int);
 	extern int nanvix_sem_wait(int);
 	extern int nanvix_sem_close(int);

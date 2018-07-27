@@ -20,40 +20,27 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef NANVIX_LIMITS_H_
-#define NANVIX_LIMITS_H_
+#ifndef _TEST_H_
+#define _TEST_H_
 
-	#define __NEED_HAL_CONST_
-	#include <nanvix/hal.h>
-
-	/**
-	 * @brief Maximum length of a process name.
-	 *
-	 * @note The null character is included.
-	 */
-	#define NANVIX_PROC_NAME_MAX 56
+	#include <assert.h>
+	#include <stdlib.h>
 
 	/**
-	 * @brief Maximum number of processes.
+	 * @brief Asserts a logic expression.
 	 */
-	#define NANVIX_PROC_MAX HAL_NR_CCLUSTERS
+	#define TEST_ASSERT(x) assert(x)
 
 	/**
-	 * @brief Maximum number of mailboxes.
+	 * @brief Unit test.
 	 */
-	#define NANVIX_MAILBOX_MAX HAL_NR_MAILBOX
+	struct test
+	{
+		void (*test_fn)(void); /**< Test function. */
+		const char *name;      /**< Test name.     */
+	};
 
-	/**
-	 * @brief Maximum number of portals.
-	 */
-	#define NANVIX_PORTAL_MAX HAL_NR_PORTAL
+	/* Forward definitions. */
+	extern struct test posix_semaphore_tests_api[];
 
-	/**
-	 * @brief Maximum length of a sempahore name.
-	 *
-	 * @note The null character is included.
-	 */
-	#define NANVIX_SEM_NAME_MAX (HAL_MAILBOX_MSG_SIZE - 10)
-
-#endif /* NANVIX_LIMITS_H_ */
-
+#endif /* _TEST_H_ */

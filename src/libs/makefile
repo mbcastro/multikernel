@@ -23,24 +23,29 @@
 # Conflicts.
 .PHONY: crt0
 .PHONY: crt1
+.PHONY: libc
 .PHONY: nanvix
 
 #===============================================================================
 
 # Builds startup routines.
-all: crt0 crt1 nanvix
+all: crt0 crt1 nanvix libc
 
 # Builds startup routines for IO Cluster.
-crt0: nanvix
+crt0: nanvix libc
 ifeq ($(BUILDING_IOCLUSTER),true)
 	cd crt0 && $(MAKE) all
 endif
 
 # Builds startup routines for Compute Cluster.
-crt1: nanvix
+crt1: nanvix libc
 ifeq ($(BUILDING_CCLUSTER),true)
 	cd crt1 && $(MAKE) all
 endif
+
+# Builds C library.
+libc: nanvix
+	cd libc && $(MAKE) all
 
 # Builds Nanvix library.
 nanvix:
@@ -50,11 +55,13 @@ nanvix:
 clean:
 	cd crt0 && $(MAKE) clean
 	cd crt1 && $(MAKE) clean
+	cd libc && $(MAKE) clean
 	cd nanvix && $(MAKE) clean
 
 # Cleans everything.
 distclean: clean
 	cd crt0 && $(MAKE) distclean
 	cd crt1 && $(MAKE) distclean
+	cd libc && $(MAKE) distclean
 	cd nanvix && $(MAKE) distclean
 

@@ -32,6 +32,7 @@ extern void test_ipc_barrier(void);
 extern void test_ipc_mailbox(void);
 extern void test_ipc_portal(void);
 extern void test_mm_rmem(void);
+extern void test_semaphore(void);
 
 /**
  * @brief Launches automated tests.
@@ -63,6 +64,8 @@ int main2(int argc, const char **argv)
 		test_ipc_portal();
 	else if (!strcmp(argv[2], "--rmem"))
 		test_mm_rmem();
+	else if (!strcmp(argv[2], "--semaphore"))
+		test_semaphore();
 
 	return (EXIT_SUCCESS);
 }

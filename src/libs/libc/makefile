@@ -21,17 +21,17 @@
 #
 
 # C Source Files
-SRC = name-server.c semaphore-server.c rmem-server.c
+SRC = $(wildcard semaphore/*.c)
 
 # Object Files
 OBJ = $(SRC:.c=.o)
 
 #===============================================================================
 
-# Builds everything.
+# Builds Nanvix library.
 all: $(OBJ)
 	mkdir -p $(LIBDIR)
-	$(AR) $(ARFLAGS) $(LIBSERVERS) $(OBJ)
+	$(AR) rs $(LIBUSER) $(OBJ)
 
 # Builds object files.
 %.o: %.c
@@ -43,5 +43,5 @@ clean:
 
 # Cleans everything.
 distclean: clean
-	rm -rf $(LIBSERVERS)
+	rm -rf $(LIBUSER)
 

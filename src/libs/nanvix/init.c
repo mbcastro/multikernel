@@ -31,7 +31,7 @@
 /* Forward definitions. */
 extern int name_init(void);
 extern int meminit(void);
-extern int sem_init(void);
+extern int nanvix_sem_init(void);
 
 /**
  * @brief Global runtime lock.
@@ -94,7 +94,8 @@ int runtime_setup(int level)
 			name_init();
 			if (meminit() != 0)
 				goto error;
-			sem_init();
+			if (nanvix_sem_init() != 0)
+				goto error;
 		}
 
 		initialized[nodenum] = 1;

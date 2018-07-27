@@ -20,40 +20,37 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef NANVIX_LIMITS_H_
-#define NANVIX_LIMITS_H_
+#include <errno.h>
+#include <semaphore.h>
 
-	#define __NEED_HAL_CONST_
-	#include <nanvix/hal.h>
+#include <nanvix/semaphore.h>
 
-	/**
-	 * @brief Maximum length of a process name.
-	 *
-	 * @note The null character is included.
-	 */
-	#define NANVIX_PROC_NAME_MAX 56
+#include "semaphore.h"
 
-	/**
-	 * @brief Maximum number of processes.
-	 */
-	#define NANVIX_PROC_MAX HAL_NR_CCLUSTERS
+/**
+ * @brief Close a named semaphore.
+ *
+ * @param semid ID of the target semaphore.
+ *
+ * @returns Upon successful completion, zero is returned. Upon
+ * failure, a negative error code is returned instead.
+ */
+int sem_close(sem_t *semid)
+{
+	int ret;
 
-	/**
-	 * @brief Maximum number of mailboxes.
-	 */
-	#define NANVIX_MAILBOX_MAX HAL_NR_MAILBOX
+	/* Invalid semaphore. */
+	if (semid == NULL)
+		return (-EINVAL);
 
-	/**
-	 * @brief Maximum number of portals.
-	 */
-	#define NANVIX_PORTAL_MAX HAL_NR_PORTAL
+	/* Invalid semaphore. */
+	if (!_sem_is_valid(*semid))
+		return (-EINVAL);
+	
+	if ((ret = nanvix_sem_close(*semid)) < 0)
+		return (ret);
 
-	/**
-	 * @brief Maximum length of a sempahore name.
-	 *
-	 * @note The null character is included.
-	 */
-	#define NANVIX_SEM_NAME_MAX (HAL_MAILBOX_MSG_SIZE - 10)
+	_sem_free(*semid);
 
-#endif /* NANVIX_LIMITS_H_ */
-
+	return (0);
+}

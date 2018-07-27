@@ -23,26 +23,22 @@
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include <stdio.h>
 #include <pthread.h>
+#include <semaphore.h>
 
-#define __NEED_HAL_NOC_
-#define __NEED_HAL_CORE_
-
-#include <nanvix/hal.h>
 #include <nanvix/semaphore.h>
+#include <nanvix/syscalls.h>
 #include <nanvix/pm.h>
 
 /**
- * @brief Mailboxe for small messages.
+ * @brief Semaphores server connection.
  */
-static int server;
-
-/**
- * @brief Is the semaphore service initialized ?
- */
-static int initialized = 0;
+static struct
+{
+	int initialized; /**< Is the connection initialized? */
+	int outbox;      /**< Output mailbox for requests.   */
+} server = { 0, -1 };
 
 /**
  * @brief Mailbox module lock.
@@ -50,7 +46,7 @@ static int initialized = 0;
 static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
 /*============================================================================*
- * sem_init()                                                                 *
+ * nanvix_sem_init()                                                          *
  *============================================================================*/
 
 /**
@@ -59,25 +55,22 @@ static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
  * @returns Upon successful completion, zero is returned. Upon
  * failure, a negative error code is returned instead.
  */
-int sem_init(void)
+int nanvix_sem_init(void)
 {
-	char server_name[NANVIX_PROC_NAME_MAX];
-
-	/* Nothing to do. */
-	if (initialized)
+	/* Nothing to do.  */
+	if (server.initialized)
 		return (0);
 
-	sprintf(server_name, "/sem-server");
-
-	server = mailbox_open(server_name);
-
-	if (server >= 0)
+	/* Open output mailbox */
+	if ((server.outbox = mailbox_open("/sem-server")) < 0)
 	{
-		initialized = 1;
-		return (0);
+		printf("[nanvix][semaphores] cannot open outbox to server\n");
+		return (server.outbox);
 	}
 
-	return (-1);
+	server.initialized = 1;
+
+	return (0);
 }
 
 /*============================================================================*
@@ -87,38 +80,25 @@ int sem_init(void)
 /**
  * @brief Closes the semaphore client.
  */
-void sem_finalize(void)
+void nanvix_sem_finalize(void)
 {
 	/* Nothing to do. */
-	if (!initialized)
+	if (!server.initialized)
 		return;
 
-	mailbox_close(server);
+	/* Close output mailbox. */
+	if (mailbox_close(server.outbox) < 0)
+	{
+		printf("[nanvix][semaphores] cannot close outbox to server\n");
+		return;
+	}
 
-	initialized = 0;
+	server.initialized = 0;
 }
 
-/*=======================================================================*
- * sem_name_is_valid()                                                   *
- *=======================================================================*/
-
-/**
- * @brief Asserts whether or not a name is valid.
- *
- * @param name	Target name.
- *
- * @returns One if the target semaphore name is valid, and false
- * otherwise.
- */
-static int sem_name_is_valid(const char *name)
-{
-	return ((name != NULL) && (strlen(name) < (NANVIX_SEM_NAME_MAX - 1)) &&
-													   (strcmp(name, "")));
-}
-
-/*=======================================================================*
- * sem_is_valid()                                                        *
- *=======================================================================*/
+/*============================================================================*
+ * nanvix_sem_is_valid()                                                      *
+ *============================================================================*/
 
 /**
  * @brief Asserts whether or not a semaphore is valid.
@@ -128,131 +108,165 @@ static int sem_name_is_valid(const char *name)
  * @returns One if the target semaphore is valid, and false
  * otherwise.
  */
-static int sem_is_valid(int sem)
+static int nanvix_sem_is_valid(sem_t sem)
 {
 	return ((sem >= 0) && (sem < SEM_MAX));
 }
 
 /*============================================================================*
- * nanvix_sem_open()                                                          *
+ * nanvix_sem_create()                                                        *
  *============================================================================*/
 
 /**
- * @brief Open a semaphore.
- *
- * @param name	Target name.
- * @param oflag	Creation flags.
- * @param mode	User permissions.
- * @param value	Semaphore count value.
- *
- * @returns Upon successful completion, the semaphore is
- * returned. Upon failure, a negative error code is returned instead.
+ * @see nanvix_sem_create()
  */
-int nanvix_sem_open(const char *name, int oflag, ...)
+static inline sem_t _nanvix_sem_create(const char *name, mode_t mode, unsigned value, int excl)
 {
-	int mode;                                /* Creation mode.               */
-	int value;                               /* semaphore value.             */
-	int nodeid;                              /* NoC node ID.                 */
-	va_list ap;                              /* Arguments pointer.           */
-	struct sem_message msg1;                 /* Semaphore message 1.         */
-	struct sem_message msg2;                 /* Semaphore message 2.         */
-	char process_name[NANVIX_PROC_NAME_MAX]; /* Name of the running process. */
-	int inbox;                               /* Mailbox for small messages.  */
+	int ret;                /* Return value.                */
+	int inbox;              /* Mailbox for small messages.  */
+	int nodenum;            /* NoC node number.             */
+	struct sem_message msg; /* Semaphore message.         */
 
-	if (!sem_name_is_valid(name))
-		return (-EINVAL);
-
-	/* Initilize semaphore client. */
-	if (!initialized)
+	if ((inbox = get_inbox()) < 0)
 		return (-EAGAIN);
 
-	nodeid = hal_get_node_id();
+	nodenum = sys_get_node_num();
 
-	if (get_name(process_name) != 0)
-		return (-EAGAIN);
-
-	if ((inbox = get_named_inbox()) < 0)
-		return (-EAGAIN);
-
-	/* Semaphore creation operation. */
-	if (oflag & O_CREAT)
-	{
-		/* Retrieve arguments. */
-		va_start(ap, oflag);
-		mode = va_arg(ap, int);
-		value = va_arg(ap, int);
-		va_end(ap);
-
-		/* Invalid semaphore value. */
-		if (value > SEM_VALUE_MAX)
-			return (-EINVAL);
-
-		/* Build operation header 1. */
-		msg1.seq = ((nodeid << 4) | 0);
-		strcpy(msg1.name, process_name);
-
-		/* Is the creation exclusive ? */
-		if (oflag & O_EXCL)
-			msg1.op = SEM_CREATE_EXCL;
-		else
-			msg1.op = SEM_CREATE;
-
-		msg1.value = mode;
-
-		/* Build operation header 2. */
-		msg2.seq = ((nodeid << 4) | 1);
-		strcpy(msg2.name, name);
-
-		/* Is the creation exclusive ? */
-		if (oflag & O_EXCL)
-			msg2.op = SEM_CREATE_EXCL;
-		else
-			msg2.op = SEM_CREATE;
-
-		msg2.value = value;
-	}
-	/* Semaphore opening operation. */
-	else
-	{
-		/* Build operation header 1. */
-		msg1.seq = ((nodeid << 4) | 0);
-		strcpy(msg1.name, process_name);
-		msg1.op = SEM_OPEN;
-		msg1.value = -1;
-
-		/* Build operation header 2. */
-		msg2.seq = ((nodeid << 4) | 1);
-		strcpy(msg2.name, name);
-		msg2.op = SEM_OPEN;
-		msg2.value = 0;
-	}
+	/* Build message header. */
+	msg.source = nodenum;
+	msg.opcode = (excl) ? SEM_CREATE_EXCL : SEM_CREATE;
 
 	pthread_mutex_lock(&lock);
 
-	if (mailbox_write(server, &msg1, sizeof(struct sem_message)) != 0)
-		goto error;
+		/* Build message 1.*/
+		msg.seq = ((nodenum << 4) | 0);
+		msg.op.create1.mode = mode;
+		msg.op.create1.value = value;
 
-	if (mailbox_write(server, &msg2, sizeof(struct sem_message)) != 0)
-		goto error;
+		if ((ret = mailbox_write(server.outbox, &msg, sizeof(struct sem_message))) != 0)
+			goto error;
 
-	if (mailbox_read(inbox, &msg1, sizeof(struct sem_message)) != 0)
-		goto error;
+		/* Build message 2. */
+		msg.seq = ((nodenum << 4) | 1);
+		strcpy(msg.op.create2.name, name);
+
+		if ((ret = mailbox_write(server.outbox, &msg, sizeof(struct sem_message))) != 0)
+			goto error;
+
+		if ((ret = sys_mailbox_read(inbox, &msg, sizeof(struct sem_message))) != MAILBOX_MSG_SIZE)
+			goto error;
 
 	pthread_mutex_unlock(&lock);
 
-	if (msg1.value < 0)
-	{
-		errno = msg1.value;
-		return (SEM_FAILURE);
-	}
-
-	return (msg1.value);
+	return (msg.op.ret);
 
 error:
+	pthread_mutex_unlock(&lock);
+	return (ret);
+}
+
+/**
+ * @brief Creates a named semaphore.
+ *
+ * @param name	Target name.
+ * @param mode	User permissions.
+ * @param value	Semaphore count value.
+ * @param excl  Exclusive creation?
+ *
+ * @returns Upon successful completion, the ID of the newly created
+ * semaphore is returned. Upon failure, a negative error code is
+ * returned instead.
+ */
+sem_t nanvix_sem_create(const char *name, mode_t mode, unsigned value, int excl)
+{
+	/* Invalid name. */
+	if ((name == NULL) || (!strcmp(name, "")))
+		return (-EINVAL);
+
+	/* Name too long. */
+	if (strlen(name) >= (NANVIX_SEM_NAME_MAX))
+		return (-ENAMETOOLONG);
+
+	/* Invalid semaphore value. */
+	if (value > SEM_VALUE_MAX)
+		return (-EINVAL);
+
+	/* Initilize semaphore client. */
+	if (!server.initialized)
+		return (-EAGAIN);
+
+	return (_nanvix_sem_create(name, mode, value, excl));
+}
+
+/*============================================================================*
+ * nanvix_sem_open ()                                                         *
+ *============================================================================*/
+
+/**
+ * @see nanvix_sem_open().
+ */
+static inline sem_t _nanvix_sem_open(const char *name)
+{
+	int ret;                /* Return value.                */
+	int inbox;              /* Mailbox for small messages.  */
+	int nodenum;            /* NoC node number.             */
+	struct sem_message msg; /* Semaphore message.           */
+
+	if ((inbox = get_inbox()) < 0)
+		return (-EAGAIN);
+
+	nodenum = sys_get_node_num();
+
+	/* Build message header. */
+	msg.source = nodenum;
+	msg.opcode = SEM_OPEN;
+	msg.seq = ((nodenum << 4) | 0);
+	strcpy(msg.op.open.name, name);
+
+	pthread_mutex_lock(&lock);
+
+		if ((ret = mailbox_write(server.outbox, &msg, sizeof(struct sem_message))) != 0)
+			goto error;
+
+		if ((ret = sys_mailbox_read(inbox, &msg, sizeof(struct sem_message))) != MAILBOX_MSG_SIZE)
+			goto error;
 
 	pthread_mutex_unlock(&lock);
 
-	return (-EAGAIN);
+	return (msg.op.ret);
+
+error:
+	pthread_mutex_unlock(&lock);
+	return (ret);
+}
+
+/**
+ * @brief Opens a named semaphore.
+ *
+ * @param name	Target name.
+ * @param mode	User permissions.
+ * @param value	Semaphore count value.
+ * @param excl  Exclusive creation?
+ *
+ * @returns Upon successful completion, the ID of the target semaphore
+ * is returned. Upon failure, a negative error code is returned
+ * instead.
+ */
+sem_t nanvix_sem_open(const char *name)
+{
+	/* Invalid name. */
+	if ((name == NULL) || (!strcmp(name, "")))
+		return (-EINVAL);
+
+	/* Name too long. */
+	if (strlen(name) >= (NANVIX_SEM_NAME_MAX))
+		return (-ENAMETOOLONG);
+
+	/* Initilize semaphore client. */
+	if (!server.initialized)
+		return (-EAGAIN);
+
+	return (_nanvix_sem_open(name));
 }
 
 /*============================================================================*
@@ -260,64 +274,62 @@ error:
  *============================================================================*/
 
 /**
- * @brief Post a semaphore.
- *
- * @param sem	Target semaphore.
- *
- * @returns Upon successful completion, 0 is returned.
- * Upon failure, a negative error code is returned instead.
+ * @see nanvix_set_post()
  */
-int nanvix_sem_post(int sem)
+static inline int _nanvix_sem_post(sem_t sem)
 {
-	struct sem_message msg;                  /* Semaphore message.           */
-	int nodeid;                              /* NoC node ID.                 */
-	char process_name[NANVIX_PROC_NAME_MAX]; /* Name of the running process. */
-	int inbox;                               /* Mailbox for small messages.  */
+	int ret;                /* Return value.                */
+	struct sem_message msg; /* Semaphore message.           */
+	int nodenum;            /* NoC node number.             */
+	int inbox;              /* Mailbox for small messages.  */
 
-	if (!sem_is_valid(sem))
-		return (-EINVAL);
-
-	/* Initilize semaphore client. */
-	if (!initialized)
+	if ((inbox = get_inbox()) < 0)
 		return (-EAGAIN);
 
-	nodeid = hal_get_node_id();
+	nodenum = sys_get_node_num();
 
-	if (get_name(process_name) != 0)
-		return (-EAGAIN);
-
-	if ((inbox = get_named_inbox()) < 0)
-		return (-EAGAIN);
-
-	/* Build operation header. */
-	msg.seq = ((nodeid << 4) | 0);
-	strcpy(msg.name, process_name);
-	msg.op = SEM_POST;
-	msg.value = sem;
+	/* Build message. */
+	msg.source = nodenum;
+	msg.opcode = SEM_POST;
+	msg.seq = ((nodenum << 4) | 0);
+	msg.op.post.semid = sem;
 
 	pthread_mutex_lock(&lock);
 
-	if (mailbox_write(server, &msg, sizeof(struct sem_message)) != 0)
-		goto error;
+		if ((ret = mailbox_write(server.outbox, &msg, sizeof(struct sem_message))) != 0)
+			goto error;
 
-	if (mailbox_read(inbox, &msg, sizeof(struct sem_message)) != 0)
-		goto error;
+		if ((ret = sys_mailbox_read(inbox, &msg, sizeof(struct sem_message))) != MAILBOX_MSG_SIZE)
+			goto error;
 
 	pthread_mutex_unlock(&lock);
 
-	if (msg.op < 0)
-	{
-		errno = msg.op;
-		return (SEM_FAILURE);
-	}
-
-	return (msg.op);
+	return (msg.op.ret);
 
 error:
-
 	pthread_mutex_unlock(&lock);
+	return (ret);
+}
 
-	return (-EAGAIN);
+/**
+ * @brief Post on a named semaphore.
+ *
+ * @param sem Target semaphore.
+ *
+ * @returns Upon successful completion, zero is returned. Upon
+ * failure, a negative error code is returned instead.
+ */
+int nanvix_sem_post(sem_t sem)
+{
+	/* Invalid semaphore. */
+	if (!nanvix_sem_is_valid(sem))
+		return (-EINVAL);
+
+	/* Initilize semaphore client. */
+	if (!server.initialized)
+		return (-EAGAIN);
+	
+	return (_nanvix_sem_post(sem));
 }
 
 /*============================================================================*
@@ -325,75 +337,65 @@ error:
  *============================================================================*/
 
 /**
- * @brief Wait a semaphore.
- *
- * @param sem	Target semaphore.
- *
- * @returns Upon successful completion, 0 is returned.
- * Upon failure, a negative error code is returned instead.
+ * @see nanvix_sem_wait()
  */
-int nanvix_sem_wait(int sem)
+static inline int _nanvix_sem_wait(sem_t sem)
 {
-	struct sem_message msg;                  /* Semaphore message.           */
-	int nodeid;                              /* NoC node ID.                 */
-	char process_name[NANVIX_PROC_NAME_MAX]; /* Name of the running process. */
-	int inbox;                               /* Mailbox for small messages.  */
+	int ret;                /* Return value.               */
+	struct sem_message msg; /* Semaphore message.          */
+	int nodenum;            /* NoC node number.            */
+	int inbox;              /* Mailbox for small messages. */
 
-	if (!sem_is_valid(sem))
-		return (-EINVAL);
-
-	/* Initilize semaphore client. */
-	if (!initialized)
+	if ((inbox = get_inbox()) < 0)
 		return (-EAGAIN);
 
-	nodeid = hal_get_node_id();
+	nodenum = sys_get_node_num();
 
-	if (get_name(process_name) != 0)
-		return (-EAGAIN);
-
-	if ((inbox = get_named_inbox()) < 0)
-		return (-EAGAIN);
-
-	/* Build operation header. */
-	msg.seq = ((nodeid << 4) | 0);
-	strcpy(msg.name, process_name);
-	msg.op = SEM_WAIT;
-	msg.value = sem;
+	/* Build message. */
+	msg.source = nodenum;
+	msg.opcode = SEM_WAIT;
+	msg.seq = ((nodenum << 4) | 0);
+	msg.op.wait.semid = sem;
 
 	pthread_mutex_lock(&lock);
 
-	if (mailbox_write(server, &msg, sizeof(struct sem_message)) != 0)
-		goto error;
+		if ((ret = mailbox_write(server.outbox, &msg, sizeof(struct sem_message))) != 0)
+			goto error;
 
-	if (mailbox_read(inbox, &msg, sizeof(struct sem_message)) != 0)
-		goto error;
-
-	/* Wait for a semaphore ressource. */
-	if (msg.op == SEM_WAIT)
-	{
-		while (msg.op != SEM_SUCCESS)
-			if (mailbox_read(get_named_inbox(), &msg, sizeof(struct sem_message)) != 0)
+		do
+		{
+			if ((ret = sys_mailbox_read(inbox, &msg, sizeof(struct sem_message))) != MAILBOX_MSG_SIZE)
 				goto error;
-
-	}
-	else if (msg.op == SEM_SUCCESS)
-	{
-		pthread_mutex_unlock(&lock);
-	}
-
-	if (msg.op < 0)
-	{
-		errno = msg.op;
-		return (SEM_FAILURE);
-	}
-
-	return (msg.op);
-
-error:
+		} while (msg.opcode == SEM_WAIT);
 
 	pthread_mutex_unlock(&lock);
 
-	return (-EAGAIN);
+	return (msg.op.ret);
+
+error:
+	pthread_mutex_unlock(&lock);
+	return (ret);
+}
+
+/**
+ * @brief Wait a named semaphore.
+ *
+ * @param sem Target semaphore.
+ *
+ * @returns Upon successful completion, zero is returned.  Upon
+ * failure, a negative error code is returned instead.
+ */
+int nanvix_sem_wait(sem_t sem)
+{
+	/* Invalid semaphore. */
+	if (!nanvix_sem_is_valid(sem))
+		return (-EINVAL);
+
+	/* Initilize semaphore client. */
+	if (!server.initialized)
+		return (-EAGAIN);
+
+	return (_nanvix_sem_wait(sem));
 }
 
 /*============================================================================*
@@ -401,72 +403,107 @@ error:
  *============================================================================*/
 
 /**
- * @brief Close a semaphore.
- *
- * @param sem	Target semaphore.
- *
- * @returns Upon successful completion, 0 is returned.
- * Upon failure, a negative error code is returned instead.
+ * @see nanvix_sem_close()
  */
-int nanvix_sem_close(int sem)
+static inline int _nanvix_sem_close(sem_t sem)
 {
-	struct sem_message msg;                  /* Semaphore message.           */
-	int nodeid;                              /* NoC node ID.                 */
-	char process_name[NANVIX_PROC_NAME_MAX]; /* Name of the running process. */
-	int inbox;                               /* Mailbox for small messages.  */
+	int ret;                /* Return value.               */
+	struct sem_message msg; /* Semaphore message.          */
+	int nodenum;            /* NoC node number.            */
+	int inbox;              /* Mailbox for small messages. */
 
-	if (!sem_is_valid(sem))
-		return (-EINVAL);
-
-	/* Initilize semaphore client. */
-	if (!initialized)
+	if ((inbox = get_inbox()) < 0)
 		return (-EAGAIN);
 
-	nodeid = hal_get_node_id();
+	nodenum = sys_get_node_num();
 
-	if (get_name(process_name) != 0)
-		return (-EAGAIN);
-
-	if ((inbox = get_named_inbox()) < 0)
-		return (-EAGAIN);
-
-	/* Build operation header. */
-	msg.seq = ((nodeid << 4) | 0);
-	strcpy(msg.name, process_name);
-	msg.op = SEM_CLOSE;
-	msg.value = sem;
+	/* Build message. */
+	msg.source = nodenum;
+	msg.opcode = SEM_CLOSE;
+	msg.seq = ((nodenum << 4) | 0);
+	msg.op.close.semid = sem;
 
 	pthread_mutex_lock(&lock);
 
-	if (mailbox_write(server, &msg, sizeof(struct sem_message)) != 0)
-		goto error;
+		if ((ret = mailbox_write(server.outbox, &msg, sizeof(struct sem_message))) != 0)
+			goto error;
 
-	if (mailbox_read(inbox, &msg, sizeof(struct sem_message)) != 0)
-		goto error;
+		if ((ret = sys_mailbox_read(inbox, &msg, sizeof(struct sem_message))) != MAILBOX_MSG_SIZE)
+			goto error;
 
 	pthread_mutex_unlock(&lock);
 
-	if (msg.op < 0)
-	{
-		errno = msg.op;
-		return (SEM_FAILURE);
-	}
-
-	return (msg.op);
+	return (msg.op.ret);
 
 error:
-
 	pthread_mutex_unlock(&lock);
+	return (ret);
+}
 
-	return (-EAGAIN);
+/**
+ * @brief Close a named semaphore.
+ *
+ * @param sem	Target semaphore.
+ *
+ * @returns Upon successful completion, zero is returned. Upon
+ * failure, a negative error code is returned instead.
+ */
+int nanvix_sem_close(sem_t sem)
+{
+	/* Invalid semaphore. */
+	if (!nanvix_sem_is_valid(sem))
+		return (-EINVAL);
+
+	/* Initilize semaphore client. */
+	if (!server.initialized)
+		return (-EAGAIN);
+
+	return (_nanvix_sem_close(sem));
 }
 
 /*============================================================================*
  * nanvix_sem_unlink()                                                        *
  *============================================================================*/
+/**
+ * @see nanvix_sem_unlink()
+ */
+static inline int _nanvix_sem_unlink(const char *name)
+{
+	int ret;                /* Return value.               */
+	struct sem_message msg; /* Semaphore message.          */
+	int nodenum;            /* NoC node number.            */
+	int inbox;              /* Mailbox for small messages. */
+
+	if ((inbox = get_inbox()) < 0)
+		return (-EAGAIN);
+
+	nodenum = sys_get_node_num();
+
+	/* Build message. */
+	msg.source = nodenum;
+	msg.opcode = SEM_UNLINK;
+	msg.seq = ((nodenum << 4) | 0);
+	strcpy(msg.op.unlink.name, name);
+
+	pthread_mutex_lock(&lock);
+
+		if ((ret = mailbox_write(server.outbox, &msg, sizeof(struct sem_message))) != 0)
+			goto error;
+
+		if ((ret = sys_mailbox_read(inbox, &msg, sizeof(struct sem_message))) != MAILBOX_MSG_SIZE)
+			goto error;
+
+	pthread_mutex_unlock(&lock);
+
+	return (msg.op.ret);
+
+error:
+	pthread_mutex_unlock(&lock);
+	return (ret);
+}
 
 /**
- * @brief Unlink a semaphore.
+ * @brief Unlinks a named semaphore.
  *
  * @param name	Target semaphore name.
  *
@@ -475,63 +512,17 @@ error:
  */
 int nanvix_sem_unlink(const char *name)
 {
-	struct sem_message msg1;                 /* Semaphore message 1.         */
-	struct sem_message msg2;                 /* Semaphore message 2.         */
-	int nodeid;                              /* NoC node ID.                 */
-	char process_name[NANVIX_PROC_NAME_MAX]; /* Name of the running process. */
-	int inbox;                               /* Mailbox for small messages.  */
+	/* Invalid name. */
+	if ((name == NULL) || (!strcmp(name, "")))
+		return (-ENOENT);
 
-	if (!sem_name_is_valid(name))
-		return (-EINVAL);
+	/* Name too long. */
+	if (strlen(name) >= (NANVIX_SEM_NAME_MAX))
+		return (-ENAMETOOLONG);
 
 	/* Initilize semaphore client. */
-	if (!initialized)
+	if (!server.initialized)
 		return (-EAGAIN);
 
-	nodeid = hal_get_node_id();
-
-	if (get_name(process_name) != 0)
-		return (-EAGAIN);
-
-	if ((inbox = get_named_inbox()) < 0)
-		return (-EAGAIN);
-
-	/* Build operation header 1. */
-	msg1.seq = ((nodeid << 4) | 0);
-	strcpy(msg1.name, process_name);
-	msg1.op = SEM_UNLINK;
-	msg1.value = -1;
-
-	/* Build operation header 2. */
-	msg2.seq = ((nodeid << 4) | 1);
-	strcpy(msg2.name, name);
-	msg2.op = SEM_UNLINK;
-	msg2.value = -1;
-
-	pthread_mutex_lock(&lock);
-
-	if (mailbox_write(server, &msg1, sizeof(struct sem_message)) != 0)
-		goto error;
-
-	if (mailbox_write(server, &msg2, sizeof(struct sem_message)) != 0)
-		goto error;
-
-	if (mailbox_read(inbox, &msg1, sizeof(struct sem_message)) != 0)
-		goto error;
-
-	pthread_mutex_unlock(&lock);
-
-	if (msg1.value < 0)
-	{
-		errno = msg1.value;
-		return (SEM_FAILURE);
-	}
-
-	return (msg1.value);
-
-error:
-
-	pthread_mutex_unlock(&lock);
-
-	return (-EAGAIN);
+	return (_nanvix_sem_unlink(name));
 }

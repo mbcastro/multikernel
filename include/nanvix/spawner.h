@@ -48,7 +48,7 @@
 	extern const char *spawner_name;
 	extern const int spawner_shutdown;
 	extern const int spawner_nservers;
-	extern struct serverinfo spawner_servers[];
+	extern struct serverinfo *spawner_servers;
 	extern void (*test_kernel_fn)(const char *);
 	extern void (*test_runtime_fn)(const char *);
 	extern int (*main2_fn)(int, const char **);
@@ -90,12 +90,12 @@
 	/**
 	 * @brief Declares the servers table.
 	 *
-	 * @param x    Number of servers.
-	 * @param ... Table entries.
+	 * @param n Number of servers.
+	 * @param x Servers table.
 	 */
-	#define SPAWNER_SERVERS(x, ...)       \
-		const int spawner_nservers = x;   \
-		struct serverinfo spawner_servers[x] = { __VA_ARGS__ };
+	#define SPAWNER_SERVERS(n, x)       \
+		const int spawner_nservers = n;   \
+		struct serverinfo *spawner_servers = x;
 
 	/**
 	 * @brief Declares test-driver for the kernel.

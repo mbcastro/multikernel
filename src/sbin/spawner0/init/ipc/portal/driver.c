@@ -48,7 +48,9 @@ void test_kernel_ipc_portal(int nbusycores)
 
 	ipc_portal_ncores = sys_get_num_cores() - nbusycores;
 
-	pthread_barrier_init(&barrier, NULL, ipc_portal_ncores - 1);
+	pthread_barrier_init(&barrier, NULL, ipc_portal_ncores);
+
+#ifdef _TEST_API_NAMED_PORTAL_IOCLUSTER
 
 	/* Run API tests. */
 	for (int i = 0; ipc_portal_tests_api[i].test_fn != NULL; i++)
@@ -56,6 +58,8 @@ void test_kernel_ipc_portal(int nbusycores)
 		printf("[nanvix][test][api][ipc][portal] %s\n", ipc_portal_tests_api[i].name);
 		ipc_portal_tests_api[i].test_fn();
 	}
+
+#endif /* _TEST_API_NAMED_PORTAL_IOCLUSTER */
 
 	/* Run fault injection tests. */
 	for (int i = 0; ipc_portal_tests_fault[i].test_fn != NULL; i++)

@@ -21,17 +21,20 @@
 #
 
 # C Source Files
-SRC = name-server.c semaphore-server.c rmem-server.c
+SRC = $(wildcard *.c)
 
 # Object Files
 OBJ = $(SRC:.c=.o)
 
+# Binary Files
+export ELFBIN = $(BINDIR)/test/posix-semaphore-slave
+
 #===============================================================================
 
-# Builds everything.
+# Builds the kernel.
 all: $(OBJ)
-	mkdir -p $(LIBDIR)
-	$(AR) $(ARFLAGS) $(LIBSERVERS) $(OBJ)
+	mkdir -p $(BINDIR)/test/
+	$(CC) $(LDFLAGS) $(OBJ) $(CRT1) -o $(ELFBIN) $(LIBUSER) $(LIBKERNEL) $(LIBS)
 
 # Builds object files.
 %.o: %.c
@@ -43,5 +46,5 @@ clean:
 
 # Cleans everything.
 distclean: clean
-	rm -rf $(LIBSERVERS)
+	rm -rf $(ELFBIN)
 
