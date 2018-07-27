@@ -32,6 +32,8 @@
 #include <nanvix/name.h>
 #include <nanvix/semaphore.h>
 
+#define DEBUG_SEMAPHORE
+
 /**
  * @brief Acknowledgement for semaphore server.
  */
@@ -87,6 +89,16 @@ struct msg_element
 	};
 
 /**
+ * @brief Node number.
+ */
+static int nodenum;
+
+/**
+ * @brief Input mailbox for small messages.
+ */
+static int inbox;
+
+/**
  * @brief Table of named semaphores.
  */
 static struct semaphore semaphores[SEM_MAX];
@@ -105,38 +117,6 @@ static int tail = 0;
  * @brief Head of the messages queue.
  */
 static int head = 0;
-
-/*============================================================================*
- * semaphore_init()                                                           *
- *============================================================================*/
-
-/**
- * @brief Initializes the name server.
- */
-static void semaphore_init(void)
-{
-	/* Initialize semaphores table. */
-	for (int i = 0; i < SEM_MAX; i++)
-	{
-		semaphores[i].nr_proc = 0;
-		semaphores[i].flags = 0;
-		semaphores[i].count = 0;
-		strcpy(semaphores[i].name, "");
-
-		for (int j = 0; j < NANVIX_PROC_MAX; j++)
-			semaphores[i].queue[j].used = 0;
-
-		semaphores[i].head = -1;
-		semaphores[i].tail = -1;
-	}
-
-	/* Initilize message queue. */
-	for (int i = 0; i < NANVIX_PROC_MAX; i++)
-		messages[i].used = 0;
-
-	head = -1;
-	tail = -1;
-}
 
 /*============================================================================*
  * semaphore_procname_is_valid()                                              *
@@ -580,6 +560,15 @@ static int semaphore_create(char *source, char *name, int mode, int value)
 	int i;       /* Semaphore Id.      */
 	int nr_proc; /* Number of process. */
 
+#ifdef DEBUG_SEMAPHORE
+	printf("SEMAPHORE CREATE %s %s %d %d\n",
+		source,
+		name,
+		mode,
+		value
+	);
+#endif
+
 	/* Invalid name. */
 	if ((!semaphore_procname_is_valid(source)) || (!semaphore_name_is_valid(name)))
 		return (-EINVAL);
@@ -709,6 +698,13 @@ static int semaphore_unlink(char *name, char *source)
 	int r;     /* Return value. */
 	int semid; /* Semaphore Id. */
 	int i;
+
+#ifdef DEBUG_SEMAPHORE
+	printf("SEMAPHORE UNLINK %s %s\n",
+		name,
+		source
+	);
+#endif
 
 	/* Sanity check. */
 	if ((!semaphore_name_is_valid(name)) || (!semaphore_procname_is_valid(source)))
@@ -881,251 +877,258 @@ found2:
 }
 
 /*============================================================================*
+ * rmem_loop()                                                                *
+ *============================================================================*/
+
+/**
+ * @brief Handles named semaphore requests.
+ *
+ * @returns Upon successful completion zero is returned. Upon failure,
+ * a negative error code is returned instead.
+ */
+static int semaphore_loop(void)
+{
+	while(1)
+	{
+		int send_response = 0;   /* Reply?               */
+		struct sem_message msg1; /* Semaphore message 1. */
+		struct sem_message msg2; /* Semaphore message 2. */
+
+		assert(sys_mailbox_read(inbox, &msg1, sizeof(struct sem_message)) == 0);
+
+		/* Handle semaphore requests. */
+		switch (msg1.op)
+		{
+			/* Create a named semaphore. */
+			case SEM_CREATE:
+			{
+				/* First message. */
+				if (!(msg1.seq & 1))
+				{
+					assert(semaphore_put_message(&msg1) == 0);
+				}
+				/* Second message. */
+				else
+				{
+					/* Get second message. */
+					assert(semaphore_get_message(&msg2, (msg1.seq & 0xfffe)) == 0);
+					assert(msg1.seq == (msg2.seq | 1));
+
+					msg1.value = semaphore_create(msg2.name, msg1.name, msg2.value, msg1.value);
+					msg1.op = (msg1.value >= 0) ? SEM_SUCCESS : SEM_FAILURE;
+					send_response = 1;
+				}
+			} break;
+
+			/* Create a semaphore with existence check. */
+			case SEM_CREATE_EXCL:
+			{
+				/* First message. */
+				if (!(msg1.seq & 1))
+				{
+					assert(semaphore_put_message(&msg1) == 0);
+				}
+				/* Second message. */
+				else
+				{
+					/* Get second message. */
+					assert(semaphore_get_message(&msg2, (msg1.seq & 0xfffe)) == 0);
+					assert(msg1.seq == (msg2.seq | 1));
+
+					msg1.value = semaphore_create_exclusive(msg2.name, msg1.name, msg2.value, msg1.value);
+					msg1.op = (msg1.value >= 0) ? SEM_SUCCESS : SEM_FAILURE;
+					send_response = 1;
+				}
+
+			} break;
+
+			/* Open a semaphore. */
+			case SEM_OPEN:
+			{
+				/* First message. */
+				if (!(msg1.seq & 1))
+				{
+					assert(semaphore_put_message(&msg1) == 0);
+				}
+				/* Second message. */
+				else
+				{
+					/* Get second message. */
+					assert(semaphore_get_message(&msg2, (msg1.seq & 0xfffe)) == 0);
+					assert(msg1.seq == (msg2.seq | 1));
+
+					msg1.value = semaphore_open(msg2.name, msg1.name);
+					msg1.op = (msg1.value >= 0) ? SEM_SUCCESS : SEM_FAILURE;
+					send_response = 1;
+				}
+			} break;
+
+			/* Close a semaphore. */
+			case SEM_CLOSE:
+			{
+				msg1.value = semaphore_close(msg1.value, msg1.name);
+				msg1.op = (msg1.value >= 0) ? SEM_SUCCESS : SEM_FAILURE;
+				send_response = 1;
+			} break;
+
+			/* Unlink a semaphore. */
+			case SEM_UNLINK:
+			{
+				/* First message. */
+				if (!(msg1.seq & 1))
+				{
+					assert(semaphore_put_message(&msg1) == 0);
+				}
+				/* Second message. */
+				else
+				{
+					/* Get second message. */
+					assert(semaphore_get_message(&msg2, (msg1.seq & 0xfffe)) == 0);
+					assert(msg1.seq == (msg2.seq | 1));
+
+					msg1.value = semaphore_unlink(msg1.name, msg2.name);
+					msg1.op = (msg1.value >= 0) ? SEM_SUCCESS : SEM_FAILURE;
+					send_response = 1;
+				}
+			} break;
+
+			/* Wait a semaphore. */
+			case SEM_WAIT:
+			{
+				msg1.op = semaphore_wait(msg1.value, msg1.name);
+				send_response = 1;
+			} break;
+
+			/* Post a semaphore. */
+			case SEM_POST:
+			{
+				msg1.op = semaphore_post(msg1.value, msg1.name);
+				send_response = 1;
+			} break;
+
+			/* Should not happen. */
+			default:
+				break;
+		}
+
+		/* Send response. */
+		if (send_response)
+		{
+			int outbox;
+			assert((outbox = sys_mailbox_open(atoi(msg2.name))) >= 0);
+			assert(sys_mailbox_write(outbox, &msg1, sizeof(struct sem_message)) == sizeof(struct sem_message));
+			assert(sys_mailbox_close(outbox) == 0);
+		}
+	}
+
+	return (0);
+}
+
+/*============================================================================*
+ * semaphore_startup()                                                        *
+ *============================================================================*/
+
+/**
+ * @brief Initializes the named semaphores server.
+ *
+ * @param _inbox Input mailbox.
+ *
+ * @returns Upon successful completion zero is returned. Upon failure,
+ * a negative error code is returned instead.
+ */
+static int semaphore_startup(int _inbox)
+{
+	int ret;
+	char pathname[NANVIX_PROC_NAME_MAX];
+
+	nodenum = sys_get_node_num();
+
+	/* Assign input mailbox. */
+	inbox = _inbox;
+
+	/* Link name. */
+	sprintf(pathname, "/sem-server");
+	if ((ret = name_link(nodenum, pathname)) < 0)
+		return (ret);
+
+	/* Initialize semaphores table. */
+	for (int i = 0; i < SEM_MAX; i++)
+	{
+		semaphores[i].nr_proc = 0;
+		semaphores[i].flags = 0;
+		semaphores[i].count = 0;
+		strcpy(semaphores[i].name, "");
+
+		for (int j = 0; j < NANVIX_PROC_MAX; j++)
+			semaphores[i].queue[j].used = 0;
+
+		semaphores[i].head = -1;
+		semaphores[i].tail = -1;
+	}
+
+	/* Initialize message queue. */
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
+		messages[i].used = 0;
+
+	head = -1;
+	tail = -1;
+
+	return (0);
+}
+
+/*============================================================================*
+ * semaphore_shutdown()                                                       *
+ *============================================================================*/
+
+/**
+ * @brief Shutdowns the named semaphores server.
+ *
+ * @returns Upon successful completion zero is returned. Upon failure,
+ * a negative error code is returned instead.
+ */
+static int rmem_shutdown(void)
+{
+	return (0);
+}
+
+/*============================================================================*
  * semaphore_server()                                                         *
  *============================================================================*/
 
 /**
  * @brief Handles remote semaphore requests.
  *
- * @param inbox    Input mailbox.
- * @param inportal Input portal.
+ * @param _inbox    Input mailbox.
+ * @param _inportal Input portal.
  *
- * @returns Always returns NULL.
+ * @returns Upon successful completion zero is returned. Upon failure,
+ * a negative error code is returned instead.
  */
-int semaphore_server(int inbox, int inportal)
+int semaphore_server(int _inbox, int _inportal)
 {
-	int outbox;                            /* Mailbox for small messages. */
-	int semid;                             /* Semaphore ID.               */
-	struct sem_message msg1;               /* Semaphore message 1.        */
-	struct sem_message msg2;               /* Semaphore message 2.        */
+	int ret;
 
-	((void) inportal);
+	((void) _inportal);
 
 	printf("[nanvix][semaphore] booting up server\n");
 
-	/* Create input mailbox. */
-	inbox = mailbox_create("/sem-server");
-
-	semaphore_init();
+	if ((ret = semaphore_startup(_inbox)) < 0)
+		goto error;
 
 	printf("[nanvix][semaphore] server alive\n");
 
 	spawner_ack();
 
-	while(1)
-	{
-		assert(mailbox_read(inbox, &msg1, sizeof(struct sem_message)) == 0);
+	if ((ret = semaphore_loop()) < 0)
+		goto error;
 
-		/* Handle semaphore requests. */
-		switch (msg1.op)
-		{
-			/* Create a semaphore. */
-			case SEM_CREATE:
-#ifdef DEBUG
-				printf("SEM_CREATE name: %s.\n", msg1.name);
-#endif
-				/* First message. */
-				if (!(msg1.seq & 1))
-				{
-					assert(semaphore_put_message(&msg1) == 0);
-				}
-				/* Second message. */
-				else
-				{
-					assert(semaphore_get_message(&msg2, (msg1.seq & 0xfffe)) == 0);
+	printf("[nanvix][semaphore] shutting down server\n");
 
-					/* Sequence number check. */
-					assert(msg1.seq == (msg2.seq | 1));
+	if ((ret = rmem_shutdown()) < 0)
+		goto error;
 
-					semid = semaphore_create(msg2.name, msg1.name, msg2.value, msg1.value);
+	return (0);
 
-					if ((msg1.value = semid) >= 0)
-						msg1.op = SEM_SUCCESS;
-					else
-						msg1.op = SEM_FAILURE;
-
-					/* Send response. */
-					assert((outbox = sys_mailbox_open(atoi(msg2.name))) >= 0);
-
-					assert(sys_mailbox_write(outbox, &msg1, sizeof(struct sem_message))
-														== sizeof(struct sem_message));
-
-					assert(sys_mailbox_close(outbox) == 0);
-				}
-
-				break;
-
-			/* Create a semaphore with existence check. */
-			case SEM_CREATE_EXCL:
-#ifdef DEBUG
-				printf("SEM_CREATE_EXCL name: %s.\n", msg1.name);
-#endif
-				/* First message. */
-				if (!(msg1.seq & 1))
-				{
-					assert(semaphore_put_message(&msg1) == 0);
-				}
-				/* Second message. */
-				else
-				{
-					assert(semaphore_get_message(&msg2, (msg1.seq & 0xfffe)) == 0);
-
-					/* Sequence number check. */
-					assert(msg1.seq == (msg2.seq | 1));
-
-					semid = semaphore_create_exclusive(msg2.name, msg1.name, msg2.value, msg1.value);
-
-					if ((msg1.value = semid) >= 0)
-						msg1.op = SEM_SUCCESS;
-					else
-						msg1.op = SEM_FAILURE;
-
-					/* Send response. */
-					assert((outbox = sys_mailbox_open(atoi(msg2.name))) >= 0);
-
-					assert(sys_mailbox_write(outbox, &msg1, sizeof(struct sem_message))
-														== sizeof(struct sem_message));
-
-					assert(sys_mailbox_close(outbox) == 0);
-				}
-
-				break;
-
-			/* Open a semaphore. */
-			case SEM_OPEN:
-#ifdef DEBUG
-				printf("SEM_OPEN name: %s.\n", msg1.name);
-#endif
-				/* First message. */
-				if (!(msg1.seq & 1))
-				{
-					assert(semaphore_put_message(&msg1) == 0);
-				}
-				/* Second message. */
-				else
-				{
-					assert(semaphore_get_message(&msg2, (msg1.seq & 0xfffe)) == 0);
-
-					/* Sequence number check. */
-					assert(msg1.seq == (msg2.seq | 1));
-
-					semid = semaphore_open(msg2.name, msg1.name);
-
-					if ((msg1.value = semid) >= 0)
-						msg1.op = SEM_SUCCESS;
-					else
-						msg1.op = SEM_FAILURE;
-
-					/* Send response. */
-					assert((outbox = sys_mailbox_open(atoi(msg2.name))) >= 0);
-
-					assert(sys_mailbox_write(outbox, &msg1, sizeof(struct sem_message))
-														== sizeof(struct sem_message));
-
-					assert(sys_mailbox_close(outbox) == 0);
-				}
-
-				break;
-
-			/* Close a semaphore. */
-			case SEM_CLOSE:
-#ifdef DEBUG
-				printf("SEM_CLOSE name: %s.\n", msg1.name);
-#endif
-
-				if ((msg1.value = semaphore_close(msg1.value, msg1.name)) >= 0)
-					msg1.op = SEM_SUCCESS;
-				else
-					msg1.op = SEM_FAILURE;
-
-				/* Send response. */
-				assert((outbox = sys_mailbox_open(atoi(msg1.name))) >= 0);
-
-				assert(sys_mailbox_write(outbox, &msg1, sizeof(struct sem_message))
-													== sizeof(struct sem_message));
-
-				assert(sys_mailbox_close(outbox) == 0);
-
-				break;
-
-			/* Unlink a semaphore. */
-			case SEM_UNLINK:
-#ifdef DEBUG
-				printf("SEM_UNLINK name: %s.\n", msg1.name);
-#endif
-				/* First message. */
-				if (!(msg1.seq & 1))
-				{
-					assert(semaphore_put_message(&msg1) == 0);
-				}
-				/* Second message. */
-				else
-				{
-					assert(semaphore_get_message(&msg2, (msg1.seq & 0xfffe)) == 0);
-
-					/* Sequence number check. */
-					assert(msg1.seq == (msg2.seq | 1));
-
-					if ((msg1.value = semaphore_unlink(msg1.name, msg2.name)) >= 0)
-						msg1.op = SEM_SUCCESS;
-					else
-						msg1.op = SEM_FAILURE;
-
-					/* Send response. */
-					assert((outbox = sys_mailbox_open(atoi(msg2.name))) >= 0);
-
-					assert(sys_mailbox_write(outbox, &msg1, sizeof(struct sem_message))
-														== sizeof(struct sem_message));
-
-					assert(sys_mailbox_close(outbox) == 0);
-				}
-
-				break;
-
-			/* Wait a semaphore. */
-			case SEM_WAIT:
-#ifdef DEBUG
-				printf("SEM_WAIT name: %s.\n", msg1.name);
-#endif
-
-				msg1.op = semaphore_wait(msg1.value, msg1.name);
-
-				/* Send response. */
-				assert((outbox = sys_mailbox_open(atoi(msg1.name))) >= 0);
-
-				assert(sys_mailbox_write(outbox, &msg1, sizeof(struct sem_message))
-													== sizeof(struct sem_message));
-
-				assert(sys_mailbox_close(outbox) == 0);
-
-				break;
-
-			/* Post a semaphore. */
-			case SEM_POST:
-#ifdef DEBUG
-				printf("SEM_POST name: %s.\n", msg1.name);
-#endif
-
-				msg1.op = semaphore_post(msg1.value, msg1.name);
-
-				/* Send response. */
-				assert((outbox = sys_mailbox_open(atoi(msg1.name))) >= 0);
-
-				assert(sys_mailbox_write(outbox, &msg1, sizeof(struct sem_message))
-													== sizeof(struct sem_message));
-
-				assert(sys_mailbox_close(outbox) == 0);
-
-				break;
-
-			/* Should not happen. */
-			default:
-				break;
-		}
-	}
-
-	/* House keeping. */
-	mailbox_unlink(inbox);
-
-	return (EXIT_SUCCESS);
+error:
+	return (ret);
 }
