@@ -42,13 +42,14 @@
 	 * @brief Operation types for semaphore server.
 	 */
 	/**@{*/
-	#define SEM_OPEN        1 /* Open a semaphore.                        */
-	#define SEM_POST        2 /* Post a semaphore.                        */
-	#define SEM_WAIT        3 /* Wait a semaphore.                        */
-	#define SEM_CLOSE       4 /* Close a semaphore.                       */
-	#define SEM_UNLINK      5 /* Unlink a semaphore.                      */
-	#define SEM_CREATE      6 /* Create a semaphore.                      */
-	#define SEM_CREATE_EXCL 7 /* Create a semaphore with existence check. */
+	#define SEM_OPEN        1 /* Open a semaphore.              */
+	#define SEM_POST        2 /* Post a semaphore.              */
+	#define SEM_WAIT        3 /* Wait a semaphore.              */
+	#define SEM_CLOSE       4 /* Close a semaphore.             */
+	#define SEM_UNLINK      5 /* Unlink a semaphore.            */
+	#define SEM_CREATE      6 /* Create a semaphore.            */
+	#define SEM_CREATE_EXCL 7 /* Create an exclusive semaphore. */
+	#define SEM_RETURN      8 /* Return.                        */
 	/**@}*/
 
 	/**
@@ -56,10 +57,52 @@
 	 */
 	struct sem_message
 	{
-		uint16_t seq;                   /**< Sequence number.          */
-		char name[NANVIX_SEM_NAME_MAX]; /**< Client or semaphore name. */
-		int16_t op;                     /**< Semaphore operation.      */
-		int value;                      /**< Value.                    */
+		uint16_t source; /**< Source cluster.      */
+		int16_t opcode;  /**< Semaphore operation. */
+		uint16_t seq;    /**< Sequence number.     */
+
+		/* Operation-specific fields. */
+		union 
+		{
+			/* Create message 1. */
+			struct {
+				mode_t mode; /**< Access permissions. */
+				int value;   /**< Value.              */
+			} create1;
+
+			/* Create message 2. */
+			struct {
+				char name[NANVIX_SEM_NAME_MAX]; /**< Semaphore name. */
+			} create2;
+
+			/* Open message. */
+			struct {
+				char name[NANVIX_SEM_NAME_MAX]; /**< Semaphore name. */
+			} open;
+
+			/* Post message. */
+			struct {
+				int semid; /**< ID of target semaphore. */ 
+			} post;
+
+			/* Wait message. */
+			struct {
+				int semid; /**< ID of target semaphore. */ 
+			} wait;
+
+			/* Close message. */
+			struct {
+				int semid; /**< ID of target semaphore. */ 
+			} close;
+
+			/* Unlink message. */
+			struct {
+				char name[NANVIX_SEM_NAME_MAX]; /**< Semaphore name. */
+			} unlink;
+
+			/* Return value. */
+			int ret;
+		} op;
 	};
 
 	/* Forward definitions. */
