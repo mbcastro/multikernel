@@ -32,8 +32,6 @@
 #include <nanvix/name.h>
 #include <nanvix/semaphore.h>
 
-#define DEBUG_SEMAPHORE
-
 /**
  * @brief Semaphore flags.
  */
