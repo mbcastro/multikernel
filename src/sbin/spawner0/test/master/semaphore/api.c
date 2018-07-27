@@ -146,6 +146,58 @@ static void test_posix_semaphore_create_unlink_cc(void)
 	TEST_ASSERT(barrier_wait(barrier) == 0);
 
 	join_slaves();
+
+	/* House keeping. */
+	TEST_ASSERT(barrier_unlink(barrier) == 0);
+}
+
+/*============================================================================*
+ * API Test: Open Close CC                                                    *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Open Close CC
+ */
+static void test_posix_semaphore_open_close_cc(void)
+{
+	int nodenum;
+	int barrier;
+	int nodes[NANVIX_PROC_MAX + 1];
+	char masternode_str[4];
+	char mailbox_nclusters_str[4];
+	char test_str[4];
+	const char *args[] = {
+		"/test/posix-semaphore-slave",
+		masternode_str,
+		mailbox_nclusters_str,
+		test_str,
+		NULL
+	};
+
+	nodenum = sys_get_node_num();
+
+	/* Build arguments. */
+	sprintf(masternode_str, "%d", nodenum);
+	sprintf(mailbox_nclusters_str, "%d", NANVIX_PROC_MAX);
+	sprintf(test_str, "%d", 1);
+
+	/* Build nodes list. */
+	nodes[0] = nodenum;
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
+		nodes[i + 1] = i;
+
+	/* Create barrier. */
+	TEST_ASSERT((barrier = barrier_create(nodes, NANVIX_PROC_MAX + 1)) >= 0);
+
+	spawn_slaves(args);
+
+	/* Wait for slaves. */
+	TEST_ASSERT(barrier_wait(barrier) == 0);
+
+	join_slaves();
+
+	/* House keeping. */
+	TEST_ASSERT(barrier_unlink(barrier) == 0);
 }
 
 /*============================================================================*/
@@ -157,5 +209,6 @@ struct test posix_semaphore_tests_api[] = {
 	{ test_posix_semaphore_create_unlink,    "Create Unlink" },
 	{ test_posix_semaphore_open_close,       "Open Close"    },
 	{ test_posix_semaphore_create_unlink_cc, "Create Unlink" },
+	{ test_posix_semaphore_open_close_cc,    "Open Close"    },
 	{ NULL,                                  NULL            },
 };

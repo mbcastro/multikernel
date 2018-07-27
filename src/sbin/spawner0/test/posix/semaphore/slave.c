@@ -69,6 +69,43 @@ static void test_posix_semaphore_create_unlink_cc(int masternode, int nclusters)
 	TEST_ASSERT(barrier_unlink(barrier) == 0);
 }
 
+/*============================================================================*
+ * API Test: Open Close CC                                                    *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Open Close CC
+ */
+static void test_posix_semaphore_open_close_cc(int masternode, int nclusters)
+{
+	sem_t *sem;
+	int nodenum;
+	int barrier;
+	int nodes[nclusters + 1];
+	char semaphore_name[NANVIX_SEM_NAME_MAX];
+
+	nodenum = sys_get_node_num();
+
+	/* Build nodes list. */
+	nodes[0] = masternode;
+	for (int i = 0; i < nclusters; i++)
+		nodes[i + 1] = i;
+
+	/* Create barrier. */
+	TEST_ASSERT((barrier = barrier_create(nodes, nclusters + 1)) >= 0);
+
+	/* Create and unlink semaphore. */
+	sprintf(semaphore_name, "/semaphore%d", nodenum);
+	TEST_ASSERT((sem = sem_open(semaphore_name, O_CREAT, 0, 0)) != SEM_FAILED);
+	TEST_ASSERT((sem = sem_open(semaphore_name, 0)) != SEM_FAILED);
+	TEST_ASSERT(sem_close(sem) == 0);
+	TEST_ASSERT(sem_unlink(semaphore_name) == 0);
+
+	/* Sync. */
+	TEST_ASSERT(barrier_wait(barrier) == 0);
+	TEST_ASSERT(barrier_unlink(barrier) == 0);
+}
+
 /*============================================================================*/
 
 /**
@@ -91,6 +128,11 @@ int main2(int argc, char **argv)
 		/* Create Unlink CC */
 		case 0:
 			test_posix_semaphore_create_unlink_cc(masternode, nclusters);
+			break;
+
+		/* Open Close CC */
+		case 1:
+			test_posix_semaphore_open_close_cc(masternode, nclusters);
 			break;
 
 		/* Should not happen. */
