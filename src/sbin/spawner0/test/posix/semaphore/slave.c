@@ -137,6 +137,156 @@ static void test_posix_semaphore_open_close2_cc(int masternode, int nclusters)
 }
 
 /*============================================================================*
+ * API Test: Open Close 3 CC                                                  *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Open Close 3 CC
+ */
+static void test_posix_semaphore_open_close3_cc(int masternode, int nclusters)
+{
+	sem_t *sem;
+	int barrier;
+	int nodenum;
+	int nodes[nclusters + 1];
+	char semaphore_name[NANVIX_SEM_NAME_MAX];
+
+	/* Build nodes list. */
+	nodes[0] = masternode;
+	for (int i = 0; i < nclusters; i++)
+		nodes[i + 1] = i;
+
+	/* Create barrier. */
+	TEST_ASSERT((barrier = barrier_create(nodes, nclusters + 1)) >= 0);
+
+	nodenum = sys_get_node_num();
+
+	/* Create semaphore. */
+	sprintf(semaphore_name, "/semaphore%d", nodenum);
+	TEST_ASSERT((sem = sem_open(semaphore_name, O_CREAT, 0, 0)) != SEM_FAILED);
+
+	/* Sync. */
+	TEST_ASSERT(barrier_wait(barrier) == 0);
+
+	/* Sync. */
+	TEST_ASSERT(barrier_wait(barrier) == 0);
+
+	/* House keeping. */
+	TEST_ASSERT(sem_unlink(semaphore_name) == 0);
+
+	/* Sync. */
+	TEST_ASSERT(barrier_wait(barrier) == 0);
+	TEST_ASSERT(barrier_unlink(barrier) == 0);
+}
+
+/*============================================================================*
+ * API Test: Open Close 4 CC                                                  *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Open Close 4 CC
+ */
+static void test_posix_semaphore_open_close4_cc(int masternode, int nclusters)
+{
+	sem_t *sem1, *sem2;
+	int nodenum;
+	int barrier;
+	int nodes[nclusters + 1];
+	char semaphore_name[NANVIX_SEM_NAME_MAX];
+
+	nodenum = sys_get_node_num();
+
+	/* Build nodes list. */
+	nodes[0] = masternode;
+	for (int i = 0; i < nclusters; i++)
+		nodes[i + 1] = i;
+
+	/* Create barrier. */
+	TEST_ASSERT((barrier = barrier_create(nodes, nclusters + 1)) >= 0);
+
+	/* Create semaphore. */
+	sprintf(semaphore_name, "/semaphore%d", nodenum);
+	TEST_ASSERT((sem1 = sem_open(semaphore_name, O_CREAT, 0, 0)) != SEM_FAILED);
+
+	/* Sync. */
+	TEST_ASSERT(barrier_wait(barrier) == 0);
+
+	/* Open semaphore. */
+	sprintf(semaphore_name, "/semaphore%d", (nodenum + 1)%nclusters);
+	TEST_ASSERT((sem2 = sem_open(semaphore_name, 0)) != SEM_FAILED);
+	TEST_ASSERT(sem_close(sem2) == 0);
+
+	/* House keeping. */
+	sprintf(semaphore_name, "/semaphore%d", nodenum);
+	TEST_ASSERT(sem_unlink(semaphore_name) == 0);
+
+	/* Sync. */
+	TEST_ASSERT(barrier_wait(barrier) == 0);
+	TEST_ASSERT(barrier_unlink(barrier) == 0);
+}
+
+/*============================================================================*
+ * API Test: Wait Post CC                                                     *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Wait Post CC
+ */
+static void test_posix_semaphore_wait_post_cc(int masternode, int nclusters)
+{
+	sem_t *sem;
+	int nodenum;
+	int barrier;
+	int nodes[nclusters + 1];
+
+	nodenum = sys_get_node_num();
+
+	/* Build nodes list. */
+	nodes[0] = masternode;
+	for (int i = 0; i < nclusters; i++)
+		nodes[i + 1] = i;
+
+	/* Create barrier. */
+	TEST_ASSERT((barrier = barrier_create(nodes, nclusters + 1)) >= 0);
+
+	/* Create semaphore. */
+	if (nodenum == 0)
+		TEST_ASSERT((sem = sem_open("/semaphore", O_CREAT, 0, 1)) != SEM_FAILED);
+
+	/* Sync. */
+	TEST_ASSERT(barrier_wait(barrier) == 0);
+
+	/* Open semaphore. */
+	if (nodenum != 0)
+		TEST_ASSERT((sem = sem_open("/semaphore", 0)) != SEM_FAILED);
+
+	/* Wait on semaphore. */
+	if (nodenum != 0)
+		TEST_ASSERT(sem_wait(sem) == 0);
+
+	/* Post on semaphore. */
+	if (nodenum == 0)
+	{
+		for (int i = 0; i < nclusters - 1; i++)
+			TEST_ASSERT(sem_post(sem) == 0);
+	}
+
+	/* House keeping. */
+	if (nodenum == 0)
+	{
+		TEST_ASSERT(sem_unlink("/semaphore") == 0);
+	}
+	else
+	{
+		TEST_ASSERT(sem_close(sem) == 0);
+	}
+
+	/* Sync. */
+	TEST_ASSERT(barrier_wait(barrier) == 0);
+	TEST_ASSERT(barrier_unlink(barrier) == 0);
+}
+
+/*============================================================================*
  * API Test: Wait Post 2 CC                                                   *
  *============================================================================*/
 
@@ -160,6 +310,51 @@ static void test_posix_semaphore_wait_post2_cc(int masternode, int nclusters)
 	TEST_ASSERT((sem = sem_open("/semaphore", 0)) != SEM_FAILED);
 	TEST_ASSERT(sem_wait(sem) == 0);
 	TEST_ASSERT(sem_close(sem) == 0);
+
+	/* Sync. */
+	TEST_ASSERT(barrier_wait(barrier) == 0);
+	TEST_ASSERT(barrier_unlink(barrier) == 0);
+}
+
+/*============================================================================*
+ * API Test: Wait Post 3 CC                                                   *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Wait Post 3 CC
+ */
+static void test_posix_semaphore_wait_post3_cc(int masternode, int nclusters)
+{
+	sem_t *sem;
+	int barrier;
+	int nodenum;
+	int nodes[nclusters + 1];
+	char semaphore_name[NANVIX_SEM_NAME_MAX];
+
+	/* Build nodes list. */
+	nodes[0] = masternode;
+	for (int i = 0; i < nclusters; i++)
+		nodes[i + 1] = i;
+
+	/* Create barrier. */
+	TEST_ASSERT((barrier = barrier_create(nodes, nclusters + 1)) >= 0);
+
+	nodenum = sys_get_node_num();
+
+	/* Create semaphore. */
+	sprintf(semaphore_name, "/semaphore%d", nodenum);
+	TEST_ASSERT((sem = sem_open(semaphore_name, O_CREAT, 0, 1)) != SEM_FAILED);
+
+	/* Sync. */
+	TEST_ASSERT(barrier_wait(barrier) == 0);
+
+	TEST_ASSERT(sem_post(sem) == 0);
+
+	/* Sync. */
+	TEST_ASSERT(barrier_wait(barrier) == 0);
+
+	/* House keeping. */
+	TEST_ASSERT(sem_unlink(semaphore_name) == 0);
 
 	/* Sync. */
 	TEST_ASSERT(barrier_wait(barrier) == 0);
@@ -200,9 +395,29 @@ int main2(int argc, char **argv)
 			test_posix_semaphore_open_close2_cc(masternode, nclusters);
 			break;
 
-		/* Wait Post 2 CC */
+		/* Open Close 3 CC */
 		case 3:
+			test_posix_semaphore_open_close3_cc(masternode, nclusters);
+			break;
+
+		/* Open Close 4 CC */
+		case 4:
+			test_posix_semaphore_open_close4_cc(masternode, nclusters);
+			break;
+
+		/* Wait Post CC */
+		case 5:
+			test_posix_semaphore_wait_post_cc(masternode, nclusters);
+			break;
+
+		/* Wait Post 2 CC */
+		case 6:
 			test_posix_semaphore_wait_post2_cc(masternode, nclusters);
+			break;
+
+		/* Wait Post 3 CC */
+		case 7:
+			test_posix_semaphore_wait_post3_cc(masternode, nclusters);
 			break;
 
 		/* Should not happen. */
