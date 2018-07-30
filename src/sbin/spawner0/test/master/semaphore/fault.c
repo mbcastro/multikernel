@@ -126,6 +126,19 @@ static void test_posix_semaphore_invalid_unlink(void)
 	TEST_ASSERT(nanvix_sem_unlink(buf) == -1);
 }
 
+/*============================================================================*
+ * Fault Injection Test: Bad Unlink                                           *
+ *============================================================================*/
+
+/**
+ * @brief Fault Injection Test: Bad Unlink 
+ */
+static void test_posix_semaphore_bad_unlink(void)
+{
+	TEST_ASSERT(nanvix_sem_unlink("") == -1);
+	TEST_ASSERT(nanvix_sem_unlink("missing-name") == -1);
+}
+
 /*============================================================================*/
 
 /**
@@ -138,5 +151,6 @@ struct test posix_semaphore_tests_fault[] = {
 	{ test_posix_semaphore_invalid_open,   "Invalid Open"   },
 	{ test_posix_semaphore_bad_open,       "Bad Open"       },
 	{ test_posix_semaphore_invalid_unlink, "Invalid Unlink" },
+	{ test_posix_semaphore_bad_unlink,     "Bad Unlink"     },
 	{ NULL,                                NULL             },
 };
