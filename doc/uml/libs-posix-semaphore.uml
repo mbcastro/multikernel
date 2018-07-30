@@ -1,0 +1,14 @@
+@startuml
+
+interface Semaphore {
+	+ SEM_FAILED
+	+ sem_t
+	+ sem_close()
+	+ sem_open()
+	+ sem_post()
+	+ sem_unlink()
+	+ sem_wait()
+}
+
+@enduml
+

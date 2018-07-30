@@ -1,18 +1,20 @@
 @startuml
 
-!include kernel-hal.uml
+!include hal.uml
 
 remove HAL.CoreTypes
 remove HAL.CoreInterface
 remove HAL.SyncTypes
 remove HAL.SyncInterface
 remove HAL.PortalInterface
-remove HAL.PerformanceInterface
+remote HAL.PerformanceInterface
 
-!include libs-ipc-name.uml
+!include ipc.uml
 
-remove name.NameOperations
-remove name.NameMessageType
+remove IPC.NameClient
+remove IPC.Mailbox
+remove IPC.MailboxOperations
+remove Unknown
 
 namespace NameServer {
 	class NameTable {
@@ -25,14 +27,16 @@ namespace NameServer {
 		- int _name_lookup(const char *name)
 		- int _name_link(int nodeid, char *name)
 		- int _name_unlink(char *name)
-		~ int name_server(int inbox)
+		~ void *name_server(void *args)
 	}
 
 	NameServer.NameServer "1" *-- "HAL_NR_NOC_NODES" NameServer.NameTable : names
 
-	NameServer.NameServer ..> name.NameMessage      : <<uses>>
+	NameServer.NameServer ..> IPC.NameMessage      : <<uses>>
 	NameServer.NameServer ..> HAL.MailboxInterface : <<uses>>
 	NameServer.NameServer ..> HAL.NoCInterface     : <<uses>>
+	NameServer.NameServer ..> HAL.SetupInterface   : <<uses>>
 }
 
 @enduml
+
