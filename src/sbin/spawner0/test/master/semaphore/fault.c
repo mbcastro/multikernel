@@ -168,6 +168,19 @@ static void test_posix_semaphore_invalid_close(void)
 	TEST_ASSERT(nanvix_sem_close(SEM_MAX + 1) == -1);
 }
 
+/*============================================================================*
+ * Fault Injection Test: Bad Close                                            *
+ *============================================================================*/
+
+/**
+ * @brief Fault Injection Test: Bad Close
+ */
+static void test_posix_semaphore_bad_close(void)
+{
+	for (int i = 0; i < SEM_MAX; i++)
+		TEST_ASSERT(nanvix_sem_close(i) == -1);
+}
+
 /*============================================================================*/
 
 /**
@@ -183,5 +196,6 @@ struct test posix_semaphore_tests_fault[] = {
 	{ test_posix_semaphore_bad_unlink,     "Bad Unlink"     },
 	{ test_posix_semaphore_double_unlink,  "Double Unlink"  },
 	{ test_posix_semaphore_invalid_close,  "Invalid Close"  },
+	{ test_posix_semaphore_bad_close,      "Bad Close"      },
 	{ NULL,                                NULL             },
 };
