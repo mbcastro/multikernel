@@ -34,7 +34,7 @@
 #define NR_SERVERS 1
 
 /* Forward definitions. */
-extern int name_server(int);
+extern int name_server(int, int);
 extern void test_kernel_sys_sync(void);
 extern void test_kernel_barrier(void);
 
@@ -89,7 +89,7 @@ void spawners_sync(void)
 
 SPAWNER_NAME("spawner1")
 SPAWNER_SHUTDOWN(SHUTDOWN_DISABLE)
-SPAWNER_SERVERS(NR_SERVERS, { name_server, NAME_SERVER_NODE, 0 }, )
+SPAWNER_SERVERS(NR_SERVERS, { name_server, NAME_SERVER_NODE, 0 } )
 SPAWNER_MAIN2(NULL)
 SPAWNER_KERNEL_TESTS(test_kernel)
 SPAWNER_RUNTIME_TESTS(test_runtime)

@@ -33,7 +33,7 @@
 /**
  * @brief Barrier for synchronization.
  */
-static pthread_barrier_t barrier;
+pthread_barrier_t spawner_barrier;
 
 /**
  * @brief Server wrapper.
@@ -42,7 +42,7 @@ static void *server(void *args)
 {
 	int servernum;
 	int runlevel;
-	int (*main_fn) (int);
+	int (*main_fn) (int, int);
 
 	kernel_setup();
 
@@ -54,11 +54,8 @@ static void *server(void *args)
 	/* Initialize runtime. */
 	assert(runtime_setup(runlevel) == 0);
 
-	/* Wait for other servers. */
-	pthread_barrier_wait(&barrier);
-
 	/* Spawn server. */
-	main_fn(get_inbox());
+	main_fn(get_inbox(), get_inportal());
 
 	assert(runtime_cleanup() == 0);
 
@@ -94,7 +91,7 @@ int main(int argc, const char **argv)
 
 	printf("[nanvix][%s] server alive\n", spawner_name);
 
-	pthread_barrier_init(&barrier, NULL, spawner_nservers + 1);
+	pthread_barrier_init(&spawner_barrier, NULL, spawner_nservers + 1);
 
 	/* Spawn servers. */
 	for (int i = 0; i < spawner_nservers; i++)
@@ -107,7 +104,7 @@ int main(int argc, const char **argv)
 		);
 	}
 
-	pthread_barrier_wait(&barrier);
+	pthread_barrier_wait(&spawner_barrier);
 
 	spawners_sync();
 

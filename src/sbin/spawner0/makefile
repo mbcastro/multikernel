@@ -38,16 +38,22 @@ export INIT_SRC = $(wildcard $(CURDIR)/init/hal/core/*.c)      \
 #===============================================================================
 
 # Builds everything.
-all: test
+all: test benchmark
 
-# Builds Test-Driver Utilitiy
+# Builds Test-Driver Utilitiy.
 test:
 	cd test && $(MAKE) all
+
+# Builds Synthetic Benchmarks.
+benchmark:
+	cd rmem-benchmark && $(MAKE) all
 
 # Cleans compilation files.
 clean:
 	cd test && $(MAKE) clean
+	cd rmem-benchmark && $(MAKE) clean
 
 # Cleans everything.
 distclean: clean
 	cd test && $(MAKE) distclean
+	cd rmem-benchmark && $(MAKE) distclean

@@ -21,17 +21,21 @@
 #
 
 # C Source Files
-SRC = $(wildcard *.c)
+SRC = $(wildcard *.c) \
+	  $(INIT_SRC)
 
 # Object Files
 OBJ = $(SRC:.c=.o)
 
+# Binary Files
+export ELFBIN = $(BINDIR)/benchmarks
+
 #===============================================================================
 
-# Builds IPC library.
+# Builds the kernel.
 all: $(OBJ)
-	mkdir -p $(LIBDIR)
-	$(AR) $(ARFLAGS) $(LIBUSER) $(OBJ)
+	mkdir -p $(BINDIR)
+	$(CC) $(LDFLAGS) $(OBJ) $(CRT0) -o $(ELFBIN) $(LIBSERVERS) $(LIBUSER) $(LIBKERNEL) $(LIBS)
 
 # Builds object files.
 %.o: %.c
@@ -43,5 +47,5 @@ clean:
 
 # Cleans everything.
 distclean: clean
-	rm -rf $(LIBUSER)
+	rm -rf $(ELFBIN)
 

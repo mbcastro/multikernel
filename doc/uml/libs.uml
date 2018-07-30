@@ -13,12 +13,17 @@ namespace libs {
 	namespace portal {
 	}
 
+	namespace rmem {
+	}
+  
 	namespace semaphore {
 	}
 
 	libs.mailbox   ..> libs.name    : <<use>>
 	libs.portal    ..> libs.name    : <<use>>
-	libs.semaphore ..> libs.name    : <<use>>
+	libs.rmem      ..> libs.mailbox : <<use>>
+	libs.rmem      ..> libs.portal  : <<use>>
+  libs.semaphore ..> libs.name    : <<use>>
 	libs.semaphore ..> libs.mailbox : <<use>>
 }
 

@@ -20,15 +20,32 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef _MEM_H_
-#define _MEM_H_
+#ifndef _TEST_H_
+#define _TEST_H_
+
+	#include <stdlib.h>
+
+	/**
+	 * @brief Asserts a logic expression.
+	 */
+	#define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
+
+	/**
+	 * @brief Buffer size (in bytes).
+	 */
+	#define DATA_SIZE 256
+
+	/**
+	 * @brief Unit test.
+	 */
+	struct test
+	{
+		void (*test_fn)(void); /**< Test function. */
+		const char *name;      /**< Test name.     */
+	};
 
 	/* Forward definitions. */
-	extern int _mem_outbox;
-	extern int _mem_inportal;
-	extern int _mem_outportal;
+	extern struct test mm_rmem_tests_api[];
+	extern struct test mm_rmem_tests_fault[];
 
-	/* Forward definitions. */
-	extern void meminit(void);
-
-#endif /* _MEM_H_ */
+#endif /* _TEST_H_ */

@@ -23,14 +23,16 @@
 #ifndef NANVIX_SPAWNER_H_
 #define NANVIX_SPAWNER_H_
 
+	#include <pthread.h>
+
 	/**
 	 * @brief Server information,
 	 */
 	struct serverinfo
 	{
-		int (*main) (int); /**< Main function.   */
-		int nodenum;       /**< Node number.     */
-		int runlevel;      /**< Server runlevel. */
+		int (*main) (int, int); /**< Main function.   */
+		int nodenum;            /**< Node number.     */
+		int runlevel;           /**< Server runlevel. */
 	};
 
 	/* Forward definitions. */
@@ -99,5 +101,8 @@
 	 */
 	#define SPAWNER_RUNTIME_TESTS(x) \
 		void (*test_runtime_fn)(const char *) = x;
+
+	/* Forward definitions. */
+	extern pthread_barrier_t spawner_barrier;
 
 #endif /* NANVIX_SPAWNER_H_*/

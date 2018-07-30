@@ -98,7 +98,7 @@ static void mppa256_portal_unlock(void)
  */
 static int portal_is_valid(int portalid)
 {
-	return ((portalid >= 0) || (portalid < HAL_NR_PORTAL));
+	return ((portalid >= 0) && (portalid < HAL_NR_PORTAL));
 }
 
 /*============================================================================*

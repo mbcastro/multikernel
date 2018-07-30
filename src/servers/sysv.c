@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#include <nanvix/spawner.h>
 #include <nanvix/syscalls.h>
 #include <nanvix/pm.h>
 #include <nanvix/name.h>
@@ -835,16 +836,19 @@ found2:
 /**
  * @brief Handles remote semaphore requests.
  *
- * @param inbox Input mailbox.
+ * @param inbox    Input mailbox.
+ * @param inportal Input portal.
  *
  * @returns Always returns NULL.
  */
-int semaphore_server(int inbox)
+int semaphore_server(int inbox, int inportal)
 {
 	int outbox;                            /* Mailbox for small messages. */
 	int semid;                             /* Semaphore ID.               */
 	struct sem_message msg1;               /* Semaphore message 1.        */
 	struct sem_message msg2;               /* Semaphore message 2.        */
+
+	((void) inportal);
 
 	printf("[nanvix][semaphore] booting up server\n");
 
@@ -854,6 +858,9 @@ int semaphore_server(int inbox)
 	_sem_init();
 
 	printf("[nanvix][semaphore] server alive\n");
+
+	/* Wait for other servers. */
+	pthread_barrier_wait(&spawner_barrier);
 
 	while(1)
 	{
