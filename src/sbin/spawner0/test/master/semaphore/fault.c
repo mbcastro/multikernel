@@ -164,8 +164,7 @@ static void test_posix_semaphore_double_unlink(void)
  */
 static void test_posix_semaphore_invalid_close(void)
 {
-	TEST_ASSERT(nanvix_sem_close(-1) == -1);
-	TEST_ASSERT(nanvix_sem_close(SEM_MAX + 1) == -1);
+	TEST_ASSERT(nanvix_sem_close(NULL) == -1);
 }
 
 /*============================================================================*
@@ -177,8 +176,9 @@ static void test_posix_semaphore_invalid_close(void)
  */
 static void test_posix_semaphore_bad_close(void)
 {
-	for (int i = 0; i < SEM_MAX; i++)
-		TEST_ASSERT(nanvix_sem_close(i) == -1);
+	sem_t sem;
+
+	TEST_ASSERT(nanvix_sem_close(&sem) == -1);
 }
 
 /*============================================================================*
