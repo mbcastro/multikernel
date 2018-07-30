@@ -20,57 +20,29 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <pthread.h>
 #include <stdio.h>
 
-#define __NEED_HAL_CORE_
-#define __NEED_HAL_NOC_
 #include <nanvix/syscalls.h>
-#include <nanvix/limits.h>
 
 #include "test.h"
 
 /**
- * @brief Number of remote clusters.
+ * @brief Named Semaphores Test Driver
  */
-int ipc_semaphore_nclusters = NANVIX_PROC_MAX;
-
-/**
- * @brief Number of cores in the underlying cluster.
- */
-int ipc_semaphore_ncores = 0;
-
-/**
- * @brief Global barrier for synchronization.
- */
-pthread_barrier_t ipc_semaphore_barrier;
-
-/**
- * @brief Synchronization Point Test Driver
- *
- * @param nbusycores Number of busy cores.
- */
-void test_kernel_semaphore(int nbusycores)
+void test_semaphore(void)
 {
-	TEST_ASSERT(runtime_setup(2) == 0);
-
-	ipc_semaphore_ncores = sys_get_num_cores() - nbusycores;
-
-	pthread_barrier_init(&ipc_semaphore_barrier, NULL, ipc_semaphore_ncores - 1);
-
 	/* Run API tests. */
-	for (int i = 0; ipc_semaphore_tests_api[i].test_fn != NULL; i++)
+	for (int i = 0; posix_semaphore_tests_api[i].test_fn != NULL; i++)
 	{
-		printf("[nanvix][test][api][ipc][semaphore] %s\n", ipc_semaphore_tests_api[i].name);
-		ipc_semaphore_tests_api[i].test_fn();
+		printf("[nanvix][test][api][posix][semaphore] %s\n", posix_semaphore_tests_api[i].name);
+		posix_semaphore_tests_api[i].test_fn();
 	}
+
 
 	/* Run fault injection tests. */
-	for (int i = 0; ipc_semaphore_tests_fault[i].test_fn != NULL; i++)
+	for (int i = 0; posix_semaphore_tests_fault[i].test_fn != NULL; i++)
 	{
-		printf("[nanvix][test][fault][ipc][semaphore] %s\n", ipc_semaphore_tests_fault[i].name);
-		ipc_semaphore_tests_fault[i].test_fn();
+		printf("[nanvix][test][fault][posix][semaphore] %s\n", posix_semaphore_tests_fault[i].name);
+		posix_semaphore_tests_fault[i].test_fn();
 	}
-
-	TEST_ASSERT(runtime_cleanup() == 0);
 }

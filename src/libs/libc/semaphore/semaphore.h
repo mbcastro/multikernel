@@ -20,40 +20,26 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef NANVIX_LIMITS_H_
-#define NANVIX_LIMITS_H_
+#ifndef _SEMAPHORE_H_
+#define _SEMAPHORE_H_
 
-	#define __NEED_HAL_CONST_
-	#include <nanvix/hal.h>
-
-	/**
-	 * @brief Maximum length of a process name.
-	 *
-	 * @note The null character is included.
-	 */
-	#define NANVIX_PROC_NAME_MAX 56
+	#include <semaphore.h>
 
 	/**
-	 * @brief Maximum number of processes.
+	 * @brief Semaphore.
 	 */
-	#define NANVIX_PROC_MAX HAL_NR_CCLUSTERS
+	struct _semaphore
+	{
+		sem_t id; /**< Semaphore id. */
+		int used; /**< Used?         */
+	};
 
-	/**
-	 * @brief Maximum number of mailboxes.
-	 */
-	#define NANVIX_MAILBOX_MAX HAL_NR_MAILBOX
+	/* Forward definitions. */
+	extern struct _semaphore _semaphores[];
 
-	/**
-	 * @brief Maximum number of portals.
-	 */
-	#define NANVIX_PORTAL_MAX HAL_NR_PORTAL
+	/* Forward definitions. */
+	extern int _sem_is_valid(int);
+	extern int _sem_alloc(void);
+	extern void _sem_free(int);
 
-	/**
-	 * @brief Maximum length of a sempahore name.
-	 *
-	 * @note The null character is included.
-	 */
-	#define NANVIX_SEM_NAME_MAX (HAL_MAILBOX_MSG_SIZE - 10)
-
-#endif /* NANVIX_LIMITS_H_ */
-
+#endif /* _SEMAPHORE_H_ */

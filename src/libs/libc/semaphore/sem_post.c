@@ -20,31 +20,30 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef _TEST_H_
-#define _TEST_H_
+#include <errno.h>
+#include <semaphore.h>
 
-	#include <stdlib.h>
-	#include <pthread.h>
+#include <nanvix/semaphore.h>
 
-	/**
-	 * @brief Asserts a logic expression.
-	 */
-	#define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
+#include "semaphore.h"
 
-	/**
-	 * @brief Unit test.
-	 */
-	struct test
-	{
-		void (*test_fn)(void); /**< Test function. */
-		const char *name;      /**< Test name.     */
-	};
+/**
+ * @brief Post on a named semaphore.
+ *
+ * @param semid ID of the target semaphore.
+ *
+ * @returns Upon successful completion, zero is returned. Upon
+ * failure, a negative error code is returned instead.
+ */
+int sem_post(sem_t *semid)
+{
+	/* Invalid semaphore. */
+	if (semid == NULL)
+		return (-EINVAL);
 
-	/* Forward definitions. */
-	extern int ipc_semaphore_nclusters;
-	extern int ipc_semaphore_ncores;
-	extern pthread_barrier_t ipc_semaphore_barrier;
-	extern struct test ipc_semaphore_tests_api[];
-	extern struct test ipc_semaphore_tests_fault[];
+	/* Invalid semaphore. */
+	if (!_sem_is_valid(*semid))
+		return (-EINVAL);
 
-#endif /* _TEST_H_ */
+	return (nanvix_sem_post(*semid));
+}

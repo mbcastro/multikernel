@@ -20,40 +20,29 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef NANVIX_LIMITS_H_
-#define NANVIX_LIMITS_H_
+#include <errno.h>
+#include <semaphore.h>
+#include <string.h>
 
-	#define __NEED_HAL_CONST_
-	#include <nanvix/hal.h>
+#include <nanvix/semaphore.h>
 
-	/**
-	 * @brief Maximum length of a process name.
-	 *
-	 * @note The null character is included.
-	 */
-	#define NANVIX_PROC_NAME_MAX 56
+/**
+ * @brief Unlinks a named semaphore.
+ *
+ * @param name	Target semaphore name.
+ *
+ * @returns Upon successful completion, zero is returned. Upon
+ * failure, a negative error code is returned instead.
+ */
+int sem_unlink(const char *name)
+{
+	/* Invalid name. */
+	if ((name == NULL) || (!strcmp(name, "")))
+		return (-ENOENT);
 
-	/**
-	 * @brief Maximum number of processes.
-	 */
-	#define NANVIX_PROC_MAX HAL_NR_CCLUSTERS
+	/* Name too long. */
+	if (strlen(name) >= (NANVIX_SEM_NAME_MAX))
+		return (-ENAMETOOLONG);
 
-	/**
-	 * @brief Maximum number of mailboxes.
-	 */
-	#define NANVIX_MAILBOX_MAX HAL_NR_MAILBOX
-
-	/**
-	 * @brief Maximum number of portals.
-	 */
-	#define NANVIX_PORTAL_MAX HAL_NR_PORTAL
-
-	/**
-	 * @brief Maximum length of a sempahore name.
-	 *
-	 * @note The null character is included.
-	 */
-	#define NANVIX_SEM_NAME_MAX (HAL_MAILBOX_MSG_SIZE - 10)
-
-#endif /* NANVIX_LIMITS_H_ */
-
+	return (nanvix_sem_unlink(name));
+}

@@ -21,7 +21,6 @@
  */
 
 #include <assert.h>
-#include <pthread.h>
 #include <string.h>
 #include <errno.h>
 #include <stdio.h>
@@ -204,8 +203,7 @@ int name_server(int inbox, int inportal)
 
 	printf("[nanvix][name] server alive\n");
 
-	/* Wait for other servers. */
-	pthread_barrier_wait(&spawner_barrier);
+	spawner_ack();
 
 	while(1)
 	{

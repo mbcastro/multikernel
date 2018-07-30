@@ -23,17 +23,13 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <stdio.h>
 
 #include <mppa/osconfig.h>
 
 #include <nanvix/syscalls.h>
 #include <nanvix/spawner.h>
 #include <nanvix/pm.h>
-
-/**
- * @brief Barrier for synchronization.
- */
-pthread_barrier_t spawner_barrier;
 
 /**
  * @brief Server wrapper.
@@ -91,20 +87,18 @@ int main(int argc, const char **argv)
 
 	printf("[nanvix][%s] server alive\n", spawner_name);
 
-	pthread_barrier_init(&spawner_barrier, NULL, spawner_nservers + 1);
+	spawner_init();
 
 	/* Spawn servers. */
 	for (int i = 0; i < spawner_nservers; i++)
 	{
-		args[i] = 0;
+		args[i] = i;
 		assert((pthread_create(&tids[i],
 			NULL,
 			server,
 			&args[i])) == 0
 		);
 	}
-
-	pthread_barrier_wait(&spawner_barrier);
 
 	spawners_sync();
 

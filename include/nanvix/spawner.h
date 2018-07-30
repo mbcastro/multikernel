@@ -26,7 +26,7 @@
 	#include <pthread.h>
 
 	/**
-	 * @brief Server information,
+	 * @brief Server information.
 	 */
 	struct serverinfo
 	{
@@ -35,15 +35,26 @@
 		int runlevel;           /**< Server runlevel. */
 	};
 
+	/**
+	 * @brief Spawner message.
+	 */
+	struct spawner_message
+	{
+		char unused[60]; /**< Not used. */
+		int status;      /**< Status.   */
+	};
+
 	/* Forward definitions. */
 	extern const char *spawner_name;
 	extern const int spawner_shutdown;
 	extern const int spawner_nservers;
-	extern struct serverinfo spawner_servers[];
+	extern struct serverinfo *spawner_servers;
 	extern void (*test_kernel_fn)(const char *);
 	extern void (*test_runtime_fn)(const char *);
 	extern int (*main2_fn)(int, const char **);
+	extern void spawner_init(void);
 	extern void spawners_sync(void);
+	extern void spawner_ack(void);
 
 	/**
 	 * @brief Shutdown flags.
@@ -79,12 +90,12 @@
 	/**
 	 * @brief Declares the servers table.
 	 *
-	 * @param x    Number of servers.
-	 * @param ... Table entries.
+	 * @param n Number of servers.
+	 * @param x Servers table.
 	 */
-	#define SPAWNER_SERVERS(x, ...)       \
-		const int spawner_nservers = x;   \
-		struct serverinfo spawner_servers[x] = { __VA_ARGS__ };
+	#define SPAWNER_SERVERS(n, x)       \
+		const int spawner_nservers = n;   \
+		struct serverinfo *spawner_servers = x;
 
 	/**
 	 * @brief Declares test-driver for the kernel.
