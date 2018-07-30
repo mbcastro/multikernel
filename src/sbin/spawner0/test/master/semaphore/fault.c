@@ -20,28 +20,37 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef _TEST_H_
-#define _TEST_H_
+#include <stdlib.h>
+#include <semaphore.h>
 
-	#include <assert.h>
-	#include <stdlib.h>
+#include "test.h"
 
-	/**
-	 * @brief Asserts a logic expression.
-	 */
-	#define TEST_ASSERT(x) assert(x)
+/*============================================================================*
+ * Fault Injection Test: Invalid Create                                       *
+ *============================================================================*/
 
-	/**
-	 * @brief Unit test.
-	 */
-	struct test
-	{
-		void (*test_fn)(void); /**< Test function. */
-		const char *name;      /**< Test name.     */
-	};
+/**
+ * @brief Fault Injection Test: Invalid Create
+ */
+static void test_posix_semaphore_invalid_create(void)
+{
+	char buf[NANVIX_SEM_NAME_MAX + 1];
 
-	/* Forward definitions. */
-	extern struct test posix_semaphore_tests_api[];
-	extern struct test posix_semaphore_tests_fault[];
+	memset(buf, 'a', NANVIX_SEM_NAME_MAX + 1);
+	buf[NANVIX_SEM_NAME_MAX] = '\0';
 
-#endif /* _TEST_H_ */
+	/* Create invalid semaphores. */
+	TEST_ASSERT(nanvix_sem_open(NULL, O_CREAT, 0, 0) == SEM_FAILURE);
+	TEST_ASSERT(nanvix_sem_open(buf, O_CREAT, 0, 0) == SEM_FAILURE);
+	TEST_ASSERT(nanvix_sem_open("cool-name", O_CREAT, 0, (SEM_MAX + 1)) == SEM_FAILURE);
+}
+
+/*============================================================================*/
+
+/**
+ * @brief Unit tests.
+ */
+struct test posix_semaphore_tests_fault[] = {
+	{ test_posix_semaphore_invalid_create, "Invalid Create" },
+	{ NULL,                                NULL             },
+};
