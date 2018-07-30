@@ -10,12 +10,16 @@ namespace servers {
 
 	namespace rmem {
 	}
+
+	namespace semaphore {
+  }
 }
 
-libs      ..>  kernel : <<use>>
-servers   ..>  kernel : <<use>>
-libs.name <|.. servers.name : <<implements>>
-libs.rmem <|.. servers.rmem : <<implements>>
+libs    ..>  kernel : <<use>>
+servers ..>  kernel : <<use>>
+libs.name      <|.. servers.name      : <<implements>>
+libs.rmem      <|.. servers.rmem      : <<implements>>
+libs.semaphore <|.. servers.semaphore : <<implements>>
+libs.name      <..  servers.semaphore : <<use>>
 
 @enduml
-

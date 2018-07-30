@@ -3,15 +3,23 @@
 namespace name {
 
 	interface NameOperations {
-		+ name_link()
-		+ name_lookup()
-		+ name_unlink()
+		- int server
+		- int initialized = 0
+		- char process_name[HAL_NR_NOC_IONODES][NANVIX_PROC_NAME_MAX]
+		- pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER
+		+ int name_init(void)
+		+ void name_finalize(void)
+		+ int get_name(char *name)
+		+ int name_lookup(char *name)
+		+ int name_link(int nodenum, const char *name)
+		+ int name_unlink(const char *name)
 	}
 
 	class NameMessage {
-		+ source
-		+ nodenum
-		+ name[NANVIX_PROC_NAME_MAX]
+		+ uint16_t source
+		+ uint16_t op
+		+ int32_t nodenum
+		+ char name[NANVIX_PROC_NAME_MAX]
 	}
 
 	enum NameMessageType {
