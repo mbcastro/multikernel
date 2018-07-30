@@ -324,41 +324,6 @@ static void test_sys_sync_signal_wait(void)
 		pthread_join(tids[i], NULL);
 }
 
-/*============================================================================*
- * API Test: Barrier Mode                                                     *
- *============================================================================*/
-
-/**
- * @brief API Test: Barrier Mode
- */
-static void test_sys_sync_barrier(void)
-{
-	int nodenum;
-	int syncid;
-	int syncid_local;
-	int _nodes[2];
-	int _nodes_local[2];
-
-	nodenum = sys_get_node_num();
-
-	_nodes[0] = nodenum;
-	_nodes[1] = SPAWNER1_SERVER_NODE;
-
-	_nodes_local[0] = SPAWNER1_SERVER_NODE;
-	_nodes_local[1] = nodenum;
-
-	/* Open synchronization points. */
-	TEST_ASSERT((syncid_local = sys_sync_create(_nodes_local, 2, SYNC_ONE_TO_ALL)) >= 0);
-	TEST_ASSERT((syncid = sys_sync_open(_nodes, 2, SYNC_ONE_TO_ALL)) >= 0);
-
-	TEST_ASSERT(sys_sync_signal(syncid) == 0);
-	TEST_ASSERT(sys_sync_wait(syncid_local) == 0);
-
-	/* House keeping. */
-	TEST_ASSERT(sys_sync_unlink(syncid_local) == 0);
-	TEST_ASSERT(sys_sync_close(syncid) == 0);
-}
-
 /*============================================================================*/
 
 /**
@@ -370,6 +335,5 @@ struct test tests_api[] = {
 	{ test_sys_sync_open_close,       "Open Close"    },
 	{ test_sys_sync_wait_signal,      "Wait Signal"   },
 	{ test_sys_sync_signal_wait,      "Signal Wait"   },
-	{ test_sys_sync_barrier,          "Barrier Mode"  },
 	{ NULL,                           NULL            },
 };

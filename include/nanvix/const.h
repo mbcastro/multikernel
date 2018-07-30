@@ -37,16 +37,6 @@
 	#define SPAWNER_SERVER_NODE 16
 
 	/**
-	 * @brief Remote memory server NoC node num.
-	 */
-	#define RMEM_SERVER_NODE 17
-
-	/**
-	 * @brief Semaphores server NoC node num.
-	 */
-	#define SEMAPHORE_SERVER_NODE 18
-
-	/**
 	 * @brief Name server NoC node num.
 	 */
 	#define SPAWNER1_SERVER_NODE 20
@@ -55,6 +45,16 @@
 	 * @brief Name server NoC node num.
 	 */
 	#define NAME_SERVER_NODE 21
+
+	/**
+	 * @brief Remote memory server NoC node num.
+	 */
+	#define RMEM_SERVER_NODE 22
+
+	/**
+	 * @brief Semaphores server NoC node num.
+	 */
+	#define SEMAPHORE_SERVER_NODE 23
 
 #endif /* CONST_H_ */
 
