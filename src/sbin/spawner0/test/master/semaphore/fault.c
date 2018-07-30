@@ -22,6 +22,7 @@
 
 #include <stdlib.h>
 #include <semaphore.h>
+#include <string.h>
 
 #include "test.h"
 
@@ -106,6 +107,25 @@ static void test_posix_semaphore_bad_open(void)
 	TEST_ASSERT(nanvix_sem_open("cool-name", 0) == SEM_FAILURE);
 }
 
+/*============================================================================*
+ * Fault Injection Test: Invalid Unlink                                       *
+ *============================================================================*/
+
+/**
+ * @brief Fault Injection Test: Invalid Unlink
+ */
+static void test_posix_semaphore_invalid_unlink(void)
+{
+	char buf[NANVIX_SEM_NAME_MAX + 1];
+
+	memset(buf, 'a', NANVIX_SEM_NAME_MAX + 1);
+	buf[NANVIX_SEM_NAME_MAX] = '\0';
+
+	/* Unlink invalid semaphores. */
+	TEST_ASSERT(nanvix_sem_unlink(NULL) == -1);
+	TEST_ASSERT(nanvix_sem_unlink(buf) == -1);
+}
+
 /*============================================================================*/
 
 /**
@@ -117,5 +137,6 @@ struct test posix_semaphore_tests_fault[] = {
 	{ test_posix_semaphore_double_create,  "Double Create"  },
 	{ test_posix_semaphore_invalid_open,   "Invalid Open"   },
 	{ test_posix_semaphore_bad_open,       "Bad Open"       },
+	{ test_posix_semaphore_invalid_unlink, "Invalid Unlink" },
 	{ NULL,                                NULL             },
 };
