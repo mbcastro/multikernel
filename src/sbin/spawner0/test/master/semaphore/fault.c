@@ -140,13 +140,13 @@ static void test_posix_semaphore_bad_unlink(void)
 }
 
 /*============================================================================*
- * Fault Injection Test: Double Create                                        *
+ * Fault Injection Test: Double Unlink                                        *
  *============================================================================*/
 
 /**
- * @brief Fault Injection Test: Double Create 
+ * @brief Fault Injection Test: Double Unlink 
  */
-static void test_posix_semaphore_double_create(void)
+static void test_posix_semaphore_double_unlink(void)
 {
 	set_t *sem;
 
