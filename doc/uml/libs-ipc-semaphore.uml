@@ -3,40 +3,34 @@
 namespace semaphore {
 
 	interface SemaphoreOperations {
-		- int server
-		- int initialized = 0
-		+ int sem_init(void)
-		+ void sem_finalize(void)
-		- pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER
-		- int sem_name_is_valid(const char *name)
-		- int sem_is_valid(int sem)
-		+ int nanvix_sem_open(const char *name, int oflag, ...)
-		+ int nanvix_sem_post(int sem)
-		+ int nanvix_sem_wait(int sem)
-		+ int nanvix_sem_close(int sem)
-		+ int nanvix_sem_unlink(const char *name)
+		+ sem_init()
+		+ sem_finalize()
+		+ nanvix_sem_create()
+		+ nanvix_sem_open()
+		+ nanvix_sem_post()
+		+ nanvix_sem_wait()
+		+ nanvix_sem_close()
+		+ nanvix_sem_unlink()
 	}
 
 	class SemaphoreMessage {
-		+ uint16_t seq
-		+ char name[NANVIX_SEM_NAME_MAX]
-		+ int16_t op
-		+ int value
+		+ source
+	    + seq	
+		+ op
 	}
 
 	enum SemaphoreMessageType {
-		+ const SEM_OPEN
-		+ const SEM_POST
-		+ const SEM_WAIT
-		+ const SEM_CLOSE
-		+ const SEM_UNLINK
-		+ const SEM_CREATE
-		+ const SEM_CREATE_EXCL
-		+ const SEM_SUCCESS
-		+ const SEM_FAILURE
+		+ SEM_OPEN
+		+ SEM_POST
+		+ SEM_WAIT
+		+ SEM_CLOSE
+		+ SEM_UNLINK
+		+ SEM_CREATE
+		+ SEM_CREATE_EXCL
+		+ SEM_RETURN_
 	}
 
-	SemaphoreMessage    *- SemaphoreMessageType : op
+	SemaphoreMessage    *- SemaphoreMessageType : opcode
 	SemaphoreOperations -> SemaphoreMessage     : <<use>>
 }
 

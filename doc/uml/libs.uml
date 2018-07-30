@@ -1,26 +1,37 @@
 @startuml
 
 namespace libs {
-	namespace barrier {
+	namespace nanvix {
+		namespace barrier {
+		}
+
+		namespace name {
+		}
+
+		namespace mailbox {
+		}
+
+		namespace portal {
+		}
+
+		namespace rmem {
+		}
+	  
+		namespace semaphore {
+		}
 	}
 
-	namespace name {
+	namespace posix {
+		namespace semaphore {
+		}
 	}
 
-	namespace mailbox {
-	}
-
-	namespace portal {
-	}
-
-	namespace rmem {
-	}
-
-	libs.mailbox ..> libs.name    : <<use>>
-	libs.portal  ..> libs.name    : <<use>>
-	libs.rmem    ..> libs.mailbox : <<use>>
-	libs.rmem    ..> libs.portal  : <<use>>
+	libs.nanvix.mailbox   ..> libs.nanvix.name    : <<use>>
+	libs.nanvix.portal    ..> libs.nanvix.name    : <<use>>
+	libs.nanvix.rmem      ..> libs.nanvix.mailbox : <<use>>
+	libs.nanvix.rmem      ..> libs.nanvix.portal  : <<use>>
+	libs.nanvix.semaphore ..> libs.nanvix.mailbox : <<use>>
+	libs.posix.semaphore <|.. libs.nanvix.semaphore : <<implements>>
 }
 
 @enduml
-
