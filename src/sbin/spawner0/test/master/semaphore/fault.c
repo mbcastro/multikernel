@@ -45,6 +45,18 @@ static void test_posix_semaphore_invalid_create(void)
 	TEST_ASSERT(nanvix_sem_open("cool-name", O_CREAT, 0, (SEM_MAX + 1)) == SEM_FAILURE);
 }
 
+/*============================================================================*
+ * Fault Injection Test: Bad Create                                           *
+ *============================================================================*/
+
+/**
+ * @brief Fault Injection Test: Bad Create 
+ */
+static void test_posix_semaphore_bad_create(void)
+{
+	TEST_ASSERT(nanvix_sem_open("", O_CREAT, 0, 0) == SEM_FAILURE);
+}
+
 /*============================================================================*/
 
 /**
@@ -52,5 +64,6 @@ static void test_posix_semaphore_invalid_create(void)
  */
 struct test posix_semaphore_tests_fault[] = {
 	{ test_posix_semaphore_invalid_create, "Invalid Create" },
+	{ test_posix_semaphore_bad_create,     "Bad Create"     },
 	{ NULL,                                NULL             },
 };
