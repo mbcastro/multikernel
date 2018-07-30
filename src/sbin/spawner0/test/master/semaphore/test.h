@@ -23,13 +23,12 @@
 #ifndef _TEST_H_
 #define _TEST_H_
 
-	#include <assert.h>
 	#include <stdlib.h>
 
 	/**
 	 * @brief Asserts a logic expression.
 	 */
-	#define TEST_ASSERT(x) assert(x)
+	#define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
 
 	/**
 	 * @brief Unit test.
@@ -42,5 +41,6 @@
 
 	/* Forward definitions. */
 	extern struct test posix_semaphore_tests_api[];
+	extern struct test posix_semaphore_tests_fault[];
 
 #endif /* _TEST_H_ */
