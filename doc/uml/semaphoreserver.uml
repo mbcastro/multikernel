@@ -1,0 +1,48 @@
+@startuml
+
+!include libs-ipc-semaphore.uml
+
+remove semaphore.SemaphoreMessageType
+remove semaphore.SemaphoreOperations
+
+!include libs-ipc-mailbox.uml
+
+remove mailbox.MailboxFlags
+remove mailbox.Mailbox
+
+namespace SemaphoreServer {
+
+	class SemaphoreServer {
+		- struct semaphore semaphores[SEM_MAX]
+		- struct msg_element messages[NR_PROC]
+		- int tail = 0
+		- int head = 0
+		- void _sem_init(void)
+		- int _sem_proc_name_is_valid(const char *name)
+		- int _sem_name_is_valid(const char *name)
+		- int _sem_is_valid(int semid)
+		- int _sem_is_used(int semid)
+		- void _sem_set_used(int semid)
+		- void _sem_clear_flags(int semid)
+		- void _sem_set_permission(int semid, int mode)
+		- int _sem_alloc(void)
+		- int _sem_free(int semid)
+		- int _sem_put_message(struct sem_message *message)
+		- int _sem_get_message(struct sem_message *message, uint16_t seq)
+		- int _sem_enqueue(char *name, int semid)
+		- int _sem_dequeue(char *name, int semid)
+		- int _sem_open(char *source, char *name)
+		- int _sem_create(char *source, char *name, int mode, int value)
+		- int _sem_create_exclusive(char *source, char *name, int mode, int value)
+		- int _sem_close(int semid, char *source)
+		- int _sem_unlink(char *name, char *source)
+		- int _sem_wait(int semid, char *source)
+		- int _sem_post(int semid, char *source)
+		~ int semaphore_server(int inbox)
+	}
+
+	SemaphoreServer.SemaphoreServer ..> semaphore.SemaphoreMessage : <<uses>>
+	SemaphoreServer.SemaphoreServer ..> mailbox.MailboxOperations      : <<uses>>
+}
+
+@enduml
