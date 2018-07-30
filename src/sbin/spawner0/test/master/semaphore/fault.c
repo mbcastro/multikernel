@@ -198,6 +198,32 @@ static void test_posix_semaphore_double_close(void)
 	TEST_ASSERT(nanvix_sem_unlink("cool-name") == 0);
 }
 
+/*============================================================================*
+ * Fault Injection Test: Invalid Post                                         *
+ *============================================================================*/
+
+/**
+ * @brief Fault Injection Test: Invalid Post
+ */
+static void test_posix_semaphore_invalid_post(void)
+{
+	TEST_ASSERT(nanvix_sem_post(NULL) == -1);
+}
+
+/*============================================================================*
+ * Fault Injection Test: Bad Post                                             *
+ *============================================================================*/
+
+/**
+ * @brief Fault Injection Test: Bad Post
+ */
+static void test_posix_semaphore_bad_post(void)
+{
+	sem_t sem;
+
+	TEST_ASSERT(nanvix_sem_post(&sem) == -1);
+}
+
 /*============================================================================*/
 
 /**
@@ -215,5 +241,7 @@ struct test posix_semaphore_tests_fault[] = {
 	{ test_posix_semaphore_invalid_close,  "Invalid Close"  },
 	{ test_posix_semaphore_bad_close,      "Bad Close"      },
 	{ test_posix_semaphore_double_close,   "Double Close"   },
+	{ test_posix_semaphore_invalid_post,   "Invalid Post"   },
+	{ test_posix_semaphore_bad_post,       "Bad Post"       },
 	{ NULL,                                NULL             },
 };
