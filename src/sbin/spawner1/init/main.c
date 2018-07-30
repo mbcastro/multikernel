@@ -32,8 +32,6 @@
 extern int name_server(int, int);
 extern int rmem_server(int, int);
 extern int semaphore_server(int, int);
-extern void test_kernel_sys_sync(void);
-extern void test_kernel_barrier(void);
 
 /**
  * @brief Number of servers launched from this spawner.
@@ -58,24 +56,6 @@ static int inbox = -1;
  * @brief Spawner NoC node number.
  */
 static int nodenum = -1;
-
-/**
- * @brief Generic test driver.
- */
-static void test_kernel(const char *module)
-{
-	if (!strcmp(module, "--hal-sync"))
-		test_kernel_sys_sync();
-}
-
-/**
- * @brief Generic test driver.
- */
-static void test_runtime(const char *module)
-{
-	if (!strcmp(module, "--barrier"))
-		test_kernel_barrier();
-}
 
 /**
  * @brief Initializes spawner.
@@ -140,5 +120,5 @@ SPAWNER_NAME("spawner1")
 SPAWNER_SHUTDOWN(SHUTDOWN_DISABLE)
 SPAWNER_SERVERS(NR_SERVERS, servers)
 SPAWNER_MAIN2(NULL)
-SPAWNER_KERNEL_TESTS(test_kernel)
-SPAWNER_RUNTIME_TESTS(test_runtime)
+SPAWNER_KERNEL_TESTS(NULL)
+SPAWNER_RUNTIME_TESTS(NULL)
