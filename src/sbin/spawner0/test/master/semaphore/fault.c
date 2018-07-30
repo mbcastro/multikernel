@@ -24,6 +24,9 @@
 #include <semaphore.h>
 #include <string.h>
 
+#include <nanvix/limits.h>
+#include <nanvix/semaphore.h>
+
 #include "test.h"
 
 /*============================================================================*
@@ -41,9 +44,9 @@ static void test_posix_semaphore_invalid_create(void)
 	buf[NANVIX_SEM_NAME_MAX] = '\0';
 
 	/* Create invalid semaphores. */
-	TEST_ASSERT(nanvix_sem_open(NULL, O_CREAT, 0, 0) == SEM_FAILURE);
-	TEST_ASSERT(nanvix_sem_open(buf, O_CREAT, 0, 0) == SEM_FAILURE);
-	TEST_ASSERT(nanvix_sem_open("cool-name", O_CREAT, 0, (SEM_MAX + 1)) == SEM_FAILURE);
+	TEST_ASSERT(sem_open(NULL, O_CREAT, 0, 0) == SEM_FAILED);
+	TEST_ASSERT(sem_open(buf, O_CREAT, 0, 0) == SEM_FAILED);
+	TEST_ASSERT(sem_open("cool-name", O_CREAT, 0, (SEM_MAX + 1)) == SEM_FAILED);
 }
 
 /*============================================================================*
@@ -55,7 +58,7 @@ static void test_posix_semaphore_invalid_create(void)
  */
 static void test_posix_semaphore_bad_create(void)
 {
-	TEST_ASSERT(nanvix_sem_open("", O_CREAT, 0, 0) == SEM_FAILURE);
+	TEST_ASSERT(sem_open("", O_CREAT, 0, 0) == SEM_FAILED);
 }
 
 /*============================================================================*
@@ -67,12 +70,12 @@ static void test_posix_semaphore_bad_create(void)
  */
 static void test_posix_semaphore_double_create(void)
 {
-	set_t *sem;
+	sem_t *sem;
 
-	TEST_ASSERT((sem = nanvix_sem_open("cool-name", O_CREAT, 0, 0)) != SEM_FAILURE);
-	TEST_ASSERT(nanvix_sem_open("cool-name", O_CREAT, 0, 0) == SEM_FAILURE);
-	TEST_ASSERT(nanvix_sem_open("cool-name", (O_CREAT | O_EXCL), 0, 0) == SEM_FAILURE);
-	TEST_ASSERT(nanvix_sem_unlink("cool-name") == 0);
+	TEST_ASSERT((sem = sem_open("cool-name", O_CREAT, 0, 0)) != SEM_FAILED);
+	TEST_ASSERT(sem_open("cool-name", O_CREAT, 0, 0) == SEM_FAILED);
+	TEST_ASSERT(sem_open("cool-name", (O_CREAT | O_EXCL), 0, 0) == SEM_FAILED);
+	TEST_ASSERT(sem_unlink("cool-name") == 0);
 }
 
 /*============================================================================*
@@ -90,8 +93,8 @@ static void test_posix_semaphore_invalid_open(void)
 	buf[NANVIX_SEM_NAME_MAX] = '\0';
 
 	/* Open invalid semaphores. */
-	TEST_ASSERT(nanvix_sem_open(NULL, 0) == SEM_FAILURE);
-	TEST_ASSERT(nanvix_sem_open(buf, 0) == SEM_FAILURE);
+	TEST_ASSERT(sem_open(NULL, 0) == SEM_FAILED);
+	TEST_ASSERT(sem_open(buf, 0) == SEM_FAILED);
 }
 
 /*============================================================================*
@@ -103,8 +106,8 @@ static void test_posix_semaphore_invalid_open(void)
  */
 static void test_posix_semaphore_bad_open(void)
 {
-	TEST_ASSERT(nanvix_sem_open("", 0) == SEM_FAILURE);
-	TEST_ASSERT(nanvix_sem_open("cool-name", 0) == SEM_FAILURE);
+	TEST_ASSERT(sem_open("", 0) == SEM_FAILED);
+	TEST_ASSERT(sem_open("cool-name", 0) == SEM_FAILED);
 }
 
 /*============================================================================*
@@ -122,8 +125,8 @@ static void test_posix_semaphore_invalid_unlink(void)
 	buf[NANVIX_SEM_NAME_MAX] = '\0';
 
 	/* Unlink invalid semaphores. */
-	TEST_ASSERT(nanvix_sem_unlink(NULL) == -1);
-	TEST_ASSERT(nanvix_sem_unlink(buf) == -1);
+	TEST_ASSERT(sem_unlink(NULL) < 0);
+	TEST_ASSERT(sem_unlink(buf) < 0);
 }
 
 /*============================================================================*
@@ -135,8 +138,8 @@ static void test_posix_semaphore_invalid_unlink(void)
  */
 static void test_posix_semaphore_bad_unlink(void)
 {
-	TEST_ASSERT(nanvix_sem_unlink("") == -1);
-	TEST_ASSERT(nanvix_sem_unlink("missing-name") == -1);
+	TEST_ASSERT(sem_unlink("") < 0);
+	TEST_ASSERT(sem_unlink("missing-name") < 0);
 }
 
 /*============================================================================*
@@ -148,11 +151,11 @@ static void test_posix_semaphore_bad_unlink(void)
  */
 static void test_posix_semaphore_double_unlink(void)
 {
-	set_t *sem;
+	sem_t *sem;
 
-	TEST_ASSERT((sem = nanvix_sem_open("cool-name", O_CREAT, 0, 0)) != SEM_FAILURE);
-	TEST_ASSERT(nanvix_sem_unlink("cool-name") == 0);
-	TEST_ASSERT(nanvix_sem_unlink("cool-name") == -1);
+	TEST_ASSERT((sem = sem_open("cool-name", O_CREAT, 0, 0)) != SEM_FAILED);
+	TEST_ASSERT(sem_unlink("cool-name") == 0);
+	TEST_ASSERT(sem_unlink("cool-name") < 0);
 }
 
 /*============================================================================*
@@ -164,7 +167,7 @@ static void test_posix_semaphore_double_unlink(void)
  */
 static void test_posix_semaphore_invalid_close(void)
 {
-	TEST_ASSERT(nanvix_sem_close(NULL) == -1);
+	TEST_ASSERT(sem_close(NULL) < 0);
 }
 
 /*============================================================================*
@@ -178,7 +181,7 @@ static void test_posix_semaphore_bad_close(void)
 {
 	sem_t sem;
 
-	TEST_ASSERT(nanvix_sem_close(&sem) == -1);
+	TEST_ASSERT(sem_close(&sem) < 0);
 }
 
 /*============================================================================*
@@ -190,12 +193,12 @@ static void test_posix_semaphore_bad_close(void)
  */
 static void test_posix_semaphore_double_close(void)
 {
-	set_t *sem;
+	sem_t *sem;
 
-	TEST_ASSERT((sem = nanvix_sem_open("cool-name", O_CREAT, 0, 0)) != SEM_FAILURE);
-	TEST_ASSERT(nanvix_sem_close(sem) == 0);
-	TEST_ASSERT(nanvix_sem_close(sem) == -1);
-	TEST_ASSERT(nanvix_sem_unlink("cool-name") == 0);
+	TEST_ASSERT((sem = sem_open("cool-name", O_CREAT, 0, 0)) != SEM_FAILED);
+	TEST_ASSERT(sem_close(sem) == 0);
+	TEST_ASSERT(sem_close(sem) < 0);
+	TEST_ASSERT(sem_unlink("cool-name") == 0);
 }
 
 /*============================================================================*
@@ -207,7 +210,7 @@ static void test_posix_semaphore_double_close(void)
  */
 static void test_posix_semaphore_invalid_post(void)
 {
-	TEST_ASSERT(nanvix_sem_post(NULL) == -1);
+	TEST_ASSERT(sem_post(NULL) < 0);
 }
 
 /*============================================================================*
@@ -221,7 +224,7 @@ static void test_posix_semaphore_bad_post(void)
 {
 	sem_t sem;
 
-	TEST_ASSERT(nanvix_sem_post(&sem) == -1);
+	TEST_ASSERT(sem_post(&sem) < 0);
 }
 
 /*============================================================================*
@@ -233,7 +236,7 @@ static void test_posix_semaphore_bad_post(void)
  */
 static void test_posix_semaphore_invalid_wait(void)
 {
-	TEST_ASSERT(nanvix_sem_wait(NULL) == -1);
+	TEST_ASSERT(sem_wait(NULL) < 0);
 }
 
 /*============================================================================*
@@ -247,7 +250,7 @@ static void test_posix_semaphore_bad_wait(void)
 {
 	sem_t sem;
 
-	TEST_ASSERT(nanvix_sem_wait(&sem) == -1);
+	TEST_ASSERT(sem_wait(&sem) < 0);
 }
 
 /*============================================================================*/
