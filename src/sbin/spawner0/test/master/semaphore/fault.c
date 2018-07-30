@@ -93,6 +93,19 @@ static void test_posix_semaphore_invalid_open(void)
 	TEST_ASSERT(nanvix_sem_open(buf, 0) == SEM_FAILURE);
 }
 
+/*============================================================================*
+ * Fault Injection Test: Bad Open                                             *
+ *============================================================================*/
+
+/**
+ * @brief Fault Injection Test: Bad Open 
+ */
+static void test_posix_semaphore_bad_open(void)
+{
+	TEST_ASSERT(nanvix_sem_open("", 0) == SEM_FAILURE);
+	TEST_ASSERT(nanvix_sem_open("cool-name", 0) == SEM_FAILURE);
+}
+
 /*============================================================================*/
 
 /**
@@ -103,5 +116,6 @@ struct test posix_semaphore_tests_fault[] = {
 	{ test_posix_semaphore_bad_create,     "Bad Create"     },
 	{ test_posix_semaphore_double_create,  "Double Create"  },
 	{ test_posix_semaphore_invalid_open,   "Invalid Open"   },
+	{ test_posix_semaphore_bad_open,       "Bad Open"       },
 	{ NULL,                                NULL             },
 };
