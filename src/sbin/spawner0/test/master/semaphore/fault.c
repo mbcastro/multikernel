@@ -224,6 +224,32 @@ static void test_posix_semaphore_bad_post(void)
 	TEST_ASSERT(nanvix_sem_post(&sem) == -1);
 }
 
+/*============================================================================*
+ * Fault Injection Test: Invalid Wait                                         *
+ *============================================================================*/
+
+/**
+ * @brief Fault Injection Test: Invalid Wait
+ */
+static void test_posix_semaphore_invalid_wait(void)
+{
+	TEST_ASSERT(nanvix_sem_wait(NULL) == -1);
+}
+
+/*============================================================================*
+ * Fault Injection Test: Bad Wait                                             *
+ *============================================================================*/
+
+/**
+ * @brief Fault Injection Test: Bad Wait
+ */
+static void test_posix_semaphore_bad_wait(void)
+{
+	sem_t sem;
+
+	TEST_ASSERT(nanvix_sem_wait(&sem) == -1);
+}
+
 /*============================================================================*/
 
 /**
@@ -243,5 +269,7 @@ struct test posix_semaphore_tests_fault[] = {
 	{ test_posix_semaphore_double_close,   "Double Close"   },
 	{ test_posix_semaphore_invalid_post,   "Invalid Post"   },
 	{ test_posix_semaphore_bad_post,       "Bad Post"       },
+	{ test_posix_semaphore_invalid_wait,   "Invalid Wait"   },
+	{ test_posix_semaphore_bad_wait,       "Bad Wait"       },
 	{ NULL,                                NULL             },
 };
