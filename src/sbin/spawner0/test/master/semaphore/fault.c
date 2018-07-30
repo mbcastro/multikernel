@@ -181,6 +181,23 @@ static void test_posix_semaphore_bad_close(void)
 		TEST_ASSERT(nanvix_sem_close(i) == -1);
 }
 
+/*============================================================================*
+ * Fault Injection Test: Double Close                                         *
+ *============================================================================*/
+
+/**
+ * @brief Fault Injection Test: Double Close 
+ */
+static void test_posix_semaphore_double_close(void)
+{
+	set_t *sem;
+
+	TEST_ASSERT((sem = nanvix_sem_open("cool-name", O_CREAT, 0, 0)) != SEM_FAILURE);
+	TEST_ASSERT(nanvix_sem_close(sem) == 0);
+	TEST_ASSERT(nanvix_sem_close(sem) == -1);
+	TEST_ASSERT(nanvix_sem_unlink("cool-name") == 0);
+}
+
 /*============================================================================*/
 
 /**
@@ -197,5 +214,6 @@ struct test posix_semaphore_tests_fault[] = {
 	{ test_posix_semaphore_double_unlink,  "Double Unlink"  },
 	{ test_posix_semaphore_invalid_close,  "Invalid Close"  },
 	{ test_posix_semaphore_bad_close,      "Bad Close"      },
+	{ test_posix_semaphore_double_close,   "Double Close"   },
 	{ NULL,                                NULL             },
 };
