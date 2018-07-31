@@ -168,12 +168,12 @@ static void kernel_gather(void)
 		uint64_t t1, t2;
 		mppa_aiocb_t aiocb;
 
-		/* Setup read operation. */
-		mppa_aiocb_ctor(&aiocb, inportal, buffer, nclusters*bufsize);
-		mppa_aiocb_set_trigger(&aiocb, nclusters);
-		assert(mppa_aio_read(&aiocb) != -1);
-
 		t1 = timer_get();
+
+			/* Setup read operation. */
+			mppa_aiocb_ctor(&aiocb, inportal, buffer, nclusters*bufsize);
+			mppa_aiocb_set_trigger(&aiocb, nclusters);
+			assert(mppa_aio_read(&aiocb) != -1);
 
 			/* Unblock remotes. */
 			mask = ~0;
