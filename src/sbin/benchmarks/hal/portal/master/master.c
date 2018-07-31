@@ -201,15 +201,18 @@ static void kernel_gather(void)
 	/* Benchmark. */
 	for (int k = 0; k <= niterations; k++)
 	{
-		t1 = sys_timer_get();
+		uint64_t t3 = 0;
+
 		for (int i = 0; i < nclusters; i++)
 		{
 			assert(sys_portal_allow(inportal, i) == 0);
-			assert(sys_portal_read(inportal, buffer, bufsize) == bufsize);
+			t1 = sys_timer_get();
+				assert(sys_portal_read(inportal, buffer, bufsize) == bufsize);
+			t2 = sys_timer_get();
+			t3 += sys_timer_diff(t1, t2);
 		}
-		t2 = sys_timer_get();
 
-		total = sys_timer_diff(t1, t2)/((double) sys_get_core_freq());
+		total = t3/((double) sys_get_core_freq());
 
 		/* Warmup. */
 		if (k == 0)
