@@ -135,6 +135,7 @@ static void kernel(int inbox)
 	/* Benchmark. */
 	for (int k = 0; k <= niterations; k++)
 	{
+		double mean;
 		double total[nclusters];
 
 		assert(barrier_wait(barrier) == 0);
@@ -153,20 +154,20 @@ static void kernel(int inbox)
 		if (k == 0)
 			continue;
 
+		/* Compute mean time. */
+		mean = 0.0;
+		for (int i = 0; i < nclusters; i++)
+			mean += total[i];
+		mean /= nclusters;
+
 		/* Dump statistics. */
-		printf("nanvix;%s;%d;%d;",
+		printf("nanvix;%s;%d;%d;%.2lf;%.2lf\n",
 			kernelname,
 			bufsize,
-			nclusters
+			nclusters,
+			mean*MEGA,
+			bufsize/mean
 		);
-		for (int i = 0; i < nclusters; i++)
-		{
-			printf("%.2lf;%.2lf",
-				(total[i]*MEGA)/nclusters,
-				bufsize/total[i]
-			);
-		}
-		printf("\n");
 	}
 }
 
