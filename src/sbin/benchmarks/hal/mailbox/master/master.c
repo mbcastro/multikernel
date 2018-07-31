@@ -175,11 +175,11 @@ static void kernel_broadcast(void)
 		if (((k == 0) || (k == (niterations + 1))))
 			continue;
 
-		printf("nanvix;%s;%d;%d;%.2lf;%.2lf\n",
+		printf("nanvix;mailbox;%s;%d;%d;%lf;%lf\n",
 			kernel,
 			MAILBOX_MSG_SIZE,
 			nclusters,
-			(total*MEGA)/nclusters,
+			total/nclusters,
 			(nclusters*MAILBOX_MSG_SIZE)/total
 		);
 	}
@@ -210,11 +210,11 @@ static void kernel_gather(void)
 		if (((k == 0) || (k == (niterations + 1))))
 			continue;
 
-		printf("nanvix;%s;%d;%d;%.2lf;%.2lf\n",
+		printf("nanvix;mailbox;%s;%d;%d;%lf;%lf\n",
 			kernel,
 			MAILBOX_MSG_SIZE,
 			nclusters,
-			(total*MEGA)/nclusters,
+			total/nclusters,
 			(nclusters*MAILBOX_MSG_SIZE)/total
 		);
 	}
@@ -248,11 +248,11 @@ static void kernel_pingpong(void)
 		if (((k == 0) || (k == (niterations + 1))))
 			continue;
 
-		printf("nanvix;%s;%d;%d;%.2lf;%.2lf\n",
+		printf("nanvix;mailbox;%s;%d;%d;%lf;%lf\n",
 			kernel,
 			MAILBOX_MSG_SIZE,
 			nclusters,
-			(total*MEGA)/nclusters,
+			total/nclusters,
 			2*(nclusters*MAILBOX_MSG_SIZE)/total
 		);
 	}
