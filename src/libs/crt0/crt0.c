@@ -113,7 +113,7 @@ int main(int argc, const char **argv)
 		printf("[nanvix][%s] switching to user mode\n", spawner_name);
 
 		/* Initialization. */
-		assert(runtime_setup(2) == 0);
+		assert(runtime_setup(3) == 0);
 
 		ret = main2_fn(argc, argv);
 

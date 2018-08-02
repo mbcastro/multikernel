@@ -25,7 +25,12 @@
 	
 	#include <inttypes.h>
 	#include <stddef.h>
-	
+	#include <sys/types.h>
+
+/*============================================================================*
+ * Remote Memory Service                                                      *
+ *============================================================================*/
+
 	/**
 	 * @brief Remote memory block size (in bytes).
 	 */
@@ -60,5 +65,79 @@
 	extern int meminit(void);
 	extern int memwrite(uint64_t, const void *, size_t);
 	extern int memread(uint64_t, void *, size_t);
+
+/*============================================================================*
+ * Shared Memory Region Service                                               *
+ *============================================================================*/
+
+	/**
+	 * @brief Maximum length for a shared memory region name.
+	 */
+	#define SHM_NAME_MAX 55
+
+	/**
+	 * @bried Shared memory region operations.
+	 */
+	/**@{*/
+	#define SHM_OPEN        1 /**< Open.             */
+	#define SHM_CREATE      2 /**< Create.           */
+	#define SHM_CREATE_EXCL 3 /**< Exclusive create. */
+	#define SHM_UNLINK      4 /**< Unlink.           */
+	#define SHM_RETURN      5 /**< Return.           */
+	/**@}*/
+
+	/**
+	 * @brief Shared Memory Region message.
+	 */
+	struct shm_message
+	{
+		uint16_t source; /**< Source cluster.                 */
+		int8_t opcode;   /**< Shared Memory Region operation. */
+		uint16_t seq;    /**< Sequence number.                */
+
+		/* Operation-specific fields. */
+		union 
+		{
+			/* Create message 1. */
+			struct {
+				char name[SHM_NAME_MAX]; /**< Shared Memory Region name. */
+			} create1;
+
+			/* Create message 2. */
+			struct {
+				mode_t mode;  /**< Access permissions. */
+				int excl;     /**< Exclusive creation? */
+				int rw;       /**< Read write?         */
+				int truncate; /**< Truncate?           */
+			} create2;
+
+			/* Open message 1. */
+			struct {
+				char name[SHM_NAME_MAX]; /**< Shared Memory Region name. */
+			} open1;
+
+			/* Open message 2. */
+			struct {
+				int rw;       /**< Read write? */
+				int truncate; /**< Truncate?   */
+			} open2;
+
+			/* Unlink message. */
+			struct {
+				char name[SHM_NAME_MAX]; /**< Shared Memory Region name. */
+			} unlink;
+
+			/* Return value. */
+			int ret;
+		} op;
+	};
+
+	/* Forward definitions. */
+	extern int nanvix_shm_init(void);
+	extern void nanvix_shm_finalize(void);
+	extern int nanvix_shm_create(const char *, int, int, mode_t);
+	extern int nanvix_shm_create_excl(const char *, int, mode_t);
+	extern int nanvix_shm_open(const char *, int, int);
+	extern int nanvix_shm_unlink(const char *);
 
 #endif /* _MAILBOX_H_ */

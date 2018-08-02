@@ -32,27 +32,32 @@
 	#define NANVIX_NR_NODES HAL_NR_NOC_NODES
 
 	/**
-	 * @brief Name server NoC node num.
+	 * @brief Spawner Server NoC node number.
 	 */
 	#define SPAWNER_SERVER_NODE 16
 
 	/**
-	 * @brief Name server NoC node num.
+	 * @brief Shared Memory Region Server NoC node number.
+	 */
+	#define SHM_SERVER_NODE 17
+
+	/**
+	 * @brief Spawner Server NoC node number.
 	 */
 	#define SPAWNER1_SERVER_NODE 20
 
 	/**
-	 * @brief Name server NoC node num.
+	 * @brief Name Server NoC node number.
 	 */
 	#define NAME_SERVER_NODE 21
 
 	/**
-	 * @brief Remote memory server NoC node num.
+	 * @brief Remote Memory Server NoC node number.
 	 */
 	#define RMEM_SERVER_NODE 22
 
 	/**
-	 * @brief Semaphores server NoC node num.
+	 * @brief Semaphores Server NoC node number.
 	 */
 	#define SEMAPHORE_SERVER_NODE 23
 

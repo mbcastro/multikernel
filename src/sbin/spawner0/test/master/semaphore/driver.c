@@ -38,7 +38,6 @@ void test_semaphore(void)
 		posix_semaphore_tests_api[i].test_fn();
 	}
 
-
 	/* Run fault injection tests. */
 	for (int i = 0; posix_semaphore_tests_fault[i].test_fn != NULL; i++)
 	{
