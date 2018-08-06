@@ -78,15 +78,15 @@ static int inbox;
  * shm_debug()                                                                *
  *============================================================================*/
 
-#ifndef DEBUG_SHM
-	#define shm_debug(fmt, ...) { }
-#else
-
 /**
  * @brief Dumps debug information.
  */
 static void shm_debug(const char *fmt, ...)
 {
+#ifndef DEBUG_SHM
+	((void) fmt);
+#else
+
 	int len;
 	va_list args;
 	char strbuf[80];
@@ -99,9 +99,9 @@ static void shm_debug(const char *fmt, ...)
 	va_start (args, fmt);
 	vprintf (strbuf, args);
 	va_end (args);
-}
 
 #endif
+}
 
 /*============================================================================*
  * shm_name_is_valid()                                                        *
