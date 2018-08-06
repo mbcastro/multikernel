@@ -34,6 +34,8 @@
 #include <nanvix/pm.h>
 #include <nanvix/name.h>
 
+#include "shm.h"
+
 /**
  * @brief Maximum number of shared memory regions.
  */
@@ -59,15 +61,6 @@ static struct
 	mode_t mode;                 /**< Access permissions.         */
 	int nodes[HAL_NR_NOC_NODES]; /**< Process list.               */
 } shmregs[SHM_MAX];
-
-/**
- * @brief Buffer of messages.
- */
-static struct
-{
-	int valid;              /**< Valid slot?     */
-	struct shm_message msg; /**< Bufferd message. */
-} buffer[HAL_NR_NOC_NODES];
 
 /**
  * @brief Input mailbox for small messages.
@@ -251,64 +244,6 @@ static int shm_alloc(void)
 static void shm_free(int shmid)
 {
 	shm_clear_flags(shmid);
-}
-
-/*============================================================================*
- * shm_put_message()                                                          *
- *============================================================================*/
-
-/**
- * @brief Puts a message in the messages buffer.
- *
- * @param msg Target message
- *
- * @return Upon successful completion zero is returned.  Upon failure,
- * a negative error code is returned instead.
- */
-static int shm_put_message(struct shm_message *msg)
-{
-	int i;
-
-	/* Invalid message. */
-	if (msg->source >= HAL_NR_NOC_NODES)
-		return (-EAGAIN);
-
-	i = msg->source;
-
-	buffer[i].valid = 1;
-	memcpy(&buffer[i].msg, msg, sizeof(struct shm_message));
-
-	return (0);
-}
-
-/*============================================================================*
- * shm_get_message()                                                    *
- *============================================================================*/
-
-/**
- * @brief Gets a message from the message buffer.
- *
- * @param message Address where the message will be stored.
- * @param i       Buffer slot.
- *
- * @return Upon successful completion zero is returned.
- * Upon failure, a negative error code is returned instead.
- */
-static int shm_get_message(struct shm_message *msg, int i)
-{
-	/* Invalid slot. */
-	if ((i < 0) || (i >= HAL_NR_NOC_NODES))
-		return (-EINVAL);
-
-	/* Bad slot. */
-	if (!buffer[i].valid)
-		return (-ENOENT);
-
-	/* Get message. */
-	buffer[i].valid = 0;
-	memcpy(msg, &buffer[i].msg, sizeof(struct shm_message));
-
-	return (0);
 }
 
 /*============================================================================*
@@ -621,14 +556,14 @@ static int shm_loop(void)
 			{
 				/* Persist first message. */
 				if (!(msg.seq & 1))
-					assert(shm_put_message(&msg) == 0);
+					assert(buffer_put(msg.source, &msg) == 0);
 				/* Parse second message.*/
 				else
 				{
 					struct shm_message msg1;
 
 					/* Get first message. */
-					assert(shm_get_message(&msg1, msg.source) == 0);
+					assert(buffer_get(msg.source, &msg1) == 0);
 					assert(msg.seq == (msg1.seq | 1));
 
 					msg.op.ret = shm_create(msg.source, msg1.op.create1.name, msg.op.create2.mode);
@@ -642,14 +577,14 @@ static int shm_loop(void)
 			{
 				/* Persist first message. */
 				if (!(msg.seq & 1))
-					assert(shm_put_message(&msg) == 0);
+					assert(buffer_put(msg.source, &msg) == 0);
 				/* Parse second message.*/
 				else
 				{
 					struct shm_message msg1;
 
 					/* Get first message. */
-					assert(shm_get_message(&msg1, msg.source) == 0);
+					assert(buffer_get(msg.source, &msg1) == 0);
 					assert(msg.seq == (msg1.seq | 1));
 
 					msg.op.ret = shm_create_exclusive(msg.source, msg1.op.create1.name, msg.op.create2.mode);
@@ -664,14 +599,14 @@ static int shm_loop(void)
 			{
 				/* Persist first message. */
 				if (!(msg.seq & 1))
-					assert(shm_put_message(&msg) == 0);
+					assert(buffer_put(msg.source, &msg) == 0);
 				/* Parse second message.*/
 				else
 				{
 					struct shm_message msg1;
 
 					/* Get first message. */
-					assert(shm_get_message(&msg1, msg.source) == 0);
+					assert(buffer_get(msg.source, &msg1) == 0);
 					assert(msg.seq == (msg1.seq | 1));
 
 					msg.op.ret = shm_open(msg.source, msg1.op.create1.name);
@@ -731,9 +666,7 @@ static int shm_startup(int _inbox)
 		shm_clear_flags(i);
 	}
 
-	/* Initialize message buffer. */
-	for (int i = 0; i < HAL_NR_NOC_NODES; i++)
-		buffer[i].valid = 0;
+	buffer_init();
 
 	return (0);
 }
