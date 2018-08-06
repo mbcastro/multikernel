@@ -385,7 +385,8 @@ static int semaphore_create(int owner, char *name, mode_t mode, int value)
 	}
 
 	/* Allocate a new semaphore. */
-	semid = semaphore_alloc();
+	if ((semid = semaphore_alloc()) < 0)
+		return (-ENOENT);
 
 	/* Initialize semaphore. */
 	semaphores[semid].count = value;
