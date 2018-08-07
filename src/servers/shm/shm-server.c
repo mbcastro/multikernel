@@ -26,7 +26,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
-#include <stdarg.h>
 
 #include <nanvix/spawner.h>
 #include <nanvix/syscalls.h>
@@ -37,64 +36,33 @@
 #include "shm.h"
 
 /**
- * @brief Maximum number of shared memory regions.
+ * @brief Maximum number of opened shared memory regions.
  */
-#define SHM_MAX 128
+#define SHM_OPEN_MAX 8
 
 /**
- * @brief Shared memory region flags.
- */
-/**@{*/
-#define SHM_USED   (1 << 0) /**< Used?   */
-#define SHM_REMOVE (1 << 1) /**< Remove? */
-/**@}*/
-
-/**
- * @brief Table of named shared memory regions.
+ * @brief Table of processes.
  */
 static struct
 {
-	char name[SHM_NAME_MAX];     /**< Shared memory region name.  */
-	int flags;                   /**< Flags.                      */
-	int owner;                   /**< ID of owner process.        */
-	int refcount;                /**< Number of references.       */
-	mode_t mode;                 /**< Access permissions.         */
-	int nodes[HAL_NR_NOC_NODES]; /**< Process list.               */
-} shmregs[SHM_MAX];
+	/**
+	 * @brief Number of opened shared memory regions.
+	 */
+	int nopen;
+
+	/**
+	 * Table of opened shared memory regions.
+	 */
+	struct
+	{
+		int shmid;
+	} oregions[SHM_OPEN_MAX];
+} procs[HAL_NR_NOC_NODES];
 
 /**
  * @brief Input mailbox for small messages.
  */
 static int inbox;
-
-/*============================================================================*
- * shm_debug()                                                                *
- *============================================================================*/
-
-/**
- * @brief Dumps debug information.
- */
-static void shm_debug(const char *fmt, ...)
-{
-#ifndef DEBUG_SHM
-	((void) fmt);
-#else
-
-	int len;
-	va_list args;
-	char strbuf[80];
-
-	strcpy(strbuf, "[DEBUG][nanvix][shm] ");
-	len = 80 - 2 - strlen(strbuf);
-	strncat(strbuf, fmt, len);
-	strcat(strbuf, "\n");
-
-	va_start (args, fmt);
-	vprintf (strbuf, args);
-	va_end (args);
-
-#endif
-}
 
 /*============================================================================*
  * shm_name_is_valid()                                                        *
@@ -117,133 +85,32 @@ static inline int shm_name_is_valid(const char *name)
 }
 
 /*============================================================================*
- * shm_is_valid()                                                             *
+ * shm_is_opened()                                                            *
  *============================================================================*/
 
 /**
- * @brief Asserts whether or not a shared memory region ID is valid.
+ * @brief Asserts whether or not a node has opened a given shared
+ * memory region.
  *
- * @param shmid ID of the target shared memory region.
+ * @param node  Target node.
+ * @param shmid ID of target shared memory region.
  *
- * @returns Non-zero if the shared memory region valid, and zero otherwise.
+ * @return If the target node has opened the target shared memory
+ * region, one is returned. Otherwise, zero is returned instead.
  */
-static inline int shm_is_valid(int shmid)
+static int shm_is_opened(int node, int shmid)
 {
-	return ((shmid >= 0) && (shmid < SHM_MAX));
-}
+	int nopen;
 
-/*============================================================================*
- * shm_is_used()                                                              *
- *============================================================================*/
+	nopen = procs[node].nopen;
 
-/**
- * @brief Asserts whether or not a shared memory region is used.
- *
- * @param shmid ID of the target shared memory region.
- *
- * @returns Non-zero if the shared memory region is marked as used,
- * and zero otherwise.
- */
-static inline int shm_is_used(int shmid)
-{
-	return (shmregs[shmid].flags & SHM_USED);
-}
-
-/*============================================================================*
- * shm_is_remove()                                                            *
- *============================================================================*/
-
-/**
- * @brief Asserts whether or not a shared memory region is remove.
- *
- * @param shmid ID of the target shared memory region.
- *
- * @returns Non-zero if the shared memory region is marked to be
- * removed, and zero otherwise.
- */
-static inline int shm_is_remove(int shmid)
-{
-	return (shmregs[shmid].flags & SHM_REMOVE);
-}
-
-/*============================================================================*
- * shm_set_used()                                                             *
- *============================================================================*/
-
-/**
- * @brief Sets a shared memory region as used.
- *
- * @param shmid ID of the target shared memory region.
- */
-static inline void shm_set_used(int shmid)
-{
-	shmregs[shmid].flags |= SHM_USED;
-}
-
-/*============================================================================*
- * shm_set_remove()                                                           *
- *============================================================================*/
-
-/**
- * @brief Marks a shared memory region to be removed.
- *
- * @param shmid ID of the target shared memory region.
- */
-static inline void shm_set_remove(int shmid)
-{
-	shmregs[shmid].flags |= SHM_REMOVE;
-}
-
-/*============================================================================*
- * shm_clear_flags()                                                          *
- *============================================================================*/
-
-/**
- * @brief Clears the flags of a shared memory region.
- *
- * @param shmid ID of the target shared memory region.
- */
-static inline void shm_clear_flags(int shmid)
-{
-	shmregs[shmid].flags = 0;
-}
-
-/*============================================================================*
- * shm_alloc()                                                                *
- *============================================================================*/
-
-/**
- * @brief Allocates a shared memory region.
- *
- * @return Upon successful completion, the ID of the newly allocated
- * shared memory region is returned. Upon failure, -1 is returned instead.
- */
-static int shm_alloc(void)
-{
-	/* Search for a free shared memory region. */
-	for (int i = 0; i < SHM_MAX; i++)
+	for (int i = 0; i < nopen; i++)
 	{
-		/* Found. */
-		if (!shm_is_used(i))
-		{
-			shm_set_used(i);
+		if (procs[node].oregions[i].shmid == shmid)
 			return (i);
-		}
 	}
 
 	return (-1);
-}
-
-/*============================================================================*
- * shm_free()                                                                 *
- *============================================================================*/
-
-/**
- * @brief Free a shared memory region.
- */
-static void shm_free(int shmid)
-{
-	shm_clear_flags(shmid);
 }
 
 /*============================================================================*
@@ -261,51 +128,35 @@ static void shm_free(int shmid)
  */
 static int shm_open(int node, const char *name)
 {
-	int shmid;    /* Shared memory region ID. */
-	int refcount; /* Number of process.       */
+	int i;
+	int shmid;
 
 	shm_debug("open node=%d name=%s", node, name);
 
-	/* Invalid process. */
-	if ((node < 0) || (node >= HAL_NR_NOC_NODES))
-		return (-EINVAL);
-
-	/* Invalid shm name. */
+	/* Invalid name. */
 	if (!shm_name_is_valid(name))
 		return (-EINVAL);
 
-	/* Look for shm. */
-	for (int i = 0; i < SHM_MAX; i++)
-	{
-		/* Shared memory region not in use. */
-		if (!shm_is_used(i))
-			continue;
+	/* Get shared memory. */
+	if ((shmid = shm_get(name)) < 0)
+		return (-EINVAL);
 
-		/* Found.*/
-		if (!strcmp(shmregs[i].name, name))
-		{
-			shmid = i;
-			goto found;
-		}
+	/* Shared memory region shall be removed soon. */
+	if (shm_is_remove(shmid))
+	{
+		shm_put(shmid);
+		return (-EAGAIN);
 	}
 
-	return (-EINVAL);
-
-found:
-
-	refcount = shmregs[shmid].refcount++;
-
-	/*
-	 * Check if we had opened this shm before.
-	 * If so, there is nothing else to do.
-	 */
-	for (int i = 0; i < refcount; i++)
+	/* Too many files are opened. */
+	if (procs[node].nopen >= SHM_OPEN_MAX)
 	{
-		if (shmregs[shmid].nodes[i] == node)
-			return (shmid);
+		shm_put(shmid);
+		return (-ENFILE);
 	}
 
-	shmregs[shmid].nodes[refcount] = node;
+	i = procs[node].nopen++;
+	procs[node].oregions[i].shmid = shmid;
 
 	return (shmid);
 }
@@ -327,40 +178,36 @@ found:
  */
 static int shm_create(int owner, const char *name, mode_t mode)
 {
-	int shmid;
+	int i;     /* Index of opened region.  */
+	int shmid; /* Shared memory region ID. */
 
 	shm_debug("create node=%d name=%s mode=%d", owner, name, mode);
 
-	/* Invalid process. */
-	if ((owner < 0) || (owner >= HAL_NR_NOC_NODES))
-		return (-EINVAL);
-
-	/* Invalid shm name. */
+	/* Invalid name. */
 	if (!shm_name_is_valid(name))
 		return (-EINVAL);
 
-	/* Look for shm. */
-	for (int i = 0; i < SHM_MAX; i++)
+	/* Look for shared memory region. */
+	if ((shmid = shm_get(name)) >= 0)
 	{
-		/* Shared memory region not in use. */
-		if (!shm_is_used(i))
-			continue;
-
-		/* Found.*/
-		if (!strcmp(shmregs[i].name, name))
-			return (shm_open(owner, name));
+		shm_put(shmid);
+		return (shm_open(owner, name));
 	}
+
+	/* Too many files are opened. */
+	if (procs[owner].nopen >= SHM_OPEN_MAX)
+		return (-ENFILE);
 
 	/* Allocate a new shm. */
 	if ((shmid = shm_alloc()) < 0)
 		return (-EAGAIN);
 
-	/* Initialize shm. */
-	shmregs[shmid].refcount = 1;
-	shmregs[shmid].owner = owner;
-	shmregs[shmid].nodes[0] = owner;
-	shmregs[shmid].mode =  mode;
-	strcpy(shmregs[shmid].name, name);
+	/* Initialize shared memory region. */
+	shm_set_perm(shmid, owner, mode);
+	shm_set_name(shmid, name);
+
+	i = procs[owner].nopen++;
+	procs[owner].oregions[i].shmid = shmid;
 
 	return (shmid);
 }
@@ -382,26 +229,19 @@ static int shm_create(int owner, const char *name, mode_t mode)
  */
 static int shm_create_exclusive(int owner, char *name, int mode)
 {
+	int shmid;
+
 	shm_debug("create-excl node=%d name=%s mode=%d", owner, name, mode);
 
-	/* Invalid process. */
-	if ((owner < 0) || (owner >= HAL_NR_NOC_NODES))
-		return (-EINVAL);
-
-	/* Invalid shm name. */
+	/* Invalid name. */
 	if (!shm_name_is_valid(name))
 		return (-EINVAL);
 
-	/* Look for shm. */
-	for (int i = 0; i < SHM_MAX; i++)
+	/* Shared memory region exists. */
+	if ((shmid = shm_get(name)) >= 0)
 	{
-		/* Shared memory region not in use. */
-		if (!shm_is_used(i))
-			continue;
-
-		/* Found.*/
-		if (!strcmp(shmregs[i].name, name))
-			return (-EEXIST);
+		shm_put(shmid);
+		return (-EEXIST);
 	}
 
 	return (shm_create(owner, name, mode));
@@ -423,47 +263,27 @@ static int shm_create_exclusive(int owner, char *name, int mode)
 static int shm_close(int node, int shmid)
 {
 	int i;
-	int refcount;
+	int nopen;
 
 	shm_debug("close node=%d shmid=%d", node, shmid);
-
-	/* Invalid process. */
-	if ((node < 0) || (node >= HAL_NR_NOC_NODES))
-		return (-EINVAL);
-
-	/* Invalid shm ID. */
-	if (!shm_is_valid(shmid))
-		return (-EINVAL);
 
 	/* Shared memory region not in use. */
 	if (!shm_is_used(shmid))
 		return (-EINVAL);
 
-	refcount = shmregs[shmid].refcount;
-
 	/*
 	 * The process should have opened
 	 * the shared memory region before.
 	 */
-	for (i = 0; i < refcount; i++)
-	{
-		if (shmregs[shmid].nodes[i] == node)
-			goto found;
-	}
+	if ((i = shm_is_opened(node, shmid)) < 0)
+		return (-EACCES);
 
-	return (-EINVAL);
+	/* Remove the shared region from the list. */
+	nopen = --procs[node].nopen;
+	for (int j = i; j < nopen; j++)
+		procs[node].oregions[j].shmid = procs[node].oregions[j + 1].shmid;		
 
-found:
-
-	/* Remove the process from the list. */
-	for (int j = i; j < refcount - 1; j++)
-		shmregs[shmid].nodes[j] = shmregs[shmid].nodes[j + 1];
-
-	shmregs[shmid].refcount--;
-
-	/* Unlink the shared memory region if no process is using it anymore. */
-	if ((shmregs[shmid].refcount == 0) && (shm_is_remove(shmid)))
-		shm_free(shmid);
+	shm_put(shmid);
 
 	return (0);
 }
@@ -487,44 +307,17 @@ static int shm_unlink(int node, const char *name)
 
 	shm_debug("unlink node=%d name=%s", node, name);
 
-	/* Invalid process ID. */
-	if ((node < 0) || (node >= HAL_NR_NOC_NODES))
+	/* Shared memory region does not exist. */
+	if ((shmid = shm_get(name)) < 0)
 		return (-EINVAL);
-
-	/* Look for shared memory region. */
-	for (shmid = 0; shmid < SHM_MAX; shmid++)
-	{
-		/* Shared memory region not in use. */
-		if (!shm_is_used(shmid))
-			continue;
-
-		if (!strcmp(shmregs[shmid].name, name))
-			goto found;
-	}
-
-	return (-EAGAIN);
-
-found:
+	shm_put(shmid);
 
 	/* Do I own the shared memory region? */
-	if (shmregs[shmid].owner != node)
+	if (!shm_is_owner(shmid, node))
 		return (-EPERM);
 
-	/*
-	 * We cannot remote the shared memory region now,
-	 * so let us just close it and schedule the
-	 * operation.
-	 **/
-	if (shmregs[shmid].refcount > 1)
-	{
-		shm_set_remove(shmid);
-		return (shm_close(node, shmid));
-	}
-
-	shmregs[shmid].refcount = 0;
-	shm_clear_flags(shmid);
-
-	return (0);
+	shm_set_remove(shmid);
+	return (shm_close(node, shmid));
 }
 
 /*============================================================================*
@@ -547,6 +340,10 @@ static int shm_loop(void)
 		assert(sys_mailbox_read(inbox, &msg, sizeof(struct shm_message)) == MAILBOX_MSG_SIZE);
 
 		shm_debug("request received");
+
+		/* Invalid process ID. */
+		if (msg.source >= HAL_NR_NOC_NODES)
+			continue;
 
 		/* Handle shared memory region requests. */
 		switch (msg.opcode)
@@ -659,20 +456,19 @@ static int shm_startup(int _inbox)
 	/* Assign input mailbox. */
 	inbox = _inbox;
 
-	/* Initialize shmregs table. */
-	for (int i = 0; i < SHM_MAX; i++)
-	{
-		shmregs[i].refcount = 0;
-		shm_clear_flags(i);
-	}
-
+	shm_init();
 	buffer_init();
+
+	/* Initialize process table. */
+	for (int i = 0; i < HAL_NR_NOC_NODES; i++)
+		procs[i].nopen = 0;
+
 
 	return (0);
 }
 
 /*============================================================================*
- * shm_shutdown()                                                       *
+ * shm_shutdown()                                                             *
  *============================================================================*/
 
 /**
@@ -687,7 +483,7 @@ static int shm_shutdown(void)
 }
 
 /*============================================================================*
- * shm_server()                                                         *
+ * shm_server()                                                               *
  *============================================================================*/
 
 /**
