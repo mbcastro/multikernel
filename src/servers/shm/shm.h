@@ -24,6 +24,7 @@
 #define _SHM_H_
 
 	#include <sys/types.h>
+	#include <stdint.h>
 
 	/* Forward definitions. */
 	extern void shm_debug(const char *, ...);
@@ -33,9 +34,13 @@
 	extern int shm_is_used(int);
 	extern int shm_is_remove(int);
 	extern int shm_is_owner(int, int);
+	extern uint64_t shm_get_base(int);
+	extern size_t shm_get_size(int);
 	extern void shm_set_remove(int);
 	extern void shm_set_perm(int, int, mode_t);
 	extern void shm_set_name(int, const char *);
+	extern void shm_set_base(int, uint64_t);
+	extern void shm_set_size(int, size_t);
 	extern int shm_alloc(void);
 	extern int shm_get(const char *);
 	extern void shm_put(int);

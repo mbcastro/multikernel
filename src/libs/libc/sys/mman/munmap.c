@@ -20,41 +20,30 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef SYS_MMAN_H_
-#define SYS_MMAN_H_
+#include <sys/mman.h>
+#include <sys/types.h>
+#include <errno.h>
 
-	#include <sys/types.h>
-	#include <stddef.h>
-	
-	/**
-	 * @brief Page protection options.
-	 */
-	/**@{*/
-	#define PROT_NONE         0  /**< Page cannot be accessed. */
-	#define PROT_EXEC   (1 << 0) /**< Page can be executed.    */
-	#define PROT_WRITE  (1 << 1) /**< Page can be written.     */
-	#define PROT_READ   (1 << 2) /**< Page can be read.        */
-	/**@}*/
+#include <nanvix/mm.h>
 
-	/**
-	 * @brief Flag options.
-	 */
-	/**@{*/
-	#define MAP_FIXED   1 /**< Interpret address exactly. */
-	#define MAP_PRIVATE 2 /**< Changes are private.       */
-	#define MAP_SHARED  3 /**< Share changes.             */
-	/**@}*/
+/**
+ * @brief Unmaps pages of memory.
+ *
+ * @param addr  Mapping address.
+ * @param len   Length of mapping (in bytes).
+ *
+ * @retuns Upon successful completion, zero is returned. Otherwise, -1
+ * is returned and errno is set to indicate the error.
+ */
+int munmap(void *addr, size_t len)
+{
+	/* Invalid length. */
+	if (len == 0)
+	{
+		errno = EINVAL;
+		return (-1);
+	}
 
-	/**
-	 * @brief Mapping failed.
-	 */
-	#define MAP_FAILED NULL
-
-	/* Forward definitions. */
-	extern int shm_open(const char *, int, mode_t);
-	extern int shm_unlink(const char *);
-	extern void *mmap(void *, size_t, int, int, int, off_t);
-	extern int munmap(void *, size_t);
-
-#endif /* SYS_MMAN_H_ */
+	return (nanvix_munmap(addr, len));
+}
 

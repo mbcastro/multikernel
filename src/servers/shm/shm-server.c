@@ -36,9 +36,13 @@
 #include "shm.h"
 
 /**
- * @brief Maximum number of opened shared memory regions.
+ * @brief Flags for shared region.
  */
-#define SHM_OPEN_MAX 8
+/*@{@*/
+#define SHM_WRITE  (1 << 0) /**< Writable? Else read-only */
+#define SHM_SHARED (1 << 1) /**< Shared? Else private.    */
+#define SHM_MAPPED (1 << 2) /**< Mapped? Else unmapped.   */
+/**@}*/
 
 /**
  * @brief Table of processes.
@@ -56,6 +60,7 @@ static struct
 	struct
 	{
 		int shmid;
+		int flags;
 	} oregions[SHM_OPEN_MAX];
 } procs[HAL_NR_NOC_NODES];
 
@@ -157,6 +162,7 @@ static int shm_open(int node, const char *name)
 
 	i = procs[node].nopen++;
 	procs[node].oregions[i].shmid = shmid;
+	procs[node].oregions[i].flags = SHM_WRITE;
 
 	return (shmid);
 }
@@ -205,9 +211,12 @@ static int shm_create(int owner, const char *name, mode_t mode)
 	/* Initialize shared memory region. */
 	shm_set_perm(shmid, owner, mode);
 	shm_set_name(shmid, name);
+	shm_set_base(shmid, 0);
+	shm_set_size(shmid, RMEM_SIZE);
 
 	i = procs[owner].nopen++;
 	procs[owner].oregions[i].shmid = shmid;
+	procs[owner].oregions[i].flags = SHM_WRITE;
 
 	return (shmid);
 }
@@ -281,7 +290,10 @@ static int shm_close(int node, int shmid)
 	/* Remove the shared region from the list. */
 	nopen = --procs[node].nopen;
 	for (int j = i; j < nopen; j++)
-		procs[node].oregions[j].shmid = procs[node].oregions[j + 1].shmid;		
+	{
+		procs[node].oregions[j].shmid = procs[node].oregions[j + 1].shmid;
+		procs[node].oregions[j].flags = procs[node].oregions[j + 1].flags;
+	}
 
 	shm_put(shmid);
 
@@ -318,6 +330,114 @@ static int shm_unlink(int node, const char *name)
 
 	shm_set_remove(shmid);
 	return (shm_close(node, shmid));
+}
+
+/*============================================================================*
+ * shm_unmap()                                                                *
+ *============================================================================*/
+
+/**
+ * @brief Maps a shared memory region.
+ *
+ * @param node     ID of the calling node.
+ * @param shmid    ID of the target shared memory region.
+ * @param size     Size of mapping.
+ * @param writable Writable mapping? Else read-only.
+ * @param shared   Shared mapping? Else private.
+ * @param off      Offset within shared memory region.
+ * @param mapblk   Place which the mapping address should be stored.
+ *
+ * @returns Upon successful completion, zero is returned and the
+ * mapping address is stored into @p mapblk. Upon failure, a negative
+ * error code is returned instead.
+ */
+static int shm_map(
+	int node,
+	int shmid,
+	size_t size,
+	int writable,
+	int shared,
+	off_t off,
+	uint64_t *mapblk)
+{
+	int i;
+
+	shm_debug("map node=%d name=%d", node, shmid);
+
+	/* Shared memory region not in use. */
+	if (!shm_is_used(shmid))
+		return (-EINVAL);
+
+	/*
+	 * The process should have opened
+	 * the shared memory region before.
+	 */
+	if ((i = shm_is_opened(node, shmid)) < 0)
+		return (-EACCES);
+
+	/* Invalid size. */
+	if (size > RMEM_BLOCK_SIZE)
+		return (-ENOMEM);
+
+	/* Invalid offset. */
+	if (off > RMEM_SIZE)
+		return (-ENXIO);
+
+	/* Invalid range. */
+	if ((off + size) > RMEM_SIZE)
+		return (-ENXIO);
+
+	/* Cannot write. */
+	if (writable && ((!procs[node].oregions[i].flags & SHM_WRITE)))
+		return (-EACCES);
+
+	/* Map. */
+	if (!(procs[node].oregions[i].flags & SHM_MAPPED))
+	{
+		procs[node].oregions[i].flags |= SHM_MAPPED;
+		procs[node].oregions[i].flags |= (shared) ? SHM_SHARED : 0;
+	}
+
+	*mapblk = off;
+
+	return (0);
+}
+
+/*============================================================================*
+ * shm_unmap()                                                                *
+ *============================================================================*/
+
+/**
+ * @brief Unmaps a shared memory region.
+ *
+ * @param node     ID of the calling node.
+ * @param shmid    ID of the target shared memory region.
+ *
+ * @returns Upon successful completion, zero is returned. Upon
+ * failure, a negative error code is returned instead.
+ */
+static int shm_unmap(int node, int shmid)
+{
+	int i;
+
+	shm_debug("unmap node=%d name=%d", node, shmid);
+
+	/* Shared memory region not in use. */
+	if (!shm_is_used(shmid))
+		return (-EINVAL);
+
+	/*
+	 * The process should have opened
+	 * the shared memory region before.
+	 */
+	if ((i = shm_is_opened(node, shmid)) < 0)
+		return (-EACCES);
+
+	/* Not mapped. */
+	if (!(procs[node].oregions[i].flags & SHM_MAPPED))
+		return (-EINVAL);
+
+	return (0);
 }
 
 /*============================================================================*
@@ -363,7 +483,7 @@ static int shm_loop(void)
 					assert(buffer_get(msg.source, &msg1) == 0);
 					assert(msg.seq == (msg1.seq | 1));
 
-					msg.op.ret = shm_create(msg.source, msg1.op.create1.name, msg.op.create2.mode);
+					msg.op.ret.status = shm_create(msg.source, msg1.op.create1.name, msg.op.create2.mode);
 					msg.opcode = SHM_RETURN;
 					reply = 1;
 				}
@@ -384,7 +504,7 @@ static int shm_loop(void)
 					assert(buffer_get(msg.source, &msg1) == 0);
 					assert(msg.seq == (msg1.seq | 1));
 
-					msg.op.ret = shm_create_exclusive(msg.source, msg1.op.create1.name, msg.op.create2.mode);
+					msg.op.ret.status = shm_create_exclusive(msg.source, msg1.op.create1.name, msg.op.create2.mode);
 					msg.opcode = SHM_RETURN;
 					reply = 1;
 				}
@@ -406,7 +526,7 @@ static int shm_loop(void)
 					assert(buffer_get(msg.source, &msg1) == 0);
 					assert(msg.seq == (msg1.seq | 1));
 
-					msg.op.ret = shm_open(msg.source, msg1.op.create1.name);
+					msg.op.ret.status = shm_open(msg.source, msg1.op.create1.name);
 					msg.opcode = SHM_RETURN;
 					reply = 1;
 				}
@@ -415,10 +535,46 @@ static int shm_loop(void)
 
 			/* Unlink a shared memory region. */
 			case SHM_UNLINK:
-				msg.op.ret = shm_unlink(msg.source, msg.op.unlink.name);
+				msg.op.ret.status = shm_unlink(msg.source, msg.op.unlink.name);
 				msg.opcode = SHM_RETURN;
 				reply = 1;
 			break;
+
+			/* Map a shared memory region. */
+			case SHM_MAP:
+			{
+				int ret;
+				uint64_t mapblk;
+
+				ret = shm_map(
+					msg.source,
+					msg.op.map.shmid,
+					msg.op.map.size,
+					msg.op.map.writable,
+					msg.op.map.shared,
+					msg.op.map.off,
+					&mapblk
+				);
+				if (ret == 0)
+				{
+					msg.opcode = SHM_RETURN;
+					msg.op.ret.mapblk = mapblk;
+				}
+				else
+				{
+					msg.opcode = SHM_FAILED;
+					msg.op.ret.status = ret;
+				}
+				reply = 1;
+			} break;
+
+			/* Unmap a shared memory region. */
+			case SHM_UNMAP:
+			{
+				msg.op.ret.status = shm_unmap(msg.source, msg.op.unmap.shmid);
+				msg.opcode = SHM_RETURN;
+				reply = 1;
+			} break;
 
 			/* Should not happen. */
 			default:

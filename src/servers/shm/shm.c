@@ -21,6 +21,7 @@
  */
 
 #include <sys/types.h>
+#include <stdint.h>
 #include <string.h>
 
 #include <nanvix/mm.h>
@@ -48,6 +49,8 @@ static struct
 	int owner;               /**< ID of owner process.        */
 	int refcount;            /**< Number of references.       */
 	mode_t mode;             /**< Access permissions.         */
+	uint64_t base;           /**< Base address.               */
+	size_t size;             /**< Size (in bytes).            */
 } regions[SHM_MAX];
 
 /*============================================================================*
@@ -120,6 +123,38 @@ int shm_is_owner(int shmid, int node)
 }
 
 /*============================================================================*
+ * shm_get_base()                                                             *
+ *============================================================================*/
+
+/**
+ * @brief Gets the base address of a shared memory region.
+ *
+ * @param shmid ID of the target shared memory region.
+ *
+ * @param The base address of the target shared memory region.
+ */
+uint64_t shm_get_base(int shmid)
+{
+	return (regions[shmid].base);
+}
+
+/*============================================================================*
+ * shm_get_size()                                                             *
+ *============================================================================*/
+
+/**
+ * @brief Gets the size (in bytes) of a shared memory region.
+ *
+ * @param shmid ID of the target shared memory region.
+ *
+ * @returns The size (in bytes) of the target shared memory region.
+ */
+size_t shm_get_size(int shmid)
+{
+	return (regions[shmid].size);
+}
+
+/*============================================================================*
  * shm_set_used()                                                             *
  *============================================================================*/
 
@@ -175,6 +210,36 @@ void shm_set_perm(int shmid, int owner, mode_t mode)
 void shm_set_name(int shmid, const char *name)
 {
 	strcpy(regions[shmid].name, name);
+}
+
+/*============================================================================*
+ * shm_set_base()                                                             *
+ *============================================================================*/
+
+/**
+ * @brief Sets the base address of a shared memory region.
+ *
+ * @param shmid ID of the target shared memory region.
+ * @param base  Base address of the target shared memory region.
+ */
+void shm_set_base(int shmid, uint64_t base)
+{
+	regions[shmid].base = base;
+}
+
+/*============================================================================*
+ * shm_set_size()                                                             *
+ *============================================================================*/
+
+/**
+ * @brief Sets the size (in bytes) of a shared memory region.
+ *
+ * @param shmid ID of the target shared memory region.
+ * @param size  Size of the target shared memoy region.
+ */
+void shm_set_size(int shmid, size_t size)
+{
+	regions[shmid].size = size;
 }
 
 /*============================================================================*
