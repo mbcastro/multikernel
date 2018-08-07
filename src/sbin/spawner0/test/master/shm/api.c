@@ -26,13 +26,16 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 
-#include <mppaipc.h>
-
 #include <nanvix/limits.h>
 #include <nanvix/syscalls.h>
 #include <nanvix/mm.h>
 
 #include "test.h"
+
+/**
+ * @brief Shared memory region size.
+ */
+#define REGION_SIZE 1024
 
 /*==========================================================================*
  * API Test: Create Unlink                                                  *
@@ -129,6 +132,166 @@ static void test_posix_shm_open_close(void)
 	TEST_ASSERT(shm_unlink(shm_name) == 0);
 }
 
+/*==========================================================================*
+ * API Test: Map Unmap 1                                                    *
+ *==========================================================================*/
+
+/**
+ * @brief API Test: Map Unmap 1
+ */
+static void test_posix_shm_map_unmap1(void)
+{
+	int shm;
+	void *map;
+	char shm_name[SHM_NAME_MAX];
+
+	sprintf(shm_name, "/shm");
+	TEST_ASSERT((shm = shm_open(shm_name, O_CREAT, O_RDONLY)) >= 0);
+	TEST_ASSERT((map = mmap(NULL, REGION_SIZE, PROT_READ, MAP_PRIVATE, shm, 0)) != MAP_FAILED);
+	TEST_ASSERT(munmap(map, REGION_SIZE) == 0);
+	TEST_ASSERT(shm_unlink(shm_name) == 0);
+}
+
+/*==========================================================================*
+ * API Test: Map_Unmap 2                                                    *
+ *==========================================================================*/
+
+/**
+ * @brief API Test: Map Unmap 2
+ */
+static void test_posix_shm_map_unmap2(void)
+{
+	int shm;
+	void *map;
+	char shm_name[SHM_NAME_MAX];
+
+	sprintf(shm_name, "/shm");
+	TEST_ASSERT((shm = shm_open(shm_name, O_CREAT, O_RDWR)) >= 0);
+	TEST_ASSERT((map = mmap(NULL, REGION_SIZE, PROT_WRITE, MAP_PRIVATE, shm, 0)) != MAP_FAILED);
+	TEST_ASSERT(munmap(map, REGION_SIZE) == 0);
+	TEST_ASSERT(shm_unlink(shm_name) == 0);
+}
+
+/*==========================================================================*
+ * API Test: Map Unmap 3                                                    *
+ *==========================================================================*/
+
+/**
+ * @brief API Test: Map Unmap 3
+ */
+static void test_posix_shm_map_unmap3(void)
+{
+	int shm;
+	void *map;
+	char shm_name[SHM_NAME_MAX];
+
+	sprintf(shm_name, "/shm");
+	TEST_ASSERT((shm = shm_open(shm_name, O_CREAT, O_RDONLY)) >= 0);
+	TEST_ASSERT((map = mmap(NULL, REGION_SIZE, PROT_READ, MAP_SHARED, shm, 0)) != MAP_FAILED);
+	TEST_ASSERT(munmap(map, REGION_SIZE) == 0);
+	TEST_ASSERT(shm_unlink(shm_name) == 0);
+}
+
+/*==========================================================================*
+ * API Test: Map_Unmap 4                                                    *
+ *==========================================================================*/
+
+/**
+ * @brief API Test: Map Unmap 4
+ */
+static void test_posix_shm_map_unmap4(void)
+{
+	int shm;
+	void *map;
+	char shm_name[SHM_NAME_MAX];
+
+	sprintf(shm_name, "/shm");
+	TEST_ASSERT((shm = shm_open(shm_name, O_CREAT, O_RDWR)) >= 0);
+	TEST_ASSERT((map = mmap(NULL, REGION_SIZE, PROT_WRITE, MAP_SHARED, shm, 0)) != MAP_FAILED);
+	TEST_ASSERT(munmap(map, REGION_SIZE) == 0);
+	TEST_ASSERT(shm_unlink(shm_name) == 0);
+}
+
+/*==========================================================================*
+ * API Test: Map Unmap 5                                                    *
+ *==========================================================================*/
+
+/**
+ * @brief API Test: Map Unmap 5
+ */
+static void test_posix_shm_map_unmap5(void)
+{
+	int shm;
+	void *map;
+	char shm_name[SHM_NAME_MAX];
+
+	sprintf(shm_name, "/shm");
+	TEST_ASSERT((shm = shm_open(shm_name, O_CREAT, O_RDONLY)) >= 0);
+	TEST_ASSERT((map = mmap(NULL, REGION_SIZE, PROT_READ, MAP_PRIVATE, shm, REGION_SIZE)) != MAP_FAILED);
+	TEST_ASSERT(munmap(map, REGION_SIZE) == 0);
+	TEST_ASSERT(shm_unlink(shm_name) == 0);
+}
+
+/*==========================================================================*
+ * API Test: Map_Unmap 6                                                    *
+ *==========================================================================*/
+
+/**
+ * @brief API Test: Map Unmap 6
+ */
+static void test_posix_shm_map_unmap6(void)
+{
+	int shm;
+	void *map;
+	char shm_name[SHM_NAME_MAX];
+
+	sprintf(shm_name, "/shm");
+	TEST_ASSERT((shm = shm_open(shm_name, O_CREAT, O_RDWR)) >= 0);
+	TEST_ASSERT((map = mmap(NULL, REGION_SIZE, PROT_WRITE, MAP_PRIVATE, shm, REGION_SIZE)) != MAP_FAILED);
+	TEST_ASSERT(munmap(map, REGION_SIZE) == 0);
+	TEST_ASSERT(shm_unlink(shm_name) == 0);
+}
+
+/*==========================================================================*
+ * API Test: Map Unmap 7                                                    *
+ *==========================================================================*/
+
+/**
+ * @brief API Test: Map Unmap 7
+ */
+static void test_posix_shm_map_unmap7(void)
+{
+	int shm;
+	void *map;
+	char shm_name[SHM_NAME_MAX];
+
+	sprintf(shm_name, "/shm");
+	TEST_ASSERT((shm = shm_open(shm_name, O_CREAT, O_RDONLY)) >= 0);
+	TEST_ASSERT((map = mmap(NULL, REGION_SIZE, PROT_READ, MAP_SHARED, shm, REGION_SIZE)) != MAP_FAILED);
+	TEST_ASSERT(munmap(map, REGION_SIZE) == 0);
+	TEST_ASSERT(shm_unlink(shm_name) == 0);
+}
+
+/*==========================================================================*
+ * API Test: Map_Unmap 8                                                    *
+ *==========================================================================*/
+
+/**
+ * @brief API Test: Map Unmap 8
+ */
+static void test_posix_shm_map_unmap8(void)
+{
+	int shm;
+	void *map;
+	char shm_name[SHM_NAME_MAX];
+
+	sprintf(shm_name, "/shm");
+	TEST_ASSERT((shm = shm_open(shm_name, O_CREAT, O_RDWR)) >= 0);
+	TEST_ASSERT((map = mmap(NULL, REGION_SIZE, PROT_WRITE, MAP_SHARED, shm, REGION_SIZE)) != MAP_FAILED);
+	TEST_ASSERT(munmap(map, REGION_SIZE) == 0);
+	TEST_ASSERT(shm_unlink(shm_name) == 0);
+}
+
 /*============================================================================*/
 
 /**
@@ -140,5 +303,13 @@ struct test posix_shm_tests_api[] = {
 	{ test_posix_shm_create_unlink3, "Create Unlink 3" },
 	{ test_posix_shm_create_unlink4, "Create Unlink 4" },
 	{ test_posix_shm_open_close,     "Open Close"      },
+	{ test_posix_shm_map_unmap1,     "Map Unmap 1"     },
+	{ test_posix_shm_map_unmap2,     "Map Unmap 2"     },
+	{ test_posix_shm_map_unmap3,     "Map Unmap 3"     },
+	{ test_posix_shm_map_unmap4,     "Map Unmap 4"     },
+	{ test_posix_shm_map_unmap5,     "Map Unmap 5"     },
+	{ test_posix_shm_map_unmap6,     "Map Unmap 6"     },
+	{ test_posix_shm_map_unmap7,     "Map Unmap 7"     },
+	{ test_posix_shm_map_unmap8,     "Map Unmap 8"     },
 	{ NULL,                          NULL              },
 };
