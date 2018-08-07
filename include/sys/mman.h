@@ -46,6 +46,15 @@
 	/**@}*/
 
 	/**
+	 * @brief Memory synchronization flags.
+	 */
+	/**@{*/
+	#define MS_ASYNC      (1 << 0) /**< Perform asynchronous writes. */
+	#define MS_SYNC       (1 << 1) /**< Perform synchronous writes.  */
+	#define MS_INVALIDATE (1 << 2) /**< Invalidate cached data.      */
+	/**@}*/
+
+	/**
 	 * @brief Mapping failed.
 	 */
 	#define MAP_FAILED NULL
@@ -55,6 +64,7 @@
 	extern int shm_unlink(const char *);
 	extern void *mmap(void *, size_t, int, int, int, off_t);
 	extern int munmap(void *, size_t);
+	extern int msync(void *, size_t, int);
 
 #endif /* SYS_MMAN_H_ */
 

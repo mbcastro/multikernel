@@ -600,3 +600,51 @@ error:
 	return (msg.op.ret.status);
 }
 
+/*============================================================================*
+ * nanvix_msync()                                                             *
+ *============================================================================*/
+
+/**
+ * @brief Synchronizes memory with physical storage.
+ *
+ * @param addr       Target local address.
+ * @param len        Number of bytes to synchronize.
+ * @param async      Asynchronous write? Else synchronous.
+ * @param invalidate Invaldiate cached data? Else no.
+ *
+ * @para Upon successful completion, zero is returned. Upon failure,
+ * -1 is returned instead and errno is set to indicate the error.
+ */
+int nanvix_msync(void *addr, size_t len, int async, int invalidate)
+{
+	int i;
+
+	/* Not supported. */
+	if (async)
+	{
+		errno = ENOTSUP;
+		return (-1);
+	}
+
+	/* Search for mapping. */
+	for (i = 0; i < nmappings; i++)
+	{
+		if (mappings[i].local == addr)
+			goto found;
+	}
+
+found:
+
+	/* Invalidate cached data. */
+	if (invalidate)
+	{
+		memread(mappings[i].remote, mappings[i].local, len);
+		return (0);
+	}
+
+	/* Synchronize region. */
+	if ((mappings[i].shared) && (mappings[i].writable))
+		memwrite(mappings[i].remote, mappings[i].local, len);
+
+	return (0);
+}

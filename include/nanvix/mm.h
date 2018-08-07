@@ -173,5 +173,6 @@
 	extern int nanvix_shm_unlink(const char *);
 	extern void *nanvix_mmap(size_t, int, int, int, off_t);
 	extern int nanvix_munmap(void *, size_t);
+	extern int nanvix_msync(void *, size_t, int, int);
 
 #endif /* _MAILBOX_H_ */
