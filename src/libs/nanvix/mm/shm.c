@@ -599,3 +599,4 @@ error:
 	pthread_mutex_unlock(&lock);
 	return (msg.op.ret.status);
 }
+

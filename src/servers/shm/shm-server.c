@@ -376,15 +376,15 @@ static int shm_map(
 		return (-EACCES);
 
 	/* Invalid size. */
-	if (size > RMEM_BLOCK_SIZE)
+	if (size > shm_get_size(shmid))
 		return (-ENOMEM);
 
 	/* Invalid offset. */
-	if (off > RMEM_SIZE)
+	if (off > ((off_t) shm_get_size(shmid)))
 		return (-ENXIO);
 
 	/* Invalid range. */
-	if ((off + size) > RMEM_SIZE)
+	if ((off + size) > shm_get_size(shmid))
 		return (-ENXIO);
 
 	/* Cannot write. */
@@ -398,7 +398,7 @@ static int shm_map(
 		procs[node].oregions[i].flags |= (shared) ? SHM_SHARED : 0;
 	}
 
-	*mapblk = off;
+	*mapblk = shm_get_base(shmid) + off;
 
 	return (0);
 }
