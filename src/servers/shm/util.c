@@ -20,41 +20,36 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef SYS_MMAN_H_
-#define SYS_MMAN_H_
+#include <stdarg.h>
+#include <string.h>
+#include <stdio.h>
 
-	#include <sys/types.h>
-	#include <stddef.h>
-	
-	/**
-	 * @brief Page protection options.
-	 */
-	/**@{*/
-	#define PROT_NONE         0  /**< Page cannot be accessed. */
-	#define PROT_EXEC   (1 << 0) /**< Page can be executed.    */
-	#define PROT_WRITE  (1 << 1) /**< Page can be written.     */
-	#define PROT_READ   (1 << 2) /**< Page can be read.        */
-	/**@}*/
+/*============================================================================*
+ * shm_debug()                                                                *
+ *============================================================================*/
 
-	/**
-	 * @brief Flag options.
-	 */
-	/**@{*/
-	#define MAP_FIXED   1 /**< Interpret address exactly. */
-	#define MAP_PRIVATE 2 /**< Changes are private.       */
-	#define MAP_SHARED  3 /**< Share changes.             */
-	/**@}*/
+/**
+ * @brief Dumps debug information.
+ */
+void shm_debug(const char *fmt, ...)
+{
+#ifndef DEBUG_SHM
+	((void) fmt);
+#else
 
-	/**
-	 * @brief Mapping failed.
-	 */
-	#define MAP_FAILED NULL
+	int len;
+	va_list args;
+	char strbuf[80];
 
-	/* Forward definitions. */
-	extern int shm_open(const char *, int, mode_t);
-	extern int shm_unlink(const char *);
-	extern void *mmap(void *, size_t, int, int, int, off_t);
-	extern int munmap(void *, size_t);
+	strcpy(strbuf, "[DEBUG][nanvix][shm] ");
+	len = 80 - 2 - strlen(strbuf);
+	strncat(strbuf, fmt, len);
+	strcat(strbuf, "\n");
 
-#endif /* SYS_MMAN_H_ */
+	va_start (args, fmt);
+	vprintf (strbuf, args);
+	va_end (args);
+
+#endif
+}
 

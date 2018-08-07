@@ -23,9 +23,9 @@
 #ifndef NANVIX_MM_H_
 #define NANVIX_MM_H_
 	
-	#include <inttypes.h>
-	#include <stddef.h>
 	#include <sys/types.h>
+	#include <stdint.h>
+	#include <stddef.h>
 
 /*============================================================================*
  * Remote Memory Service                                                      *
@@ -71,6 +71,16 @@
  *============================================================================*/
 
 	/**
+	 * @brief Maximum number of opened shared memory regions.
+	 */
+	#define SHM_OPEN_MAX 8
+
+	/**
+	 * @brief Maximum mapping size (in bytes).
+	 */
+	#define SHM_MAP_SIZE_MAX (512*1024)
+
+	/**
 	 * @brief Maximum length for a shared memory region name.
 	 */
 	#define SHM_NAME_MAX 55
@@ -83,7 +93,10 @@
 	#define SHM_CREATE      2 /**< Create.           */
 	#define SHM_CREATE_EXCL 3 /**< Exclusive create. */
 	#define SHM_UNLINK      4 /**< Unlink.           */
-	#define SHM_RETURN      5 /**< Return.           */
+	#define SHM_MAP         5 /**< Map.              */
+	#define SHM_UNMAP       6 /**< Unmap.            */
+	#define SHM_RETURN      7 /**< Return.           */
+	#define SHM_FAILED      8 /**< Return.           */
 	/**@}*/
 
 	/**
@@ -127,8 +140,27 @@
 				char name[SHM_NAME_MAX]; /**< Shared Memory Region name. */
 			} unlink;
 
-			/* Return value. */
-			int ret;
+			/* Map message. */
+			struct {
+				int shmid;    /**< Target shared memory region.           */
+				size_t size;  /**< Mapping size.                          */
+				int writable; /**< Writable mapping?                      */
+				int shared;   /**< Shared mapping?                        */
+				off_t off;    /**< Offset in target shared memory region. */
+			} map;
+
+			/* Unmap message. */
+			struct {
+				int shmid;   /**< Target shared memory region. */
+				size_t size; /**< Mapping size.                */
+			} unmap;
+
+			/* Return message. */
+			union
+			{
+				int status;      /**< Status code.           */
+				uint64_t mapblk; /**< Mapped remote address. */
+			} ret;
 		} op;
 	};
 
@@ -139,5 +171,7 @@
 	extern int nanvix_shm_create_excl(const char *, int, mode_t);
 	extern int nanvix_shm_open(const char *, int, int);
 	extern int nanvix_shm_unlink(const char *);
+	extern void *nanvix_mmap(size_t, int, int, int, off_t);
+	extern int nanvix_munmap(void *, size_t);
 
 #endif /* _MAILBOX_H_ */

@@ -20,11 +20,13 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <errno.h>
-#include <string.h>
-#include <pthread.h>
-#include <stdio.h>
 #include <sys/types.h>
+#include <errno.h>
+#include <pthread.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
 
 #include <nanvix/const.h>
 #include <nanvix/mm.h>
@@ -39,6 +41,29 @@ static struct
 	int initialized; /**< Is the connection initialized? */
 	int outbox;      /**< Output mailbox for requests.   */
 } server = { 0, -1 };
+
+/**
+ * @brief Number of current mappings.
+ */
+static int nmappings = 0;
+
+/**
+ * @brief Mapping quota usage.
+ */
+static size_t quota = 0;
+
+/**
+ * @brief Opened mappings.
+ */
+static struct
+{
+	int shmid;       /**< UNderlying shared memory region. */
+	void *local;     /**< Local address.                   */
+	uint64_t remote; /**< Remote address.                  */
+	size_t size;     /**< Mapping size.                    */
+	int shared;      /**< Shared? Else private.            */
+	int writable;    /**< Writable? Else read-only.        */
+} mappings[SHM_OPEN_MAX];
 
 /**
  * @brief Shared Memory module lock.
@@ -181,7 +206,7 @@ int nanvix_shm_create_excl(const char *name, int rw, mode_t mode)
 
 	pthread_mutex_unlock(&lock);
 
-	return (msg.op.ret);
+	return (msg.op.ret.status);
 
 error:
 	pthread_mutex_unlock(&lock);
@@ -249,7 +274,7 @@ int nanvix_shm_create(const char *name, int rw, int truncate, mode_t mode)
 
 	pthread_mutex_unlock(&lock);
 
-	return (msg.op.ret);
+	return (msg.op.ret.status);
 
 error:
 	pthread_mutex_unlock(&lock);
@@ -315,7 +340,7 @@ int nanvix_shm_open(const char *name, int rw, int truncate)
 
 	pthread_mutex_unlock(&lock);
 
-	return (msg.op.ret);
+	return (msg.op.ret.status);
 
 error:
 	pthread_mutex_unlock(&lock);
@@ -368,9 +393,209 @@ int nanvix_shm_unlink(const char *name)
 
 	pthread_mutex_unlock(&lock);
 
-	return (msg.op.ret);
+	return (msg.op.ret.status);
 
 error:
 	pthread_mutex_unlock(&lock);
 	return (ret);
+}
+
+/*============================================================================*
+ * nanvix_mmap()                                                              *
+ *============================================================================*/
+
+/**
+ * @brief Maps pages of memory.
+ *
+ * @param len      Length of mapping (in bytes).
+ * @param writable Writable? Else read-only.
+ * @param shared   Shared? Else private.
+ * @param fd       Target file descriptor.
+ * @param off      Offset within file.
+ *
+ * @retuns Upon successful completion, the address at which the
+ * mapping was placed is returned. Otherwise, NULL is returned
+ * and errno is set to indicate the error.
+ */
+void *nanvix_mmap(size_t len, int writable, int shared, int fd, off_t off)
+{
+	int ret;
+	void *map;
+	int inbox;
+	int nodenum;
+	struct shm_message msg;
+
+	/* Invalid length. */
+	if (len == 0)
+	{
+		errno = EINVAL;
+		return (NULL);
+	}
+
+	/* Too mapning opened mappings. */
+	if (nmappings >= SHM_OPEN_MAX)
+	{
+		errno = ENFILE;
+		return (NULL);
+	}
+
+	/* Cannot get inbox. */
+	if ((inbox = get_inbox()) < 0)
+	{
+		errno = EAGAIN;
+		return (NULL);
+	}
+
+	/* Not enough memory. */
+	if ((quota + len) > SHM_MAP_SIZE_MAX)
+	{
+		errno = ENOMEM;
+		return (NULL);
+	}
+
+	/* Cannot allocate local region. */
+	if ((map = malloc(len)) == NULL)
+		return (NULL);
+
+	nodenum = sys_get_node_num();
+
+	/* Build message. */
+	msg.source = nodenum;
+	msg.opcode = SHM_MAP;
+	msg.seq = ((nodenum << 4) | 0);
+	msg.op.map.shmid = fd;
+	msg.op.map.size = len;
+	msg.op.map.writable = writable;
+	msg.op.map.shared = shared;
+	msg.op.map.off = off;
+
+	pthread_mutex_lock(&lock);
+
+		if ((ret = sys_mailbox_write(server.outbox, &msg, sizeof(struct shm_message))) != MAILBOX_MSG_SIZE)
+			goto error1;
+
+		if ((ret = sys_mailbox_read(inbox, &msg, sizeof(struct shm_message))) != MAILBOX_MSG_SIZE)
+			goto error1;
+
+	pthread_mutex_unlock(&lock);
+
+	/* Failed to map. */
+	if (msg.opcode == SHM_FAILED)
+	{
+		ret = msg.op.ret.status;
+		goto error0;
+	}
+
+	mappings[nmappings].shmid = fd;
+	mappings[nmappings].size = len;
+	mappings[nmappings].local = map;
+	mappings[nmappings].remote = msg.op.ret.mapblk;
+	mappings[nmappings].shared = shared;
+	mappings[nmappings].writable = writable;
+	quota += len;
+	nmappings++;
+
+	/* Synchronize region. */
+	memread(msg.op.ret.mapblk, map, len);
+
+	return (map);
+
+error1:
+	pthread_mutex_unlock(&lock);
+error0:
+	free(map);
+	errno = ret;
+	return (NULL);
+}
+
+/*============================================================================*
+ * nanvix_munmap()                                                            *
+ *============================================================================*/
+
+/**
+ * @brief Unmaps pages of memory.
+ *
+ * @param addr  Mapping address.
+ * @param len   Length of mapping (in bytes).
+ *
+ * @retuns Upon successful completion, zero is returned. Otherwise, -1
+ * is returned and errno is set to indicate the error.
+ */
+int nanvix_munmap(void *addr, size_t len)
+{
+	int i;
+	int ret;
+	int inbox;
+	int nodenum;
+	struct shm_message msg;
+
+	/* Invalid length. */
+	if (len == 0)
+	{
+		errno = EINVAL;
+		return (-1);
+	}
+
+	/* Search for mapping. */
+	for (i = 0; i < nmappings; i++)
+	{
+		if (mappings[i].local == addr)
+			goto found;
+	}
+
+	/* Invalid address. */
+	return (-EINVAL);
+
+found:
+
+	/* Invalid size. */
+	if (len != mappings[i].size)
+		return (-EINVAL);
+
+	/* Cannot get inbox. */
+	if ((inbox = get_inbox()) < 0)
+		return (-EAGAIN);
+
+	nodenum = sys_get_node_num();
+
+	/* Build message. */
+	msg.source = nodenum;
+	msg.opcode = SHM_UNMAP;
+	msg.seq = ((nodenum << 4) | 0);
+	msg.op.unmap.shmid = mappings[i].shmid;
+	msg.op.unmap.size = len;
+
+	pthread_mutex_lock(&lock);
+
+		if ((ret = sys_mailbox_write(server.outbox, &msg, sizeof(struct shm_message))) != MAILBOX_MSG_SIZE)
+			goto error;
+
+		if ((ret = sys_mailbox_read(inbox, &msg, sizeof(struct shm_message))) != MAILBOX_MSG_SIZE)
+			goto error;
+
+	pthread_mutex_unlock(&lock);
+
+	/* Synchronize region. */
+	if ((mappings[i].shared) && (mappings[i].writable))
+		memwrite(mappings[i].remote, mappings[i].local, len);
+
+	/* Remove mapping. */
+	free(mappings[i].local);
+	quota -= len;
+
+	/* Remove from list of opened mappings. */
+	nmappings--;
+	for (int j = i; j < nmappings; j++)
+	{
+		mappings[j].shmid = mappings[j + 1].shmid;
+		mappings[j].size = mappings[j + 1].size;
+		mappings[j].local = mappings[j + 1].local;
+		mappings[j].remote = mappings[j + 1].remote;
+	}
+
+	return (0);
+
+error:
+	pthread_mutex_unlock(&lock);
+	return (msg.op.ret.status);
 }

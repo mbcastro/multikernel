@@ -20,41 +20,30 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef SYS_MMAN_H_
-#define SYS_MMAN_H_
+#ifndef _SHM_H_
+#define _SHM_H_
 
 	#include <sys/types.h>
-	#include <stddef.h>
-	
-	/**
-	 * @brief Page protection options.
-	 */
-	/**@{*/
-	#define PROT_NONE         0  /**< Page cannot be accessed. */
-	#define PROT_EXEC   (1 << 0) /**< Page can be executed.    */
-	#define PROT_WRITE  (1 << 1) /**< Page can be written.     */
-	#define PROT_READ   (1 << 2) /**< Page can be read.        */
-	/**@}*/
-
-	/**
-	 * @brief Flag options.
-	 */
-	/**@{*/
-	#define MAP_FIXED   1 /**< Interpret address exactly. */
-	#define MAP_PRIVATE 2 /**< Changes are private.       */
-	#define MAP_SHARED  3 /**< Share changes.             */
-	/**@}*/
-
-	/**
-	 * @brief Mapping failed.
-	 */
-	#define MAP_FAILED NULL
+	#include <stdint.h>
 
 	/* Forward definitions. */
-	extern int shm_open(const char *, int, mode_t);
-	extern int shm_unlink(const char *);
-	extern void *mmap(void *, size_t, int, int, int, off_t);
-	extern int munmap(void *, size_t);
+	extern void shm_debug(const char *, ...);
+	extern void buffer_init(void);
+	extern int buffer_put(int, const void *);
+	extern int buffer_get(int, void *);
+	extern int shm_is_used(int);
+	extern int shm_is_remove(int);
+	extern int shm_is_owner(int, int);
+	extern uint64_t shm_get_base(int);
+	extern size_t shm_get_size(int);
+	extern void shm_set_remove(int);
+	extern void shm_set_perm(int, int, mode_t);
+	extern void shm_set_name(int, const char *);
+	extern void shm_set_base(int, uint64_t);
+	extern void shm_set_size(int, size_t);
+	extern int shm_alloc(void);
+	extern int shm_get(const char *);
+	extern void shm_put(int);
+	extern void shm_init(void);
 
-#endif /* SYS_MMAN_H_ */
-
+#endif /* _SHM_H_ */
