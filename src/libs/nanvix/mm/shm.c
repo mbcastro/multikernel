@@ -71,6 +71,50 @@ static struct
 static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
 /*============================================================================*
+ * nanvix_get_mapping()                                                       *
+ *============================================================================*/
+
+/**
+ * @brief Gets a memory mapping with a given shared memory region.
+ *
+ * @param shmid ID of the target shared memory region.
+ * 
+ * @returns If a memory mapping is currently opened with the target
+ * shared memory region, its index in the table of opened memory
+ * mappings is returned. Otherwise, -1 is returned instead.
+ */
+static int nanvix_get_mapping1(int shmid)
+{
+	for (int i = 0; i < nmappings; i++)
+	{
+		if (mappings[i].shmid == shmid)
+			return (i);
+	}
+
+	return (-1);
+}
+
+/**
+ * @brief Gets a memory mapping at a given local address.
+ *
+ * @param local Target local address.
+ * 
+ * @returns If a memory mapping is currently opened at the target
+ * local address, its index in the table of opened memory mappings is
+ * returned. Otherwise, -1 is returned instead.
+ */
+static int nanvix_get_mapping2(const void *local)
+{
+	for (int i = 0; i < nmappings; i++)
+	{
+		if (mappings[i].local == local)
+			return (i);
+	}
+
+	return (-1);
+}
+
+/*============================================================================*
  * nanvix_shm_is_invalid_name()                                               *
  *============================================================================*/
 
@@ -536,17 +580,12 @@ int nanvix_munmap(void *addr, size_t len)
 		return (-1);
 	}
 
-	/* Search for mapping. */
-	for (i = 0; i < nmappings; i++)
+	/* Invalid shared memory region. */
+	if ((i = nanvix_get_mapping2(addr)) < 0)
 	{
-		if (mappings[i].local == addr)
-			goto found;
+		errno = EINVAL;
+		return (-1);
 	}
-
-	/* Invalid address. */
-	return (-EINVAL);
-
-found:
 
 	/* Invalid size. */
 	if (len != mappings[i].size)
@@ -626,17 +665,12 @@ int nanvix_msync(void *addr, size_t len, int async, int invalidate)
 		return (-1);
 	}
 
-	/* Search for mapping. */
-	for (i = 0; i < nmappings; i++)
+	/* Invalid shared memory region. */
+	if ((i = nanvix_get_mapping2(addr)) < 0)
 	{
-		if (mappings[i].local == addr)
-			goto found;
+		errno = EINVAL;
+		return (-1);
 	}
-
-	errno = EINVAL;
-	return (-1);
-
-found:
 
 	/* Invalidate cached data. */
 	if (invalidate)
@@ -674,16 +708,19 @@ int nanvix_mtruncate(int shmid, size_t size)
 	int nodenum;
 	struct shm_message msg;
 
-	/* Cannot be mapped. */
-	for (i = 0; i < nmappings; i++)
+	/* Bad shared memory region. */
+	if ((i = nanvix_get_mapping1(shmid)) >= 0)
 	{
-		if (mappings[i].shmid == shmid)
-			errno = EINVAL;
+		errno = EINVAL;
+		return (-1);
 	}
 
 	/* Cannot get inbox. */
 	if ((inbox = get_inbox()) < 0)
-		return (-EAGAIN);
+	{
+		errno = EAGAIN;
+		return (-1);
+	}
 
 	nodenum = sys_get_node_num();
 
