@@ -23,7 +23,6 @@
 #include <sys/types.h>
 #include <errno.h>
 #include <pthread.h>
-#include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -43,76 +42,9 @@ static struct
 } server = { 0, -1 };
 
 /**
- * @brief Number of current mappings.
- */
-static int nmappings = 0;
-
-/**
- * @brief Mapping quota usage.
- */
-static size_t quota = 0;
-
-/**
- * @brief Opened mappings.
- */
-static struct
-{
-	int shmid;       /**< UNderlying shared memory region. */
-	void *local;     /**< Local address.                   */
-	uint64_t remote; /**< Remote address.                  */
-	size_t size;     /**< Mapping size.                    */
-	int shared;      /**< Shared? Else private.            */
-	int writable;    /**< Writable? Else read-only.        */
-} mappings[SHM_OPEN_MAX];
-
-/**
  * @brief Shared Memory module lock.
  */
 static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
-
-/*============================================================================*
- * nanvix_get_mapping()                                                       *
- *============================================================================*/
-
-/**
- * @brief Gets a memory mapping with a given shared memory region.
- *
- * @param shmid ID of the target shared memory region.
- * 
- * @returns If a memory mapping is currently opened with the target
- * shared memory region, its index in the table of opened memory
- * mappings is returned. Otherwise, -1 is returned instead.
- */
-static int nanvix_get_mapping1(int shmid)
-{
-	for (int i = 0; i < nmappings; i++)
-	{
-		if (mappings[i].shmid == shmid)
-			return (i);
-	}
-
-	return (-1);
-}
-
-/**
- * @brief Gets a memory mapping at a given local address.
- *
- * @param local Target local address.
- * 
- * @returns If a memory mapping is currently opened at the target
- * local address, its index in the table of opened memory mappings is
- * returned. Otherwise, -1 is returned instead.
- */
-static int nanvix_get_mapping2(const void *local)
-{
-	for (int i = 0; i < nmappings; i++)
-	{
-		if (mappings[i].local == local)
-			return (i);
-	}
-
-	return (-1);
-}
 
 /*============================================================================*
  * nanvix_shm_is_invalid_name()                                               *
@@ -451,20 +383,19 @@ error:
 /**
  * @brief Maps pages of memory.
  *
+ * @param mapblk   Location at mapped block should be stored.
  * @param len      Length of mapping (in bytes).
  * @param writable Writable? Else read-only.
  * @param shared   Shared? Else private.
  * @param fd       Target file descriptor.
  * @param off      Offset within file.
  *
- * @retuns Upon successful completion, the address at which the
- * mapping was placed is returned. Otherwise, NULL is returned
- * and errno is set to indicate the error.
+ * @retuns Upon successful completion, zero is returned. Upon failure,
+ * -1 is returned instead and errno is set to indicate the error.
  */
-void *nanvix_mmap(size_t len, int writable, int shared, int fd, off_t off)
+int nanvix_map(uint64_t *mapblk, size_t len, int writable, int shared, int fd, off_t off)
 {
 	int ret;
-	void *map;
 	int inbox;
 	int nodenum;
 	struct shm_message msg;
@@ -473,33 +404,15 @@ void *nanvix_mmap(size_t len, int writable, int shared, int fd, off_t off)
 	if (len == 0)
 	{
 		errno = EINVAL;
-		return (NULL);
-	}
-
-	/* Too mapning opened mappings. */
-	if (nmappings >= SHM_OPEN_MAX)
-	{
-		errno = ENFILE;
-		return (NULL);
+		return (-1);
 	}
 
 	/* Cannot get inbox. */
 	if ((inbox = get_inbox()) < 0)
 	{
 		errno = EAGAIN;
-		return (NULL);
+		return (-1);
 	}
-
-	/* Not enough memory. */
-	if ((quota + len) > SHM_MAP_SIZE_MAX)
-	{
-		errno = ENOMEM;
-		return (NULL);
-	}
-
-	/* Cannot allocate local region. */
-	if ((map = malloc(len)) == NULL)
-		return (NULL);
 
 	nodenum = sys_get_node_num();
 
@@ -530,26 +443,15 @@ void *nanvix_mmap(size_t len, int writable, int shared, int fd, off_t off)
 		goto error0;
 	}
 
-	mappings[nmappings].shmid = fd;
-	mappings[nmappings].size = len;
-	mappings[nmappings].local = map;
-	mappings[nmappings].remote = msg.op.ret.mapblk;
-	mappings[nmappings].shared = shared;
-	mappings[nmappings].writable = writable;
-	quota += len;
-	nmappings++;
+	*mapblk = msg.op.ret.mapblk;
 
-	/* Synchronize region. */
-	memread(msg.op.ret.mapblk, map, len);
-
-	return (map);
+	return (0);
 
 error1:
 	pthread_mutex_unlock(&lock);
 error0:
-	free(map);
 	errno = ret;
-	return (NULL);
+	return (-1);
 }
 
 /*============================================================================*
@@ -559,15 +461,14 @@ error0:
 /**
  * @brief Unmaps pages of memory.
  *
- * @param addr  Mapping address.
+ * @param shmid ID of the target shared memory region.
  * @param len   Length of mapping (in bytes).
  *
  * @retuns Upon successful completion, zero is returned. Otherwise, -1
  * is returned and errno is set to indicate the error.
  */
-int nanvix_munmap(void *addr, size_t len)
+int nanvix_unmap(int shmid, size_t len)
 {
-	int i;
 	int ret;
 	int inbox;
 	int nodenum;
@@ -580,20 +481,12 @@ int nanvix_munmap(void *addr, size_t len)
 		return (-1);
 	}
 
-	/* Invalid shared memory region. */
-	if ((i = nanvix_get_mapping2(addr)) < 0)
-	{
-		errno = EINVAL;
-		return (-1);
-	}
-
-	/* Invalid size. */
-	if (len != mappings[i].size)
-		return (-EINVAL);
-
 	/* Cannot get inbox. */
 	if ((inbox = get_inbox()) < 0)
-		return (-EAGAIN);
+	{
+		errno = EAGAIN;
+		return (-1);
+	}
 
 	nodenum = sys_get_node_num();
 
@@ -601,7 +494,7 @@ int nanvix_munmap(void *addr, size_t len)
 	msg.source = nodenum;
 	msg.opcode = SHM_UNMAP;
 	msg.seq = ((nodenum << 4) | 0);
-	msg.op.unmap.shmid = mappings[i].shmid;
+	msg.op.unmap.shmid = shmid;
 	msg.op.unmap.size = len;
 
 	pthread_mutex_lock(&lock);
@@ -614,76 +507,12 @@ int nanvix_munmap(void *addr, size_t len)
 
 	pthread_mutex_unlock(&lock);
 
-	/* Synchronize region. */
-	if ((mappings[i].shared) && (mappings[i].writable))
-		memwrite(mappings[i].remote, mappings[i].local, len);
-
-	/* Remove mapping. */
-	free(mappings[i].local);
-	quota -= len;
-
-	/* Remove from list of opened mappings. */
-	nmappings--;
-	for (int j = i; j < nmappings; j++)
-	{
-		mappings[j].shmid = mappings[j + 1].shmid;
-		mappings[j].size = mappings[j + 1].size;
-		mappings[j].local = mappings[j + 1].local;
-		mappings[j].remote = mappings[j + 1].remote;
-	}
-
 	return (0);
 
 error:
 	pthread_mutex_unlock(&lock);
-	return (msg.op.ret.status);
-}
-
-/*============================================================================*
- * nanvix_msync()                                                             *
- *============================================================================*/
-
-/**
- * @brief Synchronizes memory with physical storage.
- *
- * @param addr       Target local address.
- * @param len        Number of bytes to synchronize.
- * @param async      Asynchronous write? Else synchronous.
- * @param invalidate Invaldiate cached data? Else no.
- *
- * @para Upon successful completion, zero is returned. Upon failure,
- * -1 is returned instead and errno is set to indicate the error.
- */
-int nanvix_msync(void *addr, size_t len, int async, int invalidate)
-{
-	int i;
-
-	/* Not supported. */
-	if (async)
-	{
-		errno = ENOTSUP;
-		return (-1);
-	}
-
-	/* Invalid shared memory region. */
-	if ((i = nanvix_get_mapping2(addr)) < 0)
-	{
-		errno = EINVAL;
-		return (-1);
-	}
-
-	/* Invalidate cached data. */
-	if (invalidate)
-	{
-		memread(mappings[i].remote, mappings[i].local, len);
-		return (0);
-	}
-
-	/* Synchronize region. */
-	if ((mappings[i].shared) && (mappings[i].writable))
-		memwrite(mappings[i].remote, mappings[i].local, len);
-
-	return (0);
+	errno = msg.op.ret.status;
+	return (-1);
 }
 
 /*============================================================================*
@@ -702,18 +531,10 @@ int nanvix_msync(void *addr, size_t len, int async, int invalidate)
  */
 int nanvix_mtruncate(int shmid, size_t size)
 {
-	int i;
 	int ret;
 	int inbox;
 	int nodenum;
 	struct shm_message msg;
-
-	/* Bad shared memory region. */
-	if ((i = nanvix_get_mapping1(shmid)) >= 0)
-	{
-		errno = EINVAL;
-		return (-1);
-	}
 
 	/* Cannot get inbox. */
 	if ((inbox = get_inbox()) < 0)

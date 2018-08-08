@@ -24,7 +24,7 @@
 #include <errno.h>
 #include <stddef.h>
 
-#include <nanvix/mm.h>
+#include <nanvix/fs.h>
 
 /**
  * @brief Synchronizes memory with physical storage.
