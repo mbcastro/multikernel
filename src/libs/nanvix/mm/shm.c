@@ -633,6 +633,9 @@ int nanvix_msync(void *addr, size_t len, int async, int invalidate)
 			goto found;
 	}
 
+	errno = EINVAL;
+	return (-1);
+
 found:
 
 	/* Invalidate cached data. */
