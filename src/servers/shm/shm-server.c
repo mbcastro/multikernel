@@ -212,7 +212,7 @@ static int shm_create(int owner, const char *name, mode_t mode)
 	shm_set_perm(shmid, owner, mode);
 	shm_set_name(shmid, name);
 	shm_set_base(shmid, 0);
-	shm_set_size(shmid, RMEM_SIZE);
+	shm_set_size(shmid, 0);
 
 	i = procs[owner].nopen++;
 	procs[owner].oregions[i].shmid = shmid;
@@ -333,7 +333,56 @@ static int shm_unlink(int node, const char *name)
 }
 
 /*============================================================================*
- * shm_unmap()                                                                *
+ * shm_truncate()                                                             *
+ *============================================================================*/
+
+/**
+ * @brief Truncates a shared memory region to a specified size.
+ *
+ * @param node   ID of opening process.
+ * @param shmid  ID of the target shared memory region.
+ * @param length Shared memory region size (in bytes).
+ *
+ * @returns Upon successful completion, zero is returned. Upon
+ * failure, -1 is returned instead, and errno is set to indicate the
+ * error.
+ */
+static int shm_truncate(int node, int shmid, size_t size)
+{
+	int i;
+
+	shm_debug("truncate node=%d shmid=%d size=%d", node, shmid, size);
+
+	/* Not enought memory. */
+	if (size > RMEM_SIZE)
+		return (-ENOMEM);
+
+	/* Shared memory region not in use. */
+	if (!shm_is_used(shmid))
+		return (-EINVAL);
+
+	/*
+	 * The process should have opened
+	 * the shared memory region before.
+	 */
+	if ((i = shm_is_opened(node, shmid)) < 0)
+		return (-EACCES);
+
+	/* Cannot write. */
+	if (!(procs[node].oregions[i].flags & SHM_WRITE))
+		return (-EINVAL);
+
+	/* Already mapped. */
+	if (procs[node].oregions[i].flags & SHM_MAPPED)
+		return (-EBUSY);
+
+	shm_set_size(shmid, size);
+
+	return (0);
+}
+
+/*============================================================================*
+ * shm_map()                                                                  *
  *============================================================================*/
 
 /**
@@ -573,6 +622,25 @@ static int shm_loop(void)
 			{
 				msg.op.ret.status = shm_unmap(msg.source, msg.op.unmap.shmid);
 				msg.opcode = SHM_RETURN;
+				reply = 1;
+			} break;
+
+			/* Truncate a shared memory region. */
+			case SHM_TRUNCATE:
+			{
+				int ret;
+
+				ret = shm_truncate(msg.source, msg.op.truncate.shmid, msg.op.truncate.size);
+				if (ret == 0)
+				{
+					msg.opcode = SHM_RETURN;
+					msg.op.ret.status = 0;
+				}
+				else
+				{
+					msg.opcode = SHM_FAILED;
+					msg.op.ret.status = -ret;
+				}
 				reply = 1;
 			} break;
 

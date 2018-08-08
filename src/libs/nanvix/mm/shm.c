@@ -651,3 +651,68 @@ found:
 
 	return (0);
 }
+
+/*============================================================================*
+ * nanvix_mtruncate()                                                         *
+ *============================================================================*/
+
+/**
+ * @brief Truncates a shared memory region to a specified size.
+ *
+ * @param shmid  ID of the target shared memory region.
+ * @param length Shared memory region size (in bytes).
+ *
+ * @returns Upon successful completion, zero is returned. Upon
+ * failure, -1 is returned instead, and errno is set to indicate the
+ * error.
+ */
+int nanvix_mtruncate(int shmid, size_t size)
+{
+	int i;
+	int ret;
+	int inbox;
+	int nodenum;
+	struct shm_message msg;
+
+	/* Cannot be mapped. */
+	for (i = 0; i < nmappings; i++)
+	{
+		if (mappings[i].shmid == shmid)
+			errno = EINVAL;
+	}
+
+	/* Cannot get inbox. */
+	if ((inbox = get_inbox()) < 0)
+		return (-EAGAIN);
+
+	nodenum = sys_get_node_num();
+
+	/* Build message. */
+	msg.source = nodenum;
+	msg.opcode = SHM_TRUNCATE;
+	msg.seq = ((nodenum << 4) | 0);
+	msg.op.truncate.shmid = shmid;
+	msg.op.truncate.size = size;
+
+	pthread_mutex_lock(&lock);
+
+		if ((ret = sys_mailbox_write(server.outbox, &msg, sizeof(struct shm_message))) != MAILBOX_MSG_SIZE)
+			goto error1;
+
+		if ((ret = sys_mailbox_read(inbox, &msg, sizeof(struct shm_message))) != MAILBOX_MSG_SIZE)
+			goto error1;
+
+	pthread_mutex_unlock(&lock);
+
+	/* Failed to truncate. */
+	if (msg.opcode == SHM_FAILED)
+		goto error0;
+
+	return (0);
+
+error1:
+	pthread_mutex_unlock(&lock);
+error0:
+	errno = msg.op.ret.status;
+	return (-1);
+}

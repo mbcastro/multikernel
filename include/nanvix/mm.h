@@ -95,8 +95,9 @@
 	#define SHM_UNLINK      4 /**< Unlink.           */
 	#define SHM_MAP         5 /**< Map.              */
 	#define SHM_UNMAP       6 /**< Unmap.            */
-	#define SHM_RETURN      7 /**< Return.           */
-	#define SHM_FAILED      8 /**< Return.           */
+	#define SHM_TRUNCATE    7 /**< Truncate.         */
+	#define SHM_RETURN      8 /**< Return.           */
+	#define SHM_FAILED      9 /**< Return.           */
 	/**@}*/
 
 	/**
@@ -155,6 +156,14 @@
 				size_t size; /**< Mapping size.                */
 			} unmap;
 
+			/**
+			 * Truncate message.
+			 */
+			struct {
+				int shmid;   /**< Target shared memory region. */
+				size_t size; /**< Size (in bytes).             */
+			} truncate;
+
 			/* Return message. */
 			union
 			{
@@ -174,5 +183,6 @@
 	extern void *nanvix_mmap(size_t, int, int, int, off_t);
 	extern int nanvix_munmap(void *, size_t);
 	extern int nanvix_msync(void *, size_t, int, int);
+	extern int nanvix_mtruncate(int, size_t);
 
 #endif /* _MAILBOX_H_ */

@@ -22,7 +22,8 @@
 
 # C Source Files
 SRC = $(wildcard semaphore/*.c) \
-      $(wildcard sys/mman/*.c)
+      $(wildcard sys/mman/*.c)  \
+      $(wildcard unistd/*.c)
 
 # Object Files
 OBJ = $(SRC:.c=.o)
