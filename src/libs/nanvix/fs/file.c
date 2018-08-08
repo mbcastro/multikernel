@@ -20,33 +20,37 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <assert.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include <sys/types.h>
+#include <errno.h>
 
-#include <mppa/osconfig.h>
-
-#include <nanvix/syscalls.h>
-
-/* Forward definitions. */
-extern int main2(int, const char **);
+#include <nanvix/mm.h>
 
 /**
- * @brief Bootstrap for a user application.
+ * @brief Truncates a file to a specified length.
+ *
+ * @param fd     Target file descriptor.
+ * @param length File length (in bytes).
+ *
+ * @returns Upon successful completion, zero is returned. Upon
+ * failure, -1 is returned instead, and errno is set to indicate the
+ * error.
  */
-int main(int argc, const char **argv)
+int nanvix_ftruncate(int fd, off_t length)
 {
-	int ret;
+	/* Invalid file descriptor. */
+	if (fd < 0)
+	{
+		errno = EINVAL;
+		return (-1);
+	}
 
-	/* Initialization. */
-	assert(kernel_setup() == 0);
-	assert(runtime_setup(3) == 0);
+	/* Invalid length. */
+	if (length <= 0)
+	{
+		errno = EINVAL;
+		return (-1);
+	}
 
-	ret = main2(argc, argv);
-
-	/* Cleanup. */
-	assert(runtime_cleanup() == 0);
-	assert(kernel_cleanup() == 0);
-
-	return (ret);
+	return (nanvix_mtruncate(fd, length));
 }
+

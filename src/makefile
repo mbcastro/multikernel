@@ -40,6 +40,10 @@ ifdef DEBUG
 export CFLAGS += -DDEBUG
 endif
 
+ifeq ($(DEBUG_SHM),true)
+	export CFLAGS += -DDEBUG_SHM
+endif
+
 # Linker Options
 export LDFLAGS += 
 export ARFLAGS = rcs

@@ -20,33 +20,27 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <assert.h>
-#include <stdlib.h>
-#include <stdio.h>
+#ifndef _TEST_H_
+#define _TEST_H_
 
-#include <mppa/osconfig.h>
+	#include <stdlib.h>
 
-#include <nanvix/syscalls.h>
+	/**
+	 * @brief Asserts a logic expression.
+	 */
+	#define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
 
-/* Forward definitions. */
-extern int main2(int, const char **);
+	/**
+	 * @brief Unit test.
+	 */
+	struct test
+	{
+		void (*test_fn)(void); /**< Test function. */
+		const char *name;      /**< Test name.     */
+	};
 
-/**
- * @brief Bootstrap for a user application.
- */
-int main(int argc, const char **argv)
-{
-	int ret;
+	/* Forward definitions. */
+	extern struct test posix_shm_tests_api[];
+	extern struct test posix_shm_tests_fault[];
 
-	/* Initialization. */
-	assert(kernel_setup() == 0);
-	assert(runtime_setup(3) == 0);
-
-	ret = main2(argc, argv);
-
-	/* Cleanup. */
-	assert(runtime_cleanup() == 0);
-	assert(kernel_cleanup() == 0);
-
-	return (ret);
-}
+#endif /* _TEST_H_ */

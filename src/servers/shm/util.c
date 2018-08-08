@@ -20,33 +20,36 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <assert.h>
-#include <stdlib.h>
+#include <stdarg.h>
+#include <string.h>
 #include <stdio.h>
 
-#include <mppa/osconfig.h>
-
-#include <nanvix/syscalls.h>
-
-/* Forward definitions. */
-extern int main2(int, const char **);
+/*============================================================================*
+ * shm_debug()                                                                *
+ *============================================================================*/
 
 /**
- * @brief Bootstrap for a user application.
+ * @brief Dumps debug information.
  */
-int main(int argc, const char **argv)
+void shm_debug(const char *fmt, ...)
 {
-	int ret;
+#ifndef DEBUG_SHM
+	((void) fmt);
+#else
 
-	/* Initialization. */
-	assert(kernel_setup() == 0);
-	assert(runtime_setup(3) == 0);
+	int len;
+	va_list args;
+	char strbuf[80];
 
-	ret = main2(argc, argv);
+	strcpy(strbuf, "[DEBUG][nanvix][shm] ");
+	len = 80 - 2 - strlen(strbuf);
+	strncat(strbuf, fmt, len);
+	strcat(strbuf, "\n");
 
-	/* Cleanup. */
-	assert(runtime_cleanup() == 0);
-	assert(kernel_cleanup() == 0);
+	va_start (args, fmt);
+	vprintf (strbuf, args);
+	va_end (args);
 
-	return (ret);
+#endif
 }
+

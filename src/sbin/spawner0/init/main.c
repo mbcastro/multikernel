@@ -38,16 +38,18 @@ extern void test_kernel_name(int);
 extern void test_kernel_ipc_mailbox(int);
 extern void test_kernel_ipc_portal(int);
 extern void test_kernel_ipc_barrier(int);
+extern int shm_server(int, int);
 
 /**
  * @brief Number of servers launched from this spawner.
  */
-#define NR_SERVERS 0
+#define NR_SERVERS 1
 
 /**
  * @brief Servers.
  */
 static struct serverinfo servers[NR_SERVERS] = {
+	{ shm_server, SHM_SERVER_NODE, 1 }
 };
 
 /**

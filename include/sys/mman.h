@@ -20,46 +20,51 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef NANVIX_CONST_H_
-#define NANVIX_CONST_H_
+#ifndef SYS_MMAN_H_
+#define SYS_MMAN_H_
 
-	#define __NEED_HAL_CONST_
-	#include <nanvix/hal.h>
+	#include <sys/types.h>
+	#include <stddef.h>
+	
+	/**
+	 * @brief Page protection options.
+	 */
+	/**@{*/
+	#define PROT_NONE         0  /**< Page cannot be accessed. */
+	#define PROT_EXEC   (1 << 0) /**< Page can be executed.    */
+	#define PROT_WRITE  (1 << 1) /**< Page can be written.     */
+	#define PROT_READ   (1 << 2) /**< Page can be read.        */
+	/**@}*/
 
 	/**
-	 * @brief Number of NoC nodes.
+	 * @brief Flag options.
 	 */
-	#define NANVIX_NR_NODES HAL_NR_NOC_NODES
+	/**@{*/
+	#define MAP_FIXED   1 /**< Interpret address exactly. */
+	#define MAP_PRIVATE 2 /**< Changes are private.       */
+	#define MAP_SHARED  3 /**< Share changes.             */
+	/**@}*/
 
 	/**
-	 * @brief Spawner Server NoC node number.
+	 * @brief Memory synchronization flags.
 	 */
-	#define SPAWNER_SERVER_NODE 16
+	/**@{*/
+	#define MS_ASYNC      (1 << 0) /**< Perform asynchronous writes. */
+	#define MS_SYNC       (1 << 1) /**< Perform synchronous writes.  */
+	#define MS_INVALIDATE (1 << 2) /**< Invalidate cached data.      */
+	/**@}*/
 
 	/**
-	 * @brief Shared Memory Region Server NoC node number.
+	 * @brief Mapping failed.
 	 */
-	#define SHM_SERVER_NODE 17
+	#define MAP_FAILED NULL
 
-	/**
-	 * @brief Spawner Server NoC node number.
-	 */
-	#define SPAWNER1_SERVER_NODE 20
+	/* Forward definitions. */
+	extern int shm_open(const char *, int, mode_t);
+	extern int shm_unlink(const char *);
+	extern void *mmap(void *, size_t, int, int, int, off_t);
+	extern int munmap(void *, size_t);
+	extern int msync(void *, size_t, int);
 
-	/**
-	 * @brief Name Server NoC node number.
-	 */
-	#define NAME_SERVER_NODE 21
-
-	/**
-	 * @brief Remote Memory Server NoC node number.
-	 */
-	#define RMEM_SERVER_NODE 22
-
-	/**
-	 * @brief Semaphores Server NoC node number.
-	 */
-	#define SEMAPHORE_SERVER_NODE 23
-
-#endif /* CONST_H_ */
+#endif /* SYS_MMAN_H_ */
 

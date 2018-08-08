@@ -32,6 +32,7 @@
 extern int name_init(void);
 extern int meminit(void);
 extern int nanvix_sem_init(void);
+extern int nanvix_shm_init(void);
 
 /**
  * @brief Global runtime lock.
@@ -95,6 +96,13 @@ int runtime_setup(int level)
 			if (meminit() != 0)
 				goto error;
 			if (nanvix_sem_init() != 0)
+				goto error;
+		}
+
+		/* Initialize named services. */
+		if (level >= 3)
+		{
+			if (nanvix_shm_init() != 0)
 				goto error;
 		}
 

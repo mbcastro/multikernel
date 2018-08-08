@@ -20,33 +20,28 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <assert.h>
-#include <stdlib.h>
 #include <stdio.h>
-
-#include <mppa/osconfig.h>
 
 #include <nanvix/syscalls.h>
 
-/* Forward definitions. */
-extern int main2(int, const char **);
+#include "test.h"
 
 /**
- * @brief Bootstrap for a user application.
+ * @brief Shared Memory Region Test Driver
  */
-int main(int argc, const char **argv)
+void test_shm(void)
 {
-	int ret;
+	/* Run API tests. */
+	for (int i = 0; posix_shm_tests_api[i].test_fn != NULL; i++)
+	{
+		printf("[nanvix][test][api][posix][shm] %s\n", posix_shm_tests_api[i].name);
+		posix_shm_tests_api[i].test_fn();
+	}
 
-	/* Initialization. */
-	assert(kernel_setup() == 0);
-	assert(runtime_setup(3) == 0);
-
-	ret = main2(argc, argv);
-
-	/* Cleanup. */
-	assert(runtime_cleanup() == 0);
-	assert(kernel_cleanup() == 0);
-
-	return (ret);
+	/* Run fault injection tests. */
+	for (int i = 0; posix_shm_tests_fault[i].test_fn != NULL; i++)
+	{
+		printf("[nanvix][test][fault][posix][shm] %s\n", posix_shm_tests_fault[i].name);
+		posix_shm_tests_fault[i].test_fn();
+	}
 }

@@ -20,33 +20,30 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <assert.h>
-#include <stdlib.h>
-#include <stdio.h>
+#ifndef _SHM_H_
+#define _SHM_H_
 
-#include <mppa/osconfig.h>
+	#include <sys/types.h>
+	#include <stdint.h>
 
-#include <nanvix/syscalls.h>
+	/* Forward definitions. */
+	extern void shm_debug(const char *, ...);
+	extern void buffer_init(void);
+	extern int buffer_put(int, const void *);
+	extern int buffer_get(int, void *);
+	extern int shm_is_used(int);
+	extern int shm_is_remove(int);
+	extern int shm_is_owner(int, int);
+	extern uint64_t shm_get_base(int);
+	extern size_t shm_get_size(int);
+	extern void shm_set_remove(int);
+	extern void shm_set_perm(int, int, mode_t);
+	extern void shm_set_name(int, const char *);
+	extern void shm_set_base(int, uint64_t);
+	extern void shm_set_size(int, size_t);
+	extern int shm_alloc(void);
+	extern int shm_get(const char *);
+	extern void shm_put(int);
+	extern void shm_init(void);
 
-/* Forward definitions. */
-extern int main2(int, const char **);
-
-/**
- * @brief Bootstrap for a user application.
- */
-int main(int argc, const char **argv)
-{
-	int ret;
-
-	/* Initialization. */
-	assert(kernel_setup() == 0);
-	assert(runtime_setup(3) == 0);
-
-	ret = main2(argc, argv);
-
-	/* Cleanup. */
-	assert(runtime_cleanup() == 0);
-	assert(kernel_cleanup() == 0);
-
-	return (ret);
-}
+#endif /* _SHM_H_ */

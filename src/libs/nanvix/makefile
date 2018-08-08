@@ -22,6 +22,7 @@
 
 # C Source Files
 SRC = $(wildcard *.c)     \
+      $(wildcard fs/*.c)  \
       $(wildcard ipc/*.c) \
       $(wildcard mm/*.c)
 
