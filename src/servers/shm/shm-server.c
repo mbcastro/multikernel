@@ -498,6 +498,7 @@ static int shm_unmap(int node, int shmid)
  */
 static inline int do_create(struct shm_message *msg, struct shm_message *response)
 {
+	int ret;
 	struct shm_message msg1;
 
 	/* Persist first message. */
@@ -511,13 +512,23 @@ static inline int do_create(struct shm_message *msg, struct shm_message *respons
 	assert(buffer_get(msg->source, &msg1) == 0);
 	assert(msg->seq == (msg1.seq | 1));
 
-	response->op.ret.status = shm_create(
+	ret = shm_create(
 		msg->source,
 		msg1.op.create1.name,
 		msg->op.create2.mode
 	);
-	response->opcode = SHM_RETURN;
+	
 	response->source = msg->source;
+	if (ret >= 0)
+	{
+		response->op.ret.shmid = ret;
+		response->opcode = SHM_SUCCESS;
+	}
+	else
+	{
+		response->op.ret.status = -ret;
+		response->opcode = SHM_FAILURE;
+	}
 
 	return (1);
 }
@@ -531,6 +542,7 @@ static inline int do_create(struct shm_message *msg, struct shm_message *respons
  */
 static int do_create_excl(struct shm_message *msg, struct shm_message *response)
 {
+	int ret;
 	struct shm_message msg1;
 
 	/* Persist first message. */
@@ -544,13 +556,23 @@ static int do_create_excl(struct shm_message *msg, struct shm_message *response)
 	assert(buffer_get(msg->source, &msg1) == 0);
 	assert(msg->seq == (msg1.seq | 1));
 
-	response->op.ret.status = shm_create_exclusive(
+	ret = shm_create_exclusive(
 			msg->source,
 			msg1.op.create1.name,
 			msg->op.create2.mode
 	);
-	response->opcode = SHM_RETURN;
+
 	response->source = msg->source;
+	if (ret >= 0)
+	{
+		response->op.ret.shmid = ret;
+		response->opcode = SHM_SUCCESS;
+	}
+	else
+	{
+		response->op.ret.status = -ret;
+		response->opcode = SHM_FAILURE;
+	}
 	
 	return (1);
 }
@@ -564,6 +586,7 @@ static int do_create_excl(struct shm_message *msg, struct shm_message *response)
  */
 static int do_open(struct shm_message *msg, struct shm_message *response)
 {
+	int ret;
 	struct shm_message msg1;
 
 	/* Persist first message. */
@@ -577,9 +600,19 @@ static int do_open(struct shm_message *msg, struct shm_message *response)
 	assert(buffer_get(msg->source, &msg1) == 0);
 	assert(msg->seq == (msg1.seq | 1));
 
-	response->op.ret.status = shm_open(msg->source, msg1.op.create1.name);
-	response->opcode = SHM_RETURN;
+	ret = shm_open(msg->source, msg1.op.create1.name);
+
 	response->source = msg->source;
+	if (ret >= 0)
+	{
+		response->op.ret.shmid = ret;
+		response->opcode = SHM_SUCCESS;
+	}
+	else
+	{
+		response->op.ret.status = -ret;
+		response->opcode = SHM_FAILURE;
+	}
 
 	return (1);
 }
@@ -593,9 +626,21 @@ static int do_open(struct shm_message *msg, struct shm_message *response)
  */
 static int do_unlink(struct shm_message *msg, struct shm_message *response)
 {
-	response->op.ret.status = shm_unlink(msg->source, msg->op.unlink.name);
-	response->opcode = SHM_RETURN;
+	int ret;
+
+	ret = shm_unlink(msg->source, msg->op.unlink.name);
+
 	response->source = msg->source;
+	if (ret == 0)
+	{
+		response->op.ret.status = 0;
+		response->opcode = SHM_SUCCESS;
+	}
+	else
+	{
+		response->op.ret.status = -ret;
+		response->opcode = SHM_FAILURE;
+	}
 
 	return (1);
 }
@@ -621,17 +666,18 @@ static int do_map(struct shm_message *msg, struct shm_message *response)
 		msg->op.map.off,
 		&mapblk
 	);
+
+	response->source = msg->source;
 	if (ret == 0)
 	{
-		response->opcode = SHM_RETURN;
 		response->op.ret.mapblk = mapblk;
+		response->opcode = SHM_SUCCESS;
 	}
 	else
 	{
-		response->opcode = SHM_FAILED;
-		response->op.ret.status = ret;
+		response->op.ret.status = -ret;
+		response->opcode = SHM_FAILURE;
 	}
-	response->source = msg->source;
 	
 	return (1);
 }
@@ -645,9 +691,21 @@ static int do_map(struct shm_message *msg, struct shm_message *response)
  */
 static int do_unmap(struct shm_message *msg, struct shm_message *response)
 {
-	response->op.ret.status = shm_unmap(msg->source, msg->op.unmap.shmid);
-	response->opcode = SHM_RETURN;
+	int ret;
+
+	ret = shm_unmap(msg->source, msg->op.unmap.shmid);
+
 	response->source = msg->source;
+	if (ret == 0)
+	{
+		response->op.ret.status = 0;
+		response->opcode = SHM_SUCCESS;
+	}
+	else
+	{
+		response->op.ret.status = -ret;
+		response->opcode = SHM_FAILURE;
+	}
 
 	return (1);
 }
@@ -669,17 +727,17 @@ static int do_truncate(struct shm_message *msg, struct shm_message *response)
 		msg->op.truncate.size
 	);
 
+	response->source = msg->source;
 	if (ret == 0)
 	{
-		response->opcode = SHM_RETURN;
 		response->op.ret.status = 0;
+		response->opcode = SHM_SUCCESS;
 	}
 	else
 	{
-		response->opcode = SHM_FAILED;
 		response->op.ret.status = -ret;
+		response->opcode = SHM_FAILURE;
 	}
-	response->source = msg->source;
 
 	return (1);
 }
@@ -693,7 +751,7 @@ static int do_truncate(struct shm_message *msg, struct shm_message *response)
  */
 static int do_null(struct shm_message *msg, struct shm_message *response)
 {
-	response->opcode = SHM_FAILED;
+	response->opcode = SHM_FAILURE;
 	response->op.ret.status = EINVAL;
 	response->source = msg->source;
 

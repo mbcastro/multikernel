@@ -96,8 +96,8 @@
 	#define SHM_MAP         5 /**< Map.              */
 	#define SHM_UNMAP       6 /**< Unmap.            */
 	#define SHM_TRUNCATE    7 /**< Truncate.         */
-	#define SHM_RETURN      8 /**< Return.           */
-	#define SHM_FAILED      9 /**< Return.           */
+	#define SHM_SUCCESS     8 /**< Success.          */
+	#define SHM_FAILURE     9 /**< Failure.          */
 	/**@}*/
 
 	/**
@@ -167,8 +167,9 @@
 			/* Return message. */
 			union
 			{
-				int status;      /**< Status code.           */
-				uint64_t mapblk; /**< Mapped remote address. */
+				int shmid;       /**< ID of shared memory region.  */
+				int status;      /**< Status code.                 */
+				uint64_t mapblk; /**< Mapped remote address.       */
 			} ret;
 		} op;
 	};

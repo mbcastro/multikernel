@@ -63,11 +63,17 @@ static inline int nanvix_shm_is_invalid_name(const char *name)
 {
 	/* Invalid name. */
 	if ((name == NULL) || (!strcmp(name, "")))
-		return (-EINVAL);
+	{
+		errno = EINVAL;
+		return (-1);
+	}
 
 	/* Name too long. */
 	if (strlen(name) >= (SHM_NAME_MAX - 1))
-		return (-ENAMETOOLONG);
+	{
+		errno = ENAMETOOLONG;
+		return (-1);
+	}
 
 	return (0);
 }
@@ -147,11 +153,11 @@ int nanvix_shm_create_excl(const char *name, int rw, mode_t mode)
 
 	/* Cannot get inbox. */
 	if ((inbox = get_inbox()) < 0)
-		return (-EAGAIN);
+		return (-1);
 
 	/* Invalid name. */
-	if ((ret = nanvix_shm_is_invalid_name(name)))
-		return (ret);
+	if (nanvix_shm_is_invalid_name(name))
+		return (-1);
 
 	nodenum = sys_get_node_num();
 
@@ -182,11 +188,19 @@ int nanvix_shm_create_excl(const char *name, int rw, mode_t mode)
 
 	pthread_mutex_unlock(&lock);
 
-	return (msg.op.ret.status);
+	/* Failed to create shared memory region. */
+	if (msg.opcode == SHM_FAILURE)
+	{
+		errno = msg.op.ret.status;
+		return (-1);
+	}
+
+	return (msg.op.ret.shmid);
 
 error:
 	pthread_mutex_unlock(&lock);
-	return (ret);
+	errno = -ret;
+	return (-1);
 }
 
 /*============================================================================*
@@ -214,11 +228,11 @@ int nanvix_shm_create(const char *name, int rw, int truncate, mode_t mode)
 
 	/* Cannot get inbox. */
 	if ((inbox = get_inbox()) < 0)
-		return (-EAGAIN);
+		return (-1);
 
 	/* Invalid name. */
-	if ((ret = nanvix_shm_is_invalid_name(name)))
-		return (ret);
+	if (nanvix_shm_is_invalid_name(name))
+		return (-1);
 
 	nodenum = sys_get_node_num();
 
@@ -250,11 +264,19 @@ int nanvix_shm_create(const char *name, int rw, int truncate, mode_t mode)
 
 	pthread_mutex_unlock(&lock);
 
-	return (msg.op.ret.status);
+	/* Failed to create shared memory region. */
+	if (msg.opcode == SHM_FAILURE)
+	{
+		errno = msg.op.ret.status;
+		return (-1);
+	}
+
+	return (msg.op.ret.shmid);
 
 error:
 	pthread_mutex_unlock(&lock);
-	return (ret);
+	errno = -ret;
+	return (-1);
 }
 
 /*============================================================================*
@@ -272,7 +294,6 @@ error:
  * shared memory region is returned. Upon failure, a negative error
  * code is returned instead.
  */
-
 int nanvix_shm_open(const char *name, int rw, int truncate)
 {
 	int ret;
@@ -282,11 +303,11 @@ int nanvix_shm_open(const char *name, int rw, int truncate)
 
 	/* Cannot get inbox. */
 	if ((inbox = get_inbox()) < 0)
-		return (-EAGAIN);
+		return (-1);
 
 	/* Invalid name. */
-	if ((ret = nanvix_shm_is_invalid_name(name)))
-		return (ret);
+	if (nanvix_shm_is_invalid_name(name))
+		return (-1);
 
 	nodenum = sys_get_node_num();
 
@@ -316,11 +337,19 @@ int nanvix_shm_open(const char *name, int rw, int truncate)
 
 	pthread_mutex_unlock(&lock);
 
-	return (msg.op.ret.status);
+	/* Failed to open shared memory region. */
+	if (msg.opcode == SHM_FAILURE)
+	{
+		errno = msg.op.ret.status;
+		return (-1);
+	}
+
+	return (msg.op.ret.shmid);
 
 error:
 	pthread_mutex_unlock(&lock);
-	return (ret);
+	errno = -ret;
+	return (-1);
 }
 
 /*============================================================================*
@@ -345,11 +374,11 @@ int nanvix_shm_unlink(const char *name)
 
 	/* Cannot get inbox. */
 	if ((inbox = get_inbox()) < 0)
-		return (-EAGAIN);
+		return (-1);
 
 	/* Invalid name. */
-	if ((ret = nanvix_shm_is_invalid_name(name)))
-		return (ret);
+	if (nanvix_shm_is_invalid_name(name))
+		return (-1);
 
 	nodenum = sys_get_node_num();
 
@@ -369,11 +398,19 @@ int nanvix_shm_unlink(const char *name)
 
 	pthread_mutex_unlock(&lock);
 
-	return (msg.op.ret.status);
+	/* Failed to unlink shared memory region. */
+	if (msg.opcode == SHM_FAILURE)
+	{
+		errno = msg.op.ret.status;
+		return (-1);
+	}
+
+	return (0);
 
 error:
 	pthread_mutex_unlock(&lock);
-	return (ret);
+	errno = -ret;
+	return (-1);
 }
 
 /*============================================================================*
@@ -409,10 +446,7 @@ int nanvix_map(uint64_t *mapblk, size_t len, int writable, int shared, int fd, o
 
 	/* Cannot get inbox. */
 	if ((inbox = get_inbox()) < 0)
-	{
-		errno = EAGAIN;
 		return (-1);
-	}
 
 	nodenum = sys_get_node_num();
 
@@ -429,28 +463,27 @@ int nanvix_map(uint64_t *mapblk, size_t len, int writable, int shared, int fd, o
 	pthread_mutex_lock(&lock);
 
 		if ((ret = sys_mailbox_write(server.outbox, &msg, sizeof(struct shm_message))) != MAILBOX_MSG_SIZE)
-			goto error1;
+			goto error;
 
 		if ((ret = sys_mailbox_read(inbox, &msg, sizeof(struct shm_message))) != MAILBOX_MSG_SIZE)
-			goto error1;
+			goto error;
 
 	pthread_mutex_unlock(&lock);
 
 	/* Failed to map. */
-	if (msg.opcode == SHM_FAILED)
+	if (msg.opcode == SHM_FAILURE)
 	{
-		ret = msg.op.ret.status;
-		goto error0;
+		errno = msg.op.ret.status;
+		return (-1);
 	}
 
 	*mapblk = msg.op.ret.mapblk;
 
 	return (0);
 
-error1:
+error:
 	pthread_mutex_unlock(&lock);
-error0:
-	errno = ret;
+	errno = -ret;
 	return (-1);
 }
 
@@ -483,10 +516,7 @@ int nanvix_unmap(int shmid, size_t len)
 
 	/* Cannot get inbox. */
 	if ((inbox = get_inbox()) < 0)
-	{
-		errno = EAGAIN;
 		return (-1);
-	}
 
 	nodenum = sys_get_node_num();
 
@@ -507,11 +537,18 @@ int nanvix_unmap(int shmid, size_t len)
 
 	pthread_mutex_unlock(&lock);
 
+	/* Failed to unmap. */
+	if (msg.opcode == SHM_FAILURE)
+	{
+		errno = msg.op.ret.status;
+		return (-1);
+	}
+
 	return (0);
 
 error:
 	pthread_mutex_unlock(&lock);
-	errno = msg.op.ret.status;
+	errno = -ret;
 	return (-1);
 }
 
@@ -538,10 +575,7 @@ int nanvix_mtruncate(int shmid, size_t size)
 
 	/* Cannot get inbox. */
 	if ((inbox = get_inbox()) < 0)
-	{
-		errno = EAGAIN;
 		return (-1);
-	}
 
 	nodenum = sys_get_node_num();
 
@@ -555,22 +589,24 @@ int nanvix_mtruncate(int shmid, size_t size)
 	pthread_mutex_lock(&lock);
 
 		if ((ret = sys_mailbox_write(server.outbox, &msg, sizeof(struct shm_message))) != MAILBOX_MSG_SIZE)
-			goto error1;
+			goto error;
 
 		if ((ret = sys_mailbox_read(inbox, &msg, sizeof(struct shm_message))) != MAILBOX_MSG_SIZE)
-			goto error1;
+			goto error;
 
 	pthread_mutex_unlock(&lock);
 
 	/* Failed to truncate. */
-	if (msg.opcode == SHM_FAILED)
-		goto error0;
+	if (msg.opcode == SHM_FAILURE)
+	{
+		errno = msg.op.ret.status;
+		return (-1);
+	}
 
 	return (0);
 
-error1:
+error:
 	pthread_mutex_unlock(&lock);
-error0:
-	errno = msg.op.ret.status;
+	errno = -ret;
 	return (-1);
 }

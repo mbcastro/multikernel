@@ -60,7 +60,10 @@ int shm_open(const char *name, int oflag, mode_t mode)
 
 	/* Cannot truncate region. */
 	if ((!rw) && truncate)
-		return (-EACCES);
+	{
+		errno = EACCES;
+		return (-1);
+	}
 
 	/* Exclusive create. */
 	if ((oflag & O_CREAT) && (oflag & O_EXCL))
