@@ -20,33 +20,32 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <assert.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include <errno.h>
 
-#include <mppa/osconfig.h>
-
-#include <nanvix/syscalls.h>
-
-/* Forward definitions. */
-extern int main2(int, const char **);
+#include <nanvix/mm.h>
 
 /**
- * @brief Bootstrap for a user application.
+ * @brief Removes a shared memory region.
+ *
+ * @details The shm_unlink() removes the name of the shared memory
+ * region named by the string pointed to by @p name. 
+ *
+ * If one or more references to the shared memory region exist when
+ * the region is unlinked, the @p name is removed before shm_unlink()
+ * returns, but the removal of the memory region contents are
+ * postponed until all open and map references to the shared memory
+ * region have been removed.
+ *
+ * Even if the region continues to exist after the last shm_unlink(),
+ * reuse of the name shall subsequently cause shm_open() to behave as
+ * if no shared memory region of this name exists.
+ *
+ * @returns Upon successful completion, zero is returned returned.
+ * Otherwise, -1 is returned and errno set to indicate the error. If
+ * -1 is returned, the named shared memory object is not changed by
+ *  this function call. 
  */
-int main(int argc, const char **argv)
+int shm_unlink(const char *name)
 {
-	int ret;
-
-	/* Initialization. */
-	assert(kernel_setup() == 0);
-	assert(runtime_setup(3) == 0);
-
-	ret = main2(argc, argv);
-
-	/* Cleanup. */
-	assert(runtime_cleanup() == 0);
-	assert(kernel_cleanup() == 0);
-
-	return (ret);
+	return (nanvix_shm_unlink(name));
 }

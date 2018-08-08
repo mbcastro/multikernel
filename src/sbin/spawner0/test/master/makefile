@@ -23,6 +23,7 @@
 # C Source Files
 SRC = $(wildcard mm/rmem/*.c)   \
 	  $(wildcard semaphore/*.c) \
+	  $(wildcard shm/*.c)       \
 	  $(wildcard *.c)           \
 	  $(INIT_SRC)
 

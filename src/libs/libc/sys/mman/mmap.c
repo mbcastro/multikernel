@@ -20,28 +20,61 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <stdio.h>
+#include <sys/mman.h>
+#include <sys/types.h>
+#include <errno.h>
 
-#include <nanvix/syscalls.h>
-
-#include "test.h"
+#include <nanvix/mm.h>
 
 /**
- * @brief Named Semaphores Test Driver
+ * @brief Maps pages of memory.
+ *
+ * @param addr  Hint local address.
+ * @param len   Length of mapping (in bytes).
+ * @param prot  Protection for mapping.
+ * @param flags Opening flags.
+ * @param fd    Target file descriptor.
+ * @param off   Offset within file.
+ *
+ * @retuns Upon successful completion, the address at which the
+ * mapping was placed is returned. Otherwise, MAP_FAILED is returned
+ * and errno is set to indicate the error.
  */
-void test_semaphore(void)
+void *mmap(void *addr, size_t len, int prot, int flags, int fd, off_t off)
 {
-	/* Run API tests. */
-	for (int i = 0; posix_semaphore_tests_api[i].test_fn != NULL; i++)
+	void *map;
+
+	((void)addr);
+
+	/* Invalid length. */
+	if (len == 0)
 	{
-		printf("[nanvix][test][api][posix][semaphore] %s\n", posix_semaphore_tests_api[i].name);
-		posix_semaphore_tests_api[i].test_fn();
+		errno = EINVAL;
+		return (MAP_FAILED);
 	}
 
-	/* Run fault injection tests. */
-	for (int i = 0; posix_semaphore_tests_fault[i].test_fn != NULL; i++)
+	/* Protection not supported.*/
+	if ((prot & PROT_EXEC) || (prot & PROT_NONE))
 	{
-		printf("[nanvix][test][fault][posix][semaphore] %s\n", posix_semaphore_tests_fault[i].name);
-		posix_semaphore_tests_fault[i].test_fn();
+		errno = ENOTSUP;
+		return (MAP_FAILED);
 	}
+
+	/* Fixed mapping not supported. */
+	if (flags == MAP_FIXED)
+	{
+		errno = ENOTSUP;
+		return (MAP_FAILED);
+	}
+
+	/* Invalid mapping. */
+	if ((flags != MAP_SHARED) && (flags != MAP_PRIVATE))
+	{
+		errno = EINVAL;
+		return (MAP_FAILED);
+	}
+
+	map = nanvix_mmap(len, prot & PROT_WRITE, flags == MAP_SHARED, fd, off);
+
+	return ((map == NULL) ? MAP_FAILED : map);
 }

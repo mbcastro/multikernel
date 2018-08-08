@@ -20,33 +20,13 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <assert.h>
-#include <stdlib.h>
-#include <stdio.h>
+#ifndef NANVIX_FS_H_
+#define NANVIX_FS_H_
 
-#include <mppa/osconfig.h>
+	#include <sys/types.h>
 
-#include <nanvix/syscalls.h>
+	/* Forward definitions. */
+	extern int nanvix_ftruncate(int, off_t);
 
-/* Forward definitions. */
-extern int main2(int, const char **);
+#endif /* NANVIX_FS_H_ */
 
-/**
- * @brief Bootstrap for a user application.
- */
-int main(int argc, const char **argv)
-{
-	int ret;
-
-	/* Initialization. */
-	assert(kernel_setup() == 0);
-	assert(runtime_setup(3) == 0);
-
-	ret = main2(argc, argv);
-
-	/* Cleanup. */
-	assert(runtime_cleanup() == 0);
-	assert(kernel_cleanup() == 0);
-
-	return (ret);
-}

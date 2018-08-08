@@ -21,7 +21,8 @@
 #
 
 # C Source Files
-SRC = name-server.c semaphore-server.c rmem-server.c
+SRC = $(wildcard shm/*.c) \
+      name-server.c semaphore-server.c rmem-server.c
 
 # Object Files
 OBJ = $(SRC:.c=.o)

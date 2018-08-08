@@ -52,29 +52,6 @@ static void test_ipc_barrier_create_unlink(void)
 	TEST_ASSERT(barrier_unlink(barrier) == 0);
 }
 
-/*============================================================================*
- * API Test: Wait                                                             *
- *============================================================================*/
-
-/**
- * @brief API Test: Wait
- */
-static void test_ipc_barrier_wait(void)
-{
-	int barrier;
-	int nodenum;
-	int nodes[2];
-
-	nodenum = sys_get_node_num();
-   
-	nodes[0] = SPAWNER1_SERVER_NODE;
-	nodes[1] = nodenum;
-
-	TEST_ASSERT((barrier = barrier_create(nodes, 2)) >= 0);
-	TEST_ASSERT(barrier_wait(barrier) == 0);
-	TEST_ASSERT(barrier_unlink(barrier) == 0);
-}
-
 /*============================================================================*/
 
 /**
@@ -82,6 +59,5 @@ static void test_ipc_barrier_wait(void)
  */
 struct test ipc_barrier_tests_api[] = {
 	{ test_ipc_barrier_create_unlink, "Create Unlink" },
-	{ test_ipc_barrier_wait,          "Wait"          },
 	{ NULL,                            NULL           },
 };

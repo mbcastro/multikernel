@@ -29,8 +29,6 @@
 #include <nanvix/spawner.h>
 
 /* Forward definitions. */
-extern int rmem_server(int, int);
-extern int semaphore_server(int, int);
 extern int main2(int, const char **);
 extern void test_kernel_sys_core(void);
 extern void test_kernel_sys_sync(void);
@@ -40,18 +38,18 @@ extern void test_kernel_name(int);
 extern void test_kernel_ipc_mailbox(int);
 extern void test_kernel_ipc_portal(int);
 extern void test_kernel_ipc_barrier(int);
+extern int shm_server(int, int);
 
 /**
  * @brief Number of servers launched from this spawner.
  */
-#define NR_SERVERS 2
+#define NR_SERVERS 1
 
 /**
  * @brief Servers.
  */
 static struct serverinfo servers[NR_SERVERS] = {
-	{ rmem_server,      RMEM_SERVER_NODE,      1 },
-	{ semaphore_server, SEMAPHORE_SERVER_NODE, 1 }
+	{ shm_server, SHM_SERVER_NODE, 1 }
 };
 
 /**
@@ -128,8 +126,8 @@ void spawners_sync(void)
 	int syncid;
 	int syncid_local;
 	int nodes[2];
-	int nodes_local[2];
 	struct spawner_message msg;
+
 
 	/* Wait for acknowledge message of all servers. */
 	for (int i = 0; i < NR_SERVERS; i++)
@@ -138,15 +136,12 @@ void spawners_sync(void)
 		assert(msg.status == 0);
 	}
 
-	nodes[0] = nodenum;
-	nodes[1] = SPAWNER1_SERVER_NODE;
-
-	nodes_local[0] = SPAWNER1_SERVER_NODE;
-	nodes_local[1] = nodenum;
+	nodes[0] = SPAWNER1_SERVER_NODE;
+	nodes[1] = nodenum;
 
 	/* Open synchronization points. */
-	assert((syncid_local = sys_sync_create(nodes_local, 2, SYNC_ONE_TO_ALL)) >= 0);
-	assert((syncid = sys_sync_open(nodes, 2, SYNC_ONE_TO_ALL)) >= 0);
+	assert((syncid_local = sys_sync_create(nodes, 2, SYNC_ONE_TO_ALL)) >= 0);
+	assert((syncid = sys_sync_open(nodes, 2, SYNC_ALL_TO_ONE)) >= 0);
 
 	assert(sys_sync_signal(syncid) == 0);
 	assert(sys_sync_wait(syncid_local) == 0);

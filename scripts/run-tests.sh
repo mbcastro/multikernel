@@ -51,3 +51,6 @@ run2 "nanvix-runtime-debug.img" "/test-driver" "/servers1" "--debug --rmem"
 
 echo "=== Running Semaphore Tests"
 run2 "nanvix-posix-debug.img" "/test-driver" "/servers1" "--debug --semaphore"
+
+echo "=== Running Shared Memory Region Tests"
+run2 "nanvix-posix-debug.img" "/test-driver" "/servers1" "--debug --shm"

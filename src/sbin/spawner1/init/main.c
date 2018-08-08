@@ -30,19 +30,21 @@
 
 /* Forward definitions. */
 extern int name_server(int, int);
-extern void test_kernel_sys_sync(void);
-extern void test_kernel_barrier(void);
+extern int rmem_server(int, int);
+extern int semaphore_server(int, int);
 
 /**
  * @brief Number of servers launched from this spawner.
  */
-#define NR_SERVERS 1
+#define NR_SERVERS 3
 
 /**
  * @brief Servers.
  */
 static struct serverinfo servers[NR_SERVERS] = {
-	{ name_server, NAME_SERVER_NODE, 0 }
+	{ name_server,      NAME_SERVER_NODE,      0 },
+	{ rmem_server,      RMEM_SERVER_NODE,      1 },
+	{ semaphore_server, SEMAPHORE_SERVER_NODE, 1 }
 };
 
 /**
@@ -54,24 +56,6 @@ static int inbox = -1;
  * @brief Spawner NoC node number.
  */
 static int nodenum = -1;
-
-/**
- * @brief Generic test driver.
- */
-static void test_kernel(const char *module)
-{
-	if (!strcmp(module, "--hal-sync"))
-		test_kernel_sys_sync();
-}
-
-/**
- * @brief Generic test driver.
- */
-static void test_runtime(const char *module)
-{
-	if (!strcmp(module, "--barrier"))
-		test_kernel_barrier();
-}
 
 /**
  * @brief Initializes spawner.
@@ -107,7 +91,6 @@ void spawners_sync(void)
 	int syncid;
 	int syncid_local;
 	int nodes[2];
-	int nodes_local[2];
 	struct spawner_message msg;
 
 	/* Wait for acknowledge message of all servers. */
@@ -120,11 +103,8 @@ void spawners_sync(void)
 	nodes[0] = nodenum;
 	nodes[1] = SPAWNER_SERVER_NODE;
 
-	nodes_local[0] = SPAWNER_SERVER_NODE;
-	nodes_local[1] = nodenum;
-
 	/* Open syncrhonization points. */
-	assert((syncid_local = sys_sync_create(nodes_local, 2, SYNC_ONE_TO_ALL)) >= 0);
+	assert((syncid_local = sys_sync_create(nodes, 2, SYNC_ALL_TO_ONE)) >= 0);
 	assert((syncid = sys_sync_open(nodes, 2, SYNC_ONE_TO_ALL)) >= 0);
 
 	assert(sys_sync_wait(syncid_local) == 0);
@@ -140,5 +120,5 @@ SPAWNER_NAME("spawner1")
 SPAWNER_SHUTDOWN(SHUTDOWN_DISABLE)
 SPAWNER_SERVERS(NR_SERVERS, servers)
 SPAWNER_MAIN2(NULL)
-SPAWNER_KERNEL_TESTS(test_kernel)
-SPAWNER_RUNTIME_TESTS(test_runtime)
+SPAWNER_KERNEL_TESTS(NULL)
+SPAWNER_RUNTIME_TESTS(NULL)

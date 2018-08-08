@@ -20,50 +20,27 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
+#ifndef _TEST_H_
+#define _TEST_H_
 
-#include <mppaipc.h>
+	#include <stdlib.h>
 
-#include <nanvix/const.h>
-#include <nanvix/syscalls.h>
-#include <nanvix/pm.h>
+	/**
+	 * @brief Asserts a logic expression.
+	 */
+	#define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
 
-/**
- * @brief Asserts a logic expression.
- */
-#define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
+	/**
+	 * @brief Unit test.
+	 */
+	struct test
+	{
+		void (*test_fn)(void); /**< Test function. */
+		const char *name;      /**< Test name.     */
+	};
 
-/*============================================================================*
- * API Test: Wait                                                             *
- *============================================================================*/
+	/* Forward definitions. */
+	extern struct test posix_shm_tests_api[];
+	extern struct test posix_shm_tests_fault[];
 
-/**
- * @brief API Test: Wait
- */
-static void test_barrier_io(void)
-{
-	int barrier;
-	int nodenum;
-	int nodes[2];
-
-	nodenum = sys_get_node_num();
-
-	nodes[0] = nodenum;
-	nodes[1] = SPAWNER_SERVER_NODE;
-
-	/* Wait on barrier. */
-	TEST_ASSERT((barrier = barrier_create(nodes, 2)) >= 0);
-	TEST_ASSERT(barrier_wait(barrier) == 0);
-	TEST_ASSERT(barrier_unlink(barrier) == 0);
-}
-
-/*============================================================================*/
-
-/**
- * @brief Barrier test driver.
- */
-void test_kernel_barrier(void)
-{
-	test_barrier_io();
-}
+#endif /* _TEST_H_ */

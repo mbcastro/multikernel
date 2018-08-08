@@ -20,59 +20,36 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <stdlib.h>
-
-#include <nanvix/const.h>
-#include <nanvix/syscalls.h>
-
-/**
- * @brief Asserts a logic expression.
- */
-#define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
+#include <stdarg.h>
+#include <string.h>
+#include <stdio.h>
 
 /*============================================================================*
- * API Test: Barrier Mode                                                     *
+ * shm_debug()                                                                *
  *============================================================================*/
 
 /**
- * @brief API Test: Barrier
+ * @brief Dumps debug information.
  */
-static void test_sys_sync_barrier(void)
+void shm_debug(const char *fmt, ...)
 {
-	int nodenum;
-	int syncid;
-	int syncid_local;
-	int nodes[2];
-	int nodes_local[2];
+#ifndef DEBUG_SHM
+	((void) fmt);
+#else
 
-	nodenum = sys_get_node_num();
+	int len;
+	va_list args;
+	char strbuf[80];
 
-	nodes[0] = nodenum;
-	nodes[1] = SPAWNER_SERVER_NODE;
+	strcpy(strbuf, "[DEBUG][nanvix][shm] ");
+	len = 80 - 2 - strlen(strbuf);
+	strncat(strbuf, fmt, len);
+	strcat(strbuf, "\n");
 
-	nodes_local[0] = SPAWNER_SERVER_NODE;
-	nodes_local[1] = nodenum;
+	va_start (args, fmt);
+	vprintf (strbuf, args);
+	va_end (args);
 
-	/* Open syncrhonization points. */
-	TEST_ASSERT((syncid_local = sys_sync_create(nodes_local, 2, SYNC_ONE_TO_ALL)) >= 0);
-	TEST_ASSERT((syncid = sys_sync_open(nodes, 2, SYNC_ONE_TO_ALL)) >= 0);
-
-	TEST_ASSERT(sys_sync_wait(syncid_local) == 0);
-	TEST_ASSERT(sys_sync_signal(syncid) == 0);
-
-	/* House keeping. */
-	TEST_ASSERT(sys_sync_unlink(syncid_local) == 0);
-	TEST_ASSERT(sys_sync_close(syncid) == 0);
+#endif
 }
 
-/*===================================================================*
- * Synchronization Point Test Driver                                 *
- *===================================================================*/
-
-/**
- * @brief Synchronization Point Test Driver
- */
-void test_kernel_sys_sync(void)
-{
-	test_sys_sync_barrier();
-}
