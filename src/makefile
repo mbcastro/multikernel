@@ -60,7 +60,7 @@ export CRT1 = $(LIBDIR)/crt1.o
 export LIBSERVERS = $(LIBDIR)/libservers.a
 
 # System Services
-export SERVERSBIN1 = $(BINDIR)/servers1
+export SPAWNER1BIN = $(BINDIR)/spawner1
 
 #===============================================================================
 
