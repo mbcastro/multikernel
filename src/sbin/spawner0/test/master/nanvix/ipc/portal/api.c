@@ -20,24 +20,18 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 #include <mppaipc.h>
 
 #include <nanvix/syscalls.h>
+#include <nanvix/name.h>
 #include <nanvix/limits.h>
 #include <nanvix/pm.h>
 
-/**
- * @brief Asserts a logic expression.
- */
-#define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
-
-/**
- * @brief Data Size.
- */
-#define DATA_SIZE 128
+#include "test.h"
 
 /*============================================================================*
  * Utilities                                                                  *
@@ -72,13 +66,30 @@ static void join_slaves(void)
 }
 
 /*============================================================================*
+ * API Test: Create Unlink                                                    *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Portal Create Unlink
+ */
+static void test_nanvix_ipc_portal_create_unlink(void)
+{
+	int inportal;
+	char pathname[NANVIX_PROC_NAME_MAX];
+
+	sprintf(pathname, "cool-name");
+	TEST_ASSERT((inportal = portal_create(pathname)) >= 0);
+	TEST_ASSERT(portal_unlink(inportal) == 0);
+}
+
+/*============================================================================*
  * API Test: Create Unlink CC                                                 *
  *============================================================================*/
 
 /**
  * @brief API Test: Create Unlink CC
  */
-static void test_ipc_portal_create_unlink_cc(void)
+static void test_nanvix_ipc_portal_create_unlink_cc(void)
 {
 	char masternode_str[4];
 	char portal_nclusters_str[4];
@@ -90,8 +101,6 @@ static void test_ipc_portal_create_unlink_cc(void)
 		test_str,
 		NULL
 	};
-
-	printf("[nanvix][test][api][ipc][portal] Create Unlink CC\n");
 
 	/* Build arguments. */
 	sprintf(masternode_str, "%d", sys_get_node_num());
@@ -109,7 +118,7 @@ static void test_ipc_portal_create_unlink_cc(void)
 /**
  * @brief API Test: Open Close CC
  */
-static void test_ipc_portal_open_close_cc(void)
+static void test_nanvix_ipc_portal_open_close_cc(void)
 {
 	char masternode_str[4];
 	char portal_nclusters_str[4];
@@ -121,8 +130,6 @@ static void test_ipc_portal_open_close_cc(void)
 		test_str,
 		NULL
 	};
-
-	printf("[nanvix][test][api][ipc][portal] Open Close CC\n");
 
 	/* Build arguments. */
 	sprintf(masternode_str, "%d", sys_get_node_num());
@@ -140,7 +147,7 @@ static void test_ipc_portal_open_close_cc(void)
 /**
  * @brief API Test: Read Write CC
  */
-static void test_ipc_portal_read_write_cc(void)
+static void test_nanvix_ipc_portal_read_write1_cc(void)
 {
 	char masternode_str[4];
 	char portal_nclusters_str[4];
@@ -152,8 +159,6 @@ static void test_ipc_portal_read_write_cc(void)
 		test_str,
 		NULL
 	};
-
-	printf("[nanvix][test][api][ipc][portal] Read Write CC\n");
 
 	/* Build arguments. */
 	sprintf(masternode_str, "%d", sys_get_node_num());
@@ -171,7 +176,7 @@ static void test_ipc_portal_read_write_cc(void)
 /**
  * @brief API Test: Read Write 2 CC
  */
-static void test_ipc_portal_read_write2_cc(void)
+static void test_nanvix_ipc_portal_read_write2_cc(void)
 {
 	int barrier;
 	int nodes[NANVIX_PROC_MAX + 1];
@@ -185,8 +190,6 @@ static void test_ipc_portal_read_write2_cc(void)
 		test_str,
 		NULL
 	};
-
-	printf("[nanvix][test][api][ipc][portal] Read Write 2 CC\n");
 
 	/* Build arguments. */
 	sprintf(masternode_str, "%d", sys_get_node_num());
@@ -236,7 +239,7 @@ static void test_ipc_portal_read_write2_cc(void)
 /**
  * @brief API Test: Read Write 2 CC
  */
-static void test_ipc_portal_read_write3_cc(void)
+static void test_nanvix_ipc_portal_read_write3_cc(void)
 {
 	int nodenum;
 	int inportal;
@@ -251,8 +254,6 @@ static void test_ipc_portal_read_write3_cc(void)
 		test_str,
 		NULL
 	};
-
-	printf("[nanvix][test][api][hal][portal] Read Write 3 CC\n");
 
 	nodenum = sys_get_node_num();
 
@@ -292,14 +293,14 @@ static void test_ipc_portal_read_write3_cc(void)
 /*============================================================================*/
 
 /**
- * @brief Automated HAL portal test driver.
+ * @brief Unit tests.
  */
-void test_ipc_portal(void)
-{
-	test_ipc_portal_create_unlink_cc();
-	test_ipc_portal_open_close_cc();
-	test_ipc_portal_read_write_cc();
-	test_ipc_portal_read_write2_cc();
-	test_ipc_portal_read_write3_cc();
-}
-
+struct test nanvix_ipc_portal_tests_api[] = {
+	{ test_nanvix_ipc_portal_create_unlink,    "Create Unlink"    },
+	{ test_nanvix_ipc_portal_create_unlink_cc, "Create Unlink CC" },
+	{ test_nanvix_ipc_portal_open_close_cc,    "Open Close CC"    },
+	{ test_nanvix_ipc_portal_read_write1_cc,   "Read Write 1 CC"  },
+	{ test_nanvix_ipc_portal_read_write2_cc,   "Read Write 2 CC"  },
+	{ test_nanvix_ipc_portal_read_write3_cc,   "Read Write 3 CC"  },
+	{ NULL,                                     NULL              },
+};
