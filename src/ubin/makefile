@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# Copyright (c) 2011-2018 Pedro Henrique Penna <pedrohenriquepenna@gmail.com>
+# Copyright (c) 211-218 Pedro Henrique Penna <pedrohenriquepenna@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,31 +20,28 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-# C Source Files
-SRC = $(wildcard *.c)
-
-# Object Files
-OBJ = $(SRC:.c=.o)
-
-# Binary Files
-export ELFBIN = $(BINDIR)/hal-sync-slave
+# Conflicts
+.PHONY: test
 
 #===============================================================================
 
-# Builds the kernel.
-all: $(OBJ)
-	mkdir -p $(BINDIR)
-	$(CC) $(LDFLAGS) $(OBJ) -o $(ELFBIN) $(LIBKERNEL) $(LIBMPPAIPC)
+# Builds everything.
+all: test benchmark
 
-# Builds object files.
-%.o: %.c
-	$(CC) $(CFLAGS) $< -c -o $@
+# Builds Test-Driver Utilitiy.
+test:
+	cd test && $(MAKE) all
+
+# Builds Synthetic Benchmarks.
+benchmark:
+	cd rmem-benchmark && $(MAKE) all
 
 # Cleans compilation files.
 clean:
-	rm -rf $(OBJ)
+	cd test && $(MAKE) clean
+	cd rmem-benchmark && $(MAKE) clean
 
 # Cleans everything.
 distclean: clean
-	rm -rf $(ELFBIN)
-
+	cd test && $(MAKE) distclean
+	cd rmem-benchmark && $(MAKE) distclean

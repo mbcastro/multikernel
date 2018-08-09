@@ -20,31 +20,51 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-# C Source Files
-SRC = $(wildcard *.c)
-
-# Object Files
-OBJ = $(SRC:.c=.o)
-
-# Binary Files
-export ELFBIN = $(BINDIR)/hal-sync-slave
+# Conflicts.
+.PHONY:nanvix
+.PHONY:posix
 
 #===============================================================================
 
-# Builds the kernel.
-all: $(OBJ)
-	mkdir -p $(BINDIR)
-	$(CC) $(LDFLAGS) $(OBJ) -o $(ELFBIN) $(LIBKERNEL) $(LIBMPPAIPC)
+# Builds automated test driver.
+all:  nanvix posix
 
-# Builds object files.
-%.o: %.c
-	$(CC) $(CFLAGS) $< -c -o $@
+# Nanvix API test drivers.
+nanvix:
+	cd nanvix/kernel/sync && $(MAKE) all
+	cd nanvix/kernel/mailbox && $(MAKE) all
+	cd nanvix/kernel/portal && $(MAKE) all
+	cd nanvix/ipc/barrier && $(MAKE) all
+	cd nanvix/ipc/name && $(MAKE) all
+	cd nanvix/ipc/mailbox && $(MAKE) all
+	cd nanvix/ipc/portal&& $(MAKE) all
+	cd nanvix/mm/rmem && $(MAKE) all
+
+# POSIX API test drivers.
+posix:
+	cd posix/semaphore && $(MAKE) all
 
 # Cleans compilation files.
 clean:
-	rm -rf $(OBJ)
+	cd nanvix/kernel/sync && $(MAKE) clean
+	cd nanvix/kernel/mailbox && $(MAKE) clean
+	cd nanvix/kernel/portal && $(MAKE) clean
+	cd nanvix/ipc/barrier && $(MAKE) clean
+	cd nanvix/ipc/name && $(MAKE) clean
+	cd nanvix/ipc/mailbox && $(MAKE) clean
+	cd nanvix/ipc/portal && $(MAKE) clean
+	cd nanvix/mm/rmem && $(MAKE) clean
+	cd posix/semaphore && $(MAKE) clean
 
 # Cleans everything.
 distclean: clean
-	rm -rf $(ELFBIN)
+	cd nanvix/kernel/sync && $(MAKE) distclean
+	cd nanvix/kernel/mailbox && $(MAKE) distclean
+	cd nanvix/kernel/portal && $(MAKE) distclean
+	cd nanvix/ipc/barrier && $(MAKE) distclean
+	cd nanvix/ipc/name && $(MAKE) distclean
+	cd nanvix/ipc/mailbox && $(MAKE) distclean
+	cd nanvix/ipc/portal && $(MAKE) distclean
+	cd nanvix/mm/rmem && $(MAKE) distclean
+	cd posix/semaphore && $(MAKE) distclean
 

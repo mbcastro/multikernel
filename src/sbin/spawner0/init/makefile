@@ -21,24 +21,25 @@
 #
 
 # C Source Files
-SRC = $(wildcard *.c)
-
+SRC = $(wildcard hal/core/*.c)    \
+      $(wildcard hal/sync/*.c)    \
+      $(wildcard hal/mailbox/*.c) \
+      $(wildcard hal/portal/*.c)  \
+      $(wildcard *.c)
+	  
 # Object Files
 OBJ = $(SRC:.c=.o)
 
-# Binary Files
-export ELFBIN = $(BINDIR)/hal-sync-slave
-
 #===============================================================================
 
-# Builds the kernel.
+# Builds everything.
 all: $(OBJ)
-	mkdir -p $(BINDIR)
-	$(CC) $(LDFLAGS) $(OBJ) -o $(ELFBIN) $(LIBKERNEL) $(LIBMPPAIPC)
+	mkdir -p $(LIBDIR)
+	$(AR) $(ARFLAGS) $(LIBNANVIX) $(OBJ)
 
 # Builds object files.
 %.o: %.c
-	$(CC) $(CFLAGS) $< -c -o $@
+	$(CC) $(CFLAGS) $<  -c -o $@
 
 # Cleans compilation files.
 clean:
@@ -46,5 +47,5 @@ clean:
 
 # Cleans everything.
 distclean: clean
-	rm -rf $(ELFBIN)
+	rm -rf $(LIBNANVIX)
 

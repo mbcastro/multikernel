@@ -81,7 +81,7 @@ case "$1" in
 		do
 			run2 "nanvix-benchmarks.img"                   \
 				"/benchmarks"                              \
-				"/servers1"                                \
+				"/spawner1"                                \
 				"$NCLUSTERS $NITERATIONS $BUFSIZE $kernel"
 		done
 	;;

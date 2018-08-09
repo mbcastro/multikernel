@@ -53,8 +53,8 @@ function run2
 {
 	local multibin=$1
 	local bin1=$2
-	local bin2=$3
-	local args=$4
+	local args=$3
+	local bin2="/spawner1"
 
 	$K1TOOLS_DIR/bin/k1-jtag-runner     \
 		--multibinary=$OUTDIR/$multibin \
@@ -71,3 +71,32 @@ function run2
 	fi
 }
 
+function build1
+{
+	local bindir=$1
+	local bootbin=$2
+	local nodebin=$3
+	local multibin=$4
+
+	$K1TOOLS_DIR/bin/k1-create-multibinary -f \
+		--remove-prefix $bindir               \
+		--boot $bootbin                       \
+		--clusters $nodebin                   \
+		-T $multibin
+}
+
+function build2
+{
+	local bindir=$1
+	local bootbin=$2
+	local nodebin=$3
+	local multibin=$4
+	local iobin=$1/spawner1
+
+	$K1TOOLS_DIR/bin/k1-create-multibinary -f \
+		--remove-prefix $bindir               \
+		--boot $bootbin                       \
+		--ios $iobin                          \
+		--clusters $nodebin                   \
+		-T $multibin
+}

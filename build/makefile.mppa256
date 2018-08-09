@@ -21,11 +21,9 @@
 #
 
 ifeq ($(ARCH),k1bdp)
-	export BUILD_LIBS=true
 	export BUILD_SERVERS=false
 	export BUILDING_CCLUSTER=true
 else
-	export BUILD_LIBS=false
 	export BUILD_SERVERS=true
 	export BUILDING_IOCLUSTER=true
 endif
@@ -58,11 +56,15 @@ endif
 
 # Binaries & Libraries
 ifeq ($(ARCH),k1bdp)
-	export LIBS = $(TOOLCHAIN)/k1-nodeos/lib/mOS/libmppaipc.a
+	export LIBMPPAIPC = $(TOOLCHAIN)/k1-nodeos/lib/mOS/libmppaipc.a
 	export LIBKERNEL = $(LIBDIR)/libkernel-k1bdp.a
 	export LIBUSER = $(LIBDIR)/libuser-k1bdp.a
+	export LIBS=$(LIBUSER) $(LIBKERNEL) $(LIBMPPAIPC)
 else
-	export LIBS = $(TOOLCHAIN)/k1-rtems/lib/libmppaipc.a
+	export LIBMPPAIPC = $(TOOLCHAIN)/k1-rtems/lib/libmppaipc.a
 	export LIBKERNEL = $(LIBDIR)/libkernel-k1bio.a
 	export LIBUSER = $(LIBDIR)/libuser-k1bio.a
+	export LIBNANVIX = $(LIBDIR)/libnanvix-k1bio.a
+	export LIBSERVERS = $(LIBDIR)/libservers.a
+	export LIBS=$(LIBNANVIX) $(LIBSERVERS) $(LIBUSER) $(LIBKERNEL) $(LIBMPPAIPC)
 endif

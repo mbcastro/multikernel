@@ -21,20 +21,21 @@
 #
 
 # C Source Files
-SRC = $(wildcard *.c)
+SRC = $(wildcard *.c) \
+	  $(INIT_SRC)
 
 # Object Files
 OBJ = $(SRC:.c=.o)
 
 # Binary Files
-export ELFBIN = $(BINDIR)/hal-sync-slave
+export ELFBIN = $(BINDIR)/benchmarks
 
 #===============================================================================
 
 # Builds the kernel.
 all: $(OBJ)
 	mkdir -p $(BINDIR)
-	$(CC) $(LDFLAGS) $(OBJ) -o $(ELFBIN) $(LIBKERNEL) $(LIBMPPAIPC)
+	$(CC) $(LDFLAGS) $(OBJ) $(CRT0) -o $(ELFBIN) $(LIBS)
 
 # Builds object files.
 %.o: %.c
