@@ -51,6 +51,20 @@
 	 */
 	#define MAILBOX_MSG_SIZE HAL_MAILBOX_MSG_SIZE
 
+	/**
+	 * @brief Sanity check at compile-time.
+	 */
+	/**@{*/
+	#define BUILD_CHECK(condition) \
+		((void) sizeof(char[1 - 2*!!(condition)]))
+
+	/**
+	 * @brief Check mailbox message size
+	 */
+	/**@{*/
+	#define CHECK_MAILBOX_MSG_SIZE(struct_type) \
+		BUILD_CHECK(sizeof(struct_type) != MAILBOX_MSG_SIZE)
+
 	/* Forward definitions. */
 	extern uint64_t sys_timer_get(void);
 	extern uint64_t sys_timer_diff(uint64_t, uint64_t);

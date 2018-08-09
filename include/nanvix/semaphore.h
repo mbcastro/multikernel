@@ -29,7 +29,7 @@
 	#include <nanvix/limits.h>
 
 	/**
-	 * @brief Maximal number of sempahores in the system.
+	 * @brief Maximal number of semaphores in the system.
 	 */
 	#define SEM_MAX 50
 
