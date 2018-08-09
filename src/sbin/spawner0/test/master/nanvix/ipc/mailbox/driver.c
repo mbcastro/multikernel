@@ -20,7 +20,6 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <pthread.h>
 #include <stdio.h>
 
 #include <nanvix/syscalls.h>
@@ -28,46 +27,23 @@
 #include "test.h"
 
 /**
- * @brief Number of cores in the underlying cluster.
+ * @brief Test driver for Named Mailboxes.
  */
-int ipc_mailbox_ncores = 0;
-
-/**
- * @brief Global barrier for synchronization.
- */
-pthread_barrier_t barrier;
-
-/**
- * @brief Unnamed Mailbox Test Driver
- *
- * @param nbusycores Number of busy cores.
- */
-void test_kernel_ipc_mailbox(int nbusycores)
+void test_nanvix_ipc_mailbox(void)
 {
-	TEST_ASSERT(runtime_setup(1) == 0);
-
-	ipc_mailbox_ncores = sys_get_num_cores() - nbusycores;
-
-	pthread_barrier_init(&barrier, NULL, ipc_mailbox_ncores);
-
-#ifdef _TEST_API_NAMED_MAILBOX_IOCLUSTER
 
 	/* Run API tests. */
-	for (int i = 0; ipc_mailbox_tests_api[i].test_fn != NULL; i++)
+	for (int i = 0; nanvix_ipc_mailbox_tests_api[i].test_fn != NULL; i++)
 	{
-		printf("[nanvix][test][api][ipc][mailbox] %s\n", ipc_mailbox_tests_api[i].name);
-		ipc_mailbox_tests_api[i].test_fn();
+		printf("[nanvix][test][api][ipc][mailbox] %s\n", nanvix_ipc_mailbox_tests_api[i].name);
+		nanvix_ipc_mailbox_tests_api[i].test_fn();
 	}
-
-#endif /* _TEST_API_NAMED_MAILBOX_IOCLUSTER */
 
 	/* Run fault injection tests. */
-	for (int i = 0; ipc_mailbox_tests_fault[i].test_fn != NULL; i++)
+	for (int i = 0; nanvix_ipc_mailbox_tests_fault[i].test_fn != NULL; i++)
 	{
-		printf("[nanvix][test][fault][ipc][mailbox] %s\n", ipc_mailbox_tests_fault[i].name);
-		ipc_mailbox_tests_fault[i].test_fn();
+		printf("[nanvix][test][fault][ipc][mailbox] %s\n", nanvix_ipc_mailbox_tests_fault[i].name);
+		nanvix_ipc_mailbox_tests_fault[i].test_fn();
 	}
-
-	TEST_ASSERT(runtime_cleanup() == 0);
 }
 

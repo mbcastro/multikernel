@@ -20,20 +20,18 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include <mppaipc.h>
 
 #include <nanvix/syscalls.h>
+#include <nanvix/name.h>
 #include <nanvix/limits.h>
 #include <nanvix/pm.h>
 
-/**
- * @brief Asserts a logic expression.
- */
-#define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
+#include "test.h"
 
 /*============================================================================*
  * Utilities                                                                  *
@@ -68,13 +66,30 @@ static void join_slaves(void)
 }
 
 /*============================================================================*
+ * API Test: Create Unlink                                                    *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Mailbox Create Unlink
+ */
+static void test_nanvix_ipc_mailbox_create_unlink(void)
+{
+	int inbox;
+	char pathname[NANVIX_PROC_NAME_MAX];
+
+	sprintf(pathname, "cool-name");
+	TEST_ASSERT((inbox = mailbox_create(pathname)) >= 0);
+	TEST_ASSERT(mailbox_unlink(inbox) == 0);
+}
+
+/*============================================================================*
  * API Test: Create Unlink CC                                                 *
  *============================================================================*/
 
 /**
  * @brief API Test: Create Unlink CC
  */
-static void test_ipc_mailbox_create_unlink_cc(void)
+static void test_nanvix_ipc_mailbox_create_unlink_cc(void)
 {
 	char masternode_str[4];
 	char mailbox_nclusters_str[4];
@@ -86,8 +101,6 @@ static void test_ipc_mailbox_create_unlink_cc(void)
 		test_str,
 		NULL
 	};
-
-	printf("[nanvix][test][api][ipc][mailbox] Create Unlink CC\n");
 
 	/* Build arguments. */
 	sprintf(masternode_str, "%d", sys_get_node_num());
@@ -105,7 +118,7 @@ static void test_ipc_mailbox_create_unlink_cc(void)
 /**
  * @brief API Test: Open Close CC
  */
-static void test_ipc_mailbox_open_close_cc(void)
+static void test_nanvix_ipc_mailbox_open_close_cc(void)
 {
 	char masternode_str[4];
 	char mailbox_nclusters_str[4];
@@ -117,8 +130,6 @@ static void test_ipc_mailbox_open_close_cc(void)
 		test_str,
 		NULL
 	};
-
-	printf("[nanvix][test][api][ipc][mailbox] Open Close CC\n");
 
 	/* Build arguments. */
 	sprintf(masternode_str, "%d", sys_get_node_num());
@@ -136,7 +147,7 @@ static void test_ipc_mailbox_open_close_cc(void)
 /**
  * @brief API Test: Read Write CC
  */
-static void test_ipc_mailbox_read_write_cc(void)
+static void test_nanvix_ipc_mailbox_read_write1_cc(void)
 {
 	char masternode_str[4];
 	char mailbox_nclusters_str[4];
@@ -148,8 +159,6 @@ static void test_ipc_mailbox_read_write_cc(void)
 		test_str,
 		NULL
 	};
-
-	printf("[nanvix][test][api][ipc][mailbox] Read Write CC\n");
 
 	/* Build arguments. */
 	sprintf(masternode_str, "%d", sys_get_node_num());
@@ -167,7 +176,7 @@ static void test_ipc_mailbox_read_write_cc(void)
 /**
  * @brief API Test: Read Write 2 CC
  */
-static void test_ipc_mailbox_read_write2_cc(void)
+static void test_nanvix_ipc_mailbox_read_write2_cc(void)
 {
 	int inbox;
 	char masternode_str[4];
@@ -181,8 +190,6 @@ static void test_ipc_mailbox_read_write2_cc(void)
 		test_str,
 		NULL
 	};
-
-	printf("[nanvix][test][api][ipc][mailbox] Read Write 2 CC\n");
 
 	/* Build arguments. */
 	sprintf(masternode_str, "%d", sys_get_node_num());
@@ -218,7 +225,7 @@ static void test_ipc_mailbox_read_write2_cc(void)
 /**
  * @brief API Test: Read Write 3 CC
  */
-static void test_ipc_mailbox_read_write3_cc(void)
+static void test_nanvix_ipc_mailbox_read_write3_cc(void)
 {
 	int nodenum;
 	int barrier;
@@ -233,8 +240,6 @@ static void test_ipc_mailbox_read_write3_cc(void)
 		test_str,
 		NULL
 	};
-
-	printf("[nanvix][test][api][ipc][mailbox] Read Write 3 CC\n");
 
 	nodenum = sys_get_node_num();
 
@@ -284,14 +289,14 @@ static void test_ipc_mailbox_read_write3_cc(void)
 /*============================================================================*/
 
 /**
- * @brief Automated test driver for Named Mailboxes.
+ * @brief Unit tests.
  */
-void test_ipc_mailbox(void)
-{
-	test_ipc_mailbox_create_unlink_cc();
-	test_ipc_mailbox_open_close_cc();
-	test_ipc_mailbox_read_write_cc();
-	test_ipc_mailbox_read_write2_cc();
-	test_ipc_mailbox_read_write3_cc();
-}
-
+struct test nanvix_ipc_mailbox_tests_api[] = {
+	{ test_nanvix_ipc_mailbox_create_unlink,    "Create Unlink"    },
+	{ test_nanvix_ipc_mailbox_create_unlink_cc, "Create Unlink CC" },
+	{ test_nanvix_ipc_mailbox_open_close_cc,    "Open Close CC"    },
+	{ test_nanvix_ipc_mailbox_read_write1_cc,   "Read Write 1 CC"  },
+	{ test_nanvix_ipc_mailbox_read_write2_cc,   "Read Write 2 CC"  },
+	{ test_nanvix_ipc_mailbox_read_write3_cc,   "Read Write 3 CC"  },
+	{ NULL,                                      NULL              },
+};

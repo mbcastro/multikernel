@@ -24,7 +24,6 @@
 #define _TEST_H_
 
 	#include <stdlib.h>
-	#include <pthread.h>
 
 	/**
 	 * @brief Asserts a logic expression.
@@ -41,9 +40,7 @@
 	};
 
 	/* Forward definitions. */
-	extern int ipc_mailbox_ncores;
-	extern pthread_barrier_t barrier;
-	extern struct test ipc_mailbox_tests_api[];
-	extern struct test ipc_mailbox_tests_fault[];
+	extern struct test nanvix_ipc_mailbox_tests_api[];
+	extern struct test nanvix_ipc_mailbox_tests_fault[];
 
 #endif /* _TEST_H_ */
