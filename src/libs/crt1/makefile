@@ -29,8 +29,8 @@ all:
 
 # Cleans compilation files.
 clean:
-	rm -rf $(CRT1)
 
 # Cleans everything.
-distclean: clean
+distclean:
+	rm -rf $(CRT1)
 

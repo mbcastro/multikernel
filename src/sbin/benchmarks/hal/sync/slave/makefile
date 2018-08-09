@@ -34,7 +34,7 @@ export ELFBIN = $(BINDIR)/hal-sync-slave
 # Builds the kernel.
 all: $(OBJ)
 	mkdir -p $(BINDIR)
-	$(CC) $(LDFLAGS) $(OBJ) -o $(ELFBIN) $(LIBKERNEL) $(LIBS)
+	$(CC) $(LDFLAGS) $(OBJ) -o $(ELFBIN) $(LIBKERNEL) $(LIBMPPAIPC)
 
 # Builds object files.
 %.o: %.c

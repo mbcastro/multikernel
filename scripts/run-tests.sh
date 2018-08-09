@@ -23,34 +23,34 @@
 source "scripts/arch/mppa256.sh"
 
 echo "=== Running Core and NoC Interface Tests"
-run2 "nanvix-kernel-debug.img" "/test-driver" "/servers1" "--debug --hal-core"
+run2 "nanvix-kernel-debug.img" "/test-driver" "--debug --hal-core"
 
 echo "=== Running Unnamed Sync Tests"
-run2 "nanvix-kernel-debug.img" "/test-driver" "/servers1" "--debug --hal-sync"
+run2 "nanvix-kernel-debug.img" "/test-driver" "--debug --hal-sync"
 
 echo "=== Running Unnamed Mailbox Tests"
-run2 "nanvix-kernel-debug.img" "/test-driver" "/servers1" "--debug --hal-mailbox"
+run2 "nanvix-kernel-debug.img" "/test-driver" "--debug --hal-mailbox"
 
 echo "=== Running Unnamed Portal Tests"
-run2 "nanvix-kernel-debug.img" "/test-driver" "/servers1" "--debug --hal-portal"
+run2 "nanvix-kernel-debug.img" "/test-driver" "--debug --hal-portal"
 
 echo "=== Running Naming Service Tests"
-run2 "nanvix-runtime-debug.img" "/test-driver" "/servers1" "--debug --name"
+run2 "nanvix-runtime-debug.img" "/test-driver" "--debug --name"
 
 echo "=== Running Nammed Mailbox Tests"
-run2 "nanvix-runtime-debug.img" "/test-driver" "/servers1" "--debug --mailbox"
+run2 "nanvix-runtime-debug.img" "/test-driver" "--debug --mailbox"
 
 echo "=== Running Nammed Portal Tests"
-run2 "nanvix-runtime-debug.img" "/test-driver" "/servers1" "--debug --portal"
+run2 "nanvix-runtime-debug.img" "/test-driver" "--debug --portal"
 
 echo "=== Running Barrier Tests"
-run2 "nanvix-runtime-debug.img" "/test-driver" "/servers1" "--debug --barrier"
+run2 "nanvix-runtime-debug.img" "/test-driver" "--debug --barrier"
 
 echo "=== Running RMem Tests"
-run2 "nanvix-runtime-debug.img" "/test-driver" "/servers1" "--debug --rmem"
+run2 "nanvix-runtime-debug.img" "/test-driver" "--debug --rmem"
 
 echo "=== Running Semaphore Tests"
-run2 "nanvix-posix-debug.img" "/test-driver" "/servers1" "--debug --semaphore"
+run2 "nanvix-posix-debug.img" "/test-driver" "--debug --semaphore"
 
 echo "=== Running Shared Memory Region Tests"
-run2 "nanvix-posix-debug.img" "/test-driver" "/servers1" "--debug --shm"
+run2 "nanvix-posix-debug.img" "/test-driver" "--debug --shm"

@@ -30,13 +30,13 @@ all: master slave
 # Builds master binary.
 master:
 ifeq ($(BUILDING_IOCLUSTER),true)
-	cd master && $(MAKE) all LIBS="$(LIBNANVIX) $(LIBSERVERS) $(LIBUSER) $(LIBKERNEL) $(LIBS)"
+	cd master && $(MAKE) all
 endif
 
 # Builds slave binary.
 slave:
 ifeq ($(BUILDING_CCLUSTER),true)
-	cd slave && $(MAKE) all LIBS="$(LIBUSER) $(LIBKERNEL) $(LIBS)"
+	cd slave && $(MAKE) all
 endif
 
 # Cleans compilation files.

@@ -100,7 +100,7 @@ ubin: kernel servers libs sbin
 	cd ubin && $(MAKE) all
 
 # Builds benchmarks.
-benchmarks: kernel servers libs
+benchmarks: kernel servers libs sbin
 	mkdir -p $(BINDIR)
 	cd sbin/benchmarks && $(MAKE) all
 
