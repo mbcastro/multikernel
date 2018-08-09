@@ -96,8 +96,8 @@
 	#define SHM_MAP         5 /**< Map.              */
 	#define SHM_UNMAP       6 /**< Unmap.            */
 	#define SHM_TRUNCATE    7 /**< Truncate.         */
-	#define SHM_RETURN      8 /**< Return.           */
-	#define SHM_FAILED      9 /**< Return.           */
+	#define SHM_SUCCESS     8 /**< Success.          */
+	#define SHM_FAILURE     9 /**< Failure.          */
 	/**@}*/
 
 	/**
@@ -167,8 +167,9 @@
 			/* Return message. */
 			union
 			{
-				int status;      /**< Status code.           */
-				uint64_t mapblk; /**< Mapped remote address. */
+				int shmid;       /**< ID of shared memory region.  */
+				int status;      /**< Status code.                 */
+				uint64_t mapblk; /**< Mapped remote address.       */
 			} ret;
 		} op;
 	};
@@ -180,9 +181,8 @@
 	extern int nanvix_shm_create_excl(const char *, int, mode_t);
 	extern int nanvix_shm_open(const char *, int, int);
 	extern int nanvix_shm_unlink(const char *);
-	extern void *nanvix_mmap(size_t, int, int, int, off_t);
-	extern int nanvix_munmap(void *, size_t);
-	extern int nanvix_msync(void *, size_t, int, int);
+	extern int nanvix_map(uint64_t *, size_t, int, int, int, off_t);
+	extern int nanvix_unmap(int, size_t);
 	extern int nanvix_mtruncate(int, size_t);
 
 #endif /* _MAILBOX_H_ */

@@ -20,44 +20,27 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
+#ifndef _TEST_H_
+#define _TEST_H_
 
-#include <nanvix/const.h>
-#include <nanvix/syscalls.h>
-#include <nanvix/pm.h>
+	#include <stdlib.h>
 
-/**
- * @brief Asserts a logic expression.
- */
-#define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
+	/**
+	 * @brief Asserts a logic expression.
+	 */
+	#define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
 
-/**
- * @brief waitpid test.
- */
-int main(int argc, char **argv)
-{
-	int barrier;
-	int nodes[2] = {0, SPAWNER_SERVER_NODE};
+	/**
+	 * @brief Unit test.
+	 */
+	struct test
+	{
+		void (*test_fn)(void); /**< Test function. */
+		const char *name;      /**< Test name.     */
+	};
 
-	((void) argc);
-	((void) argv);
+	/* Forward definitions. */
+	extern struct test nanvix_ipc_mailbox_tests_api[];
+	extern struct test nanvix_ipc_mailbox_tests_fault[];
 
-	kernel_setup();
-
-	TEST_ASSERT((barrier = barrier_create(nodes, 2)) >= 0);
-
-	printf("Slave alive\n");
-
-	while(1);
-
-	// sleep(10);
-
-	// printf("Slave passed the barrier\n");
-
-	// TEST_ASSERT(barrier_wait(barrier) == 0);
-
-	kernel_cleanup();
-	return (EXIT_SUCCESS);
-}
+#endif /* _TEST_H_ */

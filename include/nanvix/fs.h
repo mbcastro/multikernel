@@ -26,7 +26,10 @@
 	#include <sys/types.h>
 
 	/* Forward definitions. */
+	extern void *nanvix_mmap(size_t, int, int, int, off_t);
+	extern int nanvix_munmap(void *, size_t);
 	extern int nanvix_ftruncate(int, off_t);
+	extern int nanvix_msync(void *, size_t, int, int);
 
 #endif /* NANVIX_FS_H_ */
 

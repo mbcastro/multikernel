@@ -20,24 +20,18 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 #include <mppaipc.h>
 
 #include <nanvix/syscalls.h>
+#include <nanvix/name.h>
 #include <nanvix/limits.h>
 #include <nanvix/pm.h>
 
-/**
- * @brief Asserts a logic expression.
- */
-#define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
-
-/**
- * @brief Data Size.
- */
-#define DATA_SIZE 128
+#include "test.h"
 
 /*============================================================================*
  * Utilities                                                                  *
@@ -72,30 +66,45 @@ static void join_slaves(void)
 }
 
 /*============================================================================*
+ * API Test: Create Unlink                                                    *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Mailbox Create Unlink
+ */
+static void test_nanvix_ipc_mailbox_create_unlink(void)
+{
+	int inbox;
+	char pathname[NANVIX_PROC_NAME_MAX];
+
+	sprintf(pathname, "cool-name");
+	TEST_ASSERT((inbox = mailbox_create(pathname)) >= 0);
+	TEST_ASSERT(mailbox_unlink(inbox) == 0);
+}
+
+/*============================================================================*
  * API Test: Create Unlink CC                                                 *
  *============================================================================*/
 
 /**
  * @brief API Test: Create Unlink CC
  */
-static void test_ipc_portal_create_unlink_cc(void)
+static void test_nanvix_ipc_mailbox_create_unlink_cc(void)
 {
 	char masternode_str[4];
-	char portal_nclusters_str[4];
+	char mailbox_nclusters_str[4];
 	char test_str[4];
 	const char *args[] = {
-		"/test/ipc-portal-slave",
+		"/test/ipc-mailbox-slave",
 		masternode_str,
-		portal_nclusters_str,
+		mailbox_nclusters_str,
 		test_str,
 		NULL
 	};
 
-	printf("[nanvix][test][api][ipc][portal] Create Unlink CC\n");
-
 	/* Build arguments. */
 	sprintf(masternode_str, "%d", sys_get_node_num());
-	sprintf(portal_nclusters_str, "%d", NANVIX_PROC_MAX);
+	sprintf(mailbox_nclusters_str, "%d", NANVIX_PROC_MAX);
 	sprintf(test_str, "%d", 0);
 
 	spawn_slaves(args);
@@ -109,24 +118,22 @@ static void test_ipc_portal_create_unlink_cc(void)
 /**
  * @brief API Test: Open Close CC
  */
-static void test_ipc_portal_open_close_cc(void)
+static void test_nanvix_ipc_mailbox_open_close_cc(void)
 {
 	char masternode_str[4];
-	char portal_nclusters_str[4];
+	char mailbox_nclusters_str[4];
 	char test_str[4];
 	const char *args[] = {
-		"/test/ipc-portal-slave",
+		"/test/ipc-mailbox-slave",
 		masternode_str,
-		portal_nclusters_str,
+		mailbox_nclusters_str,
 		test_str,
 		NULL
 	};
 
-	printf("[nanvix][test][api][ipc][portal] Open Close CC\n");
-
 	/* Build arguments. */
 	sprintf(masternode_str, "%d", sys_get_node_num());
-	sprintf(portal_nclusters_str, "%d", NANVIX_PROC_MAX);
+	sprintf(mailbox_nclusters_str, "%d", NANVIX_PROC_MAX);
 	sprintf(test_str, "%d", 1);
 
 	spawn_slaves(args);
@@ -140,24 +147,22 @@ static void test_ipc_portal_open_close_cc(void)
 /**
  * @brief API Test: Read Write CC
  */
-static void test_ipc_portal_read_write_cc(void)
+static void test_nanvix_ipc_mailbox_read_write1_cc(void)
 {
 	char masternode_str[4];
-	char portal_nclusters_str[4];
+	char mailbox_nclusters_str[4];
 	char test_str[4];
 	const char *args[] = {
-		"/test/ipc-portal-slave",
+		"/test/ipc-mailbox-slave",
 		masternode_str,
-		portal_nclusters_str,
+		mailbox_nclusters_str,
 		test_str,
 		NULL
 	};
 
-	printf("[nanvix][test][api][ipc][portal] Read Write CC\n");
-
 	/* Build arguments. */
 	sprintf(masternode_str, "%d", sys_get_node_num());
-	sprintf(portal_nclusters_str, "%d", NANVIX_PROC_MAX);
+	sprintf(mailbox_nclusters_str, "%d", NANVIX_PROC_MAX);
 	sprintf(test_str, "%d", 2);
 
 	spawn_slaves(args);
@@ -171,30 +176,80 @@ static void test_ipc_portal_read_write_cc(void)
 /**
  * @brief API Test: Read Write 2 CC
  */
-static void test_ipc_portal_read_write2_cc(void)
+static void test_nanvix_ipc_mailbox_read_write2_cc(void)
 {
-	int barrier;
-	int nodes[NANVIX_PROC_MAX + 1];
+	int inbox;
 	char masternode_str[4];
-	char portal_nclusters_str[4];
+	char mailbox_nclusters_str[4];
 	char test_str[4];
+	char buffer[MAILBOX_MSG_SIZE];
 	const char *args[] = {
-		"/test/ipc-portal-slave",
+		"/test/ipc-mailbox-slave",
 		masternode_str,
-		portal_nclusters_str,
+		mailbox_nclusters_str,
 		test_str,
 		NULL
 	};
 
-	printf("[nanvix][test][api][ipc][portal] Read Write 2 CC\n");
-
 	/* Build arguments. */
 	sprintf(masternode_str, "%d", sys_get_node_num());
-	sprintf(portal_nclusters_str, "%d", NANVIX_PROC_MAX);
+	sprintf(mailbox_nclusters_str, "%d", NANVIX_PROC_MAX);
 	sprintf(test_str, "%d", 3);
 
+	/* Create input mailbox. */
+	TEST_ASSERT((inbox = mailbox_create("master")) >= 0);
+
+	spawn_slaves(args);
+
+	/* Receive messages. */
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
+	{
+		memset(buffer, 0, MAILBOX_MSG_SIZE);
+		TEST_ASSERT(mailbox_read(inbox, buffer, MAILBOX_MSG_SIZE) == 0);
+
+		/* Checksum. */
+		for (int j = 0; j < MAILBOX_MSG_SIZE; j++)
+			TEST_ASSERT(buffer[j] == 1);
+	}
+
+	join_slaves();
+
+	/* House keeping. */
+	TEST_ASSERT(mailbox_unlink(inbox) == 0);
+}
+
+/*============================================================================*
+ * API Test: Read Write 3 CC                                                  *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Read Write 3 CC
+ */
+static void test_nanvix_ipc_mailbox_read_write3_cc(void)
+{
+	int nodenum;
+	int barrier;
+	int nodes[NANVIX_PROC_MAX + 1];
+	char masternode_str[4];
+	char mailbox_nclusters_str[4];
+	char test_str[4];
+	const char *args[] = {
+		"/test/ipc-mailbox-slave",
+		masternode_str,
+		mailbox_nclusters_str,
+		test_str,
+		NULL
+	};
+
+	nodenum = sys_get_node_num();
+
+	/* Build arguments. */
+	sprintf(masternode_str, "%d", nodenum);
+	sprintf(mailbox_nclusters_str, "%d", NANVIX_PROC_MAX);
+	sprintf(test_str, "%d", 4);
+
 	/* Build nodes list. */
-	nodes[0] = sys_get_node_num();
+	nodes[0] = nodenum;
 	for (int i = 0; i < NANVIX_PROC_MAX; i++)
 		nodes[i + 1] = i;
 
@@ -203,24 +258,26 @@ static void test_ipc_portal_read_write2_cc(void)
 
 	spawn_slaves(args);
 
-	/* Sync. */
+	/* Wait for slaves. */
 	TEST_ASSERT(barrier_wait(barrier) == 0);
 
-	/* Send data. */
+	/* Send messages. */
 	for (int i = 0; i < NANVIX_PROC_MAX; i++)
 	{
-		int outportal;
-		char buffer[DATA_SIZE];
+		int outbox;
+		char buffer[MAILBOX_MSG_SIZE];
 		char pathname[NANVIX_PROC_NAME_MAX];
 
-		sprintf(pathname, "ccluster%d", i);
-		TEST_ASSERT((outportal = portal_open(pathname)) >= 0);
-		TEST_ASSERT((portal_write(
-			outportal,
-			buffer,
-			DATA_SIZE) == DATA_SIZE)
-		);
-		TEST_ASSERT(portal_close(outportal) == 0);
+		/* Open output mailbox. */
+		sprintf(pathname, "cluster%d", i);
+		TEST_ASSERT((outbox = mailbox_open(pathname)) >= 0);
+
+		/* Send messages. */
+		memset(buffer, 1, MAILBOX_MSG_SIZE);
+		TEST_ASSERT(mailbox_write(outbox, buffer, MAILBOX_MSG_SIZE) == 0);
+
+		/* Close output mailbox. */
+		TEST_ASSERT(mailbox_close(outbox) == 0);
 	}
 
 	join_slaves();
@@ -229,77 +286,17 @@ static void test_ipc_portal_read_write2_cc(void)
 	TEST_ASSERT(barrier_unlink(barrier) == 0);
 }
 
-/*============================================================================*
- * API Test: Read Write 3 CC                                                  *
- *============================================================================*/
-
-/**
- * @brief API Test: Read Write 2 CC
- */
-static void test_ipc_portal_read_write3_cc(void)
-{
-	int nodenum;
-	int inportal;
-	char masternode_str[4];
-	char portal_nclusters_str[4];
-	char test_str[4];
-	char pathname[NANVIX_PROC_NAME_MAX];
-	const char *args[] = {
-		"/test/ipc-portal-slave",
-		masternode_str,
-		portal_nclusters_str,
-		test_str,
-		NULL
-	};
-
-	printf("[nanvix][test][api][hal][portal] Read Write 3 CC\n");
-
-	nodenum = sys_get_node_num();
-
-	/* Build arguments. */
-	sprintf(masternode_str, "%d", nodenum);
-	sprintf(portal_nclusters_str, "%d", NANVIX_PROC_MAX);
-	sprintf(test_str, "%d", 4);
-
-	sprintf(pathname, "iocluster%d", nodenum);
-	TEST_ASSERT((inportal = portal_create(pathname)) >= 0);
-
-	spawn_slaves(args);
-
-	/* Receive data. */
-	for (int i = 0; i < NANVIX_PROC_MAX; i++)
-	{
-		char buffer[DATA_SIZE];
-
-		TEST_ASSERT((portal_allow(
-			inportal,
-			i) == 0)
-		);
-
-		TEST_ASSERT((portal_read(
-			inportal,
-			buffer,
-			DATA_SIZE) == DATA_SIZE)
-		);
-	}
-
-	join_slaves();
-
-	/* House keeping. */
-	TEST_ASSERT(portal_unlink(inportal) == 0);
-}
-
 /*============================================================================*/
 
 /**
- * @brief Automated HAL portal test driver.
+ * @brief Unit tests.
  */
-void test_ipc_portal(void)
-{
-	test_ipc_portal_create_unlink_cc();
-	test_ipc_portal_open_close_cc();
-	test_ipc_portal_read_write_cc();
-	test_ipc_portal_read_write2_cc();
-	test_ipc_portal_read_write3_cc();
-}
-
+struct test nanvix_ipc_mailbox_tests_api[] = {
+	{ test_nanvix_ipc_mailbox_create_unlink,    "Create Unlink"    },
+	{ test_nanvix_ipc_mailbox_create_unlink_cc, "Create Unlink CC" },
+	{ test_nanvix_ipc_mailbox_open_close_cc,    "Open Close CC"    },
+	{ test_nanvix_ipc_mailbox_read_write1_cc,   "Read Write 1 CC"  },
+	{ test_nanvix_ipc_mailbox_read_write2_cc,   "Read Write 2 CC"  },
+	{ test_nanvix_ipc_mailbox_read_write3_cc,   "Read Write 3 CC"  },
+	{ NULL,                                      NULL              },
+};

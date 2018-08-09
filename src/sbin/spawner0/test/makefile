@@ -37,40 +37,40 @@ endif
 # Builds Slave Binaries
 slaves:
 ifeq ($(BUILDING_CCLUSTER),true)
-	cd hal/sync && $(MAKE) all
-	cd hal/mailbox && $(MAKE) all
-	cd hal/portal && $(MAKE) all
-	cd ipc/barrier && $(MAKE) all
-	cd ipc/name && $(MAKE) all
-	cd ipc/mailbox && $(MAKE) all
-	cd ipc/portal&& $(MAKE) all
-	cd mm/rmem && $(MAKE) all
-	cd posix/semaphore && $(MAKE) all
+	cd slave/nanvix/kernel/sync && $(MAKE) all
+	cd slave/nanvix/kernel/mailbox && $(MAKE) all
+	cd slave/nanvix/kernel/portal && $(MAKE) all
+	cd slave/nanvix/ipc/barrier && $(MAKE) all
+	cd slave/nanvix/ipc/name && $(MAKE) all
+	cd slave/nanvix/ipc/mailbox && $(MAKE) all
+	cd slave/nanvix/ipc/portal&& $(MAKE) all
+	cd slave/nanvix/mm/rmem && $(MAKE) all
+	cd slave/posix/semaphore && $(MAKE) all
 endif
 
 # Cleans compilation files.
 clean:
 	cd master && $(MAKE) clean
-	cd hal/sync && $(MAKE) clean
-	cd hal/mailbox && $(MAKE) clean
-	cd hal/portal && $(MAKE) clean
-	cd ipc/barrier && $(MAKE) clean
-	cd ipc/name && $(MAKE) clean
-	cd ipc/mailbox && $(MAKE) clean
-	cd ipc/portal && $(MAKE) clean
-	cd mm/rmem && $(MAKE) clean
-	cd posix/semaphore && $(MAKE) clean
+	cd slave/nanvix/kernel/sync && $(MAKE) clean
+	cd slave/nanvix/kernel/mailbox && $(MAKE) clean
+	cd slave/nanvix/kernel/portal && $(MAKE) clean
+	cd slave/nanvix/ipc/barrier && $(MAKE) clean
+	cd slave/nanvix/ipc/name && $(MAKE) clean
+	cd slave/nanvix/ipc/mailbox && $(MAKE) clean
+	cd slave/nanvix/ipc/portal && $(MAKE) clean
+	cd slave/nanvix/mm/rmem && $(MAKE) clean
+	cd slave/posix/semaphore && $(MAKE) clean
 
 # Cleans everything.
 distclean: clean
 	cd master && $(MAKE) distclean
-	cd hal/sync && $(MAKE) distclean
-	cd hal/mailbox && $(MAKE) distclean
-	cd hal/portal && $(MAKE) distclean
-	cd ipc/barrier && $(MAKE) distclean
-	cd ipc/name && $(MAKE) distclean
-	cd ipc/mailbox && $(MAKE) distclean
-	cd ipc/portal && $(MAKE) distclean
-	cd mm/rmem && $(MAKE) distclean
-	cd posix/semaphore && $(MAKE) distclean
+	cd slave/nanvix/kernel/sync && $(MAKE) distclean
+	cd slave/nanvix/kernel/mailbox && $(MAKE) distclean
+	cd slave/nanvix/kernel/portal && $(MAKE) distclean
+	cd slave/nanvix/ipc/barrier && $(MAKE) distclean
+	cd slave/nanvix/ipc/name && $(MAKE) distclean
+	cd slave/nanvix/ipc/mailbox && $(MAKE) distclean
+	cd slave/nanvix/ipc/portal && $(MAKE) distclean
+	cd slave/nanvix/mm/rmem && $(MAKE) distclean
+	cd slave/posix/semaphore && $(MAKE) distclean
 

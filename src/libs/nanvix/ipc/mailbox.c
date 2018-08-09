@@ -136,7 +136,10 @@ int get_inbox(void)
 
 	/* Uninitialized named mailbox facility. */
 	if (!mailboxes_are_initialized())
-		return (-EINVAL);
+	{
+		errno = EINVAL;
+		return (-1);
+	}
 
 	local = sys_get_node_num();
 

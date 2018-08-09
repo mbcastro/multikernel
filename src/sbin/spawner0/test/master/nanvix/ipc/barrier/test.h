@@ -20,41 +20,27 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <stdio.h>
+#ifndef _TEST_H_
+#define _TEST_H_
 
-#include <nanvix/syscalls.h>
+	#include <stdlib.h>
 
-#include "test.h"
+	/**
+	 * @brief Asserts a logic expression.
+	 */
+	#define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
 
-/**
- * @brief Number of cores in the underlying cluster.
- */
-int ipc_barrier_ncores = 0;
-
-/**
- * @brief Barrier Test Driver
- *
- * @param nbusycores Number of busy cores.
- */
-void test_kernel_ipc_barrier(int nbusycores)
-{
-	TEST_ASSERT(runtime_setup(0) == 0);
-
-	ipc_barrier_ncores = sys_get_num_cores() - nbusycores;
-
-	/* Run API tests. */
-	for (int i = 0; ipc_barrier_tests_api[i].test_fn != NULL; i++)
+	/**
+	 * @brief Unit test.
+	 */
+	struct test
 	{
-		printf("[nanvix][test][api][ipc][barrier] %s\n", ipc_barrier_tests_api[i].name);
-		ipc_barrier_tests_api[i].test_fn();
-	}
+		void (*test_fn)(void); /**< Test function. */
+		const char *name;      /**< Test name.     */
+	};
 
-	/* Run fault injection tests. */
-	for (int i = 0; ipc_barrier_tests_fault[i].test_fn != NULL; i++)
-	{
-		printf("[nanvix][test][fault][ipc][barrier] %s\n", ipc_barrier_tests_fault[i].name);
-		ipc_barrier_tests_fault[i].test_fn();
-	}
+	/* Forward definitions. */
+	extern struct test nanvix_ipc_barrier_tests_api[];
+	extern struct test nanvix_ipc_barrier_tests_fault[];
 
-	TEST_ASSERT(runtime_cleanup() == 0);
-}
+#endif /* _TEST_H_ */

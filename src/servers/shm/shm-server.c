@@ -490,6 +490,275 @@ static int shm_unmap(int node, int shmid)
 }
 
 /*============================================================================*
+ * do_create()                                                                *
+ *============================================================================*/
+
+/**
+ * @brief Handles a create request.
+ */
+static inline int do_create(struct shm_message *msg, struct shm_message *response)
+{
+	int ret;
+	struct shm_message msg1;
+
+	/* Persist first message. */
+	if (!(msg->seq & 1))
+	{
+		assert(buffer_put(msg->source, msg) == 0);
+		return (0);
+	}
+
+	/* Get first message. */
+	assert(buffer_get(msg->source, &msg1) == 0);
+	assert(msg->seq == (msg1.seq | 1));
+
+	ret = shm_create(
+		msg->source,
+		msg1.op.create1.name,
+		msg->op.create2.mode
+	);
+	
+	response->source = msg->source;
+	if (ret >= 0)
+	{
+		response->op.ret.shmid = ret;
+		response->opcode = SHM_SUCCESS;
+	}
+	else
+	{
+		response->op.ret.status = -ret;
+		response->opcode = SHM_FAILURE;
+	}
+
+	return (1);
+}
+
+/*============================================================================*
+ * do_create_excl()                                                           *
+ *============================================================================*/
+
+/**
+ * @brief Handles an exclusive create request.
+ */
+static int do_create_excl(struct shm_message *msg, struct shm_message *response)
+{
+	int ret;
+	struct shm_message msg1;
+
+	/* Persist first message. */
+	if (!(msg->seq & 1))
+	{
+		assert(buffer_put(msg->source, msg) == 0);
+		return (0);
+	}
+
+	/* Get first message. */
+	assert(buffer_get(msg->source, &msg1) == 0);
+	assert(msg->seq == (msg1.seq | 1));
+
+	ret = shm_create_exclusive(
+			msg->source,
+			msg1.op.create1.name,
+			msg->op.create2.mode
+	);
+
+	response->source = msg->source;
+	if (ret >= 0)
+	{
+		response->op.ret.shmid = ret;
+		response->opcode = SHM_SUCCESS;
+	}
+	else
+	{
+		response->op.ret.status = -ret;
+		response->opcode = SHM_FAILURE;
+	}
+	
+	return (1);
+}
+
+/*============================================================================*
+ * do_open()                                                                  *
+ *============================================================================*/
+
+/**
+ * @brief Handles an open request.
+ */
+static int do_open(struct shm_message *msg, struct shm_message *response)
+{
+	int ret;
+	struct shm_message msg1;
+
+	/* Persist first message. */
+	if (!(msg->seq & 1))
+	{
+		assert(buffer_put(msg->source, msg) == 0);
+		return (0);
+	}
+
+	/* Get first message. */
+	assert(buffer_get(msg->source, &msg1) == 0);
+	assert(msg->seq == (msg1.seq | 1));
+
+	ret = shm_open(msg->source, msg1.op.create1.name);
+
+	response->source = msg->source;
+	if (ret >= 0)
+	{
+		response->op.ret.shmid = ret;
+		response->opcode = SHM_SUCCESS;
+	}
+	else
+	{
+		response->op.ret.status = -ret;
+		response->opcode = SHM_FAILURE;
+	}
+
+	return (1);
+}
+
+/*============================================================================*
+ * do_unlink()                                                                *
+ *============================================================================*/
+
+/**
+ * @brief Handles an unlink request.
+ */
+static int do_unlink(struct shm_message *msg, struct shm_message *response)
+{
+	int ret;
+
+	ret = shm_unlink(msg->source, msg->op.unlink.name);
+
+	response->source = msg->source;
+	if (ret == 0)
+	{
+		response->op.ret.status = 0;
+		response->opcode = SHM_SUCCESS;
+	}
+	else
+	{
+		response->op.ret.status = -ret;
+		response->opcode = SHM_FAILURE;
+	}
+
+	return (1);
+}
+
+/*============================================================================*
+ * do_map()                                                                   *
+ *============================================================================*/
+
+/**
+ * @brief Handles a map request.
+ */
+static int do_map(struct shm_message *msg, struct shm_message *response)
+{
+	int ret;
+	uint64_t mapblk;
+
+	ret = shm_map(
+		msg->source,
+		msg->op.map.shmid,
+		msg->op.map.size,
+		msg->op.map.writable,
+		msg->op.map.shared,
+		msg->op.map.off,
+		&mapblk
+	);
+
+	response->source = msg->source;
+	if (ret == 0)
+	{
+		response->op.ret.mapblk = mapblk;
+		response->opcode = SHM_SUCCESS;
+	}
+	else
+	{
+		response->op.ret.status = -ret;
+		response->opcode = SHM_FAILURE;
+	}
+	
+	return (1);
+}
+
+/*============================================================================*
+ * do_unmap()                                                                 *
+ *============================================================================*/
+
+/**
+ * @brief Handles an unmap request.
+ */
+static int do_unmap(struct shm_message *msg, struct shm_message *response)
+{
+	int ret;
+
+	ret = shm_unmap(msg->source, msg->op.unmap.shmid);
+
+	response->source = msg->source;
+	if (ret == 0)
+	{
+		response->op.ret.status = 0;
+		response->opcode = SHM_SUCCESS;
+	}
+	else
+	{
+		response->op.ret.status = -ret;
+		response->opcode = SHM_FAILURE;
+	}
+
+	return (1);
+}
+
+/*============================================================================*
+ * do_truncate()                                                              *
+ *============================================================================*/
+
+/**
+ * @brief Handles a truncate request.
+ */
+static int do_truncate(struct shm_message *msg, struct shm_message *response)
+{
+	int ret;
+
+	ret = shm_truncate(
+		msg->source,
+		msg->op.truncate.shmid,
+		msg->op.truncate.size
+	);
+
+	response->source = msg->source;
+	if (ret == 0)
+	{
+		response->op.ret.status = 0;
+		response->opcode = SHM_SUCCESS;
+	}
+	else
+	{
+		response->op.ret.status = -ret;
+		response->opcode = SHM_FAILURE;
+	}
+
+	return (1);
+}
+
+/*============================================================================*
+ * do_null()                                                                  *
+ *============================================================================*/
+
+/**
+ * @brief Handles a null request.
+ */
+static int do_null(struct shm_message *msg, struct shm_message *response)
+{
+	response->opcode = SHM_FAILURE;
+	response->op.ret.status = EINVAL;
+	response->source = msg->source;
+
+	return (1);
+}
+
+/*============================================================================*
  * shm_loop()                                                                 *
  *============================================================================*/
 
@@ -504,148 +773,48 @@ static int shm_loop(void)
 	while(1)
 	{
 		int reply = 0;
-		struct shm_message msg;
+		struct shm_message request;
+		struct shm_message response;
 
-		assert(sys_mailbox_read(inbox, &msg, sizeof(struct shm_message)) == MAILBOX_MSG_SIZE);
-
-		shm_debug("request received");
+		assert(sys_mailbox_read(inbox, &request, sizeof(struct shm_message)) == MAILBOX_MSG_SIZE);
 
 		/* Invalid process ID. */
-		if (msg.source >= HAL_NR_NOC_NODES)
+		if (request.source >= HAL_NR_NOC_NODES)
 			continue;
 
-		/* Handle shared memory region requests. */
-		switch (msg.opcode)
+		/* Handle request. */
+		switch (request.opcode)
 		{
-			/* Create a shared memory region. */
 			case SHM_CREATE:
-			{
-				/* Persist first message. */
-				if (!(msg.seq & 1))
-					assert(buffer_put(msg.source, &msg) == 0);
-				/* Parse second message.*/
-				else
-				{
-					struct shm_message msg1;
+				reply = do_create(&request, &response);
+				break;
 
-					/* Get first message. */
-					assert(buffer_get(msg.source, &msg1) == 0);
-					assert(msg.seq == (msg1.seq | 1));
-
-					msg.op.ret.status = shm_create(msg.source, msg1.op.create1.name, msg.op.create2.mode);
-					msg.opcode = SHM_RETURN;
-					reply = 1;
-				}
-			} break;
-
-			/* Create a shared memory region with existence check. */
 			case SHM_CREATE_EXCL:
-			{
-				/* Persist first message. */
-				if (!(msg.seq & 1))
-					assert(buffer_put(msg.source, &msg) == 0);
-				/* Parse second message.*/
-				else
-				{
-					struct shm_message msg1;
+				reply = do_create_excl(&request, &response);
+				break;
 
-					/* Get first message. */
-					assert(buffer_get(msg.source, &msg1) == 0);
-					assert(msg.seq == (msg1.seq | 1));
-
-					msg.op.ret.status = shm_create_exclusive(msg.source, msg1.op.create1.name, msg.op.create2.mode);
-					msg.opcode = SHM_RETURN;
-					reply = 1;
-				}
-
-			} break;
-
-			/* Open a shared memory region. */
 			case SHM_OPEN:
-			{
-				/* Persist first message. */
-				if (!(msg.seq & 1))
-					assert(buffer_put(msg.source, &msg) == 0);
-				/* Parse second message.*/
-				else
-				{
-					struct shm_message msg1;
+				reply = do_open(&request, &response);
+				break;
 
-					/* Get first message. */
-					assert(buffer_get(msg.source, &msg1) == 0);
-					assert(msg.seq == (msg1.seq | 1));
-
-					msg.op.ret.status = shm_open(msg.source, msg1.op.create1.name);
-					msg.opcode = SHM_RETURN;
-					reply = 1;
-				}
-
-			} break;
-
-			/* Unlink a shared memory region. */
 			case SHM_UNLINK:
-				msg.op.ret.status = shm_unlink(msg.source, msg.op.unlink.name);
-				msg.opcode = SHM_RETURN;
-				reply = 1;
-			break;
+				reply = do_unlink(&request, &response);
+				break;
 
-			/* Map a shared memory region. */
 			case SHM_MAP:
-			{
-				int ret;
-				uint64_t mapblk;
+				reply = do_map(&request, &response);
+				break;
 
-				ret = shm_map(
-					msg.source,
-					msg.op.map.shmid,
-					msg.op.map.size,
-					msg.op.map.writable,
-					msg.op.map.shared,
-					msg.op.map.off,
-					&mapblk
-				);
-				if (ret == 0)
-				{
-					msg.opcode = SHM_RETURN;
-					msg.op.ret.mapblk = mapblk;
-				}
-				else
-				{
-					msg.opcode = SHM_FAILED;
-					msg.op.ret.status = ret;
-				}
-				reply = 1;
-			} break;
-
-			/* Unmap a shared memory region. */
 			case SHM_UNMAP:
-			{
-				msg.op.ret.status = shm_unmap(msg.source, msg.op.unmap.shmid);
-				msg.opcode = SHM_RETURN;
-				reply = 1;
-			} break;
+				reply = do_unmap(&request, &response);
+				break;
 
-			/* Truncate a shared memory region. */
 			case SHM_TRUNCATE:
-			{
-				int ret;
+				reply = do_truncate(&request, &response);
+				break;
 
-				ret = shm_truncate(msg.source, msg.op.truncate.shmid, msg.op.truncate.size);
-				if (ret == 0)
-				{
-					msg.opcode = SHM_RETURN;
-					msg.op.ret.status = 0;
-				}
-				else
-				{
-					msg.opcode = SHM_FAILED;
-					msg.op.ret.status = -ret;
-				}
-				reply = 1;
-			} break;
-
-			/* Should not happen. */
 			default:
+				reply = do_null(&request, &response);
 				break;
 		}
 
@@ -653,9 +822,8 @@ static int shm_loop(void)
 		if (reply)
 		{
 			int outbox;
-			shm_debug("response sent to %d", msg.source);
-			assert((outbox = sys_mailbox_open(msg.source)) >= 0);
-			assert(sys_mailbox_write(outbox, &msg, sizeof(struct shm_message)) == MAILBOX_MSG_SIZE);
+			assert((outbox = sys_mailbox_open(response.source)) >= 0);
+			assert(sys_mailbox_write(outbox, &response, sizeof(struct shm_message)) == MAILBOX_MSG_SIZE);
 			assert(sys_mailbox_close(outbox) == 0);
 		}
 	}

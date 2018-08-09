@@ -27,10 +27,10 @@
 extern void test_sys_sync(void);
 extern void test_sys_mailbox(void);
 extern void test_sys_portal(void);
-extern void test_ipc_name(void);
-extern void test_ipc_barrier(void);
-extern void test_ipc_mailbox(void);
-extern void test_ipc_portal(void);
+extern void test_nanvix_ipc_name(void);
+extern void test_nanvix_ipc_barrier(void);
+extern void test_nanvix_ipc_mailbox(void);
+extern void test_nanvix_ipc_portal(void);
 extern void test_mm_rmem(void);
 extern void test_semaphore(void);
 extern void test_shm(void);
@@ -56,13 +56,13 @@ int main2(int argc, const char **argv)
 	else if (!strcmp(argv[2], "--hal-portal"))
 		test_sys_portal();
 	else if (!strcmp(argv[2], "--name"))
-		test_ipc_name();
+		test_nanvix_ipc_name();
 	else if (!strcmp(argv[2], "--barrier"))
-		test_ipc_barrier();
+		test_nanvix_ipc_barrier();
 	else if (!strcmp(argv[2], "--mailbox"))
-		test_ipc_mailbox();
+		test_nanvix_ipc_mailbox();
 	else if (!strcmp(argv[2], "--portal"))
-		test_ipc_portal();
+		test_nanvix_ipc_portal();
 	else if (!strcmp(argv[2], "--rmem"))
 		test_mm_rmem();
 	else if (!strcmp(argv[2], "--semaphore"))

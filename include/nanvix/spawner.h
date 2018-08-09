@@ -50,7 +50,6 @@
 	extern const int spawner_nservers;
 	extern struct serverinfo *spawner_servers;
 	extern void (*test_kernel_fn)(const char *);
-	extern void (*test_runtime_fn)(const char *);
 	extern int (*main2_fn)(int, const char **);
 	extern void spawner_init(void);
 	extern void spawners_sync(void);
@@ -104,14 +103,6 @@
 	 */
 	#define SPAWNER_KERNEL_TESTS(x) \
 		void (*test_kernel_fn)(const char *) = x;
-
-	/**
-	 * @brief Declares test-driver for the runtime system.
-	 *
-	 * @param x Runtime system test-driver.
-	 */
-	#define SPAWNER_RUNTIME_TESTS(x) \
-		void (*test_runtime_fn)(const char *) = x;
 
 	/* Forward definitions. */
 	extern pthread_barrier_t spawner_barrier;
