@@ -20,6 +20,11 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
+#
+# Release version.
+#
+VERSION=v1.0-beta.3
+
 #===============================================================================
 # Directories
 #===============================================================================
@@ -36,6 +41,15 @@ export TOOLSDIR = $(CURDIR)/scripts
 
 # Builds everything.
 all: image
+
+# Builds a release.
+release: nanvix
+	tar -cjvf nanvix-$(VERSION).tar.bz2 \
+		bin/spawner1                    \
+		build/makefile.mppa256          \
+		include                         \
+		lib                             \
+		scripts/arch/mppa256.sh
 
 # Builds image.
 image: nanvix
