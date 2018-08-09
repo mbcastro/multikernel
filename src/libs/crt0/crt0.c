@@ -104,10 +104,6 @@ int main(int argc, const char **argv)
 
 	printf("[nanvix][%s] synced\n", spawner_name);
 
-	/* Run self-tests. */
-	if ((debug) && (test_runtime_fn != NULL))
-		test_runtime_fn(argv[2]);
-
 	if (main2_fn != NULL)
 	{
 		printf("[nanvix][%s] switching to user mode\n", spawner_name);
