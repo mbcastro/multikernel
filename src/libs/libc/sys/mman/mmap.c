@@ -24,7 +24,7 @@
 #include <sys/types.h>
 #include <errno.h>
 
-#include <nanvix/mm.h>
+#include <nanvix/fs.h>
 
 /**
  * @brief Maps pages of memory.
