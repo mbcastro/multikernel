@@ -25,14 +25,12 @@
 
 #include <mppaipc.h>
 
-#include <nanvix/syscalls.h>
 #include <nanvix/limits.h>
+#include <nanvix/const.h>
+#include <nanvix/syscalls.h>
 #include <nanvix/pm.h>
 
-/**
- * @brief Asserts a logic expression.
- */
-#define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
+#include "test.h"
 
 /*============================================================================*
  * Utilities                                                                  *
@@ -73,7 +71,7 @@ static void join_slaves(void)
 /**
 * @brief API Test: Create Unlink CC
 */
-static void test_ipc_barrier_create_unlink_cc(void)
+static void test_nanvix_ipc_barrier_create_unlink_cc(void)
 {
 	char masternode_str[4];
 	char barrier_nclusters_str[4];
@@ -85,8 +83,6 @@ static void test_ipc_barrier_create_unlink_cc(void)
 		test_str,
 		NULL
 	};
-
-	printf("[nanvix][test][api][ipc][barrier] Create Unlink CC\n");
 
 	/* Build arguments. */
 	sprintf(masternode_str, "%d", sys_get_node_num());
@@ -98,13 +94,13 @@ static void test_ipc_barrier_create_unlink_cc(void)
 }
 
 /*============================================================================*
- * API Test: Wait CC                                                          *
+ * API Test: Wait 1 CC                                                        *
  *============================================================================*/
 
 /**
 * @brief API Test: Wait CC
 */
-static void test_ipc_barrier_wait_cc(void)
+static void test_nanvix_ipc_barrier_wait1_cc(void)
 {
 	char masternode_str[4];
 	char barrier_nclusters_str[4];
@@ -116,8 +112,6 @@ static void test_ipc_barrier_wait_cc(void)
 		test_str,
 		NULL
 	};
-
-	printf("[nanvix][test][api][ipc][barrier] Wait CC\n");
 
 	/* Build arguments. */
 	sprintf(masternode_str, "%d", sys_get_node_num());
@@ -135,7 +129,7 @@ static void test_ipc_barrier_wait_cc(void)
 /**
 * @brief API Test: Wait 2 CC
 */
-static void test_ipc_barrier_wait2_cc(void)
+static void test_nanvix_ipc_barrier_wait2_cc(void)
 {
 	int nodenum;
 	int barrier;
@@ -150,8 +144,6 @@ static void test_ipc_barrier_wait2_cc(void)
 		test_str,
 		NULL
 	};
-
-	printf("[nanvix][test][api][ipc][barrier] Wait 2 CC\n");
 
 	nodenum = sys_get_node_num();
 
@@ -179,12 +171,11 @@ static void test_ipc_barrier_wait2_cc(void)
 /*============================================================================*/
 
 /**
- * @brief Automated test driver for Barriers.
+ * @brief Unit tests.
  */
-void test_ipc_barrier(void)
-{
-	test_ipc_barrier_create_unlink_cc();
-	test_ipc_barrier_wait_cc();
-	test_ipc_barrier_wait2_cc();
-}
-
+struct test nanvix_ipc_barrier_tests_api[] = {
+	{ test_nanvix_ipc_barrier_create_unlink_cc, "Create Unlink CC" },
+	{ test_nanvix_ipc_barrier_wait1_cc,         "Wait 1 CC"        },
+	{ test_nanvix_ipc_barrier_wait2_cc,         "Wait 2 CC"        },
+	{ NULL,                                     NULL               },
+};

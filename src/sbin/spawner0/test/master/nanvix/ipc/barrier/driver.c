@@ -20,44 +20,28 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <stdlib.h>
+#include <stdio.h>
 
-#include <mppaipc.h>
-
-#include <nanvix/const.h>
 #include <nanvix/syscalls.h>
-#include <nanvix/pm.h>
 
 #include "test.h"
 
-/*============================================================================*
- * API Test: Create Unlink                                                    *
- *============================================================================*/
-
 /**
- * @brief API Test: Create Unlink
+ * @brief Test driver for Barriers.
  */
-static void test_ipc_barrier_create_unlink(void)
+void test_nanvix_ipc_barrier(void)
 {
-	int barrier;
-	int nodenum;
-	int nodes[2];
+	/* Run API tests. */
+	for (int i = 0; nanvix_ipc_barrier_tests_api[i].test_fn != NULL; i++)
+	{
+		printf("[nanvix][test][api][ipc][barrier] %s\n", nanvix_ipc_barrier_tests_api[i].name);
+		nanvix_ipc_barrier_tests_api[i].test_fn();
+	}
 
-	nodenum = sys_get_node_num();
-   
-	nodes[0] = SPAWNER1_SERVER_NODE;
-	nodes[1] = nodenum;
-
-	TEST_ASSERT((barrier = barrier_create(nodes, 2)) >= 0);
-	TEST_ASSERT(barrier_unlink(barrier) == 0);
+	/* Run fault injection tests. */
+	for (int i = 0; nanvix_ipc_barrier_tests_fault[i].test_fn != NULL; i++)
+	{
+		printf("[nanvix][test][fault][ipc][barrier] %s\n", nanvix_ipc_barrier_tests_fault[i].name);
+		nanvix_ipc_barrier_tests_fault[i].test_fn();
+	}
 }
-
-/*============================================================================*/
-
-/**
- * @brief Unit tests.
- */
-struct test ipc_barrier_tests_api[] = {
-	{ test_ipc_barrier_create_unlink, "Create Unlink" },
-	{ NULL,                            NULL           },
-};

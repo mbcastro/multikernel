@@ -34,7 +34,6 @@ extern void test_kernel_sys_core(void);
 extern void test_kernel_sys_sync(void);
 extern void test_kernel_sys_mailbox(void);
 extern void test_kernel_sys_portal(void);
-extern void test_kernel_ipc_barrier(int);
 extern int shm_server(int, int);
 
 /**
@@ -72,15 +71,6 @@ static void test_kernel(const char *module)
 		test_kernel_sys_mailbox();
 	else if (!strcmp(module, "--hal-portal"))
 		test_kernel_sys_portal();
-}
-
-/**
- * @brief Generic runtime test driver.
- */
-static void test_runtime(const char *module)
-{
-	if (!strcmp(module, "--barrier"))
-		test_kernel_ipc_barrier(NR_SERVERS);
 }
 
 /**
@@ -149,4 +139,4 @@ SPAWNER_SHUTDOWN(SHUTDOWN_ENABLE)
 SPAWNER_SERVERS(NR_SERVERS, servers)
 SPAWNER_MAIN2(main2)
 SPAWNER_KERNEL_TESTS(test_kernel)
-SPAWNER_RUNTIME_TESTS(test_runtime)
+SPAWNER_RUNTIME_TESTS(NULL)

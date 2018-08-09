@@ -22,8 +22,6 @@
 
 #include <stdlib.h>
 
-#include <mppaipc.h>
-
 #include <nanvix/const.h>
 #include <nanvix/syscalls.h>
 #include <nanvix/pm.h>
@@ -38,7 +36,7 @@
 /**
  * @brief API Test: Invalid Create
  */
-static void test_ipc_barrier_invalid_create(void)
+static void test_nanvix_ipc_barrier_invalid_create(void)
 {
 	int nodes[NANVIX_PROC_MAX + 1];
 	
@@ -59,7 +57,7 @@ static void test_ipc_barrier_invalid_create(void)
 /**
  * @brief API Test: Bad Create
  */
-static void test_ipc_barrier_bad_create(void)
+static void test_nanvix_ipc_barrier_bad_create(void)
 {
 	int nodes[NANVIX_PROC_MAX + 1];
 	
@@ -103,7 +101,7 @@ static void test_ipc_barrier_bad_create(void)
 /**
  * @brief API Test: Double Create
  */
-static void test_ipc_barrier_double_create(void)
+static void test_nanvix_ipc_barrier_double_create(void)
 {
 	int barrier;
 	int nodes[NANVIX_PROC_MAX + 1];
@@ -125,7 +123,7 @@ static void test_ipc_barrier_double_create(void)
 /**
  * @brief API Test: Invalid Unlink
  */
-static void test_ipc_barrier_invalid_unlink(void)
+static void test_nanvix_ipc_barrier_invalid_unlink(void)
 {
 	TEST_ASSERT(barrier_unlink(-1) < 0);
 	TEST_ASSERT(barrier_unlink(1000000) < 0);
@@ -138,7 +136,7 @@ static void test_ipc_barrier_invalid_unlink(void)
 /**
  * @brief API Test: Bad Unlink
  */
-static void test_ipc_barrier_bad_unlink(void)
+static void test_nanvix_ipc_barrier_bad_unlink(void)
 {
 	TEST_ASSERT(barrier_unlink(0) < 0);
 }
@@ -150,7 +148,7 @@ static void test_ipc_barrier_bad_unlink(void)
 /**
  * @brief API Test: Double Unlink
  */
-static void test_ipc_barrier_double_unlink(void)
+static void test_nanvix_ipc_barrier_double_unlink(void)
 {
 	int barrier;
 	int nodes[NANVIX_PROC_MAX + 1];
@@ -172,7 +170,7 @@ static void test_ipc_barrier_double_unlink(void)
 /**
  * @brief API Test: Invalid Wait
  */
-static void test_ipc_barrier_invalid_wait(void)
+static void test_nanvix_ipc_barrier_invalid_wait(void)
 {
 	TEST_ASSERT(barrier_wait(-1) < 0);
 	TEST_ASSERT(barrier_wait(1000000) < 0);
@@ -185,7 +183,7 @@ static void test_ipc_barrier_invalid_wait(void)
 /**
  * @brief API Test: Bad Wait
  */
-static void test_ipc_barrier_bad_wait(void)
+static void test_nanvix_ipc_barrier_bad_wait(void)
 {
 	TEST_ASSERT(barrier_wait(0) < 0);
 }
@@ -195,14 +193,14 @@ static void test_ipc_barrier_bad_wait(void)
 /**
  * @brief Unit tests.
  */
-struct test ipc_barrier_tests_fault[] = {
-	{ test_ipc_barrier_invalid_create, "Invalid Create" },
-	{ test_ipc_barrier_bad_create,     "Bad Create"     },
-	{ test_ipc_barrier_double_create,  "Double Create"  },
-	{ test_ipc_barrier_invalid_unlink, "Invalid Unlink" },
-	{ test_ipc_barrier_bad_unlink,     "Bad Unlink"     },
-	{ test_ipc_barrier_double_unlink,  "Double Unlink"  },
-	{ test_ipc_barrier_invalid_wait,   "Invalid Wait"   },
-	{ test_ipc_barrier_bad_wait,       "Bad Wait"       },
-	{ NULL,                            NULL             },
+struct test nanvix_ipc_barrier_tests_fault[] = {
+	{ test_nanvix_ipc_barrier_invalid_create, "Invalid Create" },
+	{ test_nanvix_ipc_barrier_bad_create,     "Bad Create"     },
+	{ test_nanvix_ipc_barrier_double_create,  "Double Create"  },
+	{ test_nanvix_ipc_barrier_invalid_unlink, "Invalid Unlink" },
+	{ test_nanvix_ipc_barrier_bad_unlink,     "Bad Unlink"     },
+	{ test_nanvix_ipc_barrier_double_unlink,  "Double Unlink"  },
+	{ test_nanvix_ipc_barrier_invalid_wait,   "Invalid Wait"   },
+	{ test_nanvix_ipc_barrier_bad_wait,       "Bad Wait"       },
+	{ NULL,                                   NULL             },
 };
