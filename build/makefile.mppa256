@@ -65,4 +65,5 @@ else
 	export LIBS = $(TOOLCHAIN)/k1-rtems/lib/libmppaipc.a
 	export LIBKERNEL = $(LIBDIR)/libkernel-k1bio.a
 	export LIBUSER = $(LIBDIR)/libuser-k1bio.a
+	export LIBNANVIX = $(LIBDIR)/libnanvix-k1bio.a
 endif

@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# Copyright (c) 211-218 Pedro Henrique Penna <pedrohenriquepenna@gmail.com>
+# Copyright (c) 2011-2018 Pedro Henrique Penna <pedrohenriquepenna@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,27 +20,31 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-# Conflicts
-.PHONY: init
+# C Source Files
+SRC = $(wildcard *.c)
+
+# Object Files
+OBJ = $(SRC:.c=.o)
+
+# Binary Files
+export ELFBIN = $(BINDIR)/benchmark/rmem-slave
 
 #===============================================================================
 
-# Builds everything.
-all: init
+# Builds the kernel.
+all: $(OBJ)
+	mkdir -p $(BINDIR)/benchmark/
+	$(CC) $(LDFLAGS) $(OBJ) $(CRT1) -o $(ELFBIN) $(LIBS)
 
-init:
-ifeq ($(BUILDING_IOCLUSTER),true)
-	cd init && $(MAKE) all
-endif
+# Builds object files.
+%.o: %.c
+	$(CC) $(CFLAGS) $< -c -o $@
 
 # Cleans compilation files.
 clean:
-ifeq ($(BUILDING_IOCLUSTER),true)
-	cd init && $(MAKE) clean
-endif
+	rm -rf $(OBJ)
 
 # Cleans everything.
 distclean: clean
-ifeq ($(BUILDING_IOCLUSTER),true)
-	cd init && $(MAKE) distclean
-endif
+	rm -rf $(ELFBIN)
+

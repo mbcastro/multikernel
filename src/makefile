@@ -69,9 +69,10 @@ export SERVERSBIN1 = $(BINDIR)/servers1
 .PHONY: libs
 .PHONY: servers
 .PHONY: sbin
+.PHONY: ubin
 
 # Builds everything.
-all: kernel libs servers sbin benchmarks
+all: kernel libs servers sbin ubin benchmarks
 
 # Builds the kernel.
 kernel: clean
@@ -88,10 +89,15 @@ ifeq ($(BUILD_SERVERS),true)
 	cd servers && $(MAKE) all
 endif
 
-# Builds binaries.
+# Builds system binaries.
 sbin: kernel servers libs
 	mkdir -p $(BINDIR)
 	cd sbin && $(MAKE) all
+
+# Builds user binaries.
+ubin: kernel servers libs sbin
+	mkdir -p $(BINDIR)
+	cd ubin && $(MAKE) all
 
 # Builds benchmarks.
 benchmarks: kernel servers libs
@@ -104,7 +110,7 @@ clean:
 	cd servers && $(MAKE) clean
 	cd libs && $(MAKE) clean
 	cd sbin && $(MAKE) clean
-	cd sbin && $(MAKE) clean
+	cd ubin && $(MAKE) clean
 
 # Cleans everything.
 distclean:
@@ -112,5 +118,5 @@ distclean:
 	cd servers && $(MAKE) distclean
 	cd libs && $(MAKE) distclean
 	cd sbin && $(MAKE) distclean
-	cd sbin && $(MAKE) distclean
+	cd ubin && $(MAKE) distclean
 

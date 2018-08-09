@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# Copyright (c) 211-218 Pedro Henrique Penna <pedrohenriquepenna@gmail.com>
+# Copyright (c) 2011-2018 Pedro Henrique Penna <pedrohenriquepenna@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,27 +20,34 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-# Conflicts
-.PHONY: init
+# Conflicts.
+.PHONY:master
+.PHONY:slaves
 
 #===============================================================================
 
-# Builds everything.
-all: init
+# Builds automated test driver.
+all: master slaves
 
-init:
+# Builds master binary.
+master:
 ifeq ($(BUILDING_IOCLUSTER),true)
-	cd init && $(MAKE) all
+	cd master && $(MAKE) all LIBS="$(LIBNANVIX) $(LIBSERVERS) $(LIBUSER) $(LIBKERNEL) $(LIBS)"
+endif
+
+# Builds slave binaries
+slaves:
+ifeq ($(BUILDING_CCLUSTER),true)
+	cd slave && $(MAKE) all LIBS="$(LIBUSER) $(LIBKERNEL) $(LIBS)"
 endif
 
 # Cleans compilation files.
 clean:
-ifeq ($(BUILDING_IOCLUSTER),true)
-	cd init && $(MAKE) clean
-endif
+	cd master && $(MAKE) clean
+	cd slave && $(MAKE) clean
 
 # Cleans everything.
 distclean: clean
-ifeq ($(BUILDING_IOCLUSTER),true)
-	cd init && $(MAKE) distclean
-endif
+	cd master && $(MAKE) distclean
+	cd slave && $(MAKE) distclean
+

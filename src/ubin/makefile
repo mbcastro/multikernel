@@ -21,26 +21,27 @@
 #
 
 # Conflicts
-.PHONY: init
+.PHONY: test
 
 #===============================================================================
 
 # Builds everything.
-all: init
+all: test benchmark
 
-init:
-ifeq ($(BUILDING_IOCLUSTER),true)
-	cd init && $(MAKE) all
-endif
+# Builds Test-Driver Utilitiy.
+test:
+	cd test && $(MAKE) all
+
+# Builds Synthetic Benchmarks.
+benchmark:
+	cd rmem-benchmark && $(MAKE) all
 
 # Cleans compilation files.
 clean:
-ifeq ($(BUILDING_IOCLUSTER),true)
-	cd init && $(MAKE) clean
-endif
+	cd test && $(MAKE) clean
+	cd rmem-benchmark && $(MAKE) clean
 
 # Cleans everything.
 distclean: clean
-ifeq ($(BUILDING_IOCLUSTER),true)
-	cd init && $(MAKE) distclean
-endif
+	cd test && $(MAKE) distclean
+	cd rmem-benchmark && $(MAKE) distclean
