@@ -31,7 +31,7 @@ OBJ = $(SRC:.c=.o)
 # Builds everything.
 all: $(OBJ)
 	mkdir -p $(BINDIR)
-	$(CC) $(LDFLAGS) $(OBJ) $(CRT0) -o $(SERVERSBIN1) $(LIBSERVERS) $(LIBUSER) $(LIBKERNEL) $(LIBS)
+	$(CC) $(LDFLAGS) $(OBJ) $(CRT0) -o $(SPAWNER1BIN) $(LIBSERVERS) $(LIBUSER) $(LIBKERNEL) $(LIBMPPAIPC)
 
 # Builds object files.
 %.o: %.c
@@ -43,4 +43,4 @@ clean:
 
 # Cleans everything.
 distclean: clean
-	rm -rf $(SERVERSBIN1)
+	rm -rf $(SPAWNER1BIN)

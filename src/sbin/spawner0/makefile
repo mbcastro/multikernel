@@ -20,37 +20,27 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-# C Source Files
-export INIT_SRC = $(wildcard $(CURDIR)/init/hal/core/*.c)      \
-                  $(wildcard $(CURDIR)/init/hal/sync/*.c)      \
-                  $(wildcard $(CURDIR)/init/hal/mailbox/*.c)   \
-                  $(wildcard $(CURDIR)/init/hal/portal/*.c)    \
-                  $(wildcard $(CURDIR)/init/ipc/barrier/*.c)   \
-                  $(wildcard $(CURDIR)/init/ipc/portal/*.c)    \
-                  $(wildcard $(CURDIR)/init/main.c)
-
 # Conflicts
-.PHONY: test
+.PHONY: init
 
 #===============================================================================
 
 # Builds everything.
-all: test benchmark
+all: init
 
-# Builds Test-Driver Utilitiy.
-test:
-	cd test && $(MAKE) all
-
-# Builds Synthetic Benchmarks.
-benchmark:
-	cd rmem-benchmark && $(MAKE) all
+init:
+ifeq ($(BUILDING_IOCLUSTER),true)
+	cd init && $(MAKE) all
+endif
 
 # Cleans compilation files.
 clean:
-	cd test && $(MAKE) clean
-	cd rmem-benchmark && $(MAKE) clean
+ifeq ($(BUILDING_IOCLUSTER),true)
+	cd init && $(MAKE) clean
+endif
 
 # Cleans everything.
 distclean: clean
-	cd test && $(MAKE) distclean
-	cd rmem-benchmark && $(MAKE) distclean
+ifeq ($(BUILDING_IOCLUSTER),true)
+	cd init && $(MAKE) distclean
+endif

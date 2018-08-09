@@ -21,7 +21,8 @@
 #
 
 BINDIR=$1
-TOOLCHAIN=/usr/local/k1tools
+
+source "scripts/arch/mppa256.sh"
 
 #
 # Missing arguments.
@@ -32,69 +33,28 @@ then
 	exit 1
 fi
 
-function build0
-{
-	bootbin=$1
-	nodebin=$2
-	multibin=$3
-
-	$TOOLCHAIN/bin/k1-create-multibinary -f \
-		--remove-prefix $BINDIR             \
-		--boot $bootbin                     \
-		--clusters $nodebin                 \
-		-T $multibin
-}
-
-function build1
-{
-	bootbin=$1
-	iobin=$2
-	multibin=$3
-
-	$TOOLCHAIN/bin/k1-create-multibinary -f \
-		--remove-prefix $BINDIR             \
-		--boot $bootbin                     \
-		--ios $iobin                        \
-		-T $multibin
-}
-
-function build2
-{
-	bootbin=$1
-	iobin=$2
-	nodebin=$3
-	multibin=$4
-
-	$TOOLCHAIN/bin/k1-create-multibinary -f \
-		--remove-prefix $BINDIR             \
-		--boot $bootbin                     \
-		--ios $iobin                        \
-		--clusters $nodebin                 \
-		-T $multibin
-}
-
 # Test Driver
 BINARIES="$BINDIR/test/hal-sync-slave"
 BINARIES="$BINARIES,$BINDIR/test/hal-mailbox-slave"
 BINARIES="$BINARIES,$BINDIR/test/hal-portal-slave"
-build2 $BINDIR/test-driver $BINDIR/servers1 "$BINARIES" nanvix-kernel-debug.img
+build2 $BINDIR $BINDIR/test-driver "$BINARIES" nanvix-kernel-debug.img
 
 BINARIES="$BINDIR/test/ipc-name-slave"
 BINARIES="$BINARIES,$BINDIR/test/ipc-barrier-slave"
 BINARIES="$BINARIES,$BINDIR/test/ipc-mailbox-slave"
 BINARIES="$BINARIES,$BINDIR/test/ipc-portal-slave"
 BINARIES="$BINARIES,$BINDIR/test/mm-rmem-slave"
-build2 $BINDIR/test-driver $BINDIR/servers1 "$BINARIES" nanvix-runtime-debug.img
+build2 $BINDIR $BINDIR/test-driver "$BINARIES" nanvix-runtime-debug.img
 
 BINARIES="$BINDIR/test/posix-semaphore-slave"
-build2 $BINDIR/test-driver $BINDIR/servers1 "$BINARIES" nanvix-posix-debug.img
+build2 $BINDIR $BINDIR/test-driver "$BINARIES" nanvix-posix-debug.img
 
 BINARIES="$BINDIR/benchmark/rmem-slave"
-build2 $BINDIR/benchmarks $BINDIR/servers1 "$BINARIES" nanvix-benchmarks.img
+build2 $BINDIR $BINDIR/benchmarks "$BINARIES" nanvix-benchmarks.img
 
 # Benchmarks
-build0 $BINDIR/benchmark/mppa256-portal-master $BINDIR/benchmark/mppa256-portal-slave benchmark-mppa256-portal.img
-build0 $BINDIR/benchmark/mppa256-rqueue-master $BINDIR/benchmark/mppa256-rqueue-slave benchmark-mppa256-rqueue.img
-build0 $BINDIR/benchmark/hal-sync-master $BINDIR/benchmark/hal-sync-slave benchmark-hal-sync.img
-build0 $BINDIR/benchmark/hal-mailbox-master $BINDIR/benchmark/hal-mailbox-slave benchmark-hal-mailbox.img
-build0 $BINDIR/benchmark/hal-portal-master $BINDIR/benchmark/hal-portal-slave benchmark-hal-portal.img
+build1 $BINDIR $BINDIR/benchmark/mppa256-portal-master $BINDIR/benchmark/mppa256-portal-slave benchmark-mppa256-portal.img
+build1 $BINDIR $BINDIR/benchmark/mppa256-rqueue-master $BINDIR/benchmark/mppa256-rqueue-slave benchmark-mppa256-rqueue.img
+build1 $BINDIR $BINDIR/benchmark/hal-sync-master $BINDIR/benchmark/hal-sync-slave benchmark-hal-sync.img
+build1 $BINDIR $BINDIR/benchmark/hal-mailbox-master $BINDIR/benchmark/hal-mailbox-slave benchmark-hal-mailbox.img
+build1 $BINDIR $BINDIR/benchmark/hal-portal-master $BINDIR/benchmark/hal-portal-slave benchmark-hal-portal.img

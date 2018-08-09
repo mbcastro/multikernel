@@ -34,7 +34,7 @@ export ELFBIN = $(BINDIR)/mppa256-rqueue-slave
 # Builds the kernel.
 all: $(OBJ)
 	mkdir -p $(BINDIR)
-	$(CC) $(LDFLAGS) $(OBJ) -o $(ELFBIN) $(LIBS)
+	$(CC) $(LDFLAGS) $(OBJ) -o $(ELFBIN) $(LIBMPPAIPC)
 
 # Builds object files.
 %.o: %.c

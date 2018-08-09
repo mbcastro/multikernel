@@ -20,31 +20,34 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-# C Source Files
-SRC = $(wildcard *.c)
-
-# Object Files
-OBJ = $(SRC:.c=.o)
-
-# Binary Files
-export ELFBIN = $(BINDIR)/hal-sync-slave
+# Conflicts.
+.PHONY:master
+.PHONY:slaves
 
 #===============================================================================
 
-# Builds the kernel.
-all: $(OBJ)
-	mkdir -p $(BINDIR)
-	$(CC) $(LDFLAGS) $(OBJ) -o $(ELFBIN) $(LIBKERNEL) $(LIBMPPAIPC)
+# Builds automated test driver.
+all: master slaves
 
-# Builds object files.
-%.o: %.c
-	$(CC) $(CFLAGS) $< -c -o $@
+# Builds master binary.
+master:
+ifeq ($(BUILDING_IOCLUSTER),true)
+	cd master && $(MAKE) all
+endif
+
+# Builds slave binaries
+slaves:
+ifeq ($(BUILDING_CCLUSTER),true)
+	cd slave && $(MAKE) all
+endif
 
 # Cleans compilation files.
 clean:
-	rm -rf $(OBJ)
+	cd master && $(MAKE) clean
+	cd slave && $(MAKE) clean
 
 # Cleans everything.
 distclean: clean
-	rm -rf $(ELFBIN)
+	cd master && $(MAKE) distclean
+	cd slave && $(MAKE) distclean
 

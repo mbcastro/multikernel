@@ -27,14 +27,14 @@ SRC = $(wildcard *.c)
 OBJ = $(SRC:.c=.o)
 
 # Binary Files
-export ELFBIN = $(BINDIR)/hal-sync-slave
+export ELFBIN = $(BINDIR)/benchmark/rmem-slave
 
 #===============================================================================
 
 # Builds the kernel.
 all: $(OBJ)
-	mkdir -p $(BINDIR)
-	$(CC) $(LDFLAGS) $(OBJ) -o $(ELFBIN) $(LIBKERNEL) $(LIBMPPAIPC)
+	mkdir -p $(BINDIR)/benchmark/
+	$(CC) $(LDFLAGS) $(OBJ) $(CRT1) -o $(ELFBIN) $(LIBS)
 
 # Builds object files.
 %.o: %.c
