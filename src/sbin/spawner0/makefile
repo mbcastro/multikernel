@@ -26,8 +26,6 @@ export INIT_SRC = $(wildcard $(CURDIR)/init/hal/core/*.c)      \
                   $(wildcard $(CURDIR)/init/hal/mailbox/*.c)   \
                   $(wildcard $(CURDIR)/init/hal/portal/*.c)    \
                   $(wildcard $(CURDIR)/init/ipc/barrier/*.c)   \
-                  $(wildcard $(CURDIR)/init/ipc/name/*.c)      \
-                  $(wildcard $(CURDIR)/init/ipc/mailbox/*.c)   \
                   $(wildcard $(CURDIR)/init/ipc/portal/*.c)    \
                   $(wildcard $(CURDIR)/init/main.c)
 

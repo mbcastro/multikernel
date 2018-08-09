@@ -20,35 +20,30 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef _TEST_H_
-#define _TEST_H_
+#include <stdio.h>
 
-	#include <stdlib.h>
-	#include <pthread.h>
+#include <nanvix/syscalls.h>
 
-	/**
-	 * @brief Asserts a logic expression.
-	 */
-	#define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
+#include "test.h"
 
-	/**
-	 * @brief Buffer size (in bytes).
-	 */
-	#define DATA_SIZE 256
+/**
+ * @brief Test driver for Named Portals.
+ */
+void test_nanvix_ipc_portal(void)
+{
 
-	/**
-	 * @brief Unit test.
-	 */
-	struct test
+	/* Run API tests. */
+	for (int i = 0; nanvix_ipc_portal_tests_api[i].test_fn != NULL; i++)
 	{
-		void (*test_fn)(void); /**< Test function. */
-		const char *name;      /**< Test name.     */
-	};
+		printf("[nanvix][test][api][ipc][portal] %s\n", nanvix_ipc_portal_tests_api[i].name);
+		nanvix_ipc_portal_tests_api[i].test_fn();
+	}
 
-	/* Forward definitions. */
-	extern int ipc_portal_ncores;
-	extern pthread_barrier_t barrier;
-	extern struct test ipc_portal_tests_api[];
-	extern struct test ipc_portal_tests_fault[];
+	/* Run fault injection tests. */
+	for (int i = 0; nanvix_ipc_portal_tests_fault[i].test_fn != NULL; i++)
+	{
+		printf("[nanvix][test][fault][ipc][portal] %s\n", nanvix_ipc_portal_tests_fault[i].name);
+		nanvix_ipc_portal_tests_fault[i].test_fn();
+	}
+}
 
-#endif /* _TEST_H_ */

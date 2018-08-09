@@ -20,54 +20,27 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <pthread.h>
-#include <stdio.h>
+#ifndef _TEST_H_
+#define _TEST_H_
 
-#include <nanvix/syscalls.h>
+	#include <stdlib.h>
 
-#include "test.h"
+	/**
+	 * @brief Asserts a logic expression.
+	 */
+	#define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
 
-/**
- * @brief Number of cores in the underlying cluster.
- */
-int ipc_portal_ncores = 0;
-
-/**
- * @brief Global barrier for synchronization.
- */
-pthread_barrier_t barrier;
-
-/**
- * @brief Unnamed Mailbox Test Driver
- *
- * @param nbusycores Number of busy cores.
- */
-void test_kernel_ipc_portal(int nbusycores)
-{
-	TEST_ASSERT(runtime_setup(1) == 0);
-
-	ipc_portal_ncores = sys_get_num_cores() - nbusycores;
-
-	pthread_barrier_init(&barrier, NULL, ipc_portal_ncores);
-
-#ifdef _TEST_API_NAMED_PORTAL_IOCLUSTER
-
-	/* Run API tests. */
-	for (int i = 0; ipc_portal_tests_api[i].test_fn != NULL; i++)
+	/**
+	 * @brief Unit test.
+	 */
+	struct test
 	{
-		printf("[nanvix][test][api][ipc][portal] %s\n", ipc_portal_tests_api[i].name);
-		ipc_portal_tests_api[i].test_fn();
-	}
+		void (*test_fn)(void); /**< Test function. */
+		const char *name;      /**< Test name.     */
+	};
 
-#endif /* _TEST_API_NAMED_PORTAL_IOCLUSTER */
+	/* Forward definitions. */
+	extern struct test nanvix_ipc_name_tests_api[];
+	extern struct test nanvix_ipc_name_tests_fault[];
 
-	/* Run fault injection tests. */
-	for (int i = 0; ipc_portal_tests_fault[i].test_fn != NULL; i++)
-	{
-		printf("[nanvix][test][fault][ipc][portal] %s\n", ipc_portal_tests_fault[i].name);
-		ipc_portal_tests_fault[i].test_fn();
-	}
-
-	TEST_ASSERT(runtime_cleanup() == 0);
-}
-
+#endif /* _TEST_H_ */

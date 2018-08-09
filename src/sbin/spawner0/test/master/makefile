@@ -21,11 +21,17 @@
 #
 
 # C Source Files
-SRC = $(wildcard mm/rmem/*.c)   \
-	  $(wildcard semaphore/*.c) \
-	  $(wildcard shm/*.c)       \
-	  $(wildcard *.c)           \
-	  $(INIT_SRC)
+SRC = $(INIT_SRC)                        \
+      $(wildcard nanvix/ipc/barrier/*.c) \
+      $(wildcard nanvix/ipc/mailbox/*.c) \
+      $(wildcard nanvix/ipc/name/*.c)    \
+      $(wildcard nanvix/ipc/portal/*.c)  \
+	  $(wildcard nanvix/kernel/*.c)      \
+	  $(wildcard nanvix/mm/rmem/*.c)     \
+	  $(wildcard posix/semaphore/*.c)    \
+	  $(wildcard posix/shm/*.c)          \
+      $(wildcard *.c)
+	  
 
 # Object Files
 OBJ = $(SRC:.c=.o)

@@ -23,7 +23,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <pthread.h>
 
 #include <mppaipc.h>
 
@@ -41,7 +40,7 @@
 /**
  * @brief Fault Injection Test: Double Link
  */
-static void test_name_double_link(void)
+static void test_nanvix_ipc_name_double_link(void)
 {
 	int nodenum;
 	char pathname[NANVIX_PROC_NAME_MAX];
@@ -62,7 +61,7 @@ static void test_name_double_link(void)
 /**
  * @brief Fault Injection Test: Invalid Link 
  */
-static void test_name_invalid_link(void)
+static void test_nanvix_ipc_name_invalid_link(void)
 {
 	/* Link invalid names. */
 	TEST_ASSERT(name_link(-1, "missing_name") < 0);
@@ -76,7 +75,7 @@ static void test_name_invalid_link(void)
 /**
  * @brief Fault Injection Test: Bad Link
  */
-static void test_name_bad_link(void)
+static void test_nanvix_ipc_name_bad_link(void)
 {
 	int nodenum;
 	char pathname[NANVIX_PROC_NAME_MAX + 1];
@@ -98,7 +97,7 @@ static void test_name_bad_link(void)
 /**
  * @brief Fault Injection Test: Invalid Unlink
  */
-static void test_name_invalid_unlink(void)
+static void test_nanvix_ipc_name_invalid_unlink(void)
 {
 	char pathname[NANVIX_PROC_NAME_MAX + 1];
 
@@ -117,7 +116,7 @@ static void test_name_invalid_unlink(void)
 /**
  * @brief Fault Injection Test: Bad Unlink
  */
-static void test_name_bad_unlink(void)
+static void test_nanvix_ipc_name_bad_unlink(void)
 {
 	int nodenum;
 
@@ -136,7 +135,7 @@ static void test_name_bad_unlink(void)
 /**
  * @brief Fault Injection Test: Double Unlink
  */
-static void test_name_double_unlink(void)
+static void test_nanvix_ipc_name_double_unlink(void)
 {
 	int nodenum;
 
@@ -155,7 +154,7 @@ static void test_name_double_unlink(void)
 /**
  * @brief Fault Injection Test: Bad Lookup
  */
-static void test_name_bad_lookup(void)
+static void test_nanvix_ipc_name_bad_lookup(void)
 {
 	/* Lookup missing name. */
 	TEST_ASSERT(name_lookup("missing_name") < 0);
@@ -168,7 +167,7 @@ static void test_name_bad_lookup(void)
 /**
  * @brief Fault Injection Test: Lookup Invalid Name
  */
-static void test_name_invalid_lookup(void)
+static void test_nanvix_ipc_name_invalid_lookup(void)
 {
 	char pathname[NANVIX_PROC_NAME_MAX + 1];
 
@@ -185,14 +184,14 @@ static void test_name_invalid_lookup(void)
 /**
  * @brief Unit tests.
  */
-struct test ipc_name_tests_fault[] = {
-	{ test_name_invalid_link,   "Invalid Link"   },
-	{ test_name_bad_link,       "Bad Link"       },
-	{ test_name_double_link,    "Double Link"    },
-	{ test_name_invalid_unlink, "Invalid Unlink" },
-	{ test_name_bad_unlink,     "Bad Unlink"     },
-	{ test_name_double_unlink,  "Double Unlink"  },
-	{ test_name_invalid_lookup, "Invalid Lookup" },
-	{ test_name_bad_lookup,     "Bad Lookup"     },
+struct test nanvix_ipc_name_tests_fault[] = {
+	{ test_nanvix_ipc_name_invalid_link,   "Invalid Link"   },
+	{ test_nanvix_ipc_name_bad_link,       "Bad Link"       },
+	{ test_nanvix_ipc_name_double_link,    "Double Link"    },
+	{ test_nanvix_ipc_name_invalid_unlink, "Invalid Unlink" },
+	{ test_nanvix_ipc_name_bad_unlink,     "Bad Unlink"     },
+	{ test_nanvix_ipc_name_double_unlink,  "Double Unlink"  },
+	{ test_nanvix_ipc_name_invalid_lookup, "Invalid Lookup" },
+	{ test_nanvix_ipc_name_bad_lookup,     "Bad Lookup"     },
 	{ NULL,                     NULL             },
 };
