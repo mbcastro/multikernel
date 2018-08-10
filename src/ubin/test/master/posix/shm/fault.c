@@ -188,9 +188,18 @@ static void test_posix_shm_invalid_truncate(void)
 static void test_posix_shm_bad_truncate(void)
 {
 	int shm;
+	void *map;
 
 	TEST_ASSERT((shm = shm_open("/shm", O_CREAT, O_RDONLY)) >= 0);
 	TEST_ASSERT(ftruncate(shm, REGION_SIZE) < 0);
+	TEST_ASSERT(ftruncate(1, REGION_SIZE) < 0);
+	TEST_ASSERT(shm_unlink("/shm") == 0);
+
+	TEST_ASSERT((shm = shm_open("/shm", O_CREAT, O_RDWR)) >= 0);
+	TEST_ASSERT(ftruncate(shm, REGION_SIZE) == 0);
+	TEST_ASSERT((map = mmap(NULL, REGION_SIZE, PROT_READ, MAP_PRIVATE, shm, 0)) != MAP_FAILED);
+	TEST_ASSERT(ftruncate(shm, 2*REGION_SIZE) < 0);
+	TEST_ASSERT(munmap(map, REGION_SIZE) == 0);
 	TEST_ASSERT(shm_unlink("/shm") == 0);
 }
 
@@ -207,9 +216,31 @@ static void test_posix_shm_invalid_map(void)
 	void *map;
 
 	TEST_ASSERT((shm = shm_open("/shm", O_CREAT, O_RDWR)) >= 0);
+	TEST_ASSERT((map = mmap(NULL, 0, PROT_READ, MAP_PRIVATE, shm, 0)) == MAP_FAILED);
 	TEST_ASSERT(ftruncate(shm, REGION_SIZE) == 0);
 	TEST_ASSERT((map = mmap(NULL, REGION_SIZE, PROT_READ, MAP_PRIVATE, -1, 0)) == MAP_FAILED);
 	TEST_ASSERT((map = mmap(NULL, REGION_SIZE, PROT_READ, MAP_PRIVATE, 1000000, 0)) == MAP_FAILED);
+	TEST_ASSERT((map = mmap(NULL, RMEM_SIZE + 1, PROT_READ, MAP_PRIVATE, shm, 0)) == MAP_FAILED);
+	TEST_ASSERT((map = mmap(NULL, REGION_SIZE, 0, MAP_PRIVATE, shm, 0)) == MAP_FAILED);
+	TEST_ASSERT((map = mmap(NULL, REGION_SIZE, PROT_READ, 0, shm, 0)) == MAP_FAILED);
+	TEST_ASSERT(shm_unlink("/shm") == 0);
+}
+
+/*============================================================================*
+ * Fault Injection Test: Bad Map                                              *
+ *============================================================================*/
+
+/**
+ * @brief Fault Injection Test: Bad Map
+ */
+static void test_posix_shm_bad_map(void)
+{
+	int shm;
+	void *map;
+
+	TEST_ASSERT((shm = shm_open("/shm", O_CREAT, O_RDWR)) >= 0);
+	TEST_ASSERT(ftruncate(shm, REGION_SIZE) == 0);
+	TEST_ASSERT((map = mmap(NULL, REGION_SIZE, PROT_READ, MAP_PRIVATE, 1, 0)) == MAP_FAILED);
 	TEST_ASSERT(shm_unlink("/shm") == 0);
 }
 
@@ -230,5 +261,6 @@ struct test posix_shm_tests_fault[] = {
 	{ test_posix_shm_invalid_truncate, "Invalid Truncate" },
 	{ test_posix_shm_bad_truncate,     "Bad Truncate"     },
 	{ test_posix_shm_invalid_map,      "Invalid Map"      },
+	{ test_posix_shm_bad_map,          "Bad Map"          },
 	{ NULL,                            NULL               },
 };
