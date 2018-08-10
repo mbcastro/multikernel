@@ -265,7 +265,6 @@ static void test_posix_shm_invalid_unmap(void)
 	TEST_ASSERT(munmap(map, REGION_SIZE + 1) < 0);
 	TEST_ASSERT(munmap(map, REGION_SIZE) == 0);
 	TEST_ASSERT(shm_unlink("/shm") == 0);
-
 }
 
 /*============================================================================*
@@ -285,6 +284,32 @@ static void test_posix_shm_bad_unmap(void)
 	TEST_ASSERT((map = mmap(NULL, REGION_SIZE, PROT_READ, MAP_PRIVATE, shm, 0)) != MAP_FAILED);
 	TEST_ASSERT(munmap((void *)test_posix_shm_bad_unmap, REGION_SIZE) < 0);
 	TEST_ASSERT(munmap(map, REGION_SIZE/2) < 0);
+	TEST_ASSERT(munmap(map, REGION_SIZE) == 0);
+	TEST_ASSERT(shm_unlink("/shm") == 0);
+}
+
+/*============================================================================*
+ * Fault Injection Test: Invalid Sync                                         *
+ *============================================================================*/
+
+/**
+ * @brief Fault Injection Test: Invalid Sync
+ */
+static void test_posix_shm_invalid_sync(void)
+{
+	int shm;
+	void *map;
+
+	TEST_ASSERT((shm = shm_open("/shm", O_CREAT, O_RDWR)) >= 0);
+	TEST_ASSERT(ftruncate(shm, REGION_SIZE) == 0);
+	TEST_ASSERT((map = mmap(NULL, REGION_SIZE, PROT_WRITE, MAP_SHARED, shm, 0)) != MAP_FAILED);
+
+	memset(map, 1, REGION_SIZE);
+
+	TEST_ASSERT(msync(NULL, REGION_SIZE, MS_SYNC) < 0);
+	TEST_ASSERT(msync(map, -REGION_SIZE, MS_SYNC) < 0);
+	TEST_ASSERT(msync(map, REGION_SIZE + 1, MS_SYNC) < 0);
+
 	TEST_ASSERT(munmap(map, REGION_SIZE) == 0);
 	TEST_ASSERT(shm_unlink("/shm") == 0);
 }
@@ -309,5 +334,6 @@ struct test posix_shm_tests_fault[] = {
 	{ test_posix_shm_bad_map,          "Bad Map"          },
 	{ test_posix_shm_invalid_unmap,    "Invalid Unmap"    },
 	{ test_posix_shm_bad_unmap,        "Bad Ununmap"      },
+	{ test_posix_shm_invalid_sync,     "Invalid Sync"     },
 	{ NULL,                            NULL               },
 };
