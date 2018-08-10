@@ -244,6 +244,29 @@ static void test_posix_shm_bad_map(void)
 	TEST_ASSERT(shm_unlink("/shm") == 0);
 }
 
+/*============================================================================*
+ * Fault Injection Test: Invalid Ununmap                                      *
+ *============================================================================*/
+
+/**
+ * @brief Fault Injection Test: Invalid Ununmap
+ */
+static void test_posix_shm_invalid_unmap(void)
+{
+	int shm;
+	void *map;
+
+	TEST_ASSERT((shm = shm_open("/shm", O_CREAT, O_RDWR)) >= 0);
+	TEST_ASSERT(ftruncate(shm, REGION_SIZE) == 0);
+	TEST_ASSERT((map = mmap(NULL, REGION_SIZE, PROT_READ, MAP_PRIVATE, shm, 0)) != MAP_FAILED);
+	TEST_ASSERT(munmap(NULL, REGION_SIZE) < 0);
+	TEST_ASSERT(munmap(map, 0) < 0);
+	TEST_ASSERT(munmap(map, REGION_SIZE + 1) < 0);
+	TEST_ASSERT(munmap(map, REGION_SIZE) == 0);
+	TEST_ASSERT(shm_unlink("/shm") == 0);
+
+}
+
 /*============================================================================*/
 
 /**
@@ -262,5 +285,6 @@ struct test posix_shm_tests_fault[] = {
 	{ test_posix_shm_bad_truncate,     "Bad Truncate"     },
 	{ test_posix_shm_invalid_map,      "Invalid Map"      },
 	{ test_posix_shm_bad_map,          "Bad Map"          },
+	{ test_posix_shm_invalid_unmap,    "Invalid Unmap"    },
 	{ NULL,                            NULL               },
 };
