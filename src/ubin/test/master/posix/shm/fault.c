@@ -20,10 +20,11 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <sys/mman.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/mman.h>
+#include <unistd.h>
 
 #include <nanvix/mm.h>
 
@@ -159,19 +160,38 @@ static void test_posix_shm_double_unlink(void)
 	TEST_ASSERT(shm_unlink("cool-name") < 0);
 }
 
+/*============================================================================*
+ * Fault Injection Test: Invalid Truncate                                     *
+ *============================================================================*/
+
+/**
+ * @brief Fault Injection Test: Invalid Truncate
+ */
+static void test_posix_shm_invalid_truncate(void)
+{
+	int shm;
+
+	TEST_ASSERT((shm = shm_open("/shm", O_CREAT, O_RDWR)) >= 0);
+	TEST_ASSERT(ftruncate(-1, REGION_SIZE) < 0);
+	TEST_ASSERT(ftruncate(1000000, REGION_SIZE) < 0);
+	TEST_ASSERT(ftruncate(shm, RMEM_SIZE + 1) < 0);
+	TEST_ASSERT(shm_unlink("/shm") == 0);
+}
+
 /*============================================================================*/
 
 /**
  * @brief Unit tests.
  */
 struct test posix_shm_tests_fault[] = {
-	{ test_posix_shm_invalid_create, "Invalid Create" },
-	{ test_posix_shm_bad_create,     "Bad Create"     },
-	{ test_posix_shm_double_create,  "Double Create"  },
-	{ test_posix_shm_invalid_open,   "Invalid Open"   },
-	{ test_posix_shm_bad_open,       "Bad Open"       },
-	{ test_posix_shm_invalid_unlink, "Invalid Unlink" },
-	{ test_posix_shm_bad_unlink,     "Bad Unlink"     },
-	{ test_posix_shm_double_unlink,  "Double Unlink"  },
-	{ NULL,                          NULL             },
+	{ test_posix_shm_invalid_create,   "Invalid Create"   },
+	{ test_posix_shm_bad_create,       "Bad Create"       },
+	{ test_posix_shm_double_create,    "Double Create"    },
+	{ test_posix_shm_invalid_open,     "Invalid Open"     },
+	{ test_posix_shm_bad_open,         "Bad Open"         },
+	{ test_posix_shm_invalid_unlink,   "Invalid Unlink"   },
+	{ test_posix_shm_bad_unlink,       "Bad Unlink"       },
+	{ test_posix_shm_double_unlink,    "Double Unlink"    },
+	{ test_posix_shm_invalid_truncate, "Invalid Truncate" },
+	{ NULL,                            NULL               },
 };

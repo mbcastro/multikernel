@@ -31,6 +31,11 @@
 	#define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
 
 	/**
+	 * @brief Shared memory region size.
+	 */
+	#define REGION_SIZE 1024
+
+	/**
 	 * @brief Unit test.
 	 */
 	struct test
