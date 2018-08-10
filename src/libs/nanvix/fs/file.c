@@ -272,8 +272,17 @@ int nanvix_msync(void *addr, size_t len, int async, int invalidate)
 	}
 
 	/* Synchronize region. */
-	if ((mappings[i].shared) && (mappings[i].writable))
+	if (mappings[i].shared)
+	{
+		/* Canot write. */
+		if (!mappings[i].writable)
+		{
+			errno = EINVAL;
+			return (-1);
+		}
+
 		memwrite(mappings[i].remote, mappings[i].local, len);
+	}
 
 	return (0);
 }
