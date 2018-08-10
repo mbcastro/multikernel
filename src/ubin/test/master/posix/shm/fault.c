@@ -178,6 +178,22 @@ static void test_posix_shm_invalid_truncate(void)
 	TEST_ASSERT(shm_unlink("/shm") == 0);
 }
 
+/*============================================================================*
+ * Fault Injection Test: Bad Truncate                                         *
+ *============================================================================*/
+
+/**
+ * @brief Fault Injection Test: Bad Truncate
+ */
+static void test_posix_shm_bad_truncate(void)
+{
+	int shm;
+
+	TEST_ASSERT((shm = shm_open("/shm", O_CREAT, O_RDONLY)) >= 0);
+	TEST_ASSERT(ftruncate(shm, REGION_SIZE) < 0);
+	TEST_ASSERT(shm_unlink("/shm") == 0);
+}
+
 /*============================================================================*/
 
 /**
@@ -193,5 +209,6 @@ struct test posix_shm_tests_fault[] = {
 	{ test_posix_shm_bad_unlink,       "Bad Unlink"       },
 	{ test_posix_shm_double_unlink,    "Double Unlink"    },
 	{ test_posix_shm_invalid_truncate, "Invalid Truncate" },
+	{ test_posix_shm_bad_truncate,     "Bad Truncate"     },
 	{ NULL,                            NULL               },
 };
