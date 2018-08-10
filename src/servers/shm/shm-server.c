@@ -174,15 +174,16 @@ static int shm_open(int node, const char *name)
 /**
  * @brief Creates a shared memory region
  *
- * @param owner ID of owner process.
- * @param name  Name of the targeted shm.
- * @param mode  Access permissions.
+ * @param owner    ID of owner process.
+ * @param name     Name of the targeted shm.
+ * @param writable Writable? Else read-only.
+ * @param mode     Access permissions.
  *
  * @returns Upon successful completion, the ID of the newly created
  * shared memory region is returned. Upon failure, a negative error
  * code is returned instead.
  */
-static int shm_create(int owner, const char *name, mode_t mode)
+static int shm_create(int owner, const char *name, int writable, mode_t mode)
 {
 	int i;     /* Index of opened region.  */
 	int shmid; /* Shared memory region ID. */
@@ -216,7 +217,7 @@ static int shm_create(int owner, const char *name, mode_t mode)
 
 	i = procs[owner].nopen++;
 	procs[owner].oregions[i].shmid = shmid;
-	procs[owner].oregions[i].flags = SHM_WRITE;
+	procs[owner].oregions[i].flags = (writable) ? SHM_WRITE : 0;
 
 	return (shmid);
 }
@@ -228,15 +229,16 @@ static int shm_create(int owner, const char *name, mode_t mode)
 /**
  * @brief Open a shared memory region with existence check
  *
- * @param owner ID of owner process.
- * @param name  Name of the targeted shared memory region.
- * @param mode  Access permissions.
+ * @param owner    ID of owner process.
+ * @param name     Name of the targeted shared memory region.
+ * @param writable Writable? Else read-only.
+ * @param mode     Access permissions.
  *
  * @returns Upon successful completion, the newly created shared
  * memory region ID is returned. Upon failure, a negative error code
  * is returned instead.
  */
-static int shm_create_exclusive(int owner, char *name, int mode)
+static int shm_create_exclusive(int owner, char *name, int writable, mode_t mode)
 {
 	int shmid;
 
@@ -253,7 +255,7 @@ static int shm_create_exclusive(int owner, char *name, int mode)
 		return (-EEXIST);
 	}
 
-	return (shm_create(owner, name, mode));
+	return (shm_create(owner, name, mode, writable));
 }
 
 /*============================================================================*
@@ -515,7 +517,8 @@ static inline int do_create(struct shm_message *msg, struct shm_message *respons
 	ret = shm_create(
 		msg->source,
 		msg1.op.create1.name,
-		msg->op.create2.mode
+		msg->op.create2.mode,
+		msg->op.create2.rw
 	);
 	
 	response->source = msg->source;
@@ -557,9 +560,10 @@ static int do_create_excl(struct shm_message *msg, struct shm_message *response)
 	assert(msg->seq == (msg1.seq | 1));
 
 	ret = shm_create_exclusive(
-			msg->source,
-			msg1.op.create1.name,
-			msg->op.create2.mode
+		msg->source,
+		msg1.op.create1.name,
+		msg->op.create2.mode,
+		msg->op.create2.rw
 	);
 
 	response->source = msg->source;
