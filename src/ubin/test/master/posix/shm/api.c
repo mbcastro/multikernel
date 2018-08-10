@@ -33,11 +33,6 @@
 
 #include "test.h"
 
-/**
- * @brief Shared memory region size.
- */
-#define REGION_SIZE 1024
-
 /*==========================================================================*
  * API Test: Create Unlink                                                  *
  *==========================================================================*/
@@ -114,13 +109,13 @@ static void test_posix_shm_create_unlink4(void)
 }
 
 /*==========================================================================*
- * API Test: Open Close                                                     *
+ * API Test: Open Close 1                                                   *
  *==========================================================================*/
 
 /**
- * @brief API Test: Open Close
+ * @brief API Test: Open Close 1
  */
-static void test_posix_shm_open_close(void)
+static void test_posix_shm_open_close1(void)
 {
 	int shm1, shm2;
 	char shm_name[SHM_NAME_MAX];
@@ -129,6 +124,26 @@ static void test_posix_shm_open_close(void)
 	sprintf(shm_name, "/shm");
 	TEST_ASSERT((shm1 = shm_open(shm_name, O_CREAT, 0)) >= 0);
 	TEST_ASSERT((shm2 = shm_open(shm_name, 0, 0)) >= 0);
+	TEST_ASSERT(shm_unlink(shm_name) == 0);
+	TEST_ASSERT(shm_unlink(shm_name) == 0);
+}
+
+/*==========================================================================*
+ * API Test: Open Close 2                                                   *
+ *==========================================================================*/
+
+/**
+ * @brief API Test: Open Close 2
+ */
+static void test_posix_shm_open_close2(void)
+{
+	int shm1, shm2;
+	char shm_name[SHM_NAME_MAX];
+
+	/* Create and unlink shm. */
+	sprintf(shm_name, "/shm");
+	TEST_ASSERT((shm1 = shm_open(shm_name, O_CREAT | O_RDWR, 0)) >= 0);
+	TEST_ASSERT((shm2 = shm_open(shm_name, O_TRUNC | O_RDWR, 0)) >= 0);
 	TEST_ASSERT(shm_unlink(shm_name) == 0);
 	TEST_ASSERT(shm_unlink(shm_name) == 0);
 }
@@ -319,6 +334,28 @@ static void test_posix_shm_map_unmap8(void)
 	TEST_ASSERT(munmap(map, REGION_SIZE) == 0);
 	TEST_ASSERT(shm_unlink(shm_name) == 0);
 }
+/*==========================================================================*
+ * API Test: Map_Unmap 9                                                    *
+ *==========================================================================*/
+
+/**
+ * @brief API Test: Map Unmap 9
+ */
+static void test_posix_shm_map_unmap9(void)
+{
+	int shm;
+	void *map1, *map2;
+	char shm_name[SHM_NAME_MAX];
+
+	sprintf(shm_name, "/shm");
+	TEST_ASSERT((shm = shm_open(shm_name, O_CREAT, O_RDWR)) >= 0);
+	TEST_ASSERT(ftruncate(shm, REGION_SIZE) == 0);
+	TEST_ASSERT((map1 = mmap(NULL, REGION_SIZE, PROT_WRITE, MAP_SHARED, shm, 0)) != MAP_FAILED);
+	TEST_ASSERT(munmap(map1, REGION_SIZE) == 0);
+	TEST_ASSERT((map2 = mmap(NULL, REGION_SIZE, PROT_WRITE, MAP_SHARED, shm, 0)) != MAP_FAILED);
+	TEST_ASSERT(munmap(map2, REGION_SIZE) == 0);
+	TEST_ASSERT(shm_unlink(shm_name) == 0);
+}
 
 /*==========================================================================*
  * API Test: Sync 1                                                         *
@@ -380,36 +417,6 @@ static void test_posix_shm_sync2(void)
 	TEST_ASSERT(shm_unlink(shm_name) == 0);
 }
 
-/*==========================================================================*
- * API Test: Sync 3                                                         *
- *==========================================================================*/
-
-/**
- * @brief API Test: Sync 3
- */
-static void test_posix_shm_sync3(void)
-{
-	int shm;
-	char *map;
-	char shm_name[SHM_NAME_MAX];
-
-	sprintf(shm_name, "/shm");
-	TEST_ASSERT((shm = shm_open(shm_name, O_CREAT, O_RDWR)) >= 0);
-	TEST_ASSERT(ftruncate(shm, REGION_SIZE) == 0);
-	TEST_ASSERT((map = mmap(NULL, REGION_SIZE, PROT_WRITE, MAP_SHARED, shm, 0)) != MAP_FAILED);
-
-	memset(map, 0, REGION_SIZE);
-
-	TEST_ASSERT(msync(map, REGION_SIZE, MS_SYNC) == 0);
-
-	/* Check sum. */
-	for (int i = 0; i < REGION_SIZE; i++)
-		TEST_ASSERT(map[i] == 0);
-
-	TEST_ASSERT(munmap(map, REGION_SIZE) == 0);
-	TEST_ASSERT(shm_unlink(shm_name) == 0);
-}
-
 /*============================================================================*/
 
 /**
@@ -420,7 +427,8 @@ struct test posix_shm_tests_api[] = {
 	{ test_posix_shm_create_unlink2, "Create Unlink 2" },
 	{ test_posix_shm_create_unlink3, "Create Unlink 3" },
 	{ test_posix_shm_create_unlink4, "Create Unlink 4" },
-	{ test_posix_shm_open_close,     "Open Close"      },
+	{ test_posix_shm_open_close1,    "Open Close 1"    },
+	{ test_posix_shm_open_close2,    "Open Close 2"    },
 	{ test_posix_shm_truncate,       "Truncate"        },
 	{ test_posix_shm_map_unmap1,     "Map Unmap 1"     },
 	{ test_posix_shm_map_unmap2,     "Map Unmap 2"     },
@@ -430,8 +438,8 @@ struct test posix_shm_tests_api[] = {
 	{ test_posix_shm_map_unmap6,     "Map Unmap 6"     },
 	{ test_posix_shm_map_unmap7,     "Map Unmap 7"     },
 	{ test_posix_shm_map_unmap8,     "Map Unmap 8"     },
+	{ test_posix_shm_map_unmap9,     "Map Unmap 9"     },
 	{ test_posix_shm_sync1,          "Sync 1"          },
 	{ test_posix_shm_sync2,          "Sync 2"          },
-	{ test_posix_shm_sync3,          "Sync 3"          },
 	{ NULL,                          NULL              },
 };

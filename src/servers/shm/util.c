@@ -46,9 +46,9 @@ void shm_debug(const char *fmt, ...)
 	strncat(strbuf, fmt, len);
 	strcat(strbuf, "\n");
 
-	va_start (args, fmt);
-	vprintf (strbuf, args);
-	va_end (args);
+	va_start(args, fmt);
+	vprintf(strbuf, args);
+	va_end(args);
 
 #endif
 }

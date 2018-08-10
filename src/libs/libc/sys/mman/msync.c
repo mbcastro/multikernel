@@ -45,5 +45,5 @@ int msync(void *addr, size_t len, int flags)
 		return (-1);
 	}
 
-	return (nanvix_msync(addr, len, flags & MS_ASYNC, flags & MS_INVALIDATE));
+	return (nanvix_msync(addr, len, flags & MS_SYNC, flags & MS_INVALIDATE));
 }

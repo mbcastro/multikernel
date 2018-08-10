@@ -233,25 +233,25 @@ int nanvix_munmap(void *addr, size_t len)
  *
  * @param addr       Target local address.
  * @param len        Number of bytes to synchronize.
- * @param async      Asynchronous write? Else synchronous.
+ * @param sync       Synchronous write? Else asynchronous.
  * @param invalidate Invaldiate cached data? Else no.
  *
  * @para Upon successful completion, zero is returned. Upon failure,
  * -1 is returned instead and errno is set to indicate the error.
  */
-int nanvix_msync(void *addr, size_t len, int async, int invalidate)
+int nanvix_msync(void *addr, size_t len, int sync, int invalidate)
 {
 	int i;
 
-	/* Not supported. */
-	if (async)
+	/* Invalid shared memory region. */
+	if ((i = nanvix_get_mapping2(addr)) < 0)
 	{
-		errno = ENOTSUP;
+		errno = EINVAL;
 		return (-1);
 	}
 
-	/* Invalid shared memory region. */
-	if ((i = nanvix_get_mapping2(addr)) < 0)
+	/* Invalid size. */
+	if (len > mappings[i].size)
 	{
 		errno = EINVAL;
 		return (-1);
@@ -264,9 +264,25 @@ int nanvix_msync(void *addr, size_t len, int async, int invalidate)
 		return (0);
 	}
 
+	/* Not supported. */
+	if (!sync)
+	{
+		errno = ENOTSUP;
+		return (-1);
+	}
+
 	/* Synchronize region. */
-	if ((mappings[i].shared) && (mappings[i].writable))
+	if (mappings[i].shared)
+	{
+		/* Canot write. */
+		if (!mappings[i].writable)
+		{
+			errno = EINVAL;
+			return (-1);
+		}
+
 		memwrite(mappings[i].remote, mappings[i].local, len);
+	}
 
 	return (0);
 }
@@ -310,5 +326,5 @@ int nanvix_ftruncate(int fd, off_t length)
 		return (-1);
 	}
 
-	return (nanvix_mtruncate(fd, length) < 0);
+	return (nanvix_mtruncate(fd, length));
 }
