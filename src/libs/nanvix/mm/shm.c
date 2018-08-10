@@ -154,6 +154,13 @@ int nanvix_shm_create_excl(const char *name, int rw, mode_t mode)
 	int nodenum;
 	struct shm_message msg;
 
+	/* Uninitalized server. */
+	if (!server.initialized)
+	{
+		errno = EAGAIN;
+		return (-1);
+	}
+
 	/* Cannot get inbox. */
 	if ((inbox = get_inbox()) < 0)
 		return (-1);
@@ -228,6 +235,13 @@ int nanvix_shm_create(const char *name, int rw, int truncate, mode_t mode)
 	int inbox;
 	int nodenum;
 	struct shm_message msg;
+
+	/* Uninitalized server. */
+	if (!server.initialized)
+	{
+		errno = EAGAIN;
+		return (-1);
+	}
 
 	/* Cannot get inbox. */
 	if ((inbox = get_inbox()) < 0)
@@ -304,6 +318,13 @@ int nanvix_shm_open(const char *name, int rw, int truncate)
 	int nodenum;
 	struct shm_message msg;
 
+	/* Uninitalized server. */
+	if (!server.initialized)
+	{
+		errno = EAGAIN;
+		return (-1);
+	}
+
 	/* Cannot get inbox. */
 	if ((inbox = get_inbox()) < 0)
 		return (-1);
@@ -375,6 +396,13 @@ int nanvix_shm_unlink(const char *name)
 	int nodenum;
 	struct shm_message msg;
 
+	/* Uninitalized server. */
+	if (!server.initialized)
+	{
+		errno = EAGAIN;
+		return (-1);
+	}
+
 	/* Cannot get inbox. */
 	if ((inbox = get_inbox()) < 0)
 		return (-1);
@@ -417,7 +445,7 @@ error:
 }
 
 /*============================================================================*
- * nanvix_mmap()                                                              *
+ * nanvix_map()                                                               *
  *============================================================================*/
 
 /**
@@ -439,6 +467,13 @@ int nanvix_map(uint64_t *mapblk, size_t len, int writable, int shared, int fd, o
 	int inbox;
 	int nodenum;
 	struct shm_message msg;
+
+	/* Uninitalized server. */
+	if (!server.initialized)
+	{
+		errno = EAGAIN;
+		return (-1);
+	}
 
 	/* Invalid length. */
 	if (len == 0)
@@ -510,6 +545,13 @@ int nanvix_unmap(int shmid, size_t len)
 	int nodenum;
 	struct shm_message msg;
 
+	/* Uninitalized server. */
+	if (!server.initialized)
+	{
+		errno = EAGAIN;
+		return (-1);
+	}
+
 	/* Invalid length. */
 	if (len == 0)
 	{
@@ -574,7 +616,7 @@ int nanvix_mtruncate(int shmid, size_t size)
 	int ret;
 	int inbox;
 	int nodenum;
-	struct shm_message msg;
+		struct shm_message msg;
 
 	/* Cannot get inbox. */
 	if ((inbox = get_inbox()) < 0)
