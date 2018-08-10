@@ -157,7 +157,7 @@ int nanvix_shm_create_excl(const char *name, int rw, mode_t mode)
 	/* Uninitalized server. */
 	if (!server.initialized)
 	{
-		errno = -EAGAIN;
+		errno = EAGAIN;
 		return (-1);
 	}
 
@@ -239,7 +239,7 @@ int nanvix_shm_create(const char *name, int rw, int truncate, mode_t mode)
 	/* Uninitalized server. */
 	if (!server.initialized)
 	{
-		errno = -EAGAIN;
+		errno = EAGAIN;
 		return (-1);
 	}
 
@@ -321,7 +321,7 @@ int nanvix_shm_open(const char *name, int rw, int truncate)
 	/* Uninitalized server. */
 	if (!server.initialized)
 	{
-		errno = -EAGAIN;
+		errno = EAGAIN;
 		return (-1);
 	}
 
@@ -399,7 +399,7 @@ int nanvix_shm_unlink(const char *name)
 	/* Uninitalized server. */
 	if (!server.initialized)
 	{
-		errno = -EAGAIN;
+		errno = EAGAIN;
 		return (-1);
 	}
 
@@ -471,7 +471,7 @@ int nanvix_map(uint64_t *mapblk, size_t len, int writable, int shared, int fd, o
 	/* Uninitalized server. */
 	if (!server.initialized)
 	{
-		errno = -EAGAIN;
+		errno = EAGAIN;
 		return (-1);
 	}
 
@@ -548,7 +548,7 @@ int nanvix_unmap(int shmid, size_t len)
 	/* Uninitalized server. */
 	if (!server.initialized)
 	{
-		errno = -EAGAIN;
+		errno = EAGAIN;
 		return (-1);
 	}
 
@@ -616,14 +616,7 @@ int nanvix_mtruncate(int shmid, size_t size)
 	int ret;
 	int inbox;
 	int nodenum;
-	struct shm_message msg;
-
-	/* Uninitalized server. */
-	if (!server.initialized)
-	{
-		errno = -EAGAIN;
-		return (-1);
-	}
+		struct shm_message msg;
 
 	/* Cannot get inbox. */
 	if ((inbox = get_inbox()) < 0)
