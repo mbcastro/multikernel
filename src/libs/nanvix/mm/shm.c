@@ -90,6 +90,9 @@ static inline int nanvix_shm_is_invalid_name(const char *name)
  */
 int nanvix_shm_init(void)
 {
+	/* Sanity check at compile time: Mailbox compliant */
+	CHECK_MAILBOX_MSG_SIZE(struct shm_message);
+
 	/* Nothing to do.  */
 	if (server.initialized)
 		return (0);

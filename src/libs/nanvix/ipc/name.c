@@ -62,6 +62,9 @@ static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
  */
 int name_init(void)
 {
+	/* Sanity check at compile time: Mailbox compliant */
+	CHECK_MAILBOX_MSG_SIZE(struct name_message);
+
 	/* Nothing to do. */
 	if (initialized)
 		return (0);

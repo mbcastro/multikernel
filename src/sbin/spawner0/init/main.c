@@ -78,6 +78,9 @@ static void test_kernel(const char *module)
  */
 void spawner_init(void)
 {
+	/* Sanity check at compile time: Mailbox compliant */
+	CHECK_MAILBOX_MSG_SIZE(struct spawner_message);
+
 	nodenum = sys_get_node_num();
 
 	assert((inbox = sys_mailbox_create(nodenum)) >= 0);

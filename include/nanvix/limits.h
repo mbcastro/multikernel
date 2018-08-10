@@ -49,7 +49,7 @@
 	#define NANVIX_PORTAL_MAX HAL_NR_PORTAL
 
 	/**
-	 * @brief Maximum length of a sempahore name.
+	 * @brief Maximum length of a semaphore name.
 	 *
 	 * @note The null character is included.
 	 */

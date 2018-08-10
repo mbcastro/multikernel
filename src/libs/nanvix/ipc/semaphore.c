@@ -57,6 +57,9 @@ static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
  */
 int nanvix_sem_init(void)
 {
+	/* Sanity check at compile time: Mailbox compliant */
+	CHECK_MAILBOX_MSG_SIZE(struct sem_message);
+
 	/* Nothing to do.  */
 	if (server.initialized)
 		return (0);

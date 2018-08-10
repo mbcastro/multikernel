@@ -140,6 +140,9 @@ int memwrite(uint64_t addr, const void *buf, size_t n)
  */
 int meminit(void)
 {
+	/* Sanity check at compile time: Mailbox compliant */
+	CHECK_MAILBOX_MSG_SIZE(struct rmem_message);
+
 	/* Nothing to do.  */
 	if (server.initialized)
 		return (0);
