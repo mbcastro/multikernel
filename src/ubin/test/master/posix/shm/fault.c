@@ -309,6 +309,8 @@ static void test_posix_shm_invalid_sync(void)
 	TEST_ASSERT(msync(NULL, REGION_SIZE, MS_SYNC) < 0);
 	TEST_ASSERT(msync(map, -REGION_SIZE, MS_SYNC) < 0);
 	TEST_ASSERT(msync(map, REGION_SIZE + 1, MS_SYNC) < 0);
+	TEST_ASSERT(msync(map, REGION_SIZE, MS_SYNC | MS_ASYNC) < 0);
+	TEST_ASSERT(msync(map, REGION_SIZE, 0) < 0);
 
 	TEST_ASSERT(munmap(map, REGION_SIZE) == 0);
 	TEST_ASSERT(shm_unlink("/shm") == 0);
