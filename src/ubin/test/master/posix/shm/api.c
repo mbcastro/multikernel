@@ -314,6 +314,28 @@ static void test_posix_shm_map_unmap8(void)
 	TEST_ASSERT(munmap(map, REGION_SIZE) == 0);
 	TEST_ASSERT(shm_unlink(shm_name) == 0);
 }
+/*==========================================================================*
+ * API Test: Map_Unmap 9                                                    *
+ *==========================================================================*/
+
+/**
+ * @brief API Test: Map Unmap 9
+ */
+static void test_posix_shm_map_unmap9(void)
+{
+	int shm;
+	void *map1, *map2;
+	char shm_name[SHM_NAME_MAX];
+
+	sprintf(shm_name, "/shm");
+	TEST_ASSERT((shm = shm_open(shm_name, O_CREAT, O_RDWR)) >= 0);
+	TEST_ASSERT(ftruncate(shm, REGION_SIZE) == 0);
+	TEST_ASSERT((map1 = mmap(NULL, REGION_SIZE, PROT_WRITE, MAP_SHARED, shm, 0)) != MAP_FAILED);
+	TEST_ASSERT(munmap(map1, REGION_SIZE) == 0);
+	TEST_ASSERT((map2 = mmap(NULL, REGION_SIZE, PROT_WRITE, MAP_SHARED, shm, 0)) != MAP_FAILED);
+	TEST_ASSERT(munmap(map2, REGION_SIZE) == 0);
+	TEST_ASSERT(shm_unlink(shm_name) == 0);
+}
 
 /*==========================================================================*
  * API Test: Sync 1                                                         *
@@ -395,6 +417,7 @@ struct test posix_shm_tests_api[] = {
 	{ test_posix_shm_map_unmap6,     "Map Unmap 6"     },
 	{ test_posix_shm_map_unmap7,     "Map Unmap 7"     },
 	{ test_posix_shm_map_unmap8,     "Map Unmap 8"     },
+	{ test_posix_shm_map_unmap9,     "Map Unmap 9"     },
 	{ test_posix_shm_sync1,          "Sync 1"          },
 	{ test_posix_shm_sync2,          "Sync 2"          },
 	{ NULL,                          NULL              },
