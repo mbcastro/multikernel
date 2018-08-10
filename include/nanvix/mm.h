@@ -58,7 +58,7 @@
 		uint16_t op;         /**< Operation.      */
 		uint64_t blknum;     /**< Block number.   */
 		uint32_t size;       /**< Size.           */
-		uint32_t unused[12]; /**< Not used.       */
+		uint32_t unused[10]; /**< Not used.       */
 	};
 
 	/* Forward definitions. */

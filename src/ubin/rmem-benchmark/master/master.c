@@ -129,6 +129,9 @@ static void join_remotes(void)
  */
 static void kernel(int inbox)
 {
+	/* Sanity check at compile time: Mailbox compliant */
+	CHECK_MAILBOX_MSG_SIZE(struct message);
+
 	/* Initialization. */
 	memset(buffer, 1, bufsize);
 
