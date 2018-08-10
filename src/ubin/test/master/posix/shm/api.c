@@ -109,13 +109,13 @@ static void test_posix_shm_create_unlink4(void)
 }
 
 /*==========================================================================*
- * API Test: Open Close                                                     *
+ * API Test: Open Close 1                                                   *
  *==========================================================================*/
 
 /**
- * @brief API Test: Open Close
+ * @brief API Test: Open Close 1
  */
-static void test_posix_shm_open_close(void)
+static void test_posix_shm_open_close1(void)
 {
 	int shm1, shm2;
 	char shm_name[SHM_NAME_MAX];
@@ -124,6 +124,26 @@ static void test_posix_shm_open_close(void)
 	sprintf(shm_name, "/shm");
 	TEST_ASSERT((shm1 = shm_open(shm_name, O_CREAT, 0)) >= 0);
 	TEST_ASSERT((shm2 = shm_open(shm_name, 0, 0)) >= 0);
+	TEST_ASSERT(shm_unlink(shm_name) == 0);
+	TEST_ASSERT(shm_unlink(shm_name) == 0);
+}
+
+/*==========================================================================*
+ * API Test: Open Close 2                                                   *
+ *==========================================================================*/
+
+/**
+ * @brief API Test: Open Close 2
+ */
+static void test_posix_shm_open_close2(void)
+{
+	int shm1, shm2;
+	char shm_name[SHM_NAME_MAX];
+
+	/* Create and unlink shm. */
+	sprintf(shm_name, "/shm");
+	TEST_ASSERT((shm1 = shm_open(shm_name, O_CREAT | O_RDWR, 0)) >= 0);
+	TEST_ASSERT((shm2 = shm_open(shm_name, O_TRUNC | O_RDWR, 0)) >= 0);
 	TEST_ASSERT(shm_unlink(shm_name) == 0);
 	TEST_ASSERT(shm_unlink(shm_name) == 0);
 }
@@ -407,7 +427,8 @@ struct test posix_shm_tests_api[] = {
 	{ test_posix_shm_create_unlink2, "Create Unlink 2" },
 	{ test_posix_shm_create_unlink3, "Create Unlink 3" },
 	{ test_posix_shm_create_unlink4, "Create Unlink 4" },
-	{ test_posix_shm_open_close,     "Open Close"      },
+	{ test_posix_shm_open_close1,    "Open Close 1"    },
+	{ test_posix_shm_open_close2,    "Open Close 2"    },
 	{ test_posix_shm_truncate,       "Truncate"        },
 	{ test_posix_shm_map_unmap1,     "Map Unmap 1"     },
 	{ test_posix_shm_map_unmap2,     "Map Unmap 2"     },
