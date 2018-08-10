@@ -60,6 +60,13 @@ void *mmap(void *addr, size_t len, int prot, int flags, int fd, off_t off)
 		return (MAP_FAILED);
 	}
 
+	/* Missing protection. */
+	if (!((prot & PROT_WRITE) || (prot & PROT_READ)))
+	{
+		errno = EINVAL;
+		return (MAP_FAILED);
+	}
+
 	/* Fixed mapping not supported. */
 	if (flags == MAP_FIXED)
 	{
