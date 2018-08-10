@@ -257,6 +257,13 @@ int nanvix_msync(void *addr, size_t len, int async, int invalidate)
 		return (-1);
 	}
 
+	/* Invalid size. */
+	if (len > mappings[i].size)
+	{
+		errno = EINVAL;
+		return (-1);
+	}
+
 	/* Invalidate cached data. */
 	if (invalidate)
 	{
