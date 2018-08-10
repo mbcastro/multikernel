@@ -16,7 +16,10 @@ namespace libs {
 
 		namespace rmem {
 		}
-	  
+
+		namespace shm {
+		}	  
+
 		namespace semaphore {
 		}
 	}
@@ -24,14 +27,20 @@ namespace libs {
 	namespace posix {
 		namespace semaphore {
 		}
+
+		namespace shm {
+		}
 	}
 
-	libs.nanvix.mailbox   ..> libs.nanvix.name    : <<use>>
-	libs.nanvix.portal    ..> libs.nanvix.name    : <<use>>
-	libs.nanvix.rmem      ..> libs.nanvix.mailbox : <<use>>
-	libs.nanvix.rmem      ..> libs.nanvix.portal  : <<use>>
-	libs.nanvix.semaphore ..> libs.nanvix.mailbox : <<use>>
-	libs.posix.semaphore <|.. libs.nanvix.semaphore : <<implements>>
+	libs.nanvix.mailbox   ..>  libs.nanvix.name      : <<use>>
+	libs.nanvix.portal    ..>  libs.nanvix.name      : <<use>>
+	libs.nanvix.rmem      ..>  libs.nanvix.mailbox   : <<use>>
+	libs.nanvix.rmem      ..>  libs.nanvix.portal    : <<use>>
+	libs.nanvix.shm        .>  libs.nanvix.rmem      : <<use>>
+	libs.nanvix.shm       ..>  libs.nanvix.mailbox   : <<use>>
+	libs.posix.shm        <|.. libs.nanvix.shm       : <<implements>>
+	libs.nanvix.semaphore ..>  libs.nanvix.mailbox   : <<use>>
+	libs.posix.semaphore  <|.. libs.nanvix.semaphore : <<implements>>
 }
 
 @enduml
