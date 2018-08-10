@@ -380,36 +380,6 @@ static void test_posix_shm_sync2(void)
 	TEST_ASSERT(shm_unlink(shm_name) == 0);
 }
 
-/*==========================================================================*
- * API Test: Sync 3                                                         *
- *==========================================================================*/
-
-/**
- * @brief API Test: Sync 3
- */
-static void test_posix_shm_sync3(void)
-{
-	int shm;
-	char *map;
-	char shm_name[SHM_NAME_MAX];
-
-	sprintf(shm_name, "/shm");
-	TEST_ASSERT((shm = shm_open(shm_name, O_CREAT, O_RDWR)) >= 0);
-	TEST_ASSERT(ftruncate(shm, REGION_SIZE) == 0);
-	TEST_ASSERT((map = mmap(NULL, REGION_SIZE, PROT_WRITE, MAP_SHARED, shm, 0)) != MAP_FAILED);
-
-	memset(map, 0, REGION_SIZE);
-
-	TEST_ASSERT(msync(map, REGION_SIZE, MS_SYNC) == 0);
-
-	/* Check sum. */
-	for (int i = 0; i < REGION_SIZE; i++)
-		TEST_ASSERT(map[i] == 0);
-
-	TEST_ASSERT(munmap(map, REGION_SIZE) == 0);
-	TEST_ASSERT(shm_unlink(shm_name) == 0);
-}
-
 /*============================================================================*/
 
 /**
@@ -432,6 +402,5 @@ struct test posix_shm_tests_api[] = {
 	{ test_posix_shm_map_unmap8,     "Map Unmap 8"     },
 	{ test_posix_shm_sync1,          "Sync 1"          },
 	{ test_posix_shm_sync2,          "Sync 2"          },
-	{ test_posix_shm_sync3,          "Sync 3"          },
 	{ NULL,                          NULL              },
 };
