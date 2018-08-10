@@ -310,5 +310,5 @@ int nanvix_ftruncate(int fd, off_t length)
 		return (-1);
 	}
 
-	return (nanvix_mtruncate(fd, length) < 0);
+	return (nanvix_mtruncate(fd, length));
 }
