@@ -37,7 +37,7 @@ export AR = $(TOOLCHAIN)/bin/k1-ar
 export TOOLCHAIN=/usr/local/k1tools
 
 # Compiler Options
-export CFLAGS += -D_KALRAY_MPPA256 -D_KALRAY_MPPA_256_HIGH_LEVEL
+export CFLAGS += -D_KALRAY_MPPA256
 ifeq ($(ARCH),k1bdp)
 	export CFLAGS += -march=k1b -mos=nodeos -mcluster=node 
 	export CFLAGS += -D_KALRAY_MPPA_CCLUSTER_
