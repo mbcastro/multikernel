@@ -48,37 +48,8 @@ case "$1" in
 				"$NCLUSTERS $NITERATIONS $BUFSIZE $kernel"
 		done
 	;;
-	nanvix-sync)
-		echo "Running Nanvix Sync Microbenchmarks"
-		for kernel in barrier;
-		do
-			run1 "benchmark-hal-sync.img"      \
-				"/benchmark/hal-sync-master"   \
-				"$NCLUSTERS $NITERATIONS $kernel"
-		done
-	;;
-	nanvix-mailbox)
-		echo "Running Nanvix Mailbox Microbenchmarks"
-		for kernel in broadcast gather pingpong;
-		do
-			run1 "benchmark-hal-mailbox.img"      \
-				"/benchmark/hal-mailbox-master"   \
-				"$NCLUSTERS $NITERATIONS $kernel"
-		done
-	;;
-	nanvix-portal)
-		echo "Running Nanvix Portal Microbenchmarks"
-		for kernel in broadcast gather pingpong;
-		do
-			run1 "benchmark-hal-portal.img"                \
-				"/benchmark/hal-portal-master"             \
-				"$NCLUSTERS $NITERATIONS $BUFSIZE $kernel"
-		done
-	;;
 	*)
 		echo "Usage: run.sh test {mppa256-portal|mppa256-rqueue}"
-		echo "                   {nanvix-sync|nanvix-mailbox|nanvix-portal}"
-		echo "                   {nanvix-rmem}"
 		exit 1
 	;;
 esac

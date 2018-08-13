@@ -24,45 +24,25 @@
 export BINDIR := $(BINDIR)/benchmark
 
 # Builds everything.
-all: arch-rqueue arch-portal hal-sync hal-mailbox hal-portal
+all: arch-rqueue arch-portal
 
-# Builds Native Portal Microbenchmarks
-arch-portal:
-	mkdir -p $(BINDIR)
-	cd arch/portal && $(MAKE) all
-
-# Builds Native Rqueue Microbenchmarks
+# Builds rqueue microbenchmark
 arch-rqueue:
 	mkdir -p $(BINDIR)
 	cd arch/rqueue && $(MAKE) all
 
-# Builds HAL Sync Benchmark
-hal-sync:
+# Builds portal microbenchmark
+arch-portal:
 	mkdir -p $(BINDIR)
-	cd hal/sync && $(MAKE) all
-
-# Builds HAL Mailbox Benchmark
-hal-mailbox:
-	mkdir -p $(BINDIR)
-	cd hal/mailbox && $(MAKE) all
-
-# Builds HAL Portal Benchmark
-hal-portal:
-	mkdir -p $(BINDIR)
-	cd hal/portal && $(MAKE) all
+	cd arch/portal && $(MAKE) all
 
 # Cleans compilation files.
 clean:
 	cd arch/rqueue && $(MAKE) clean
 	cd arch/portal && $(MAKE) clean
-	cd hal/mailbox && $(MAKE) clean
-	cd hal/portal  && $(MAKE) clean
 
 # Cleans everything.
 distclean:
 	cd arch/rqueue && $(MAKE) distclean
 	cd arch/portal && $(MAKE) distclean
-	cd hal/sync    && $(MAKE) distclean
-	cd hal/mailbox && $(MAKE) distclean
-	cd hal/portal  && $(MAKE) distclean
 
