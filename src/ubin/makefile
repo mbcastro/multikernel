@@ -28,7 +28,7 @@
 # Builds everything.
 all: test
 
-# Builds Test-Driver Utilitiy.
+# Builds Test-Driver Utility.
 test:
 	cd test && $(MAKE) all
 
