@@ -72,7 +72,7 @@ export SPAWNER1BIN = $(BINDIR)/spawner1
 .PHONY: ubin
 
 # Builds everything.
-all: kernel libs servers sbin ubin benchmarks
+all: kernel libs servers sbin ubin 
 
 # Builds the kernel.
 kernel: clean
@@ -98,11 +98,6 @@ sbin: kernel servers libs
 ubin: kernel servers libs sbin
 	mkdir -p $(BINDIR)
 	cd ubin && $(MAKE) all
-
-# Builds benchmarks.
-benchmarks: kernel servers libs sbin
-	mkdir -p $(BINDIR)
-	cd sbin/benchmarks && $(MAKE) all
 
 # Cleans compilation files.
 clean:

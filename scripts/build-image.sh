@@ -48,7 +48,3 @@ build2 $BINDIR $BINDIR/test-driver "$BINARIES" nanvix-runtime-debug.img
 
 BINARIES="$BINDIR/test/posix-semaphore-slave"
 build2 $BINDIR $BINDIR/test-driver "$BINARIES" nanvix-posix-debug.img
-
-# Benchmarks
-build1 $BINDIR $BINDIR/benchmark/mppa256-portal-master $BINDIR/benchmark/mppa256-portal-slave benchmark-mppa256-portal.img
-build1 $BINDIR $BINDIR/benchmark/mppa256-rqueue-master $BINDIR/benchmark/mppa256-rqueue-slave benchmark-mppa256-rqueue.img
