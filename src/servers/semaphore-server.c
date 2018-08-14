@@ -27,10 +27,17 @@
 #include <stdlib.h>
 
 #include <nanvix/spawner.h>
+#include <nanvix/klib.h>
 #include <nanvix/syscalls.h>
 #include <nanvix/pm.h>
 #include <nanvix/name.h>
 #include <nanvix/semaphore.h>
+
+#ifdef DEBUG_SEMAPHORE
+	#define semaphore_debug(fmt, ...) debug("semaphore", fmt, __VA_ARGS__)
+#else
+	#define semaphore_debug(fmt, ...) { }
+#endif
 
 /**
  * @brief Semaphore flags.
@@ -351,14 +358,12 @@ static int semaphore_create(int owner, char *name, mode_t mode, int value)
 {
 	int semid;
 
-#ifdef DEBUG_SEMAPHORE
-	printf("SEMAPHORE CREATE %d %s %d %d\n",
+	semaphore_debug("create nodenum=%d name=%s mode=%d value=%d",
 		owner,
 		name,
-		(int) mode,
+		mode,
 		value
 	);
-#endif
 
 	/* Invalid process. */
 	if ((owner < 0) || (owner >= HAL_NR_NOC_NODES))
@@ -463,12 +468,10 @@ static int semaphore_open(int node, char *name)
 	int semid;  /* Semaphore Id.      */
 	int refcount; /* Number of process. */
 
-#ifdef DEBUG_SEMAPHORE
-	printf("SEMAPHORE OPEN %d %s\n",
+	semaphore_debug("open nodenum=%d name=%s",
 		node,
 		name
 	);
-#endif
 
 	/* Invalid process. */
 	if ((node < 0) || (node >= HAL_NR_NOC_NODES))
@@ -533,12 +536,10 @@ static int semaphore_close(int node, int semid)
 	int i;
 	int refcount;
 
-#ifdef DEBUG_SEMAPHORE
-	printf("SEMAPHORE CLOSE %d %d\n",
+	semaphore_debug("close nodenum=%d semid=%d",
 		node,
 		semid
 	);
-#endif
 
 	/* Invalid process. */
 	if ((node < 0) || (node >= HAL_NR_NOC_NODES))
@@ -598,12 +599,10 @@ static int semaphore_unlink(int node, const char *name)
 {
 	int semid;
 
-#ifdef DEBUG_SEMAPHORE
-	printf("SEMAPHORE UNLINK %d %s\n",
+	semaphore_debug("unlink nodenum=%d name=%s",
 		node,
 		name
 	);
-#endif
 
 	/* Invalid process ID. */
 	if ((node < 0) || (node >= HAL_NR_NOC_NODES))
@@ -665,12 +664,10 @@ static int semaphore_wait(int node, int semid)
 	int i;
 	int refcount;
 
-#ifdef DEBUG_SEMAPHORE
-	printf("SEMAPHORE WAIT %d %d\n",
+	semaphore_debug("wait nodenum=%d semid=%d",
 		node,
 		semid
 	);
-#endif
 
 	/* Invalid process. */
 	if ((node < 0) || (node >= HAL_NR_NOC_NODES))
@@ -733,12 +730,10 @@ static int semaphore_post(int node, int semid)
 	int refcount;
 	struct sem_message msg;
 
-#ifdef DEBUG_SEMAPHORE
-	printf("SEMAPHORE POST %d %d\n",
+	semaphore_debug("post nodenum=%d semid=%d",
 		node,
 		semid
 	);
-#endif
 
 	/* Invalid process. */
 	if ((node < 0) || (node >= HAL_NR_NOC_NODES))

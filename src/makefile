@@ -44,6 +44,10 @@ ifeq ($(DEBUG_NAME),true)
 	export CFLAGS += -DDEBUG_NAME
 endif
 
+ifeq ($(DEBUG_SEMAPHORE),true)
+	export CFLAGS += -DDEBUG_SEMAPHORE
+endif
+
 ifeq ($(DEBUG_RMEM),true)
 	export CFLAGS += -DDEBUG_RMEM
 endif
