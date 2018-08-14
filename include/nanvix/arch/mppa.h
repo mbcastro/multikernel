@@ -125,6 +125,11 @@
 		#define HAL_NR_PORTAL (4*HAL_NR_NOC_NODES)
 	#endif
 
+	/**
+	 * @brief Maximum size for portal data transfers (in bytes).
+	 */
+	#define HAL_PORTAL_MAX_SIZE (1024*1024)
+
 #endif /* __NEED_HAL_CONST_ */
 
 /*============================================================================*
