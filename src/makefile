@@ -36,8 +36,12 @@ export CFLAGS += -Winit-self -Wswitch-default -Wfloat-equal
 export CFLAGS += -Wundef -Wshadow -Wuninitialized
 export CFLAGS += -O3
 export CFLAGS += -I $(INCDIR)
-ifdef DEBUG
-export CFLAGS += -DDEBUG
+
+ifeq ($(DEBUG),true)
+	export CFLAGS += -DDEBUG_NAME
+	export CFLAGS += -DDEBUG_SEMAPHORE
+	export CFLAGS += -DDEBUG_RMEM
+	export CFLAGS += -DDEBUG_SHM
 endif
 
 ifeq ($(DEBUG_NAME),true)
