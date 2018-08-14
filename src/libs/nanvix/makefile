@@ -21,10 +21,11 @@
 #
 
 # C Source Files
-SRC = $(wildcard *.c)     \
-      $(wildcard fs/*.c)  \
-      $(wildcard ipc/*.c) \
-      $(wildcard mm/*.c)
+SRC = $(wildcard *.c)      \
+      $(wildcard fs/*.c)   \
+      $(wildcard ipc/*.c)  \
+      $(wildcard mm/*.c)   \
+      $(wildcard util/*.c)
 
 # Object Files
 OBJ = $(SRC:.c=.o)

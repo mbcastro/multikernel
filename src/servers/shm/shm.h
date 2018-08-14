@@ -26,8 +26,15 @@
 	#include <sys/types.h>
 	#include <stdint.h>
 
+	#include <nanvix/klib.h>
+
+#ifdef DEBUG_SHM
+	#define shm_debug(fmt, ...) debug("shm", fmt, __VA_ARGS__)
+#else
+	#define shm_debug(fmt, ...) { }
+#endif
+
 	/* Forward definitions. */
-	extern void shm_debug(const char *, ...);
 	extern void buffer_init(void);
 	extern int buffer_put(int, const void *);
 	extern int buffer_get(int, void *);

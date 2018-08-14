@@ -24,24 +24,19 @@
 #include <string.h>
 #include <stdio.h>
 
-/*============================================================================*
- * shm_debug()                                                                *
- *============================================================================*/
-
 /**
  * @brief Dumps debug information.
+ *
+ * @param modulename Name of the calling module.
+ * @param fmt        Formatted string.
  */
-void shm_debug(const char *fmt, ...)
+void debug(const char *modulename, const char *fmt, ...)
 {
-#ifndef DEBUG_SHM
-	((void) fmt);
-#else
-
 	int len;
 	va_list args;
 	char strbuf[80];
 
-	strcpy(strbuf, "[DEBUG][nanvix][shm] ");
+	sprintf(strbuf, "[DEBUG][nanvix][%s] ", modulename);
 	len = 80 - 2 - strlen(strbuf);
 	strncat(strbuf, fmt, len);
 	strcat(strbuf, "\n");
@@ -49,7 +44,5 @@ void shm_debug(const char *fmt, ...)
 	va_start(args, fmt);
 	vprintf(strbuf, args);
 	va_end(args);
-
-#endif
 }
 
