@@ -470,10 +470,11 @@ int mailbox_read(int mbxid, void *buf, size_t n)
 	if (buf == NULL)
 		return (-EINVAL);
 
-	if (sys_mailbox_read(mailboxes[mbxid].fd, buf, n) == n)
-		return (0);
+	/* Read. */
+	if (sys_mailbox_read(mailboxes[mbxid].fd, buf, n) < 0)
+		return (-EINVAL);
 
-	return (-EAGAIN);
+	return (0);
 }
 
 /*============================================================================*
@@ -512,10 +513,11 @@ int mailbox_write(int mbxid, const void *buf, size_t n)
 	if (buf == NULL)
 		return (-EINVAL);
 
-	if (sys_mailbox_write(mailboxes[mbxid].fd, buf, n) == n)
-		return (0);
+	/* Write. */
+	if (sys_mailbox_write(mailboxes[mbxid].fd, buf, n) < 0)
+		return (-EINVAL);
 
-	return (-EAGAIN);
+	return (0);
 }
 
 /*============================================================================*
