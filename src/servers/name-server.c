@@ -27,10 +27,17 @@
 #include <stdlib.h>
 
 #include <nanvix/spawner.h>
+#include <nanvix/klib.h>
 #include <nanvix/syscalls.h>
 #include <nanvix/const.h>
 #include <nanvix/pm.h>
 #include <nanvix/name.h>
+
+#ifdef DEBUG_NAME
+	#define name_debug(fmt, ...) debug("name", fmt, __VA_ARGS__)
+#else
+	#define name_debug(fmt, ...) { }
+#endif
 
 /**
  * @brief Number of registration.
@@ -79,6 +86,8 @@ static void _name_init(void)
  */
 static int _name_lookup(const char *name)
 {
+	name_debug("lookup name=%s", name);
+
 	/* Search for portal name. */
 	for (int i = 0; i < NANVIX_NR_NODES; i++)
 	{
@@ -106,6 +115,8 @@ static int _name_lookup(const char *name)
 static int _name_link(int nodenum, char *name)
 {
 	int index;          /* Index where the process will be stored. */
+
+	name_debug("link nodenum=%d name=%s", nodenum, name);
 
 	/* No entry available. */
 	if (nr_registration >= NANVIX_NR_NODES)
@@ -137,11 +148,6 @@ found:
 	if (strcmp(names[index].name, ""))
 		return (-EINVAL);
 
-#ifdef DEBUG
-	printf("writing [nodenum:%d name: %s] at index %d.\n",
-	                   names[index].nodenum, name, index);
-#endif
-
 	strcpy(names[index].name, name);
 
 	return (++nr_registration);
@@ -163,6 +169,8 @@ static int _name_unlink(char *name)
 {
 	/* Search for portal name. */
 	int i = 0;
+
+	name_debug("unlink name=%s", name);
 
 	while (i < NANVIX_NR_NODES && strcmp(name, names[i].name))
 	{
@@ -216,10 +224,6 @@ int name_server(int inbox, int inportal)
 		{
 			/* Lookup. */
 			case NAME_LOOKUP:
-#ifdef DEBUG
-				printf("Entering NAME_LOOKUP case... name provided:%s.\n"
-						                                     , msg.name);
-#endif
 				msg.nodenum = _name_lookup(msg.name);
 
 				/* Send response. */
@@ -235,10 +239,6 @@ int name_server(int inbox, int inportal)
 
 			/* Add name. */
 			case NAME_LINK:
-#ifdef DEBUG
-				printf("Entering NAME_LINK case... [nodenum: %d, name: %s].\n",
-														  (int) msg.nodenum, msg.name);
-#endif
 				tmp = nr_registration;
 
 				if (_name_link(msg.nodenum, msg.name) == (tmp + 1))
@@ -261,9 +261,6 @@ int name_server(int inbox, int inportal)
 
 			/* Remove name. */
 			case NAME_UNLINK:
-#ifdef DEBUG
-				printf("Entering NAME_UNLINK case... name: %s.\n", msg.name);
-#endif
 				tmp = nr_registration;
 
 				if ((tmp > 0) && (_name_unlink(msg.name) == (tmp - 1)))

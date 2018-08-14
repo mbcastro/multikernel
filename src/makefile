@@ -44,6 +44,10 @@ ifeq ($(DEBUG_SHM),true)
 	export CFLAGS += -DDEBUG_SHM
 endif
 
+ifeq ($(DEBUG_NAME),true)
+	export CFLAGS += -DDEBUG_NAME
+endif
+
 # Linker Options
 export LDFLAGS += 
 export ARFLAGS = rcs
