@@ -37,4 +37,8 @@
 	 */
 	#define ARRAY_LENGTH(x) (sizeof(x) / sizeof((x)[0]))
 
+	/* Forward definitions. */
+	extern void debug(const char *, const char *, ...);
+	
+
 #endif /* NANVIX_KLIB_H_ */

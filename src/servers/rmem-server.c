@@ -27,10 +27,17 @@
 #include <inttypes.h>
 
 #include <nanvix/spawner.h>
+#include <nanvix/klib.h>
 #include <nanvix/syscalls.h>
 #include <nanvix/mm.h>
 #include <nanvix/name.h>
 #include <nanvix/pm.h>
+
+#ifdef DEBUG_RMEM
+	#define rmem_debug(fmt, ...) debug("rmem", fmt, __VA_ARGS__)
+#else
+	#define rmem_debug(fmt, ...) { }
+#endif
 
 /**
  * @brief Node number.
@@ -66,13 +73,11 @@ static char rmem[RMEM_SIZE];
  */
 static inline void rmem_write(int remote, uint64_t blknum, int size)
 {
-#ifdef DEBUG_RMEM
-	printf("RMEM WRITE %d %d %d\n",
-		(int) remote,
-		(int) blknum,
-		(int) size
+	rmem_debug("write nodenum=%d blknum=%d size=%d",
+		remote,
+		blknum,
+		size
 	);
-#endif
 
 	/* Invalid write. */
 	if ((blknum >= RMEM_SIZE) || (blknum + size > RMEM_SIZE))
@@ -107,13 +112,11 @@ static inline void rmem_read(int remote, uint64_t blknum, int size)
 {
 	int outportal;
 
-#ifdef DEBUG_RMEM
-	printf("RMEM READ %d %d %d\n",
-		(int) remote,
-		(int) blknum,
-		(int) size
+	rmem_debug("read nodenum=%d blknum=%d size=%d",
+		remote,
+		blknum,
+		size
 	);
-#endif
 
 	/* Invalid read. */
 	if ((blknum >= RMEM_SIZE) || (blknum + size > RMEM_SIZE))
