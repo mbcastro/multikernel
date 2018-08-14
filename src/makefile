@@ -40,12 +40,16 @@ ifdef DEBUG
 export CFLAGS += -DDEBUG
 endif
 
-ifeq ($(DEBUG_SHM),true)
-	export CFLAGS += -DDEBUG_SHM
-endif
-
 ifeq ($(DEBUG_NAME),true)
 	export CFLAGS += -DDEBUG_NAME
+endif
+
+ifeq ($(DEBUG_RMEM),true)
+	export CFLAGS += -DDEBUG_RMEM
+endif
+
+ifeq ($(DEBUG_SHM),true)
+	export CFLAGS += -DDEBUG_SHM
 endif
 
 # Linker Options
