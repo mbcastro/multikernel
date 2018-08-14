@@ -24,6 +24,7 @@
 #define __NEED_HAL_MAILBOX_
 #include <nanvix/hal.h>
 #include <nanvix/klib.h>
+#include <nanvix/syscalls.h>
 
 /**
  * @brief Creates a mailbox.
@@ -116,8 +117,12 @@ int sys_mailbox_close(int mbxid)
  *
  * @note This function is thread-safe.
  */
-size_t sys_mailbox_write(int mbxid, const void *buf, size_t n)
+ssize_t sys_mailbox_write(int mbxid, const void *buf, size_t n)
 {
+	/* Invalid message size. */
+	if (n != MAILBOX_MSG_SIZE)
+		return (-EINVAL);
+	
 	return (hal_mailbox_write(mbxid, buf, n));
 }
 
@@ -134,7 +139,11 @@ size_t sys_mailbox_write(int mbxid, const void *buf, size_t n)
  *
  * @note This function is thread-safe.
  */
-size_t sys_mailbox_read(int mbxid, void *buf, size_t n)
+ssize_t sys_mailbox_read(int mbxid, void *buf, size_t n)
 {
+	/* Invalid message size. */
+	if (n != MAILBOX_MSG_SIZE)
+		return (-EINVAL);
+	
 	return (hal_mailbox_read(mbxid, buf, n));
 }

@@ -23,8 +23,9 @@
 #ifndef NANVIX_SYSCALLS_H_
 #define NANVIX_SYSCALLS_H_
 
+	#include <sys/types.h>
 	#include <stddef.h>
-	#include <inttypes.h>
+	#include <stdint.h>
 
 	#define __NEED_HAL_CONST_
 	#include <nanvix/hal.h>
@@ -79,8 +80,8 @@
 	extern int sys_mailbox_open(int);
 	extern int sys_mailbox_unlink(int);
 	extern int sys_mailbox_close(int);
-	extern size_t sys_mailbox_write(int, const void *, size_t);
-	extern size_t sys_mailbox_read(int, void *, size_t);
+	extern ssize_t sys_mailbox_write(int, const void *, size_t);
+	extern ssize_t sys_mailbox_read(int, void *, size_t);
 	extern int sys_portal_allow(int, int);
 	extern int sys_portal_create(int);
 	extern int sys_portal_open(int);

@@ -23,6 +23,7 @@
 #ifndef NANVIX_PM_H_
 #define NANVIX_PM_H_
 
+	#include <sys/types.h>
 	#include <stddef.h>
 
 /*============================================================================*
@@ -61,8 +62,8 @@
 	extern int portal_allow(int, int);
 	extern int portal_create(char *);
 	extern int portal_open(char *);
-	extern int portal_read(int, void *, size_t);
-	extern int portal_write(int, const void *, size_t);
+	extern ssize_t portal_read(int, void *, size_t);
+	extern ssize_t portal_write(int, const void *, size_t);
 	extern int portal_close(int);
 	extern int portal_unlink(int);
 

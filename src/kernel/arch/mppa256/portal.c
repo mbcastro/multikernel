@@ -607,7 +607,7 @@ error0:
  * @note This function is thread-safe.
  * @note This function is reentrant.
  */
-int hal_portal_read(int portalid, void *buf, size_t n)
+ssize_t hal_portal_read(int portalid, void *buf, size_t n)
 {
 	int nread;
 
@@ -707,7 +707,7 @@ error0:
  * @note This function is thread-safe.
  * @note This function is reentrant.
  */
-int hal_portal_write(int portalid, const void *buf, size_t n)
+ssize_t hal_portal_write(int portalid, const void *buf, size_t n)
 {
 	int nwrite;
 
