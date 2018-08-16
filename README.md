@@ -6,7 +6,7 @@ What is This Repository About?
 
 Nanvix is a Unix like operating system created by Pedro Henrique Penna
 in 2011. It has been initially designed to address educational
-puporses, but it is now being used for research purposes as well.
+puporses, but it is now being used in academic researches as well.
 
 In this repository you will find the experimental multikernel version
 of Nanvix, which consists into a complete re-design of the operating
