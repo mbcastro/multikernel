@@ -2,7 +2,7 @@ Nanvix Multikernel
 ===================
 
 What is This Repository About?
--------------------------------
+------------------------------
 
 Nanvix is a Unix like operating system created by Pedro Henrique Penna
 in 2011. It has been initially designed to address educational
@@ -18,22 +18,22 @@ operating system abstractions and facilities to user applications.
 Currently, the multikernel version of Nanvix features an architectural
 port for the Kalray MPPA-256 processor and the following facilities:
 
-	* Exokernel: provides low-level platform-independent inter-process
-	  communication primitives.
+* Exokernel: provides low-level platform-independent inter-process
+communication primitives.
 
-	* Name Service: provides a naming linking and resolution scheme
-	  that enables processes to communicate in the underlying platform
-	  regardless their physical location.
+* Name Service: provides a naming linking and resolution scheme
+that enables processes to communicate in the underlying platform
+egardless their physical location.
 
-	* IPC Module: relies on the Name Service to provide to other
-	  servers and also user applications high-level inter process
-	  communication primitives.
+* IPC Module: relies on the Name Service to provide to other
+servers and also user applications high-level inter process
+communication primitives.
 
-	* Semaphores Service: exports to user applications a
-	  POSIX-compliant named semaphore abstraction.
+* Semaphores Service: exports to user applications a
+POSIX-compliant named semaphore abstraction.
 
-	* Shared Memory Service: exports to user applications a
-	  POSIX-compliant named shared memory region abstraction.
+* Shared Memory Service: exports to user applications a
+POSIX-compliant named shared memory region abstraction.
 
 
 License and Maintainers
