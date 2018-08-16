@@ -339,118 +339,6 @@ int semaphore_dequeue(int semid)
 }
 
 /*============================================================================*
- * semaphore_create()                                                         *
- *============================================================================*/
-
-/**
- * @brief Creates a named semaphore
- *
- * @param owner ID of owner process.
- * @param name  Name of the targeted semaphore.
- * @param mode  Access permissions.
- * @param value	Semaphore count value.
- *
- * @returns Upon successful completion, the ID of the newly created
- * semaphore is returned. Upon failure, a negative error code is
- * returned instead.
- */
-static int semaphore_create(int owner, char *name, mode_t mode, int value)
-{
-	int semid;
-
-	semaphore_debug("create nodenum=%d name=%s mode=%d value=%d",
-		owner,
-		name,
-		mode,
-		value
-	);
-
-	/* Invalid process. */
-	if ((owner < 0) || (owner >= HAL_NR_NOC_NODES))
-		return (-EINVAL);
-
-	/* Invalid semaphore name. */
-	if (!semaphore_name_is_valid(name))
-		return (-EINVAL);
-
-	/* Invalid value. */
-	if (value > SEM_VALUE_MAX)
-		return (-EINVAL);
-
-	/* Look for semaphore. */
-	for (int i = 0; i < SEM_MAX; i++)
-	{
-		/* Semaphore not in use. */
-		if (!semaphore_is_used(i))
-			continue;
-
-		/* Found.*/
-		if (!strcmp(semaphores[i].name, name))
-			return (-EEXIST);
-	}
-
-	/* Allocate a new semaphore. */
-	if ((semid = semaphore_alloc()) < 0)
-		return (-ENOENT);
-
-	/* Initialize semaphore. */
-	semaphores[semid].count = value;
-	semaphores[semid].head = 0;
-	semaphores[semid].tail = 0;
-	semaphores[semid].refcount = 1;
-	semaphores[semid].owner = owner;
-	semaphores[semid].nodes[0] = owner;
-	semaphores[semid].mode =  mode;
-	strcpy(semaphores[semid].name, name);
-
-	return (semid);
-}
-
-/*============================================================================*
- * semaphore_create_exclusive()                                               *
- *============================================================================*/
-
-/**
- * @brief Open a semaphore with existence check
- *
- * @param owner ID of owner process.
- * @param name  Name of the targeted semaphore.
- * @param mode  Access permissions.
- * @param value	Semaphore count value.
- *
- * @returns Upon successful completion, the newly created semaphore Id is
- * returned. Upon failure, a negative error code is returned instead.
- */
-static int semaphore_create_exclusive(int owner, char *name, int mode, int value)
-{
-	/* Invalid process. */
-	if ((owner < 0) || (owner >= HAL_NR_NOC_NODES))
-		return (-EINVAL);
-
-	/* Invalid semaphore name. */
-	if (!semaphore_name_is_valid(name))
-		return (-EINVAL);
-
-	/* Invalid value. */
-	if (value > SEM_VALUE_MAX)
-		return (-EINVAL);
-
-	/* Look for semaphore. */
-	for (int i = 0; i < SEM_MAX; i++)
-	{
-		/* Semaphore not in use. */
-		if (!semaphore_is_used(i))
-			continue;
-
-		/* Found.*/
-		if (!strcmp(semaphores[i].name, name))
-			return (-EEXIST);
-	}
-
-	return (semaphore_create(owner, name, mode, value));
-}
-
-/*============================================================================*
  * semaphore_open()                                                           *
  *============================================================================*/
 
@@ -516,6 +404,118 @@ found:
 	semaphores[semid].refcount++;
 
 	return (semid);
+}
+
+/*============================================================================*
+ * semaphore_create()                                                         *
+ *============================================================================*/
+
+/**
+ * @brief Creates a named semaphore
+ *
+ * @param owner ID of owner process.
+ * @param name  Name of the targeted semaphore.
+ * @param mode  Access permissions.
+ * @param value	Semaphore count value.
+ *
+ * @returns Upon successful completion, the ID of the newly created
+ * semaphore is returned. Upon failure, a negative error code is
+ * returned instead.
+ */
+static int semaphore_create(int owner, char *name, mode_t mode, int value)
+{
+	int semid;
+
+	semaphore_debug("create nodenum=%d name=%s mode=%d value=%d",
+		owner,
+		name,
+		mode,
+		value
+	);
+
+	/* Invalid process. */
+	if ((owner < 0) || (owner >= HAL_NR_NOC_NODES))
+		return (-EINVAL);
+
+	/* Invalid semaphore name. */
+	if (!semaphore_name_is_valid(name))
+		return (-EINVAL);
+
+	/* Invalid value. */
+	if (value > SEM_VALUE_MAX)
+		return (-EINVAL);
+
+	/* Look for semaphore. */
+	for (int i = 0; i < SEM_MAX; i++)
+	{
+		/* Semaphore not in use. */
+		if (!semaphore_is_used(i))
+			continue;
+
+		/* Found.*/
+		if (!strcmp(semaphores[i].name, name))
+			return (semaphore_open(owner, name));
+	}
+
+	/* Allocate a new semaphore. */
+	if ((semid = semaphore_alloc()) < 0)
+		return (-ENOENT);
+
+	/* Initialize semaphore. */
+	semaphores[semid].count = value;
+	semaphores[semid].head = 0;
+	semaphores[semid].tail = 0;
+	semaphores[semid].refcount = 1;
+	semaphores[semid].owner = owner;
+	semaphores[semid].nodes[0] = owner;
+	semaphores[semid].mode =  mode;
+	strcpy(semaphores[semid].name, name);
+
+	return (semid);
+}
+
+/*============================================================================*
+ * semaphore_create_exclusive()                                               *
+ *============================================================================*/
+
+/**
+ * @brief Open a semaphore with existence check
+ *
+ * @param owner ID of owner process.
+ * @param name  Name of the targeted semaphore.
+ * @param mode  Access permissions.
+ * @param value	Semaphore count value.
+ *
+ * @returns Upon successful completion, the newly created semaphore Id is
+ * returned. Upon failure, a negative error code is returned instead.
+ */
+static int semaphore_create_exclusive(int owner, char *name, int mode, int value)
+{
+	/* Invalid process. */
+	if ((owner < 0) || (owner >= HAL_NR_NOC_NODES))
+		return (-EINVAL);
+
+	/* Invalid semaphore name. */
+	if (!semaphore_name_is_valid(name))
+		return (-EINVAL);
+
+	/* Invalid value. */
+	if (value > SEM_VALUE_MAX)
+		return (-EINVAL);
+
+	/* Look for semaphore. */
+	for (int i = 0; i < SEM_MAX; i++)
+	{
+		/* Semaphore not in use. */
+		if (!semaphore_is_used(i))
+			continue;
+
+		/* Found.*/
+		if (!strcmp(semaphores[i].name, name))
+			return (-EEXIST);
+	}
+
+	return (semaphore_create(owner, name, mode, value));
 }
 
 /*============================================================================*
