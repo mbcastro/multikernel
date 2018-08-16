@@ -73,7 +73,6 @@ static void test_posix_semaphore_double_create(void)
 	sem_t *sem;
 
 	TEST_ASSERT((sem = sem_open("cool-name", O_CREAT, 0, 0)) != SEM_FAILED);
-	TEST_ASSERT(sem_open("cool-name", O_CREAT, 0, 0) == SEM_FAILED);
 	TEST_ASSERT(sem_open("cool-name", (O_CREAT | O_EXCL), 0, 0) == SEM_FAILED);
 	TEST_ASSERT(sem_unlink("cool-name") == 0);
 }
