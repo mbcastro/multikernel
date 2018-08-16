@@ -349,7 +349,7 @@ static void sync_free(int syncid)
 /**
  * @brief Builds the list of RX NoC nodes.
  *
- * @param ranks Target list of RX NoC nodes.
+ * @param ranks  Target list of RX NoC nodes.
  * @param nodes  IDs of target NoC nodes.
  * @param nnodes Number of target NoC nodes. 
  *

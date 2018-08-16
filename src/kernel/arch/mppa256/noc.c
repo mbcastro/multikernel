@@ -28,12 +28,12 @@
 #include "core.h"
 
 /**
- * @brief Number DMAs per compute cluster.
+ * @brief Number of DMAs per compute cluster.
  */
 #define NR_CCLUSTER_DMA 1
 
 /**
- * @brief Number of DMAs per compute cluster.
+ * @brief Number of DMAs per IO cluster.
  */
 #define NR_IOCLUSTER_DMA 4
 
@@ -238,8 +238,8 @@ int noc_get_dma(int nodeid)
 /**
  * @brief Gets the name of NoC nodes.
  *
- * @param names Place where the names should be stored.
- * @param nodes  List of of NoC node IDs.
+ * @param names  Place where the names should be stored.
+ * @param nodes  List of NoC node IDs.
  * @param nnodes Number of NoC nodes in the list.
  *
  * @note This function is non-blocking.

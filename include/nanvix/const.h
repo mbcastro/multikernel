@@ -61,5 +61,10 @@
 	 */
 	#define SEMAPHORE_SERVER_NODE 23
 
+	/**
+	 * @brief Startup delay (in seconds).
+	 */
+	#define STARTUP_DELAY 5
+
 #endif /* CONST_H_ */
 

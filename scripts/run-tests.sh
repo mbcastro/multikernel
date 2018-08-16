@@ -27,7 +27,7 @@ source "scripts/arch/mppa256.sh"
 #
 function stop_if_short_test
 {
-	if [ $1 == "--short" ];
+	if [ $1 -a  $1 == "--short" ];
 	then
 		exit 0
 	fi
@@ -74,14 +74,14 @@ case "$1" in
 		run2 "nanvix-kernel-debug.img" "/test-driver" "--debug --hal-portal"
 		stop_if_short_test $2
 	;&
-	kernel-sync)
-		echo "=== Running Unnamed Sync Tests"
-		run2 "nanvix-kernel-debug.img" "/test-driver" "--debug --hal-sync"
-		stop_if_short_test $2
-	;&
 	kernel-mailbox)
 		echo "=== Running Unnamed Mailbox Tests"
 		run2 "nanvix-kernel-debug.img" "/test-driver" "--debug --hal-mailbox"
+		stop_if_short_test $2
+	;&
+	kernel-sync)
+		echo "=== Running Unnamed Sync Tests"
+		run2 "nanvix-kernel-debug.img" "/test-driver" "--debug --hal-sync"
 		stop_if_short_test $2
 	;&
 	kernel-core)
