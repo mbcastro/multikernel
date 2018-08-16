@@ -42,5 +42,5 @@ License and Maintainers
 Nanvix is a free operating system that is distributed under the MIT
 License. Although it was created by Pedro Henrique, it has been
 implemented by himself and many others. If you are interested in
-contacting any of the contributors, take a look on our official list
-of contributors: https://github.com/nanvix/nanvix/blob/dev/CREDITS.
+contacting any of the contributors, take a look in our [official list
+of contributors](https://github.com/nanvix/nanvix/blob/dev/CREDITS).
