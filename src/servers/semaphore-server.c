@@ -27,10 +27,17 @@
 #include <stdlib.h>
 
 #include <nanvix/spawner.h>
+#include <nanvix/klib.h>
 #include <nanvix/syscalls.h>
 #include <nanvix/pm.h>
 #include <nanvix/name.h>
 #include <nanvix/semaphore.h>
+
+#ifdef DEBUG_SEMAPHORE
+	#define semaphore_debug(fmt, ...) debug("semaphore", fmt, __VA_ARGS__)
+#else
+	#define semaphore_debug(fmt, ...) { }
+#endif
 
 /**
  * @brief Semaphore flags.
@@ -332,6 +339,74 @@ int semaphore_dequeue(int semid)
 }
 
 /*============================================================================*
+ * semaphore_open()                                                           *
+ *============================================================================*/
+
+/**
+ * @brief Opens a named semaphore
+ *
+ * @param node  ID of opening process.
+ * @param name  Name of the targeted semaphore.
+ *
+ * @returns Upon successful completion, the semaphore Id is
+ * returned. Upon failure, a negative error code is returned instead.
+ */
+static int semaphore_open(int node, char *name)
+{
+	int semid;  /* Semaphore Id.      */
+	int refcount; /* Number of process. */
+
+	semaphore_debug("open nodenum=%d name=%s",
+		node,
+		name
+	);
+
+	/* Invalid process. */
+	if ((node < 0) || (node >= HAL_NR_NOC_NODES))
+		return (-EINVAL);
+
+	/* Invalid semaphore name. */
+	if (!semaphore_name_is_valid(name))
+		return (-EINVAL);
+
+	/* Look for semaphore. */
+	for (int i = 0; i < SEM_MAX; i++)
+	{
+		/* Semaphore not in use. */
+		if (!semaphore_is_used(i))
+			continue;
+
+		/* Found.*/
+		if (!strcmp(semaphores[i].name, name))
+		{
+			semid = i;
+			goto found;
+		}
+	}
+
+	return (-EINVAL);
+
+found:
+
+	refcount = semaphores[semid].refcount;
+
+	/*
+	 * Check if we had opened this semaphore before.
+	 * If so, there is nothing else to do.
+	 */
+	for (int i = 0; i < refcount; i++)
+	{
+		if (semaphores[semid].nodes[i] == node)
+			return (semid);
+	}
+
+	semaphores[semid].nodes[refcount] = node;
+	semaphores[semid].refcount++;
+
+	return (semid);
+}
+
+/*============================================================================*
  * semaphore_create()                                                         *
  *============================================================================*/
 
@@ -351,14 +426,12 @@ static int semaphore_create(int owner, char *name, mode_t mode, int value)
 {
 	int semid;
 
-#ifdef DEBUG_SEMAPHORE
-	printf("SEMAPHORE CREATE %d %s %d %d\n",
+	semaphore_debug("create nodenum=%d name=%s mode=%d value=%d",
 		owner,
 		name,
-		(int) mode,
+		mode,
 		value
 	);
-#endif
 
 	/* Invalid process. */
 	if ((owner < 0) || (owner >= HAL_NR_NOC_NODES))
@@ -381,7 +454,7 @@ static int semaphore_create(int owner, char *name, mode_t mode, int value)
 
 		/* Found.*/
 		if (!strcmp(semaphores[i].name, name))
-			return (-EEXIST);
+			return (semaphore_open(owner, name));
 	}
 
 	/* Allocate a new semaphore. */
@@ -446,76 +519,6 @@ static int semaphore_create_exclusive(int owner, char *name, int mode, int value
 }
 
 /*============================================================================*
- * semaphore_open()                                                           *
- *============================================================================*/
-
-/**
- * @brief Opens a named semaphore
- *
- * @param node  ID of opening process.
- * @param name  Name of the targeted semaphore.
- *
- * @returns Upon successful completion, the semaphore Id is
- * returned. Upon failure, a negative error code is returned instead.
- */
-static int semaphore_open(int node, char *name)
-{
-	int semid;  /* Semaphore Id.      */
-	int refcount; /* Number of process. */
-
-#ifdef DEBUG_SEMAPHORE
-	printf("SEMAPHORE OPEN %d %s\n",
-		node,
-		name
-	);
-#endif
-
-	/* Invalid process. */
-	if ((node < 0) || (node >= HAL_NR_NOC_NODES))
-		return (-EINVAL);
-
-	/* Invalid semaphore name. */
-	if (!semaphore_name_is_valid(name))
-		return (-EINVAL);
-
-	/* Look for semaphore. */
-	for (int i = 0; i < SEM_MAX; i++)
-	{
-		/* Semaphore not in use. */
-		if (!semaphore_is_used(i))
-			continue;
-
-		/* Found.*/
-		if (!strcmp(semaphores[i].name, name))
-		{
-			semid = i;
-			goto found;
-		}
-	}
-
-	return (-EINVAL);
-
-found:
-
-	refcount = semaphores[semid].refcount;
-
-	/*
-	 * Check if we had opened this semaphore before.
-	 * If so, there is nothing else to do.
-	 */
-	for (int i = 0; i < refcount; i++)
-	{
-		if (semaphores[semid].nodes[i] == node)
-			return (semid);
-	}
-
-	semaphores[semid].nodes[refcount] = node;
-	semaphores[semid].refcount++;
-
-	return (semid);
-}
-
-/*============================================================================*
  * semaphore_close()                                                          *
  *============================================================================*/
 
@@ -533,12 +536,10 @@ static int semaphore_close(int node, int semid)
 	int i;
 	int refcount;
 
-#ifdef DEBUG_SEMAPHORE
-	printf("SEMAPHORE CLOSE %d %d\n",
+	semaphore_debug("close nodenum=%d semid=%d",
 		node,
 		semid
 	);
-#endif
 
 	/* Invalid process. */
 	if ((node < 0) || (node >= HAL_NR_NOC_NODES))
@@ -598,12 +599,10 @@ static int semaphore_unlink(int node, const char *name)
 {
 	int semid;
 
-#ifdef DEBUG_SEMAPHORE
-	printf("SEMAPHORE UNLINK %d %s\n",
+	semaphore_debug("unlink nodenum=%d name=%s",
 		node,
 		name
 	);
-#endif
 
 	/* Invalid process ID. */
 	if ((node < 0) || (node >= HAL_NR_NOC_NODES))
@@ -665,12 +664,10 @@ static int semaphore_wait(int node, int semid)
 	int i;
 	int refcount;
 
-#ifdef DEBUG_SEMAPHORE
-	printf("SEMAPHORE WAIT %d %d\n",
+	semaphore_debug("wait nodenum=%d semid=%d",
 		node,
 		semid
 	);
-#endif
 
 	/* Invalid process. */
 	if ((node < 0) || (node >= HAL_NR_NOC_NODES))
@@ -733,12 +730,10 @@ static int semaphore_post(int node, int semid)
 	int refcount;
 	struct sem_message msg;
 
-#ifdef DEBUG_SEMAPHORE
-	printf("SEMAPHORE POST %d %d\n",
+	semaphore_debug("post nodenum=%d semid=%d",
 		node,
 		semid
 	);
-#endif
 
 	/* Invalid process. */
 	if ((node < 0) || (node >= HAL_NR_NOC_NODES))

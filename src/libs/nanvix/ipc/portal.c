@@ -478,7 +478,7 @@ int portal_read(int id, void *buf, size_t n)
 	if (buf == NULL)
 		return (-EINVAL);
 
-	/* Invalid buffer. */
+	/* Invalid buffer size. */
 	if (n < 1)
 		return (-EINVAL);
 

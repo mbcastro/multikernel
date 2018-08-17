@@ -114,7 +114,7 @@ int runtime_setup(int level)
 
 error:
 	runtime_unlock();
-	printf("[nanvix][libs] failled to setup runtime\n");
+	printf("[nanvix][libs] failed to setup runtime\n");
 	return (-EAGAIN);
 }
 
@@ -149,6 +149,6 @@ int runtime_cleanup(void)
 
 error:
 	runtime_unlock();
-	printf("[nanvix][libs] failled to clean runtime\n");
+	printf("[nanvix][libs] failed to clean runtime\n");
 	return (-EAGAIN);
 }

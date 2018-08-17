@@ -66,6 +66,7 @@ int main(int argc, const char **argv)
 {
 	int ret = EXIT_SUCCESS;
 	int debug = 0;
+	int initialized_servers = 0;
 	int args[spawner_nservers];
 	pthread_t tids[spawner_nservers];
 
@@ -76,31 +77,51 @@ int main(int argc, const char **argv)
 			debug = 1;
 	}
 
+	printf("[nanvix][%s] booting up \n", spawner_name);
+
 	/* Initialization. */
 	assert(kernel_setup() == 0);
-
-	printf("[nanvix][%s] booting up server\n", spawner_name);
 
 	/* Run self-tests. */
 	if ((debug) && (test_kernel_fn != NULL))
 		test_kernel_fn(argv[2]);
 
-	printf("[nanvix][%s] server alive\n", spawner_name);
-
 	spawner_init();
 
+	printf("[nanvix][%s] alive\n", spawner_name);
+
 	/* Spawn servers. */
-	for (int i = 0; i < spawner_nservers; i++)
+	for (int curr_runlevel = 0; curr_runlevel < NR_RUNLEVELS; curr_runlevel++)
 	{
-		args[i] = i;
-		assert((pthread_create(&tids[i],
-			NULL,
-			server,
-			&args[i])) == 0
-		);
+		int new_services_amount = 0;
+
+		printf("[nanvix][%s] initializing runtime %d\n", spawner_name, curr_runlevel);
+
+		for (int i = 0; i < spawner_nservers; i++)
+		{
+			if (curr_runlevel != spawner_servers[i].runlevel)
+				continue;
+
+			args[i] = i;
+			assert((pthread_create(&tids[i],
+				NULL,
+				server,
+				&args[i])) == 0
+			);
+
+			new_services_amount++;
+		}
+
+		/* Runlevel sync */
+		spawners_sync(new_services_amount);
+
+		initialized_servers += new_services_amount;
 	}
 
-	spawners_sync();
+	spawner_finalize();
+	
+	if (initialized_servers != spawner_nservers)
+		goto error;
 
 	printf("[nanvix][%s] synced\n", spawner_name);
 
@@ -129,4 +150,9 @@ int main(int argc, const char **argv)
 	/* Cleanup. */
 	assert(kernel_cleanup() == 0);
 	return (ret);
+
+error:
+	kernel_cleanup();
+	printf("[nanvix][kernel] failed to synchronize services initialization\n");
+	return (-EAGAIN);
 }

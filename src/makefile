@@ -36,8 +36,24 @@ export CFLAGS += -Winit-self -Wswitch-default -Wfloat-equal
 export CFLAGS += -Wundef -Wshadow -Wuninitialized
 export CFLAGS += -O3
 export CFLAGS += -I $(INCDIR)
-ifdef DEBUG
-export CFLAGS += -DDEBUG
+
+ifeq ($(DEBUG),true)
+	export CFLAGS += -DDEBUG_NAME
+	export CFLAGS += -DDEBUG_SEMAPHORE
+	export CFLAGS += -DDEBUG_RMEM
+	export CFLAGS += -DDEBUG_SHM
+endif
+
+ifeq ($(DEBUG_NAME),true)
+	export CFLAGS += -DDEBUG_NAME
+endif
+
+ifeq ($(DEBUG_SEMAPHORE),true)
+	export CFLAGS += -DDEBUG_SEMAPHORE
+endif
+
+ifeq ($(DEBUG_RMEM),true)
+	export CFLAGS += -DDEBUG_RMEM
 endif
 
 ifeq ($(DEBUG_SHM),true)
@@ -72,7 +88,7 @@ export SPAWNER1BIN = $(BINDIR)/spawner1
 .PHONY: ubin
 
 # Builds everything.
-all: kernel libs servers sbin ubin benchmarks
+all: kernel libs servers sbin ubin 
 
 # Builds the kernel.
 kernel: clean
@@ -98,11 +114,6 @@ sbin: kernel servers libs
 ubin: kernel servers libs sbin
 	mkdir -p $(BINDIR)
 	cd ubin && $(MAKE) all
-
-# Builds benchmarks.
-benchmarks: kernel servers libs sbin
-	mkdir -p $(BINDIR)
-	cd sbin/benchmarks && $(MAKE) all
 
 # Cleans compilation files.
 clean:

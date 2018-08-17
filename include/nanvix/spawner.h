@@ -52,8 +52,14 @@
 	extern void (*test_kernel_fn)(const char *);
 	extern int (*main2_fn)(int, const char **);
 	extern void spawner_init(void);
-	extern void spawners_sync(void);
+	extern void spawner_finalize(void);
+	extern void spawners_sync(int);
 	extern void spawner_ack(void);
+
+		/**
+	 * @brief Number of runlevels.
+	 */
+	#define NR_RUNLEVELS 4
 
 	/**
 	 * @brief Shutdown flags.

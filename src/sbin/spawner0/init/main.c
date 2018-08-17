@@ -54,6 +54,21 @@ static struct serverinfo servers[NR_SERVERS] = {
 static int inbox = -1;
 
 /**
+ * @brief Local sync.
+ */
+static int syncid_local = -1;
+
+/**
+ * @brief Local sync.
+ */
+static int syncid_remote = -1;
+
+/**
+ * @brief Sync's nodes.
+ */
+static int sync_nodes[2] = { -1, };
+
+/**
  * @brief Spawner NoC node number.
  */
 static int nodenum = -1;
@@ -84,6 +99,23 @@ void spawner_init(void)
 	nodenum = sys_get_node_num();
 
 	assert((inbox = sys_mailbox_create(nodenum)) >= 0);
+
+	sync_nodes[0] = SPAWNER1_SERVER_NODE;
+	sync_nodes[1] = nodenum;
+
+	/* Create synchronization point. */
+	assert((syncid_local = sys_sync_create(sync_nodes, 2, SYNC_ONE_TO_ALL)) >= 0);
+	assert((syncid_remote = sys_sync_open(sync_nodes, 2, SYNC_ALL_TO_ONE)) >= 0);
+}
+
+/**
+ * @brief Finalizes local sync.
+ */
+void spawner_finalize(void)
+{
+	assert(sys_sync_close(syncid_remote) == 0);
+	assert(sys_sync_unlink(syncid_local) == 0);
+	assert(sys_mailbox_unlink(inbox) == 0);
 }
 
 /**
@@ -105,37 +137,21 @@ void spawner_ack(void)
 /**
  * @brief Sync spawners.
  */
-void spawners_sync(void)
+void spawners_sync(int requested_acks)
 {
-	int syncid;
-	int syncid_local;
-	int nodes[2];
 	struct spawner_message msg;
 
-
 	/* Wait for acknowledge message of all servers. */
-	for (int i = 0; i < NR_SERVERS; i++)
+	for (int i = 0; i < requested_acks; i++)
 	{
 		assert(sys_mailbox_read(inbox, &msg, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
 		assert(msg.status == 0);
 	}
 
-	nodes[0] = SPAWNER1_SERVER_NODE;
-	nodes[1] = nodenum;
-
-	/* Open synchronization points. */
-	assert((syncid_local = sys_sync_create(nodes, 2, SYNC_ONE_TO_ALL)) >= 0);
-	assert((syncid = sys_sync_open(nodes, 2, SYNC_ALL_TO_ONE)) >= 0);
-
-	assert(sys_sync_signal(syncid) == 0);
+	/* Synchronization point. */
 	assert(sys_sync_wait(syncid_local) == 0);
-
-	/* House keeping. */
-	assert(sys_mailbox_unlink(inbox) == 0);
-	assert(sys_sync_unlink(syncid_local) == 0);
-	assert(sys_sync_close(syncid) == 0);
+	assert(sys_sync_signal(syncid_remote) == 0);
 }
-
 
 SPAWNER_NAME("spawner0")
 SPAWNER_SHUTDOWN(SHUTDOWN_ENABLE)

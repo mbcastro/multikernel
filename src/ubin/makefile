@@ -26,22 +26,16 @@
 #===============================================================================
 
 # Builds everything.
-all: test benchmark
+all: test
 
-# Builds Test-Driver Utilitiy.
+# Builds Test-Driver Utility.
 test:
 	cd test && $(MAKE) all
-
-# Builds Synthetic Benchmarks.
-benchmark:
-	cd rmem-benchmark && $(MAKE) all
 
 # Cleans compilation files.
 clean:
 	cd test && $(MAKE) clean
-	cd rmem-benchmark && $(MAKE) clean
 
 # Cleans everything.
 distclean: clean
 	cd test && $(MAKE) distclean
-	cd rmem-benchmark && $(MAKE) distclean

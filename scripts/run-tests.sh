@@ -22,35 +22,71 @@
 
 source "scripts/arch/mppa256.sh"
 
-echo "=== Running Core and NoC Interface Tests"
-run2 "nanvix-kernel-debug.img" "/test-driver" "--debug --hal-core"
+#
+# Stops regression test if running running short test.
+#
+function stop_if_short_test
+{
+	if [ $1 -a  $1 == "--short" ];
+	then
+		exit 0
+	fi
+}
 
-echo "=== Running Unnamed Sync Tests"
-run2 "nanvix-kernel-debug.img" "/test-driver" "--debug --hal-sync"
-
-echo "=== Running Unnamed Mailbox Tests"
-run2 "nanvix-kernel-debug.img" "/test-driver" "--debug --hal-mailbox"
-
-echo "=== Running Unnamed Portal Tests"
-run2 "nanvix-kernel-debug.img" "/test-driver" "--debug --hal-portal"
-
-echo "=== Running Naming Service Tests"
-run2 "nanvix-runtime-debug.img" "/test-driver" "--debug --name"
-
-echo "=== Running Nammed Mailbox Tests"
-run2 "nanvix-runtime-debug.img" "/test-driver" "--debug --mailbox"
-
-echo "=== Running Nammed Portal Tests"
-run2 "nanvix-runtime-debug.img" "/test-driver" "--debug --portal"
-
-echo "=== Running Barrier Tests"
-run2 "nanvix-runtime-debug.img" "/test-driver" "--debug --barrier"
-
-echo "=== Running RMem Tests"
-run2 "nanvix-runtime-debug.img" "/test-driver" "--debug --rmem"
-
-echo "=== Running Semaphore Tests"
-run2 "nanvix-posix-debug.img" "/test-driver" "--debug --semaphore"
-
-echo "=== Running Shared Memory Region Tests"
-run2 "nanvix-posix-debug.img" "/test-driver" "--debug --shm"
+case "$1" in
+	shm)
+		echo "=== Running Shared Memory Region Tests"
+		run2 "nanvix-posix-debug.img" "/test-driver" "--debug --shm"
+		stop_if_short_test $2
+	;&
+	rmem)
+		echo "=== Running RMem Tests"
+		run2 "nanvix-runtime-debug.img" "/test-driver" "--debug --rmem"
+		stop_if_short_test $2
+	;&
+	semaphore)
+		echo "=== Running Semaphore Tests"
+		run2 "nanvix-posix-debug.img" "/test-driver" "--debug --semaphore"
+		stop_if_short_test $2
+	;&
+	portal)
+		echo "=== Running Nammed Portal Tests"
+		run2 "nanvix-runtime-debug.img" "/test-driver" "--debug --portal"
+		stop_if_short_test $2
+	;&
+	mailbox)
+		echo "=== Running Nammed Mailbox Tests"
+		run2 "nanvix-runtime-debug.img" "/test-driver" "--debug --mailbox"
+		stop_if_short_test $2
+	;&
+	barrier)
+		echo "=== Running Barrier Tests"
+		run2 "nanvix-runtime-debug.img" "/test-driver" "--debug --barrier"
+		stop_if_short_test $2
+	;&
+	name)
+		echo "=== Running Naming Service Tests"
+		run2 "nanvix-runtime-debug.img" "/test-driver" "--debug --name"
+		stop_if_short_test $2
+	;&
+	kernel-portal)
+		echo "=== Running Unnamed Portal Tests"
+		run2 "nanvix-kernel-debug.img" "/test-driver" "--debug --hal-portal"
+		stop_if_short_test $2
+	;&
+	kernel-mailbox)
+		echo "=== Running Unnamed Mailbox Tests"
+		run2 "nanvix-kernel-debug.img" "/test-driver" "--debug --hal-mailbox"
+		stop_if_short_test $2
+	;&
+	kernel-sync)
+		echo "=== Running Unnamed Sync Tests"
+		run2 "nanvix-kernel-debug.img" "/test-driver" "--debug --hal-sync"
+		stop_if_short_test $2
+	;&
+	kernel-core)
+		echo "=== Running Core and NoC Interface Tests"
+		run2 "nanvix-kernel-debug.img" "/test-driver" "--debug --hal-core"
+		stop_if_short_test $2
+	;&
+esac

@@ -21,18 +21,13 @@
 #
 
 # Conflicts
-.PHONY: benchmarks
 .PHONY: spawner0
 .PHONY: spawner1
 
 #===============================================================================
 
 # Builds everything.
-all: benchmarks spawner0 spawner1
-
-# Builds benchmarks.
-benchamrks:
-	cd benchmarks && $(MAKE) all
+all: spawner0 spawner1
 
 # Builds spawner0 binaries.
 spawner0:
@@ -46,12 +41,10 @@ endif
 
 # Cleans compilation files.
 clean:
-	cd benchmarks && $(MAKE) clean
 	cd spawner0 && $(MAKE) clean
 	cd spawner1 && $(MAKE) clean
 
 # Cleans everything.
 distclean: clean
-	cd benchmarks && $(MAKE) distclean
 	cd spawner0 && $(MAKE) distclean
 	cd spawner1 && $(MAKE) distclean

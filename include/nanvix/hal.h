@@ -186,6 +186,11 @@
 		#error "undefined symbol: HAL_NR_PORTAL"
 	#endif
 
+	/* Sanity check. */
+	#ifndef HAL_PORTAL_MAX_SIZE
+		#error "undefined symbol: HAL_PORTAL_MAX_SIZE"
+	#endif
+
 #endif /* (__NEED_HAL_PORTAL_ || __NEED_HAL_CONST_) */
 
 #ifdef __NEED_HAL_PORTAL_

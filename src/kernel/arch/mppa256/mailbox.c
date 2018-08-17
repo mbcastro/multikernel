@@ -30,6 +30,8 @@
 
 #include "noc.h"
 
+#define DUP_NOC_FD
+
 /**
  * @brief Mailbox flags.
  */
@@ -401,6 +403,49 @@ static int mppa256_mailbox_open(int nodeid)
 	if ((mbxid = mailbox_alloc(nodeid)) < 0)
 		goto error0;
 
+#ifdef DUP_NOC_FD
+
+	/*
+	 * Check if we need to duplicate
+	 * the underlying dile descriptor.
+	 */
+	if (noc_is_ionode(hal_get_node_id()))
+	{
+		int ncores;
+		int mycoreid;
+		
+		ncores = hal_get_num_cores();
+		mycoreid = hal_get_core_id();
+
+		/* Check if already opened. */
+		for (int i = 0; i < ncores; i++)
+		{
+			int j;
+
+			/*
+			 * We have just allocated the 
+			 * mailbox.
+			 */
+			if (mycoreid == i)
+				continue;
+
+			j = i*HAL_NR_NOC_NODES+hal_get_node_num(nodeid);
+
+			/* Not used. */
+			if (!mailbox_is_used(j))
+				continue;
+
+			/* Input mailbox. */
+			if (!mailbox_is_wronly(j))
+				continue;
+
+			fd = mailboxes[j].fd;
+			goto done;
+		}
+	}
+
+#endif
+
 	noc_get_remotes(remotes, nodeid);
 	noctag = noctag_mailbox(nodeid);
 
@@ -415,8 +460,8 @@ static int mppa256_mailbox_open(int nodeid)
 	);
 
 	/* Open NoC connector. */
-		if ((fd = mppa_open(pathname, O_WRONLY)) == -1)
-			goto error1;
+	if ((fd = mppa_open(pathname, O_WRONLY)) == -1)
+		goto error1;
 
 	/* Set DMA interface for IO cluster. */
 	if (noc_is_ionode(hal_get_node_id()))
@@ -424,6 +469,10 @@ static int mppa256_mailbox_open(int nodeid)
 		if (mppa_ioctl(fd, MPPA_TX_SET_INTERFACE, noc_get_dma(hal_get_node_id())) == -1)
 			goto error2;
 	}
+
+#ifdef DUP_NOC_FD
+done:
+#endif
 
 	/* Initialize mailbox. */
 	mailboxes[mbxid].fd = fd;
@@ -576,9 +625,51 @@ again:
 	 * Release lock, since we may sleep below.
 	 */
 	mppa256_mailbox_unlock();
+
+#ifdef DUP_NOC_FD
+
+	/*
+	 * Check if the underlying file
+	 * descriptor has been duplicated.
+	 */
+	if (noc_is_ionode(hal_get_node_id()))
+	{
+		int fd;
+
+		fd = mailboxes[mbxid].fd;
+
+		/* Check if already opened. */
+		for (int i = 0; i < HAL_NR_MAILBOX; i++)
+		{
+			/* Skip this one. */
+			if (i == mbxid)
+				continue;
+
+			/* Not used. */
+			if (!mailbox_is_used(i))
+				continue;
+
+			/* Input mailbox. */
+			if (!mailbox_is_wronly(i))
+				continue;
+
+			/* Not this output mailbox. */
+			if (fd != mailboxes[i].fd)
+				continue;
+
+			goto done;
+		}
+	}
+
+#endif
 	
 	if (mppa_close(mailboxes[mbxid].fd) < 0)
 		goto error1;
+
+
+#ifdef DUP_NOC_FD
+done:
+#endif
 
 	mppa256_mailbox_lock();
 		mailbox_free(mbxid);

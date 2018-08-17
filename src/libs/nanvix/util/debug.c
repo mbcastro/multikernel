@@ -20,13 +20,29 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef _KERNEL_H_
-#define _KERNEL_H_
+#include <stdarg.h>
+#include <string.h>
+#include <stdio.h>
 
-	/**
-	 * @brief Mega (10^6).
-	 */
-	#define MEGA (1000000)
+/**
+ * @brief Dumps debug information.
+ *
+ * @param modulename Name of the calling module.
+ * @param fmt        Formatted string.
+ */
+void debug(const char *modulename, const char *fmt, ...)
+{
+	int len;
+	va_list args;
+	char strbuf[80];
 
-#endif /* _KERNEL_H_ */
+	sprintf(strbuf, "[DEBUG][nanvix][%s] ", modulename);
+	len = 80 - 2 - strlen(strbuf);
+	strncat(strbuf, fmt, len);
+	strcat(strbuf, "\n");
+
+	va_start(args, fmt);
+	vprintf(strbuf, args);
+	va_end(args);
+}
 
