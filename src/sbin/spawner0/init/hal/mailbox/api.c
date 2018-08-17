@@ -145,6 +145,77 @@ static void test_sys_mailbox_open_close(void)
 }
 
 /*============================================================================*
+ * API Test: Double Open                                                       *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Mailbox Double Open
+ */
+static void *test_sys_mailbox_thread_double_open(void *args)
+{
+	int tid;
+	int inbox;
+	int nodenum;
+	int outboxes[2];
+
+	kernel_setup();
+
+	tid = ((int *)args)[0];
+
+	nodenum = sys_get_node_num();
+
+	TEST_ASSERT((inbox = sys_mailbox_create(nodenum)) >= 0);
+
+	pthread_barrier_wait(&barrier);
+
+	TEST_ASSERT((outboxes[0] = sys_mailbox_open(
+		((tid + 1) == mailbox_ncores) ?
+			nodenum + 1 - mailbox_ncores + 1 :
+			nodenum + 1)) >= 0
+	);
+
+	TEST_ASSERT((outboxes[1] = sys_mailbox_open(
+		(tid == 0) ?
+			nodenum + 1 - mailbox_ncores + 1 :
+			nodenum - 1)) >= 0
+	);
+
+	pthread_barrier_wait(&barrier);
+
+	TEST_ASSERT(sys_mailbox_close(outboxes[0]) == 0);
+	TEST_ASSERT(sys_mailbox_close(outboxes[1]) == 0);
+
+	TEST_ASSERT(sys_mailbox_unlink(inbox) == 0);
+
+	kernel_cleanup();
+	return (NULL);
+}
+
+/**
+ * @brief API Test: Mailbox Double Open
+ */
+static void test_sys_mailbox_double_open(void)
+{
+	int tids[mailbox_ncores];
+	pthread_t threads[mailbox_ncores];
+
+	/* Spawn driver threads. */
+	for (int i = 1; i < mailbox_ncores; i++)
+	{
+		tids[i] = i;
+		TEST_ASSERT((pthread_create(&threads[i],
+			NULL,
+			test_sys_mailbox_thread_double_open,
+			&tids[i])) == 0
+		);
+	}
+
+	/* Wait for driver threads. */
+	for (int i = 1; i < mailbox_ncores; i++)
+		pthread_join(threads[i], NULL);
+}
+
+/*============================================================================*
  * API Test: Read Write                                                       *
  *============================================================================*/
 
@@ -231,6 +302,7 @@ struct test mailbox_tests_api[] = {
 	/* Intra-Cluster API Tests */
 	{ test_sys_mailbox_create_unlink, "Create Unlink"          },
 	{ test_sys_mailbox_open_close,    "Open Close"             },
+	{ test_sys_mailbox_double_open,   "Double Open"            },
 	{ test_sys_mailbox_read_write,    "Read Write"             },
 	{ NULL,                           NULL                     },
 };

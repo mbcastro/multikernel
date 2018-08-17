@@ -100,7 +100,7 @@
 	#ifdef _KALRAY_MPPA_CCLUSTER_
 		#define HAL_NR_MAILBOX HAL_NR_NOC_NODES
 	#else
-		#define HAL_NR_MAILBOX (4*HAL_NR_NOC_NODES)
+		#define HAL_NR_MAILBOX (4 + HAL_NR_NOC_NODES)
 	#endif
 
 	/**
