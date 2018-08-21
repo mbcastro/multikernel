@@ -53,8 +53,9 @@
 	extern int (*main2_fn)(int, const char **);
 	extern void spawner_init(void);
 	extern void spawner_finalize(void);
-	extern void spawners_sync(int);
+	extern void spawners_sync(void);
 	extern void spawner_ack(void);
+	extern void server_sync(void);
 
 		/**
 	 * @brief Number of runlevels.

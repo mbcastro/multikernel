@@ -135,20 +135,21 @@ void spawner_ack(void)
 }
 
 /**
- * @brief Sync spawners.
+ * @brief Sync with server.
  */
-void spawners_sync(int requested_acks)
+void server_sync(void)
 {
 	struct spawner_message msg;
 
-	/* Wait for acknowledge message of all servers. */
-	for (int i = 0; i < requested_acks; i++)
-	{
-		assert(sys_mailbox_read(inbox, &msg, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
-		assert(msg.status == 0);
-	}
+	assert(sys_mailbox_read(inbox, &msg, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
+	assert(msg.status == 0);
+}
 
-	/* Synchronization point. */
+/**
+ * @brief Sync spawners.
+ */
+void spawners_sync(void)
+{
 	assert(sys_sync_wait(syncid_local) == 0);
 	assert(sys_sync_signal(syncid_remote) == 0);
 }
