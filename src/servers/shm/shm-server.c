@@ -1083,9 +1083,9 @@ int shm_server(int _inbox, int _inportal)
 	if ((ret = shm_startup(_inbox)) < 0)
 		goto error;
 
-	printf("[nanvix][shm] server alive\n");
-
 	spawner_ack();
+
+	printf("[nanvix][shm] server alive\n");
 
 	if ((ret = shm_loop()) < 0)
 		goto error;
