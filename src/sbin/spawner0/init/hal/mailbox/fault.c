@@ -110,26 +110,6 @@ static void test_sys_mailbox_bad_open(void)
 }
 
 /*============================================================================*
- * Fault Injection Test: Double Open                                          *
- *============================================================================*/
-
-/**
- * @brief Fault Injection Test: Double Open
- */
-static void test_sys_mailbox_double_open(void)
-{
-	int outbox;
-	int nodenum;
-
-	nodenum = sys_get_node_num();
-
-	TEST_ASSERT((outbox = sys_mailbox_open(nodenum + 1)) >= 0);
-	TEST_ASSERT(sys_mailbox_open(nodenum + 1) < 0);
-
-	TEST_ASSERT(sys_mailbox_close(outbox) == 0);
-}
-
-/*============================================================================*
  * Fault Injection Test: Double Unlink                                        *
  *============================================================================*/
 
@@ -294,7 +274,6 @@ struct test mailbox_tests_fault[] = {
 	{ test_sys_mailbox_double_create,  "Double Create"  },
 	{ test_sys_mailbox_invalid_open,   "Invalid Open"   },
 	{ test_sys_mailbox_bad_open,       "Bad Open"       },
-	{ test_sys_mailbox_double_open,    "Double Open"    },
 	{ test_sys_mailbox_double_unlink,  "Double Unlink"  },
 	{ test_sys_mailbox_double_close,   "Double Close"   },
 	{ test_sys_mailbox_invalid_write,  "Invalid Write"  },
