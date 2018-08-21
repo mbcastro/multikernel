@@ -981,9 +981,9 @@ int semaphore_server(int _inbox, int _inportal)
 	if ((ret = semaphore_startup(_inbox)) < 0)
 		goto error;
 
-	printf("[nanvix][semaphore] server alive\n");
-
 	spawner_ack();
+
+	printf("[nanvix][semaphore] server alive\n");
 
 	if ((ret = semaphore_loop()) < 0)
 		goto error;

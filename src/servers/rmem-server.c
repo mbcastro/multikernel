@@ -247,10 +247,10 @@ int rmem_server(int _inbox, int _inportal)
 
 	if ((ret = rmem_startup(_inbox, _inportal)) < 0)
 		goto error;
-	
-	printf("[nanvix][rmem] server alive\n");
 
 	spawner_ack();
+	
+	printf("[nanvix][rmem] server alive\n");
 
 	if ((ret = rmem_loop()) < 0)
 		goto error;

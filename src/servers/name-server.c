@@ -209,9 +209,9 @@ int name_server(int inbox, int inportal)
 
 	_name_init();
 
-	printf("[nanvix][name] server alive\n");
-
 	spawner_ack();
+
+	printf("[nanvix][name] server alive\n");
 
 	while(1)
 	{
