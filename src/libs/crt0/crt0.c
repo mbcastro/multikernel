@@ -109,11 +109,13 @@ int main(int argc, const char **argv)
 				&args[i])) == 0
 			);
 
+			server_sync();
+
 			new_services_amount++;
 		}
 
 		/* Runlevel sync */
-		spawners_sync(new_services_amount);
+		spawners_sync();
 
 		initialized_servers += new_services_amount;
 	}
