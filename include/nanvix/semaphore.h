@@ -50,6 +50,7 @@
 	#define SEM_CREATE      6 /* Create a semaphore.            */
 	#define SEM_CREATE_EXCL 7 /* Create an exclusive semaphore. */
 	#define SEM_RETURN      8 /* Return.                        */
+	#define SEM_EXIT        9 /* Exit request.                  */
 	/**@}*/
 
 	/**

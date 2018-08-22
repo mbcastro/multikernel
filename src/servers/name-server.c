@@ -202,6 +202,7 @@ int name_server(int inbox, int inportal)
 {
 	int tmp;
 	int source;
+	int shutdown = 0;
 
 	((void) inportal);
 
@@ -213,7 +214,7 @@ int name_server(int inbox, int inportal)
 
 	printf("[nanvix][name] server alive\n");
 
-	while(1)
+	while(!shutdown)
 	{
 		struct name_message msg;
 
@@ -281,14 +282,17 @@ int name_server(int inbox, int inportal)
 
 				break;
 
+			case NAME_EXIT:
+				shutdown = 1;
+				break;
+
 			/* Should not happen. */
 			default:
 				break;
 		}
 	}
 
-	/* House keeping. */
-	sys_mailbox_unlink(inbox);
+	printf("[nanvix][name] shutting down server\n");
 
 	return (EXIT_SUCCESS);
 }

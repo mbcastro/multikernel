@@ -86,9 +86,22 @@ int name_init(void)
 
 /**
  * @brief Closes the naming client.
+ *
+ * @returns Upon successful completion, zero is returned. Upon
+ * failure, a negative error code is returned instead.
  */
-void name_finalize(void)
+int name_finalize(void)
 {
+	/* Nothing to do. */
+	if (!initialized)
+		return (0);
+
+	if (sys_mailbox_close(NAME_SERVER_NODE) < 0)
+		return (-EAGAIN);
+
+	initialized = 0;
+
+	return (0);
 }
 
 /*============================================================================*

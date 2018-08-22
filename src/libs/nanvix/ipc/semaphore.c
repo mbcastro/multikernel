@@ -82,21 +82,26 @@ int nanvix_sem_init(void)
 
 /**
  * @brief Closes the semaphore client.
+ *
+ * @returns Upon successful completion, zero is returned. Upon
+ * failure, a negative error code is returned instead.
  */
-void nanvix_sem_finalize(void)
+int nanvix_sem_finalize(void)
 {
 	/* Nothing to do. */
 	if (!server.initialized)
-		return;
+		return (0);
 
 	/* Close output mailbox. */
 	if (mailbox_close(server.outbox) < 0)
 	{
 		printf("[nanvix][semaphores] cannot close outbox to server\n");
-		return;
+		return (-EAGAIN);
 	}
 
 	server.initialized = 0;
+
+	return (0);
 }
 
 /*============================================================================*

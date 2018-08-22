@@ -27,6 +27,9 @@
 #include <nanvix/const.h>
 #include <nanvix/syscalls.h>
 #include <nanvix/spawner.h>
+#include <nanvix/name.h>
+#include <nanvix/semaphore.h>
+#include <nanvix/mm.h>
 
 /* Forward definitions. */
 extern int main2(int, const char **);
@@ -154,8 +157,44 @@ void spawners_sync(void)
 	assert(sys_sync_signal(syncid_remote) == 0);
 }
 
+/**
+ * @brief Shutdown servers.
+ */
+void servers_shutdown(void)
+{
+	int outbox;
+
+	/* SHM shutdown request */
+	struct shm_message shm_req  = { .opcode = SHM_EXIT };
+
+	assert((outbox = sys_mailbox_open(SHM_SERVER_NODE)) >= 0);
+	assert(sys_mailbox_write(outbox, &shm_req, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
+	assert(sys_mailbox_close(outbox) == 0);
+
+	/* RMem shutdown request */
+	struct rmem_message rmem_req = { .op = RMEM_EXIT };
+
+	assert((outbox = sys_mailbox_open(RMEM_SERVER_NODE)) >= 0);
+	assert(sys_mailbox_write(outbox, &rmem_req, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
+	assert(sys_mailbox_close(outbox) == 0);
+
+	/* Semaphore shutdown request */
+	struct sem_message sem_req = { .opcode = SEM_EXIT };
+
+	assert((outbox = sys_mailbox_open(SEMAPHORE_SERVER_NODE)) >= 0);
+	assert(sys_mailbox_write(outbox, &sem_req, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
+	assert(sys_mailbox_close(outbox) == 0);
+	
+	/* Name shutdown request */
+	struct name_message name_req = { .op = NAME_EXIT };
+
+	assert((outbox = sys_mailbox_open(NAME_SERVER_NODE)) >= 0);
+	assert(sys_mailbox_write(outbox, &name_req, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
+	assert(sys_mailbox_close(outbox) == 0);
+}
+
 SPAWNER_NAME("spawner0")
-SPAWNER_SHUTDOWN(SHUTDOWN_ENABLE)
+SPAWNER_SHUTDOWN(servers_shutdown)
 SPAWNER_SERVERS(NR_SERVERS, servers)
 SPAWNER_MAIN2(main2)
 SPAWNER_KERNEL_TESTS(test_kernel)

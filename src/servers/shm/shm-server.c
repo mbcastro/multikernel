@@ -956,7 +956,9 @@ static int do_null(struct shm_message *msg, struct shm_message *response)
  */
 static int shm_loop(void)
 {
-	while(1)
+	int shutdown = 0;
+
+	while(!shutdown)
 	{
 		int reply = 0;
 		struct shm_message request;
@@ -997,6 +999,10 @@ static int shm_loop(void)
 
 			case SHM_TRUNCATE:
 				reply = do_truncate(&request, &response);
+				break;
+
+			case SHM_EXIT:
+				shutdown = 1;
 				break;
 
 			default:

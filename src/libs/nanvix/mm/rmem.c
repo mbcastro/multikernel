@@ -173,3 +173,34 @@ int meminit(void)
 
 	return (0);
 }
+
+/**
+ * @brief Closes the remote memory client.
+ *
+ * @returns Upon successful completion, zero is returned. Upon
+ * failure, a negative error code is returned instead.
+ */
+int memfinalize(void)
+{
+	/* Nothing to do.  */
+	if (!server.initialized)
+		return (0);
+
+	/* Close output mailbox */
+	if (mailbox_close(server.outbox) < 0)
+	{
+		printf("[nanvix][rmem] cannot close outbox to server\n");
+		return (-EAGAIN);
+	}
+
+	/* Close underlying IPC connectors. */
+	if (portal_close(server.outportal) < 0)
+	{
+		printf("[nanvix][rmem] cannot close outportal to server\n");
+		return (-EAGAIN);
+	}
+
+	server.initialized = 0;
+
+	return (0);
+}

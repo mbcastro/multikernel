@@ -31,6 +31,10 @@
 #include <nanvix/spawner.h>
 #include <nanvix/pm.h>
 
+/* Forward definitions. */
+extern int runtime_setup(int);
+extern int runtime_cleanup(void);
+
 /**
  * @brief Server wrapper.
  */
@@ -140,12 +144,12 @@ int main(int argc, const char **argv)
 		assert(runtime_cleanup() == 0);
 	}
 
+	if (spawner_shutdown != NULL)
+		spawner_shutdown();
+
 	/* Wait for servers. */
-	if (!spawner_shutdown)
-	{
-		for (int i = 0; i < spawner_nservers; i++)
-			pthread_join(tids[i], NULL);
-	}
+	for (int i = 0; i < spawner_nservers; i++)
+		pthread_join(tids[i], NULL);
 
 	printf("[nanvix][%s] shutting down\n", spawner_name);
 

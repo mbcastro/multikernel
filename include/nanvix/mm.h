@@ -45,8 +45,9 @@
 	 * @brief Operations on remote memory.
 	 */
 	/**@{*/
-	#define RMEM_READ   0 /**< Read.   */
-	#define RMEM_WRITE  1 /**< Write.  */
+	#define RMEM_READ   0 /**< Read.  		 */
+	#define RMEM_WRITE  1 /**< Write. 		 */
+	#define RMEM_EXIT   2 /**< Exit Request. */
 	/**@}*/
 
 	/**
@@ -63,6 +64,7 @@
 
 	/* Forward definitions. */
 	extern int meminit(void);
+	extern int memfinalize(void);
 	extern int memwrite(uint64_t, const void *, size_t);
 	extern int memread(uint64_t, void *, size_t);
 
@@ -89,15 +91,16 @@
 	 * @bried Shared memory region operations.
 	 */
 	/**@{*/
-	#define SHM_OPEN        1 /**< Open.             */
-	#define SHM_CREATE      2 /**< Create.           */
-	#define SHM_CREATE_EXCL 3 /**< Exclusive create. */
-	#define SHM_UNLINK      4 /**< Unlink.           */
-	#define SHM_MAP         5 /**< Map.              */
-	#define SHM_UNMAP       6 /**< Unmap.            */
-	#define SHM_TRUNCATE    7 /**< Truncate.         */
-	#define SHM_SUCCESS     8 /**< Success.          */
-	#define SHM_FAILURE     9 /**< Failure.          */
+	#define SHM_OPEN         1  /**< Open.             */
+	#define SHM_CREATE       2  /**< Create.           */
+	#define SHM_CREATE_EXCL  3  /**< Exclusive create. */
+	#define SHM_UNLINK       4  /**< Unlink.           */
+	#define SHM_MAP          5  /**< Map.              */
+	#define SHM_UNMAP        6  /**< Unmap.            */
+	#define SHM_TRUNCATE     7  /**< Truncate.         */
+	#define SHM_SUCCESS      8  /**< Success.          */
+	#define SHM_FAILURE      9  /**< Failure.          */
+	#define SHM_EXIT        10 /**< Exit Request.     */
 	/**@}*/
 
 	/**

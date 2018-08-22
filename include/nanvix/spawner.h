@@ -46,9 +46,9 @@
 
 	/* Forward definitions. */
 	extern const char *spawner_name;
-	extern const int spawner_shutdown;
 	extern const int spawner_nservers;
 	extern struct serverinfo *spawner_servers;
+	extern void (*spawner_shutdown)(void);
 	extern void (*test_kernel_fn)(const char *);
 	extern int (*main2_fn)(int, const char **);
 	extern void spawner_init(void);
@@ -61,14 +61,6 @@
 	 * @brief Number of runlevels.
 	 */
 	#define NR_RUNLEVELS 4
-
-	/**
-	 * @brief Shutdown flags.
-	 */
-	/**@{*/
-	#define SHUTDOWN_DISABLE 0 /**< Disable shutdown. */
-	#define SHUTDOWN_ENABLE  1 /**< Enable shutdown.  */
-	/**@}*/
 
 	/**
 	 * @brief Declares the name of the spawner.
@@ -84,7 +76,7 @@
 	 * @param x Enable shutdown?
 	 */
 	#define SPAWNER_SHUTDOWN(x) \
-		const int spawner_shutdown = x;
+		void (*spawner_shutdown)(void) = x;
 
 	/**
 	 * @brief Declares the user-level main function.

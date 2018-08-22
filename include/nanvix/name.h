@@ -35,6 +35,7 @@
 	#define NAME_UNLINK  3 /**< Remove a name.           */
 	#define NAME_SUCCESS 4 /**< Success acknowledgement. */
 	#define NAME_FAIL    5 /**< Failure acknowledgement. */
+	#define NAME_EXIT    6 /**< Exit request. 			 */
 	/**@}*/
 
 	/**

@@ -793,7 +793,9 @@ found:
  */
 static int semaphore_loop(void)
 {
-	while(1)
+	int shutdown = 0;
+
+	while(!shutdown)
 	{
 		int send_response = 0;  /* Reply?             */
 		struct sem_message msg; /* Semaphore message. */
@@ -880,6 +882,10 @@ static int semaphore_loop(void)
 				msg.opcode = SEM_RETURN;
 				send_response = 1;
 			break;
+
+			case SEM_EXIT:
+				shutdown = 1;
+				break;
 
 			/* Should not happen. */
 			default:

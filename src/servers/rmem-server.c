@@ -149,7 +149,9 @@ static inline void rmem_read(int remote, uint64_t blknum, int size)
  */
 static int rmem_loop(void)
 {
-	while(1)
+	int shutdown = 0;
+
+	while(!shutdown)
 	{
 		struct rmem_message msg;
 
@@ -166,6 +168,10 @@ static int rmem_loop(void)
 			/* Read from RMEM. */
 			case RMEM_READ:
 				rmem_read(msg.source, msg.blknum, msg.size);
+				break;
+
+			case RMEM_EXIT:
+				shutdown = 1;
 				break;
 
 			/* Should not happen. */
