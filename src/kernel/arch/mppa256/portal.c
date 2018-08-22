@@ -389,8 +389,7 @@ static int mppa256_portal_allow(int portalid, int local, int remote)
 	sprintf(pathname,
 			"/mppa/sync/%d:%d",
 			remote,
-			(noc_is_cnode(remote) || noc_is_cnode(local)) ?
-							 noctag_portal(portals[portalid].local) : 127
+			noctag_portal(local)
 	);
 
 	/* Open sync. */
@@ -500,8 +499,7 @@ static int mppa256_portal_open(int local, int remote)
 	sprintf(pathname,
 			"/mppa/sync/%d:%d",
 			local,
-			(noc_is_cnode(remote) || noc_is_cnode(local)) ?
-									noctag_portal(remote) : 127
+			noctag_portal(remote)
 	);
 
 	/* Open NoC connector. */

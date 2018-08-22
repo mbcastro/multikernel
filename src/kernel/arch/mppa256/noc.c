@@ -357,11 +357,11 @@ int noctag_mailbox(int nodeid)
  */
 int noctag_portal(int nodeid)
 {
-	if ((nodeid >= IOCLUSTER0) && (nodeid < (IOCLUSTER0 + NR_IOCLUSTER_DMA)))
+	if (noc_is_ionode0(nodeid))
 	{
 		return (NOCTAG_PORTAL_OFF + nodeid%NR_IOCLUSTER_DMA);
 	}
-	else if ((nodeid >= IOCLUSTER1) && (nodeid < (IOCLUSTER1 + NR_IOCLUSTER_DMA)))
+	else if (noc_is_ionode1(nodeid))
 	{
 		return (NOCTAG_PORTAL_OFF + NR_IOCLUSTER_DMA + nodeid%NR_IOCLUSTER_DMA);
 	}
