@@ -160,7 +160,10 @@ int runtime_cleanup(void)
 
 		/* Finalize Naming client. */
 		if (current_level >= 1)
-			name_finalize();
+		{
+			if (name_finalize() != 0)
+				goto error;
+		}
 		
 		/* Destroy underlying input mailbox. */
 		if (mailbox_cleanup() != 0)

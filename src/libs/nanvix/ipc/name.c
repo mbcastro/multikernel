@@ -96,7 +96,7 @@ int name_finalize(void)
 	if (!initialized)
 		return (0);
 
-	if (sys_mailbox_close(NAME_SERVER_NODE) < 0)
+	if (sys_mailbox_close(server) < 0)
 		return (-EAGAIN);
 
 	initialized = 0;
