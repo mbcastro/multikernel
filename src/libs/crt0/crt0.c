@@ -144,17 +144,27 @@ int main(int argc, const char **argv)
 		assert(runtime_cleanup() == 0);
 	}
 
+	/* Shutdown servers. */
 	if (spawner_shutdown != NULL)
+	{
+		printf("[nanvix][%s] broadcasting shutdown signal\n", spawner_name);
 		spawner_shutdown();
+	}
 
 	/* Wait for servers. */
 	for (int i = 0; i < spawner_nservers; i++)
 		pthread_join(tids[i], NULL);
 
-	printf("[nanvix][%s] shutting down\n", spawner_name);
-
 	/* Cleanup. */
 	assert(kernel_cleanup() == 0);
+
+	/* Sync spawners. */
+	if (spawner_shutdown == NULL)
+	{
+		printf("[nanvix][%s] down\n", spawner_name);
+		while(1);
+	}
+
 	return (ret);
 
 error:
