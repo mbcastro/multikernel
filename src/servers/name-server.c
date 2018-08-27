@@ -221,14 +221,14 @@ int name_server(int inbox, int inportal)
 		assert(sys_mailbox_read(inbox, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
 
 		/* Handle name requests. */
-		switch (msg.op)
+		switch (msg.header.opcode)
 		{
 			/* Lookup. */
 			case NAME_LOOKUP:
 				msg.nodenum = _name_lookup(msg.name);
 
 				/* Send response. */
-				source = sys_mailbox_open(msg.source);
+				source = sys_mailbox_open(msg.header.source);
 
 				assert(source >= 0);
 
@@ -243,14 +243,14 @@ int name_server(int inbox, int inportal)
 				tmp = nr_registration;
 
 				if (_name_link(msg.nodenum, msg.name) == (tmp + 1))
-					msg.op = NAME_SUCCESS;
+					msg.header.opcode = NAME_SUCCESS;
 				else
-					msg.op = NAME_FAIL;
+					msg.header.opcode = NAME_FAIL;
 
 				assert(nr_registration >= 0);
 
 				/* Send acknowledgement. */
-				source = sys_mailbox_open(msg.source);
+				source = sys_mailbox_open(msg.header.source);
 
 				assert(source >= 0);
 
@@ -265,14 +265,14 @@ int name_server(int inbox, int inportal)
 				tmp = nr_registration;
 
 				if ((tmp > 0) && (_name_unlink(msg.name) == (tmp - 1)))
-					msg.op = NAME_SUCCESS;
+					msg.header.opcode = NAME_SUCCESS;
 				else
-					msg.op = NAME_FAIL;
+					msg.header.opcode = NAME_FAIL;
 
 				assert(nr_registration >= 0);
 
 				/* Send acknowledgement. */
-				source = sys_mailbox_open(msg.source);
+				source = sys_mailbox_open(msg.header.source);
 
 				assert(source >= 0);
 

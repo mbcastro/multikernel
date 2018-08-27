@@ -158,16 +158,16 @@ static int rmem_loop(void)
 		sys_mailbox_read(inbox, &msg, MAILBOX_MSG_SIZE);
 
 		/* handle write operation. */
-		switch (msg.op)
+		switch (msg.header.opcode)
 		{
 			/* Write to RMEM. */
 			case RMEM_WRITE:
-				rmem_write(msg.source, msg.blknum, msg.size);
+				rmem_write(msg.header.source, msg.blknum, msg.size);
 				break;
 
 			/* Read from RMEM. */
 			case RMEM_READ:
-				rmem_read(msg.source, msg.blknum, msg.size);
+				rmem_read(msg.header.source, msg.blknum, msg.size);
 				break;
 
 			case RMEM_EXIT:

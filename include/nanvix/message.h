@@ -20,40 +20,20 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef NANVIX_NAME_H_
-#define NANVIX_NAME_H_
+#ifndef NANVIX_MESSAGE_H_
+#define NANVIX_MESSAGE_H_
 
-	#include <stdint.h>
-    
-	#include <nanvix/limits.h>
-	#include <nanvix/message.h>
+    #include <stdint.h>
 
 	/**
-	 * @brief Operation types for name server.
+	 * @brief Polymorphic message header.
 	 */
-	/**@{*/
-	#define NAME_EXIT    0 /**< Exit request.            */
-	#define NAME_LOOKUP  1 /**< lookup a name.           */
-	#define NAME_LINK    2 /**< Add a new name.          */
-	#define NAME_UNLINK  3 /**< Remove a name.           */
-	#define NAME_SUCCESS 4 /**< Success acknowledgement. */
-	#define NAME_FAIL    5 /**< Failure acknowledgement. */
-	/**@}*/
-
-	/**
-	 * @brief Name server message.
-	 */
-	struct name_message
+	typedef struct
 	{
-		message_header header;           /**< Message header. */
-		int32_t nodenum;                 /**< NoC node.       */
-		char name[NANVIX_PROC_NAME_MAX]; /**< Portal name.    */
-	};
+		uint16_t source; /**< Source cluster. */
+		uint8_t  opcode; /**< Operation.      */
+		uint8_t  unused; /**< Not used.       */
+	} message_header;
 
-	/* Forward definitions. */
-	extern int name_init(void);
-	extern int name_lookup(char *);
-	extern int name_link(int, const char *);
-	extern int name_unlink(const char *);
+#endif /* MESSAGE_H_ */
 
-#endif /* _NAME_H_ */

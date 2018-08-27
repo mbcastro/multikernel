@@ -172,8 +172,8 @@ int nanvix_shm_create_excl(const char *name, int rw, mode_t mode)
 	nodenum = sys_get_node_num();
 
 	/* Build message header. */
-	msg.source = nodenum;
-	msg.opcode = SHM_CREATE_EXCL;
+	msg.header.source = nodenum;
+	msg.header.opcode = SHM_CREATE_EXCL;
 
 	pthread_mutex_lock(&lock);
 
@@ -199,7 +199,7 @@ int nanvix_shm_create_excl(const char *name, int rw, mode_t mode)
 	pthread_mutex_unlock(&lock);
 
 	/* Failed to create shared memory region. */
-	if (msg.opcode == SHM_FAILURE)
+	if (msg.header.opcode == SHM_FAILURE)
 	{
 		errno = msg.op.ret.status;
 		return (-1);
@@ -254,8 +254,8 @@ int nanvix_shm_create(const char *name, int rw, int truncate, mode_t mode)
 	nodenum = sys_get_node_num();
 
 	/* Build message header. */
-	msg.source = nodenum;
-	msg.opcode = SHM_CREATE;
+	msg.header.source = nodenum;
+	msg.header.opcode = SHM_CREATE;
 
 	pthread_mutex_lock(&lock);
 
@@ -282,7 +282,7 @@ int nanvix_shm_create(const char *name, int rw, int truncate, mode_t mode)
 	pthread_mutex_unlock(&lock);
 
 	/* Failed to create shared memory region. */
-	if (msg.opcode == SHM_FAILURE)
+	if (msg.header.opcode == SHM_FAILURE)
 	{
 		errno = msg.op.ret.status;
 		return (-1);
@@ -336,8 +336,8 @@ int nanvix_shm_open(const char *name, int rw, int truncate)
 	nodenum = sys_get_node_num();
 
 	/* Build message header. */
-	msg.source = nodenum;
-	msg.opcode = SHM_OPEN;
+	msg.header.source = nodenum;
+	msg.header.opcode = SHM_OPEN;
 
 	pthread_mutex_lock(&lock);
 
@@ -362,7 +362,7 @@ int nanvix_shm_open(const char *name, int rw, int truncate)
 	pthread_mutex_unlock(&lock);
 
 	/* Failed to open shared memory region. */
-	if (msg.opcode == SHM_FAILURE)
+	if (msg.header.opcode == SHM_FAILURE)
 	{
 		errno = msg.op.ret.status;
 		return (-1);
@@ -414,8 +414,8 @@ int nanvix_shm_unlink(const char *name)
 	nodenum = sys_get_node_num();
 
 	/* Build message. */
-	msg.source = nodenum;
-	msg.opcode = SHM_UNLINK;
+	msg.header.source = nodenum;
+	msg.header.opcode = SHM_UNLINK;
 	msg.seq = ((nodenum << 4) | 0);
 	strcpy(msg.op.unlink.name, name);
 
@@ -430,7 +430,7 @@ int nanvix_shm_unlink(const char *name)
 	pthread_mutex_unlock(&lock);
 
 	/* Failed to unlink shared memory region. */
-	if (msg.opcode == SHM_FAILURE)
+	if (msg.header.opcode == SHM_FAILURE)
 	{
 		errno = msg.op.ret.status;
 		return (-1);
@@ -489,8 +489,8 @@ int nanvix_map(uint64_t *mapblk, size_t len, int writable, int shared, int fd, o
 	nodenum = sys_get_node_num();
 
 	/* Build message. */
-	msg.source = nodenum;
-	msg.opcode = SHM_MAP;
+	msg.header.source = nodenum;
+	msg.header.opcode = SHM_MAP;
 	msg.seq = ((nodenum << 4) | 0);
 	msg.op.map.shmid = fd;
 	msg.op.map.size = len;
@@ -509,7 +509,7 @@ int nanvix_map(uint64_t *mapblk, size_t len, int writable, int shared, int fd, o
 	pthread_mutex_unlock(&lock);
 
 	/* Failed to map. */
-	if (msg.opcode == SHM_FAILURE)
+	if (msg.header.opcode == SHM_FAILURE)
 	{
 		errno = msg.op.ret.status;
 		return (-1);
@@ -566,8 +566,8 @@ int nanvix_unmap(int shmid, size_t len)
 	nodenum = sys_get_node_num();
 
 	/* Build message. */
-	msg.source = nodenum;
-	msg.opcode = SHM_UNMAP;
+	msg.header.source = nodenum;
+	msg.header.opcode = SHM_UNMAP;
 	msg.seq = ((nodenum << 4) | 0);
 	msg.op.unmap.shmid = shmid;
 	msg.op.unmap.size = len;
@@ -583,7 +583,7 @@ int nanvix_unmap(int shmid, size_t len)
 	pthread_mutex_unlock(&lock);
 
 	/* Failed to unmap. */
-	if (msg.opcode == SHM_FAILURE)
+	if (msg.header.opcode == SHM_FAILURE)
 	{
 		errno = msg.op.ret.status;
 		return (-1);
@@ -625,8 +625,8 @@ int nanvix_mtruncate(int shmid, size_t size)
 	nodenum = sys_get_node_num();
 
 	/* Build message. */
-	msg.source = nodenum;
-	msg.opcode = SHM_TRUNCATE;
+	msg.header.source = nodenum;
+	msg.header.opcode = SHM_TRUNCATE;
 	msg.seq = ((nodenum << 4) | 0);
 	msg.op.truncate.shmid = shmid;
 	msg.op.truncate.size = size;
@@ -642,7 +642,7 @@ int nanvix_mtruncate(int shmid, size_t size)
 	pthread_mutex_unlock(&lock);
 
 	/* Failed to truncate. */
-	if (msg.opcode == SHM_FAILURE)
+	if (msg.header.opcode == SHM_FAILURE)
 	{
 		errno = msg.op.ret.status;
 		return (-1);

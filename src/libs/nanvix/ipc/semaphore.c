@@ -141,8 +141,8 @@ static inline sem_t _nanvix_sem_create(const char *name, mode_t mode, unsigned v
 	nodenum = sys_get_node_num();
 
 	/* Build message header. */
-	msg.source = nodenum;
-	msg.opcode = (excl) ? SEM_CREATE_EXCL : SEM_CREATE;
+	msg.header.source = nodenum;
+	msg.header.opcode = (excl) ? SEM_CREATE_EXCL : SEM_CREATE;
 
 	pthread_mutex_lock(&lock);
 
@@ -226,8 +226,8 @@ static inline sem_t _nanvix_sem_open(const char *name)
 	nodenum = sys_get_node_num();
 
 	/* Build message header. */
-	msg.source = nodenum;
-	msg.opcode = SEM_OPEN;
+	msg.header.source = nodenum;
+	msg.header.opcode = SEM_OPEN;
 	msg.seq = ((nodenum << 4) | 0);
 	strcpy(msg.op.open.name, name);
 
@@ -297,8 +297,8 @@ static inline int _nanvix_sem_post(sem_t sem)
 	nodenum = sys_get_node_num();
 
 	/* Build message. */
-	msg.source = nodenum;
-	msg.opcode = SEM_POST;
+	msg.header.source = nodenum;
+	msg.header.opcode = SEM_POST;
 	msg.seq = ((nodenum << 4) | 0);
 	msg.op.post.semid = sem;
 
@@ -360,8 +360,8 @@ static inline int _nanvix_sem_wait(sem_t sem)
 	nodenum = sys_get_node_num();
 
 	/* Build message. */
-	msg.source = nodenum;
-	msg.opcode = SEM_WAIT;
+	msg.header.source = nodenum;
+	msg.header.opcode = SEM_WAIT;
 	msg.seq = ((nodenum << 4) | 0);
 	msg.op.wait.semid = sem;
 
@@ -374,7 +374,7 @@ static inline int _nanvix_sem_wait(sem_t sem)
 		{
 			if ((ret = sys_mailbox_read(inbox, &msg, sizeof(struct sem_message))) != MAILBOX_MSG_SIZE)
 				goto error;
-		} while (msg.opcode == SEM_WAIT);
+		} while (msg.header.opcode == SEM_WAIT);
 
 	pthread_mutex_unlock(&lock);
 
@@ -426,8 +426,8 @@ static inline int _nanvix_sem_close(sem_t sem)
 	nodenum = sys_get_node_num();
 
 	/* Build message. */
-	msg.source = nodenum;
-	msg.opcode = SEM_CLOSE;
+	msg.header.source = nodenum;
+	msg.header.opcode = SEM_CLOSE;
 	msg.seq = ((nodenum << 4) | 0);
 	msg.op.close.semid = sem;
 
@@ -488,8 +488,8 @@ static inline int _nanvix_sem_unlink(const char *name)
 	nodenum = sys_get_node_num();
 
 	/* Build message. */
-	msg.source = nodenum;
-	msg.opcode = SEM_UNLINK;
+	msg.header.source = nodenum;
+	msg.header.opcode = SEM_UNLINK;
 	msg.seq = ((nodenum << 4) | 0);
 	strcpy(msg.op.unlink.name, name);
 

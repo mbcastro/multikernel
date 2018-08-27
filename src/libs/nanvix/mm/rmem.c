@@ -75,8 +75,8 @@ int memread(uint64_t addr, void *buf, size_t n)
 		return (0);
 
 	/* Build operation header. */
-	msg.source = sys_get_node_num();
-	msg.op = RMEM_READ;
+	msg.header.source = sys_get_node_num();
+	msg.header.opcode = RMEM_READ;
 	msg.blknum = addr;
 	msg.size = n;
 
@@ -125,8 +125,8 @@ int memwrite(uint64_t addr, const void *buf, size_t n)
 		return (0);
 
 	/* Build operation header. */
-	msg.source = sys_get_node_num();
-	msg.op = RMEM_WRITE;
+	msg.header.source = sys_get_node_num();
+	msg.header.opcode = RMEM_WRITE;
 	msg.blknum = addr;
 	msg.size = n;
 

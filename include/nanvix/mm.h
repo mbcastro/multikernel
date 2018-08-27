@@ -23,9 +23,11 @@
 #ifndef NANVIX_MM_H_
 #define NANVIX_MM_H_
 	
-	#include <sys/types.h>
 	#include <stdint.h>
 	#include <stddef.h>
+
+	#include <sys/types.h>
+	#include <nanvix/message.h>
 
 /*============================================================================*
  * Remote Memory Service                                                      *
@@ -45,9 +47,9 @@
 	 * @brief Operations on remote memory.
 	 */
 	/**@{*/
-	#define RMEM_READ   0 /**< Read.  		 */
-	#define RMEM_WRITE  1 /**< Write. 		 */
-	#define RMEM_EXIT   2 /**< Exit Request. */
+	#define RMEM_EXIT  0 /**< Exit Request. */
+	#define RMEM_READ  1 /**< Read.         */
+	#define RMEM_WRITE 2 /**< Write.        */
 	/**@}*/
 
 	/**
@@ -55,11 +57,10 @@
 	 */
 	struct rmem_message
 	{
-		uint16_t source;     /**< Source cluster. */
-		uint16_t op;         /**< Operation.      */
-		uint64_t blknum;     /**< Block number.   */
-		uint32_t size;       /**< Size.           */
-		uint32_t unused[10]; /**< Not used.       */
+		message_header header; /**< Message header. */
+		uint64_t blknum;       /**< Block number.   */
+		uint32_t size;         /**< Size.           */
+		uint32_t unused[11];   /**< Not used.       */
 	};
 
 	/* Forward definitions. */
@@ -91,6 +92,7 @@
 	 * @bried Shared memory region operations.
 	 */
 	/**@{*/
+	#define SHM_EXIT         0  /**< Exit Request.     */
 	#define SHM_OPEN         1  /**< Open.             */
 	#define SHM_CREATE       2  /**< Create.           */
 	#define SHM_CREATE_EXCL  3  /**< Exclusive create. */
@@ -100,7 +102,6 @@
 	#define SHM_TRUNCATE     7  /**< Truncate.         */
 	#define SHM_SUCCESS      8  /**< Success.          */
 	#define SHM_FAILURE      9  /**< Failure.          */
-	#define SHM_EXIT        10 /**< Exit Request.     */
 	/**@}*/
 
 	/**
@@ -108,9 +109,8 @@
 	 */
 	struct shm_message
 	{
-		uint16_t source; /**< Source cluster.                 */
-		int8_t opcode;   /**< Shared Memory Region operation. */
-		uint16_t seq;    /**< Sequence number.                */
+		message_header header; /**< Message header.  */
+		uint16_t seq;          /**< Sequence number. */
 
 		/* Operation-specific fields. */
 		union 

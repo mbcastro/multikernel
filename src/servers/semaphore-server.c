@@ -251,10 +251,10 @@ static int semaphore_put_message(struct sem_message *msg)
 	int i;
 
 	/* Invalid message. */
-	if (msg->source >= HAL_NR_NOC_NODES)
+	if (msg->header.source >= HAL_NR_NOC_NODES)
 		return (-EAGAIN);
 
-	i = msg->source;
+	i = msg->header.source;
 
 	buffer[i].valid = 1;
 	memcpy(&buffer[i].msg, msg, sizeof(struct sem_message));
@@ -772,7 +772,7 @@ found:
 
 	/* Send wake up signal. */
 	remote = semaphore_dequeue(semid);
-	msg.opcode = SEM_RETURN;
+	msg.header.opcode = SEM_RETURN;
 	msg.op.ret = 0;
 	assert((outbox = sys_mailbox_open(remote)) >= 0);
 	assert(sys_mailbox_write(outbox, &msg, sizeof(struct sem_message)) == MAILBOX_MSG_SIZE);
@@ -803,7 +803,7 @@ static int semaphore_loop(void)
 		assert(sys_mailbox_read(inbox, &msg, sizeof(struct sem_message)) == MAILBOX_MSG_SIZE);
 
 		/* Handle semaphore requests. */
-		switch (msg.opcode)
+		switch (msg.header.opcode)
 		{
 			/* Create a named semaphore. */
 			case SEM_CREATE:
@@ -817,11 +817,11 @@ static int semaphore_loop(void)
 					struct sem_message msg1;
 
 					/* Get first message. */
-					assert(semaphore_get_message(&msg1, msg.source) == 0);
+					assert(semaphore_get_message(&msg1, msg.header.source) == 0);
 					assert(msg.seq == (msg1.seq | 1));
 
-					msg.op.ret = semaphore_create(msg.source, msg.op.create2.name, msg1.op.create1.mode, msg1.op.create1.value);
-					msg.opcode = SEM_RETURN;
+					msg.op.ret = semaphore_create(msg.header.source, msg.op.create2.name, msg1.op.create1.mode, msg1.op.create1.value);
+					msg.header.opcode = SEM_RETURN;
 					send_response = 1;
 				}
 			} break;
@@ -838,11 +838,11 @@ static int semaphore_loop(void)
 					struct sem_message msg1;
 
 					/* Get first message. */
-					assert(semaphore_get_message(&msg1, msg.source) == 0);
+					assert(semaphore_get_message(&msg1, msg.header.source) == 0);
 					assert(msg.seq == (msg1.seq | 1));
 
-					msg.op.ret = semaphore_create_exclusive(msg.source, msg.op.create2.name, msg1.op.create1.mode, msg1.op.create1.value);
-					msg.opcode = SEM_RETURN;
+					msg.op.ret = semaphore_create_exclusive(msg.header.source, msg.op.create2.name, msg1.op.create1.mode, msg1.op.create1.value);
+					msg.header.opcode = SEM_RETURN;
 					send_response = 1;
 				}
 
@@ -850,36 +850,36 @@ static int semaphore_loop(void)
 
 			/* Open a semaphore. */
 			case SEM_OPEN:
-				msg.op.ret = semaphore_open(msg.source, msg.op.open.name);
-				msg.opcode = SEM_RETURN;
+				msg.op.ret = semaphore_open(msg.header.source, msg.op.open.name);
+				msg.header.opcode = SEM_RETURN;
 				send_response = 1;
 			break;
 
 			/* Close a semaphore. */
 			case SEM_CLOSE:
-				msg.op.ret = semaphore_close(msg.source, msg.op.close.semid);
-				msg.opcode = SEM_RETURN;
+				msg.op.ret = semaphore_close(msg.header.source, msg.op.close.semid);
+				msg.header.opcode = SEM_RETURN;
 				send_response = 1;
 			break;
 
 			/* Unlink a semaphore. */
 			case SEM_UNLINK:
-				msg.op.ret = semaphore_unlink(msg.source, msg.op.unlink.name);
-				msg.opcode = SEM_RETURN;
+				msg.op.ret = semaphore_unlink(msg.header.source, msg.op.unlink.name);
+				msg.header.opcode = SEM_RETURN;
 				send_response = 1;
 			break;
 
 			/* Wait a semaphore. */
 			case SEM_WAIT:
-				msg.op.ret = semaphore_wait(msg.source, msg.op.close.semid);
-				msg.opcode = (msg.op.ret == 1) ? SEM_WAIT: SEM_RETURN;
+				msg.op.ret = semaphore_wait(msg.header.source, msg.op.close.semid);
+				msg.header.opcode = (msg.op.ret == 1) ? SEM_WAIT: SEM_RETURN;
 				send_response = 1;
 			break;
 
 			/* Post a semaphore. */
 			case SEM_POST:
-				msg.op.ret = semaphore_post(msg.source, msg.op.close.semid);
-				msg.opcode = SEM_RETURN;
+				msg.op.ret = semaphore_post(msg.header.source, msg.op.close.semid);
+				msg.header.opcode = SEM_RETURN;
 				send_response = 1;
 			break;
 
@@ -896,7 +896,7 @@ static int semaphore_loop(void)
 		if (send_response)
 		{
 			int outbox;
-			assert((outbox = sys_mailbox_open(msg.source)) >= 0);
+			assert((outbox = sys_mailbox_open(msg.header.source)) >= 0);
 			assert(sys_mailbox_write(outbox, &msg, sizeof(struct sem_message)) == MAILBOX_MSG_SIZE);
 			assert(sys_mailbox_close(outbox) == 0);
 		}

@@ -24,6 +24,7 @@
 #define NANVIX_SPAWNER_H_
 
 	#include <pthread.h>
+	#include <nanvix/message.h>
 
 	/**
 	 * @brief Server information.
@@ -35,13 +36,21 @@
 		int runlevel;           /**< Server runlevel. */
 	};
 
+    /**
+	 * @brief Operations on servers.
+	 */
+	/**@{*/
+	#define SHUTDOWN_REQ 0 /**< Shutdown request. */
+	/**@}*/
+
 	/**
 	 * @brief Spawner message.
 	 */
 	struct spawner_message
 	{
-		char unused[60]; /**< Not used. */
-		int status;      /**< Status.   */
+		message_header header; /**< Message header. */
+		char unused[56];       /**< Not used.       */
+		int status;            /**< Status.         */
 	};
 
 	/* Forward definitions. */

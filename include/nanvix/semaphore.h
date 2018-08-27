@@ -27,6 +27,7 @@
 	#include <fcntl.h>
 
 	#include <nanvix/limits.h>
+	#include <nanvix/message.h>
 
 	/**
 	 * @brief Maximal number of semaphores in the system.
@@ -42,6 +43,7 @@
 	 * @brief Operation types for semaphore server.
 	 */
 	/**@{*/
+	#define SEM_EXIT        0 /* Exit request.                  */
 	#define SEM_OPEN        1 /* Open a semaphore.              */
 	#define SEM_POST        2 /* Post a semaphore.              */
 	#define SEM_WAIT        3 /* Wait a semaphore.              */
@@ -50,7 +52,6 @@
 	#define SEM_CREATE      6 /* Create a semaphore.            */
 	#define SEM_CREATE_EXCL 7 /* Create an exclusive semaphore. */
 	#define SEM_RETURN      8 /* Return.                        */
-	#define SEM_EXIT        9 /* Exit request.                  */
 	/**@}*/
 
 	/**
@@ -58,9 +59,8 @@
 	 */
 	struct sem_message
 	{
-		uint16_t source; /**< Source cluster.      */
-		int16_t opcode;  /**< Semaphore operation. */
-		uint16_t seq;    /**< Sequence number.     */
+		message_header header; /**< Message header.  */
+		uint16_t seq;          /**< Sequence number. */
 
 		/* Operation-specific fields. */
 		union 

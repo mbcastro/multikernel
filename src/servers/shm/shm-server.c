@@ -683,31 +683,31 @@ static inline int do_create(struct shm_message *msg, struct shm_message *respons
 	/* Persist first message. */
 	if (!(msg->seq & 1))
 	{
-		assert(buffer_put(msg->source, msg) == 0);
+		assert(buffer_put(msg->header.source, msg) == 0);
 		return (0);
 	}
 
 	/* Get first message. */
-	assert(buffer_get(msg->source, &msg1) == 0);
+	assert(buffer_get(msg->header.source, &msg1) == 0);
 	assert(msg->seq == (msg1.seq | 1));
 
 	ret = shm_create(
-		msg->source,
+		msg->header.source,
 		msg1.op.create1.name,
 		msg->op.create2.mode,
 		msg->op.create2.rw
 	);
 	
-	response->source = msg->source;
+	response->header.source = msg->header.source;
 	if (ret >= 0)
 	{
 		response->op.ret.shmid = ret;
-		response->opcode = SHM_SUCCESS;
+		response->header.opcode = SHM_SUCCESS;
 	}
 	else
 	{
 		response->op.ret.status = -ret;
-		response->opcode = SHM_FAILURE;
+		response->header.opcode = SHM_FAILURE;
 	}
 
 	return (1);
@@ -728,31 +728,31 @@ static int do_create_excl(struct shm_message *msg, struct shm_message *response)
 	/* Persist first message. */
 	if (!(msg->seq & 1))
 	{
-		assert(buffer_put(msg->source, msg) == 0);
+		assert(buffer_put(msg->header.source, msg) == 0);
 		return (0);
 	}
 
 	/* Get first message. */
-	assert(buffer_get(msg->source, &msg1) == 0);
+	assert(buffer_get(msg->header.source, &msg1) == 0);
 	assert(msg->seq == (msg1.seq | 1));
 
 	ret = shm_create_exclusive(
-		msg->source,
+		msg->header.source,
 		msg1.op.create1.name,
 		msg->op.create2.mode,
 		msg->op.create2.rw
 	);
 
-	response->source = msg->source;
+	response->header.source = msg->header.source;
 	if (ret >= 0)
 	{
 		response->op.ret.shmid = ret;
-		response->opcode = SHM_SUCCESS;
+		response->header.opcode = SHM_SUCCESS;
 	}
 	else
 	{
 		response->op.ret.status = -ret;
-		response->opcode = SHM_FAILURE;
+		response->header.opcode = SHM_FAILURE;
 	}
 	
 	return (1);
@@ -773,31 +773,31 @@ static int do_open(struct shm_message *msg, struct shm_message *response)
 	/* Persist first message. */
 	if (!(msg->seq & 1))
 	{
-		assert(buffer_put(msg->source, msg) == 0);
+		assert(buffer_put(msg->header.source, msg) == 0);
 		return (0);
 	}
 
 	/* Get first message. */
-	assert(buffer_get(msg->source, &msg1) == 0);
+	assert(buffer_get(msg->header.source, &msg1) == 0);
 	assert(msg->seq == (msg1.seq | 1));
 
 	ret = shm_open(
-		msg->source,
+		msg->header.source,
 		msg1.op.open1.name,
 		msg->op.open2.rw,
 		msg->op.open2.truncate
 	);
 
-	response->source = msg->source;
+	response->header.source = msg->header.source;
 	if (ret >= 0)
 	{
 		response->op.ret.shmid = ret;
-		response->opcode = SHM_SUCCESS;
+		response->header.opcode = SHM_SUCCESS;
 	}
 	else
 	{
 		response->op.ret.status = -ret;
-		response->opcode = SHM_FAILURE;
+		response->header.opcode = SHM_FAILURE;
 	}
 
 	return (1);
@@ -814,18 +814,18 @@ static int do_unlink(struct shm_message *msg, struct shm_message *response)
 {
 	int ret;
 
-	ret = shm_unlink(msg->source, msg->op.unlink.name);
+	ret = shm_unlink(msg->header.source, msg->op.unlink.name);
 
-	response->source = msg->source;
+	response->header.source = msg->header.source;
 	if (ret == 0)
 	{
 		response->op.ret.status = 0;
-		response->opcode = SHM_SUCCESS;
+		response->header.opcode = SHM_SUCCESS;
 	}
 	else
 	{
 		response->op.ret.status = -ret;
-		response->opcode = SHM_FAILURE;
+		response->header.opcode = SHM_FAILURE;
 	}
 
 	return (1);
@@ -844,7 +844,7 @@ static int do_map(struct shm_message *msg, struct shm_message *response)
 	uint64_t mapblk;
 
 	ret = shm_map(
-		msg->source,
+		msg->header.source,
 		msg->op.map.shmid,
 		msg->op.map.size,
 		msg->op.map.writable,
@@ -853,16 +853,16 @@ static int do_map(struct shm_message *msg, struct shm_message *response)
 		&mapblk
 	);
 
-	response->source = msg->source;
+	response->header.source = msg->header.source;
 	if (ret == 0)
 	{
 		response->op.ret.mapblk = mapblk;
-		response->opcode = SHM_SUCCESS;
+		response->header.opcode = SHM_SUCCESS;
 	}
 	else
 	{
 		response->op.ret.status = -ret;
-		response->opcode = SHM_FAILURE;
+		response->header.opcode = SHM_FAILURE;
 	}
 	
 	return (1);
@@ -879,18 +879,18 @@ static int do_unmap(struct shm_message *msg, struct shm_message *response)
 {
 	int ret;
 
-	ret = shm_unmap(msg->source, msg->op.unmap.shmid);
+	ret = shm_unmap(msg->header.source, msg->op.unmap.shmid);
 
-	response->source = msg->source;
+	response->header.source = msg->header.source;
 	if (ret == 0)
 	{
 		response->op.ret.status = 0;
-		response->opcode = SHM_SUCCESS;
+		response->header.opcode = SHM_SUCCESS;
 	}
 	else
 	{
 		response->op.ret.status = -ret;
-		response->opcode = SHM_FAILURE;
+		response->header.opcode = SHM_FAILURE;
 	}
 
 	return (1);
@@ -908,21 +908,21 @@ static int do_truncate(struct shm_message *msg, struct shm_message *response)
 	int ret;
 
 	ret = shm_truncate(
-		msg->source,
+		msg->header.source,
 		msg->op.truncate.shmid,
 		msg->op.truncate.size
 	);
 
-	response->source = msg->source;
+	response->header.source = msg->header.source;
 	if (ret == 0)
 	{
 		response->op.ret.status = 0;
-		response->opcode = SHM_SUCCESS;
+		response->header.opcode = SHM_SUCCESS;
 	}
 	else
 	{
 		response->op.ret.status = -ret;
-		response->opcode = SHM_FAILURE;
+		response->header.opcode = SHM_FAILURE;
 	}
 
 	return (1);
@@ -937,9 +937,9 @@ static int do_truncate(struct shm_message *msg, struct shm_message *response)
  */
 static int do_null(struct shm_message *msg, struct shm_message *response)
 {
-	response->opcode = SHM_FAILURE;
+	response->header.opcode = SHM_FAILURE;
 	response->op.ret.status = EINVAL;
-	response->source = msg->source;
+	response->header.source = msg->header.source;
 
 	return (1);
 }
@@ -967,11 +967,11 @@ static int shm_loop(void)
 		assert(sys_mailbox_read(inbox, &request, sizeof(struct shm_message)) == MAILBOX_MSG_SIZE);
 
 		/* Invalid process ID. */
-		if (request.source >= HAL_NR_NOC_NODES)
+		if (request.header.source >= HAL_NR_NOC_NODES)
 			continue;
 
 		/* Handle request. */
-		switch (request.opcode)
+		switch (request.header.opcode)
 		{
 			case SHM_CREATE:
 				reply = do_create(&request, &response);
@@ -1014,7 +1014,7 @@ static int shm_loop(void)
 		if (reply)
 		{
 			int outbox;
-			assert((outbox = sys_mailbox_open(response.source)) >= 0);
+			assert((outbox = sys_mailbox_open(response.header.source)) >= 0);
 			assert(sys_mailbox_write(outbox, &response, sizeof(struct shm_message)) == MAILBOX_MSG_SIZE);
 			assert(sys_mailbox_close(outbox) == 0);
 		}
