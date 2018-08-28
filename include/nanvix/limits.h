@@ -31,7 +31,7 @@
 	 *
 	 * @note The null character is included.
 	 */
-	#define NANVIX_PROC_NAME_MAX 56
+	#define NANVIX_PROC_NAME_MAX 112
 
 	/**
 	 * @brief Maximum number of processes.

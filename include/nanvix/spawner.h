@@ -49,8 +49,8 @@
 	struct spawner_message
 	{
 		message_header header; /**< Message header. */
-		char unused[56];       /**< Not used.       */
 		int status;            /**< Status.         */
+		char unused[112];      /**< Not used.       */
 	};
 
 	/* Forward definitions. */

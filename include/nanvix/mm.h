@@ -60,7 +60,7 @@
 		message_header header; /**< Message header. */
 		uint64_t blknum;       /**< Block number.   */
 		uint32_t size;         /**< Size.           */
-		uint32_t unused[11];   /**< Not used.       */
+		uint32_t unused[25];   /**< Not used.       */
 	};
 
 	/* Forward definitions. */
@@ -86,7 +86,7 @@
 	/**
 	 * @brief Maximum length for a shared memory region name.
 	 */
-	#define SHM_NAME_MAX 55
+	#define SHM_NAME_MAX 111
 
 	/**
 	 * @bried Shared memory region operations.
