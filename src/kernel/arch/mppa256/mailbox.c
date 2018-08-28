@@ -20,11 +20,14 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <stdint.h>
 #include <mppaipc.h>
+#include <stdarg.h>
 
 #define __NEED_HAL_CORE_
 #define __NEED_HAL_NOC_
 #define __NEED_HAL_MAILBOX_
+#define __NEED_HAL_PERFORMANCE_
 #include <nanvix/hal.h>
 #include <nanvix/klib.h>
 
@@ -46,10 +49,12 @@
  */
 static struct 
 {
-	int fd;       /**< Underlying file descriptor. */
-	int flags;    /**< Flags.                      */
-	int nodeid;   /**< ID of underlying node.      */
-	int refcount; /**< Reference counter.          */
+	int fd;           /**< Underlying file descriptor. */
+	int flags;        /**< Flags.                      */
+	int nodeid;       /**< ID of underlying node.      */
+	int refcount;     /**< Reference counter.          */
+	size_t volume;    /**< Amount of data transferred. */
+	uint64_t latency; /**< Transfer latency.           */
 } mailboxes[HAL_NR_MAILBOX];
 
 /**
@@ -344,6 +349,8 @@ static int mppa256_mailbox_create(int remote)
 	mailboxes[mbxid].fd = fd;
 	mailboxes[mbxid].nodeid = remote;
 	mailboxes[mbxid].refcount = 1;
+	mailboxes[mbxid].latency = 0;
+	mailboxes[mbxid].volume = 0;
 	mailbox_clear_busy(mbxid);
 
 	return (mbxid);
@@ -429,6 +436,8 @@ static int mppa256_mailbox_open(int nodeid)
 	mailboxes[mbxid].fd = fd;
 	mailboxes[mbxid].nodeid = nodeid;
 	mailboxes[mbxid].refcount = 1;
+	mailboxes[mbxid].latency = 0;
+	mailboxes[mbxid].volume = 0;
 	mailbox_set_wronly(mbxid);
 	mailbox_clear_busy(mbxid);
 
@@ -662,6 +671,7 @@ error0:
 size_t hal_mailbox_write(int mbxid, const void *buf, size_t n)
 {
 	size_t nwrite;
+	uint64_t t1, t2;
 
 	/* Invalid mailbox. */
 	if (!mailbox_is_valid(mbxid))
@@ -702,12 +712,16 @@ again:
 	 */
 	mppa256_mailbox_unlock();
 
-	nwrite = mppa_write(mailboxes[mbxid].fd, buf, n);
+	t1 = hal_timer_get();
+		nwrite = mppa_write(mailboxes[mbxid].fd, buf, n);
+	t2 = hal_timer_get();
+	mailboxes[mbxid].latency += t2 - t1;
 
 	mppa256_mailbox_lock();
 		mailbox_clear_busy(mbxid);
 	mppa256_mailbox_unlock();
 
+	mailboxes[mbxid].volume += nwrite;
 	return (nwrite);
 
 error1:
@@ -736,6 +750,7 @@ error0:
 size_t hal_mailbox_read(int mbxid, void *buf, size_t n)
 {
 	size_t nread;
+	uint64_t t1, t2;
 
 	/* Invalid mailbox. */
 	if (!mailbox_is_valid(mbxid))
@@ -776,16 +791,70 @@ again:
 	 */
 	mppa256_mailbox_unlock();
 
-	nread = mppa_read(mailboxes[mbxid].fd, buf, n);
-	
+	t1 = hal_timer_get();
+		nread = mppa_read(mailboxes[mbxid].fd, buf, n);
+	t2 = hal_timer_get();
+	mailboxes[mbxid].latency += t2 - t1;
+
 	mppa256_mailbox_lock();
 		mailbox_clear_busy(mbxid);
 	mppa256_mailbox_unlock();
 
+	mailboxes[mbxid].volume += nread;
 	return (nread);
 
 error1:
 	mppa256_mailbox_unlock();
 error0:
 	return (-EAGAIN);
+}
+
+/**
+ * @brief Performs control operations in a mailbox.
+ *
+ * @param mbxid   Target mailbox.
+ * @param request Request.
+ * @param args    Additional arguments.
+ *
+ * @param Upon successful completion, zero is returned. Upon failure,
+ * a negative error code is returned instead.
+ */
+int hal_mailbox_ioctl(int mbxid, unsigned request, va_list args)
+{
+	int ret = 0;
+
+	/* Invalid mailbox. */
+	if (!mailbox_is_valid(mbxid))
+		return (-EINVAL);
+
+	/* Bad mailbox. */
+	if (!mailbox_is_used(mbxid))
+		return (-EINVAL);
+
+	/* Server request. */
+	switch (request)
+	{
+		/* Get the amount of data transfered so far. */
+		case MAILBOX_IOCTL_GET_VOLUME:
+		{
+			size_t *volume;
+			volume = va_arg(args, size_t *);
+			*volume = mailboxes[mbxid].volume;
+		} break;
+
+		/* Get the cummulative transfer latency. */
+		case MAILBOX_IOCTL_GET_LATENCY:
+		{
+			uint64_t *latency;
+			latency = va_arg(args, uint64_t *);
+			*latency = mailboxes[mbxid].latency;
+		} break;
+
+		/* Operation not supported. */
+		default:
+			ret = -ENOTSUP;
+			break;
+	}
+
+	return (ret);
 }
