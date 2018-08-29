@@ -106,7 +106,7 @@
 	/**
 	 * @brief Size (in bytes) of a mailbox message.
 	 */
-	#define HAL_MAILBOX_MSG_SIZE 64
+	#define HAL_MAILBOX_MSG_SIZE 120
 
 #endif /* __NEED_HAL_CONST_ */
 

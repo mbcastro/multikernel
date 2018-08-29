@@ -82,6 +82,7 @@
 	extern int sys_mailbox_close(int);
 	extern ssize_t sys_mailbox_write(int, const void *, size_t);
 	extern ssize_t sys_mailbox_read(int, void *, size_t);
+	extern int sys_mailbox_ioctl(int, unsigned, ...);
 	extern int sys_portal_allow(int, int);
 	extern int sys_portal_create(int);
 	extern int sys_portal_open(int);
