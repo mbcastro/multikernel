@@ -805,7 +805,7 @@ again:
 
 		/* Close underlying portal. */
 		if (mppa_close(portals[portalid].portal_fd) < 0)
-			goto error0;
+			goto error1;
 
 		/* Close underlying sync connector. */
 		if (mppa_close(portals[portalid].sync_fd) < 0)
@@ -869,7 +869,7 @@ again:
 
 		/* Close underlying portal. */
 		if (mppa_close(portals[portalid].portal_fd) < 0)
-			goto error0;
+			goto error1;
 
 		/* Close underlying sync connector. */
 		if (portals[portalid].sync_fd != -1)
