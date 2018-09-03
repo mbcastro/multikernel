@@ -694,8 +694,8 @@ static inline int do_create(struct shm_message *msg, struct shm_message *respons
 	ret = shm_create(
 		msg->header.source,
 		msg1.op.create1.name,
-		msg->op.create2.mode,
-		msg->op.create2.rw
+		msg->op.create2.rw,
+		msg->op.create2.mode
 	);
 	
 	response->header.source = msg->header.source;
@@ -739,8 +739,8 @@ static int do_create_excl(struct shm_message *msg, struct shm_message *response)
 	ret = shm_create_exclusive(
 		msg->header.source,
 		msg1.op.create1.name,
-		msg->op.create2.mode,
-		msg->op.create2.rw
+		msg->op.create2.rw,
+		msg->op.create2.mode
 	);
 
 	response->header.source = msg->header.source;
