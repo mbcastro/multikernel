@@ -48,13 +48,13 @@
  */
 static struct
 {
-	int flags;        /**< Flags.                      */
-	int portal_fd;    /**< Portal NoC connector.       */
-	int sync_fd;      /**< Sync NoC connector.         */
-	int remote;       /**< Remote NoC node ID.         */
-	int local;        /**< Local NoC node ID.          */
-	size_t volume;    /**< Amount of data transferred. */
-	uint64_t latency; /**< Transfer latency.           */
+	int flags;                     /**< Flags.                      */
+	int portal_fd;                 /**< Portal NoC connector.       */
+	int sync_fd[HAL_NR_NOC_NODES]; /**< Sync NoC connector.         */
+	int remote;                    /**< Remote NoC node ID.         */
+	int local;                     /**< Local NoC node ID.          */
+	size_t volume;                 /**< Amount of data transferred. */
+	uint64_t latency;              /**< Transfer latency.           */
 } portals[HAL_NR_PORTAL];
 
 /**
@@ -69,7 +69,7 @@ static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 /**
  * @brief Locks MPPA-256 portal module.
  */
-static void mppa256_portal_lock(void)
+static inline void mppa256_portal_lock(void)
 {
 	pthread_mutex_lock(&lock);
 }
@@ -81,7 +81,7 @@ static void mppa256_portal_lock(void)
 /**
  * @brief Unlocks MPPA-256 portal module.
  */
-static void mppa256_portal_unlock(void)
+static inline void mppa256_portal_unlock(void)
 {
 	pthread_mutex_unlock(&lock);
 }
@@ -100,7 +100,7 @@ static void mppa256_portal_unlock(void)
  *
  * @note This function is thread-safe.
  */
-static int portal_is_valid(int portalid)
+static inline int portal_is_valid(int portalid)
 {
 	return ((portalid >= 0) && (portalid < HAL_NR_PORTAL));
 }
@@ -119,7 +119,7 @@ static int portal_is_valid(int portalid)
  *
  * @note This function is @b NOT thread safe.
  */
-static int portal_is_used(int portalid)
+static inline int portal_is_used(int portalid)
 {
 	return (portals[portalid].flags & PORTAL_FLAGS_USED);
 }
@@ -138,7 +138,7 @@ static int portal_is_used(int portalid)
  *
  * @note This function is @b NOT thread safe.
  */
-static int portal_is_wronly(int portalid)
+static inline int portal_is_wronly(int portalid)
 {
 	return (portals[portalid].flags & PORTAL_FLAGS_WRONLY);
 }
@@ -154,7 +154,7 @@ static int portal_is_wronly(int portalid)
  *
  * @note This function is @b NOT thread safe.
  */
-static void portal_set_used(int portalid)
+static inline void portal_set_used(int portalid)
 {
 	portals[portalid].flags |= PORTAL_FLAGS_USED;
 }
@@ -170,7 +170,7 @@ static void portal_set_used(int portalid)
  *
  * @note This function is @b NOT thread safe.
  */
-static void portal_set_wronly(int portalid)
+static inline void portal_set_wronly(int portalid)
 {
 	portals[portalid].flags |= PORTAL_FLAGS_WRONLY;
 }
@@ -191,13 +191,13 @@ static void portal_set_wronly(int portalid)
  * @note This function is @b NOT thread safe.
  * @note This function is reentrant.
  */
-static int portal_is_busy(int portalid)
+static inline int portal_is_busy(int portalid)
 {
 	return (portals[portalid].flags & PORTAL_FLAGS_BUSY);
 }
 
 /*============================================================================*
- * portal_set_busy()                                                            *
+ * portal_set_busy()                                                          *
  *============================================================================*/
 
 /**
@@ -209,7 +209,7 @@ static int portal_is_busy(int portalid)
  * @note This function is @b NOT thread safe.
  * @note This function is reentrant.
  */
-static void portal_set_busy(int portalid)
+static inline void portal_set_busy(int portalid)
 {
 	portals[portalid].flags |= PORTAL_FLAGS_BUSY;
 }
@@ -227,7 +227,7 @@ static void portal_set_busy(int portalid)
  * @note This function is @b NOT thread safe.
  * @note This function is reentrant.
  */
-static void portal_clear_busy(int portalid)
+static inline void portal_clear_busy(int portalid)
 {
 	portals[portalid].flags &= ~PORTAL_FLAGS_BUSY;
 }
@@ -243,7 +243,7 @@ static void portal_clear_busy(int portalid)
  *
  * @note This function is @b NOT thread safe.
  */
-static void portal_clear_flags(int portalid)
+static inline void portal_clear_flags(int portalid)
 {
 	portals[portalid].flags = 0;
 }
@@ -332,7 +332,8 @@ static int mppa256_portal_create(int local)
 		goto error1;
 
 	portals[portalid].portal_fd = fd;
-	portals[portalid].sync_fd = -1;
+	for (int i = 0; i < HAL_NR_NOC_NODES; i++)
+		portals[portalid].sync_fd[i] = -1;
 	portals[portalid].remote = -1;
 	portals[portalid].local = local;
 	portals[portalid].latency = 0;
@@ -388,23 +389,32 @@ int hal_portal_create(int local)
  */
 static int mppa256_portal_allow(int portalid, int local, int remote)
 {
-	int sync_fd;        /* Sync NoC connector. */
-	char pathname[128]; /* Portal pathname.    */
+	int nodenum;
 
-	/* Create underlying sync. */
-	sprintf(pathname,
-			"/mppa/sync/%d:%d",
-			remote,
-			noctag_portal(local)
-	);
+	nodenum = hal_get_node_num(remote);
 
-	/* Open sync. */
-	if ((sync_fd = mppa_open(pathname, O_WRONLY)) == -1)
-		return (-EAGAIN);
+	/* Open underlying sync. */
+	if (portals[portalid].sync_fd[nodenum] == -1)
+	{
+		int sync_fd;        /* Sync NoC connector. */
+		char pathname[128]; /* Portal pathname.    */
 
-	/* Initialize portal. */
+		/* Create underlying sync. */
+		sprintf(pathname,
+				"/mppa/sync/%d:%d",
+				remote,
+				noctag_portal(local)
+		);
+
+		/* Open sync. */
+		if ((sync_fd = mppa_open(pathname, O_WRONLY)) == -1)
+			return (-EAGAIN);
+
+		/* Initialize portal. */
+		portals[portalid].sync_fd[nodenum] = sync_fd;
+	}
+
 	portals[portalid].remote = remote;
-	portals[portalid].sync_fd = sync_fd;
 
 	return (0);
 }
@@ -481,10 +491,11 @@ error0:
  */
 static int mppa256_portal_open(int local, int remote)
 {
-	int portalid;       /* ID of  portal         */
-	int portal_fd;      /* Portal NoC Connector. */
-	int sync_fd;        /* Sync NoC connector.   */
-	char pathname[128]; /* NoC connector name.   */
+	int nodenum;        /* Number of remote node. */
+	int portalid;       /* ID of  portal          */
+	int portal_fd;      /* Portal NoC Connector.  */
+	int sync_fd;        /* Sync NoC connector.    */
+	char pathname[128]; /* NoC connector name.    */
 
 	/* Allocate portal. */
 	if ((portalid = portal_alloc(remote)) < 0)
@@ -512,8 +523,10 @@ static int mppa256_portal_open(int local, int remote)
 	if ((sync_fd = mppa_open(pathname, O_RDONLY)) == -1)
 		goto error2;
 
+	nodenum = hal_get_node_num(local);
+
 	portals[portalid].portal_fd = portal_fd;
-	portals[portalid].sync_fd = sync_fd;
+	portals[portalid].sync_fd[nodenum] = sync_fd;
 	portals[portalid].remote = remote;
 	portals[portalid].local = local;
 	portals[portalid].latency = 0;
@@ -574,10 +587,11 @@ int hal_portal_open(int remote)
  */
 static int mppa256_portal_read(int portalid, void *buf, size_t n)
 {
-	size_t nread;
-	uint64_t mask;
-	uint64_t t1, t2;
-	mppa_aiocb_t aiocb;
+	int nodenum;        /* Number of remote node.  */
+	size_t nread;       /* Number of bytes read.   */
+	uint64_t mask;      /* Sync mask.              */
+	uint64_t t1, t2;    /* Timers.                 */
+	mppa_aiocb_t aiocb; /* Async IO control block. */
 
 	/* Setup read operation. */
 	mppa_aiocb_ctor(&aiocb, portals[portalid].portal_fd, buf, n);
@@ -586,7 +600,8 @@ static int mppa256_portal_read(int portalid, void *buf, size_t n)
 
 	/* Unblock remote. */
 	mask = 1 << hal_get_node_num(portals[portalid].local);
-	if (mppa_write(portals[portalid].sync_fd, &mask, sizeof(uint64_t)) == -1)
+	nodenum = hal_get_node_num(portals[portalid].remote);
+	if (mppa_write(portals[portalid].sync_fd[nodenum], &mask, sizeof(uint64_t)) == -1)
 		goto error0;
 
 	/* Wait read operation to complete. */
@@ -594,9 +609,6 @@ static int mppa256_portal_read(int portalid, void *buf, size_t n)
 		nread = mppa_aio_wait(&aiocb);
 	t2 = hal_timer_get();
 	portals[portalid].latency += t2 - t1;
-
-	mppa_close(portals[portalid].sync_fd);
-	portals[portalid].sync_fd = -1;
 
 	portals[portalid].volume += nread;
 	return (nread);
@@ -685,16 +697,19 @@ error0:
  */
 static int mppa256_portal_write(int portalid, const void *buf, size_t n)
 {
-	uint64_t mask;
-	size_t nwrite;
-	uint64_t t1, t2;
+	int nodenum;     /* Number of remote node.   */
+	uint64_t mask;   /* Sync mask.               */
+	size_t nwrite;   /* Number of bytes written. */
+	uint64_t t1, t2; /* Timers.                  */
+
+	nodenum = hal_get_node_num(portals[portalid].local);
 
 	/* Wait for remote to be ready. */
 	mask = 1 << hal_get_node_num(portals[portalid].remote);
-	if (mppa_ioctl(portals[portalid].sync_fd, MPPA_RX_SET_MATCH, ~mask) == -1)
+	if (mppa_ioctl(portals[portalid].sync_fd[nodenum], MPPA_RX_SET_MATCH, ~mask) == -1)
 		goto error0;
 
-	if (mppa_read(portals[portalid].sync_fd, &mask, sizeof(uint64_t)) == -1)
+	if (mppa_read(portals[portalid].sync_fd[nodenum], &mask, sizeof(uint64_t)) == -1)
 		goto error0;
 
 	/* Write. */
@@ -799,6 +814,8 @@ error0:
  */
 int hal_portal_close(int portalid)
 {
+	int nodenum;
+
 	/* Invalid portal.*/
 	if (!portal_is_valid(portalid))
 		goto error0;
@@ -827,7 +844,8 @@ again:
 			goto error1;
 
 		/* Close underlying sync connector. */
-		if (mppa_close(portals[portalid].sync_fd) < 0)
+		nodenum = hal_get_node_num(portals[portalid].local);
+		if (mppa_close(portals[portalid].sync_fd[nodenum]) < 0)
 			goto error2;
 
 		portal_free(portalid);
@@ -890,14 +908,18 @@ again:
 		if (mppa_close(portals[portalid].portal_fd) < 0)
 			goto error1;
 
-		/* Close underlying sync connector. */
-		if (portals[portalid].sync_fd != -1)
+
+		/* Close underlying sync connectors. */
+		for (int i = 0; i < HAL_NR_NOC_NODES; i++)
 		{
-			if (mppa_close(portals[portalid].sync_fd) < 0)
-				goto error2;
+			if (portals[portalid].sync_fd[i] != -1)
+			{
+				if (mppa_close(portals[portalid].sync_fd[i]) < 0)
+					goto error2;
+			}
+			portals[portalid].sync_fd[i] = -1;
 		}
 
-		portals[portalid].sync_fd = -1;
 		portal_free(portalid);
 
 	mppa256_portal_unlock();
