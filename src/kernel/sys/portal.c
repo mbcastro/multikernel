@@ -141,7 +141,7 @@ int sys_portal_close(int portalid)
 ssize_t sys_portal_read(int portalid, void *buf, size_t n)
 {
 	/* Invalid buffer size. */
-	if ((n < 1) || (n >= HAL_PORTAL_MAX_SIZE))
+	if ((n < 1) || (n > HAL_PORTAL_MAX_SIZE))
 		return (-EINVAL);
 
 	return (hal_portal_read(portalid, buf, n));
@@ -164,7 +164,7 @@ ssize_t sys_portal_read(int portalid, void *buf, size_t n)
 ssize_t sys_portal_write(int portalid, const void *buf, size_t n)
 {
 	/* Invalid buffer size. */
-	if ((n < 1) || (n >= HAL_PORTAL_MAX_SIZE))
+	if ((n < 1) || (n > HAL_PORTAL_MAX_SIZE))
 		return (-EINVAL);
 
 	return (hal_portal_write(portalid, buf, n));

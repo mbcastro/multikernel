@@ -35,7 +35,7 @@
 /**
  * @brief Data Size.
  */
-#define DATA_SIZE 128
+#define DATA_SIZE (1024*1024)
 
 /**
  * @brief ID of master node.
@@ -179,6 +179,7 @@ static void test_sys_portal_read_write(int nclusters)
 	sync_slaves(nclusters);
 
 	TEST_ASSERT((outportal = sys_portal_open((nodenum + 1)%nclusters)) >= 0);
+
 
 	if (nodenum != 0)
 	{
