@@ -20,13 +20,15 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <inttypes.h>
-
+#include <errno.h>
+#include <stdint.h>
 #include <mppaipc.h>
+#include <stdarg.h>
 
 #define __NEED_HAL_CORE_
 #define __NEED_HAL_NOC_
 #define __NEED_HAL_PORTAL_
+#define __NEED_HAL_PERFORMANCE_
 #include <nanvix/hal.h>
 #include <nanvix/klib.h>
 
@@ -46,11 +48,13 @@
  */
 static struct
 {
-	int flags;     /**< Flags.                */
-	int portal_fd; /**< Portal NoC connector. */
-	int sync_fd;   /**< Sync NoC connector.   */
-	int remote;    /**< Remote NoC node ID.   */
-	int local;     /**< Local NoC node ID.    */
+	int flags;        /**< Flags.                      */
+	int portal_fd;    /**< Portal NoC connector.       */
+	int sync_fd;      /**< Sync NoC connector.         */
+	int remote;       /**< Remote NoC node ID.         */
+	int local;        /**< Local NoC node ID.          */
+	size_t volume;    /**< Amount of data transferred. */
+	uint64_t latency; /**< Transfer latency.           */
 } portals[HAL_NR_PORTAL];
 
 /**
@@ -331,6 +335,8 @@ static int mppa256_portal_create(int local)
 	portals[portalid].sync_fd = -1;
 	portals[portalid].remote = -1;
 	portals[portalid].local = local;
+	portals[portalid].latency = 0;
+	portals[portalid].volume = 0;
 	portal_clear_busy(portalid);
 
 	return (portalid);
@@ -510,6 +516,8 @@ static int mppa256_portal_open(int local, int remote)
 	portals[portalid].sync_fd = sync_fd;
 	portals[portalid].remote = remote;
 	portals[portalid].local = local;
+	portals[portalid].latency = 0;
+	portals[portalid].volume = 0;
 	portal_set_wronly(portalid);
 	portal_clear_busy(portalid);
 
@@ -566,9 +574,10 @@ int hal_portal_open(int remote)
  */
 static int mppa256_portal_read(int portalid, void *buf, size_t n)
 {
-	uint64_t mask;
-	mppa_aiocb_t aiocb;
 	size_t nread;
+	uint64_t mask;
+	uint64_t t1, t2;
+	mppa_aiocb_t aiocb;
 
 	/* Setup read operation. */
 	mppa_aiocb_ctor(&aiocb, portals[portalid].portal_fd, buf, n);
@@ -581,10 +590,15 @@ static int mppa256_portal_read(int portalid, void *buf, size_t n)
 		goto error0;
 
 	/* Wait read operation to complete. */
-	nread = mppa_aio_wait(&aiocb);
+	t1 = hal_timer_get();
+		nread = mppa_aio_wait(&aiocb);
+	t2 = hal_timer_get();
+	portals[portalid].latency += t2 - t1;
+
 	mppa_close(portals[portalid].sync_fd);
 	portals[portalid].sync_fd = -1;
 
+	portals[portalid].volume += nread;
 	return (nread);
 
 error0:
@@ -673,6 +687,7 @@ static int mppa256_portal_write(int portalid, const void *buf, size_t n)
 {
 	uint64_t mask;
 	size_t nwrite;
+	uint64_t t1, t2;
 
 	/* Wait for remote to be ready. */
 	mask = 1 << hal_get_node_num(portals[portalid].remote);
@@ -683,8 +698,12 @@ static int mppa256_portal_write(int portalid, const void *buf, size_t n)
 		goto error0;
 
 	/* Write. */
-	nwrite = mppa_pwrite(portals[portalid].portal_fd, buf, n, 0);
+	t1 = hal_timer_get();
+		nwrite = mppa_pwrite(portals[portalid].portal_fd, buf, n, 0);
+	t2 = hal_timer_get();
+	portals[portalid].latency += t2 - t1;
 
+	portals[portalid].volume += nwrite;
 	return (nwrite);
 
 error0:
@@ -892,4 +911,58 @@ error1:
 	mppa256_portal_unlock();
 error0:
 	return (-EINVAL);
+}
+
+/*============================================================================*
+ * hal_portal_ioctl()                                                         *
+ *============================================================================*/
+
+/**
+ * @brief Performs control operations in a portal.
+ *
+ * @param portalid Target portal.
+ * @param request  Request.
+ * @param args     Additional arguments.
+ *
+ * @param Upon successful completion, zero is returned. Upon failure,
+ * a negative error code is returned instead.
+ */
+int hal_portal_ioctl(int portalid, unsigned request, va_list args)
+{
+	int ret = 0;
+
+	/* Invalid portal. */
+	if (!portal_is_valid(portalid))
+		return (-EINVAL);
+
+	/* Bad portal. */
+	if (!portal_is_used(portalid))
+		return (-EINVAL);
+
+	/* Server request. */
+	switch (request)
+	{
+		/* Get the amount of data transfered so far. */
+		case PORTAL_IOCTL_GET_VOLUME:
+		{
+			size_t *volume;
+			volume = va_arg(args, size_t *);
+			*volume = portals[portalid].volume;
+		} break;
+
+		/* Get the cummulative transfer latency. */
+		case PORTAL_IOCTL_GET_LATENCY:
+		{
+			uint64_t *latency;
+			latency = va_arg(args, uint64_t *);
+			*latency = portals[portalid].latency;
+		} break;
+
+		/* Operation not supported. */
+		default:
+			ret = -ENOTSUP;
+			break;
+	}
+
+	return (ret);
 }

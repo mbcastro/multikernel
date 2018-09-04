@@ -20,6 +20,7 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <errno.h>
 #include <stdint.h>
 #include <mppaipc.h>
 #include <stdarg.h>
@@ -808,6 +809,10 @@ error1:
 error0:
 	return (-EAGAIN);
 }
+
+/*============================================================================*
+ * hal_mailbox_ioctl()                                                        *
+ *============================================================================*/
 
 /**
  * @brief Performs control operations in a mailbox.

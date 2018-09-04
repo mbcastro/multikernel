@@ -209,6 +209,23 @@
 		#error "undefined symbol: HAL_PORTAL_MAX_SIZE"
 	#endif
 
+	/**
+	 * @brief Requests for portal_ioctl().
+	 */
+	/**@{*/
+
+		/**
+		 * @brief Get the amount of data transferred so far.
+		 */
+		#define PORTAL_IOCTL_GET_VOLUME  1
+
+		/**
+		 * @brief Get the cumulative transfer latency.
+		 */
+		#define PORTAL_IOCTL_GET_LATENCY 2
+
+	/**@}*/
+
 #endif /* (__NEED_HAL_PORTAL_ || __NEED_HAL_CONST_) */
 
 #ifdef __NEED_HAL_PORTAL_
@@ -221,6 +238,7 @@
 	extern int hal_portal_write(int, const void *, size_t);
 	extern int hal_portal_close(int);
 	extern int hal_portal_unlink(int);
+	extern int hal_portal_ioctl(int, unsigned, va_list);
 
 #endif /* __NEED_HAL_PORTAL_ */
 

@@ -90,6 +90,7 @@
 	extern int sys_portal_write(int, const void *, size_t);
 	extern int sys_portal_close(int);
 	extern int sys_portal_unlink(int);
+	extern int sys_portal_ioctl(int, unsigned, ...);
 	extern int sys_sync_create(const int *, int, int);
 	extern int sys_sync_open(const int *, int, int);
 	extern int sys_sync_wait(int);

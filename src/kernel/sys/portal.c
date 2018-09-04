@@ -170,3 +170,24 @@ ssize_t sys_portal_write(int portalid, const void *buf, size_t n)
 	return (hal_portal_write(portalid, buf, n));
 }
 
+/**
+ * @brief Performs control operations in a portal.
+ *
+ * @param portalid Target portal.
+ * @param request  Request.
+ *
+ * @param Upon successful completion, zero is returned. Upon failure,
+ * a negative error code is returned instead.
+ */
+int sys_portal_ioctl(int portalid, unsigned request, ...)
+{
+	int ret;
+	va_list args;
+
+	va_start(args, request);
+	ret = hal_portal_ioctl(portalid, request, args);
+	va_end(args);
+
+	return (ret);
+}
+
