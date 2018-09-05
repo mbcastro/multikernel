@@ -24,7 +24,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <inttypes.h>
+#include <stdint.h>
 
 #include <nanvix/spawner.h>
 #include <nanvix/klib.h>
@@ -38,6 +38,19 @@
 #else
 	#define rmem_debug(fmt, ...) { }
 #endif
+
+/**
+ * @brief Server statistics.
+ */
+static struct
+{
+	int nreads;         /**< Number of reads.         */
+	size_t read;        /**< Number of bytes read.    */
+	int nwrites;        /**< Number of writes.        */
+	size_t written;     /**< Number of bytes written. */
+	uint64_t tstart;    /**< Start time.              */
+	uint64_t tshutdown; /**< Shutdown time.           */
+} stats = { 0, 0, 0, 0, 0, 0 };
 
 /**
  * @brief Node number.
@@ -151,6 +164,8 @@ static int rmem_loop(void)
 {
 	int shutdown = 0;
 
+	stats.tstart = sys_timer_get();
+
 	while(!shutdown)
 	{
 		struct rmem_message msg;
@@ -162,15 +177,20 @@ static int rmem_loop(void)
 		{
 			/* Write to RMEM. */
 			case RMEM_WRITE:
+				stats.nwrites++;
+				stats.written += msg.size;
 				rmem_write(msg.header.source, msg.blknum, msg.size);
 				break;
 
 			/* Read from RMEM. */
 			case RMEM_READ:
+				stats.nreads++;
+				stats.read += msg.size;
 				rmem_read(msg.header.source, msg.blknum, msg.size);
 				break;
 
 			case RMEM_EXIT:
+				stats.tshutdown = sys_timer_get();
 				shutdown = 1;
 				break;
 
@@ -179,6 +199,12 @@ static int rmem_loop(void)
 				break;
 		}
 	}
+
+	/* Dump statistics. */
+	printf("[nanvix][rmem] uptime=%.6lf read=%zu nreads=%d written=%zu nwrites=%d\n",
+			(stats.tshutdown - stats.tstart)/((double) sys_get_core_freq()),
+			stats.read, stats.nreads, stats.written, stats.nwrites
+	);
 
 	return (0);
 }
