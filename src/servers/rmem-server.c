@@ -24,7 +24,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <inttypes.h>
+#include <stdint.h>
 
 #include <nanvix/spawner.h>
 #include <nanvix/klib.h>
@@ -38,6 +38,21 @@
 #else
 	#define rmem_debug(fmt, ...) { }
 #endif
+
+/**
+ * @brief Server statistics.
+ */
+static struct
+{
+	int nreads;         /**< Number of reads.         */
+	size_t read;        /**< Number of bytes read.    */
+	int nwrites;        /**< Number of writes.        */
+	size_t written;     /**< Number of bytes written. */
+	uint64_t tstart;    /**< Start time.              */
+	uint64_t tshutdown; /**< Shutdown time.           */
+	uint64_t tnetwork;  /**< Network time.            */
+	uint64_t tcpu;      /**< CPU Time.                */
+} stats = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
 /**
  * @brief Node number.
@@ -73,6 +88,8 @@ static char rmem[RMEM_SIZE];
  */
 static inline void rmem_write(int remote, uint64_t blknum, int size)
 {
+	uint64_t t0, t1;
+
 	rmem_debug("write nodenum=%d blknum=%d size=%d",
 		remote,
 		blknum,
@@ -93,8 +110,12 @@ static inline void rmem_write(int remote, uint64_t blknum, int size)
 		return;
 	}
 
-	sys_portal_allow(inportal, remote);
-	sys_portal_read(inportal, &rmem[blknum], size);
+	t0 = sys_timer_get();
+		sys_portal_allow(inportal, remote);
+		sys_portal_read(inportal, &rmem[blknum], size);
+	t1 = sys_timer_get();
+
+	stats.tnetwork += t1 - t0;
 }
 
 /*============================================================================*
@@ -111,6 +132,7 @@ static inline void rmem_write(int remote, uint64_t blknum, int size)
 static inline void rmem_read(int remote, uint64_t blknum, int size)
 {
 	int outportal;
+	uint64_t t0, t1;
 
 	rmem_debug("read nodenum=%d blknum=%d size=%d",
 		remote,
@@ -132,9 +154,15 @@ static inline void rmem_read(int remote, uint64_t blknum, int size)
 		return;
 	}
 
-	outportal = sys_portal_open(remote);
-	sys_portal_write(outportal, &rmem[blknum], size);
-	sys_portal_close(outportal);
+	t0 = sys_timer_get();
+
+		outportal = sys_portal_open(remote);
+		sys_portal_write(outportal, &rmem[blknum], size);
+		sys_portal_close(outportal);
+
+	t1 = sys_timer_get();
+
+	stats.tnetwork += t1 - t0;
 }
 
 /*============================================================================*
@@ -150,6 +178,9 @@ static inline void rmem_read(int remote, uint64_t blknum, int size)
 static int rmem_loop(void)
 {
 	int shutdown = 0;
+	uint64_t t0, t1, t2, t3;
+
+	stats.tstart = sys_timer_get();
 
 	while(!shutdown)
 	{
@@ -157,20 +188,28 @@ static int rmem_loop(void)
 
 		sys_mailbox_read(inbox, &msg, MAILBOX_MSG_SIZE);
 
+		t2 = stats.tnetwork;
+		t0 = sys_timer_get();
+
 		/* handle write operation. */
 		switch (msg.header.opcode)
 		{
 			/* Write to RMEM. */
 			case RMEM_WRITE:
+				stats.nwrites++;
+				stats.written += msg.size;
 				rmem_write(msg.header.source, msg.blknum, msg.size);
 				break;
 
 			/* Read from RMEM. */
 			case RMEM_READ:
+				stats.nreads++;
+				stats.read += msg.size;
 				rmem_read(msg.header.source, msg.blknum, msg.size);
 				break;
 
 			case RMEM_EXIT:
+				stats.tshutdown = sys_timer_get();
 				shutdown = 1;
 				break;
 
@@ -178,7 +217,20 @@ static int rmem_loop(void)
 			default:
 				break;
 		}
+
+		t1 = sys_timer_get();
+		t3 = stats.tnetwork;
+
+		stats.tcpu += (t1 - t0) - (t3 - t2);
 	}
+
+	/* Dump statistics. */
+	printf("[nanvix][rmem] uptime=%.6lf cpu=%lf network=%lf read=%zu nreads=%d written=%zu nwrites=%d\n",
+			(stats.tshutdown - stats.tstart)/((double) sys_get_core_freq()),
+			stats.tcpu/((double) sys_get_core_freq()),
+			stats.tnetwork/((double) sys_get_core_freq()),
+			stats.read, stats.nreads, stats.written, stats.nwrites
+	);
 
 	return (0);
 }
