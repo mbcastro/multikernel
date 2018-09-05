@@ -293,6 +293,7 @@ static int shm_open(int node, const char *name, int writable, int truncate)
 {
 	int i;
 	int shmid;
+	int owner;
 
 	shm_debug("open node=%d name=%s", node, name);
 
@@ -303,6 +304,12 @@ static int shm_open(int node, const char *name, int writable, int truncate)
 	/* Get shared memory. */
 	if ((shmid = shm_get(name)) < 0)
 		return (-EINVAL);
+
+	owner = shm_get_owner(shmid);
+
+	/* Incompatible opening flags */
+	if (!shm_may_write(owner, shmid) && writable)
+		return  (-EINVAL);
 
 	/* Shared memory region shall be removed soon. */
 	if (shm_is_remove(shmid))
@@ -488,11 +495,12 @@ static int shm_close(int node, int shmid)
  * @param node  ID the calling process.
  * @param shmid Target shared memory region.
  *
- * @returns Upon successful completion, zero is returned. Upon
- * failure, a negative error code is returned instead.
+ * @returns Upon successful completion, shmid is returned.
+ * Upon failure, a negative error code is returned instead.
  */
 static int shm_unlink(int node, const char *name)
 {
+	int ret;
 	int shmid;
 
 	shm_debug("unlink node=%d name=%s", node, name);
@@ -507,7 +515,12 @@ static int shm_unlink(int node, const char *name)
 		return (-EPERM);
 
 	shm_set_remove(shmid);
-	return (shm_close(node, shmid));
+
+	/* Did I close the shared memory region correctly? */
+	if ((ret = shm_close(node, shmid) < 0))
+		return ret;
+
+	return shmid;
 }
 
 /*============================================================================*
@@ -817,9 +830,9 @@ static int do_unlink(struct shm_message *msg, struct shm_message *response)
 	ret = shm_unlink(msg->header.source, msg->op.unlink.name);
 
 	response->header.source = msg->header.source;
-	if (ret == 0)
+	if (ret >= 0)
 	{
-		response->op.ret.status = 0;
+		response->op.ret.shmid = ret;
 		response->header.opcode = SHM_SUCCESS;
 	}
 	else

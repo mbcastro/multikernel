@@ -123,6 +123,22 @@ int shm_is_owner(int shmid, int node)
 }
 
 /*============================================================================*
+ * shm_get_owner()                                                                  *
+ *============================================================================*/
+
+/**
+ * @brief Gets a shared memory region owner.
+ *
+ * @param shmid Target shared memory region.
+ *
+ * @return ID of the shared memory region's owner.
+ */
+int shm_get_owner(int shmid)
+{
+	return regions[shmid].owner;
+}
+
+/*============================================================================*
  * shm_get_base()                                                             *
  *============================================================================*/
 

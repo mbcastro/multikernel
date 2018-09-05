@@ -182,6 +182,8 @@ static int rmem_loop(void)
 
 	stats.tstart = sys_timer_get();
 
+	stats.tstart = sys_timer_get();
+
 	while(!shutdown)
 	{
 		struct rmem_message msg;
