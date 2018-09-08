@@ -41,7 +41,8 @@
 	extern int shm_is_used(int);
 	extern int shm_is_remove(int);
 	extern int shm_is_owner(int, int);
-	extern int shm_get_owner(int);
+	extern int shm_is_readable(int);
+	extern int shm_is_writable(int);
 	extern uint64_t shm_get_base(int);
 	extern size_t shm_get_size(int);
 	extern void shm_set_remove(int);

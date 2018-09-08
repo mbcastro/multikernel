@@ -79,7 +79,7 @@ static void test_posix_semaphore_create_unlink(void)
 
 	/* Create and unlink semaphore. */
 	sprintf(semaphore_name, "/semaphore");
-	TEST_ASSERT((sem = sem_open(semaphore_name, O_CREAT, 0, 0)) != SEM_FAILED);
+	TEST_ASSERT((sem = sem_open(semaphore_name, O_CREAT, (S_IRUSR | S_IWUSR), 0)) != SEM_FAILED);
 	TEST_ASSERT(sem_unlink(semaphore_name) == 0);
 }
 
@@ -96,7 +96,7 @@ static void test_posix_semaphore_open_close(void)
 	char semaphore_name[NANVIX_SEM_NAME_MAX];
 
 	sprintf(semaphore_name, "/semaphore");
-	TEST_ASSERT((sem = sem_open(semaphore_name, O_CREAT, 0, 0)) != SEM_FAILED);
+	TEST_ASSERT((sem = sem_open(semaphore_name, O_CREAT, (S_IRUSR | S_IWUSR), 0)) != SEM_FAILED);
 	TEST_ASSERT((sem = sem_open(semaphore_name, 0)) != SEM_FAILED);
 	TEST_ASSERT(sem_close(sem) == 0);
 	TEST_ASSERT(sem_unlink(semaphore_name) == 0);
@@ -239,7 +239,7 @@ static void test_posix_semaphore_open_close2_cc(void)
 
 	/* Create semaphore. */
 	sprintf(semaphore_name, "/semaphore");
-	TEST_ASSERT((sem = sem_open(semaphore_name, O_CREAT, 0, 0)) != SEM_FAILED);
+	TEST_ASSERT((sem = sem_open(semaphore_name, O_CREAT, (S_IRUSR | S_IWUSR), 0)) != SEM_FAILED);
 
 	/* Create barrier. */
 	TEST_ASSERT((barrier = barrier_create(nodes, NANVIX_PROC_MAX + 1)) >= 0);
@@ -459,7 +459,7 @@ static void test_posix_semaphore_wait_post2_cc(void)
 
 	/* Create semaphore. */
 	sprintf(semaphore_name, "/semaphore");
-	TEST_ASSERT((sem = sem_open(semaphore_name, O_CREAT, 0, 1)) != SEM_FAILED);
+	TEST_ASSERT((sem = sem_open(semaphore_name, O_CREAT, (S_IRUSR | S_IWUSR), 1)) != SEM_FAILED);
 
 	/* Create barrier. */
 	TEST_ASSERT((barrier = barrier_create(nodes, NANVIX_PROC_MAX + 1)) >= 0);

@@ -61,7 +61,7 @@ static void test_posix_semaphore_create_unlink_cc(int masternode, int nclusters)
 
 	/* Create and unlink semaphore. */
 	sprintf(semaphore_name, "/semaphore%d", nodenum);
-	TEST_ASSERT((sem = sem_open(semaphore_name, O_CREAT, 0, 0)) != SEM_FAILED);
+	TEST_ASSERT((sem = sem_open(semaphore_name, O_CREAT, (S_IRUSR | S_IWUSR), 0)) != SEM_FAILED);
 	TEST_ASSERT(sem_unlink(semaphore_name) == 0);
 
 	/* Sync. */
@@ -96,7 +96,7 @@ static void test_posix_semaphore_open_close_cc(int masternode, int nclusters)
 
 	/* Create and unlink semaphore. */
 	sprintf(semaphore_name, "/semaphore%d", nodenum);
-	TEST_ASSERT((sem = sem_open(semaphore_name, O_CREAT, 0, 0)) != SEM_FAILED);
+	TEST_ASSERT((sem = sem_open(semaphore_name, O_CREAT, (S_IRUSR | S_IWUSR), 0)) != SEM_FAILED);
 	TEST_ASSERT((sem = sem_open(semaphore_name, 0)) != SEM_FAILED);
 	TEST_ASSERT(sem_close(sem) == 0);
 	TEST_ASSERT(sem_unlink(semaphore_name) == 0);
@@ -163,7 +163,7 @@ static void test_posix_semaphore_open_close3_cc(int masternode, int nclusters)
 
 	/* Create semaphore. */
 	sprintf(semaphore_name, "/semaphore%d", nodenum);
-	TEST_ASSERT((sem = sem_open(semaphore_name, O_CREAT, 0, 0)) != SEM_FAILED);
+	TEST_ASSERT((sem = sem_open(semaphore_name, O_CREAT, (S_IRUSR | S_IWUSR), 0)) != SEM_FAILED);
 
 	/* Sync. */
 	TEST_ASSERT(barrier_wait(barrier) == 0);
@@ -206,7 +206,7 @@ static void test_posix_semaphore_open_close4_cc(int masternode, int nclusters)
 
 	/* Create semaphore. */
 	sprintf(semaphore_name, "/semaphore%d", nodenum);
-	TEST_ASSERT((sem1 = sem_open(semaphore_name, O_CREAT, 0, 0)) != SEM_FAILED);
+	TEST_ASSERT((sem1 = sem_open(semaphore_name, O_CREAT, (S_IRUSR | S_IWUSR), 0)) != SEM_FAILED);
 
 	/* Sync. */
 	TEST_ASSERT(barrier_wait(barrier) == 0);
@@ -251,7 +251,7 @@ static void test_posix_semaphore_wait_post_cc(int masternode, int nclusters)
 
 	/* Create semaphore. */
 	if (nodenum == 0)
-		TEST_ASSERT((sem = sem_open("/semaphore", O_CREAT, 0, 1)) != SEM_FAILED);
+		TEST_ASSERT((sem = sem_open("/semaphore", O_CREAT, (S_IRUSR | S_IWUSR), 1)) != SEM_FAILED);
 
 	/* Sync. */
 	TEST_ASSERT(barrier_wait(barrier) == 0);
@@ -343,7 +343,7 @@ static void test_posix_semaphore_wait_post3_cc(int masternode, int nclusters)
 
 	/* Create semaphore. */
 	sprintf(semaphore_name, "/semaphore%d", nodenum);
-	TEST_ASSERT((sem = sem_open(semaphore_name, O_CREAT, 0, 1)) != SEM_FAILED);
+	TEST_ASSERT((sem = sem_open(semaphore_name, O_CREAT, (S_IRUSR | S_IWUSR), 1)) != SEM_FAILED);
 
 	/* Sync. */
 	TEST_ASSERT(barrier_wait(barrier) == 0);

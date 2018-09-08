@@ -171,7 +171,7 @@ static void test_posix_shm_invalid_truncate(void)
 {
 	int shm;
 
-	TEST_ASSERT((shm = shm_open("/shm", O_CREAT | O_RDWR, 0)) >= 0);
+	TEST_ASSERT((shm = shm_open("/shm", O_CREAT | O_RDWR, S_IRUSR | S_IWUSR)) >= 0);
 	TEST_ASSERT(ftruncate(-1, REGION_SIZE) < 0);
 	TEST_ASSERT(ftruncate(1000000, REGION_SIZE) < 0);
 	TEST_ASSERT(ftruncate(shm, RMEM_SIZE + 1) < 0);
@@ -190,12 +190,12 @@ static void test_posix_shm_bad_truncate(void)
 	int shm;
 	void *map;
 
-	TEST_ASSERT((shm = shm_open("/shm", O_CREAT | O_RDONLY, 0)) >= 0);
+	TEST_ASSERT((shm = shm_open("/shm", O_CREAT | O_RDONLY, S_IRUSR | S_IWUSR)) >= 0);
 	TEST_ASSERT(ftruncate(shm, REGION_SIZE) < 0);
 	TEST_ASSERT(ftruncate(1, REGION_SIZE) < 0);
 	TEST_ASSERT(shm_unlink("/shm") == 0);
 
-	TEST_ASSERT((shm = shm_open("/shm", O_CREAT | O_RDWR, 0)) >= 0);
+	TEST_ASSERT((shm = shm_open("/shm", O_CREAT | O_RDWR, S_IRUSR | S_IWUSR)) >= 0);
 	TEST_ASSERT(ftruncate(shm, REGION_SIZE) == 0);
 	TEST_ASSERT((map = mmap(NULL, REGION_SIZE, PROT_READ, MAP_PRIVATE, shm, 0)) != MAP_FAILED);
 	TEST_ASSERT(ftruncate(shm, 2*REGION_SIZE) < 0);
@@ -215,7 +215,7 @@ static void test_posix_shm_invalid_map(void)
 	int shm;
 	void *map;
 
-	TEST_ASSERT((shm = shm_open("/shm", O_CREAT | O_RDWR, 0)) >= 0);
+	TEST_ASSERT((shm = shm_open("/shm", O_CREAT | O_RDWR, S_IRUSR | S_IWUSR)) >= 0);
 	TEST_ASSERT((map = mmap(NULL, 0, PROT_READ, MAP_PRIVATE, shm, 0)) == MAP_FAILED);
 	TEST_ASSERT(ftruncate(shm, REGION_SIZE) == 0);
 	TEST_ASSERT((map = mmap(NULL, REGION_SIZE, PROT_READ, MAP_PRIVATE, -1, 0)) == MAP_FAILED);
@@ -238,7 +238,7 @@ static void test_posix_shm_bad_map(void)
 	int shm;
 	void *map;
 
-	TEST_ASSERT((shm = shm_open("/shm", O_CREAT | O_RDWR, 0)) >= 0);
+	TEST_ASSERT((shm = shm_open("/shm", O_CREAT | O_RDWR, S_IRUSR | S_IWUSR)) >= 0);
 	TEST_ASSERT(ftruncate(shm, REGION_SIZE) == 0);
 	TEST_ASSERT((map = mmap(NULL, REGION_SIZE, PROT_READ, MAP_PRIVATE, 1, 0)) == MAP_FAILED);
 	TEST_ASSERT(shm_unlink("/shm") == 0);
@@ -256,7 +256,7 @@ static void test_posix_shm_invalid_unmap(void)
 	int shm;
 	void *map;
 
-	TEST_ASSERT((shm = shm_open("/shm", O_CREAT | O_RDWR, 0)) >= 0);
+	TEST_ASSERT((shm = shm_open("/shm", O_CREAT | O_RDWR, S_IRUSR | S_IWUSR)) >= 0);
 	TEST_ASSERT(ftruncate(shm, REGION_SIZE) == 0);
 	TEST_ASSERT((map = mmap(NULL, REGION_SIZE, PROT_READ, MAP_PRIVATE, shm, 0)) != MAP_FAILED);
 	TEST_ASSERT(munmap(NULL, REGION_SIZE) < 0);
@@ -279,7 +279,7 @@ static void test_posix_shm_bad_unmap(void)
 	int shm;
 	void *map;
 
-	TEST_ASSERT((shm = shm_open("/shm", O_CREAT | O_RDWR, 0)) >= 0);
+	TEST_ASSERT((shm = shm_open("/shm", O_CREAT | O_RDWR, S_IRUSR | S_IWUSR)) >= 0);
 	TEST_ASSERT(ftruncate(shm, REGION_SIZE) == 0);
 	TEST_ASSERT((map = mmap(NULL, REGION_SIZE, PROT_READ, MAP_PRIVATE, shm, 0)) != MAP_FAILED);
 	TEST_ASSERT(munmap((void *)test_posix_shm_bad_unmap, REGION_SIZE) < 0);
@@ -300,7 +300,7 @@ static void test_posix_shm_invalid_sync(void)
 	int shm;
 	void *map;
 
-	TEST_ASSERT((shm = shm_open("/shm", O_CREAT | O_RDWR, 0)) >= 0);
+	TEST_ASSERT((shm = shm_open("/shm", O_CREAT | O_RDWR, S_IRUSR | S_IWUSR)) >= 0);
 	TEST_ASSERT(ftruncate(shm, REGION_SIZE) == 0);
 	TEST_ASSERT((map = mmap(NULL, REGION_SIZE, PROT_WRITE, MAP_SHARED, shm, 0)) != MAP_FAILED);
 
@@ -328,7 +328,7 @@ static void test_posix_shm_bad_sync(void)
 	int shm;
 	void *map;
 
-	TEST_ASSERT((shm = shm_open("/shm", O_CREAT | O_RDWR, 0)) >= 0);
+	TEST_ASSERT((shm = shm_open("/shm", O_CREAT | O_RDWR, S_IRUSR | S_IWUSR)) >= 0);
 	TEST_ASSERT(ftruncate(shm, REGION_SIZE) == 0);
 	TEST_ASSERT((map = mmap(NULL, REGION_SIZE, PROT_WRITE, MAP_SHARED, shm, 0)) != MAP_FAILED);
 	memset(map, 1, REGION_SIZE);
@@ -336,13 +336,41 @@ static void test_posix_shm_bad_sync(void)
 	TEST_ASSERT(munmap(map, REGION_SIZE) == 0);
 	TEST_ASSERT(shm_unlink("/shm") == 0);
 
-	TEST_ASSERT((shm = shm_open("/shm", O_CREAT | O_RDWR, 0)) >= 0);
+	TEST_ASSERT((shm = shm_open("/shm", O_CREAT | O_RDWR, S_IRUSR | S_IWUSR)) >= 0);
 	TEST_ASSERT(ftruncate(shm, REGION_SIZE) == 0);
 	TEST_ASSERT((map = mmap(NULL, REGION_SIZE, PROT_READ, MAP_SHARED, shm, 0)) != MAP_FAILED);
 	memset(map, 1, REGION_SIZE);
 	TEST_ASSERT(msync(map, REGION_SIZE, MS_SYNC) < 0);
 	TEST_ASSERT(munmap(map, REGION_SIZE) == 0);
 	TEST_ASSERT(shm_unlink("/shm") == 0);
+}
+
+/*============================================================================*
+ * Fault Injection Test: Invalid OFlags                                       *
+ *============================================================================*/
+
+/**
+ * @brief Fault Injection Test: Invalid OFlags
+ */
+static void test_posix_shm_invalid_oflags(void)
+{
+	int shm;
+
+	TEST_ASSERT((shm = shm_open("cool-name", O_CREAT, 0)) >= 0);
+	TEST_ASSERT(shm_open("cool-name", O_CREAT, 0) < 0);
+	TEST_ASSERT(shm_open("cool-name", O_RDONLY, 0) < 0);
+	TEST_ASSERT(shm_open("cool-name", O_RDWR, 0) < 0);
+	TEST_ASSERT(shm_unlink("cool-name") == 0);
+
+	TEST_ASSERT((shm = shm_open("cool-name2", O_CREAT, S_IRUSR)) >= 0);
+	TEST_ASSERT(shm_open("cool-name2", O_RDWR, 0) < 0);
+	TEST_ASSERT(shm_unlink("cool-name2") == 0);
+
+	TEST_ASSERT((shm = shm_open("cool-name3", O_CREAT, S_IWUSR)) >= 0);
+	TEST_ASSERT(shm_open("cool-name3", O_CREAT, 0) < 0);
+	TEST_ASSERT(shm_open("cool-name3", O_RDONLY, 0) < 0);
+	TEST_ASSERT(shm_open("cool-name3", O_RDWR, 0) < 0);
+	TEST_ASSERT(shm_unlink("cool-name3") == 0);
 }
 
 /*============================================================================*/
@@ -367,5 +395,6 @@ struct test posix_shm_tests_fault[] = {
 	{ test_posix_shm_bad_unmap,        "Bad Ununmap"      },
 	{ test_posix_shm_invalid_sync,     "Invalid Sync"     },
 	{ test_posix_shm_bad_sync,         "Bad Sync"         },
+	{ test_posix_shm_invalid_oflags,   "Invalid OFlags"   },
 	{ NULL,                            NULL               },
 };
