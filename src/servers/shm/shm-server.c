@@ -293,7 +293,6 @@ static int shm_open(int node, const char *name, int writable, int truncate)
 {
 	int i;
 	int shmid;
-	int owner;
 
 	shm_debug("open node=%d name=%s", node, name);
 
@@ -305,11 +304,12 @@ static int shm_open(int node, const char *name, int writable, int truncate)
 	if ((shmid = shm_get(name)) < 0)
 		return (-EINVAL);
 
-	owner = shm_get_owner(shmid);
-
 	/* Incompatible opening flags */
-	if (!shm_may_write(owner, shmid) && writable)
+	if ((!shm_is_writable(shmid) && writable) || !shm_is_readable(shmid))
+	{
+		shm_put(shmid);
 		return  (-EINVAL);
+	}
 
 	/* Shared memory region shall be removed soon. */
 	if (shm_is_remove(shmid))
@@ -438,7 +438,7 @@ static int shm_create_exclusive(int owner, char *name, int writable, mode_t mode
 		return (-EEXIST);
 	}
 
-	return (shm_create(owner, name, mode, writable));
+	return (shm_create(owner, name, writable, mode));
 }
 
 /*============================================================================*

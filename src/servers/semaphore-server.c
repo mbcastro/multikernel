@@ -20,6 +20,7 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <sys/stat.h>
 #include <assert.h>
 #include <string.h>
 #include <errno.h>
@@ -151,6 +152,40 @@ static inline int semaphore_is_used(int semid)
 static inline int semaphore_is_remove(int semid)
 {
 	return (semaphores[semid].flags & SEMAPHORE_REMOVE);
+}
+
+/*============================================================================*
+ * semaphore_is_writable()                                                    *
+ *============================================================================*/
+
+/**
+ * @brief Asserts whether or not a named semaphore is writable.
+ *
+ * @param semid ID of the target named semaphore.
+ *
+ * @returns Non-zero if the semaphore has writing permission, and
+ * zero otherwise.
+ */
+static inline int semaphore_is_writable(int semid)
+{
+	return (semaphores[semid].mode & S_IWUSR);
+}
+
+/*============================================================================*
+ * semaphore_is_readable()                                                    *
+ *============================================================================*/
+
+/**
+ * @brief Asserts whether or not a named semaphore is readable.
+ *
+ * @param semid ID of the target named semaphore.
+ *
+ * @returns Non-zero if the semaphore has reading permission, and
+ * zero otherwise.
+ */
+static inline int semaphore_is_readable(int semid)
+{
+	return (semaphores[semid].mode & S_IRUSR);
 }
 
 /*============================================================================*
@@ -379,6 +414,10 @@ static int semaphore_open(int node, char *name)
 		/* Found.*/
 		if (!strcmp(semaphores[i].name, name))
 		{
+			/* Permissions do not allow to open a semaphore? */
+			if (!semaphore_is_writable(i) || !semaphore_is_readable(i))
+				return (-EINVAL);
+
 			semid = i;
 			goto found;
 		}
