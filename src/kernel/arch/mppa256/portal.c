@@ -523,6 +523,13 @@ static int mppa256_portal_open(int local, int remote)
 	if ((sync_fd = mppa_open(pathname, O_RDONLY)) == -1)
 		goto error2;
 
+	/* Set DMA interface for IO cluster. */
+	if (noc_is_ionode(local))
+	{
+		if (mppa_ioctl(portal_fd, MPPA_TX_SET_INTERFACE, noc_get_dma(local, remote)) == -1)
+			goto error2;
+	}
+
 	nodenum = hal_get_node_num(local);
 
 	portals[portalid].portal_fd = portal_fd;

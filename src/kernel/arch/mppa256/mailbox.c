@@ -397,8 +397,9 @@ int hal_mailbox_create(int remote)
 /**
  * @brief See hal_mailbox_open().
  */
-static int mppa256_mailbox_open(int nodeid)
+static int mppa256_mailbox_open(int remote)
 {
+	int local;          /* NoC ID of local node.       */
 	int mbxid;          /* Mailbox ID.                 */
 	int fd;             /* NoC connector.              */
 	char remotes[128];  /* IDs of remote NoC nodes.    */
@@ -409,13 +410,13 @@ static int mppa256_mailbox_open(int nodeid)
 	if ((mbxid = mailbox_alloc()) < 0)
 		goto error0;
 
-	noc_get_remotes(remotes, nodeid);
-	noctag = noctag_mailbox(nodeid);
+	noc_get_remotes(remotes, remote);
+	noctag = noctag_mailbox(remote);
 
 	/* Build pathname for NoC connector. */
 	sprintf(pathname,
 			"/mppa/rqueue/%d:%d/[%s]:%d/1.%d",
-			nodeid,
+			remote,
 			noctag,
 			remotes,
 			noctag,
@@ -427,15 +428,16 @@ static int mppa256_mailbox_open(int nodeid)
 		goto error1;
 
 	/* Set DMA interface for IO cluster. */
-	if (noc_is_ionode(hal_get_node_id()))
+	local = hal_get_node_id();
+	if (noc_is_ionode(local))
 	{
-		if (mppa_ioctl(fd, MPPA_TX_SET_INTERFACE, noc_get_dma(hal_get_node_id())) == -1)
+		if (mppa_ioctl(fd, MPPA_TX_SET_INTERFACE, noc_get_dma(local, remote)) == -1)
 			goto error2;
 	}
 
 	/* Initialize mailbox. */
 	mailboxes[mbxid].fd = fd;
-	mailboxes[mbxid].nodeid = nodeid;
+	mailboxes[mbxid].nodeid = remote;
 	mailboxes[mbxid].refcount = 1;
 	mailboxes[mbxid].latency = 0;
 	mailboxes[mbxid].volume = 0;
