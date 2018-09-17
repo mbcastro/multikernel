@@ -718,13 +718,13 @@ again:
 	t1 = hal_timer_get();
 		nwrite = mppa_write(mailboxes[mbxid].fd, buf, n);
 	t2 = hal_timer_get();
-	mailboxes[mbxid].latency += t2 - t1;
+	mailboxes[mbxid].latency = t2 - t1;
 
 	mppa256_mailbox_lock();
 		mailbox_clear_busy(mbxid);
 	mppa256_mailbox_unlock();
 
-	mailboxes[mbxid].volume += nwrite;
+	mailboxes[mbxid].volume = nwrite;
 	return (nwrite);
 
 error1:
@@ -797,13 +797,13 @@ again:
 	t1 = hal_timer_get();
 		nread = mppa_read(mailboxes[mbxid].fd, buf, n);
 	t2 = hal_timer_get();
-	mailboxes[mbxid].latency += t2 - t1;
+	mailboxes[mbxid].latency = t2 - t1;
 
 	mppa256_mailbox_lock();
 		mailbox_clear_busy(mbxid);
 	mppa256_mailbox_unlock();
 
-	mailboxes[mbxid].volume += nread;
+	mailboxes[mbxid].volume = nread;
 	return (nread);
 
 error1:
