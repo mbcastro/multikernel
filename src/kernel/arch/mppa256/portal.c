@@ -41,6 +41,7 @@
 #define PORTAL_FLAGS_USED   (1 << 0) /**< Used portal?     */
 #define PORTAL_FLAGS_WRONLY (1 << 1) /**< Write only mode? */
 #define PORTAL_FLAGS_BUSY   (1 << 2) /**< Busy?            */
+#define PORTAL_FLAGS_ASYNC  (1 << 3) /**< Asynchronous?    */
 /**@}*/
 
 /**
@@ -53,6 +54,7 @@ static struct
 	int sync_fd[HAL_NR_NOC_NODES]; /**< Sync NoC connector.         */
 	int remote;                    /**< Remote NoC node ID.         */
 	int local;                     /**< Local NoC node ID.          */
+	mppa_aiocb_t aiocb;            /* Async IO control block.       */
 	size_t volume;                 /**< Amount of data transferred. */
 	uint64_t latency;              /**< Transfer latency.           */
 } portals[HAL_NR_PORTAL];
@@ -176,15 +178,37 @@ static inline void portal_set_wronly(int portalid)
 }
 
 /*============================================================================*
+ * portal_is_async()                                                          *
+ *============================================================================*/
+
+/**
+ * @brief Asserts whether or not an asynchronous operation is ongoing
+ * on a portal.
+ *
+ * @param portalid ID of the target portal.
+ *
+ * @returns One if there is an asynchronous operation ongoing in the
+ * target portal, and zero otherwise.
+ *
+ * @note This function is non-blocking.
+ * @note This function is @b NOT thread safe.
+ * @note This function is reentrant.
+ */
+static inline int portal_is_async(int portalid)
+{
+	return (portals[portalid].flags & PORTAL_FLAGS_ASYNC);
+}
+
+/*============================================================================*
  * portal_is_busy()                                                            *
  *============================================================================*/
 
 /**
- * @brief Asserts whether or not a portal point is busy.
+ * @brief Asserts whether or not a portal is busy.
  *
- * @param portalid ID of the target portal point.
+ * @param portalid ID of the target portal.
  *
- * @returns One if the target portal point is busy one, and false
+ * @returns One if the target portal is busy one, and zero
  * otherwise.
  *
  * @note This function is non-blocking.
@@ -197,11 +221,29 @@ static inline int portal_is_busy(int portalid)
 }
 
 /*============================================================================*
+ * portal_set_async()                                                         *
+ *============================================================================*/
+
+/**
+ * @brief Sets async flag on a portal.
+ *
+ * @param portalid ID of the target portal.
+ *
+ * @note This function is non-blocking.
+ * @note This function is @b NOT thread safe.
+ * @note This function is reentrant.
+ */
+static inline void portal_set_async(int portalid)
+{
+	portals[portalid].flags |= PORTAL_FLAGS_ASYNC;
+}
+
+/*============================================================================*
  * portal_set_busy()                                                          *
  *============================================================================*/
 
 /**
- * @brief Sets a portal point as busy.
+ * @brief Sets a portal as busy.
  *
  * @param portalid ID of the target portal.
  *
@@ -212,6 +254,24 @@ static inline int portal_is_busy(int portalid)
 static inline void portal_set_busy(int portalid)
 {
 	portals[portalid].flags |= PORTAL_FLAGS_BUSY;
+}
+
+/*============================================================================*
+ * portal_clear_async()                                                       *
+ *============================================================================*/
+
+/**
+ * @brief Clears the async flag of a portal.
+ *
+ * @param portalid ID of the target portal.
+ *
+ * @note This function is non-blocking.
+ * @note This function is @b NOT thread safe.
+ * @note This function is reentrant.
+ */
+static inline void portal_clear_async(int portalid)
+{
+	portals[portalid].flags &= ~PORTAL_FLAGS_ASYNC;
 }
 
 /*============================================================================*
@@ -586,6 +646,197 @@ int hal_portal_open(int remote)
 }
 
 /*============================================================================*
+ * hal_portal_wait()                                                          *
+ *============================================================================*/
+
+/**
+ * @brief See hal_portal_wait()
+ */
+static ssize_t mppa256_portal_wait(int portalid)
+{
+	ssize_t n;       /* Number of bytes read/written.*/
+	uint64_t t1, t2; /* Timers.                      */
+
+	/* Wait read operation to complete. */
+	t1 = hal_timer_get();
+		n = mppa_aio_wait(&portals[portalid].aiocb);
+	t2 = hal_timer_get();
+	portals[portalid].latency = t2 - t1;
+
+	portals[portalid].volume += n;
+	return (n);
+}
+
+/**
+ * @brief Waits for an asynchronous operation on a portal to complete.
+ *
+ * @param portalid ID of target portal.
+ *
+ * @returns Upon successful completion, the number of bytes
+ * read/written is returned. Upon failure, a negative error code is
+ * returned instead.
+ *
+ * @note This function is blocking.
+ * @note This function is thread-safe.
+ * @note This function is reentrant.
+ */
+ssize_t hal_portal_wait(int portalid)
+{
+	ssize_t n;
+
+	/* Invalid portal ID.*/
+	if (!portal_is_valid(portalid))
+		goto error0;
+
+again:
+
+	mppa256_portal_lock();
+
+		/* Bad portal. */
+		if (!portal_is_used(portalid))
+			goto error1;
+
+		/* Bad portal.*/
+		if (!portal_is_async(portalid))
+			goto error1;
+
+		/* Busy portal. */
+		if (!portal_is_busy(portalid))
+		{
+			mppa256_portal_unlock();
+			goto again;
+		}
+
+		/* Set portal as busy. */
+		portal_set_busy(portalid);
+
+		/* Clear async flag. */
+		portal_set_async(portalid);
+
+	/*
+	 * Release lock, since we may sleep below.
+	 */
+	mppa256_portal_unlock();
+
+	n = mppa256_portal_wait(portalid);
+	
+	mppa256_portal_lock();
+		portal_clear_busy(portalid);
+	mppa256_portal_unlock();
+
+	return (n);
+
+error1:
+	mppa256_portal_unlock();
+error0:
+	return (-EINVAL);
+}
+
+/*============================================================================*
+ * hal_portal_aread()                                                         *
+ *============================================================================*/
+
+/**
+ * @brief See hal_portal_aread()
+ */
+static int mppa256_portal_aread(int portalid, void *buf, size_t n)
+{
+	int nodenum;  /* Number of remote node.  */
+	uint64_t mask;/* Sync mask.              */
+
+	/* Setup read operation. */
+	mppa_aiocb_ctor(&portals[portalid].aiocb, portals[portalid].portal_fd, buf, n);
+	if (mppa_aio_read(&portals[portalid].aiocb) == -1)
+		goto error0;
+
+	/* Unblock remote. */
+	mask = 1 << hal_get_node_num(portals[portalid].local);
+	nodenum = hal_get_node_num(portals[portalid].remote);
+	if (mppa_write(portals[portalid].sync_fd[nodenum], &mask, sizeof(uint64_t)) == -1)
+		goto error0;
+
+	portal_set_async(portalid);
+
+	return (0);
+
+error0:
+	return (-EAGAIN);
+}
+
+/**
+ * @brief Reads data asynchronously from a portal.
+ *
+ * @param portalid ID of target portal.
+ * @param buf      Location from where data should be written.
+ * @param n        Number of bytes to read.
+ *
+ * @returns Upon successful completion, zero is returned. Upon
+ * failure, a negative error code is returned instead.
+ *
+ * @note This function is blocking.
+ * @note This function is thread-safe.
+ * @note This function is reentrant.
+ */
+int hal_portal_aread(int portalid, void *buf, size_t n)
+{
+	int ret;
+
+	/* Invalid portal ID.*/
+	if (!portal_is_valid(portalid))
+		goto error0;
+
+	/* Invalid buffer. */
+	if (buf == NULL)
+		goto error0;
+
+	/* Invalid read size. */
+	if (n < 1)
+		goto error0;
+
+again:
+
+	mppa256_portal_lock();
+
+		/* Bad portal. */
+		if (!portal_is_used(portalid))
+			goto error1;
+
+		/* Bad portal.*/
+		if (portal_is_wronly(portalid))
+			goto error1;
+
+		/* Busy portal. */
+		if (portal_is_busy(portalid))
+		{
+			mppa256_portal_unlock();
+			goto again;
+		}
+
+		/* Set portal as busy. */
+		portal_set_busy(portalid);
+
+	/*
+	 * Release lock, since we may sleep below.
+	 */
+	mppa256_portal_unlock();
+
+	/* Setup asynchronous read. */
+	if ((ret = mppa256_portal_aread(portalid, buf, n)) < 0)
+	{
+		mppa256_portal_lock();
+			portal_clear_busy(portalid);
+		mppa256_portal_unlock();
+	}
+
+	return (ret);
+
+error1:
+	mppa256_portal_unlock();
+error0:
+	return (-EINVAL);
+}
+
+/*============================================================================*
  * hal_portal_read()                                                          *
  *============================================================================*/
 
@@ -688,6 +939,124 @@ again:
 	mppa256_portal_unlock();
 
 	return (nread);
+
+error1:
+	mppa256_portal_unlock();
+error0:
+	return (-EINVAL);
+}
+
+/*============================================================================*
+ * hal_portal_awrite()                                                        *
+ *============================================================================*/
+
+/**
+ * @brief See hal_portal_write()
+ */
+static int mppa256_portal_awrite(int portalid, const void *buf, size_t n)
+{
+	int wait_dma;  /* Wait DMA thread?       */
+	int nodenum;   /* Number of remote node. */
+	uint64_t mask; /* Sync mask.             */
+
+	nodenum = hal_get_node_num(portals[portalid].local);
+
+	/* Wait for remote to be ready. */
+	mask = 1 << hal_get_node_num(portals[portalid].remote);
+	if (mppa_ioctl(portals[portalid].sync_fd[nodenum], MPPA_RX_SET_MATCH, ~mask) == -1)
+		goto error0;
+
+	if (mppa_read(portals[portalid].sync_fd[nodenum], &mask, sizeof(uint64_t)) == -1)
+		goto error0;
+
+	/* Setup write operation. */
+	mppa_aiocb_ctor(&portals[portalid].aiocb, portals[portalid].portal_fd, (void *) buf, n);
+	mppa_aiocb_set_pwrite(&portals[portalid].aiocb, (void *) buf, n, 0);
+
+	/* Wait for a DMA thread. */
+	do
+	{
+		int ret;
+
+		if ((ret = mppa_aio_write(&portals[portalid].aiocb)) == -1)
+			goto error0;
+		wait_dma = (ret == -EAGAIN);
+	} while(wait_dma);
+
+	portal_set_async(portalid);
+
+	return (0);
+
+error0:
+	return (-EAGAIN);
+}
+
+/**
+ * @brief Writes data asynchronously to a portal.
+ *
+ * @param portalid ID of target portal.
+ * @param buf      Location from where data should be read.
+ * @param n        Number of bytes to write.
+ *
+ * @returns Upon successful, zero is returned. Upon failure, a
+ * negative error code is returned instead.
+ *
+ * @note This function is blocking.
+ * @note This function is thread-safe.
+ * @note This function is reentrant.
+ */
+int hal_portal_awrite(int portalid, const void *buf, size_t n)
+{
+	int ret;
+
+	/* Invalid portal ID.*/
+	if (!portal_is_valid(portalid))
+		goto error0;
+
+	/* Invalid buffer. */
+	if (buf == NULL)
+		goto error0;
+
+	/* Invalid write size. */
+	if (n < 1)
+		goto error0;
+
+again:
+	
+	mppa256_portal_lock();
+
+		/* Bad portal. */
+		if (!portal_is_used(portalid))
+			goto error1;
+
+		/* Bad portal. */
+		if (!portal_is_wronly(portalid))
+			goto error1;
+
+		/* Busy portal. */
+		if (portal_is_busy(portalid))
+		{
+			mppa256_portal_unlock();
+			goto again;
+		}
+
+		/* Set portal as busy. */
+		portal_set_busy(portalid);
+
+	/*
+	 * Release lock, since we may sleep below.
+	 */
+	mppa256_portal_unlock();
+
+	/* Setup asynchronous write. */
+	if ((ret = mppa256_portal_awrite(portalid, buf, n)) < 0)
+	{
+		mppa256_portal_lock();
+			portal_clear_busy(portalid);
+		mppa256_portal_unlock();
+	}
+
+	return (ret);
 
 error1:
 	mppa256_portal_unlock();

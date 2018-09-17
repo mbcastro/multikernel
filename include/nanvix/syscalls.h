@@ -86,8 +86,11 @@
 	extern int sys_portal_allow(int, int);
 	extern int sys_portal_create(int);
 	extern int sys_portal_open(int);
-	extern int sys_portal_read(int, void *, size_t);
+	extern ssize_t sys_portal_read(int, void *, size_t);
+	extern int sys_portal_aread(int, void *, size_t);
+	extern ssize_t sys_portal_wait(int);
 	extern int sys_portal_write(int, const void *, size_t);
+	extern int sys_portal_awrite(int, const void *, size_t);
 	extern int sys_portal_close(int);
 	extern int sys_portal_unlink(int);
 	extern int sys_portal_ioctl(int, unsigned, ...);

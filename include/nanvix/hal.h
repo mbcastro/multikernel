@@ -25,6 +25,7 @@
 
 	#include <stddef.h>
 	#include <stdarg.h>
+	#include <sys/types.h>
 
 	#ifdef _KALRAY_MPPA256
 		#include <nanvix/arch/mppa.h>
@@ -234,8 +235,11 @@
 	extern int hal_portal_allow(int, int);
 	extern int hal_portal_create(int);
 	extern int hal_portal_open(int);
-	extern int hal_portal_read(int, void *, size_t);
+	extern ssize_t hal_portal_read(int, void *, size_t);
+	extern int hal_portal_aread(int, void *, size_t);
+	extern ssize_t hal_portal_wait(int);
 	extern int hal_portal_write(int, const void *, size_t);
+	extern int hal_portal_awrite(int, const void *, size_t);
 	extern int hal_portal_close(int);
 	extern int hal_portal_unlink(int);
 	extern int hal_portal_ioctl(int, unsigned, va_list);
