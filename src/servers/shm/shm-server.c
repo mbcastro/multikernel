@@ -45,6 +45,7 @@ static int shm_is_shared(int, int) __attribute__((unused));
 #define SHM_WRITE  (1 << 0) /**< Writable? Else read-only */
 #define SHM_SHARED (1 << 1) /**< Shared? Else private.    */
 #define SHM_MAPPED (1 << 2) /**< Mapped? Else unmapped.   */
+#define SHM_USED   (1 << 3) /**< Used?                    */
 /**@}*/
 
 /**
@@ -52,11 +53,6 @@ static int shm_is_shared(int, int) __attribute__((unused));
  */
 static struct
 {
-	/**
-	 * @brief Number of opened shared memory regions.
-	 */
-	int nopen;
-
 	/**
 	 * Table of opened shared memory regions.
 	 */
@@ -130,6 +126,40 @@ static inline int shm_has_mapped(int node, int id)
 }
 
 /*============================================================================*
+ * oshm_is_valid()                                                          *
+ *============================================================================*/
+
+/**
+ * @brief Asserts whether or not a opened shared memory region ID is valid.
+ *
+ * @param oshmid ID of the target opened shared memory region.
+ *
+ * @returns Non-zero if the opened shared memory region valid, and 
+ * zero otherwise.
+ */
+static inline int oshm_is_valid(int oshmid)
+{
+	return ((oshmid >= 0) && (oshmid < SHM_OPEN_MAX));
+}
+
+/*============================================================================*
+ * oshm_is_used()                                                           *
+ *============================================================================*/
+
+/**
+ * @brief Asserts whether or not a opened shared memory region slot is used.
+ *
+ * @param node  Target node.
+ * @param id ID of the opened shared memory region.
+ *
+ * @returns Non-zero if the slot is marked as used, and zero otherwise.
+ */
+int oshm_is_used(int node, int id)
+{
+	return (oshm_is_valid(id) && (procs[node].oregions[id].flags & SHM_USED));
+}
+
+/*============================================================================*
  * shm_clear_flags()                                                          *
  *============================================================================*/
 
@@ -191,6 +221,21 @@ static inline void shm_set_shared(int node, int id)
 }
 
 /*============================================================================*
+ * shm_set_used()                                                          *
+ *============================================================================*/
+
+/**
+ * @brief Sets a shared memory region as used.
+ *
+ * @param node Number of the target node.
+ * @param id   ID of the target opened shared memory region.
+ */
+static inline void shm_set_used(int node, int id)
+{
+	procs[node].oregions[id].flags |= SHM_USED;
+}
+
+/*============================================================================*
  * shm_name_is_valid()                                                        *
  *============================================================================*/
 
@@ -211,6 +256,50 @@ static inline int shm_name_is_valid(const char *name)
 }
 
 /*============================================================================*
+ * oshm_alloc()                                                                *
+ *============================================================================*/
+
+/**
+ * @brief Allocates a shared memory region.
+ *
+ * @param node Number of the target node.
+ * 
+ * @return Upon successful completion, the ID of the newly allocated
+ * shared memory region is returned. Upon failure, -1 is returned instead.
+ */
+int oshm_alloc(int node)
+{
+	/* Search for a free shared memory region. */
+	for (int i = 0; i < SHM_OPEN_MAX; i++)
+	{
+		/* Found. */
+		if (!oshm_is_used(node, i))
+		{
+			shm_clear_flags(node, i);
+			shm_set_used(node, i);
+			return (i);
+		}
+	}
+
+	return (-1);
+}
+
+/*============================================================================*
+ * shm_free()                                                              *
+ *============================================================================*/
+
+/**
+ * @brief Free a shared memory region.
+ * 
+ * @param node Number of the target node.
+ * @param oshmid ID of the opened shared memory region.
+ */
+static void oshm_free(int node, int id)
+{
+	shm_clear_flags(node, id);
+}
+
+/*============================================================================*
  * shm_has_opened()                                                           *
  *============================================================================*/
 
@@ -227,13 +316,12 @@ static inline int shm_name_is_valid(const char *name)
  */
 static int shm_has_opened(int node, int shmid)
 {
-	int nopen;
-
-	nopen = procs[node].nopen;
-
-	for (int i = 0; i < nopen; i++)
+	for (int i = 0; i < SHM_OPEN_MAX; i++)
 	{
-		if (procs[node].oregions[i].shmid == shmid)
+		if (procs[node].oregions[i].shmid != shmid)
+			continue;
+
+		if (oshm_is_used(node, i))
 			return (i);
 	}
 
@@ -250,24 +338,20 @@ static int shm_has_opened(int node, int shmid)
  *
  * @param shmid ID of target shared memory region.
  *
- * @returns One if the target node has mapped the target opened mapped
+ * @returns One if the target node has mapped the target mapped
  * memory region, and zero otherwise.
  */
 static inline int shm_is_mapped(int shmid)
 {
 	for (int i = 0; i < HAL_NR_NOC_NODES; i++)
 	{
-		int nopen;
-
-		nopen = procs[i].nopen;
-
-		for (int j = 0; j < nopen; j++)
+		for (int j = 0; j < SHM_OPEN_MAX; j++)
 		{
-			if (procs[i].oregions[j].shmid == shmid)
-			{
-				if (shm_has_opened(i, j))
-					return (1);
-			}
+			if (procs[i].oregions[j].shmid != shmid)
+				continue;
+
+			if (oshm_is_used(i, j) && shm_has_mapped(i, j))
+				return (1);
 		}
 	}
 
@@ -291,8 +375,8 @@ static inline int shm_is_mapped(int shmid)
  */
 static int shm_open(int node, const char *name, int writable, int truncate)
 {
-	int i;
-	int shmid;
+	int shmid;  /* Shared memory region ID.        */
+	int oshmid; /* Opened shared memory region ID. */
 
 	shm_debug("open node=%d name=%s", node, name);
 
@@ -319,7 +403,7 @@ static int shm_open(int node, const char *name, int writable, int truncate)
 	}
 
 	/* Too many files are opened. */
-	if (procs[node].nopen >= SHM_OPEN_MAX)
+	if ((oshmid = oshm_alloc(node)) < 0)
 	{
 		shm_put(shmid);
 		return (-ENFILE);
@@ -330,22 +414,28 @@ static int shm_open(int node, const char *name, int writable, int truncate)
 	{
 		/* Cannot write. */
 		if (!writable)
+		{
+			shm_put(shmid);
+			oshm_free(node, oshmid);
 			return (-EINVAL);
+		}
 
 		/* Already mapped. */
 		if (shm_is_mapped(shmid))
+		{
+			shm_put(shmid);
+			oshm_free(node, oshmid);
 			return (-EBUSY);
+		}
 
 		shm_set_size(shmid, 0);
 	}
 
-	i = procs[node].nopen++;
-	procs[node].oregions[i].shmid = shmid;
-	shm_clear_flags(node, i);
+	procs[node].oregions[oshmid].shmid = shmid;
 	if (writable)
-		shm_set_writable(node, i);
+		shm_set_writable(node, oshmid);
 
-	return (shmid);
+	return (oshmid);
 }
 
 /*============================================================================*
@@ -361,13 +451,13 @@ static int shm_open(int node, const char *name, int writable, int truncate)
  * @param mode     Access permissions.
  *
  * @returns Upon successful completion, the ID of the newly created
- * shared memory region is returned. Upon failure, a negative error
- * code is returned instead.
+ * opened shared memory region is returned. Upon failure, a negative
+ * error code is returned instead.
  */
 static int shm_create(int owner, const char *name, int writable, mode_t mode)
 {
-	int i;     /* Index of opened region.  */
-	int shmid; /* Shared memory region ID. */
+	int shmid;  /* Shared memory region ID.        */
+	int oshmid; /* Opened shared memory region ID. */
 
 	shm_debug("create node=%d name=%s mode=%d", owner, name, mode);
 
@@ -382,13 +472,16 @@ static int shm_create(int owner, const char *name, int writable, mode_t mode)
 		return (shm_open(owner, name, writable, 0));
 	}
 
-	/* Too many files are opened. */
-	if (procs[owner].nopen >= SHM_OPEN_MAX)
+	/* Allocate a new opened shm. */
+	if ((oshmid = oshm_alloc(owner)) < 0)
 		return (-ENFILE);
 
 	/* Allocate a new shm. */
 	if ((shmid = shm_alloc()) < 0)
+	{
+		oshm_free(owner, oshmid);
 		return (-EAGAIN);
+	}
 
 	/* Initialize shared memory region. */
 	shm_set_perm(shmid, owner, mode);
@@ -396,13 +489,11 @@ static int shm_create(int owner, const char *name, int writable, mode_t mode)
 	shm_set_base(shmid, 0);
 	shm_set_size(shmid, 0);
 
-	i = procs[owner].nopen++;
-	procs[owner].oregions[i].shmid = shmid;
-	shm_clear_flags(owner, i);
+	procs[owner].oregions[oshmid].shmid = shmid;
 	if (writable)
-		shm_set_writable(owner, i);
+		shm_set_writable(owner, oshmid);
 
-	return (shmid);
+	return (oshmid);
 }
 
 /*============================================================================*
@@ -423,7 +514,7 @@ static int shm_create(int owner, const char *name, int writable, mode_t mode)
  */
 static int shm_create_exclusive(int owner, char *name, int writable, mode_t mode)
 {
-	int shmid;
+	int shmid; /* Shared memory region ID.        */
 
 	shm_debug("create-excl node=%d name=%s mode=%d", owner, name, mode);
 
@@ -446,41 +537,33 @@ static int shm_create_exclusive(int owner, char *name, int writable, mode_t mode
  *============================================================================*/
 
 /**
- * @brief Close a shared memory region
+ * @brief Close a opened shared memory region
  *
- * @param node  ID of opening process.
- * @param shared memory regionid Target shared memory region.
+ * @param node   ID of opening process.
+ * @param oshmid Opened shared memory region id.
  *
  * @returns Upon successful completion, zero is returned. Upon
  * failure, a negative error code is returned instead.
  */
-static int shm_close(int node, int shmid)
+static int shm_close(int node, int oshmid)
 {
-	int i;
-	int nopen;
+	int shmid; /* Shared memory region ID.        */
 
-	shm_debug("close node=%d shmid=%d", node, shmid);
+	shm_debug("close node=%d oshmid=%d", node, oshmid);
+
+	/* Opened shared memory region not in use. */
+	if (!oshm_is_used(node, oshmid))
+		return (-EINVAL);
+
+	shmid = procs[node].oregions[oshmid].shmid;
 
 	/* Shared memory region not in use. */
 	if (!shm_is_used(shmid))
 		return (-EINVAL);
 
-	/*
-	 * The process should have opened
-	 * the shared memory region before.
-	 */
-	if ((i = shm_has_opened(node, shmid)) < 0)
-		return (-EACCES);
-
-	/* Remove the shared region from the list. */
-	nopen = --procs[node].nopen;
-	for (int j = i; j < nopen; j++)
-	{
-		procs[node].oregions[j].shmid = procs[node].oregions[j + 1].shmid;
-		procs[node].oregions[j].flags = procs[node].oregions[j + 1].flags;
-	}
-
 	shm_put(shmid);
+
+	oshm_free(node, oshmid);
 
 	return (0);
 }
@@ -492,16 +575,17 @@ static int shm_close(int node, int shmid)
 /**
  * @brief Unlink a shared memory region
  *
- * @param node  ID the calling process.
- * @param shmid Target shared memory region.
+ * @param node ID the calling process.
+ * @param name Name of the targeted shm.
  *
- * @returns Upon successful completion, shmid is returned.
+ * @returns Upon successful completion, oshmid is returned.
  * Upon failure, a negative error code is returned instead.
  */
 static int shm_unlink(int node, const char *name)
 {
-	int ret;
-	int shmid;
+	int ret;    /* Return of closing.              */
+	int shmid;  /* Shared memory region ID.        */
+	int oshmid; /* Opened shared memory region ID. */
 
 	shm_debug("unlink node=%d name=%s", node, name);
 
@@ -514,13 +598,17 @@ static int shm_unlink(int node, const char *name)
 	if (!shm_is_owner(shmid, node))
 		return (-EPERM);
 
-	shm_set_remove(shmid);
+	/* Opened shared memory region does not exist. */
+	if ((oshmid = shm_has_opened(node, shmid)) < 0)
+		return (-EINVAL);
 
+	shm_set_remove(shmid);
+	
 	/* Did I close the shared memory region correctly? */
-	if ((ret = shm_close(node, shmid) < 0))
+	if ((ret = shm_close(node, oshmid) < 0))
 		return ret;
 
-	return shmid;
+	return oshmid;
 }
 
 /*============================================================================*
@@ -531,18 +619,24 @@ static int shm_unlink(int node, const char *name)
  * @brief Truncates a shared memory region to a specified size.
  *
  * @param node   ID of opening process.
- * @param shmid  ID of the target shared memory region.
+ * @param oshmid ID of the opened shared memory region.
  * @param length Shared memory region size (in bytes).
  *
  * @returns Upon successful completion, zero is returned. Upon
  * failure, -1 is returned instead, and errno is set to indicate the
  * error.
  */
-static int shm_truncate(int node, int shmid, size_t size)
+static int shm_truncate(int node, int oshmid, size_t size)
 {
-	int i;
+	int shmid; /* Shared memory region ID. */
 
-	shm_debug("truncate node=%d shmid=%d size=%d", node, shmid, size);
+	shm_debug("truncate node=%d oshmid=%d size=%d", node, oshmid, size);
+
+	/* Opened shared memory region not in use. */
+	if (!oshm_is_used(node, oshmid))
+		return (-EINVAL);
+
+	shmid = procs[node].oregions[oshmid].shmid;
 
 	/* Not enought memory. */
 	if (size > RMEM_SIZE)
@@ -552,15 +646,8 @@ static int shm_truncate(int node, int shmid, size_t size)
 	if (!shm_is_used(shmid))
 		return (-EINVAL);
 
-	/*
-	 * The process should have opened
-	 * the shared memory region before.
-	 */
-	if ((i = shm_has_opened(node, shmid)) < 0)
-		return (-EACCES);
-
 	/* Cannot write. */
-	if (!shm_may_write(node, i))
+	if (!shm_may_write(node, oshmid))
 		return (-EINVAL);
 
 	/* Already mapped. */
@@ -580,7 +667,7 @@ static int shm_truncate(int node, int shmid, size_t size)
  * @brief Maps a shared memory region.
  *
  * @param node     ID of the calling node.
- * @param shmid    ID of the target shared memory region.
+ * @param oshmid   ID of the opened shared memory region.
  * @param size     Size of mapping.
  * @param writable Writable mapping? Else read-only.
  * @param shared   Shared mapping? Else private.
@@ -593,27 +680,26 @@ static int shm_truncate(int node, int shmid, size_t size)
  */
 static int shm_map(
 	int node,
-	int shmid,
+	int oshmid,
 	size_t size,
 	int writable,
 	int shared,
 	off_t off,
 	uint64_t *mapblk)
 {
-	int i;
+	int shmid; /* Shared memory region ID. */
 
-	shm_debug("map node=%d name=%d", node, shmid);
+	shm_debug("map node=%d oshmid=%d", node, oshmid);
+
+	/* Opened shared memory region not in use. */
+	if (!oshm_is_used(node, oshmid))
+		return (-EINVAL);
+
+	shmid = procs[node].oregions[oshmid].shmid;
 
 	/* Shared memory region not in use. */
 	if (!shm_is_used(shmid))
 		return (-EINVAL);
-
-	/*
-	 * The process should have opened
-	 * the shared memory region before.
-	 */
-	if ((i = shm_has_opened(node, shmid)) < 0)
-		return (-EACCES);
 
 	/* Invalid size. */
 	if (size > shm_get_size(shmid))
@@ -628,15 +714,15 @@ static int shm_map(
 		return (-ENXIO);
 
 	/* Cannot write. */
-	if (writable && (!shm_may_write(node, i)))
+	if (writable && (!shm_may_write(node, oshmid)))
 		return (-EACCES);
 
 	/* Map. */
-	if (!shm_has_mapped(node, i))
+	if (!shm_has_mapped(node, oshmid))
 	{
-		shm_set_mapped(node, i);
+		shm_set_mapped(node, oshmid);
 		if (shared)
-			shm_set_shared(node, i);
+			shm_set_shared(node, oshmid);
 	}
 
 	*mapblk = shm_get_base(shmid) + off;
@@ -651,31 +737,30 @@ static int shm_map(
 /**
  * @brief Unmaps a shared memory region.
  *
- * @param node     ID of the calling node.
- * @param shmid    ID of the target shared memory region.
+ * @param node   ID of the calling node.
+ * @param oshmid ID of the opened shared memory region.
  *
  * @returns Upon successful completion, zero is returned. Upon
  * failure, a negative error code is returned instead.
  */
-static int shm_unmap(int node, int shmid)
+static int shm_unmap(int node, int oshmid)
 {
-	int i;
+	int shmid; /* Shared memory region ID. */
 
-	shm_debug("unmap node=%d name=%d", node, shmid);
+	shm_debug("unmap node=%d oshmid=%d", node, oshmid);
+
+	/* Opened shared memory region not in use. */
+	if (!oshm_is_used(node, oshmid))
+		return (-EINVAL);
+
+	shmid = procs[node].oregions[oshmid].shmid;
 
 	/* Shared memory region not in use. */
 	if (!shm_is_used(shmid))
 		return (-EINVAL);
 
-	/*
-	 * The process should have opened
-	 * the shared memory region before.
-	 */
-	if ((i = shm_has_opened(node, shmid)) < 0)
-		return (-EACCES);
-
 	/* Not mapped. */
-	if (!shm_has_mapped(node, i))
+	if (!shm_has_mapped(node, oshmid))
 		return (-EINVAL);
 
 	return (0);
@@ -1057,8 +1142,9 @@ static int shm_startup(int _inbox)
 	buffer_init();
 
 	/* Initialize process table. */
-	for (int i = 0; i < HAL_NR_NOC_NODES; i++)
-		procs[i].nopen = 0;
+	for (int node = 0; node < HAL_NR_NOC_NODES; node++)
+		for (int id = 0; id < SHM_OPEN_MAX; id++)
+			shm_clear_flags(node, id);
 
 	return (0);
 }
