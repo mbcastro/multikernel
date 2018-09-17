@@ -95,7 +95,7 @@ static inline void mppa256_portal_unlock(void)
  *
  * @param portalid ID of the target portal.
  *
- * @returns One if the target portal is valid, and false
+ * @returns One if the target portal is valid, and zero
  * otherwise.
  *
  * @note This function is thread-safe.
@@ -114,7 +114,7 @@ static inline int portal_is_valid(int portalid)
  *
  * @param portalid ID of the target portal.
  *
- * @returns One if the target portal is used, and false
+ * @returns One if the target portal is used, and zero
  * otherwise.
  *
  * @note This function is @b NOT thread safe.
@@ -134,7 +134,7 @@ static inline int portal_is_used(int portalid)
  * @param portalid ID of the target portal.
  *
  * @returns One if the target portal is write-only, and
- * false otherwise.
+ * zero otherwise.
  *
  * @note This function is @b NOT thread safe.
  */
@@ -608,9 +608,9 @@ static int mppa256_portal_read(int portalid, void *buf, size_t n)
 	t1 = hal_timer_get();
 		nread = mppa_aio_wait(&aiocb);
 	t2 = hal_timer_get();
-	portals[portalid].latency += t2 - t1;
+	portals[portalid].latency = t2 - t1;
 
-	portals[portalid].volume += nread;
+	portals[portalid].volume = nread;
 	return (nread);
 
 error0:
@@ -716,9 +716,9 @@ static int mppa256_portal_write(int portalid, const void *buf, size_t n)
 	t1 = hal_timer_get();
 		nwrite = mppa_pwrite(portals[portalid].portal_fd, buf, n, 0);
 	t2 = hal_timer_get();
-	portals[portalid].latency += t2 - t1;
+	portals[portalid].latency = t2 - t1;
 
-	portals[portalid].volume += nwrite;
+	portals[portalid].volume = nwrite;
 	return (nwrite);
 
 error0:
