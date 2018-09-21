@@ -44,14 +44,14 @@
  */
 static struct
 {
-	int nreads;         /**< Number of reads.         */
-	size_t read;        /**< Number of bytes read.    */
-	int nwrites;        /**< Number of writes.        */
-	size_t written;     /**< Number of bytes written. */
-	uint64_t tstart;    /**< Start time.              */
-	uint64_t tshutdown; /**< Shutdown time.           */
-	uint64_t tnetwork;  /**< Network time.            */
-	uint64_t tcpu;      /**< CPU Time.                */
+	int nreads;       /**< Number of reads.         */
+	size_t read;      /**< Number of bytes read.    */
+	int nwrites;      /**< Number of writes.        */
+	size_t written;   /**< Number of bytes written. */
+	double tstart;    /**< Start time.              */
+	double tshutdown; /**< Shutdown time.           */
+	double tnetwork;  /**< Network time.            */
+	double tcpu;      /**< CPU Time.                */
 } stats = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
 /**
@@ -88,7 +88,7 @@ static char rmem[RMEM_SIZE];
  */
 static inline void rmem_write(int remote, uint64_t blknum, int size)
 {
-	uint64_t t0, t1;
+	uint64_t t;
 
 	rmem_debug("write nodenum=%d blknum=%d size=%d",
 		remote,
@@ -110,12 +110,12 @@ static inline void rmem_write(int remote, uint64_t blknum, int size)
 		return;
 	}
 
-	t0 = sys_timer_get();
-		sys_portal_allow(inportal, remote);
-		sys_portal_read(inportal, &rmem[blknum], size);
-	t1 = sys_timer_get();
+	sys_portal_allow(inportal, remote);
+	sys_portal_read(inportal, &rmem[blknum], size);
 
-	stats.tnetwork += t1 - t0;
+	sys_portal_ioctl(inportal, PORTAL_IOCTL_GET_LATENCY, &t);
+
+	stats.tnetwork += t/((double) sys_get_core_freq());
 }
 
 /*============================================================================*
@@ -131,8 +131,8 @@ static inline void rmem_write(int remote, uint64_t blknum, int size)
  */
 static inline void rmem_read(int remote, uint64_t blknum, int size)
 {
+	uint64_t t;
 	int outportal;
-	uint64_t t0, t1;
 
 	rmem_debug("read nodenum=%d blknum=%d size=%d",
 		remote,
@@ -154,15 +154,12 @@ static inline void rmem_read(int remote, uint64_t blknum, int size)
 		return;
 	}
 
-	t0 = sys_timer_get();
+	outportal = sys_portal_open(remote);
+	sys_portal_write(outportal, &rmem[blknum], size);
+	sys_portal_ioctl(outportal, PORTAL_IOCTL_GET_LATENCY, &t);
+	sys_portal_close(outportal);
 
-		outportal = sys_portal_open(remote);
-		sys_portal_write(outportal, &rmem[blknum], size);
-		sys_portal_close(outportal);
-
-	t1 = sys_timer_get();
-
-	stats.tnetwork += t1 - t0;
+	stats.tnetwork += t/((double) sys_get_core_freq());
 }
 
 /*============================================================================*
@@ -178,11 +175,10 @@ static inline void rmem_read(int remote, uint64_t blknum, int size)
 static int rmem_loop(void)
 {
 	int shutdown = 0;
-	uint64_t t0, t1, t2, t3;
+	uint64_t t0, t1;
+	double t2, t3;
 
-	stats.tstart = sys_timer_get();
-
-	stats.tstart = sys_timer_get();
+	stats.tstart = sys_timer_get()/((double) sys_get_core_freq());
 
 	while(!shutdown)
 	{
@@ -211,7 +207,7 @@ static int rmem_loop(void)
 				break;
 
 			case RMEM_EXIT:
-				stats.tshutdown = sys_timer_get();
+				stats.tshutdown = sys_timer_get()/((double) sys_get_core_freq());
 				shutdown = 1;
 				break;
 
@@ -223,14 +219,14 @@ static int rmem_loop(void)
 		t1 = sys_timer_get();
 		t3 = stats.tnetwork;
 
-		stats.tcpu += (t1 - t0) - (t3 - t2);
+		stats.tcpu += ((t1 - t0)/((double) sys_get_core_freq())) - (t3 - t2);
 	}
 
 	/* Dump statistics. */
-	printf("[nanvix][rmem] uptime=%.6lf cpu=%lf network=%lf read=%zu nreads=%d written=%zu nwrites=%d\n",
-			(stats.tshutdown - stats.tstart)/((double) sys_get_core_freq()),
-			stats.tcpu/((double) sys_get_core_freq()),
-			stats.tnetwork/((double) sys_get_core_freq()),
+	printf("[nanvix][rmem] uptime=%lf cpu=%lf network=%lf read=%zu nreads=%d written=%zu nwrites=%d\n",
+			(stats.tshutdown - stats.tstart),
+			stats.tcpu,
+			stats.tnetwork,
 			stats.read, stats.nreads, stats.written, stats.nwrites
 	);
 
