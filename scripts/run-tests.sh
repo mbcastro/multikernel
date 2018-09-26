@@ -57,6 +57,11 @@ case $test in
 	all)
 		mode="--long"
 	;&
+	mqueue)
+		echo "=== Running Message Queue Tests"
+		run2 "nanvix-posix-debug.img" "/test-driver" "--debug --mqueue"
+		stop_if_short_test
+	;&
 	shm)
 		echo "=== Running Shared Memory Region Tests"
 		run2 "nanvix-posix-debug.img" "/test-driver" "--debug --shm"

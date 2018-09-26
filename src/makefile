@@ -42,6 +42,7 @@ ifeq ($(DEBUG),true)
 	export CFLAGS += -DDEBUG_SEMAPHORE
 	export CFLAGS += -DDEBUG_RMEM
 	export CFLAGS += -DDEBUG_SHM
+	export CFLAGS += -DDEBUG_MQUEUE
 endif
 
 ifeq ($(DEBUG_NAME),true)

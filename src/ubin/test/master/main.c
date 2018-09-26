@@ -34,6 +34,7 @@ extern void test_nanvix_ipc_portal(void);
 extern void test_mm_rmem(void);
 extern void test_semaphore(void);
 extern void test_shm(void);
+extern void test_mqueue(void);
 
 /**
  * @brief Launches automated tests.
@@ -69,6 +70,8 @@ int main2(int argc, const char **argv)
 		test_semaphore();
 	else if (!strcmp(argv[2], "--shm"))
 		test_shm();
+	else if (!strcmp(argv[2], "--mqueue"))
+		test_mqueue();
 
 	return (EXIT_SUCCESS);
 }

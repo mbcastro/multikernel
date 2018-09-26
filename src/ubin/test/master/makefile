@@ -29,6 +29,7 @@ SRC = $(wildcard nanvix/ipc/barrier/*.c) \
 	  $(wildcard nanvix/mm/rmem/*.c)     \
 	  $(wildcard posix/semaphore/*.c)    \
 	  $(wildcard posix/shm/*.c)          \
+	  $(wildcard posix/mqueue/*.c)       \
       $(wildcard *.c)
 	  
 
