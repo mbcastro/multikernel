@@ -35,17 +35,19 @@ extern void test_kernel_sys_sync(void);
 extern void test_kernel_sys_mailbox(void);
 extern void test_kernel_sys_portal(void);
 extern int shm_server(int, int);
+extern int mqueue_server(int, int);
 
 /**
  * @brief Number of servers launched from this spawner.
  */
-#define NR_SERVERS 1
+#define NR_SERVERS 2
 
 /**
  * @brief Servers.
  */
 static struct serverinfo servers[NR_SERVERS] = {
-	{ shm_server, SHM_SERVER_NODE, 1 }
+	{ shm_server,    SHM_SERVER_NODE,    1 },
+	{ mqueue_server, MQUEUE_SERVER_NODE, 1 }
 };
 
 /**
@@ -160,6 +162,7 @@ void spawners_sync(void)
 void servers_shutdown(void)
 {
     int shutdown_order[] = {
+        MQUEUE_SERVER_NODE,
         SHM_SERVER_NODE,
         RMEM_SERVER_NODE,
         SEMAPHORE_SERVER_NODE,
@@ -170,7 +173,7 @@ void servers_shutdown(void)
 	struct spawner_message msg = { .header.opcode = SHUTDOWN_REQ };
 
     /* Shutdown request */
-    for (int i = 0; i < 4; ++i)
+    for (int i = 0; i < 5; ++i)
     {
         assert((outbox = sys_mailbox_open(shutdown_order[i])) >= 0);
 	    assert(sys_mailbox_write(outbox, &msg, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);

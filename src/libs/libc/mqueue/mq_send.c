@@ -20,47 +20,55 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef NANVIX_LIMITS_H_
-#define NANVIX_LIMITS_H_
+#include <sys/types.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <mqueue.h>
 
-	#define __NEED_HAL_CONST_
-	#include <nanvix/hal.h>
+#include <nanvix/mqueue.h>
 
-	/**
-	 * @brief Maximum length of a process name.
-	 *
-	 * @note The null character is included.
-	 */
-	#define NANVIX_PROC_NAME_MAX 112
+/**
+ * @brief Sends a message to a message queue.
+ *
+ * @param mqdes Descriptor of the target message queue.
+ * @param msg   Target message.
+ * @param len   Length of the target message (in bytes).
+ * @param prio  Priority of the target message.
+ *
+ * @param Upon successful completion, zero is returned. Upon failure,
+ * no message is enqueued, -1 is returned and errno is set to indicate
+ * the error.
+ */
+int mq_send(mqd_t mqdes, const char *msg, size_t len, unsigned prio)
+{
+	/* Invalid descriptor. */
+	if (mqdes < 0)
+	{
+		errno = EINVAL;
+		return (-1);
+	}
 
-	/**
-	 * @brief Maximum number of processes.
-	 */
-	#define NANVIX_PROC_MAX HAL_NR_CCLUSTERS
+	/* Invalid message. */
+	if (msg == NULL)
+	{
+		errno = EINVAL;
+		return (-1);
+	}
 
-	/**
-	 * @brief Maximum number of mailboxes.
-	 */
-	#define NANVIX_MAILBOX_MAX HAL_NR_MAILBOX
+	/* Invalid length. */
+	if (len == 0)
+	{
+		errno = EINVAL;
+		return (-1);
+	}
 
-	/**
-	 * @brief Maximum number of portals.
-	 */
-	#define NANVIX_PORTAL_MAX HAL_NR_PORTAL
+	/* Invalid priority. */
+	if (prio >= MQ_PRIO_MAX)
+	{
+		errno = EINVAL;
+		return (-1);
+	}
 
-	/**
-	 * @brief Maximum length of a semaphore name.
-	 *
-	 * @note The null character is included.
-	 */
-	#define NANVIX_SEM_NAME_MAX (HAL_MAILBOX_MSG_SIZE - 10)
-
-	/**
-	 * @brief Maximum length of a message queue name.
-	 *
-	 * @note The null character is included.
-	 */
-	#define NANVIX_MQUEUE_NAME_MAX (HAL_MAILBOX_MSG_SIZE - 10)
-
-#endif /* NANVIX_LIMITS_H_ */
+	return (nanvix_mqueue_send(mqdes, msg, len, prio));
+}
 

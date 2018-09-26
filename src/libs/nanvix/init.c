@@ -33,10 +33,12 @@ extern int name_init(void);
 extern int meminit(void);
 extern int nanvix_sem_init(void);
 extern int nanvix_shm_init(void);
+extern int nanvix_mqueue_init(void);
 extern int nanvix_shm_finalize(void);
 extern int memfinalize(void);
 extern int nanvix_sem_finalize(void);
 extern int name_finalize(void);
+extern int nanvix_mqueue_cleanup(void);
 
 /**
  * @brief Global runtime lock.
@@ -112,6 +114,8 @@ int runtime_setup(int level)
 		{
 			if (nanvix_shm_init() != 0)
 				goto error;
+			if (nanvix_mqueue_init() != 0)
+				goto error;
 		}
 
 		initialized[nodenum] = 1;
@@ -145,6 +149,8 @@ int runtime_cleanup(void)
 		/* Finalize Shared Memory client. */
 		if (current_level >= 3)
 		{
+			if (nanvix_mqueue_cleanup() != 0)
+				goto error;
 			if (nanvix_shm_finalize() != 0)
 				goto error;
 		}

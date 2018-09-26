@@ -2,25 +2,32 @@
 
 namespace libs {
 	namespace nanvix {
-		namespace barrier {
+		namespace ipc {
+			namespace barrier {
+			}
+
+			namespace name {
+			}
+
+			namespace mailbox {
+			}
+
+			namespace portal {
+			}
+
+			namespace mq {
+			}
+
+			namespace semaphore {
+			}
 		}
 
-		namespace name {
-		}
+		namespace mm {
+			namespace rmem {
+			}
 
-		namespace mailbox {
-		}
-
-		namespace portal {
-		}
-
-		namespace rmem {
-		}
-
-		namespace shm {
-		}	  
-
-		namespace semaphore {
+			namespace shm {
+			}
 		}
 	}
 
@@ -30,17 +37,22 @@ namespace libs {
 
 		namespace shm {
 		}
+
+		namespace mq {
+		}
 	}
 
-	libs.nanvix.mailbox   ..>  libs.nanvix.name      : <<use>>
-	libs.nanvix.portal    ..>  libs.nanvix.name      : <<use>>
-	libs.nanvix.rmem      ..>  libs.nanvix.mailbox   : <<use>>
-	libs.nanvix.rmem      ..>  libs.nanvix.portal    : <<use>>
-	libs.nanvix.shm        .>  libs.nanvix.rmem      : <<use>>
-	libs.nanvix.shm       ..>  libs.nanvix.mailbox   : <<use>>
-	libs.posix.shm        <|.. libs.nanvix.shm       : <<implements>>
-	libs.nanvix.semaphore ..>  libs.nanvix.mailbox   : <<use>>
-	libs.posix.semaphore  <|.. libs.nanvix.semaphore : <<implements>>
+	libs.nanvix.ipc.mailbox   ..>  libs.nanvix.ipc.name      : <<use>>
+	libs.nanvix.ipc.portal    ..>  libs.nanvix.ipc.name      : <<use>>
+	libs.nanvix.mm.rmem       ..>  libs.nanvix.ipc.mailbox   : <<use>>
+	libs.nanvix.mm.rmem       ..>  libs.nanvix.ipc.portal    : <<use>>
+	libs.nanvix.mm.shm         .>  libs.nanvix.mm.rmem       : <<use>>
+	libs.nanvix.mm.shm        ..>  libs.nanvix.ipc.mailbox   : <<use>>
+	libs.nanvix.ipc.mq        ..>  libs.nanvix.ipc.portal    : <<use>>
+	libs.nanvix.ipc.semaphore ..>  libs.nanvix.ipc.mailbox   : <<use>>
+	libs.posix.shm            <|.  libs.nanvix.mm.shm        : <<implements>>
+	libs.posix.mq             <|.. libs.nanvix.ipc.mq        : <<implements>>
+	libs.posix.semaphore      <|.. libs.nanvix.ipc.semaphore : <<implements>>
 }
 
 @enduml

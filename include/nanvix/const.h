@@ -42,6 +42,11 @@
 	#define SHM_SERVER_NODE 17
 
 	/**
+	 * @brief Message Queue Server NoC node number.
+	 */
+	#define MQUEUE_SERVER_NODE 18
+
+	/**
 	 * @brief Spawner Server NoC node number.
 	 */
 	#define SPAWNER1_SERVER_NODE 20

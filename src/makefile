@@ -60,6 +60,10 @@ ifeq ($(DEBUG_SHM),true)
 	export CFLAGS += -DDEBUG_SHM
 endif
 
+ifeq ($(DEBUG_MQUEUE),true)
+	export CFLAGS += -DDEBUG_MQUEUE
+endif
+
 # Linker Options
 export LDFLAGS += 
 export ARFLAGS = rcs

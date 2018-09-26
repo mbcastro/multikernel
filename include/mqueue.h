@@ -20,47 +20,41 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef NANVIX_LIMITS_H_
-#define NANVIX_LIMITS_H_
+#ifndef MQUEUE_H_
+#define MQUEUE_H_
 
-	#define __NEED_HAL_CONST_
-	#include <nanvix/hal.h>
-
-	/**
-	 * @brief Maximum length of a process name.
-	 *
-	 * @note The null character is included.
-	 */
-	#define NANVIX_PROC_NAME_MAX 112
+	#include <fcntl.h>
+	#include <signal.h>
+	#include <sys/types.h>
+	#include <time.h>
 
 	/**
-	 * @brief Maximum number of processes.
+	 * @brief Maximum priority for a message (not included).
 	 */
-	#define NANVIX_PROC_MAX HAL_NR_CCLUSTERS
+	#define MQ_PRIO_MAX 256
 
 	/**
-	 * @brief Maximum number of mailboxes.
+	 * @brief Attributes of a message queue.
 	 */
-	#define NANVIX_MAILBOX_MAX HAL_NR_MAILBOX
+	struct mq_attr
+	{
+		long mq_flags;    /**< Message queue flags.                 */
+		long mq_maxmsg;   /**< Maximum number of messages.          */
+		long mq_msgsize;  /**< Maximum message size.                */
+		long mq_curmsgs;  /**< Number of messages currently queued. */
+	};
 
 	/**
-	 * @brief Maximum number of portals.
+	 * @brief Descriptor of a message queue.
 	 */
-	#define NANVIX_PORTAL_MAX HAL_NR_PORTAL
+	typedef int mqd_t;
 
-	/**
-	 * @brief Maximum length of a semaphore name.
-	 *
-	 * @note The null character is included.
-	 */
-	#define NANVIX_SEM_NAME_MAX (HAL_MAILBOX_MSG_SIZE - 10)
+	/* Forward definitions. */
+	extern mqd_t mq_open(const char *, int, ...);
+	extern int mq_unlink(const char *);
+	extern int mq_close(mqd_t);
+	extern ssize_t mq_receive(mqd_t, char *, size_t, unsigned *);
+	extern int mq_send(mqd_t, const char *, size_t, unsigned);
 
-	/**
-	 * @brief Maximum length of a message queue name.
-	 *
-	 * @note The null character is included.
-	 */
-	#define NANVIX_MQUEUE_NAME_MAX (HAL_MAILBOX_MSG_SIZE - 10)
-
-#endif /* NANVIX_LIMITS_H_ */
+#endif /* MQUEUE_H_ */
 

@@ -20,47 +20,20 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef NANVIX_LIMITS_H_
-#define NANVIX_LIMITS_H_
+#include <mqueue.h>
 
-	#define __NEED_HAL_CONST_
-	#include <nanvix/hal.h>
+#include <nanvix/mqueue.h>
 
-	/**
-	 * @brief Maximum length of a process name.
-	 *
-	 * @note The null character is included.
-	 */
-	#define NANVIX_PROC_NAME_MAX 112
-
-	/**
-	 * @brief Maximum number of processes.
-	 */
-	#define NANVIX_PROC_MAX HAL_NR_CCLUSTERS
-
-	/**
-	 * @brief Maximum number of mailboxes.
-	 */
-	#define NANVIX_MAILBOX_MAX HAL_NR_MAILBOX
-
-	/**
-	 * @brief Maximum number of portals.
-	 */
-	#define NANVIX_PORTAL_MAX HAL_NR_PORTAL
-
-	/**
-	 * @brief Maximum length of a semaphore name.
-	 *
-	 * @note The null character is included.
-	 */
-	#define NANVIX_SEM_NAME_MAX (HAL_MAILBOX_MSG_SIZE - 10)
-
-	/**
-	 * @brief Maximum length of a message queue name.
-	 *
-	 * @note The null character is included.
-	 */
-	#define NANVIX_MQUEUE_NAME_MAX (HAL_MAILBOX_MSG_SIZE - 10)
-
-#endif /* NANVIX_LIMITS_H_ */
-
+/**
+ * @brief removes a message queue.
+ *
+ * @param name Name of the target message queue.
+ *
+ * @returns Upon successful completion, zero is returned. Upon
+ * failure, -1 is returned instead, and errno is set to indicate the
+ * error.
+ */
+int mq_unlink(const char *name)
+{
+	return (nanvix_mqueue_unlink(name));
+}

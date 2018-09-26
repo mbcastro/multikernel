@@ -21,7 +21,8 @@
 #
 
 # C Source Files
-SRC = $(wildcard semaphore/*.c) \
+SRC = $(wildcard mqueue/*.c)    \
+      $(wildcard semaphore/*.c) \
       $(wildcard sys/mman/*.c)  \
       $(wildcard unistd/*.c)
 

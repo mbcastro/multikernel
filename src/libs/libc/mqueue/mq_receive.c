@@ -20,47 +20,56 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef NANVIX_LIMITS_H_
-#define NANVIX_LIMITS_H_
+#include <sys/types.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <mqueue.h>
 
-	#define __NEED_HAL_CONST_
-	#include <nanvix/hal.h>
+#include <nanvix/mqueue.h>
 
-	/**
-	 * @brief Maximum length of a process name.
-	 *
-	 * @note The null character is included.
-	 */
-	#define NANVIX_PROC_NAME_MAX 112
+/**
+ * @brief Receives a message from a message queue.
+ *
+ * @param mqdes Descriptor of the received message queue.
+ * @param msg   Location to store the received message.
+ * @param len   Length of the received message (in bytes).
+ * @param prio  Location to store the priority of the received message.
+ *
+ * @param Upon successful completion, the length of the received
+ * message in bytes is returned, and the message is removed from the
+ * queue. Upon failure, no message is removed from the queue, -1 is
+ * returned and errno is set to indicate the error.
+ */
+ssize_t mq_receive(mqd_t mqdes, char *msg, size_t len, unsigned *prio)
+{
+	/* Invalid descriptor. */
+	if (mqdes < 0)
+	{
+		errno = EINVAL;
+		return (-1);
+	}
 
-	/**
-	 * @brief Maximum number of processes.
-	 */
-	#define NANVIX_PROC_MAX HAL_NR_CCLUSTERS
+	/* Invalid message. */
+	if (msg == NULL)
+	{
+		errno = EINVAL;
+		return (-1);
+	}
 
-	/**
-	 * @brief Maximum number of mailboxes.
-	 */
-	#define NANVIX_MAILBOX_MAX HAL_NR_MAILBOX
+	/* Invalid length. */
+	if (len == 0)
+	{
+		errno = EINVAL;
+		return (-1);
+	}
 
-	/**
-	 * @brief Maximum number of portals.
-	 */
-	#define NANVIX_PORTAL_MAX HAL_NR_PORTAL
+	/* Invalid priority pointer. */
+	if (prio == NULL)
+	{
+		errno = EINVAL;
+		return (-1);
+	}
 
-	/**
-	 * @brief Maximum length of a semaphore name.
-	 *
-	 * @note The null character is included.
-	 */
-	#define NANVIX_SEM_NAME_MAX (HAL_MAILBOX_MSG_SIZE - 10)
-
-	/**
-	 * @brief Maximum length of a message queue name.
-	 *
-	 * @note The null character is included.
-	 */
-	#define NANVIX_MQUEUE_NAME_MAX (HAL_MAILBOX_MSG_SIZE - 10)
-
-#endif /* NANVIX_LIMITS_H_ */
+	return (nanvix_mqueue_receive(mqdes, msg, len, prio));
+}
 
