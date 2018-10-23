@@ -82,13 +82,18 @@
 	extern int sys_mailbox_close(int);
 	extern ssize_t sys_mailbox_write(int, const void *, size_t);
 	extern ssize_t sys_mailbox_read(int, void *, size_t);
+	extern int sys_mailbox_ioctl(int, unsigned, ...);
 	extern int sys_portal_allow(int, int);
 	extern int sys_portal_create(int);
 	extern int sys_portal_open(int);
-	extern int sys_portal_read(int, void *, size_t);
+	extern ssize_t sys_portal_read(int, void *, size_t);
+	extern int sys_portal_aread(int, void *, size_t);
+	extern ssize_t sys_portal_wait(int);
 	extern int sys_portal_write(int, const void *, size_t);
+	extern int sys_portal_awrite(int, const void *, size_t);
 	extern int sys_portal_close(int);
 	extern int sys_portal_unlink(int);
+	extern int sys_portal_ioctl(int, unsigned, ...);
 	extern int sys_sync_create(const int *, int, int);
 	extern int sys_sync_open(const int *, int, int);
 	extern int sys_sync_wait(int);
@@ -97,7 +102,5 @@
 	extern int sys_sync_unlink(int);
 	extern int kernel_setup(void);
 	extern int kernel_cleanup(void);
-	extern int runtime_setup(int);
-	extern int runtime_cleanup(void);
 
 #endif /* NANVIX_SYSCALLS_H_ */

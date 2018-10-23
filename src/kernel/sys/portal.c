@@ -125,6 +125,47 @@ int sys_portal_close(int portalid)
 }
 
 /**
+ * @brief Waits for an asynchronous operation on a portal to complete.
+ *
+ * @param portalid ID of target portal.
+ *
+ * @returns Upon successful completion, the number of bytes
+ * read/written is returned. Upon failure, a negative error code is
+ * returned instead.
+ *
+ * @note This function is blocking.
+ * @note This function is thread-safe.
+ * @note This function is reentrant.
+ */
+ssize_t sys_portal_wait(int portalid)
+{
+	return (hal_portal_wait(portalid));
+}
+
+/**
+ * @brief Reads data asynchronously from a portal.
+ *
+ * @param portalid ID of target portal.
+ * @param buf      Location from where data should be written.
+ * @param n        Number of bytes to read.
+ *
+ * @returns Upon successful completion zero is returned. Upon failure,
+ * a negative error code is returned instead.
+ *
+ * @note This function is blocking.
+ * @note This function is thread-safe.
+ * @note This function is reentrant.
+ */
+int sys_portal_aread(int portalid, void *buf, size_t n)
+{
+	/* Invalid buffer size. */
+	if ((n < 1) || (n > HAL_PORTAL_MAX_SIZE))
+		return (-EINVAL);
+
+	return (hal_portal_aread(portalid, buf, n));
+}
+
+/**
  * @brief Reads data from a portal.
  *
  * @param portalid ID of target portal.
@@ -141,10 +182,33 @@ int sys_portal_close(int portalid)
 ssize_t sys_portal_read(int portalid, void *buf, size_t n)
 {
 	/* Invalid buffer size. */
-	if ((n < 1) || (n >= HAL_PORTAL_MAX_SIZE))
+	if ((n < 1) || (n > HAL_PORTAL_MAX_SIZE))
 		return (-EINVAL);
 
 	return (hal_portal_read(portalid, buf, n));
+}
+
+/**
+ * @brief Writes data asynchronously to a portal.
+ *
+ * @param portalid ID of target portal.
+ * @param buf      Location from where data should be read.
+ * @param n        Number of bytes to write.
+ *
+ * @returns Upon successful completion, zero is returned. Upon
+ * failure, a negative error code is returned instead.
+ *
+ * @note This function is blocking.
+ * @note This function is thread-safe.
+ * @note This function is reentrant.
+ */
+int sys_portal_awrite(int portalid, const void *buf, size_t n)
+{
+	/* Invalid buffer size. */
+	if ((n < 1) || (n > HAL_PORTAL_MAX_SIZE))
+		return (-EINVAL);
+
+	return (hal_portal_awrite(portalid, buf, n));
 }
 
 /**
@@ -154,8 +218,8 @@ ssize_t sys_portal_read(int portalid, void *buf, size_t n)
  * @param buf      Location from where data should be read.
  * @param n        Number of bytes to write.
  *
- * @returns Upon successful the number of bytes written is returned.
- * Upon failure, a negative error code is returned instead.
+ * @returns Upon successful completion, the number of bytes written is
+ * returned. Upon failure, a negative error code is returned instead.
  *
  * @note This function is blocking.
  * @note This function is thread-safe.
@@ -164,9 +228,30 @@ ssize_t sys_portal_read(int portalid, void *buf, size_t n)
 ssize_t sys_portal_write(int portalid, const void *buf, size_t n)
 {
 	/* Invalid buffer size. */
-	if ((n < 1) || (n >= HAL_PORTAL_MAX_SIZE))
+	if ((n < 1) || (n > HAL_PORTAL_MAX_SIZE))
 		return (-EINVAL);
 
 	return (hal_portal_write(portalid, buf, n));
+}
+
+/**
+ * @brief Performs control operations in a portal.
+ *
+ * @param portalid Target portal.
+ * @param request  Request.
+ *
+ * @param Upon successful completion, zero is returned. Upon failure,
+ * a negative error code is returned instead.
+ */
+int sys_portal_ioctl(int portalid, unsigned request, ...)
+{
+	int ret;
+	va_list args;
+
+	va_start(args, request);
+	ret = hal_portal_ioctl(portalid, request, args);
+	va_end(args);
+
+	return (ret);
 }
 

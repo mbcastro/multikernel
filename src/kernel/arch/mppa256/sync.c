@@ -545,7 +545,6 @@ static int mppa256_sync_open(const int *nodes, int nnodes, int type)
 	int syncid;            /* Synchronization point.     */
 	char remotes[128];     /* IDs of remote NoC nodes.   */
 	char pathname[128];    /* NoC connector name.        */
-	int nodeid;            /* ID of underlying NoC node. */
 
 	/* Allocate a synchronization point. */
 	if ((syncid = sync_alloc()) < 0)
@@ -580,14 +579,6 @@ static int mppa256_sync_open(const int *nodes, int nnodes, int type)
 	if ((fd = mppa_open(pathname, O_WRONLY)) == -1)
 		goto error1;
 
-	/* Set DMA interface for IO cluster. */
-	nodeid = hal_get_node_id();
-	if (noc_is_ionode(nodeid))
-	{
-		if (mppa_ioctl(fd, MPPA_TX_SET_INTERFACE, noc_get_dma(nodeid)) == -1)
-			goto error2;
-	}
-
 	/* Initialize synchronization point. */
 	synctab[syncid].fd = fd;
 	synctab[syncid].ncount = nnodes - 1;
@@ -598,8 +589,6 @@ static int mppa256_sync_open(const int *nodes, int nnodes, int type)
 
 	return (syncid);
 
-error2:
-	mppa_close(fd);
 error1:
 	sync_free(syncid);
 error0:

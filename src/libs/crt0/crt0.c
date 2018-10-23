@@ -31,6 +31,10 @@
 #include <nanvix/spawner.h>
 #include <nanvix/pm.h>
 
+/* Forward definitions. */
+extern int runtime_setup(int);
+extern int runtime_cleanup(void);
+
 /**
  * @brief Server wrapper.
  */
@@ -109,11 +113,13 @@ int main(int argc, const char **argv)
 				&args[i])) == 0
 			);
 
+			server_sync();
+
 			new_services_amount++;
 		}
 
 		/* Runlevel sync */
-		spawners_sync(new_services_amount);
+		spawners_sync();
 
 		initialized_servers += new_services_amount;
 	}
@@ -138,17 +144,27 @@ int main(int argc, const char **argv)
 		assert(runtime_cleanup() == 0);
 	}
 
-	/* Wait for servers. */
-	if (!spawner_shutdown)
+	/* Shutdown servers. */
+	if (spawner_shutdown != NULL)
 	{
-		for (int i = 0; i < spawner_nservers; i++)
-			pthread_join(tids[i], NULL);
+		printf("[nanvix][%s] broadcasting shutdown signal\n", spawner_name);
+		spawner_shutdown();
 	}
 
-	printf("[nanvix][%s] shutting down\n", spawner_name);
+	/* Wait for servers. */
+	for (int i = 0; i < spawner_nservers; i++)
+		pthread_join(tids[i], NULL);
 
 	/* Cleanup. */
 	assert(kernel_cleanup() == 0);
+
+	/* Sync spawners. */
+	if (spawner_shutdown == NULL)
+	{
+		printf("[nanvix][%s] down\n", spawner_name);
+		while(1);
+	}
+
 	return (ret);
 
 error:

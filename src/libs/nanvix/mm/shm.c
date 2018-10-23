@@ -47,6 +47,198 @@ static struct
 static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
 /*============================================================================*
+ * Client cache                                                               *
+ *============================================================================*/
+
+/* Implemented but not used. */
+static int shm_is_shared(int) __attribute__((unused));
+
+/**
+ * @brief Flags for shared region.
+ */
+/*@{@*/
+#define SHM_WRITE  (1 << 0) /**< Writable? Else read-only */
+#define SHM_SHARED (1 << 1) /**< Shared? Else private.    */
+#define SHM_MAPPED (1 << 2) /**< Mapped? Else unmapped.   */
+/**@}*/
+
+/**
+ * @brief Number of opened shared memory regions.
+ */
+static int nopen;
+
+/**
+ * Table of opened shared memory regions (cache).
+ */
+static struct
+{
+	int shmid;
+	int flags;
+} oregions[SHM_OPEN_MAX];
+
+/*============================================================================*
+ * shm_may_write()                                                            *
+ *============================================================================*/
+
+/**
+ * @brief Asserts whether or not a node may write on a opened shared
+ * memory region.
+ *
+ * @param id   ID of the target opened shared memory region.
+ *
+ * @returns One if the target node may write into the target opened
+ * shared memory region, and zero otherwise.
+ */
+static inline int shm_may_write(int id)
+{
+	return (oregions[id].flags & SHM_WRITE);
+}
+
+/*============================================================================*
+ * shm_is_shared()                                                            *
+ *============================================================================*/
+
+/**
+ * @brief Asserts whether or not a node is sharing a target opened
+ * shared memory region.
+ *
+ * @param id   ID of the target opened shared memory region.
+ *
+ * @returns One if the target node is sharing the target opened
+ * shared memory region, and zero otherwise.
+ */
+static int shm_is_shared(int id)
+{
+	return (oregions[id].flags & SHM_SHARED);
+}
+
+/*============================================================================*
+ * shm_has_mapped()                                                           *
+ *============================================================================*/
+
+/**
+ * @brief Asserts whether or not a node has mapped a target opened
+ * shared memory region.
+ *
+ * @param id   ID of the target opened mapped memory region.
+ *
+ * @returns One if the target node has mapped the target opened mapped
+ * memory region, and zero otherwise.
+ */
+static inline int shm_has_mapped(int id)
+{
+	return (oregions[id].flags & SHM_MAPPED);
+}
+
+/*============================================================================*
+ * shm_clear_flags()                                                          *
+ *============================================================================*/
+
+/**
+ * @brief Clears the flags of a opened shared memory region.
+ *
+ * @param id   ID of the target opened shared memory region.
+ */
+static inline void shm_clear_flags(int id)
+{
+	oregions[id].flags = 0;
+}
+
+
+/*============================================================================*
+ * shm_set_writable()                                                         *
+ *============================================================================*/
+
+/**
+ * @brief Sets a target opened shared memory region as writable.
+ *
+ * @param id   ID of the target opened shared memory region.
+ */
+static inline void shm_set_writable(int id)
+{
+	oregions[id].flags |= SHM_WRITE;
+}
+
+/*============================================================================*
+ * shm_set_mapped()                                                           *
+ *============================================================================*/
+
+/**
+ * @brief Sets a target opened shared memory region as mapped.
+ *
+ * @param id   ID of the target opened shared memory region.
+ */
+static inline void shm_set_mapped(int id)
+{
+	oregions[id].flags |= SHM_MAPPED;
+}
+
+/*============================================================================*
+ * shm_set_shared()                                                           *
+ *============================================================================*/
+
+/**
+ * @brief Sets a target opened shared memory region as shared.
+ *
+ * @param id   ID of the target opened shared memory region.
+ */
+static inline void shm_set_shared(int id)
+{
+	oregions[id].flags |= SHM_SHARED;
+}
+
+/*============================================================================*
+ * shm_has_opened()                                                           *
+ *============================================================================*/
+
+/**
+ * @brief Asserts whether or not a node has opened a given shared
+ * memory region.
+ *
+ * @param shmid ID of target shared memory region.
+ *
+ * @return If the target node has opened the target shared memory
+ * region, its index in the table of opened shared memory regions is
+ * returned. Otherwise, -1 is returned instead.
+ */
+static int shm_has_opened(int shmid)
+{
+	for (int i = 0; i < nopen; i++)
+	{
+		if (oregions[i].shmid == shmid)
+			return (i);
+	}
+
+	return (-1);
+}
+
+/*============================================================================*
+ * shm_has_mapped()                                                           *
+ *============================================================================*/
+
+/**
+ * @brief Asserts whether or not a shared memory region is mapped by a
+ * node.
+ *
+ * @param shmid ID of target shared memory region.
+ *
+ * @returns One if the target node has mapped the target opened mapped
+ * memory region, and zero otherwise.
+ */
+static inline int shm_is_mapped(int shmid)
+{
+	for (int i = 0; i < nopen; i++)
+	{
+		if (oregions[i].shmid == shmid)
+		{
+			if (shm_has_opened(i))
+				return (1);
+		}
+	}
+	return (0);
+}
+
+/*============================================================================*
  * nanvix_shm_is_invalid_name()                                               *
  *============================================================================*/
 
@@ -149,6 +341,7 @@ void nanvix_shm_finalize(void)
  */
 int nanvix_shm_create_excl(const char *name, int rw, mode_t mode)
 {
+	int i;
 	int ret;
 	int inbox;
 	int nodenum;
@@ -172,8 +365,8 @@ int nanvix_shm_create_excl(const char *name, int rw, mode_t mode)
 	nodenum = sys_get_node_num();
 
 	/* Build message header. */
-	msg.source = nodenum;
-	msg.opcode = SHM_CREATE_EXCL;
+	msg.header.source = nodenum;
+	msg.header.opcode = SHM_CREATE_EXCL;
 
 	pthread_mutex_lock(&lock);
 
@@ -199,11 +392,17 @@ int nanvix_shm_create_excl(const char *name, int rw, mode_t mode)
 	pthread_mutex_unlock(&lock);
 
 	/* Failed to create shared memory region. */
-	if (msg.opcode == SHM_FAILURE)
+	if (msg.header.opcode == SHM_FAILURE)
 	{
 		errno = msg.op.ret.status;
 		return (-1);
 	}
+
+	i = nopen++;
+	oregions[i].shmid = msg.op.ret.shmid;
+	shm_clear_flags(i);
+	if (rw)
+		shm_set_writable(i);
 
 	return (msg.op.ret.shmid);
 
@@ -231,6 +430,7 @@ error:
  */
 int nanvix_shm_create(const char *name, int rw, int truncate, mode_t mode)
 {
+	int i;
 	int ret;
 	int inbox;
 	int nodenum;
@@ -254,8 +454,8 @@ int nanvix_shm_create(const char *name, int rw, int truncate, mode_t mode)
 	nodenum = sys_get_node_num();
 
 	/* Build message header. */
-	msg.source = nodenum;
-	msg.opcode = SHM_CREATE;
+	msg.header.source = nodenum;
+	msg.header.opcode = SHM_CREATE;
 
 	pthread_mutex_lock(&lock);
 
@@ -282,11 +482,17 @@ int nanvix_shm_create(const char *name, int rw, int truncate, mode_t mode)
 	pthread_mutex_unlock(&lock);
 
 	/* Failed to create shared memory region. */
-	if (msg.opcode == SHM_FAILURE)
+	if (msg.header.opcode == SHM_FAILURE)
 	{
 		errno = msg.op.ret.status;
 		return (-1);
 	}
+
+	i = nopen++;
+	oregions[i].shmid = msg.op.ret.shmid;
+	shm_clear_flags(i);
+	if (rw)
+		shm_set_writable(i);
 
 	return (msg.op.ret.shmid);
 
@@ -313,6 +519,7 @@ error:
  */
 int nanvix_shm_open(const char *name, int rw, int truncate)
 {
+	int i;
 	int ret;
 	int inbox;
 	int nodenum;
@@ -333,11 +540,25 @@ int nanvix_shm_open(const char *name, int rw, int truncate)
 	if (nanvix_shm_is_invalid_name(name))
 		return (-1);
 
+	/* Too many files are opened. */
+	if (nopen >= SHM_OPEN_MAX)
+	{
+		errno = ENFILE;
+		return (-1);
+	}
+
+	/* Truncate but cannot write. */
+	if (truncate && !rw)
+	{
+		errno = EINVAL;
+		return (-1);
+	}
+
 	nodenum = sys_get_node_num();
 
 	/* Build message header. */
-	msg.source = nodenum;
-	msg.opcode = SHM_OPEN;
+	msg.header.source = nodenum;
+	msg.header.opcode = SHM_OPEN;
 
 	pthread_mutex_lock(&lock);
 
@@ -362,11 +583,17 @@ int nanvix_shm_open(const char *name, int rw, int truncate)
 	pthread_mutex_unlock(&lock);
 
 	/* Failed to open shared memory region. */
-	if (msg.opcode == SHM_FAILURE)
+	if (msg.header.opcode == SHM_FAILURE)
 	{
 		errno = msg.op.ret.status;
 		return (-1);
 	}
+
+	i = nopen++;
+	oregions[i].shmid = msg.op.ret.shmid;
+	shm_clear_flags(i);
+	if (rw)
+		shm_set_writable(i);
 
 	return (msg.op.ret.shmid);
 
@@ -391,6 +618,7 @@ error:
  */
 int nanvix_shm_unlink(const char *name)
 {
+	int i;
 	int ret;
 	int inbox;
 	int nodenum;
@@ -414,8 +642,8 @@ int nanvix_shm_unlink(const char *name)
 	nodenum = sys_get_node_num();
 
 	/* Build message. */
-	msg.source = nodenum;
-	msg.opcode = SHM_UNLINK;
+	msg.header.source = nodenum;
+	msg.header.opcode = SHM_UNLINK;
 	msg.seq = ((nodenum << 4) | 0);
 	strcpy(msg.op.unlink.name, name);
 
@@ -430,10 +658,28 @@ int nanvix_shm_unlink(const char *name)
 	pthread_mutex_unlock(&lock);
 
 	/* Failed to unlink shared memory region. */
-	if (msg.opcode == SHM_FAILURE)
+	if (msg.header.opcode == SHM_FAILURE)
 	{
 		errno = msg.op.ret.status;
 		return (-1);
+	}
+
+	/*
+	 * The process should have opened
+	 * the shared memory region before.
+	 */
+	if ((i = shm_has_opened(msg.op.ret.shmid)) < 0)
+	{
+		errno = EACCES;
+		return (-1);
+	}
+
+	/* Remove the shared region from the list. */
+	--nopen;
+	for (int j = i; j < nopen; j++)
+	{
+		oregions[j].shmid = oregions[j + 1].shmid;
+		oregions[j].flags = oregions[j + 1].flags;
 	}
 
 	return (0);
@@ -463,6 +709,7 @@ error:
  */
 int nanvix_map(uint64_t *mapblk, size_t len, int writable, int shared, int fd, off_t off)
 {
+	int i;
 	int ret;
 	int inbox;
 	int nodenum;
@@ -486,11 +733,28 @@ int nanvix_map(uint64_t *mapblk, size_t len, int writable, int shared, int fd, o
 	if ((inbox = get_inbox()) < 0)
 		return (-1);
 
+	/*
+	 * The process should have opened
+	 * the shared memory region before.
+	 */
+	if ((i = shm_has_opened(fd)) < 0)
+	{
+		errno = EACCES;
+		return (-1);
+	}
+
+	/* Cannot write. */
+	if (writable && (!shm_may_write(i)))
+	{
+		errno = EACCES;
+		return (-1);
+	}
+
 	nodenum = sys_get_node_num();
 
 	/* Build message. */
-	msg.source = nodenum;
-	msg.opcode = SHM_MAP;
+	msg.header.source = nodenum;
+	msg.header.opcode = SHM_MAP;
 	msg.seq = ((nodenum << 4) | 0);
 	msg.op.map.shmid = fd;
 	msg.op.map.size = len;
@@ -509,10 +773,18 @@ int nanvix_map(uint64_t *mapblk, size_t len, int writable, int shared, int fd, o
 	pthread_mutex_unlock(&lock);
 
 	/* Failed to map. */
-	if (msg.opcode == SHM_FAILURE)
+	if (msg.header.opcode == SHM_FAILURE)
 	{
 		errno = msg.op.ret.status;
 		return (-1);
+	}
+
+	/* Map. */
+	if (!shm_has_mapped(i))
+	{
+		shm_set_mapped(i);
+		if (shared)
+			shm_set_shared(i);
 	}
 
 	*mapblk = msg.op.ret.mapblk;
@@ -540,6 +812,7 @@ error:
  */
 int nanvix_unmap(int shmid, size_t len)
 {
+	int i;
 	int ret;
 	int inbox;
 	int nodenum;
@@ -563,11 +836,28 @@ int nanvix_unmap(int shmid, size_t len)
 	if ((inbox = get_inbox()) < 0)
 		return (-1);
 
+	/*
+	 * The process should have opened
+	 * the shared memory region before.
+	 */
+	if ((i = shm_has_opened(shmid)) < 0)
+	{
+		errno = EACCES;
+		return (-1);
+	}
+
+	/* Not mapped. */
+	if (!shm_has_mapped(i))
+	{
+		errno = EINVAL;
+		return (-1);
+	}
+
 	nodenum = sys_get_node_num();
 
 	/* Build message. */
-	msg.source = nodenum;
-	msg.opcode = SHM_UNMAP;
+	msg.header.source = nodenum;
+	msg.header.opcode = SHM_UNMAP;
 	msg.seq = ((nodenum << 4) | 0);
 	msg.op.unmap.shmid = shmid;
 	msg.op.unmap.size = len;
@@ -583,7 +873,7 @@ int nanvix_unmap(int shmid, size_t len)
 	pthread_mutex_unlock(&lock);
 
 	/* Failed to unmap. */
-	if (msg.opcode == SHM_FAILURE)
+	if (msg.header.opcode == SHM_FAILURE)
 	{
 		errno = msg.op.ret.status;
 		return (-1);
@@ -613,20 +903,45 @@ error:
  */
 int nanvix_mtruncate(int shmid, size_t size)
 {
+	int i;
 	int ret;
 	int inbox;
 	int nodenum;
-		struct shm_message msg;
+	struct shm_message msg;
 
 	/* Cannot get inbox. */
 	if ((inbox = get_inbox()) < 0)
 		return (-1);
 
+	/*
+	 * The process should have opened
+	 * the shared memory region before.
+	 */
+	if ((i = shm_has_opened(shmid)) < 0)
+	{
+		errno = EACCES;
+		return (-1);
+	}
+
+	/* Cannot write. */
+	if (!shm_may_write(i))
+	{
+		errno = EINVAL;
+		return (-1);
+	}
+
+	/* Already mapped. */
+	if (shm_is_mapped(shmid))
+	{
+		errno = EBUSY;
+		return (-1);
+	}
+
 	nodenum = sys_get_node_num();
 
 	/* Build message. */
-	msg.source = nodenum;
-	msg.opcode = SHM_TRUNCATE;
+	msg.header.source = nodenum;
+	msg.header.opcode = SHM_TRUNCATE;
 	msg.seq = ((nodenum << 4) | 0);
 	msg.op.truncate.shmid = shmid;
 	msg.op.truncate.size = size;
@@ -642,7 +957,7 @@ int nanvix_mtruncate(int shmid, size_t size)
 	pthread_mutex_unlock(&lock);
 
 	/* Failed to truncate. */
-	if (msg.opcode == SHM_FAILURE)
+	if (msg.header.opcode == SHM_FAILURE)
 	{
 		errno = msg.op.ret.status;
 		return (-1);

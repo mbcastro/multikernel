@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <semaphore.h>
 #include <string.h>
+#include <stdio.h>
 
 #include <nanvix/limits.h>
 #include <nanvix/semaphore.h>
@@ -44,8 +45,8 @@ static void test_posix_semaphore_invalid_create(void)
 	buf[NANVIX_SEM_NAME_MAX] = '\0';
 
 	/* Create invalid semaphores. */
-	TEST_ASSERT(sem_open(NULL, O_CREAT, 0, 0) == SEM_FAILED);
-	TEST_ASSERT(sem_open(buf, O_CREAT, 0, 0) == SEM_FAILED);
+	TEST_ASSERT(sem_open(NULL, O_CREAT, (S_IRUSR | S_IWUSR), 0) == SEM_FAILED);
+	TEST_ASSERT(sem_open(buf, O_CREAT, (S_IRUSR | S_IWUSR), 0) == SEM_FAILED);
 	TEST_ASSERT(sem_open("cool-name", O_CREAT, 0, (SEM_MAX + 1)) == SEM_FAILED);
 }
 
@@ -58,7 +59,7 @@ static void test_posix_semaphore_invalid_create(void)
  */
 static void test_posix_semaphore_bad_create(void)
 {
-	TEST_ASSERT(sem_open("", O_CREAT, 0, 0) == SEM_FAILED);
+	TEST_ASSERT(sem_open("", O_CREAT, (S_IRUSR | S_IWUSR), 0) == SEM_FAILED);
 }
 
 /*============================================================================*
@@ -72,8 +73,8 @@ static void test_posix_semaphore_double_create(void)
 {
 	sem_t *sem;
 
-	TEST_ASSERT((sem = sem_open("cool-name", O_CREAT, 0, 0)) != SEM_FAILED);
-	TEST_ASSERT(sem_open("cool-name", (O_CREAT | O_EXCL), 0, 0) == SEM_FAILED);
+	TEST_ASSERT((sem = sem_open("cool-name", O_CREAT, (S_IRUSR | S_IWUSR), 0)) != SEM_FAILED);
+	TEST_ASSERT(sem_open("cool-name", (O_CREAT | O_EXCL), (S_IRUSR | S_IWUSR), 0) == SEM_FAILED);
 	TEST_ASSERT(sem_unlink("cool-name") == 0);
 }
 
@@ -152,7 +153,7 @@ static void test_posix_semaphore_double_unlink(void)
 {
 	sem_t *sem;
 
-	TEST_ASSERT((sem = sem_open("cool-name", O_CREAT, 0, 0)) != SEM_FAILED);
+	TEST_ASSERT((sem = sem_open("cool-name", O_CREAT, (S_IRUSR | S_IWUSR), 0)) != SEM_FAILED);
 	TEST_ASSERT(sem_unlink("cool-name") == 0);
 	TEST_ASSERT(sem_unlink("cool-name") < 0);
 }
@@ -194,7 +195,7 @@ static void test_posix_semaphore_double_close(void)
 {
 	sem_t *sem;
 
-	TEST_ASSERT((sem = sem_open("cool-name", O_CREAT, 0, 0)) != SEM_FAILED);
+	TEST_ASSERT((sem = sem_open("cool-name", O_CREAT, (S_IRUSR | S_IWUSR), 0)) != SEM_FAILED);
 	TEST_ASSERT(sem_close(sem) == 0);
 	TEST_ASSERT(sem_close(sem) < 0);
 	TEST_ASSERT(sem_unlink("cool-name") == 0);
@@ -254,24 +255,65 @@ static void test_posix_semaphore_bad_wait(void)
 
 /*============================================================================*/
 
+/*============================================================================*
+ * Fault Injection Test: Permission denied                                    *
+ *============================================================================*/
+
+/**
+ * @brief Fault Injection Test: Permission denied
+ */
+static void test_posix_semaphore_permission_denied(void)
+{
+	char semaphore_name[NANVIX_SEM_NAME_MAX];
+
+	/* Creates with no access permission. */
+	sprintf(semaphore_name, "/semaphore");
+	TEST_ASSERT(sem_open(semaphore_name, (O_CREAT | O_EXCL), 0, 0) != SEM_FAILED);
+	TEST_ASSERT(sem_open(semaphore_name, O_CREAT, 0, 0) == SEM_FAILED);
+	TEST_ASSERT(sem_open(semaphore_name, O_CREAT, S_IRUSR, 0) == SEM_FAILED);
+	TEST_ASSERT(sem_open(semaphore_name, O_CREAT, S_IWUSR, 0) == SEM_FAILED);
+	TEST_ASSERT(sem_open(semaphore_name, O_CREAT, (S_IRUSR | S_IWUSR), 0) == SEM_FAILED);
+	TEST_ASSERT(sem_open(semaphore_name, 0) == SEM_FAILED);
+	TEST_ASSERT(sem_unlink(semaphore_name) == 0);
+
+	/* Creates read-only. */
+	TEST_ASSERT(sem_open(semaphore_name, (O_CREAT | O_EXCL), S_IRUSR, 0) != SEM_FAILED);
+	TEST_ASSERT(sem_open(semaphore_name, O_CREAT, 0, 0) == SEM_FAILED);
+	TEST_ASSERT(sem_open(semaphore_name, O_CREAT, S_IRUSR, 0) == SEM_FAILED);
+	TEST_ASSERT(sem_open(semaphore_name, O_CREAT, S_IWUSR, 0) == SEM_FAILED);
+	TEST_ASSERT(sem_open(semaphore_name, O_CREAT, (S_IRUSR | S_IWUSR), 0) == SEM_FAILED);
+	TEST_ASSERT(sem_open(semaphore_name, 0) == SEM_FAILED);
+	TEST_ASSERT(sem_unlink(semaphore_name) == 0);
+
+	/* Creates write-only. */
+	TEST_ASSERT(sem_open(semaphore_name, (O_CREAT | O_EXCL), S_IWUSR, 0) != SEM_FAILED);
+	TEST_ASSERT(sem_open(semaphore_name, O_CREAT, 0, 0) == SEM_FAILED);
+	TEST_ASSERT(sem_open(semaphore_name, O_CREAT, S_IRUSR, 0) == SEM_FAILED);
+	TEST_ASSERT(sem_open(semaphore_name, O_CREAT, S_IWUSR, 0) == SEM_FAILED);
+	TEST_ASSERT(sem_open(semaphore_name, O_CREAT, (S_IRUSR | S_IWUSR), 0) == SEM_FAILED);
+	TEST_ASSERT(sem_open(semaphore_name, 0) == SEM_FAILED);
+	TEST_ASSERT(sem_unlink(semaphore_name) == 0);
+}
+
 /**
  * @brief Unit tests.
  */
 struct test posix_semaphore_tests_fault[] = {
-	{ test_posix_semaphore_invalid_create, "Invalid Create" },
-	{ test_posix_semaphore_bad_create,     "Bad Create"     },
-	{ test_posix_semaphore_double_create,  "Double Create"  },
-	{ test_posix_semaphore_invalid_open,   "Invalid Open"   },
-	{ test_posix_semaphore_bad_open,       "Bad Open"       },
-	{ test_posix_semaphore_invalid_unlink, "Invalid Unlink" },
-	{ test_posix_semaphore_bad_unlink,     "Bad Unlink"     },
-	{ test_posix_semaphore_double_unlink,  "Double Unlink"  },
-	{ test_posix_semaphore_invalid_close,  "Invalid Close"  },
-	{ test_posix_semaphore_bad_close,      "Bad Close"      },
-	{ test_posix_semaphore_double_close,   "Double Close"   },
-	{ test_posix_semaphore_invalid_post,   "Invalid Post"   },
-	{ test_posix_semaphore_bad_post,       "Bad Post"       },
-	{ test_posix_semaphore_invalid_wait,   "Invalid Wait"   },
-	{ test_posix_semaphore_bad_wait,       "Bad Wait"       },
-	{ NULL,                                NULL             },
+	{ test_posix_semaphore_invalid_create,    "Invalid Create"    },
+	{ test_posix_semaphore_bad_create,        "Bad Create"        },
+	{ test_posix_semaphore_double_create,     "Double Create"     },
+	{ test_posix_semaphore_invalid_open,      "Invalid Open"      },
+	{ test_posix_semaphore_bad_open,          "Bad Open"          },
+	{ test_posix_semaphore_invalid_unlink,    "Invalid Unlink"    },
+	{ test_posix_semaphore_bad_unlink,        "Bad Unlink"        },
+	{ test_posix_semaphore_double_unlink,     "Double Unlink"     },
+	{ test_posix_semaphore_invalid_close,     "Invalid Close"     },
+	{ test_posix_semaphore_bad_close,         "Bad Close"         },
+	{ test_posix_semaphore_double_close,      "Double Close"      },
+	{ test_posix_semaphore_invalid_post,      "Invalid Post"      },
+	{ test_posix_semaphore_bad_post,          "Bad Post"          },
+	{ test_posix_semaphore_invalid_wait,      "Invalid Wait"      },
+	{ test_posix_semaphore_bad_wait,          "Bad Wait"          },
+	{ test_posix_semaphore_permission_denied, "Permission denied" },
+	{ NULL,                                   NULL                },
 };

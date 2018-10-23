@@ -24,7 +24,8 @@
 #define NANVIX_HAL_H_
 
 	#include <stddef.h>
-	#include <inttypes.h>
+	#include <stdarg.h>
+	#include <sys/types.h>
 
 	#ifdef _KALRAY_MPPA256
 		#include <nanvix/arch/mppa.h>
@@ -161,6 +162,23 @@
 		#error "undefined symbol: HAL_MAILBOX_MSG_SIZE"
 	#endif
 
+	/**
+	 * @brief Requests for mailbox_ioctl().
+	 */
+	/**@{*/
+
+		/**
+		 * @brief Get the amount of data transferred so far.
+		 */
+		#define MAILBOX_IOCTL_GET_VOLUME  1
+
+		/**
+		 * @brief Get the cumulative transfer latency.
+		 */
+		#define MAILBOX_IOCTL_GET_LATENCY 2
+
+	/**@}*/
+
 #endif /* (__NEED_HAL_MAILBOX_ || __NEED_HAL_CONST_) */
 
 #ifdef __NEED_HAL_MAILBOX_
@@ -172,6 +190,7 @@
 	extern int hal_mailbox_close(int);
 	extern size_t hal_mailbox_write(int, const void *, size_t);
 	extern size_t hal_mailbox_read(int, void *, size_t);
+	extern int hal_mailbox_ioctl(int, unsigned, va_list);
 
 #endif /* __NEED_HAL_MAILBOX_ */
 
@@ -191,6 +210,23 @@
 		#error "undefined symbol: HAL_PORTAL_MAX_SIZE"
 	#endif
 
+	/**
+	 * @brief Requests for portal_ioctl().
+	 */
+	/**@{*/
+
+		/**
+		 * @brief Get the amount of data transferred so far.
+		 */
+		#define PORTAL_IOCTL_GET_VOLUME  1
+
+		/**
+		 * @brief Get the cumulative transfer latency.
+		 */
+		#define PORTAL_IOCTL_GET_LATENCY 2
+
+	/**@}*/
+
 #endif /* (__NEED_HAL_PORTAL_ || __NEED_HAL_CONST_) */
 
 #ifdef __NEED_HAL_PORTAL_
@@ -199,10 +235,14 @@
 	extern int hal_portal_allow(int, int);
 	extern int hal_portal_create(int);
 	extern int hal_portal_open(int);
-	extern int hal_portal_read(int, void *, size_t);
+	extern ssize_t hal_portal_read(int, void *, size_t);
+	extern int hal_portal_aread(int, void *, size_t);
+	extern ssize_t hal_portal_wait(int);
 	extern int hal_portal_write(int, const void *, size_t);
+	extern int hal_portal_awrite(int, const void *, size_t);
 	extern int hal_portal_close(int);
 	extern int hal_portal_unlink(int);
+	extern int hal_portal_ioctl(int, unsigned, va_list);
 
 #endif /* __NEED_HAL_PORTAL_ */
 

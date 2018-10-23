@@ -86,9 +86,22 @@ int name_init(void)
 
 /**
  * @brief Closes the naming client.
+ *
+ * @returns Upon successful completion, zero is returned. Upon
+ * failure, a negative error code is returned instead.
  */
-void name_finalize(void)
+int name_finalize(void)
 {
+	/* Nothing to do. */
+	if (!initialized)
+		return (0);
+
+	if (sys_mailbox_close(server) < 0)
+		return (-EAGAIN);
+
+	initialized = 0;
+
+	return (0);
 }
 
 /*============================================================================*
@@ -152,8 +165,8 @@ int name_lookup(char *name)
 		return (-EAGAIN);
 
 	/* Build operation header. */
-	msg.source = sys_get_node_num();
-	msg.op = NAME_LOOKUP;
+	msg.header.source = sys_get_node_num();
+	msg.header.opcode = NAME_LOOKUP;
 	msg.nodenum = -1;
 	strcpy(msg.name, name);
 
@@ -208,8 +221,8 @@ int name_link(int nodenum, const char *name)
 		return (-EAGAIN);
 
 	/* Build operation header. */
-	msg.source = sys_get_node_num();
-	msg.op = NAME_LINK;
+	msg.header.source = sys_get_node_num();
+	msg.header.opcode = NAME_LINK;
 	msg.nodenum = nodenum;
 	strcpy(msg.name, name);
 
@@ -225,10 +238,10 @@ int name_link(int nodenum, const char *name)
 
 	pthread_mutex_unlock(&lock);
 
-	if ((msg.op != NAME_SUCCESS) && (msg.op != NAME_FAIL))
+	if ((msg.header.opcode != NAME_SUCCESS) && (msg.header.opcode != NAME_FAIL))
 		return (-EAGAIN);
 
-	if (msg.op == NAME_SUCCESS)
+	if (msg.header.opcode == NAME_SUCCESS)
 	{
 		strcpy(process_name[sys_get_core_id()], name);
 
@@ -271,8 +284,8 @@ int name_unlink(const char *name)
 		return (-EAGAIN);
 
 	/* Build operation header. */
-	msg.source = sys_get_node_num();
-	msg.op = NAME_UNLINK;
+	msg.header.source = sys_get_node_num();
+	msg.header.opcode = NAME_UNLINK;
 	msg.nodenum = -1;
 	strcpy(msg.name, name);
 
@@ -287,10 +300,10 @@ int name_unlink(const char *name)
 
 	pthread_mutex_unlock(&lock);
 
-	if ((msg.op != NAME_SUCCESS) && (msg.op != NAME_FAIL))
+	if ((msg.header.opcode != NAME_SUCCESS) && (msg.header.opcode != NAME_FAIL))
 		return (-EAGAIN);
 
-	if (msg.op == NAME_SUCCESS)
+	if (msg.header.opcode == NAME_SUCCESS)
 		return (0);
 
 	return (-1);

@@ -24,6 +24,7 @@
 #define NANVIX_SPAWNER_H_
 
 	#include <pthread.h>
+	#include <nanvix/message.h>
 
 	/**
 	 * @brief Server information.
@@ -35,39 +36,40 @@
 		int runlevel;           /**< Server runlevel. */
 	};
 
+    /**
+	 * @brief Operations on servers.
+	 */
+	/**@{*/
+	#define SHUTDOWN_REQ 0 /**< Shutdown request. */
+	/**@}*/
+
 	/**
 	 * @brief Spawner message.
 	 */
 	struct spawner_message
 	{
-		char unused[60]; /**< Not used. */
-		int status;      /**< Status.   */
+		message_header header; /**< Message header. */
+		int status;            /**< Status.         */
+		char unused[112];      /**< Not used.       */
 	};
 
 	/* Forward definitions. */
 	extern const char *spawner_name;
-	extern const int spawner_shutdown;
 	extern const int spawner_nservers;
 	extern struct serverinfo *spawner_servers;
+	extern void (*spawner_shutdown)(void);
 	extern void (*test_kernel_fn)(const char *);
 	extern int (*main2_fn)(int, const char **);
 	extern void spawner_init(void);
 	extern void spawner_finalize(void);
-	extern void spawners_sync(int);
+	extern void spawners_sync(void);
 	extern void spawner_ack(void);
+	extern void server_sync(void);
 
 		/**
 	 * @brief Number of runlevels.
 	 */
 	#define NR_RUNLEVELS 4
-
-	/**
-	 * @brief Shutdown flags.
-	 */
-	/**@{*/
-	#define SHUTDOWN_DISABLE 0 /**< Disable shutdown. */
-	#define SHUTDOWN_ENABLE  1 /**< Enable shutdown.  */
-	/**@}*/
 
 	/**
 	 * @brief Declares the name of the spawner.
@@ -83,7 +85,7 @@
 	 * @param x Enable shutdown?
 	 */
 	#define SPAWNER_SHUTDOWN(x) \
-		const int spawner_shutdown = x;
+		void (*spawner_shutdown)(void) = x;
 
 	/**
 	 * @brief Declares the user-level main function.

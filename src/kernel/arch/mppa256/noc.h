@@ -33,7 +33,7 @@
 	extern int noctag_portal(int);
 	extern void noc_get_remotes(char *, int);
 	extern void noc_get_names(char *, const int *, int);
-	extern int noc_get_dma(int);
+	extern int noc_get_dma(int, int);
 	extern int noc_is_ionode(int);
 	extern int noc_is_ionode0(int);
 	extern int noc_is_ionode1(int);

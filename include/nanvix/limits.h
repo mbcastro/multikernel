@@ -31,7 +31,7 @@
 	 *
 	 * @note The null character is included.
 	 */
-	#define NANVIX_PROC_NAME_MAX 56
+	#define NANVIX_PROC_NAME_MAX 112
 
 	/**
 	 * @brief Maximum number of processes.
@@ -54,6 +54,13 @@
 	 * @note The null character is included.
 	 */
 	#define NANVIX_SEM_NAME_MAX (HAL_MAILBOX_MSG_SIZE - 10)
+
+	/**
+	 * @brief Maximum length of a message queue name.
+	 *
+	 * @note The null character is included.
+	 */
+	#define NANVIX_MQUEUE_NAME_MAX (HAL_MAILBOX_MSG_SIZE - 10)
 
 #endif /* NANVIX_LIMITS_H_ */
 

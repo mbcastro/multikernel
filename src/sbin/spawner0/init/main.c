@@ -35,17 +35,19 @@ extern void test_kernel_sys_sync(void);
 extern void test_kernel_sys_mailbox(void);
 extern void test_kernel_sys_portal(void);
 extern int shm_server(int, int);
+extern int mqueue_server(int, int);
 
 /**
  * @brief Number of servers launched from this spawner.
  */
-#define NR_SERVERS 1
+#define NR_SERVERS 2
 
 /**
  * @brief Servers.
  */
 static struct serverinfo servers[NR_SERVERS] = {
-	{ shm_server, SHM_SERVER_NODE, 1 }
+	{ shm_server,    SHM_SERVER_NODE,    1 },
+	{ mqueue_server, MQUEUE_SERVER_NODE, 1 }
 };
 
 /**
@@ -135,26 +137,52 @@ void spawner_ack(void)
 }
 
 /**
- * @brief Sync spawners.
+ * @brief Sync with server.
  */
-void spawners_sync(int requested_acks)
+void server_sync(void)
 {
 	struct spawner_message msg;
 
-	/* Wait for acknowledge message of all servers. */
-	for (int i = 0; i < requested_acks; i++)
-	{
-		assert(sys_mailbox_read(inbox, &msg, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
-		assert(msg.status == 0);
-	}
+	assert(sys_mailbox_read(inbox, &msg, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
+	assert(msg.status == 0);
+}
 
-	/* Synchronization point. */
+/**
+ * @brief Sync spawners.
+ */
+void spawners_sync(void)
+{
 	assert(sys_sync_wait(syncid_local) == 0);
 	assert(sys_sync_signal(syncid_remote) == 0);
 }
 
+/**
+ * @brief Shutdown servers.
+ */
+void servers_shutdown(void)
+{
+    int shutdown_order[] = {
+        MQUEUE_SERVER_NODE,
+        SHM_SERVER_NODE,
+        RMEM_SERVER_NODE,
+        SEMAPHORE_SERVER_NODE,
+        NAME_SERVER_NODE
+    };
+
+	int outbox;
+	struct spawner_message msg = { .header.opcode = SHUTDOWN_REQ };
+
+    /* Shutdown request */
+    for (int i = 0; i < 5; ++i)
+    {
+        assert((outbox = sys_mailbox_open(shutdown_order[i])) >= 0);
+	    assert(sys_mailbox_write(outbox, &msg, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
+	    assert(sys_mailbox_close(outbox) == 0);
+    }
+}
+
 SPAWNER_NAME("spawner0")
-SPAWNER_SHUTDOWN(SHUTDOWN_ENABLE)
+SPAWNER_SHUTDOWN(servers_shutdown)
 SPAWNER_SERVERS(NR_SERVERS, servers)
 SPAWNER_MAIN2(main2)
 SPAWNER_KERNEL_TESTS(test_kernel)

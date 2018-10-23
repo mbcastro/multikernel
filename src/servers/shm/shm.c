@@ -21,6 +21,7 @@
  */
 
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -120,6 +121,42 @@ int shm_is_remove(int shmid)
 int shm_is_owner(int shmid, int node)
 {
 	return (regions[shmid].owner == node);
+}
+
+/*============================================================================*
+ * shm_is_readable()                                                          *
+ *============================================================================*/
+
+/**
+ * @brief Asserts whether or not a given shared memory region has
+ * read permission.
+ *
+ * @param shmid Target shared memory region.
+ *
+ * @returns Non-zero if the target shared memory region is readable,
+ * and zero otherwise.
+ */
+int shm_is_readable(int shmid)
+{
+	return (regions[shmid].mode & S_IRUSR);
+}
+
+/*============================================================================*
+ * shm_is_writable()                                                          *
+ *============================================================================*/
+
+/**
+ * @brief Asserts whether or not a given shared memory region has
+ * write permission.
+ *
+ * @param shmid Target shared memory region.
+ *
+ * @returns Non-zero if the target shared memory region is writable,
+ * and zero otherwise.
+ */
+int shm_is_writable(int shmid)
+{
+	return (regions[shmid].mode & S_IWUSR);
 }
 
 /*============================================================================*

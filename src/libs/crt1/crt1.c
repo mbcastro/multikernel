@@ -30,6 +30,8 @@
 
 /* Forward definitions. */
 extern int main2(int, const char **);
+extern int runtime_setup(int);
+extern int runtime_cleanup(void);
 
 /**
  * @brief Bootstrap for a user application.

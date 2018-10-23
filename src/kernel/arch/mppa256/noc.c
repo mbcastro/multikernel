@@ -218,17 +218,18 @@ int noc_is_cnode(int nodeid)
  *============================================================================*/
 
 /**
- * @brief Gets the DMA channel of a NoC node.
+ * @brief Gets the DMA channel to use in a data transfer.
  *
- * @param nodeid ID of the target NoC node.
+ * @param local  ID of local NoC node.
+ * @param remote ID of remote NoC node.
  *
  * @note This function is non-blocking.
  * @note This function is thread-safe.
  */
-int noc_get_dma(int nodeid)
+int noc_get_dma(int local, int remote)
 {
-	return (noc_is_cnode(nodeid) ?
-			nodeid%NR_CCLUSTER_DMA : nodeid%NR_IOCLUSTER_DMA);
+	return (noc_is_cnode(local) ?
+			local%NR_CCLUSTER_DMA : remote%NR_IOCLUSTER_DMA);
 }
 
 /*=======================================================================*
@@ -357,11 +358,11 @@ int noctag_mailbox(int nodeid)
  */
 int noctag_portal(int nodeid)
 {
-	if ((nodeid >= IOCLUSTER0) && (nodeid < (IOCLUSTER0 + NR_IOCLUSTER_DMA)))
+	if (noc_is_ionode0(nodeid))
 	{
 		return (NOCTAG_PORTAL_OFF + nodeid%NR_IOCLUSTER_DMA);
 	}
-	else if ((nodeid >= IOCLUSTER1) && (nodeid < (IOCLUSTER1 + NR_IOCLUSTER_DMA)))
+	else if (noc_is_ionode1(nodeid))
 	{
 		return (NOCTAG_PORTAL_OFF + NR_IOCLUSTER_DMA + nodeid%NR_IOCLUSTER_DMA);
 	}

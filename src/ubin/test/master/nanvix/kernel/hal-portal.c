@@ -37,7 +37,12 @@
 /**
  * @brief Data Size.
  */
-#define DATA_SIZE 128
+#define DATA_SIZE (1024*1024)
+
+/**
+ * @brief Data buffer.
+ */
+static char buffer[DATA_SIZE];
 
 /*============================================================================*
  * Utilities                                                                  *
@@ -214,7 +219,6 @@ static void test_sys_portal_read_write2_cc(void)
 	for (int i = 0; i < NANVIX_PROC_MAX; i++)
 	{
 		int outportal;
-		char buffer[DATA_SIZE];
 
 		TEST_ASSERT((outportal = sys_portal_open(i)) >=0);
 		TEST_ASSERT((sys_portal_write(
@@ -269,8 +273,6 @@ static void test_sys_portal_read_write3_cc(void)
 	/* Receive data. */
 	for (int i = 0; i < NANVIX_PROC_MAX; i++)
 	{
-		char buffer[DATA_SIZE];
-
 		TEST_ASSERT((sys_portal_allow(
 			inportal,
 			i) == 0)

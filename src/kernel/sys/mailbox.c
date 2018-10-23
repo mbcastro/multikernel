@@ -147,3 +147,24 @@ ssize_t sys_mailbox_read(int mbxid, void *buf, size_t n)
 	
 	return (hal_mailbox_read(mbxid, buf, n));
 }
+
+/**
+ * @brief Performs control operations in a mailbox.
+ *
+ * @param mbxid   Target mailbox.
+ * @param request Request.
+ *
+ * @param Upon successful completion, zero is returned. Upon failure,
+ * a negative error code is returned instead.
+ */
+int sys_mailbox_ioctl(int mbxid, unsigned request, ...)
+{
+	int ret;
+	va_list args;
+
+	va_start(args, request);
+	ret = hal_mailbox_ioctl(mbxid, request, args);
+	va_end(args);
+
+	return (ret);
+}

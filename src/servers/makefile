@@ -21,7 +21,8 @@
 #
 
 # C Source Files
-SRC = $(wildcard shm/*.c) \
+SRC = $(wildcard mqueue/*.c) \
+      $(wildcard shm/*.c)    \
       name-server.c semaphore-server.c rmem-server.c
 
 # Object Files

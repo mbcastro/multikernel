@@ -24,12 +24,15 @@
 #define NANVIX_NAME_H_
 
 	#include <stdint.h>
+    
 	#include <nanvix/limits.h>
+	#include <nanvix/message.h>
 
 	/**
 	 * @brief Operation types for name server.
 	 */
 	/**@{*/
+	#define NAME_EXIT    0 /**< Exit request.            */
 	#define NAME_LOOKUP  1 /**< lookup a name.           */
 	#define NAME_LINK    2 /**< Add a new name.          */
 	#define NAME_UNLINK  3 /**< Remove a name.           */
@@ -42,8 +45,7 @@
 	 */
 	struct name_message
 	{
-		uint16_t source;                 /**< Source cluster. */
-		uint16_t op;                     /**< Operation.      */
+		message_header header;           /**< Message header. */
 		int32_t nodenum;                 /**< NoC node.       */
 		char name[NANVIX_PROC_NAME_MAX]; /**< Portal name.    */
 	};

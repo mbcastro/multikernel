@@ -33,11 +33,22 @@ extern int name_init(void);
 extern int meminit(void);
 extern int nanvix_sem_init(void);
 extern int nanvix_shm_init(void);
+extern int nanvix_mqueue_init(void);
+extern int nanvix_shm_finalize(void);
+extern int memfinalize(void);
+extern int nanvix_sem_finalize(void);
+extern int name_finalize(void);
+extern int nanvix_mqueue_cleanup(void);
 
 /**
  * @brief Global runtime lock.
  */
 static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+
+/**
+ * @brief Current level setup.
+ */
+int current_level = 0;
 
 /**
  *
@@ -83,16 +94,15 @@ int runtime_setup(int level)
 				goto error;
 			if (portal_setup(nodenum) != 0)
 				goto error;
-		}	
+		}
 		
 		/* Initialize naming service. */
 		if (level >= 1)
 			name_init();
 
-		/* Initialize named services. */
+		/* Initzialize named services. */
 		if (level >= 2)
 		{
-			name_init();
 			if (meminit() != 0)
 				goto error;
 			if (nanvix_sem_init() != 0)
@@ -104,9 +114,12 @@ int runtime_setup(int level)
 		{
 			if (nanvix_shm_init() != 0)
 				goto error;
+			if (nanvix_mqueue_init() != 0)
+				goto error;
 		}
 
 		initialized[nodenum] = 1;
+		current_level = level;
 
 	runtime_unlock();
 
@@ -133,6 +146,31 @@ int runtime_cleanup(void)
 		if (!initialized[nodenum])
 			goto error;
 
+		/* Finalize Shared Memory client. */
+		if (current_level >= 3)
+		{
+			if (nanvix_mqueue_cleanup() != 0)
+				goto error;
+			if (nanvix_shm_finalize() != 0)
+				goto error;
+		}
+
+		/* Finalize RMem and Semaphore clients. */
+		if (current_level >= 2)
+		{
+			if (nanvix_sem_finalize() != 0)
+				goto error;
+			if (memfinalize() != 0)
+				goto error;
+		}
+
+		/* Finalize Naming client. */
+		if (current_level >= 1)
+		{
+			if (name_finalize() != 0)
+				goto error;
+		}
+		
 		/* Destroy underlying input mailbox. */
 		if (mailbox_cleanup() != 0)
 			goto error;
@@ -142,6 +180,7 @@ int runtime_cleanup(void)
 			goto error;
 
 		initialized[nodenum] = 0;
+		current_level = 0;
 
 	runtime_unlock();
 

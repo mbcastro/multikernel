@@ -25,6 +25,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #include <nanvix/spawner.h>
 #include <nanvix/klib.h>
@@ -51,6 +52,18 @@ static struct {
 	int nodenum;                     /**< NoC node.     */
 	char name[NANVIX_PROC_NAME_MAX]; /**< Process name. */
 } names[NANVIX_NR_NODES];
+
+/**
+ * @brief Server stats.
+ */
+static struct
+{
+	int nlinks;         /**< Number of name link requests.   */
+	int nunlinks;       /**< Number of unlink name requests. */
+	int nlookups;       /**< Number of lookup requests.      */
+	uint64_t tstart;    /**< Start time.                     */
+	uint64_t tshutdown; /**< Shutdown time.                  */
+} stats = { 0, 0, 0, 0, 0 };
 
 /*===================================================================*
  * _name_init()                                                       *
@@ -202,6 +215,7 @@ int name_server(int inbox, int inportal)
 {
 	int tmp;
 	int source;
+	int shutdown = 0;
 
 	((void) inportal);
 
@@ -209,76 +223,76 @@ int name_server(int inbox, int inportal)
 
 	_name_init();
 
-	printf("[nanvix][name] server alive\n");
-
 	spawner_ack();
 
-	while(1)
+	printf("[nanvix][name] server alive\n");
+	stats.tstart = sys_timer_get();
+
+	while (!shutdown)
 	{
 		struct name_message msg;
 
 		assert(sys_mailbox_read(inbox, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
 
 		/* Handle name requests. */
-		switch (msg.op)
+		switch (msg.header.opcode)
 		{
 			/* Lookup. */
 			case NAME_LOOKUP:
+				stats.nlookups++;
 				msg.nodenum = _name_lookup(msg.name);
 
 				/* Send response. */
-				source = sys_mailbox_open(msg.source);
+				source = sys_mailbox_open(msg.header.source);
 
 				assert(source >= 0);
-
 				assert(sys_mailbox_write(source, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
-
 				assert(sys_mailbox_close(source) == 0);
 
 				break;
 
 			/* Add name. */
 			case NAME_LINK:
+				stats.nlinks++;
 				tmp = nr_registration;
 
 				if (_name_link(msg.nodenum, msg.name) == (tmp + 1))
-					msg.op = NAME_SUCCESS;
+					msg.header.opcode = NAME_SUCCESS;
 				else
-					msg.op = NAME_FAIL;
+					msg.header.opcode = NAME_FAIL;
 
 				assert(nr_registration >= 0);
 
 				/* Send acknowledgement. */
-				source = sys_mailbox_open(msg.source);
-
+				source = sys_mailbox_open(msg.header.source);
 				assert(source >= 0);
-
 				assert(sys_mailbox_write(source, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
-
 				assert(sys_mailbox_close(source) == 0);
 
 				break;
 
 			/* Remove name. */
 			case NAME_UNLINK:
+				stats.nunlinks++;
 				tmp = nr_registration;
 
 				if ((tmp > 0) && (_name_unlink(msg.name) == (tmp - 1)))
-					msg.op = NAME_SUCCESS;
+					msg.header.opcode = NAME_SUCCESS;
 				else
-					msg.op = NAME_FAIL;
+					msg.header.opcode = NAME_FAIL;
 
 				assert(nr_registration >= 0);
 
 				/* Send acknowledgement. */
-				source = sys_mailbox_open(msg.source);
-
+				source = sys_mailbox_open(msg.header.source);
 				assert(source >= 0);
-
 				assert(sys_mailbox_write(source, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
-
 				assert(sys_mailbox_close(source) == 0);
 
+				break;
+
+			case NAME_EXIT:
+				shutdown = 1;
 				break;
 
 			/* Should not happen. */
@@ -287,8 +301,14 @@ int name_server(int inbox, int inportal)
 		}
 	}
 
-	/* House keeping. */
-	sys_mailbox_unlink(inbox);
+	/* Dump statistics. */
+	stats.tshutdown = sys_timer_get();
+	printf("[nanvix][name] trunning=%.6lf nlinks=%d nunlinks=%d nlookups=%d\n",
+			(stats.tshutdown - stats.tstart)/((double) sys_get_core_freq()),
+			stats.nlinks, stats.nunlinks, stats.nlookups
+	);
+
+	printf("[nanvix][name] shutting down server\n");
 
 	return (EXIT_SUCCESS);
 }

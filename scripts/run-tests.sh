@@ -22,71 +22,99 @@
 
 source "scripts/arch/mppa256.sh"
 
+# Command Parameters
+test=$1 # Target test.
+mode=$2 # Test mode.
+
+# Missing parameters.
+if [ -z $test ];
+then
+	echo "Missing arguments!"
+	echo "Usage: $0 <test name> [mode]"
+	exit 1 
+fi
+
+#
+# Long test mode.
+#
+if [ -z $mode ];
+then
+	mode="--long"
+fi
+
 #
 # Stops regression test if running running short test.
 #
 function stop_if_short_test
 {
-	if [ $1 -a  $1 == "--short" ];
+	if [ $mode == "--short" ];
 	then
 		exit 0
 	fi
 }
 
-case "$1" in
+case $test in
+	all)
+		mode="--long"
+	;&
+	mqueue)
+		echo "=== Running Message Queue Tests"
+		run2 "nanvix-posix-debug.img" "/test-driver" "--debug --mqueue"
+		stop_if_short_test
+	;&
 	shm)
 		echo "=== Running Shared Memory Region Tests"
 		run2 "nanvix-posix-debug.img" "/test-driver" "--debug --shm"
-		stop_if_short_test $2
+		stop_if_short_test
 	;&
 	rmem)
 		echo "=== Running RMem Tests"
 		run2 "nanvix-runtime-debug.img" "/test-driver" "--debug --rmem"
-		stop_if_short_test $2
+		stop_if_short_test
 	;&
 	semaphore)
 		echo "=== Running Semaphore Tests"
 		run2 "nanvix-posix-debug.img" "/test-driver" "--debug --semaphore"
-		stop_if_short_test $2
+		stop_if_short_test
 	;&
 	portal)
 		echo "=== Running Nammed Portal Tests"
 		run2 "nanvix-runtime-debug.img" "/test-driver" "--debug --portal"
-		stop_if_short_test $2
+		stop_if_short_test
 	;&
 	mailbox)
 		echo "=== Running Nammed Mailbox Tests"
 		run2 "nanvix-runtime-debug.img" "/test-driver" "--debug --mailbox"
-		stop_if_short_test $2
+		stop_if_short_test
 	;&
 	barrier)
 		echo "=== Running Barrier Tests"
 		run2 "nanvix-runtime-debug.img" "/test-driver" "--debug --barrier"
-		stop_if_short_test $2
+		stop_if_short_test
 	;&
 	name)
 		echo "=== Running Naming Service Tests"
 		run2 "nanvix-runtime-debug.img" "/test-driver" "--debug --name"
-		stop_if_short_test $2
+		stop_if_short_test
 	;&
 	kernel-portal)
 		echo "=== Running Unnamed Portal Tests"
 		run2 "nanvix-kernel-debug.img" "/test-driver" "--debug --hal-portal"
-		stop_if_short_test $2
+		stop_if_short_test
 	;&
 	kernel-mailbox)
 		echo "=== Running Unnamed Mailbox Tests"
 		run2 "nanvix-kernel-debug.img" "/test-driver" "--debug --hal-mailbox"
-		stop_if_short_test $2
+		stop_if_short_test $mode
 	;&
 	kernel-sync)
 		echo "=== Running Unnamed Sync Tests"
 		run2 "nanvix-kernel-debug.img" "/test-driver" "--debug --hal-sync"
-		stop_if_short_test $2
+		stop_if_short_test $mode
 	;&
 	kernel-core)
 		echo "=== Running Core and NoC Interface Tests"
 		run2 "nanvix-kernel-debug.img" "/test-driver" "--debug --hal-core"
-		stop_if_short_test $2
+		stop_if_short_test $mode
 	;&
 esac
