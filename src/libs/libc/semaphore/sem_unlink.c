@@ -24,7 +24,7 @@
 #include <semaphore.h>
 #include <string.h>
 
-#include <nanvix/semaphore.h>
+#include <nanvix/semaphores.h>
 
 /**
  * @brief Unlinks a named semaphore.

@@ -30,7 +30,7 @@
 #include <mppaipc.h>
 
 #include <nanvix/syscalls.h>
-#include <nanvix/semaphore.h>
+#include <nanvix/semaphores.h>
 #include <nanvix/limits.h>
 #include <nanvix/const.h>
 #include <nanvix/pm.h>

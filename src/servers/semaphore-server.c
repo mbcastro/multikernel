@@ -32,7 +32,7 @@
 #include <nanvix/syscalls.h>
 #include <nanvix/pm.h>
 #include <nanvix/name.h>
-#include <nanvix/semaphore.h>
+#include <nanvix/semaphores.h>
 
 #ifdef DEBUG_SEMAPHORE
 	#define semaphore_debug(fmt, ...) debug("semaphore", fmt, __VA_ARGS__)

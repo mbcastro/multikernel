@@ -25,7 +25,7 @@
 #include <stdarg.h>
 #include <string.h>
 
-#include <nanvix/semaphore.h>
+#include <nanvix/semaphores.h>
 
 #include "semaphore.h"
 

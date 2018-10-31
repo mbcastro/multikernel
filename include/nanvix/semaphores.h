@@ -26,8 +26,8 @@
 	#include <stdint.h>
 	#include <fcntl.h>
 
-	#include <nanvix/limits.h>
-	#include <nanvix/message.h>
+	#include "limits.h"
+	#include "message.h"
 
 	/**
 	 * @brief Maximal number of semaphores in the system.

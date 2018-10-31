@@ -26,7 +26,7 @@
 #include <stdio.h>
 
 #include <nanvix/limits.h>
-#include <nanvix/semaphore.h>
+#include <nanvix/semaphores.h>
 
 #include "test.h"
 

@@ -23,7 +23,7 @@
 #include <errno.h>
 #include <semaphore.h>
 
-#include <nanvix/semaphore.h>
+#include <nanvix/semaphores.h>
 
 #include "semaphore.h"
 

@@ -20,8 +20,8 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef SEMAPHORE_H_
-#define SEMAPHORE_H_
+#ifndef NANVIX_SEMAPHORE_H_
+#define NANVIX_SEMAPHORE_H_
 
 	#include <fcntl.h>
 	#include <time.h>
@@ -52,4 +52,4 @@
 	extern int sem_unlink(const char *);
 	extern int sem_wait(sem_t *);
 
-#endif /* SEMAPHORE_H_ */
+#endif /* NANVIX_SEMAPHORE_H_ */

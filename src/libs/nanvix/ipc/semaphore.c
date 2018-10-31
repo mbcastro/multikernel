@@ -27,7 +27,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-#include <nanvix/semaphore.h>
+#include <nanvix/semaphores.h>
 #include <nanvix/syscalls.h>
 #include <nanvix/pm.h>
 
