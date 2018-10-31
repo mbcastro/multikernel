@@ -34,7 +34,7 @@ export ELFBIN = $(BINDIR)/test/posix-semaphore-slave
 # Builds the kernel.
 all: $(OBJ)
 	mkdir -p $(BINDIR)/test/
-	$(CC) $(LDFLAGS) $(OBJ) $(CRT1) -o $(ELFBIN) $(LIBS)
+	$(CC) $(LDFLAGS) $(OBJ) $(CRT1) -o $(ELFBIN) $(LIBC) $(LIBS)
 
 # Builds object files.
 %.o: %.c

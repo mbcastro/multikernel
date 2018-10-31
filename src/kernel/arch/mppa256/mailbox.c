@@ -29,12 +29,10 @@
 #define __NEED_HAL_NOC_
 #define __NEED_HAL_MAILBOX_
 #define __NEED_HAL_PERFORMANCE_
-#include <nanvix/hal.h>
-#include <nanvix/klib.h>
+#include <hal.h>
+#include <klib.h>
 
 #include "noc.h"
-
-#define DUP_NOC_FD
 
 /**
  * @brief Mailbox flags.

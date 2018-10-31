@@ -24,7 +24,7 @@
 #define NANVIX_LIMITS_H_
 
 	#define __NEED_HAL_CONST_
-	#include <nanvix/hal.h>
+	#include "hal.h"
 
 	/**
 	 * @brief Maximum length of a process name.

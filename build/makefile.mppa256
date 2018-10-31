@@ -58,13 +58,13 @@ endif
 ifeq ($(ARCH),k1bdp)
 	export LIBMPPAIPC = $(TOOLCHAIN)/k1-nodeos/lib/mOS/libmppaipc.a
 	export LIBKERNEL = $(LIBDIR)/libkernel-k1bdp.a
-	export LIBUSER = $(LIBDIR)/libuser-k1bdp.a
-	export LIBS=$(LIBUSER) $(LIBKERNEL) $(LIBMPPAIPC)
+	export LIBNANVIX = $(LIBDIR)/libnanvix-k1bdp.a
+	export LIBC = $(LIBDIR)/libc-k1bdp.a
 else
 	export LIBMPPAIPC = $(TOOLCHAIN)/k1-rtems/lib/libmppaipc.a
 	export LIBKERNEL = $(LIBDIR)/libkernel-k1bio.a
-	export LIBUSER = $(LIBDIR)/libuser-k1bio.a
 	export LIBNANVIX = $(LIBDIR)/libnanvix-k1bio.a
+	export LIBC = $(LIBDIR)/libc-k1bio.a
 	export LIBSERVERS = $(LIBDIR)/libservers.a
-	export LIBS=$(LIBNANVIX) $(LIBSERVERS) $(LIBUSER) $(LIBKERNEL) $(LIBMPPAIPC)
 endif
+export LIBS = $(LIBNANVIX) $(LIBKERNEL) $(LIBMPPAIPC)

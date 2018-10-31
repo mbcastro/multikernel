@@ -21,7 +21,7 @@
  */
 
 #define __NEED_HAL_CORE_
-#include <nanvix/hal.h>
+#include <hal.h>
 
 /**
  * @brief Gets the ID of the underlying cluster.

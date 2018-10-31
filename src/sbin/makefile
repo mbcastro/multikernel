@@ -24,6 +24,8 @@
 .PHONY: spawner0
 .PHONY: spawner1
 
+export CFLAGS += -I $(INCDIR)
+
 #===============================================================================
 
 # Builds everything.

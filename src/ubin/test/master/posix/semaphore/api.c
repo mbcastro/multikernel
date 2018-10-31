@@ -25,7 +25,28 @@
 #include <stdio.h>
 #include <semaphore.h>
 
+#ifdef _KALRAY_MPPA256
+
 #include <mppaipc.h>
+
+#else
+
+#define UNUSED(x) ((void)(x))
+
+static inline int mppa_spawn(int a, void *b, const void *c, void *d, void *e)
+{
+	UNUSED(a); UNUSED(b); UNUSED(c); UNUSED(d); UNUSED(e);
+	return (0);
+}
+
+static inline int mppa_waitpid(int a, void *b, int c)
+{
+	UNUSED(a); UNUSED(b); UNUSED(c);
+
+	return (0);
+}
+
+#endif
 
 #include <nanvix/limits.h>
 #include <nanvix/syscalls.h>

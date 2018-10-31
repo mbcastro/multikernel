@@ -25,8 +25,8 @@
 
 	#include <stdint.h>
     
-	#include <nanvix/limits.h>
-	#include <nanvix/message.h>
+	#include "limits.h"
+	#include "message.h"
 
 	/**
 	 * @brief Operation types for name server.

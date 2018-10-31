@@ -28,7 +28,7 @@
 	#include <sys/types.h>
 
 	#ifdef _KALRAY_MPPA256
-		#include <nanvix/arch/mppa.h>
+		#include "arch/mppa.h"
 	#endif
 
 /*============================================================================*

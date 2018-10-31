@@ -29,8 +29,8 @@
 #define __NEED_HAL_NOC_
 #define __NEED_HAL_PORTAL_
 #define __NEED_HAL_PERFORMANCE_
-#include <nanvix/hal.h>
-#include <nanvix/klib.h>
+#include <hal.h>
+#include <klib.h>
 
 #include "noc.h"
 

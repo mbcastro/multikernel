@@ -25,8 +25,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include <mppaipc.h>
-
 #include <nanvix/syscalls.h>
 #include <nanvix/const.h>
 

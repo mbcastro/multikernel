@@ -26,6 +26,8 @@
 .PHONY: libc
 .PHONY: nanvix
 
+export CFLAGS += -I $(INCDIR)
+
 #===============================================================================
 
 # Builds startup routines.

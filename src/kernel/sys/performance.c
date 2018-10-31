@@ -23,7 +23,7 @@
 #include <inttypes.h>
 
 #define __NEED_HAL_PERFORMANCE_
-#include <nanvix/hal.h>
+#include <hal.h>
 
 /**
  * @brief Timer error.

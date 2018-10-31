@@ -35,7 +35,7 @@ OBJ = $(SRC:.c=.o)
 # Builds Nanvix library.
 all: $(OBJ)
 	mkdir -p $(LIBDIR)
-	$(AR) $(ARFLAGS) $(LIBUSER) $(OBJ)
+	$(AR) $(ARFLAGS) $(LIBNANVIX) $(OBJ)
 
 # Builds object files.
 %.o: %.c
@@ -47,5 +47,5 @@ clean:
 
 # Cleans everything.
 distclean: clean
-	rm -rf $(LIBUSER)
+	rm -rf $(LIBNANVIX)
 

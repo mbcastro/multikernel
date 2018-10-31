@@ -28,6 +28,8 @@ SRC = $(wildcard mqueue/*.c) \
 # Object Files
 OBJ = $(SRC:.c=.o)
 
+export CFLAGS += -I $(INCDIR)
+
 #===============================================================================
 
 # Builds everything.

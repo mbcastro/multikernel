@@ -24,8 +24,12 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <stdio.h>
+#include <errno.h>
+#include <string.h>
 
+#ifdef _KALRAY_MPPA256
 #include <mppa/osconfig.h>
+#endif
 
 #include <nanvix/syscalls.h>
 #include <nanvix/spawner.h>

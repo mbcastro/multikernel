@@ -20,10 +20,12 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
+export CFLAGS += -pthread -I $(INCDIR)/nanvix/
+
 # C Source Files
 SRC = $(wildcard arch/$(TARGET)/*.c) \
-      $(wildcard sys/*.c)            \
-      $(wildcard init/*.c)
+      $(wildcard init/*.c)           \
+      $(wildcard sys/*.c)
 
 # Object Files
 OBJ = $(SRC:.c=.o)

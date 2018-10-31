@@ -43,7 +43,7 @@ export ELFBIN = $(BINDIR)/test-driver
 
 # Builds the kernel.
 all: $(OBJ)
-	$(CC) $(LDFLAGS) $(OBJ) $(CRT0) -o $(ELFBIN) $(LIBS)
+	$(CC) $(LDFLAGS) $(OBJ) -o $(ELFBIN) $(CRT0) $(LIBC) $(LIBSERVERS) $(LIBS)
 
 # Builds object files.
 %.o: %.c

@@ -22,8 +22,8 @@
 
 #define __NEED_HAL_NOC_
 #define __NEED_HAL_SYNC_
-#include <nanvix/hal.h>
-#include <nanvix/klib.h>
+#include <hal.h>
+#include <klib.h>
 
 /**
  * @brief Creates a synchronization point.

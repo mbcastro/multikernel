@@ -22,9 +22,9 @@
 
 #define __NEED_HAL_NOC_
 #define __NEED_HAL_MAILBOX_
-#include <nanvix/hal.h>
-#include <nanvix/klib.h>
-#include <nanvix/syscalls.h>
+#include <hal.h>
+#include <klib.h>
+#include <syscalls.h>
 
 /**
  * @brief Creates a mailbox.

@@ -22,8 +22,8 @@
 
 #define __NEED_HAL_CORE_
 #define __NEED_HAL_NOC_
-#include <nanvix/hal.h>
-#include <nanvix/klib.h>
+#include <hal.h>
+#include <klib.h>
 
 #include "core.h"
 

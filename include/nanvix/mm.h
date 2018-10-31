@@ -27,7 +27,7 @@
 	#include <stddef.h>
 
 	#include <sys/types.h>
-	#include <nanvix/message.h>
+	#include "message.h"
 
 /*============================================================================*
  * Remote Memory Service                                                      *

@@ -24,7 +24,7 @@
 #define NANVIX_CONST_H_
 
 	#define __NEED_HAL_CONST_
-	#include <nanvix/hal.h>
+	#include "hal.h"
 
 	/**
 	 * @brief Number of NoC nodes.

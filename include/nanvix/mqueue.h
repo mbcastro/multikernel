@@ -26,7 +26,7 @@
 	#include <sys/types.h>
 	#include <stdint.h>
 
-	#include <nanvix/limits.h>
+	#include "limits.h"
 
 	/**
 	 * @brief Maximum number of opened message queues.

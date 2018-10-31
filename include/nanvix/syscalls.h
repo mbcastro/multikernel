@@ -28,7 +28,7 @@
 	#include <stdint.h>
 
 	#define __NEED_HAL_CONST_
-	#include <nanvix/hal.h>
+	#include "hal.h"
 
 	/**
 	 * @brief Type of cores.

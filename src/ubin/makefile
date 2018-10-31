@@ -23,6 +23,8 @@
 # Conflicts
 .PHONY: test
 
+export CFLAGS += -I $(INCDIR)
+
 #===============================================================================
 
 # Builds everything.

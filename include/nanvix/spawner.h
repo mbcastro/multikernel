@@ -24,7 +24,7 @@
 #define NANVIX_SPAWNER_H_
 
 	#include <pthread.h>
-	#include <nanvix/message.h>
+	#include "message.h"
 
 	/**
 	 * @brief Server information.

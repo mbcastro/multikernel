@@ -21,7 +21,7 @@
  */
 
 #define __NEED_HAL_NOC_
-#include <nanvix/hal.h>
+#include <hal.h>
 
 /**
  * @brief Gets the logic number of the underlying NoC node.

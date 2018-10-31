@@ -24,7 +24,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#ifdef _KALRAY_MPPA256
 #include <mppa/osconfig.h>
+#endif
 
 #include <nanvix/syscalls.h>
 

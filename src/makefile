@@ -35,7 +35,6 @@ export CFLAGS += -Wall -Wextra -Werror
 export CFLAGS += -Winit-self -Wswitch-default -Wfloat-equal
 export CFLAGS += -Wundef -Wshadow -Wuninitialized
 export CFLAGS += -O3
-export CFLAGS += -I $(INCDIR)
 
 ifeq ($(DEBUG),true)
 	export CFLAGS += -DDEBUG_NAME
@@ -77,10 +76,8 @@ export ARFLAGS = rcs
 export CRT0 = $(LIBDIR)/crt0.o
 export CRT1 = $(LIBDIR)/crt1.o
 
-# Servers
-export LIBSERVERS = $(LIBDIR)/libservers.a
-
 # System Services
+export SPAWNER0BIN = $(BINDIR)/spawner0
 export SPAWNER1BIN = $(BINDIR)/spawner1
 
 #===============================================================================
