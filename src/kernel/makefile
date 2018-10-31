@@ -25,6 +25,7 @@ export CFLAGS += -pthread -I $(INCDIR)/nanvix/
 # C Source Files
 SRC = $(wildcard arch/$(TARGET)/*.c) \
       $(wildcard init/*.c)           \
+      $(wildcard lib/*.c)            \
       $(wildcard sys/*.c)
 
 # Object Files

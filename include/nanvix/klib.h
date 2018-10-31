@@ -29,16 +29,17 @@
 	#include <pthread.h>
 
 	/**
-	 * @brief Gets the length of an array.
+	 * @brief Returns the length of an array.
 	 *
 	 * @param x Target array.
 	 *
 	 * @return The length of the target array.
 	 */
-	#define ARRAY_LENGTH(x) (sizeof(x) / sizeof((x)[0]))
+	#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 	/* Forward definitions. */
-	extern void debug(const char *, const char *, ...);
-	
+	extern void kprintf(const char*, ...);
+	extern void kpanic(const char *, ...);
 
 #endif /* NANVIX_KLIB_H_ */
+

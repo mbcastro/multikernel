@@ -20,39 +20,29 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef _SHM_H_
-#define _SHM_H_
+#include <stdarg.h>
+#include <string.h>
+#include <stdio.h>
 
-	#include <sys/types.h>
-	#include <stdint.h>
+/**
+ * @brief Prints a message.
+ *
+ * Prints a formated message tot he standard output device.
+ * 
+ * @param fmt Formatted message.
+ */
+void kprintf(const char *fmt, ...)
+{
+	int len;
+	va_list args;
+	char strbuf[80];
 
-	#include <nanvix/utils.h>
+	sprintf(strbuf, "[INFO][nanvix][kernel] ");
+	len = 80 - 2 - strlen(strbuf);
+	strncat(strbuf, fmt, len);
+	strcat(strbuf, "\n");
 
-#ifdef DEBUG_SHM
-	#define shm_debug(fmt, ...) debug("shm", fmt, __VA_ARGS__)
-#else
-	#define shm_debug(fmt, ...) { }
-#endif
-
-	/* Forward definitions. */
-	extern void buffer_init(void);
-	extern int buffer_put(int, const void *);
-	extern int buffer_get(int, void *);
-	extern int shm_is_used(int);
-	extern int shm_is_remove(int);
-	extern int shm_is_owner(int, int);
-	extern int shm_is_readable(int);
-	extern int shm_is_writable(int);
-	extern uint64_t shm_get_base(int);
-	extern size_t shm_get_size(int);
-	extern void shm_set_remove(int);
-	extern void shm_set_perm(int, int, mode_t);
-	extern void shm_set_name(int, const char *);
-	extern void shm_set_base(int, uint64_t);
-	extern void shm_set_size(int, size_t);
-	extern int shm_alloc(void);
-	extern int shm_get(const char *);
-	extern void shm_put(int);
-	extern void shm_init(void);
-
-#endif /* _SHM_H_ */
+	va_start(args, fmt);
+	vfprintf(stderr, strbuf, args);
+	va_end(args);
+}

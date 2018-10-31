@@ -300,7 +300,7 @@ void noc_get_remotes(char *remotes, int local)
 	strcat(remotes, tmp);
 
 	/* Append Compute Clusters. */
-	for (unsigned i = 0; i < ARRAY_LENGTH(cclusters); i++)
+	for (unsigned i = 0; i < ARRAY_SIZE(cclusters); i++)
 	{
 		if (local == cclusters[i])
 			continue;

@@ -28,7 +28,7 @@
 #include <stdlib.h>
 
 #include <nanvix/spawner.h>
-#include <nanvix/klib.h>
+#include <nanvix/utils.h>
 #include <nanvix/syscalls.h>
 #include <nanvix/pm.h>
 #include <nanvix/name.h>

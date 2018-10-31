@@ -78,7 +78,7 @@ int kernel_setup(void)
 
 error:
 	kernel_unlock();
-	printf("[nanvix][kernel] failed to setup kernel\n");
+	kprintf("failed to setup kernel");
 	return (-EAGAIN);
 }
 
@@ -107,6 +107,6 @@ int kernel_cleanup(void)
 
 error:
 	kernel_unlock();
-	printf("[nanvix][kernel] failed to cleanup kernel\n");
+	kprintf("failed to cleanup kernel");
 	return (-EAGAIN);
 }
