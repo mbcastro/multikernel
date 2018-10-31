@@ -34,22 +34,22 @@
 	/**
 	 * @brief Named semaphore descriptor.
 	 */
-	typedef int  sem_t;
+	typedef int sem_t;
 
 	/* Forward definitions. */
-	int sem_close(sem_t *);
-	int sem_destroy(sem_t *);
-	int sem_getvalue(sem_t *restrict, int *restrict);
-	int sem_init(sem_t *, int, unsigned);
-	sem_t *sem_open(const char *, int, ...);
-	int sem_post(sem_t *);
+	extern int sem_close(sem_t *);
+	extern int sem_destroy(sem_t *);
+	extern int sem_getvalue(sem_t *restrict, int *restrict);
+	extern int sem_init(sem_t *, int, unsigned);
+	extern sem_t *sem_open(const char *, int, ...);
+	extern int sem_post(sem_t *);
 #ifdef _POSIX_C_SOURCE 
 #if (_POSIX_C_SOURCE >= 200112L)
-		int sem_timedwait(sem_t *restrict, const struct timespec *restrict);
+		extern int sem_timedwait(sem_t *restrict, const struct timespec *restrict);
 #endif
 #endif
-	int sem_trywait(sem_t *);
-	int sem_unlink(const char *);
-	int sem_wait(sem_t *);
+	extern int sem_trywait(sem_t *);
+	extern int sem_unlink(const char *);
+	extern int sem_wait(sem_t *);
 
 #endif /* SEMAPHORE_H_ */
