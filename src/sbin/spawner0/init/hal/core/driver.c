@@ -44,6 +44,8 @@ void test_kernel_sys_core(void)
 {
 	core_ncores = sys_get_num_cores();
 
+	TEST_ASSERT(core_ncores == HAL_NR_IOCLUSTER_CORES);
+
 	pthread_barrier_init(&core_barrier, NULL, core_ncores - 1);
 
 	/* Run API tests. */

@@ -34,6 +34,11 @@
 #if (defined(__NEED_HAL_CORE_) || defined(__NEED_HAL_CONST_))
 
 	/**
+	 * @brief Number of cores in an IO cluster.
+	 */
+	#define HAL_NR_IOCLUSTER_CORES 4
+
+	/**
 	 * @brief Number of user cores.
 	 */
 	#define HAL_NR_CORES_USER 256
