@@ -975,7 +975,7 @@ error:
  * no message is enqueued, -1 is returned and errno is set to indicate
  * the error.
  */
-int nanvix_mqueue_receive(int mqueueid, char *msg, size_t len, unsigned *prio)
+ssize_t nanvix_mqueue_receive(int mqueueid, char *msg, size_t len, unsigned *prio)
 {
 	int i;
 	int ret;

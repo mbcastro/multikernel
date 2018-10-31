@@ -29,6 +29,8 @@ fi
 
 if [ $TARGET == "mppa256" ]; then
 	source "scripts/arch/mppa256.sh"
+elif [ $TARGET == "unix" ]; then
+	source "scripts/arch/unix.sh"
 else
 	echo "unkown architecture"
 	exit 1
