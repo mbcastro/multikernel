@@ -45,7 +45,7 @@
  * -1 is returned, the named shared memory object is not changed by
  *  this function call. 
  */
-int shm_unlink(const char *name)
+int nanvix2_shm_unlink(const char *name)
 {
 	return (nanvix_shm_unlink(name));
 }

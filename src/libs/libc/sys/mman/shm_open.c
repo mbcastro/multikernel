@@ -49,7 +49,7 @@
  * representing the file descriptor is returned.  Otherwise, -1 is
  * returned instead and set errno to indicate the error.
  */
-int shm_open(const char *name, int oflag, mode_t mode)
+int nanvix2_shm_open(const char *name, int oflag, mode_t mode)
 {
 	int rw;
 	int ret;

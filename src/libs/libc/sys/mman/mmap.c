@@ -40,7 +40,7 @@
  * mapping was placed is returned. Otherwise, MAP_FAILED is returned
  * and errno is set to indicate the error.
  */
-void *mmap(void *addr, size_t len, int prot, int flags, int fd, off_t off)
+void *nanvix2_mmap(void *addr, size_t len, int prot, int flags, int fd, off_t off)
 {
 	void *map;
 

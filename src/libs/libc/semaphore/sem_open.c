@@ -43,7 +43,7 @@
  *
  * @todo Rename NANVIX_SEM_NAME_MAX to _POSIX_PATH_MAX
  */
-sem_t *sem_open(const char *name, int oflag, ...)
+sem_t *nanvix2_sem_open(const char *name, int oflag, ...)
 {
 	int sem;
 	sem_t semid = -1;

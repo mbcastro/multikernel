@@ -34,7 +34,7 @@
  * @returns Upon successful completion, zero is returned. Upon
  * failure, a negative error code is returned instead.
  */
-int sem_unlink(const char *name)
+int nanvix2_sem_unlink(const char *name)
 {
 	/* Invalid name. */
 	if ((name == NULL) || (!strcmp(name, "")))

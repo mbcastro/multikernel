@@ -35,7 +35,7 @@
  * @retuns Upon successful completion, zero is returned. Otherwise, -1
  * is returned and errno is set to indicate the error.
  */
-int munmap(void *addr, size_t len)
+int nanvix2_munmap(void *addr, size_t len)
 {
 	/* Invalid length. */
 	if (len == 0)

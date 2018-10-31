@@ -35,7 +35,7 @@
  * failure, -1 is returned instead, and errno is set to indicate the
  * error.
  */
-int ftruncate(int fd, off_t length)
+int nanvix2_ftruncate(int fd, off_t length)
 {
 	return (nanvix_ftruncate(fd, length));
 }

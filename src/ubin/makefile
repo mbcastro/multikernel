@@ -25,6 +25,21 @@
 
 export CFLAGS += -I $(INCDIR)
 
+#
+# Fix conflicting symbols.
+#
+export CFLAGS +=                     \
+	-D sem_close=nanvix2_sem_close   \
+	-D sem_open=nanvix2_sem_open     \
+	-D sem_post=nanvix2_sem_post     \
+	-D sem_unlink=nanvix2_sem_unlink \
+	-D sem_wait=nanvix2_sem_wait     \
+	-D mmap=nanvix2_mmap             \
+	-D munmap=nanvix2_munmap         \
+	-D shm_open=nanvix2_shm_open     \
+	-D shm_unlink=nanvix2_shm_unlink \
+	-D ftruncate=nanvix2_ftruncate
+
 #===============================================================================
 
 # Builds everything.

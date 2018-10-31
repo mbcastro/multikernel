@@ -35,7 +35,7 @@
  * @returns Upon successful completion, zero is returned. Upon
  * failure, a negative error code is returned instead.
  */
-int sem_close(sem_t *semid)
+int nanvix2_sem_close(sem_t *semid)
 {
 	int ret;
 
