@@ -61,7 +61,7 @@
 	/**
 	 * @brief Number of clusters in the platform.
 	 */
-	#define HAL_NR_CLUSTERS (NR_IOCLUSTER + NR_CCLUSTER)
+	#define HAL_NR_CLUSTERS (HAL_NR_IOCLUSTERS + HAL_NR_CCLUSTERS)
 
 #endif /* __NEED_HAL_CONST_ */
 
