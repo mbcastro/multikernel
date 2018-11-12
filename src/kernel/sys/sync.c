@@ -26,6 +26,64 @@
 #include <klib.h>
 
 /**
+ * @brief Builds the list of RX NoC nodes.
+ *
+ * @param ranks  Target list of RX NoC nodes.
+ * @param nodes  IDs of target NoC nodes.
+ * @param nnodes Number of target NoC nodes. 
+ *
+ * @note This function is non-blocking.
+ * @note This function is thread-safe.
+ * @note This function is reentrant.
+ */
+static void sync_ranks(int *ranks, const int *nodes, int nnodes)
+{
+	int j, tmp;
+	int nodeid;
+
+	j = 1;
+	nodeid = hal_get_node_id();
+
+	/* Build list of RX NoC nodes. */
+	for (int i = 0; i < nnodes; i++)
+	{
+		if (nodes[i] == nodeid)
+			j = i;
+
+		ranks[i] = nodes[i];
+	}
+
+	tmp = ranks[1];
+	ranks[1] = ranks[j];
+	ranks[j] = tmp;
+}
+
+/**
+ * @brief Converts a nodes list.
+ *
+ * @param _nodes Place to store converted list.
+ * @param nodes  Target nodes list.
+ * @param nnodes Number of nodes in the list.
+ *
+ * @returns Upon successful completion, zero is returned. Upon
+ * failure, a negative error code is returned instead.
+ */
+static int nodes_convert(int *_nodes, const int *nodes, int nnodes)
+{
+	/* Convert NoC node numbers into IDs. */
+	for (int i = 0; i < nnodes; i++)
+	{
+		/* Invalid nodes list. */
+		if ((nodes[i] < 0) || (nodes[i] >= HAL_NR_NOC_NODES))
+			return (-EINVAL);
+
+		_nodes[i] = hal_noc_nodes[nodes[i]];
+	}
+
+	return (0);
+}
+
+/**
  * @brief Creates a synchronization point.
  *
  * @param nodes  IDs of target NoC nodes.
@@ -42,27 +100,67 @@
  */
 int sys_sync_create(const int *nodes, int nnodes, int type)
 {
-	/* Invalid number of nodes. */
-	if (nnodes < 0)
-		return (-EINVAL);
-
+	int nodeid;
+	int ranks[nnodes];
 	int _nodes[nnodes];
 
-	/* Invalid nodes list. */
+	/* Invalid list of nodes. */
 	if (nodes == NULL)
 		return (-EINVAL);
 
+	/* Invalid number of nodes. */
+	if ((nnodes < 2) || (nnodes > HAL_NR_NOC_NODES))
+		return (-EINVAL);
+
+	/* Invalid type. */
+	if ((type != HAL_SYNC_ONE_TO_ALL) && (type != HAL_SYNC_ALL_TO_ONE))
+		return (-EINVAL);
+
 	/* Convert NoC node numbers into IDs. */
-	for (int i = 0; i < nnodes; i++)
+	if (nodes_convert(_nodes, nodes, nnodes) < 0)
+		return (-EINVAL);
+
+	nodeid = hal_get_node_id();
+
+	if (type == HAL_SYNC_ONE_TO_ALL)
 	{
-		/* Invalid nodes list. */
-		if ((nodes[i] < 0) || (nodes[i] >= HAL_NR_NOC_NODES))
+		int found = 0;
+
+		/* Underlying NoC node SHOULD NOT be here. */
+		if (nodeid == _nodes[0])
 			return (-EINVAL);
 
-		_nodes[i] = hal_noc_nodes[nodes[i]];
+		/* Underlying NoC node SHOULD be here. */
+		for (int i = 1; i < nnodes; i++)
+		{
+			if (nodeid == _nodes[i])
+				found++;
+		}
+
+		if (found != 1)
+			return (-EINVAL);
 	}
 
-	return (hal_sync_create(_nodes, nnodes, type));
+	else
+	{
+		/* Underlying NoC node SHOULD be here. */
+		if (nodeid != _nodes[0])
+			return (-EINVAL);
+
+		/* Underlying NoC node SHOULD be here. */
+		for (int i = 1; i < nnodes; i++)
+		{
+			if (nodeid == _nodes[i])
+				return (-EINVAL);
+		}
+	}
+
+	if (type == HAL_SYNC_ONE_TO_ALL)
+		sync_ranks(ranks, _nodes, nnodes);
+	else
+		memcpy(ranks, _nodes, nnodes*sizeof(int));
+
+	return (hal_sync_create(ranks, nnodes, type));
 }
 
 
@@ -85,24 +183,58 @@ int sys_sync_create(const int *nodes, int nnodes, int type)
  */
 int sys_sync_open(const int *nodes, int nnodes, int type)
 {
-	/* Invalid number of nodes. */
-	if (nnodes < 0)
-		return (-EINVAL);
-
+	int nodeid;
 	int _nodes[nnodes];
 
 	/* Invalid nodes list. */
 	if (nodes == NULL)
 		return (-EINVAL);
 
+	/* Invalid number of nodes. */
+	if ((nnodes < 2) || (nnodes > HAL_NR_NOC_NODES))
+		return (-EINVAL);
+
+	/* Invalid type. */
+	if ((type != HAL_SYNC_ONE_TO_ALL) && (type != HAL_SYNC_ALL_TO_ONE))
+		return (-EINVAL);
+
 	/* Convert NoC node numbers into IDs. */
-	for (int i = 0; i < nnodes; i++)
+	if (nodes_convert(_nodes, nodes, nnodes) < 0)
+		return (-EINVAL);
+
+	nodeid = hal_get_node_id();
+
+	if (type == HAL_SYNC_ONE_TO_ALL)
 	{
-		/* Invalid nodes list. */
-		if ((nodes[i] < 0) || (nodes[i] >= HAL_NR_NOC_NODES))
+		/* Underlying NoC node SHOULD be here. */
+		if (nodeid != _nodes[0])
 			return (-EINVAL);
 
-		_nodes[i] = hal_noc_nodes[nodes[i]];
+		/* Underlying NoC node SHOULD be here. */
+		for (int i = 1; i < nnodes; i++)
+		{
+			if (nodeid == _nodes[i])
+				return (-EINVAL);
+		}
+	}
+
+	else
+	{
+		int found = 0;
+
+		/* Underlying NoC node SHOULD NOT be here. */
+		if (nodeid == _nodes[0])
+			return (-EINVAL);
+
+		/* Underlying NoC node SHOULD be here. */
+		for (int i = 1; i < nnodes; i++)
+		{
+			if (nodeid == _nodes[i])
+				found++;
+		}
+
+		if (found != 1)
+			return (-EINVAL);
 	}
 
 	return (hal_sync_open(_nodes, nnodes, type));

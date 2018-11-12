@@ -31,30 +31,31 @@
 #define __NEED_HAL_PERFORMANCE_
 #include <hal.h>
 #include <klib.h>
+#include <resource.h>
 
 #include "noc.h"
 
 /**
- * @brief Mailbox flags.
- */
-/**@{*/
-#define MAILBOX_FLAGS_USED   (1 << 0) /**< Mailbox in use?  */
-#define MAILBOX_FLAGS_WRONLY (1 << 1) /**< Write only mode? */
-#define MAILBOX_FLAGS_BUSY   (1 << 2) /**< Busy?            */
-/**@}*/
-
-/**
  * @brief Table of mailboxes.
  */
-static struct 
+static struct mailbox
 {
-	int fd;           /**< Underlying file descriptor. */
-	int flags;        /**< Flags.                      */
-	int nodeid;       /**< ID of underlying node.      */
-	int refcount;     /**< Reference counter.          */
-	size_t volume;    /**< Amount of data transferred. */
-	uint64_t latency; /**< Transfer latency.           */
+	struct resource resource; /**< Underlying resource.        */
+	int fd;                   /**< Underlying file descriptor. */
+	int nodeid;               /**< ID of underlying node.      */
+	int refcount;             /**< Reference counter.          */
+	size_t volume;            /**< Amount of data transferred. */
+	uint64_t latency;         /**< Transfer latency.           */
 } mailboxes[HAL_NR_MAILBOX];
+
+/**
+ * @brief Resource pool.
+ */
+static const struct resource_pool pool = {
+	mailboxes,
+	HAL_NR_MAILBOX,
+	sizeof(struct mailbox)
+};
 
 /**
  * @brief Mailbox module lock.
@@ -107,208 +108,6 @@ static int mailbox_is_valid(int mbxid)
 }
 
 /*============================================================================*
- * mailbox_is_used()                                                          *
- *============================================================================*/
-
-/**
- * @brief Asserts whether or not a mailbox is used.
- *
- * @param mbxid ID of the target mailbox.
- *
- * @returns One if the target mailbox is used, and false
- * otherwise.
- *
- * @note This function is non-blocking.
- * @note This function is @b NOT thread safe.
- * @note This function is reentrant.
- */
-static int mailbox_is_used(int mbxid)
-{
-	return (mailboxes[mbxid].flags & MAILBOX_FLAGS_USED);
-}
-
-/*============================================================================*
- * mailbox_is_wronly()                                                        *
- *============================================================================*/
-
-/**
- * @brief Asserts whether or not a mailbox is a write-only.
- *
- * @param mbxid ID of the target mailbox.
- *
- * @returns One if the target mailbox is write-only, and false
- * otherwise.
- *
- * @note This function is non-blocking.
- * @note This function is @b NOT thread safe.
- * @note This function is reentrant.
- */
-static int mailbox_is_wronly(int mbxid)
-{
-	return (mailboxes[mbxid].flags & MAILBOX_FLAGS_WRONLY);
-}
-
-/*============================================================================*
- * mailbox_set_used()                                                         *
- *============================================================================*/
-
-/**
- * @brief Sets a mailbox as used.
- *
- * @param mbxid ID of the target mailbox.
- *
- * @note This function is non-blocking.
- * @note This function is @b NOT thread safe.
- * @note This function is reentrant.
- */
-static void mailbox_set_used(int mbxid)
-{
-	mailboxes[mbxid].flags |= MAILBOX_FLAGS_USED;
-}
-
-/*============================================================================*
- * mailbox_set_wronly()                                                       *
- *============================================================================*/
-
-/**
- * @brief Sets a mailbox as a write-only.
- *
- * @param mbxid ID of the target mailbox.
- *
- * @note This function is non-blocking.
- * @note This function is @b NOT thread safe.
- * @note This function is reentrant.
- */
-static void mailbox_set_wronly(int mbxid)
-{
-	mailboxes[mbxid].flags |= MAILBOX_FLAGS_WRONLY;
-}
-
-/*============================================================================*
- * mailbox_is_busy()                                                          *
- *============================================================================*/
-
-/**
- * @brief Asserts whether or not a mailbox is busy.
- *
- * @param mbxid ID of the target mailbox.
- *
- * @returns One if the target mailbox is busy one, and
- * false otherwise.
- *
- * @note This function is non-blocking.
- * @note This function is @b NOT thread safe.
- * @note This function is reentrant.
- */
-static int mailbox_is_busy(int mbxid)
-{
-	return (mailboxes[mbxid].flags & MAILBOX_FLAGS_BUSY);
-}
-
-/*============================================================================*
- * mailbox_set_busy()                                                         *
- *============================================================================*/
-
-/**
- * @brief Sets a mailbox as busy.
- *
- * @param mbxid ID of the target mailbox.
- *
- * @note This function is non-blocking.
- * @note This function is @b NOT thread safe.
- * @note This function is reentrant.
- */
-static void mailbox_set_busy(int mbxid)
-{
-	mailboxes[mbxid].flags |= MAILBOX_FLAGS_BUSY;
-}
-
-/*============================================================================*
- * mailbox_clear_busy()                                                       *
- *============================================================================*/
-
-/**
- * @brief Clears the busy flag of a mailbox.
- *
- * @param mbxid ID of the target mailbox.
- *
- * @note This function is non-blocking.
- * @note This function is @b NOT thread safe.
- * @note This function is reentrant.
- */
-static void mailbox_clear_busy(int mbxid)
-{
-	mailboxes[mbxid].flags &= ~MAILBOX_FLAGS_BUSY;
-}
-
-/*============================================================================*
- * mailbox_clear_flags()                                                      *
- *============================================================================*/
-
-/**
- * @brief Clears the flags of a mailbox.
- *
- * @param mbxid ID of the target mailbox.
- *
- * @note This function is non-blocking.
- * @note This function is @b NOT thread safe.
- * @note This function is reentrant.
- */
-static void mailbox_clear_flags(int mbxid)
-{
-	mailboxes[mbxid].flags = 0;
-}
-
-/*============================================================================*
- * mailbox_alloc()                                                            *
- *============================================================================*/
-
-/**
- * @brief Allocates a mailbox.
- *
- * @param nodeid ID of target NoC node.
- *
- * @returns Upon successful completion, the ID of a newly allocated
- * mailbox is returned. Upon failure, -1 is returned instead.
- *
- * @note This function is non-blocking.
- * @note This function is @b NOT thread safe.
- * @note This function is reentrant.
- */
-static int mailbox_alloc(void)
-{
-	for (int i = 0; i < HAL_NR_MAILBOX; i++)
-	{
-		/* Mailbox in use. */
-		if (mailbox_is_used(i))
-			continue;
-
-		mailbox_set_used(i);
-		return (i);
-	}
-
-	return (-1);
-}
-
-/*============================================================================*
- * mailbox_free()                                                             *
- *============================================================================*/
-
-/**
- * @brief Frees a mailbox.
- *
- * @param mbxid ID of the target mailboxhronization point.
- *
- * @note This function is non-blocking.
- * @note This function is @b NOT thread safe.
- * @note This function is reentrant.
- */
-static void mailbox_free(int mbxid)
-{
-	mailbox_clear_flags(mbxid);
-}
-
-/*============================================================================*
  * hal_mailbox_create()                                                       *
  *============================================================================*/
 
@@ -324,7 +123,7 @@ static int mppa256_mailbox_create(int remote)
 	int noctag;         /* NoC tag used for transfers. */
 
 	/* Allocate a mailbox. */
-	if ((mbxid = mailbox_alloc()) < 0)
+	if ((mbxid = resource_alloc(&pool)) < 0)
 		goto error0;
 
 	noc_get_remotes(remotes, remote);
@@ -350,12 +149,13 @@ static int mppa256_mailbox_create(int remote)
 	mailboxes[mbxid].refcount = 1;
 	mailboxes[mbxid].latency = 0;
 	mailboxes[mbxid].volume = 0;
-	mailbox_clear_busy(mbxid);
+	resource_set_rdonly(&mailboxes[mbxid].resource);
+	resource_set_notbusy(&mailboxes[mbxid].resource);
 
 	return (mbxid);
 
 error1:
-	mailbox_free(mbxid);
+	resource_free(&pool, mbxid);
 error0:
 	return (-EAGAIN);
 }
@@ -405,7 +205,7 @@ static int mppa256_mailbox_open(int remote)
 	int noctag;         /* NoC tag used for transfers. */
 
 	/* Allocate a mailbox. */
-	if ((mbxid = mailbox_alloc()) < 0)
+	if ((mbxid = resource_alloc(&pool)) < 0)
 		goto error0;
 
 	noc_get_remotes(remotes, remote);
@@ -439,15 +239,15 @@ static int mppa256_mailbox_open(int remote)
 	mailboxes[mbxid].refcount = 1;
 	mailboxes[mbxid].latency = 0;
 	mailboxes[mbxid].volume = 0;
-	mailbox_set_wronly(mbxid);
-	mailbox_clear_busy(mbxid);
+	resource_set_wronly(&mailboxes[mbxid].resource);
+	resource_set_notbusy(&mailboxes[mbxid].resource);
 
 	return (mbxid);
 
 error2:
 	mppa_close(fd);
 error1:
-	mailbox_free(mbxid);
+	resource_free(&pool, mbxid);
 error0:
 	return (-EAGAIN);
 }
@@ -488,11 +288,11 @@ again:
 	for (int i = 0; i < HAL_NR_MAILBOX; i++)
 	{
 		/* Skip unused mailboxes. */
-		if (!mailbox_is_used(i))
+		if (!resource_is_used(&mailboxes[i].resource))
 			continue;
 
 		/* Skip input mailboxes. */
-		if (!mailbox_is_wronly(i))
+		if (resource_is_readable(&mailboxes[i].resource))
 			continue;
 
 		/* Not this node ID. */
@@ -503,7 +303,7 @@ again:
 		 * Found, but mailbox is busy
 		 * We have to wait a bit more.
 		 */
-		if (mailbox_is_busy(i))
+		if (resource_is_busy(&mailboxes[i].resource))
 		{
 			mppa256_mailbox_unlock();
 			goto again;
@@ -548,15 +348,15 @@ again:
 	mppa256_mailbox_lock();
 
 		/* Bad mailbox. */
-		if (!mailbox_is_used(mbxid))
+		if (!resource_is_used(&mailboxes[mbxid].resource))
 			goto error1;
 
 		/* Bad mailbox. */
-		if (mailbox_is_wronly(mbxid))
+		if (resource_is_writable(&mailboxes[mbxid].resource))
 			goto error1;
 
 		/* Busy mailbox. */
-		if (mailbox_is_busy(mbxid))
+		if (resource_is_busy(&mailboxes[mbxid].resource))
 		{
 			mppa256_mailbox_unlock();
 			goto again;
@@ -565,7 +365,7 @@ again:
 		if (mppa_close(mailboxes[mbxid].fd) < 0)
 			goto error1;
 
-		mailbox_free(mbxid);
+		resource_free(&pool, mbxid);
 
 	mppa256_mailbox_unlock();
 
@@ -604,15 +404,15 @@ again:
 	mppa256_mailbox_lock();
 
 		/* Bad mailbox. */
-		if (!mailbox_is_used(mbxid))
+		if (!resource_is_used(&mailboxes[mbxid].resource))
 			goto error1;
 
 		/* Bad mailbox. */
-		if (!mailbox_is_wronly(mbxid))
+		if (resource_is_readable(&mailboxes[mbxid].resource))
 			goto error1;
 
 		/* Busy mailbox. */
-		if (mailbox_is_busy(mbxid))
+		if (resource_is_busy(&mailboxes[mbxid].resource))
 		{
 			mppa256_mailbox_unlock();
 			goto again;
@@ -625,7 +425,7 @@ again:
 		if (mailboxes[mbxid].refcount-- == 1)
 		{
 			/* Set mailbox as busy. */
-			mailbox_set_busy(mbxid);
+			resource_set_busy(&mailboxes[mbxid].resource);
 
 			/* Release lock, since we may sleep below. */
 			mppa256_mailbox_unlock();
@@ -636,7 +436,7 @@ again:
 			/* Re-acquire lock. */
 			mppa256_mailbox_lock();
 
-			mailbox_free(mbxid);
+			resource_free(&pool, mbxid);
 		}
 
 	mppa256_mailbox_unlock();
@@ -645,7 +445,7 @@ again:
 
 error2:
 	mppa256_mailbox_lock();
-		mailbox_clear_busy(mbxid);
+		resource_set_notbusy(&mailboxes[mbxid].resource);
 error1:
 	mppa256_mailbox_unlock();
 error0:
@@ -691,22 +491,22 @@ again:
 	mppa256_mailbox_lock();
 
 		/* Bad mailbox. */
-		if (!mailbox_is_used(mbxid))
+		if (!resource_is_used(&mailboxes[mbxid].resource))
 			goto error1;
 
 		/* Bad mailbox. */
-		if (!mailbox_is_wronly(mbxid))
+		if (!resource_is_writable(&mailboxes[mbxid].resource))
 			goto error1;
 
 		/* Busy mailbox. */
-		if (mailbox_is_busy(mbxid))
+		if (resource_is_busy(&mailboxes[mbxid].resource))
 		{
 			mppa256_mailbox_unlock();
 			goto again;
 		}
 
 		/* Set mailbox as busy. */
-		mailbox_set_busy(mbxid);
+		resource_set_busy(&mailboxes[mbxid].resource);
 
 	/*
 	 * Release lock, since we may sleep below.
@@ -719,7 +519,7 @@ again:
 	mailboxes[mbxid].latency = t2 - t1;
 
 	mppa256_mailbox_lock();
-		mailbox_clear_busy(mbxid);
+		resource_set_notbusy(&mailboxes[mbxid].resource);
 	mppa256_mailbox_unlock();
 
 	mailboxes[mbxid].volume = nwrite;
@@ -770,22 +570,22 @@ again:
 	mppa256_mailbox_lock();
 
 		/* Bad mailbox. */
-		if (!mailbox_is_used(mbxid))
+		if (!resource_is_used(&mailboxes[mbxid].resource))
 			goto error1;
 
 		/* Bad mailbox. */
-		if (mailbox_is_wronly(mbxid))
+		if (!resource_is_readable(&mailboxes[mbxid].resource))
 			goto error1;
 
 		/* Busy mailbox. */
-		if (mailbox_is_busy(mbxid))
+		if (resource_is_busy(&mailboxes[mbxid].resource))
 		{
 			mppa256_mailbox_unlock();
 			goto again;
 		}
 
 		/* Set mailbox as busy. */
-		mailbox_set_busy(mbxid);
+		resource_set_busy(&mailboxes[mbxid].resource);
 
 	/*
 	 * Release lock, since we may sleep below.
@@ -798,7 +598,7 @@ again:
 	mailboxes[mbxid].latency = t2 - t1;
 
 	mppa256_mailbox_lock();
-		mailbox_clear_busy(mbxid);
+		resource_set_notbusy(&mailboxes[mbxid].resource);
 	mppa256_mailbox_unlock();
 
 	mailboxes[mbxid].volume = nread;
@@ -833,7 +633,7 @@ int hal_mailbox_ioctl(int mbxid, unsigned request, va_list args)
 		return (-EINVAL);
 
 	/* Bad mailbox. */
-	if (!mailbox_is_used(mbxid))
+	if (!resource_is_used(&mailboxes[mbxid].resource))
 		return (-EINVAL);
 
 	/* Server request. */
