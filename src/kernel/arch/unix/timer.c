@@ -20,29 +20,44 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <errno.h>
-#include <mqueue.h>
+#include <inttypes.h>
 
-#include <nanvix/mqueues.h>
+#if defined(__i386__)
 
 /**
- * @brief removes a message queue.
- *
- * @param mqdes Descriptor of the received message queue.
- *
- * @returns Upon successful completion, zero is returned. Upon
- * failure, -1 is returned instead, and errno is set to indicate the
- * error.
+ * @brief Reads the rdtsc register.
  */
-
-int mq_close(mqd_t mqdes)
+static inline uint64_t rdtsc(void)
 {
-    /* Invalid descriptor. */
-	if (mqdes < 0)
-	{
-		errno = EINVAL;
-		return (-1);
-	}
+	uint64_t x;
 
-	return (nanvix_mqueue_close(mqdes));
+	asm volatile ("rdtsc" : "=A" (x));
+
+	return (x);
+}
+
+#elif defined(__amd64__)
+
+/**
+ * @brief Reads the rdtsc register.
+ */
+static inline uint64_t rdtsc(void)
+{
+	uint64_t a, d;
+
+	asm volatile ("rdtsc" : "=a" (a), "=d" (d));
+	
+	return ((d << 32) | a);
+}
+
+#endif
+
+/**
+ * @brief Gets the current timer value.
+ *
+ * @returns The current timer value;
+ */
+uint64_t hal_timer_get(void)
+{
+	return (rdtsc)();
 }

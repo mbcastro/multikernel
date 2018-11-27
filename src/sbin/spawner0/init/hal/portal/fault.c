@@ -23,6 +23,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include <nanvix/const.h>
 #include <nanvix/syscalls.h>
 
 #include "test.h"
@@ -115,14 +116,46 @@ static void test_sys_portal_bad_open(void)
 /**
  * @brief Fault Injection Test: Double Open
  */
-static void test_sys_portal_double_open(void)
+static void *test_sys_portal_double_open_thread(void *args)
 {
 	int outportal;
 	int outportal2;
 
-	TEST_ASSERT((outportal = sys_portal_open(0)) >= 0);
-	TEST_ASSERT((outportal2 = sys_portal_open(0)) < 0);
+	((void) args);
+
+	kernel_setup();
+
+	TEST_ASSERT((outportal = sys_portal_open(SPAWNER_SERVER_NODE)) >= 0);
+	TEST_ASSERT((outportal2 = sys_portal_open(SPAWNER_SERVER_NODE)) < 0);
 	TEST_ASSERT((sys_portal_close(outportal)) == 0);
+
+	kernel_cleanup();
+
+	return (NULL);
+}
+
+/**
+ * @brief Fault Injection Test: Double Open
+ */
+static void test_sys_portal_double_open(void)
+{
+	int nodenum;
+	int inportal;
+	pthread_t thread;
+
+	nodenum = sys_get_node_num();
+	TEST_ASSERT((inportal = sys_portal_create(nodenum)) >= 0);
+
+	TEST_ASSERT((pthread_create(&thread,
+			NULL,
+			test_sys_portal_double_open_thread,
+			NULL
+		)) == 0
+	);
+
+	pthread_join(thread, NULL);
+
+	TEST_ASSERT(sys_portal_unlink(inportal) == 0);
 }
 
 /*============================================================================*
@@ -145,14 +178,46 @@ static void test_sys_portal_invalid_unlink(void)
 /**
  * @brief Fault Injection Test: Bad Unlink
  */
+static void *test_sys_portal_bad_unlink_thread(void *args)
+{
+	int outportal;
+	
+	((void) args);
+
+	kernel_setup();
+
+	TEST_ASSERT((outportal = sys_portal_open(SPAWNER_SERVER_NODE)) >= 0);
+	TEST_ASSERT(sys_portal_unlink(outportal) < 0);
+	TEST_ASSERT((sys_portal_close(outportal)) == 0);
+
+	kernel_cleanup();
+	return (NULL);
+}
+
+/**
+ * @brief Fault Injection Test: Bad Unlink
+ */
 static void test_sys_portal_bad_unlink(void)
 {
+	int nodenum;
 	int inportal;
+	pthread_t thread;
 
 	TEST_ASSERT(sys_portal_unlink(0) < 0);
-	TEST_ASSERT((inportal = sys_portal_open(0)) >= 0);
-	TEST_ASSERT(sys_portal_unlink(inportal) < 0);
-	TEST_ASSERT((sys_portal_close(inportal)) == 0);
+
+	nodenum = sys_get_node_num();
+	TEST_ASSERT((inportal = sys_portal_create(nodenum)) >= 0);
+
+	TEST_ASSERT((pthread_create(&thread,
+			NULL,
+			test_sys_portal_bad_unlink_thread,
+			NULL
+		)) == 0
+	);
+
+	pthread_join(thread, NULL);
+
+	TEST_ASSERT(sys_portal_unlink(inportal) == 0);
 }
 
 /*============================================================================*
@@ -214,13 +279,44 @@ static void test_sys_portal_bad_close(void)
 /**
  * @brief Fault Injection Test: Double Close
  */
-static void test_sys_portal_double_close(void)
+static void *test_sys_portal_double_close_thread(void *args)
 {
 	int outportal;
 
-	TEST_ASSERT((outportal = sys_portal_open(0)) >= 0);
+	((void) args);
+
+	kernel_setup();
+
+	TEST_ASSERT((outportal = sys_portal_open(SPAWNER_SERVER_NODE)) >= 0);
 	TEST_ASSERT((sys_portal_close(outportal)) == 0);
 	TEST_ASSERT((sys_portal_close(outportal)) < 0);
+
+	kernel_cleanup();
+	return (NULL);
+}
+
+/**
+ * @brief Fault Injection Test: Double Close
+ */
+static void test_sys_portal_double_close(void)
+{
+	int nodenum;
+	int inportal;
+	pthread_t thread;
+
+	nodenum = sys_get_node_num();
+	TEST_ASSERT((inportal = sys_portal_create(nodenum)) >= 0);
+
+	TEST_ASSERT((pthread_create(&thread,
+			NULL,
+			test_sys_portal_double_close_thread,
+			NULL
+		)) == 0
+	);
+
+	pthread_join(thread, NULL);
+
+	TEST_ASSERT(sys_portal_unlink(inportal) == 0);
 }
 
 /*============================================================================*
@@ -253,15 +349,46 @@ static void test_sys_portal_invalid_allow(void)
 /**
  * @brief Fault Injection Test: Bad Allow
  */
+static void *test_sys_portal_bad_allow_thread(void *args)
+{
+	int outportal;
+
+	((void) args);
+
+	kernel_setup();
+
+	TEST_ASSERT((outportal = sys_portal_open(SPAWNER_SERVER_NODE)) >= 0);
+	TEST_ASSERT(sys_portal_allow(outportal, 0) < 0);
+	TEST_ASSERT((sys_portal_close(outportal)) == 0);
+
+	kernel_cleanup();
+	return (NULL);
+}
+
+/**
+ * @brief Fault Injection Test: Bad Allow
+ */
 static void test_sys_portal_bad_allow(void)
 {
+	int nodenum;
 	int inportal;
+	pthread_t thread;
 
-	TEST_ASSERT(sys_portal_allow(0, 0) < 0);
+	TEST_ASSERT(sys_portal_allow(SPAWNER_SERVER_NODE, 0) < 0);
 
-	TEST_ASSERT((inportal = sys_portal_open(0)) >= 0);
-	TEST_ASSERT(sys_portal_allow(inportal, 0) < 0);
-	TEST_ASSERT((sys_portal_close(inportal)) == 0);
+	nodenum = sys_get_node_num();
+	TEST_ASSERT((inportal = sys_portal_create(nodenum)) >= 0);
+
+	TEST_ASSERT((pthread_create(&thread,
+			NULL,
+			test_sys_portal_bad_allow_thread,
+			NULL
+		)) == 0
+	);
+
+	pthread_join(thread, NULL);
+
+	TEST_ASSERT(sys_portal_unlink(inportal) == 0);
 }
 
 /*============================================================================*
@@ -310,15 +437,46 @@ static void test_sys_portal_invalid_read(void)
 /**
  * @brief Fault Injection Test: Bad Read
  */
-static void test_sys_portal_bad_read(void)
+static void *test_sys_portal_bad_read_thread(void *args)
 {
 	int buf;
-	int inportal;
+	int outportal;
+
+	((void) args);
+
+	kernel_setup();
 
 	TEST_ASSERT(sys_portal_read(0, &buf, sizeof(buf)) < 0);
-	TEST_ASSERT((inportal = sys_portal_open(0)) >= 0);
-	TEST_ASSERT(sys_portal_read(inportal, &buf, sizeof(buf)) < 0);
-	TEST_ASSERT(sys_portal_close(inportal) == 0);
+	TEST_ASSERT((outportal = sys_portal_open(SPAWNER_SERVER_NODE)) >= 0);
+	TEST_ASSERT(sys_portal_read(outportal, &buf, sizeof(buf)) < 0);
+	TEST_ASSERT(sys_portal_close(outportal) == 0);
+
+	kernel_cleanup();
+	return (NULL);
+}
+
+/**
+ * @brief Fault Injection Test: Bad Read
+ */
+static void test_sys_portal_bad_read(void)
+{
+	int nodenum;
+	int inportal;
+	pthread_t thread;
+
+	nodenum = sys_get_node_num();
+	TEST_ASSERT((inportal = sys_portal_create(nodenum)) >= 0);
+
+	TEST_ASSERT((pthread_create(&thread,
+			NULL,
+			test_sys_portal_bad_read_thread,
+			NULL
+		)) == 0
+	);
+
+	pthread_join(thread, NULL);
+
+	TEST_ASSERT(sys_portal_unlink(inportal) == 0);
 }
 
 /*============================================================================*
@@ -377,19 +535,50 @@ static void test_sys_portal_bad_write(void)
 }
 
 /*============================================================================*
- * Fault Injection Test: Null Write                                            *
+ * Fault Injection Test: Null Write                                           *
  *============================================================================*/
+
+/**
+ * @brief Fault Injection Test: Null Write
+ */
+static void *test_sys_portal_null_write_thread(void *args)
+{
+	int outportal;
+
+	((void) args);
+
+	kernel_setup();
+
+	TEST_ASSERT((outportal = sys_portal_open(SPAWNER_SERVER_NODE)) >= 0);
+	TEST_ASSERT(sys_portal_write(outportal, NULL, 1) < 0);
+	TEST_ASSERT(sys_portal_close(outportal) == 0);
+
+	kernel_cleanup();
+	return (NULL);
+}
 
 /**
  * @brief Fault Injection Test: Null Write
  */
 static void test_sys_portal_null_write(void)
 {
-	int outportal;
+	int nodenum;
+	int inportal;
+	pthread_t thread;
 
-	TEST_ASSERT((outportal = sys_portal_open(0)) >= 0);
-	TEST_ASSERT(sys_portal_write(outportal, NULL, 1) < 0);
-	TEST_ASSERT(sys_portal_close(outportal) == 0);
+	nodenum = sys_get_node_num();
+	TEST_ASSERT((inportal = sys_portal_create(nodenum)) >= 0);
+
+	TEST_ASSERT((pthread_create(&thread,
+			NULL,
+			test_sys_portal_null_write_thread,
+			NULL
+		)) == 0
+	);
+
+	pthread_join(thread, NULL);
+
+	TEST_ASSERT(sys_portal_unlink(inportal) == 0);
 }
 
 /*============================================================================*/
@@ -401,12 +590,12 @@ struct test portal_tests_fault[] = {
 	{ test_sys_portal_invalid_create, "Invalid Create" },
 	{ test_sys_portal_bad_create,     "Bad Create"     },
 	{ test_sys_portal_double_create,  "Double Create"  },
-	{ test_sys_portal_invalid_open,   "Invalid Open"   },
-	{ test_sys_portal_bad_open,       "Bad Open"       },
-	{ test_sys_portal_double_open,    "Double Open"    },
 	{ test_sys_portal_invalid_unlink, "Invalid Unlink" },
 	{ test_sys_portal_double_unlink,  "Double Unlink"  },
 	{ test_sys_portal_bad_unlink,     "Bad Unlink"     },
+	{ test_sys_portal_invalid_open,   "Invalid Open"   },
+	{ test_sys_portal_bad_open,       "Bad Open"       },
+	{ test_sys_portal_double_open,    "Double Open"    },
 	{ test_sys_portal_invalid_close,  "Invalid Close"  },
 	{ test_sys_portal_bad_close,      "Bad Close"      },
 	{ test_sys_portal_double_close,   "Double Close"   },

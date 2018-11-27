@@ -304,5 +304,5 @@ struct test mailbox_tests_api[] = {
 	{ test_sys_mailbox_open_close,    "Open Close"             },
 	{ test_sys_mailbox_double_open,   "Double Open"            },
 	{ test_sys_mailbox_read_write,    "Read Write"             },
-	{ NULL,                           NULL                     },
+	{ NULL,                            NULL                    },
 };

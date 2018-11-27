@@ -27,7 +27,7 @@
 #include <string.h>
 
 #include <nanvix/limits.h>
-#include <nanvix/mqueue.h>
+#include <nanvix/mqueues.h>
 
 #include "test.h"
 

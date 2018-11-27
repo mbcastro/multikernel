@@ -20,29 +20,33 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <errno.h>
-#include <mqueue.h>
+#include <stdio.h>
 
-#include <nanvix/mqueues.h>
+#define __NEED_HAL_NOC_
+#include <hal.h>
+#include <klib.h>
+
+#include "noc.h"
+#include "core.h"
 
 /**
- * @brief removes a message queue.
- *
- * @param mqdes Descriptor of the received message queue.
- *
- * @returns Upon successful completion, zero is returned. Upon
- * failure, -1 is returned instead, and errno is set to indicate the
- * error.
+ * @brief Initializes platform-dependent structures.
  */
-
-int mq_close(mqd_t mqdes)
+void hal_setup(void)
 {
-    /* Invalid descriptor. */
-	if (mqdes < 0)
-	{
-		errno = EINVAL;
-		return (-1);
-	}
+	kprintf("configuring hardware");
 
-	return (nanvix_mqueue_close(mqdes));
+	unix_noc_setup();
+	unix_core_setup();
+}
+
+/**
+ * @brief Cleans platform-dependent structures.
+ */
+void hal_cleanup(void)
+{
+	kprintf("shutting down");
+
+	unix_noc_cleanup();
+	unix_core_cleanup();
 }

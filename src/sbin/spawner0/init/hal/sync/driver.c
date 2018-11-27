@@ -55,6 +55,8 @@ void test_kernel_sys_sync(void)
 {
 	ncores = sys_get_num_cores();
 
+	TEST_ASSERT(ncores == HAL_NR_IOCLUSTER_CORES);
+
 	pthread_barrier_init(&barrier, NULL, ncores - 1);
 
 	/* Run API tests. */

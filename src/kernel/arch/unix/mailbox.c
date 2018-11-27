@@ -20,36 +20,39 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <errno.h>
-#include <stdint.h>
-#include <mppaipc.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <mqueue.h>
+#include <pthread.h>
+#include <string.h>
 #include <stdarg.h>
+#include <stdint.h>
 
-#define __NEED_HAL_CORE_
 #define __NEED_HAL_NOC_
-#define __NEED_HAL_MAILBOX_
+#define __NEED_HAL_CORE_
+#define __NEED_HAL_SYNC_
 #define __NEED_HAL_PERFORMANCE_
 #include <hal.h>
 #include <klib.h>
 #include <resource.h>
-
-#include "noc.h"
 
 /**
  * @brief Table of mailboxes.
  */
 static struct mailbox
 {
-	struct resource resource; /**< Underlying resource.        */
-	int fd;                   /**< Underlying file descriptor. */
-	int nodeid;               /**< ID of underlying node.      */
-	int refcount;             /**< Reference counter.          */
-	size_t volume;            /**< Amount of data transferred. */
-	uint64_t latency;         /**< Transfer latency.           */
+	struct resource rsrc; /**< Underlying resource.        */
+	mqd_t fd;             /**< Underlying file descriptor. */
+	char pathname[128];   /**< Name of underlying mqueue.  */
+	int nodeid;           /**< ID of underlying node.      */
+	int refcount;         /**< Reference counter.          */
+	size_t volume;        /**< Amount of data transferred. */
+	uint64_t latency;     /**< Transfer latency.           */
 } mailboxes[HAL_NR_MAILBOX];
 
 /**
- * @brief Resource pool.
+ * @brief Resource pool for mailboxes.
  */
 static const struct resource_pool pool = {
 	mailboxes,
@@ -58,30 +61,38 @@ static const struct resource_pool pool = {
 };
 
 /**
- * @brief Mailbox module lock.
+ * @brief Sync module lock.
  */
 static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
+/**
+ * @brief Default message queue attribute.
+ */
+static struct mq_attr mq_attr = {
+	.mq_maxmsg = HAL_NR_NOC_NODES,
+	.mq_msgsize = HAL_MAILBOX_MSG_SIZE
+};
+
 /*============================================================================*
- * mppa256_mailbox_lock()                                                     *
+ * unix_mailbox_lock()                                                        *
  *============================================================================*/
 
 /**
- * @brief Locks MPPA-256 mailbox module.
+ * @brief Locks Unix mailbox module.
  */
-static void mppa256_mailbox_lock(void)
+static void unix_mailbox_lock(void)
 {
 	pthread_mutex_lock(&lock);
 }
 
 /*============================================================================*
- * mppa256_mailbox_unlock()                                                   *
+ * unix_mailbox_unlock()                                                      *
  *============================================================================*/
 
 /**
- * @brief Unlocks MPPA-256 mailbox module.
+ * @brief Unlocks Unix mailbox module.
  */
-static void mppa256_mailbox_unlock(void)
+static void unix_mailbox_unlock(void)
 {
 	pthread_mutex_unlock(&lock);
 }
@@ -114,33 +125,42 @@ static int mailbox_is_valid(int mbxid)
 /**
  * @brief See hal_mailbox_create().
  */
-static int mppa256_mailbox_create(int remote)
+static int unix_mailbox_create(int remote)
 {
-	int mbxid;          /* Mailbox ID.                 */
-	int fd;             /* NoC connector.              */
-	char remotes[128];  /* IDs of remote NoC nodes.    */
-	char pathname[128]; /* NoC connector name.         */
-	int noctag;         /* NoC tag used for transfers. */
+	int mbxid;      /* Mailbox ID.         */
+	int fd;         /* NoC connector.      */
+	char *pathname; /* NoC connector name. */
+
+	/* Check if input mailbox was already created. */
+	for (int i = 0; i < HAL_NR_MAILBOX; i++)
+	{
+		/* Skip invalid entries. */
+		if (!resource_is_used(&mailboxes[i].rsrc))
+			continue;
+
+		/* Skip invalid entries. */
+		if (!resource_is_readable((&mailboxes[i].rsrc)))
+			continue;
+
+		/* Found. */
+		if (mailboxes[i].nodeid == remote)
+			return (-EEXIST);
+	}
 
 	/* Allocate a mailbox. */
 	if ((mbxid = resource_alloc(&pool)) < 0)
 		goto error0;
 
-	noc_get_remotes(remotes, remote);
-	noctag = noctag_mailbox(remote);
+	pathname = mailboxes[mbxid].pathname;
 
 	/* Build pathname for NoC connector. */
 	sprintf(pathname,
-			"/mppa/rqueue/%d:%d/[%s]:%d/1.%d",
-			remote,
-			noctag,
-			remotes,
-			noctag,
-			HAL_MAILBOX_MSG_SIZE
+		"/mailbox-%d",
+		remote	
 	);
 
 	/* Open NoC connector. */
-	if ((fd = mppa_open(pathname, O_RDONLY)) == -1)
+	if ((fd = mq_open(pathname, O_RDONLY | O_CREAT, S_IRUSR | S_IWUSR, &mq_attr)) == -1)
 		goto error1;
 
 	/* Initialize mailbox. */
@@ -149,8 +169,8 @@ static int mppa256_mailbox_create(int remote)
 	mailboxes[mbxid].refcount = 1;
 	mailboxes[mbxid].latency = 0;
 	mailboxes[mbxid].volume = 0;
-	resource_set_rdonly(&mailboxes[mbxid].resource);
-	resource_set_notbusy(&mailboxes[mbxid].resource);
+	resource_set_rdonly(&mailboxes[mbxid].rsrc);
+	resource_set_notbusy(&mailboxes[mbxid].rsrc);
 
 	return (mbxid);
 
@@ -181,9 +201,9 @@ int hal_mailbox_create(int remote)
 	if (remote != hal_get_node_id())
 		return (-EINVAL);
 
-	mppa256_mailbox_lock();
-		mbxid = mppa256_mailbox_create(remote);
-	mppa256_mailbox_unlock();
+	unix_mailbox_lock();
+		mbxid = unix_mailbox_create(remote);
+	unix_mailbox_unlock();
 
 	return (mbxid);
 }
@@ -195,43 +215,27 @@ int hal_mailbox_create(int remote)
 /**
  * @brief See hal_mailbox_open().
  */
-static int mppa256_mailbox_open(int remote)
+static int unix_mailbox_open(int remote)
 {
-	int local;          /* NoC ID of local node.       */
-	int mbxid;          /* Mailbox ID.                 */
-	int fd;             /* NoC connector.              */
-	char remotes[128];  /* IDs of remote NoC nodes.    */
-	char pathname[128]; /* NoC connector name.         */
-	int noctag;         /* NoC tag used for transfers. */
+	int mbxid;      /* Mailbox ID.         */
+	int fd;         /* NoC connector.      */
+	char *pathname; /* NoC connector name. */
 
 	/* Allocate a mailbox. */
 	if ((mbxid = resource_alloc(&pool)) < 0)
 		goto error0;
 
-	noc_get_remotes(remotes, remote);
-	noctag = noctag_mailbox(remote);
+	pathname = mailboxes[mbxid].pathname;
 
 	/* Build pathname for NoC connector. */
 	sprintf(pathname,
-			"/mppa/rqueue/%d:%d/[%s]:%d/1.%d",
-			remote,
-			noctag,
-			remotes,
-			noctag,
-			HAL_MAILBOX_MSG_SIZE
+		"/mailbox-%d",
+		remote
 	);
 
 	/* Open NoC connector. */
-	if ((fd = mppa_open(pathname, O_WRONLY)) == -1)
+	if ((fd = mq_open(pathname, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR, &mq_attr)) == -1)
 		goto error1;
-
-	/* Set DMA interface for IO cluster. */
-	local = hal_get_node_id();
-	if (noc_is_ionode(local))
-	{
-		if (mppa_ioctl(fd, MPPA_TX_SET_INTERFACE, noc_get_dma(local, remote)) == -1)
-			goto error2;
-	}
 
 	/* Initialize mailbox. */
 	mailboxes[mbxid].fd = fd;
@@ -239,13 +243,11 @@ static int mppa256_mailbox_open(int remote)
 	mailboxes[mbxid].refcount = 1;
 	mailboxes[mbxid].latency = 0;
 	mailboxes[mbxid].volume = 0;
-	resource_set_wronly(&mailboxes[mbxid].resource);
-	resource_set_notbusy(&mailboxes[mbxid].resource);
+	resource_set_wronly(&mailboxes[mbxid].rsrc);
+	resource_set_notbusy(&mailboxes[mbxid].rsrc);
 
 	return (mbxid);
 
-error2:
-	mppa_close(fd);
 error1:
 	resource_free(&pool, mbxid);
 error0:
@@ -279,7 +281,7 @@ int hal_mailbox_open(int nodeid)
 
 again:
 
-	mppa256_mailbox_lock();
+	unix_mailbox_lock();
 
 	/*
 	 * Check if we should just duplicate
@@ -288,11 +290,11 @@ again:
 	for (int i = 0; i < HAL_NR_MAILBOX; i++)
 	{
 		/* Skip unused mailboxes. */
-		if (!resource_is_used(&mailboxes[i].resource))
+		if (!resource_is_used(&mailboxes[i].rsrc))
 			continue;
 
 		/* Skip input mailboxes. */
-		if (resource_is_readable(&mailboxes[i].resource))
+		if (resource_is_readable(&mailboxes[i].rsrc))
 			continue;
 
 		/* Not this node ID. */
@@ -303,9 +305,9 @@ again:
 		 * Found, but mailbox is busy
 		 * We have to wait a bit more.
 		 */
-		if (resource_is_busy(&mailboxes[i].resource))
+		if (resource_is_busy(&mailboxes[i].rsrc))
 		{
-			mppa256_mailbox_unlock();
+			unix_mailbox_unlock();
 			goto again;
 		}
 
@@ -313,11 +315,11 @@ again:
 		mailboxes[i].refcount++;
 		goto out;
 	}
-	
-	mbxid = mppa256_mailbox_open(nodeid);
-	
+
+	mbxid = unix_mailbox_open(nodeid);
+
 out:
-	mppa256_mailbox_unlock();
+	unix_mailbox_unlock();
 	return (mbxid);
 }
 
@@ -345,34 +347,36 @@ int hal_mailbox_unlink(int mbxid)
 
 again:
 
-	mppa256_mailbox_lock();
+	unix_mailbox_lock();
 
 		/* Bad mailbox. */
-		if (!resource_is_used(&mailboxes[mbxid].resource))
+		if (!resource_is_used(&mailboxes[mbxid].rsrc))
 			goto error1;
 
 		/* Bad mailbox. */
-		if (resource_is_writable(&mailboxes[mbxid].resource))
+		if (resource_is_writable(&mailboxes[mbxid].rsrc))
 			goto error1;
 
 		/* Busy mailbox. */
-		if (resource_is_busy(&mailboxes[mbxid].resource))
+		if (resource_is_busy(&mailboxes[mbxid].rsrc))
 		{
-			mppa256_mailbox_unlock();
+			unix_mailbox_unlock();
 			goto again;
 		}
 
-		if (mppa_close(mailboxes[mbxid].fd) < 0)
+		/* Destroy underlying message queue. */
+		if (mq_close(mailboxes[mbxid].fd) < 0)
 			goto error1;
+		mq_unlink(mailboxes[mbxid].pathname);
 
 		resource_free(&pool, mbxid);
 
-	mppa256_mailbox_unlock();
+	unix_mailbox_unlock();
 
 	return (0);
 
 error1:
-	mppa256_mailbox_unlock();
+	unix_mailbox_unlock();
 error0:
 	return (-EAGAIN);
 }
@@ -401,20 +405,20 @@ int hal_mailbox_close(int mbxid)
 
 again:
 
-	mppa256_mailbox_lock();
+	unix_mailbox_lock();
 
 		/* Bad mailbox. */
-		if (!resource_is_used(&mailboxes[mbxid].resource))
+		if (!resource_is_used(&mailboxes[mbxid].rsrc))
 			goto error1;
 
 		/* Bad mailbox. */
-		if (resource_is_readable(&mailboxes[mbxid].resource))
+		if (resource_is_readable(&mailboxes[mbxid].rsrc))
 			goto error1;
 
 		/* Busy mailbox. */
-		if (resource_is_busy(&mailboxes[mbxid].resource))
+		if (resource_is_busy(&mailboxes[mbxid].rsrc))
 		{
-			mppa256_mailbox_unlock();
+			unix_mailbox_unlock();
 			goto again;
 		}
 
@@ -425,29 +429,29 @@ again:
 		if (mailboxes[mbxid].refcount-- == 1)
 		{
 			/* Set mailbox as busy. */
-			resource_set_busy(&mailboxes[mbxid].resource);
+			resource_set_busy(&mailboxes[mbxid].rsrc);
 
 			/* Release lock, since we may sleep below. */
-			mppa256_mailbox_unlock();
+			unix_mailbox_unlock();
 
-			if (mppa_close(mailboxes[mbxid].fd) < 0)
+			if (mq_close(mailboxes[mbxid].fd) < 0)
 				goto error2;
 
 			/* Re-acquire lock. */
-			mppa256_mailbox_lock();
+			unix_mailbox_lock();
 
 			resource_free(&pool, mbxid);
 		}
 
-	mppa256_mailbox_unlock();
+	unix_mailbox_unlock();
 
 	return (0);
 
 error2:
-	mppa256_mailbox_lock();
-		resource_set_notbusy(&mailboxes[mbxid].resource);
+	unix_mailbox_lock();
+		resource_set_notbusy(&mailboxes[mbxid].rsrc);
 error1:
-	mppa256_mailbox_unlock();
+	unix_mailbox_unlock();
 error0:
 	return (-EAGAIN);
 }
@@ -471,7 +475,6 @@ error0:
  */
 ssize_t hal_mailbox_write(int mbxid, const void *buf, size_t n)
 {
-	size_t nwrite;
 	uint64_t t1, t2;
 
 	/* Invalid mailbox. */
@@ -488,45 +491,50 @@ ssize_t hal_mailbox_write(int mbxid, const void *buf, size_t n)
 
 again:
 
-	mppa256_mailbox_lock();
+	unix_mailbox_lock();
 
 		/* Bad mailbox. */
-		if (!resource_is_used(&mailboxes[mbxid].resource))
+		if (!resource_is_used(&mailboxes[mbxid].rsrc))
 			goto error1;
 
 		/* Bad mailbox. */
-		if (!resource_is_writable(&mailboxes[mbxid].resource))
+		if (!resource_is_writable(&mailboxes[mbxid].rsrc))
 			goto error1;
 
 		/* Busy mailbox. */
-		if (resource_is_busy(&mailboxes[mbxid].resource))
+		if (resource_is_busy(&mailboxes[mbxid].rsrc))
 		{
-			mppa256_mailbox_unlock();
+			unix_mailbox_unlock();
 			goto again;
 		}
 
 		/* Set mailbox as busy. */
-		resource_set_busy(&mailboxes[mbxid].resource);
+		resource_set_busy(&mailboxes[mbxid].rsrc);
 
 	/*
 	 * Release lock, since we may sleep below.
 	 */
-	mppa256_mailbox_unlock();
+	unix_mailbox_unlock();
 
 	t1 = hal_timer_get();
-		nwrite = mppa_write(mailboxes[mbxid].fd, buf, n);
+		if (mq_send(mailboxes[mbxid].fd, buf, n, 1) == -1)
+			goto error2;
 	t2 = hal_timer_get();
 	mailboxes[mbxid].latency = t2 - t1;
 
-	mppa256_mailbox_lock();
-		resource_set_notbusy(&mailboxes[mbxid].resource);
-	mppa256_mailbox_unlock();
+	unix_mailbox_lock();
+		resource_set_notbusy(&mailboxes[mbxid].rsrc);
+	unix_mailbox_unlock();
 
-	mailboxes[mbxid].volume = nwrite;
-	return (nwrite);
+	mailboxes[mbxid].volume = n;
+	return (n);
 
+error2:
+	unix_mailbox_lock();
+		resource_set_notbusy(&mailboxes[mbxid].rsrc);
+	unix_mailbox_unlock();
 error1:
-	mppa256_mailbox_unlock();
+	unix_mailbox_unlock();
 error0:
 	return (-EAGAIN);
 }
@@ -550,7 +558,7 @@ error0:
  */
 ssize_t hal_mailbox_read(int mbxid, void *buf, size_t n)
 {
-	size_t nread;
+	ssize_t nread;
 	uint64_t t1, t2;
 
 	/* Invalid mailbox. */
@@ -567,45 +575,49 @@ ssize_t hal_mailbox_read(int mbxid, void *buf, size_t n)
 
 again:
 
-	mppa256_mailbox_lock();
+	unix_mailbox_lock();
 
 		/* Bad mailbox. */
-		if (!resource_is_used(&mailboxes[mbxid].resource))
+		if (!resource_is_used(&mailboxes[mbxid].rsrc))
 			goto error1;
 
 		/* Bad mailbox. */
-		if (!resource_is_readable(&mailboxes[mbxid].resource))
+		if (!resource_is_readable(&mailboxes[mbxid].rsrc))
 			goto error1;
 
 		/* Busy mailbox. */
-		if (resource_is_busy(&mailboxes[mbxid].resource))
+		if (resource_is_busy(&mailboxes[mbxid].rsrc))
 		{
-			mppa256_mailbox_unlock();
+			unix_mailbox_unlock();
 			goto again;
 		}
 
 		/* Set mailbox as busy. */
-		resource_set_busy(&mailboxes[mbxid].resource);
+		resource_set_busy(&mailboxes[mbxid].rsrc);
 
 	/*
 	 * Release lock, since we may sleep below.
 	 */
-	mppa256_mailbox_unlock();
-
+	unix_mailbox_unlock();
 	t1 = hal_timer_get();
-		nread = mppa_read(mailboxes[mbxid].fd, buf, n);
+		if ((nread = mq_receive(mailboxes[mbxid].fd, buf, n, NULL)) == -1)
+			goto error2;
 	t2 = hal_timer_get();
 	mailboxes[mbxid].latency = t2 - t1;
 
-	mppa256_mailbox_lock();
-		resource_set_notbusy(&mailboxes[mbxid].resource);
-	mppa256_mailbox_unlock();
+	unix_mailbox_lock();
+		resource_set_notbusy(&mailboxes[mbxid].rsrc);
+	unix_mailbox_unlock();
 
 	mailboxes[mbxid].volume = nread;
 	return (nread);
 
+error2:
+	unix_mailbox_lock();
+		resource_set_notbusy(&mailboxes[mbxid].rsrc);
+	unix_mailbox_unlock();
 error1:
-	mppa256_mailbox_unlock();
+	unix_mailbox_unlock();
 error0:
 	return (-EAGAIN);
 }
@@ -626,40 +638,9 @@ error0:
  */
 int hal_mailbox_ioctl(int mbxid, unsigned request, va_list args)
 {
-	int ret = 0;
+	((void) mbxid);
+	((void) request);
+	((void) args);
 
-	/* Invalid mailbox. */
-	if (!mailbox_is_valid(mbxid))
-		return (-EINVAL);
-
-	/* Bad mailbox. */
-	if (!resource_is_used(&mailboxes[mbxid].resource))
-		return (-EINVAL);
-
-	/* Server request. */
-	switch (request)
-	{
-		/* Get the amount of data transfered so far. */
-		case MAILBOX_IOCTL_GET_VOLUME:
-		{
-			size_t *volume;
-			volume = va_arg(args, size_t *);
-			*volume = mailboxes[mbxid].volume;
-		} break;
-
-		/* Get the cummulative transfer latency. */
-		case MAILBOX_IOCTL_GET_LATENCY:
-		{
-			uint64_t *latency;
-			latency = va_arg(args, uint64_t *);
-			*latency = mailboxes[mbxid].latency;
-		} break;
-
-		/* Operation not supported. */
-		default:
-			ret = -ENOTSUP;
-			break;
-	}
-
-	return (ret);
+	return (0);
 }

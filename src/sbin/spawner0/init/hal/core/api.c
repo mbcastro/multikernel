@@ -22,6 +22,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <pthread.h>
 
 #include <nanvix/const.h>
@@ -34,18 +35,29 @@
  *============================================================================*/
 
 /**
+ * @brief Local lock.
+ */
+static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+
+/**
  * @brief API Test: Query Core ID
  */
 static void *test_thread_sys_get_core_id(void *args)
 {
-	int tid;
+	int coreid;
+	int *cores;
+
+	cores = args;
 
 	kernel_setup();
 	pthread_barrier_wait(&core_barrier);
 
-	tid = ((int *)args)[0];
+	coreid = sys_get_core_id();
 
-	TEST_ASSERT(tid == sys_get_core_id());
+	pthread_mutex_lock(&lock);
+		TEST_ASSERT(!cores[coreid]);
+		cores[coreid] = 1;
+	pthread_mutex_unlock(&lock);
 
 	kernel_cleanup();
 	return (NULL);
@@ -56,23 +68,28 @@ static void *test_thread_sys_get_core_id(void *args)
  */
 static void test_sys_get_core_id(void)
 {
-	int args[core_ncores];
+	int cores[core_ncores];
 	pthread_t threads[core_ncores];
 
 	/* Spawn driver threads. */
+	memset(cores, 0, core_ncores*sizeof(int));
+	cores[0] = 1;
 	for (int i = 1; i < core_ncores; i++)
 	{
-		args[i] = i;
 		TEST_ASSERT((pthread_create(&threads[i],
 			NULL,
 			test_thread_sys_get_core_id,
-			&args[i])) == 0
+			cores)) == 0
 		);
 	}
 
 	/* Wait for driver threads. */
 	for (int i = 1; i < core_ncores; i++)
 		pthread_join(threads[i], NULL);
+
+	/* Check result. */
+	for (int i = 0; i < core_ncores; i++)
+		TEST_ASSERT(cores[i]);
 }
 
 /*============================================================================*

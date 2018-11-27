@@ -28,7 +28,7 @@
 
 #include <nanvix/limits.h>
 #include <nanvix/syscalls.h>
-#include <nanvix/mqueue.h>
+#include <nanvix/mqueues.h>
 
 #include "test.h"
 

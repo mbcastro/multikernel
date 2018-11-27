@@ -37,15 +37,21 @@ extern int semaphore_server(int, int);
 /**
  * @brief Number of servers launched from this spawner.
  */
+#ifdef _UNIX_
+#define NR_SERVERS 0
+#else
 #define NR_SERVERS 3
+#endif
 
 /**
  * @brief Servers.
  */
 static struct serverinfo servers[NR_SERVERS] = {
+#ifndef _UNIX_
 	{ name_server,      NAME_SERVER_NODE,      0 },
 	{ rmem_server,      RMEM_SERVER_NODE,      1 },
 	{ semaphore_server, SEMAPHORE_SERVER_NODE, 1 }
+#endif
 };
 
 /**

@@ -29,6 +29,8 @@
 
 	#ifdef _KALRAY_MPPA256
 		#include "arch/mppa.h"
+	#elif  defined(_UNIX_)
+		#include "arch/unix.h"
 	#endif
 
 /*============================================================================*
@@ -188,8 +190,8 @@
 	extern int hal_mailbox_open(int);
 	extern int hal_mailbox_unlink(int);
 	extern int hal_mailbox_close(int);
-	extern size_t hal_mailbox_write(int, const void *, size_t);
-	extern size_t hal_mailbox_read(int, void *, size_t);
+	extern ssize_t hal_mailbox_write(int, const void *, size_t);
+	extern ssize_t hal_mailbox_read(int, void *, size_t);
 	extern int hal_mailbox_ioctl(int, unsigned, va_list);
 
 #endif /* __NEED_HAL_MAILBOX_ */
@@ -238,7 +240,7 @@
 	extern ssize_t hal_portal_read(int, void *, size_t);
 	extern int hal_portal_aread(int, void *, size_t);
 	extern ssize_t hal_portal_wait(int);
-	extern int hal_portal_write(int, const void *, size_t);
+	extern ssize_t hal_portal_write(int, const void *, size_t);
 	extern int hal_portal_awrite(int, const void *, size_t);
 	extern int hal_portal_close(int);
 	extern int hal_portal_unlink(int);
@@ -259,7 +261,6 @@
 	#define HAL_SYNC_ONE_TO_ALL 0 /**< One to all. */
 	#define HAL_SYNC_ALL_TO_ONE 1 /**< All to one. */
 	/**@}*/
-
 
 	/* Sanity check. */
 	#ifndef HAL_NR_SYNC

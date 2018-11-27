@@ -23,7 +23,7 @@
 #include <mqueue.h>
 #include <stdarg.h>
 
-#include <nanvix/mqueue.h>
+#include <nanvix/mqueues.h>
 
 /**
  * @brief Opens and initializes a message queue.

@@ -20,29 +20,16 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <errno.h>
-#include <mqueue.h>
+#ifndef _UNIX_CORE_H_
+#define _UNIX_CORE_H_
 
-#include <nanvix/mqueues.h>
+	#ifndef _UNIX_
+		#error "bad target"
+	#endif
 
-/**
- * @brief removes a message queue.
- *
- * @param mqdes Descriptor of the received message queue.
- *
- * @returns Upon successful completion, zero is returned. Upon
- * failure, -1 is returned instead, and errno is set to indicate the
- * error.
- */
+	/* Forward definitions. */
+	extern void unix_core_setup(void);
+	extern void unix_core_cleanup(void);
 
-int mq_close(mqd_t mqdes)
-{
-    /* Invalid descriptor. */
-	if (mqdes < 0)
-	{
-		errno = EINVAL;
-		return (-1);
-	}
+#endif /* _UNIX_CORE_H_ */
 
-	return (nanvix_mqueue_close(mqdes));
-}

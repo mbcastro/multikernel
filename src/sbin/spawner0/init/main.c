@@ -40,14 +40,20 @@ extern int mqueue_server(int, int);
 /**
  * @brief Number of servers launched from this spawner.
  */
+#ifdef _UNIX_
+#define NR_SERVERS 0
+#else
 #define NR_SERVERS 2
+#endif
 
 /**
  * @brief Servers.
  */
 static struct serverinfo servers[NR_SERVERS] = {
+#ifndef _UNIX_
 	{ shm_server,    SHM_SERVER_NODE,    1 },
 	{ mqueue_server, MQUEUE_SERVER_NODE, 1 }
+#endif
 };
 
 /**
@@ -182,8 +188,13 @@ void servers_shutdown(void)
 }
 
 SPAWNER_NAME("spawner0")
-SPAWNER_SHUTDOWN(servers_shutdown)
 SPAWNER_SERVERS(NR_SERVERS, servers)
+#ifdef _UNIX_
+SPAWNER_MAIN2(NULL)
+SPAWNER_SHUTDOWN(NULL)
+#else
 SPAWNER_MAIN2(main2)
+SPAWNER_SHUTDOWN(servers_shutdown)
+#endif
 SPAWNER_KERNEL_TESTS(test_kernel)
 

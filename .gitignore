@@ -3,5 +3,7 @@ lib/*
 output/*
 *.swp
 *.o
+spawner0.out
+spawner1.out
 
 tags

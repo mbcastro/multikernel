@@ -25,7 +25,7 @@
 #include <stdio.h>
 
 #include <nanvix/spawner.h>
-#include <nanvix/mqueue.h>
+#include <nanvix/mqueues.h>
 #include <nanvix/name.h>
 #include <nanvix/syscalls.h>
 

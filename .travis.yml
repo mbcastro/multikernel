@@ -1,0 +1,34 @@
+language: c
+sudo: true
+compiler: gcc
+
+jobs:
+    include:
+        - stage: "Build"
+          script: make all TARGET=unix
+
+        - stage: "Tests"
+          name: "Kernel Core Module Unit Testing"
+          script:
+            - make all TARGET=unix > /dev/null
+            - sudo TARGET=unix bash scripts/run-tests.sh kernel-core --short
+
+        - stage: "Tests"
+          name: "Kernel Sync Module Unit Testing"
+          script:
+            - make all TARGET=unix > /dev/null
+            - sudo TARGET=unix bash scripts/run-tests.sh kernel-sync --short
+
+        - stage: "Tests"
+          name: "Kernel Mailbox Module Unit Testing"
+          script:
+            - make all TARGET=unix > /dev/null
+            - sudo TARGET=unix bash scripts/run-tests.sh kernel-mailbox --short
+
+        - stage: "Tests"
+          name: "Kernel Portal Module Unit Testing"
+          script:
+            - make all TARGET=unix > /dev/null
+            - sudo TARGET=unix bash scripts/run-tests.sh kernel-portal --short
+
+

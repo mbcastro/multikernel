@@ -60,6 +60,8 @@ nanvix:
 ifeq ($(TARGET),mppa256)
 	cd $(SRCDIR) && $(MAKE) all ARCH=k1bdp
 	cd $(SRCDIR) && $(MAKE) all ARCH=k1bio
+else ifeq ($(TARGET),unix)
+	cd $(SRCDIR) && $(MAKE) all ARCH=unix
 endif
 
 # Cleans everything.
@@ -67,5 +69,7 @@ distclean:
 ifeq ($(TARGET),mppa256)
 	cd $(SRCDIR) && $(MAKE) distclean ARCH=k1bdp
 	cd $(SRCDIR) && $(MAKE) distclean ARCH=k1bio
+else ifeq ($(TARGET),unix)
+	cd $(SRCDIR) && $(MAKE) distclean ARCH=unix
 endif
 

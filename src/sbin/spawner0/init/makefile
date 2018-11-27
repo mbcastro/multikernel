@@ -36,6 +36,10 @@ OBJ = $(SRC:.c=.o)
 all: $(OBJ)
 	mkdir -p $(LIBDIR)
 	$(AR) $(ARFLAGS) $(LIBSERVERS) $(OBJ)
+ifeq ($(TARGET),unix)
+	mkdir -p $(BINDIR)
+	$(CC) $(LDFLAGS) $(OBJ) $(CRT0) -o $(SPAWNER0BIN) $(LIBS)
+endif
 
 # Builds object files.
 %.o: %.c

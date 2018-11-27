@@ -25,6 +25,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include <nanvix/const.h>
 #include <nanvix/syscalls.h>
 
 #include "test.h"
@@ -94,27 +95,33 @@ static void test_sys_portal_create_unlink(void)
  */
 static void *test_sys_portal_thread_open_close(void *args)
 {
+	int remote;
+	int local;
+	int inportal;
 	int outportal;
-	int tid;
-	int nodenum;
+
+	((void) args);
 
 	kernel_setup();
 
 	pthread_barrier_wait(&barrier);
 
-	tid = ((int *)args)[0];
+	local = sys_get_node_num();
 
-	nodenum = sys_get_node_num();
-
+	TEST_ASSERT((inportal = sys_portal_create(local)) >= 0);
 	pthread_barrier_wait(&barrier);
 
-	TEST_ASSERT((outportal = sys_portal_open(((tid + 1) == sys_portal_ncores) ?
-		nodenum + 1 - sys_portal_ncores + 1:
-		nodenum + 1)) >= 0);
+	remote = ((local + 1) < (SPAWNER_SERVER_NODE + sys_portal_ncores)) ?
+		local + 1 :
+		SPAWNER_SERVER_NODE + 1;
 
+	TEST_ASSERT((outportal = sys_portal_open(remote)) >= 0);
 	pthread_barrier_wait(&barrier);
 
 	TEST_ASSERT(sys_portal_close(outportal) == 0);
+	pthread_barrier_wait(&barrier);
+
+	TEST_ASSERT(sys_portal_unlink(inportal) == 0);
 
 	kernel_cleanup();
 	return (NULL);
@@ -125,17 +132,15 @@ static void *test_sys_portal_thread_open_close(void *args)
  */
 static void test_sys_portal_open_close(void)
 {
-	int tids[sys_portal_ncores];
 	pthread_t threads[sys_portal_ncores];
 
 	/* Spawn driver threads. */
 	for (int i = 1; i < sys_portal_ncores; i++)
 	{
-		tids[i] = i;
-		TEST_ASSERT((pthread_create(&threads[i],
+		TEST_ASSERT(pthread_create(&threads[i],
 			NULL,
 			test_sys_portal_thread_open_close,
-			&tids[i])) == 0
+			NULL) == 0
 		);
 	}
 
@@ -153,31 +158,30 @@ static void test_sys_portal_open_close(void)
  */
 static void *test_sys_portal_thread_read_write(void *args)
 {
-	int tnum;
-	int outportal;
-	int inportal;
+	int local;
 	char buf[DATA_SIZE];
-	int nodenum;
-	int TID_READ = 1;
+
+	((void) args);
 
 	kernel_setup();
 
 	pthread_barrier_wait(&barrier);
 
-	tnum = ((int *)args)[0];
-
-	nodenum = sys_get_node_num();
+	local = sys_get_node_num();
 
 	/* Reader thread */
-	if (tnum == TID_READ)
+	if (local == (SPAWNER_SERVER_NODE + sys_portal_ncores -1))
 	{
-		TEST_ASSERT((inportal = sys_portal_create(nodenum)) >= 0);
+		int inportal;
+
+		TEST_ASSERT((inportal = sys_portal_create(local)) >= 0);
+		pthread_barrier_wait(&barrier);
 		pthread_barrier_wait(&barrier);
 
 		for (int i = 1; i < sys_portal_ncores - 1; i++)
 		{
 			/* Enables read operations. */
-			TEST_ASSERT(sys_portal_allow(inportal, nodenum + i) == 0);
+			TEST_ASSERT(sys_portal_allow(inportal, SPAWNER_SERVER_NODE + i) == 0);
 
 			memset(buf, 0, DATA_SIZE);
 			TEST_ASSERT(sys_portal_read(inportal, buf, DATA_SIZE) == DATA_SIZE);
@@ -186,16 +190,21 @@ static void *test_sys_portal_thread_read_write(void *args)
 				TEST_ASSERT(buf[j] == 1);
 		}
 
+		pthread_barrier_wait(&barrier);
 		TEST_ASSERT(sys_portal_unlink(inportal) == 0);
 	}
 	else
 	{
+		int outportal;
+
 		pthread_barrier_wait(&barrier);
-		TEST_ASSERT((outportal = sys_portal_open(nodenum - tnum + TID_READ)) >= 0);
+		TEST_ASSERT((outportal = sys_portal_open(SPAWNER_SERVER_NODE + sys_portal_ncores - 1)) >= 0);
+		pthread_barrier_wait(&barrier);
 
 		memset(buf, 1, DATA_SIZE);
 		TEST_ASSERT(sys_portal_write(outportal, buf, DATA_SIZE) == DATA_SIZE);
 
+		pthread_barrier_wait(&barrier);
 		TEST_ASSERT(sys_portal_close(outportal) == 0);
 	}
 
@@ -208,18 +217,16 @@ static void *test_sys_portal_thread_read_write(void *args)
  */
 static void test_sys_portal_read_write(void)
 {
-	int tids[sys_portal_ncores];
 	pthread_t threads[sys_portal_ncores];
 
 	/* Spawn driver threads. */
 	for (int i = 1; i < sys_portal_ncores; i++)
 	{
-		tids[i] = i;
-
 		TEST_ASSERT((pthread_create(&threads[i],
-			NULL,
-			test_sys_portal_thread_read_write,
-			&tids[i])) == 0
+				NULL,
+				test_sys_portal_thread_read_write,
+				NULL
+			)) == 0
 		);
 	}
 
@@ -235,7 +242,7 @@ static void test_sys_portal_read_write(void)
  */
 struct test sys_portal_tests_api[] = {
 	{ test_sys_portal_create_unlink, "Create Unlink" },
-	{ test_sys_portal_read_write,    "Read Write"    },
 	{ test_sys_portal_open_close,    "Open Close"    },
+	{ test_sys_portal_read_write,    "Read Write"    },
 	{ NULL,                           NULL           },
 };

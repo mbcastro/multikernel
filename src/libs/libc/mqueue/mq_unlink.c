@@ -22,7 +22,7 @@
 
 #include <mqueue.h>
 
-#include <nanvix/mqueue.h>
+#include <nanvix/mqueues.h>
 
 /**
  * @brief removes a message queue.

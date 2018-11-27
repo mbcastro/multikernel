@@ -20,39 +20,37 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef NANVIX_KLIB_H_
-#define NANVIX_KLIB_H_
+#ifndef _UNIX_NOC_H_
+#define _UNIX_NOC_H_
 
-	#include <errno.h>
-	#include <stdio.h>
-	#include <string.h>
-	#include <pthread.h>
+	#ifndef _UNIX_
+		#error "bad target"
+	#endif
 
-	/**
-	 * @brief Returns the length of an array.
-	 *
-	 * @param x Target array.
-	 *
-	 * @return The length of the target array.
-	 */
-	#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
-
-	/**
-	 * @brief Asserts an expression.
-	 *
-	 * @param x Expression.
-	 */
-	#define KASSERT(x)                                                    \
-		{                                                                 \
-			if(!(x))                                                      \
-				kpanic("assertation failed (file=%s function=%s line=%d", \
-					__FILE__, __FUNCTION__, __LINE__                      \
-				);                                                        \
-		}
+	/* Cluster IDs. */
+	#define IOCLUSTER0   0 /**< IO cluster 0.       */
+	#define IOCLUSTER1   4 /**< IO cluster 1.       */
+	#define CCLUSTER0    8 /**< Compute cluster  0. */
+	#define CCLUSTER1    9 /**< Compute cluster  1. */
+	#define CCLUSTER2   10 /**< Compute cluster  2. */
+	#define CCLUSTER3   11 /**< Compute cluster  3. */
+	#define CCLUSTER4   12 /**< Compute cluster  4. */
+	#define CCLUSTER5   13 /**< Compute cluster  5. */
+	#define CCLUSTER6   14 /**< Compute cluster  6. */
+	#define CCLUSTER7   15 /**< Compute cluster  7. */
+	#define CCLUSTER8   16 /**< Compute cluster  8. */
+	#define CCLUSTER9   17 /**< Compute cluster  9. */
+	#define CCLUSTER10  18 /**< Compute cluster 10. */
+	#define CCLUSTER11  19 /**< Compute cluster 11. */
+	#define CCLUSTER12  20 /**< Compute cluster 12. */
+	#define CCLUSTER13  11 /**< Compute cluster 13. */
+	#define CCLUSTER14  22 /**< Compute cluster 14. */
+	#define CCLUSTER15  23 /**< Compute cluster 15. */
 
 	/* Forward definitions. */
-	extern void kprintf(const char*, ...);
-	extern void kpanic(const char *, ...);
+	extern void unix_noc_setup(void);
+	extern void unix_noc_cleanup(void);
 
-#endif /* NANVIX_KLIB_H_ */
+#endif /* _UNIX_NOC_H_ */
+
 

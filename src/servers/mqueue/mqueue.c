@@ -24,7 +24,7 @@
 #include <sys/stat.h>
 #include <string.h>
 
-#include <nanvix/mqueue.h>
+#include <nanvix/mqueues.h>
 
 /**
  * @brief Maximum number of message mqueues.

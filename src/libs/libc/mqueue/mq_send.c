@@ -25,7 +25,7 @@
 #include <stdlib.h>
 #include <mqueue.h>
 
-#include <nanvix/mqueue.h>
+#include <nanvix/mqueues.h>
 
 /**
  * @brief Sends a message to a message queue.

@@ -23,6 +23,8 @@
 # Import Platform-Dependent Stuff
 ifeq ($(ARCH),$(filter $(ARCH),k1bdp k1bio))
 	include $(MAKEDIR)/makefile.mppa256
+else ifeq ($(ARCH),$(filter $(ARCH),unix))
+	include $(MAKEDIR)/makefile.unix
 endif
 
 #===============================================================================
@@ -30,6 +32,7 @@ endif
 #===============================================================================
 
 # Compiler Options
+export CFLAGS += -D asm=__asm__ -D inline=__inline__
 export CFLAGS += -ansi -std=c99
 export CFLAGS += -Wall -Wextra -Werror
 export CFLAGS += -Winit-self -Wswitch-default -Wfloat-equal

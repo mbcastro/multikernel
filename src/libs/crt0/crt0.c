@@ -85,14 +85,24 @@ int main(int argc, const char **argv)
 			debug = 1;
 	}
 
-	printf("[nanvix][%s] booting up \n", spawner_name);
+	printf("[nanvix][%s] booting up", spawner_name);
+	if (argc > 1)
+	{
+		printf(" [");
+		for (int i = 1; i < argc; i++)
+			printf("%s%s", argv[i], ((i + 1) < argc) ? " " : "]");
+	}
+	printf("\n");
 
 	/* Initialization. */
 	assert(kernel_setup() == 0);
 
 	/* Run self-tests. */
 	if ((debug) && (test_kernel_fn != NULL))
+	{
+		printf("[nanvix][%s] launching unit tests\n", spawner_name);
 		test_kernel_fn(argv[2]);
+	}
 
 	spawner_init();
 
@@ -129,6 +139,8 @@ int main(int argc, const char **argv)
 	}
 
 	spawner_finalize();
+
+	printf("[nanvix][%s] %d/%d servers successfully launched\n", spawner_name, initialized_servers, spawner_nservers);
 	
 	if (initialized_servers != spawner_nservers)
 		goto error;
@@ -166,7 +178,9 @@ int main(int argc, const char **argv)
 	if (spawner_shutdown == NULL)
 	{
 		printf("[nanvix][%s] down\n", spawner_name);
-		while(1);
+#ifndef _UNIX_
+	while(1);
+#endif
 	}
 
 	return (ret);

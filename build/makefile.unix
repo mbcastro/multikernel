@@ -20,33 +20,21 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-export CFLAGS += -I $(INCDIR)/nanvix/
+export BUILD_SERVERS=true
+export BUILDING_IOCLUSTER=true
+export BUILDING_CCLUSTER=true
 
-# C Source Files
-SRC = $(wildcard arch/$(TARGET)/*.c) \
-      $(wildcard init/*.c)           \
-      $(wildcard lib/*.c)            \
-      $(wildcard sys/*.c)
+# Toolchain
+export CC = gcc
+export LD = ld
+export AR = ar
 
-# Object Files
-OBJ = $(SRC:.c=.o)
+# Compiler Options
+export CFLAGS = -D_UNIX_ -D_XOPEN_SOURCE=700
 
-#===============================================================================
-
-# Builds everything.
-all: $(OBJ)
-	mkdir -p $(LIBDIR)
-	$(AR) $(ARFLAGS) $(LIBKERNEL) $(OBJ)
-
-# Builds object files.
-%.o: %.c
-	$(CC) $(CFLAGS) $<  -c -o $@
-
-# Cleans compilation files.
-clean:
-	rm -rf $(OBJ)
-
-# Cleans everything.
-distclean: clean
-	rm -rf $(LIBKERNEL)
-
+# Binaries & Libraries
+export LIBKERNEL = $(LIBDIR)/libkernel.a
+export LIBNANVIX = $(LIBDIR)/libnanvix.a
+export LIBSERVERS = $(LIBDIR)/libservers.a
+export LIBC = $(LIBDIR)/libc.a
+export LIBS = $(LIBNANVIX) $(LIBKERNEL) -lpthread -lrt

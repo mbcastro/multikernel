@@ -73,7 +73,6 @@ static void test_sys_mailbox_double_create(void)
 
 	TEST_ASSERT((inbox = sys_mailbox_create(nodenum)) >= 0);
 	TEST_ASSERT(sys_mailbox_create(nodenum) < 0);
-
 	TEST_ASSERT(sys_mailbox_unlink(inbox) == 0);
 }
 
@@ -272,9 +271,9 @@ struct test mailbox_tests_fault[] = {
 	{ test_sys_mailbox_invalid_create, "Invalid Create" },
 	{ test_sys_mailbox_bad_create,     "Bad Create"     },
 	{ test_sys_mailbox_double_create,  "Double Create"  },
+	{ test_sys_mailbox_double_unlink,  "Double Unlink"  },
 	{ test_sys_mailbox_invalid_open,   "Invalid Open"   },
 	{ test_sys_mailbox_bad_open,       "Bad Open"       },
-	{ test_sys_mailbox_double_unlink,  "Double Unlink"  },
 	{ test_sys_mailbox_double_close,   "Double Close"   },
 	{ test_sys_mailbox_invalid_write,  "Invalid Write"  },
 	{ test_sys_mailbox_bad_write,      "Bad Write"      },
@@ -282,5 +281,5 @@ struct test mailbox_tests_fault[] = {
 	{ test_sys_mailbox_invalid_read,   "Invalid Read"   },
 	{ test_sys_mailbox_bad_read,       "Bad Read"       },
 	{ test_sys_mailbox_null_read,      "Null Read"      },
-	{ NULL,                            NULL             },
+	{ NULL,                             NULL            },
 };

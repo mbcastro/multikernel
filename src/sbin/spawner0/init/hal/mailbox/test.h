@@ -25,11 +25,21 @@
 
 	#include <stdlib.h>
 	#include <pthread.h>
+	#include <stdio.h>
 
 	/**
 	 * @brief Asserts a logic expression.
 	 */
-	#define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
+	#define TEST_ASSERT(x)                                                                 \
+		{                                                                                  \
+			if(!(x))                                                                       \
+			{                                                                              \
+				fprintf(stderr, "test assertation failed (file=%s function=%s line=%d)\n", \
+					__FILE__, __FUNCTION__, __LINE__                                       \
+				);                                                                         \
+				exit(EXIT_FAILURE);                                                        \
+			}                                                                              \
+		}
 
 	/**
 	 * @brief Unit test.
