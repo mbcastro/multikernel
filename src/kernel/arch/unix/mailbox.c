@@ -24,7 +24,6 @@
 #include <sys/types.h>
 #include <fcntl.h>
 #include <mqueue.h>
-#include <pthread.h>
 #include <string.h>
 #include <stdarg.h>
 #include <stdint.h>
@@ -33,6 +32,7 @@
 #define __NEED_HAL_CORE_
 #define __NEED_HAL_SYNC_
 #define __NEED_HAL_PERFORMANCE_
+#define __NEED_HAL_MUTEX_
 #include <hal.h>
 #include <klib.h>
 #include <resource.h>
@@ -63,7 +63,7 @@ static const struct resource_pool pool = {
 /**
  * @brief Sync module lock.
  */
-static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+static hal_mutex_t lock = HAL_MUTEX_INITIALIZER;
 
 /**
  * @brief Default message queue attribute.
@@ -82,7 +82,7 @@ static struct mq_attr mq_attr = {
  */
 static void unix_mailbox_lock(void)
 {
-	pthread_mutex_lock(&lock);
+	hal_mutex_lock(&lock);
 }
 
 /*============================================================================*
@@ -94,7 +94,7 @@ static void unix_mailbox_lock(void)
  */
 static void unix_mailbox_unlock(void)
 {
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 }
 
 /*============================================================================*

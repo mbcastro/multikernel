@@ -23,7 +23,9 @@
 #ifndef NANVIX_SPAWNER_H_
 #define NANVIX_SPAWNER_H_
 
-	#include <pthread.h>
+	#define __NEED_HAL_CONST_
+	#define __NEED_HAL_BARRIER_
+	#include "hal.h"
 	#include "message.h"
 
 	/**
@@ -113,6 +115,6 @@
 		void (*test_kernel_fn)(const char *) = x;
 
 	/* Forward definitions. */
-	extern pthread_barrier_t spawner_barrier;
+	extern hal_barrier_t spawner_barrier;
 
 #endif /* NANVIX_SPAWNER_H_*/

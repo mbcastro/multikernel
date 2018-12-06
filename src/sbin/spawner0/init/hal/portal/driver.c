@@ -20,9 +20,9 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <pthread.h>
 #include <stdio.h>
 
+#define __NEED_HAL_BARRIER_
 #include <nanvix/syscalls.h>
 
 #include "test.h"
@@ -35,7 +35,7 @@ int sys_portal_ncores = 0;
 /**
  * @brief Global barrier for synchronization.
  */
-pthread_barrier_t barrier;
+hal_barrier_t barrier;
 
 /**
  * @brief Unnamed Mailbox Test Driver
@@ -44,7 +44,7 @@ void test_kernel_sys_portal(void)
 {
 	sys_portal_ncores = sys_get_num_cores();
 
-	pthread_barrier_init(&barrier, NULL, sys_portal_ncores - 1);
+	hal_barrier_init(&barrier, sys_portal_ncores - 1);
 
 	/* Run API tests. */
 	for (int i = 0; sys_portal_tests_api[i].test_fn != NULL; i++)

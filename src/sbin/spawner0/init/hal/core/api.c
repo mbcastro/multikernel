@@ -25,6 +25,8 @@
 #include <string.h>
 #include <pthread.h>
 
+#define __NEED_HAL_MUTEX_
+#define __NEED_HAL_BARRIER_
 #include <nanvix/const.h>
 #include <nanvix/syscalls.h>
 
@@ -37,7 +39,7 @@
 /**
  * @brief Local lock.
  */
-static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+static hal_mutex_t lock = HAL_MUTEX_INITIALIZER;
 
 /**
  * @brief API Test: Query Core ID
@@ -50,14 +52,14 @@ static void *test_thread_sys_get_core_id(void *args)
 	cores = args;
 
 	kernel_setup();
-	pthread_barrier_wait(&core_barrier);
+	hal_barrier_wait(&core_barrier);
 
 	coreid = sys_get_core_id();
 
-	pthread_mutex_lock(&lock);
+	hal_mutex_lock(&lock);
 		TEST_ASSERT(!cores[coreid]);
 		cores[coreid] = 1;
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 
 	kernel_cleanup();
 	return (NULL);
@@ -104,7 +106,7 @@ static void *test_thread_sys_get_core_type(void *args)
 	((void) args);
 
 	kernel_setup();
-	pthread_barrier_wait(&core_barrier);
+	hal_barrier_wait(&core_barrier);
 
 	TEST_ASSERT(sys_get_core_type() == CORE_SYSTEM);
 

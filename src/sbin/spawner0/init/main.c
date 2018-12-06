@@ -24,9 +24,10 @@
 #include <stddef.h>
 #include <string.h>
 
+#define __NEED_HAL_BARRIER_
 #include <nanvix/const.h>
-#include <nanvix/syscalls.h>
 #include <nanvix/spawner.h>
+#include <nanvix/syscalls.h>
 
 /* Forward definitions. */
 extern int main2(int, const char **);

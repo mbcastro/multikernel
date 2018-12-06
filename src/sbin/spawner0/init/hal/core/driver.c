@@ -20,9 +20,10 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <pthread.h>
 #include <stdio.h>
 
+#define __NEED_HAL_MUTEX_
+#define __NEED_HAL_BARRIER_
 #include <nanvix/syscalls.h>
 
 #include "test.h"
@@ -35,7 +36,7 @@ int core_ncores = 0;
 /**
  * @brief Global barrier for synchronization.
  */
-pthread_barrier_t core_barrier;
+hal_barrier_t core_barrier;
 
 /**
  * @brief Synchronization Point Test Driver
@@ -46,7 +47,7 @@ void test_kernel_sys_core(void)
 
 	TEST_ASSERT(core_ncores == HAL_NR_IOCLUSTER_CORES);
 
-	pthread_barrier_init(&core_barrier, NULL, core_ncores - 1);
+	hal_barrier_init(&core_barrier, core_ncores - 1);
 
 	/* Run API tests. */
 	for (int i = 0; core_tests_api[i].test_fn != NULL; i++)

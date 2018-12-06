@@ -31,8 +31,8 @@
 #include <mppa/osconfig.h>
 #endif
 
-#include <nanvix/syscalls.h>
 #include <nanvix/spawner.h>
+#include <nanvix/syscalls.h>
 #include <nanvix/pm.h>
 
 /* Forward definitions. */

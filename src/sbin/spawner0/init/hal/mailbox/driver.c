@@ -20,9 +20,9 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <pthread.h>
 #include <stdio.h>
 
+#define __NEED_HAL_BARRIER_
 #include <nanvix/syscalls.h>
 #include <nanvix/const.h>
 
@@ -45,7 +45,7 @@ int mailbox_nodes_local[NANVIX_NR_NODES];
 /**
  * @brief Global barrier for synchronization.
  */
-pthread_barrier_t barrier;
+hal_barrier_t barrier;
 
 /**
  * @brief Unnamed Mailbox Test Driver
@@ -54,7 +54,7 @@ void test_kernel_sys_mailbox(void)
 {
 	mailbox_ncores = sys_get_num_cores();
 
-	pthread_barrier_init(&barrier, NULL, mailbox_ncores - 1);
+	hal_barrier_init(&barrier, mailbox_ncores - 1);
 
 	/* Run API tests. */
 	for (int i = 0; mailbox_tests_api[i].test_fn != NULL; i++)

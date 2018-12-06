@@ -26,6 +26,7 @@
 #include <mqueue.h>
 #include <string.h>
 
+#define __NEED_HAL_BARRIER_
 #include <nanvix/limits.h>
 #include <nanvix/mqueues.h>
 

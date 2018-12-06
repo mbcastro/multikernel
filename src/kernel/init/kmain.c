@@ -23,13 +23,14 @@
 #define __NEED_HAL_CORE_
 #define __NEED_HAL_NOC_
 #define __NEED_HAL_SETUP_
+#define __NEED_HAL_MUTEX_
 #include <hal.h>
 #include <klib.h>
 
 /**
  * @brief Global kernel lock.
  */
-static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+static hal_mutex_t lock = HAL_MUTEX_INITIALIZER;
 
 /**
  *
@@ -42,7 +43,7 @@ static int initialized[HAL_NR_NOC_IONODES] = { 0, };
  */
 static void kernel_lock(void)
 {
-	pthread_mutex_lock(&lock);
+	hal_mutex_lock(&lock);
 }
 
 /**
@@ -50,7 +51,7 @@ static void kernel_lock(void)
  */
 static void kernel_unlock(void)
 {
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 }
 
 /**

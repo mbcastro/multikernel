@@ -22,6 +22,7 @@
 
 #include <stdio.h>
 
+#define __NEED_HAL_BARRIER_
 #include "test.h"
 
 /**

@@ -23,6 +23,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+#define __NEED_HAL_BARRIER_
 #include <nanvix/const.h>
 #include <nanvix/syscalls.h>
 

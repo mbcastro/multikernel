@@ -26,6 +26,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#define __NEED_HAL_BARRIER_
 #include <nanvix/mm.h>
 
 #include "test.h"

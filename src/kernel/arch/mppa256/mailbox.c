@@ -29,6 +29,7 @@
 #define __NEED_HAL_NOC_
 #define __NEED_HAL_MAILBOX_
 #define __NEED_HAL_PERFORMANCE_
+#define __NEED_HAL_MUTEX_
 #include <hal.h>
 #include <klib.h>
 #include <resource.h>
@@ -60,7 +61,7 @@ static const struct resource_pool pool = {
 /**
  * @brief Mailbox module lock.
  */
-static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+static hal_mutex_t lock = HAL_MUTEX_INITIALIZER;
 
 /*============================================================================*
  * mppa256_mailbox_lock()                                                     *
@@ -71,7 +72,7 @@ static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
  */
 static void mppa256_mailbox_lock(void)
 {
-	pthread_mutex_lock(&lock);
+	hal_mutex_lock(&lock);
 }
 
 /*============================================================================*
@@ -83,7 +84,7 @@ static void mppa256_mailbox_lock(void)
  */
 static void mppa256_mailbox_unlock(void)
 {
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 }
 
 /*============================================================================*

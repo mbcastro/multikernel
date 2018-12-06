@@ -281,4 +281,23 @@
 
 #endif /* __NEED_HAL_SYNC_ */
 
+#ifdef __NEED_HAL_MUTEX_
+
+	/* Forward definitions. */
+	extern int hal_mutex_init(hal_mutex_t *);
+	extern int hal_mutex_destroy(hal_mutex_t *);
+	extern int hal_mutex_lock(hal_mutex_t *);
+	extern int hal_mutex_unlock(hal_mutex_t *);
+
+#endif /* __NEED_HAL_MUTEX_ */
+
+#ifdef __NEED_HAL_BARRIER_
+
+	/* Forward definitions. */
+	extern int hal_barrier_init(hal_barrier_t *, unsigned);
+	extern int hal_barrier_destroy(hal_barrier_t *);
+	extern int hal_barrier_wait(hal_barrier_t *);
+
+#endif /* __NEED_HAL_BARRIER_ */
+
 #endif /* NANVIX_HAL_H_ */

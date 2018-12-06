@@ -25,6 +25,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+#define __NEED_HAL_MUTEX_
+#define __NEED_HAL_BARRIER_
 #include <nanvix/const.h>
 #include <nanvix/syscalls.h>
 
@@ -51,7 +53,7 @@ static void *test_sys_sync_create_unlink_worker(void *args)
 	/*
 	 * Wait for nodes list to be initialized. 
 	 */
-	pthread_barrier_wait(&barrier);
+	hal_barrier_wait(&barrier);
 
 	TEST_ASSERT((syncid = sys_sync_create(nodes, ncores, SYNC_ONE_TO_ALL)) >= 0);
 
@@ -59,7 +61,7 @@ static void *test_sys_sync_create_unlink_worker(void *args)
 	 * Wait for all processes to create the 
 	 * their synchronization points.
 	 */
-	pthread_barrier_wait(&barrier);
+	hal_barrier_wait(&barrier);
 
 	TEST_ASSERT(sys_sync_unlink(syncid) == 0);
 
@@ -114,7 +116,7 @@ static void *test_sys_sync_open_close_worker(void *args)
 	/*
 	 * Wait for nodes list to be initialized. 
 	 */
-	pthread_barrier_wait(&barrier);
+	hal_barrier_wait(&barrier);
 
 	TEST_ASSERT((syncid = sys_sync_create(nodes, ncores, SYNC_ONE_TO_ALL)) >= 0);
 
@@ -122,7 +124,7 @@ static void *test_sys_sync_open_close_worker(void *args)
 	 * Wait for all processes to open the 
 	 * their synchronization points.
 	 */
-	pthread_barrier_wait(&barrier);
+	hal_barrier_wait(&barrier);
 
 	TEST_ASSERT(sys_sync_unlink(syncid) == 0);
 
@@ -177,7 +179,7 @@ static void *test_sys_sync_wait_signal_worker(void *args)
 	/*
 	 * Wait for nodes list to be initialized. 
 	 */
-	pthread_barrier_wait(&barrier);
+	hal_barrier_wait(&barrier);
 
 	if (tnum == 0)
 	{
@@ -187,7 +189,7 @@ static void *test_sys_sync_wait_signal_worker(void *args)
 		 * Wait for all processes to open the 
 		 * their synchronization points.
 		 */
-		pthread_barrier_wait(&barrier);
+		hal_barrier_wait(&barrier);
 
 		TEST_ASSERT(sys_sync_signal(syncid) == 0);
 
@@ -201,7 +203,7 @@ static void *test_sys_sync_wait_signal_worker(void *args)
 		 * Wait for all processes to open the 
 		 * their synchronization points.
 		 */
-		pthread_barrier_wait(&barrier);
+		hal_barrier_wait(&barrier);
 
 		TEST_ASSERT(sys_sync_wait(syncid) == 0);
 
@@ -259,7 +261,7 @@ static void *test_sys_sync_signal_wait_worker(void *args)
 	/*
 	 * Wait for nodes list to be initialized. 
 	 */
-	pthread_barrier_wait(&barrier);
+	hal_barrier_wait(&barrier);
 
 	if (tnum == 0)
 	{
@@ -269,7 +271,7 @@ static void *test_sys_sync_signal_wait_worker(void *args)
 		 * Wait for all processes to open the 
 		 * their synchronization points.
 		 */
-		pthread_barrier_wait(&barrier);
+		hal_barrier_wait(&barrier);
 
 		TEST_ASSERT(sys_sync_wait(syncid) == 0);
 
@@ -283,7 +285,7 @@ static void *test_sys_sync_signal_wait_worker(void *args)
 		 * Wait for all processes to open the 
 		 * their synchronization points.
 		 */
-		pthread_barrier_wait(&barrier);
+		hal_barrier_wait(&barrier);
 
 		TEST_ASSERT(sys_sync_signal(syncid) == 0);
 

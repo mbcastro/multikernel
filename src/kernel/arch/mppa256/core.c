@@ -23,6 +23,7 @@
 #include <HAL/hal/core/mp.h>
 
 #define __NEED_HAL_CORE_
+#define __NEED_HAL_MUTEX_
 #include <hal.h>
 #include <klib.h>
 
@@ -46,7 +47,7 @@ static pthread_t threads[NR_IOCLUSTER_CORES] = { 0, };
 /**
  * @brief Core module lock.
  */
-static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+static hal_mutex_t lock = HAL_MUTEX_INITIALIZER;
 
 /*============================================================================*
  * mppa256_core_lock()                                                        *
@@ -57,7 +58,7 @@ static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
  */
 static void mppa256_core_lock(void)
 {
-	pthread_mutex_lock(&lock);
+	hal_mutex_lock(&lock);
 }
 
 /*============================================================================*
@@ -69,7 +70,7 @@ static void mppa256_core_lock(void)
  */
 static void mppa256_core_unlock(void)
 {
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 }
 
 /*============================================================================*

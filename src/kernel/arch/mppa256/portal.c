@@ -29,6 +29,7 @@
 #define __NEED_HAL_NOC_
 #define __NEED_HAL_PORTAL_
 #define __NEED_HAL_PERFORMANCE_
+#define __NEED_HAL_MUTEX_
 #include <hal.h>
 #include <klib.h>
 
@@ -62,7 +63,7 @@ static struct
 /**
  * @brief Portal module lock.
  */
-static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+static hal_mutex_t lock = HAL_MUTEX_INITIALIZER;
 
 /*============================================================================*
  * mppa256_portal_lock()                                                      *
@@ -73,7 +74,7 @@ static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
  */
 static inline void mppa256_portal_lock(void)
 {
-	pthread_mutex_lock(&lock);
+	hal_mutex_lock(&lock);
 }
 
 /*============================================================================*
@@ -85,7 +86,7 @@ static inline void mppa256_portal_lock(void)
  */
 static inline void mppa256_portal_unlock(void)
 {
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 }
 
 /*============================================================================*

@@ -20,31 +20,26 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <stdio.h>
+#include <pthread.h>
 
-#define __NEED_HAL_BARRIER_
-#include <nanvix/syscalls.h>
+typedef pthread_mutex_t hal_mutex_t;
 
-#include "test.h"
-
-/**
- * @brief Test driver for Named Portals.
- */
-void test_nanvix_ipc_portal(void)
+int hal_mutex_init(hal_mutex_t * mutex)
 {
-
-	/* Run API tests. */
-	for (int i = 0; nanvix_ipc_portal_tests_api[i].test_fn != NULL; i++)
-	{
-		printf("[nanvix][test][api][ipc][portal] %s\n", nanvix_ipc_portal_tests_api[i].name);
-		nanvix_ipc_portal_tests_api[i].test_fn();
-	}
-
-	/* Run fault injection tests. */
-	for (int i = 0; nanvix_ipc_portal_tests_fault[i].test_fn != NULL; i++)
-	{
-		printf("[nanvix][test][fault][ipc][portal] %s\n", nanvix_ipc_portal_tests_fault[i].name);
-		nanvix_ipc_portal_tests_fault[i].test_fn();
-	}
+    return pthread_mutex_init(mutex, NULL);
 }
 
+int hal_mutex_destroy(hal_mutex_t * mutex)
+{
+    return pthread_mutex_destroy(mutex);
+}
+
+int hal_mutex_lock(hal_mutex_t * mutex)
+{
+    return pthread_mutex_lock(mutex);
+}
+
+int hal_mutex_unlock(hal_mutex_t * mutex)
+{
+    return pthread_mutex_unlock(mutex);
+}

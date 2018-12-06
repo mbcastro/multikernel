@@ -24,8 +24,10 @@
 #define _TEST_H_
 
 	#include <stdlib.h>
-	#include <pthread.h>
 	#include <stdio.h>
+
+	#define __NEED_HAL_BARRIER_
+	#include <nanvix/hal.h>
 
 	/**
 	 * @brief Asserts a logic expression.
@@ -52,7 +54,7 @@
 
 	/* Forward definitions. */
 	extern int sys_portal_ncores;
-	extern pthread_barrier_t barrier;
+	extern hal_barrier_t barrier;
 	extern struct test sys_portal_tests_api[];
 	extern struct test portal_tests_fault[];
 

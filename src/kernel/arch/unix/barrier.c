@@ -20,31 +20,21 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <stdio.h>
+#include <pthread.h>
 
-#define __NEED_HAL_BARRIER_
-#include <nanvix/syscalls.h>
+typedef pthread_barrier_t hal_barrier_t;
 
-#include "test.h"
-
-/**
- * @brief Test driver for Named Portals.
- */
-void test_nanvix_ipc_portal(void)
+int hal_barrier_init(hal_barrier_t * barrier, unsigned count)
 {
-
-	/* Run API tests. */
-	for (int i = 0; nanvix_ipc_portal_tests_api[i].test_fn != NULL; i++)
-	{
-		printf("[nanvix][test][api][ipc][portal] %s\n", nanvix_ipc_portal_tests_api[i].name);
-		nanvix_ipc_portal_tests_api[i].test_fn();
-	}
-
-	/* Run fault injection tests. */
-	for (int i = 0; nanvix_ipc_portal_tests_fault[i].test_fn != NULL; i++)
-	{
-		printf("[nanvix][test][fault][ipc][portal] %s\n", nanvix_ipc_portal_tests_fault[i].name);
-		nanvix_ipc_portal_tests_fault[i].test_fn();
-	}
+    return pthread_barrier_init(barrier, NULL, count);
 }
 
+int hal_barrier_destroy(hal_barrier_t * barrier)
+{
+    return pthread_barrier_destroy(barrier);
+}
+
+int hal_barrier_wait(hal_barrier_t * barrier)
+{
+    return pthread_barrier_wait(barrier);
+}

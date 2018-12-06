@@ -23,7 +23,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <pthread.h>
 
 #include <nanvix/syscalls.h>
 #include <nanvix/name.h>

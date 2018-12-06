@@ -23,8 +23,8 @@
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
-#include <pthread.h>
 
+#define __NEED_HAL_MUTEX_
 #include <nanvix/const.h>
 #include <nanvix/syscalls.h>
 #include <nanvix/name.h>
@@ -48,7 +48,7 @@ static char process_name[HAL_NR_NOC_IONODES][NANVIX_PROC_NAME_MAX];
 /**
  * @brief Mailbox module lock.
  */
-static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+static hal_mutex_t lock = HAL_MUTEX_INITIALIZER;
 
 /*============================================================================*
  * name_init()                                                                *
@@ -170,7 +170,7 @@ int name_lookup(char *name)
 	msg.nodenum = -1;
 	strcpy(msg.name, name);
 
-	pthread_mutex_lock(&lock);
+	hal_mutex_lock(&lock);
 
 		if (sys_mailbox_write(server, &msg, sizeof(struct name_message)) != sizeof(struct name_message))
 			goto error1;
@@ -178,12 +178,12 @@ int name_lookup(char *name)
 		if (sys_mailbox_read(get_inbox(), &msg, sizeof(struct name_message)) != sizeof(struct name_message))
 			goto error1;
 
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 
 	return (msg.nodenum);
 
 error1:
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 	return (-EAGAIN);
 }
 
@@ -226,7 +226,7 @@ int name_link(int nodenum, const char *name)
 	msg.nodenum = nodenum;
 	strcpy(msg.name, name);
 
-	pthread_mutex_lock(&lock);
+	hal_mutex_lock(&lock);
 
 		/* Send link request. */
 		if (sys_mailbox_write(server, &msg, sizeof(struct name_message)) != sizeof(struct name_message))
@@ -236,7 +236,7 @@ int name_link(int nodenum, const char *name)
 		if (sys_mailbox_read(get_inbox(), &msg, sizeof(struct name_message)) != sizeof(struct name_message))
 			goto error1;
 
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 
 	if ((msg.header.opcode != NAME_SUCCESS) && (msg.header.opcode != NAME_FAIL))
 		return (-EAGAIN);
@@ -251,7 +251,7 @@ int name_link(int nodenum, const char *name)
 	return (-1);
 
 error1:
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 	return (-EAGAIN);
 }
 
@@ -289,7 +289,7 @@ int name_unlink(const char *name)
 	msg.nodenum = -1;
 	strcpy(msg.name, name);
 
-	pthread_mutex_lock(&lock);
+	hal_mutex_lock(&lock);
 
 		if (sys_mailbox_write(server, &msg, sizeof(struct name_message)) != sizeof(struct name_message))
 			goto error1;
@@ -298,7 +298,7 @@ int name_unlink(const char *name)
 		if (sys_mailbox_read(get_inbox(), &msg, sizeof(struct name_message)) != sizeof(struct name_message))
 			goto error1;
 
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 
 	if ((msg.header.opcode != NAME_SUCCESS) && (msg.header.opcode != NAME_FAIL))
 		return (-EAGAIN);
@@ -309,6 +309,6 @@ int name_unlink(const char *name)
 	return (-1);
 
 error1:
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 	return (-EAGAIN);
 }

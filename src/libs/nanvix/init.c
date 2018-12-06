@@ -21,9 +21,9 @@
  */
 
 #include <errno.h>
-#include <pthread.h>
 #include <stdio.h>
 
+#define __NEED_HAL_MUTEX_
 #include <nanvix/pm.h>
 #include <nanvix/syscalls.h>
 #include <nanvix/const.h>
@@ -43,7 +43,7 @@ extern int nanvix_mqueue_cleanup(void);
 /**
  * @brief Global runtime lock.
  */
-static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+static hal_mutex_t lock = HAL_MUTEX_INITIALIZER;
 
 /**
  * @brief Current level setup.
@@ -61,7 +61,7 @@ static int initialized[NANVIX_NR_NODES] = { 0, };
  */
 static void runtime_lock(void)
 {
-	pthread_mutex_lock(&lock);
+	hal_mutex_lock(&lock);
 }
 
 /**
@@ -69,7 +69,7 @@ static void runtime_lock(void)
  */
 static void runtime_unlock(void)
 {
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 }
 
 /**

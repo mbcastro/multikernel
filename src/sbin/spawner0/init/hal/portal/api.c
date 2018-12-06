@@ -25,6 +25,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+#define __NEED_HAL_MUTEX_
+#define __NEED_HAL_BARRIER_
 #include <nanvix/const.h>
 #include <nanvix/syscalls.h>
 
@@ -48,13 +50,13 @@ static void *test_sys_portal_thread_create_unlink(void *args)
 
 	kernel_setup();
 
-	pthread_barrier_wait(&barrier);
+	hal_barrier_wait(&barrier);
 
 	nodenum = sys_get_node_num();
 
 	TEST_ASSERT((inportal = sys_portal_create(nodenum)) >= 0);
 
-	pthread_barrier_wait(&barrier);
+	hal_barrier_wait(&barrier);
 
 	TEST_ASSERT(sys_portal_unlink(inportal) == 0);
 
@@ -104,22 +106,22 @@ static void *test_sys_portal_thread_open_close(void *args)
 
 	kernel_setup();
 
-	pthread_barrier_wait(&barrier);
+	hal_barrier_wait(&barrier);
 
 	local = sys_get_node_num();
 
 	TEST_ASSERT((inportal = sys_portal_create(local)) >= 0);
-	pthread_barrier_wait(&barrier);
+	hal_barrier_wait(&barrier);
 
 	remote = ((local + 1) < (SPAWNER_SERVER_NODE + sys_portal_ncores)) ?
 		local + 1 :
 		SPAWNER_SERVER_NODE + 1;
 
 	TEST_ASSERT((outportal = sys_portal_open(remote)) >= 0);
-	pthread_barrier_wait(&barrier);
+	hal_barrier_wait(&barrier);
 
 	TEST_ASSERT(sys_portal_close(outportal) == 0);
-	pthread_barrier_wait(&barrier);
+	hal_barrier_wait(&barrier);
 
 	TEST_ASSERT(sys_portal_unlink(inportal) == 0);
 
@@ -165,7 +167,7 @@ static void *test_sys_portal_thread_read_write(void *args)
 
 	kernel_setup();
 
-	pthread_barrier_wait(&barrier);
+	hal_barrier_wait(&barrier);
 
 	local = sys_get_node_num();
 
@@ -175,8 +177,8 @@ static void *test_sys_portal_thread_read_write(void *args)
 		int inportal;
 
 		TEST_ASSERT((inportal = sys_portal_create(local)) >= 0);
-		pthread_barrier_wait(&barrier);
-		pthread_barrier_wait(&barrier);
+		hal_barrier_wait(&barrier);
+		hal_barrier_wait(&barrier);
 
 		for (int i = 1; i < sys_portal_ncores - 1; i++)
 		{
@@ -190,21 +192,21 @@ static void *test_sys_portal_thread_read_write(void *args)
 				TEST_ASSERT(buf[j] == 1);
 		}
 
-		pthread_barrier_wait(&barrier);
+		hal_barrier_wait(&barrier);
 		TEST_ASSERT(sys_portal_unlink(inportal) == 0);
 	}
 	else
 	{
 		int outportal;
 
-		pthread_barrier_wait(&barrier);
+		hal_barrier_wait(&barrier);
 		TEST_ASSERT((outportal = sys_portal_open(SPAWNER_SERVER_NODE + sys_portal_ncores - 1)) >= 0);
-		pthread_barrier_wait(&barrier);
+		hal_barrier_wait(&barrier);
 
 		memset(buf, 1, DATA_SIZE);
 		TEST_ASSERT(sys_portal_write(outportal, buf, DATA_SIZE) == DATA_SIZE);
 
-		pthread_barrier_wait(&barrier);
+		hal_barrier_wait(&barrier);
 		TEST_ASSERT(sys_portal_close(outportal) == 0);
 	}
 

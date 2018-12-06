@@ -149,5 +149,20 @@
 
 #endif /* __NEED_HAL_CONST_ */
 
+#if (defined(__NEED_HAL_MUTEX_) || defined(__NEED_HAL_BARRIER_))
+
+	#include <pthread.h>
+
+	#ifdef __NEED_HAL_MUTEX_
+		typedef pthread_mutex_t hal_mutex_t;
+		#define HAL_MUTEX_INITIALIZER PTHREAD_MUTEX_INITIALIZER
+	#endif
+
+	#ifdef __NEED_HAL_BARRIER_
+		typedef pthread_barrier_t hal_barrier_t;
+	#endif
+
+#endif /* __NEED_HAL_MUTEX_ || __NEED_HAL_BARRIER_ */
+
 #endif /* NANVIX_UNIX_ */
 

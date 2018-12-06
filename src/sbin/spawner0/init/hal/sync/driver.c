@@ -20,9 +20,9 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <pthread.h>
 #include <stdio.h>
 
+#define __NEED_HAL_BARRIER_
 #include <nanvix/syscalls.h>
 #include <nanvix/const.h>
 
@@ -46,7 +46,7 @@ int nodes[NANVIX_NR_NODES];
 /**
  * @brief Global barrier for synchronization.
  */
-pthread_barrier_t barrier;
+hal_barrier_t barrier;
 
 /**
  * @brief Synchronization Point Test Driver
@@ -57,7 +57,7 @@ void test_kernel_sys_sync(void)
 
 	TEST_ASSERT(ncores == HAL_NR_IOCLUSTER_CORES);
 
-	pthread_barrier_init(&barrier, NULL, ncores - 1);
+	hal_barrier_init(&barrier, ncores - 1);
 
 	/* Run API tests. */
 	for (int i = 0; tests_api[i].test_fn != NULL; i++)

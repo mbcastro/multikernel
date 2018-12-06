@@ -25,6 +25,7 @@
 #include <string.h>
 #include <stdio.h>
 
+#define __NEED_HAL_BARRIER_
 #include <nanvix/limits.h>
 #include <nanvix/semaphores.h>
 

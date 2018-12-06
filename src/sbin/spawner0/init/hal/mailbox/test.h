@@ -24,8 +24,10 @@
 #define _TEST_H_
 
 	#include <stdlib.h>
-	#include <pthread.h>
 	#include <stdio.h>
+
+	#define __NEED_HAL_BARRIER_
+	#include <nanvix/hal.h>
 
 	/**
 	 * @brief Asserts a logic expression.
@@ -56,7 +58,7 @@
 	extern int mailbox_nodes[];
 	extern int mailbox_nodes_local[];
 	extern int mailbox_ncores;
-	extern pthread_barrier_t barrier;
+	extern hal_barrier_t barrier;
 	extern struct test mailbox_tests_api[];
 	extern struct test mailbox_tests_fault[];
 

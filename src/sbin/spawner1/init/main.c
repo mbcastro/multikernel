@@ -25,9 +25,10 @@
 #include <string.h>
 #include <time.h>
 
+#define __NEED_HAL_BARRIER_
 #include <nanvix/const.h>
-#include <nanvix/syscalls.h>
 #include <nanvix/spawner.h>
+#include <nanvix/syscalls.h>
 
 /* Forward definitions. */
 extern int name_server(int, int);

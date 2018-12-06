@@ -22,10 +22,10 @@
 
 #include <sys/types.h>
 #include <errno.h>
-#include <pthread.h>
 #include <stdio.h>
 #include <string.h>
 
+#define __NEED_HAL_MUTEX_
 #include <nanvix/syscalls.h>
 #include <nanvix/const.h>
 #include <nanvix/pm.h>
@@ -44,7 +44,7 @@ static struct
 /**
  * @brief Mailbox module lock.
  */
-static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+static hal_mutex_t lock = HAL_MUTEX_INITIALIZER;
 
 /*============================================================================*
  * Client cache                                                               *
@@ -350,7 +350,7 @@ int nanvix_mqueue_create(
 	msg.source = nodenum;
 	msg.opcode = MQUEUE_CREATE;
 
-	pthread_mutex_lock(&lock);
+	hal_mutex_lock(&lock);
 
 		/* Build message 1.*/
 		msg.seq = ((nodenum << 4) | 0);
@@ -371,7 +371,7 @@ int nanvix_mqueue_create(
 		if ((ret = sys_mailbox_read(inbox, &msg, sizeof(struct mqueue_message))) != MAILBOX_MSG_SIZE)
 			goto error;
 
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 
 	/* Failed to create. */
 	if (msg.opcode == MQUEUE_FAILURE)
@@ -391,7 +391,7 @@ int nanvix_mqueue_create(
 	return (msg.op.ret.mqueueid);
 
 error:
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 	return (ret);
 }
 
@@ -464,7 +464,7 @@ int nanvix_mqueue_create_excl(
 	msg.source = nodenum;
 	msg.opcode = MQUEUE_CREATE_EXCL;
 
-	pthread_mutex_lock(&lock);
+	hal_mutex_lock(&lock);
 
 		/* Build message 1.*/
 		msg.seq = ((nodenum << 4) | 0);
@@ -485,7 +485,7 @@ int nanvix_mqueue_create_excl(
 		if ((ret = sys_mailbox_read(inbox, &msg, sizeof(struct mqueue_message))) != MAILBOX_MSG_SIZE)
 			goto error;
 
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 
 	/* Failed to create. */
 	if (msg.opcode == MQUEUE_FAILURE)
@@ -505,7 +505,7 @@ int nanvix_mqueue_create_excl(
 	return (msg.op.ret.mqueueid);
 
 error:
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 	errno = -ret;
 	return (ret);
 }
@@ -574,7 +574,7 @@ int nanvix_mqueue_open(const char *name, int readable, int writable)
 	msg.source = nodenum;
 	msg.opcode = MQUEUE_OPEN;
 
-	pthread_mutex_lock(&lock);
+	hal_mutex_lock(&lock);
 
 		/* Build message 1.*/
 		msg.seq = ((nodenum << 4) | 0);
@@ -594,7 +594,7 @@ int nanvix_mqueue_open(const char *name, int readable, int writable)
 		if ((ret = sys_mailbox_read(inbox, &msg, sizeof(struct mqueue_message))) != MAILBOX_MSG_SIZE)
 			goto error;
 
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 
 	/* Failed to create. */
 	if (msg.opcode == MQUEUE_FAILURE)
@@ -614,7 +614,7 @@ int nanvix_mqueue_open(const char *name, int readable, int writable)
 	return (msg.op.ret.mqueueid);
 
 error:
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 	errno = -ret;
 	return (ret);
 }
@@ -669,7 +669,7 @@ int nanvix_mqueue_unlink(const char *name)
 	msg.seq = ((nodenum << 4) | 0);
 	strcpy(msg.op.unlink.name, name);
 
-	pthread_mutex_lock(&lock);
+	hal_mutex_lock(&lock);
 
 		if ((ret = mailbox_write(server.outbox, &msg, sizeof(struct mqueue_message))) != 0)
 			goto error;
@@ -677,7 +677,7 @@ int nanvix_mqueue_unlink(const char *name)
 		if ((ret = sys_mailbox_read(inbox, &msg, sizeof(struct mqueue_message))) != MAILBOX_MSG_SIZE)
 			goto error;
 
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 
 	/* Failed to unlink. */
 	if (msg.opcode == MQUEUE_FAILURE)
@@ -707,7 +707,7 @@ int nanvix_mqueue_unlink(const char *name)
 	return (0);
 
 error:
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 	errno = -ret;
 	return (ret);
 }
@@ -781,7 +781,7 @@ int nanvix_mqueue_close(int mqueueid)
 	request.seq = ((nodenum << 4) | 0);
 	request.op.close.mqueueid = mqueueid;
 
-	pthread_mutex_lock(&lock);
+	hal_mutex_lock(&lock);
 
 		/* Send request. */
 		if ((ret = mailbox_write(server.outbox, &request, sizeof(struct mqueue_message))) != 0)
@@ -791,7 +791,7 @@ int nanvix_mqueue_close(int mqueueid)
 		if ((ret = sys_mailbox_read(inbox, &response, sizeof(struct mqueue_message))) != MAILBOX_MSG_SIZE)
 			goto error;
 
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 
 	/* Failed to send. */
 	if (response.opcode == MQUEUE_FAILURE)
@@ -811,7 +811,7 @@ int nanvix_mqueue_close(int mqueueid)
 	return (0);
 
 error:
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 	errno = -ret;
 	return (ret);
 }
@@ -910,7 +910,7 @@ int nanvix_mqueue_send(int mqueueid, const char *msg, size_t len, unsigned prio)
 	request.op.send.len = len;
 	request.op.send.prio = prio;
 
-	pthread_mutex_lock(&lock);
+	hal_mutex_lock(&lock);
 
 		/* Send request. */
 		if ((ret = mailbox_write(server.outbox, &request, sizeof(struct mqueue_message))) != 0)
@@ -920,7 +920,7 @@ int nanvix_mqueue_send(int mqueueid, const char *msg, size_t len, unsigned prio)
 		if ((ret = sys_mailbox_read(inbox, &response, sizeof(struct mqueue_message))) != MAILBOX_MSG_SIZE)
 			goto error;
 	
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 		
 	/* Failed to send. */
 	if (response.opcode == MQUEUE_FAILURE)
@@ -936,13 +936,13 @@ int nanvix_mqueue_send(int mqueueid, const char *msg, size_t len, unsigned prio)
 		return (-1);
 	}
 
-	pthread_mutex_lock(&lock);
+	hal_mutex_lock(&lock);
 
 		/* Wait response. */
 		if ((ret = sys_mailbox_read(inbox, &response, sizeof(struct mqueue_message))) != MAILBOX_MSG_SIZE)
 			goto error;
 
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 
 	/* Failed to send. */
 	if (response.opcode == MQUEUE_FAILURE)
@@ -954,7 +954,7 @@ int nanvix_mqueue_send(int mqueueid, const char *msg, size_t len, unsigned prio)
 	return (0);
 
 error:
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 	errno = -ret;
 	return (ret);
 }
@@ -1053,7 +1053,7 @@ ssize_t nanvix_mqueue_receive(int mqueueid, char *msg, size_t len, unsigned *pri
 	request.op.receive.mqueueid = mqueueid;
 	request.op.receive.len = len;
 
-	pthread_mutex_lock(&lock);
+	hal_mutex_lock(&lock);
 
 		/* Send request. */
 		if ((ret = mailbox_write(server.outbox, &request, sizeof(struct mqueue_message))) != 0)
@@ -1067,7 +1067,7 @@ ssize_t nanvix_mqueue_receive(int mqueueid, char *msg, size_t len, unsigned *pri
 		if ((ret = sys_portal_allow(inportal, MQUEUE_SERVER_NODE)) < 0)
 			goto error;
 
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 
 	/* Failed to receive. */
 	if (response.opcode == MQUEUE_FAILURE)
@@ -1083,13 +1083,13 @@ ssize_t nanvix_mqueue_receive(int mqueueid, char *msg, size_t len, unsigned *pri
 		return (-1);
 	}
 
-	pthread_mutex_lock(&lock);
+	hal_mutex_lock(&lock);
 
 		/* Wait response. */
 		if ((ret = sys_mailbox_read(inbox, &response, sizeof(struct mqueue_message))) != MAILBOX_MSG_SIZE)
 			goto error;
 	
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 
 	/* Save priority. */
 	if (prio != NULL)
@@ -1098,7 +1098,7 @@ ssize_t nanvix_mqueue_receive(int mqueueid, char *msg, size_t len, unsigned *pri
 	return (len);
 
 error:
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 	errno = -ret;
 	return (ret);
 }

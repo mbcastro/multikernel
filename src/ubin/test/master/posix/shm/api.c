@@ -27,6 +27,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#define __NEED_HAL_BARRIER_
 #include <nanvix/limits.h>
 #include <nanvix/syscalls.h>
 #include <nanvix/mm.h>

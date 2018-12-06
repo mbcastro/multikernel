@@ -24,9 +24,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <pthread.h>
 #include <semaphore.h>
 
+#define __NEED_HAL_MUTEX_
 #include <nanvix/semaphores.h>
 #include <nanvix/syscalls.h>
 #include <nanvix/pm.h>
@@ -43,7 +43,7 @@ static struct
 /**
  * @brief Mailbox module lock.
  */
-static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+static hal_mutex_t lock = HAL_MUTEX_INITIALIZER;
 
 /*============================================================================*
  * nanvix_sem_init()                                                          *
@@ -144,7 +144,7 @@ static inline sem_t _nanvix_sem_create(const char *name, mode_t mode, unsigned v
 	msg.header.source = nodenum;
 	msg.header.opcode = (excl) ? SEM_CREATE_EXCL : SEM_CREATE;
 
-	pthread_mutex_lock(&lock);
+	hal_mutex_lock(&lock);
 
 		/* Build message 1.*/
 		msg.seq = ((nodenum << 4) | 0);
@@ -164,12 +164,12 @@ static inline sem_t _nanvix_sem_create(const char *name, mode_t mode, unsigned v
 		if ((ret = sys_mailbox_read(inbox, &msg, sizeof(struct sem_message))) != MAILBOX_MSG_SIZE)
 			goto error;
 
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 
 	return (msg.op.ret);
 
 error:
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 	return (ret);
 }
 
@@ -231,7 +231,7 @@ static inline sem_t _nanvix_sem_open(const char *name)
 	msg.seq = ((nodenum << 4) | 0);
 	strcpy(msg.op.open.name, name);
 
-	pthread_mutex_lock(&lock);
+	hal_mutex_lock(&lock);
 
 		if ((ret = mailbox_write(server.outbox, &msg, sizeof(struct sem_message))) != 0)
 			goto error;
@@ -239,12 +239,12 @@ static inline sem_t _nanvix_sem_open(const char *name)
 		if ((ret = sys_mailbox_read(inbox, &msg, sizeof(struct sem_message))) != MAILBOX_MSG_SIZE)
 			goto error;
 
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 
 	return (msg.op.ret);
 
 error:
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 	return (ret);
 }
 
@@ -302,7 +302,7 @@ static inline int _nanvix_sem_post(sem_t sem)
 	msg.seq = ((nodenum << 4) | 0);
 	msg.op.post.semid = sem;
 
-	pthread_mutex_lock(&lock);
+	hal_mutex_lock(&lock);
 
 		if ((ret = mailbox_write(server.outbox, &msg, sizeof(struct sem_message))) != 0)
 			goto error;
@@ -310,12 +310,12 @@ static inline int _nanvix_sem_post(sem_t sem)
 		if ((ret = sys_mailbox_read(inbox, &msg, sizeof(struct sem_message))) != MAILBOX_MSG_SIZE)
 			goto error;
 
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 
 	return (msg.op.ret);
 
 error:
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 	return (ret);
 }
 
@@ -365,7 +365,7 @@ static inline int _nanvix_sem_wait(sem_t sem)
 	msg.seq = ((nodenum << 4) | 0);
 	msg.op.wait.semid = sem;
 
-	pthread_mutex_lock(&lock);
+	hal_mutex_lock(&lock);
 
 		if ((ret = mailbox_write(server.outbox, &msg, sizeof(struct sem_message))) != 0)
 			goto error;
@@ -376,12 +376,12 @@ static inline int _nanvix_sem_wait(sem_t sem)
 				goto error;
 		} while (msg.header.opcode == SEM_WAIT);
 
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 
 	return (msg.op.ret);
 
 error:
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 	return (ret);
 }
 
@@ -431,7 +431,7 @@ static inline int _nanvix_sem_close(sem_t sem)
 	msg.seq = ((nodenum << 4) | 0);
 	msg.op.close.semid = sem;
 
-	pthread_mutex_lock(&lock);
+	hal_mutex_lock(&lock);
 
 		if ((ret = mailbox_write(server.outbox, &msg, sizeof(struct sem_message))) != 0)
 			goto error;
@@ -439,12 +439,12 @@ static inline int _nanvix_sem_close(sem_t sem)
 		if ((ret = sys_mailbox_read(inbox, &msg, sizeof(struct sem_message))) != MAILBOX_MSG_SIZE)
 			goto error;
 
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 
 	return (msg.op.ret);
 
 error:
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 	return (ret);
 }
 
@@ -493,7 +493,7 @@ static inline int _nanvix_sem_unlink(const char *name)
 	msg.seq = ((nodenum << 4) | 0);
 	strcpy(msg.op.unlink.name, name);
 
-	pthread_mutex_lock(&lock);
+	hal_mutex_lock(&lock);
 
 		if ((ret = mailbox_write(server.outbox, &msg, sizeof(struct sem_message))) != 0)
 			goto error;
@@ -501,12 +501,12 @@ static inline int _nanvix_sem_unlink(const char *name)
 		if ((ret = sys_mailbox_read(inbox, &msg, sizeof(struct sem_message))) != MAILBOX_MSG_SIZE)
 			goto error;
 
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 
 	return (msg.op.ret);
 
 error:
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 	return (ret);
 }
 

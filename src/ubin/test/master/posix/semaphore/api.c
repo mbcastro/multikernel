@@ -48,6 +48,7 @@ static inline int mppa_waitpid(int a, void *b, int c)
 
 #endif
 
+#define __NEED_HAL_BARRIER_
 #include <nanvix/limits.h>
 #include <nanvix/syscalls.h>
 #include <nanvix/pm.h>

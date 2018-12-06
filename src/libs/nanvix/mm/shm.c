@@ -22,11 +22,11 @@
 
 #include <sys/types.h>
 #include <errno.h>
-#include <pthread.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
+#define __NEED_HAL_MUTEX_
 #include <nanvix/const.h>
 #include <nanvix/mm.h>
 #include <nanvix/pm.h>
@@ -44,7 +44,7 @@ static struct
 /**
  * @brief Shared Memory module lock.
  */
-static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+static hal_mutex_t lock = HAL_MUTEX_INITIALIZER;
 
 /*============================================================================*
  * Client cache                                                               *
@@ -368,7 +368,7 @@ int nanvix_shm_create_excl(const char *name, int rw, mode_t mode)
 	msg.header.source = nodenum;
 	msg.header.opcode = SHM_CREATE_EXCL;
 
-	pthread_mutex_lock(&lock);
+	hal_mutex_lock(&lock);
 
 		/* Build message 1.*/
 		msg.seq = ((nodenum << 4) | 0);
@@ -389,7 +389,7 @@ int nanvix_shm_create_excl(const char *name, int rw, mode_t mode)
 		if ((ret = sys_mailbox_read(inbox, &msg, sizeof(struct shm_message))) != MAILBOX_MSG_SIZE)
 			goto error;
 
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 
 	/* Failed to create shared memory region. */
 	if (msg.header.opcode == SHM_FAILURE)
@@ -407,7 +407,7 @@ int nanvix_shm_create_excl(const char *name, int rw, mode_t mode)
 	return (msg.op.ret.shmid);
 
 error:
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 	errno = -ret;
 	return (-1);
 }
@@ -457,7 +457,7 @@ int nanvix_shm_create(const char *name, int rw, int truncate, mode_t mode)
 	msg.header.source = nodenum;
 	msg.header.opcode = SHM_CREATE;
 
-	pthread_mutex_lock(&lock);
+	hal_mutex_lock(&lock);
 
 		/* Build message 1.*/
 		msg.seq = ((nodenum << 4) | 0);
@@ -479,7 +479,7 @@ int nanvix_shm_create(const char *name, int rw, int truncate, mode_t mode)
 		if ((ret = sys_mailbox_read(inbox, &msg, sizeof(struct shm_message))) != MAILBOX_MSG_SIZE)
 			goto error;
 
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 
 	/* Failed to create shared memory region. */
 	if (msg.header.opcode == SHM_FAILURE)
@@ -497,7 +497,7 @@ int nanvix_shm_create(const char *name, int rw, int truncate, mode_t mode)
 	return (msg.op.ret.shmid);
 
 error:
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 	errno = -ret;
 	return (-1);
 }
@@ -560,7 +560,7 @@ int nanvix_shm_open(const char *name, int rw, int truncate)
 	msg.header.source = nodenum;
 	msg.header.opcode = SHM_OPEN;
 
-	pthread_mutex_lock(&lock);
+	hal_mutex_lock(&lock);
 
 		/* Build message 1.*/
 		msg.seq = ((nodenum << 4) | 0);
@@ -580,7 +580,7 @@ int nanvix_shm_open(const char *name, int rw, int truncate)
 		if ((ret = sys_mailbox_read(inbox, &msg, sizeof(struct shm_message))) != MAILBOX_MSG_SIZE)
 			goto error;
 
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 
 	/* Failed to open shared memory region. */
 	if (msg.header.opcode == SHM_FAILURE)
@@ -598,7 +598,7 @@ int nanvix_shm_open(const char *name, int rw, int truncate)
 	return (msg.op.ret.shmid);
 
 error:
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 	errno = -ret;
 	return (-1);
 }
@@ -647,7 +647,7 @@ int nanvix_shm_unlink(const char *name)
 	msg.seq = ((nodenum << 4) | 0);
 	strcpy(msg.op.unlink.name, name);
 
-	pthread_mutex_lock(&lock);
+	hal_mutex_lock(&lock);
 
 		if ((ret = sys_mailbox_write(server.outbox, &msg, sizeof(struct shm_message))) != MAILBOX_MSG_SIZE)
 			goto error;
@@ -655,7 +655,7 @@ int nanvix_shm_unlink(const char *name)
 		if ((ret = sys_mailbox_read(inbox, &msg, sizeof(struct shm_message))) != MAILBOX_MSG_SIZE)
 			goto error;
 
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 
 	/* Failed to unlink shared memory region. */
 	if (msg.header.opcode == SHM_FAILURE)
@@ -685,7 +685,7 @@ int nanvix_shm_unlink(const char *name)
 	return (0);
 
 error:
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 	errno = -ret;
 	return (-1);
 }
@@ -762,7 +762,7 @@ int nanvix_map(uint64_t *mapblk, size_t len, int writable, int shared, int fd, o
 	msg.op.map.shared = shared;
 	msg.op.map.off = off;
 
-	pthread_mutex_lock(&lock);
+	hal_mutex_lock(&lock);
 
 		if ((ret = sys_mailbox_write(server.outbox, &msg, sizeof(struct shm_message))) != MAILBOX_MSG_SIZE)
 			goto error;
@@ -770,7 +770,7 @@ int nanvix_map(uint64_t *mapblk, size_t len, int writable, int shared, int fd, o
 		if ((ret = sys_mailbox_read(inbox, &msg, sizeof(struct shm_message))) != MAILBOX_MSG_SIZE)
 			goto error;
 
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 
 	/* Failed to map. */
 	if (msg.header.opcode == SHM_FAILURE)
@@ -792,7 +792,7 @@ int nanvix_map(uint64_t *mapblk, size_t len, int writable, int shared, int fd, o
 	return (0);
 
 error:
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 	errno = -ret;
 	return (-1);
 }
@@ -862,7 +862,7 @@ int nanvix_unmap(int shmid, size_t len)
 	msg.op.unmap.shmid = shmid;
 	msg.op.unmap.size = len;
 
-	pthread_mutex_lock(&lock);
+	hal_mutex_lock(&lock);
 
 		if ((ret = sys_mailbox_write(server.outbox, &msg, sizeof(struct shm_message))) != MAILBOX_MSG_SIZE)
 			goto error;
@@ -870,7 +870,7 @@ int nanvix_unmap(int shmid, size_t len)
 		if ((ret = sys_mailbox_read(inbox, &msg, sizeof(struct shm_message))) != MAILBOX_MSG_SIZE)
 			goto error;
 
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 
 	/* Failed to unmap. */
 	if (msg.header.opcode == SHM_FAILURE)
@@ -882,7 +882,7 @@ int nanvix_unmap(int shmid, size_t len)
 	return (0);
 
 error:
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 	errno = -ret;
 	return (-1);
 }
@@ -946,7 +946,7 @@ int nanvix_mtruncate(int shmid, size_t size)
 	msg.op.truncate.shmid = shmid;
 	msg.op.truncate.size = size;
 
-	pthread_mutex_lock(&lock);
+	hal_mutex_lock(&lock);
 
 		if ((ret = sys_mailbox_write(server.outbox, &msg, sizeof(struct shm_message))) != MAILBOX_MSG_SIZE)
 			goto error;
@@ -954,7 +954,7 @@ int nanvix_mtruncate(int shmid, size_t size)
 		if ((ret = sys_mailbox_read(inbox, &msg, sizeof(struct shm_message))) != MAILBOX_MSG_SIZE)
 			goto error;
 
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 
 	/* Failed to truncate. */
 	if (msg.header.opcode == SHM_FAILURE)
@@ -966,7 +966,7 @@ int nanvix_mtruncate(int shmid, size_t size)
 	return (0);
 
 error:
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 	errno = -ret;
 	return (-1);
 }

@@ -26,7 +26,6 @@
 	#include <errno.h>
 	#include <stdio.h>
 	#include <string.h>
-	#include <pthread.h>
 
 	/**
 	 * @brief Returns the length of an array.

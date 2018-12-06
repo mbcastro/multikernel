@@ -25,6 +25,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+#define __NEED_HAL_MUTEX_
+#define __NEED_HAL_BARRIER_
 #include <nanvix/syscalls.h>
 #include <nanvix/const.h>
 
@@ -50,7 +52,7 @@ static void *test_sys_mailbox_thread_create_unlink(void *args)
 
 	TEST_ASSERT((inbox = sys_mailbox_create(nodenum)) >= 0);
 
-	pthread_barrier_wait(&barrier);
+	hal_barrier_wait(&barrier);
 
 	TEST_ASSERT(sys_mailbox_unlink(inbox) == 0);
 
@@ -102,7 +104,7 @@ static void *test_sys_mailbox_thread_open_close(void *args)
 
 	TEST_ASSERT((inbox = sys_mailbox_create(nodenum)) >= 0);
 
-	pthread_barrier_wait(&barrier);
+	hal_barrier_wait(&barrier);
 
 	TEST_ASSERT((outbox = sys_mailbox_open(
 		((tid + 1) == mailbox_ncores) ?
@@ -110,7 +112,7 @@ static void *test_sys_mailbox_thread_open_close(void *args)
 			nodenum + 1)) >= 0
 	);
 
-	pthread_barrier_wait(&barrier);
+	hal_barrier_wait(&barrier);
 
 	TEST_ASSERT(sys_mailbox_close(outbox) == 0);
 
@@ -166,7 +168,7 @@ static void *test_sys_mailbox_thread_double_open(void *args)
 
 	TEST_ASSERT((inbox = sys_mailbox_create(nodenum)) >= 0);
 
-	pthread_barrier_wait(&barrier);
+	hal_barrier_wait(&barrier);
 
 	TEST_ASSERT((outboxes[0] = sys_mailbox_open(
 		((tid + 1) == mailbox_ncores) ?
@@ -180,7 +182,7 @@ static void *test_sys_mailbox_thread_double_open(void *args)
 			nodenum - 1)) >= 0
 	);
 
-	pthread_barrier_wait(&barrier);
+	hal_barrier_wait(&barrier);
 
 	TEST_ASSERT(sys_mailbox_close(outboxes[0]) == 0);
 	TEST_ASSERT(sys_mailbox_close(outboxes[1]) == 0);
@@ -238,7 +240,7 @@ static void *test_sys_mailbox_thread_read_write(void *args)
 	nodenum = sys_get_node_num();
 	mailbox_nodes[tnum] = nodenum;
 
-	pthread_barrier_wait(&barrier);
+	hal_barrier_wait(&barrier);
 
 	TEST_ASSERT((inbox = sys_mailbox_create(nodenum)) >= 0);
 
@@ -248,7 +250,7 @@ static void *test_sys_mailbox_thread_read_write(void *args)
 			mailbox_nodes[tnum + 1])) >= 0
 	);
 
-	pthread_barrier_wait(&barrier);
+	hal_barrier_wait(&barrier);
 
 	memset(buf, 1, MAILBOX_MSG_SIZE);
 	TEST_ASSERT(sys_mailbox_write(outbox, buf, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
@@ -259,7 +261,7 @@ static void *test_sys_mailbox_thread_read_write(void *args)
 	for (int i = 0; i < MAILBOX_MSG_SIZE; i++)
 		TEST_ASSERT(buf[i] == 1);
 
-	pthread_barrier_wait(&barrier);
+	hal_barrier_wait(&barrier);
 
 	TEST_ASSERT(sys_mailbox_close(outbox) == 0);
 

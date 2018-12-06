@@ -26,6 +26,7 @@
 
 #define __NEED_HAL_NOC_
 #define __NEED_HAL_SYNC_
+#define __NEED_HAL_MUTEX_
 #include <hal.h>
 #include <klib.h>
 #include <resource.h>
@@ -55,7 +56,7 @@ static const struct resource_pool pool = {
 /**
  * @brief Sync module lock.
  */
-static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+static hal_mutex_t lock = HAL_MUTEX_INITIALIZER;
 
 /*============================================================================*
  * mppa256_sync_lock()                                                        *
@@ -66,7 +67,7 @@ static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
  */
 static void mppa256_sync_lock(void)
 {
-	pthread_mutex_lock(&lock);
+	hal_mutex_lock(&lock);
 }
 
 /*============================================================================*
@@ -78,7 +79,7 @@ static void mppa256_sync_lock(void)
  */
 static void mppa256_sync_unlock(void)
 {
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 }
 
 /*============================================================================*

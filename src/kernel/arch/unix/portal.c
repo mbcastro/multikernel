@@ -24,7 +24,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fcntl.h>
-#include <pthread.h>
 #include <semaphore.h>
 #include <string.h>
 #include <stdarg.h>
@@ -35,6 +34,7 @@
 #define __NEED_HAL_CORE_
 #define __NEED_HAL_PORTAL_
 #define __NEED_HAL_PERFORMANCE_
+#define __NEED_HAL_MUTEX_
 #include <hal.h>
 #include <klib.h>
 #include <resource.h>
@@ -76,7 +76,7 @@ struct portal
 /**
  * @brief Sync module lock.
  */
-static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+static hal_mutex_t lock = HAL_MUTEX_INITIALIZER;
 
 /**
  * @brief Resource pool for portals.
@@ -96,7 +96,7 @@ static const struct resource_pool pool = {
  */
 static void unix_portal_lock(void)
 {
-	pthread_mutex_lock(&lock);
+	hal_mutex_lock(&lock);
 }
 
 /*============================================================================*
@@ -108,7 +108,7 @@ static void unix_portal_lock(void)
  */
 static void unix_portal_unlock(void)
 {
-	pthread_mutex_unlock(&lock);
+	hal_mutex_unlock(&lock);
 }
 
 /*============================================================================*

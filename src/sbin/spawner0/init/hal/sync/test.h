@@ -24,8 +24,10 @@
 #define _TEST_H_
 
 	#include <stdlib.h>
-	#include <pthread.h>
 	#include <stdio.h>
+
+	#define __NEED_HAL_BARRIER_
+	#include <nanvix/hal.h>
 
 	/**
 	 * @brief Asserts a logic expression.
@@ -54,7 +56,7 @@
 	extern int sync_nclusters;
 	extern int ncores;
 	extern int nodes[];
-	extern pthread_barrier_t barrier;
+	extern hal_barrier_t barrier;
 	extern struct test tests_api[];
 	extern struct test tests_fault[];
 
