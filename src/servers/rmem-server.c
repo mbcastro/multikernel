@@ -40,6 +40,11 @@
 #endif
 
 /**
+ * @brief Number of remote memory blocks.
+ */
+#define RMEM_NUM_BLOCKS (RMEM_SIZE/RMEM_BLOCK_SIZE)
+
+/**
  * @brief Server statistics.
  */
 static struct
@@ -74,6 +79,77 @@ static int inportal;
  */
 static char rmem[RMEM_SIZE];
 
+/**
+ * @brief Map of blocks.
+ */
+static int blocks[RMEM_NUM_BLOCKS];
+
+/*============================================================================*
+ * rmem_alloc()
+ *============================================================================*/
+
+/**
+ * @brief Initializes blocks array.
+ */
+static inline void blocks_init(void)
+{
+    memset(blocks, 0, (RMEM_NUM_BLOCKS)*sizeof(int));
+}
+
+/*============================================================================*
+ * rmem_malloc()                                                              *
+ *============================================================================*/
+
+/**
+ * @brief Handles remote memory allocation.
+ */
+static inline uint64_t rmem_malloc(void)
+{
+	/* Search for a free block. */
+    for (int i = 0; i < RMEM_NUM_BLOCKS; i++)
+	{
+		/* Found. */
+        if (blocks[i] == 0)
+		{
+			int blknum;
+
+            blknum = i;
+            blocks[i] = 1;
+
+            return (blknum);
+        }
+    }
+    return (-ENOMEM);
+}
+
+/*============================================================================*
+ * rmem_memfree()                                                             *
+ *============================================================================*/
+
+/**
+ * @brief Handles remote memory free.
+ *
+ * @param blknum Target block.
+ */
+static inline void rmem_memfree(uint64_t blknum)
+{
+	/* Invalid block number. */
+    if (blknum > RMEM_SIZE)
+    {
+        printf("[nanvix][rmem] invalid blocks number\n");
+        return;
+    }
+
+	/* Bad block number. */
+    if (blocks[blknum] != 1)
+    {
+        printf("[nanvix][rmem] double blocks free\n");
+        return;
+    }
+
+    blocks[blknum] = 0;
+
+}
 /*============================================================================*
  * rmem_write()                                                               *
  *============================================================================*/
@@ -206,6 +282,16 @@ static int rmem_loop(void)
 				rmem_read(msg.header.source, msg.blknum, msg.size);
 				break;
 
+            /* Allocate RMEM. */
+            case RMEM_MEMALLOC:
+                rmem_malloc();
+                break;
+
+            /* Free  RMEM. */
+            case RMEM_MEMFREE:
+                rmem_memfree(msg.blknum);
+                break;
+
 			case RMEM_EXIT:
 				stats.tshutdown = sys_timer_get()/((double) sys_get_core_freq());
 				shutdown = 1;
@@ -250,6 +336,8 @@ static int rmem_startup(int _inbox, int _inportal)
 {
 	int ret;
 	char pathname[NANVIX_PROC_NAME_MAX];
+
+    blocks_init();
 
 	nodenum = sys_get_node_num();
 
@@ -305,7 +393,7 @@ int rmem_server(int _inbox, int _inportal)
 		goto error;
 
 	spawner_ack();
-	
+
 	printf("[nanvix][rmem] server alive\n");
 
 	if ((ret = rmem_loop()) < 0)

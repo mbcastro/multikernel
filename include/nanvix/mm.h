@@ -22,7 +22,7 @@
 
 #ifndef NANVIX_MM_H_
 #define NANVIX_MM_H_
-	
+
 	#include <stdint.h>
 	#include <stddef.h>
 
@@ -37,7 +37,7 @@
 	 * @brief Remote memory block size (in bytes).
 	 */
 	#define RMEM_BLOCK_SIZE (1024*1024)
-	
+
 	/**
 	 * @brief Remote memory size (in bytes).
 	 */
@@ -47,9 +47,11 @@
 	 * @brief Operations on remote memory.
 	 */
 	/**@{*/
-	#define RMEM_EXIT  0 /**< Exit Request. */
-	#define RMEM_READ  1 /**< Read.         */
-	#define RMEM_WRITE 2 /**< Write.        */
+	#define RMEM_EXIT     0 /**< Exit Request. */
+	#define RMEM_READ     1 /**< Read.         */
+	#define RMEM_WRITE    2 /**< Write.        */
+	#define RMEM_MEMALLOC 3 /**< Alloc.        */
+	#define RMEM_MEMFREE  4 /**< Free.        */
 	/**@}*/
 
 	/**
@@ -66,6 +68,8 @@
 	/* Forward definitions. */
 	extern int meminit(void);
 	extern int memfinalize(void);
+	extern int memalloc(void);
+	extern int memfree(uint64_t);
 	extern int memwrite(uint64_t, const void *, size_t);
 	extern int memread(uint64_t, void *, size_t);
 
@@ -113,7 +117,7 @@
 		uint16_t seq;          /**< Sequence number. */
 
 		/* Operation-specific fields. */
-		union 
+		union
 		{
 			/* Create message 1. */
 			struct {

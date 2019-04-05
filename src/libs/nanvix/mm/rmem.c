@@ -41,6 +41,61 @@ static struct
 } server;
 
 /*============================================================================*
+ * memalloc()                                                                 *
+ *============================================================================*/
+
+/**
+ * @brief Allocates a remote memory block.
+ *
+ * @returns Upon successful completion, the number of the newly
+ * allocated block in the remote memory is returned. Upon failure, a
+ * negative error code is returned instead.
+ */
+int memalloc(void)
+{
+	struct rmem_message msg;
+
+	/* Build operation header. */
+	msg.header.source = sys_get_node_num();
+	msg.header.opcode = RMEM_MEMALLOC;
+
+	/* Send operation header. */
+	assert(mailbox_write(server.outbox, &msg, MAILBOX_MSG_SIZE) == 0);
+
+	return (0);
+}
+
+/*============================================================================*
+ * memfree()                                                                  *
+ *============================================================================*/
+
+/**
+ * @brief Frees a remote memory block.
+ *
+ * @param blknum Target remote memory block.
+ *
+ * @returns Upon successful completion, zero is returned. Upon
+ * failure, a negative error code is returned instead.
+ */
+int memfree(uint64_t blknum)
+{
+	struct rmem_message msg;
+
+	/* Invalid read. */
+	if ((blknum >= RMEM_SIZE/RMEM_BLOCK_SIZE))
+		return (-EINVAL);
+
+	/* Build operation header. */
+	msg.header.source = sys_get_node_num();
+	msg.header.opcode = RMEM_MEMFREE;
+
+	/* Send operation header. */
+	assert(mailbox_write(server.outbox, &msg, MAILBOX_MSG_SIZE) == 0);
+
+	return (0);
+}
+
+/*============================================================================*
  * memread()                                                                  *
  *============================================================================*/
 
@@ -57,7 +112,7 @@ static struct
 int memread(uint64_t addr, void *buf, size_t n)
 {
 	struct rmem_message msg;
-	
+
 	/* Invalid read. */
 	if ((addr >= RMEM_SIZE) || ((addr + n) > RMEM_SIZE))
 		return (-EINVAL);
@@ -83,7 +138,7 @@ int memread(uint64_t addr, void *buf, size_t n)
 	/* Send operation header. */
 	assert(mailbox_write(server.outbox, &msg, MAILBOX_MSG_SIZE) == 0);
 
-	/* Send data. */
+	/* Recieve data. */
 	assert(sys_portal_allow(get_inportal(), RMEM_SERVER_NODE) == 0);
 	assert(sys_portal_read(get_inportal(), buf, n) == (int) n);
 
@@ -107,7 +162,7 @@ int memread(uint64_t addr, void *buf, size_t n)
 int memwrite(uint64_t addr, const void *buf, size_t n)
 {
 	struct rmem_message msg;
-	
+
 	/* Invalid write. */
 	if ((addr >= RMEM_SIZE) || ((addr + n) > RMEM_SIZE))
 		return (-EINVAL);
