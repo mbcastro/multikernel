@@ -39,7 +39,7 @@ static inline int mppa_spawn(int a, void *b, const void *c, void *d, void *e)
 
 static inline int mppa_waitpid(int a, void *b, int c)
 {
-	UNUSED(a); UNUSED(b); UNUSED(c);
+	UNUSED(a); *(int*) b = EXIT_SUCCESS; UNUSED(c);
 
 	return (0);
 }
@@ -82,7 +82,7 @@ static void spawn_slaves(const char **args)
  */
 static void join_slaves(void)
 {
-	int status;
+	int status = EXIT_FAILURE;
 
 	for (int i = 0; i < NANVIX_PROC_MAX; i++)
 	{
@@ -332,7 +332,7 @@ void test_sys_sync(void)
 	nodes[0] = sys_get_node_num();
 	for (int i = 0; i < NANVIX_PROC_MAX; i++)
 		nodes[i + 1] = i;
-	
+
 	test_sys_sync_create_unlink_cc();
 	test_sys_sync_open_close_cc();
 	test_sys_sync_wait_signal_cc();

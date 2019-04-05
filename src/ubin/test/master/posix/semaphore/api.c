@@ -41,7 +41,7 @@ static inline int mppa_spawn(int a, void *b, const void *c, void *d, void *e)
 
 static inline int mppa_waitpid(int a, void *b, int c)
 {
-	UNUSED(a); UNUSED(b); UNUSED(c);
+	UNUSED(a); *(int*) b = EXIT_SUCCESS; UNUSED(c);
 
 	return (0);
 }
@@ -77,7 +77,7 @@ static void spawn_slaves(const char **args)
  */
 static void join_slaves(void)
 {
-	int status;
+	int status = EXIT_FAILURE;
 
 	for (int i = 0; i < NANVIX_PROC_MAX; i++)
 	{
