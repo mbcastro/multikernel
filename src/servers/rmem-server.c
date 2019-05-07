@@ -284,7 +284,10 @@ static int rmem_loop(void)
 
             /* Allocate RMEM. */
             case RMEM_MEMALLOC:
-                rmem_malloc();
+                blk = rmem_malloc();
+                source = sys_mailbox_open(msg.header.source);
+                mailbox_write(source, &blk, msg.size);
+                mailbox_close(source);
                 break;
 
             /* Free  RMEM. */
