@@ -20,6 +20,7 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <assert.h>
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
@@ -136,19 +137,18 @@ static inline void rmem_memfree(uint64_t blknum)
 	/* Invalid block number. */
     if (blknum > RMEM_SIZE)
     {
-        printf("[nanvix][rmem] invalid blocks number\n");
+        printf("[nanvix][rmem] invalid block number\n");
         return;
     }
 
 	/* Bad block number. */
     if (blocks[blknum] != 1)
     {
-        printf("[nanvix][rmem] double blocks free\n");
+        printf("[nanvix][rmem] double block free\n");
         return;
     }
 
     blocks[blknum] = 0;
-
 }
 /*============================================================================*
  * rmem_write()                                                               *
@@ -251,6 +251,7 @@ static inline void rmem_read(int remote, uint64_t blknum, int size)
 static int rmem_loop(void)
 {
 	int shutdown = 0;
+    int source;
 	uint64_t t0, t1;
 	double t2, t3;
 
@@ -284,10 +285,10 @@ static int rmem_loop(void)
 
             /* Allocate RMEM. */
             case RMEM_MEMALLOC:
-                blk = rmem_malloc();
+                msg.blknum = rmem_malloc();
                 source = sys_mailbox_open(msg.header.source);
-                mailbox_write(source, &blk, msg.size);
-                mailbox_close(source);
+                assert(sys_mailbox_write(source, &msg, sizeof(struct rmem_message)) == sizeof(struct rmem_message));
+                assert(sys_mailbox_close(source) == 0);
                 break;
 
             /* Free  RMEM. */
