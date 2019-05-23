@@ -107,11 +107,58 @@ static void test_mm_rmem_alloc(void)
 }
 
 /*============================================================================*
+ * API Test: Alloc CC                                                         *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Alloc CC
+ */
+static void test_mm_rmem_alloc_cc(void)
+{
+	int nodenum;
+	int barrier;
+	int nodes[NANVIX_PROC_MAX + 1];
+	char masternode_str[4];
+	char mailbox_nclusters_str[4];
+	char test_str[4];
+	const char *args[] = {
+		"/test/mm-rmem-slave",
+		masternode_str,
+		mailbox_nclusters_str,
+		test_str,
+		NULL
+	};
+
+	nodenum = sys_get_node_num();
+
+	/* Build arguments. */
+	sprintf(masternode_str, "%d", nodenum);
+	sprintf(mailbox_nclusters_str, "%d", NANVIX_PROC_MAX);
+	sprintf(test_str, "%d", 1);
+
+	/* Build nodes list. */
+	nodes[0] = nodenum;
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
+		nodes[i + 1] = i;
+
+	/* Create barrier. */
+	TEST_ASSERT((barrier = barrier_create(nodes, NANVIX_PROC_MAX + 1)) >= 0);
+
+	spawn_slaves(args);
+
+	/* Wait for slaves. */
+	TEST_ASSERT(barrier_wait(barrier) == 0);
+	TEST_ASSERT(barrier_unlink(barrier) == 0);
+
+	join_slaves();
+}
+
+/*============================================================================*
  * API Test: Free                                                             *
  *============================================================================*/
 
 /**
- * @brief API Test Free
+ * @brief API Test: Free
  */
 static void test_mm_rmem_free(void)
 {
@@ -121,6 +168,56 @@ static void test_mm_rmem_free(void)
     TEST_ASSERT(memfree(2) == 0);
     TEST_ASSERT(memalloc() == 0);
     TEST_ASSERT(memalloc() == 2);
+    for (int i = 0; i < 4; i++) {
+        TEST_ASSERT(memfree(i) == 0);
+    }
+}
+
+/*============================================================================*
+ * API Test: Free CC                                                          *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Free CC
+ */
+static void test_mm_rmem_free_cc(void)
+{
+	int nodenum;
+	int barrier;
+	int nodes[NANVIX_PROC_MAX + 1];
+	char masternode_str[4];
+	char mailbox_nclusters_str[4];
+	char test_str[4];
+	const char *args[] = {
+		"/test/mm-rmem-slave",
+		masternode_str,
+		mailbox_nclusters_str,
+		test_str,
+		NULL
+	};
+
+	nodenum = sys_get_node_num();
+
+	/* Build arguments. */
+	sprintf(masternode_str, "%d", nodenum);
+	sprintf(mailbox_nclusters_str, "%d", NANVIX_PROC_MAX);
+	sprintf(test_str, "%d", 2);
+
+	/* Build nodes list. */
+	nodes[0] = nodenum;
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
+		nodes[i + 1] = i;
+
+	/* Create barrier. */
+	TEST_ASSERT((barrier = barrier_create(nodes, NANVIX_PROC_MAX + 1)) >= 0);
+
+	spawn_slaves(args);
+
+	/* Wait for slaves. */
+	TEST_ASSERT(barrier_wait(barrier) == 0);
+	TEST_ASSERT(barrier_unlink(barrier) == 0);
+
+	join_slaves();
 }
 
 /*============================================================================*
@@ -132,16 +229,18 @@ static void test_mm_rmem_free(void)
  */
 static void test_mm_rmem_read_write(void)
 {
-	char buffer[DATA_SIZE];
+	static char buffer[RMEM_BLOCK_SIZE];
 
-	memset(buffer, 1, DATA_SIZE);
-	TEST_ASSERT(memwrite(0, buffer, DATA_SIZE) == 0);
+	memset(buffer, 1, RMEM_BLOCK_SIZE);
+    memalloc();
+	TEST_ASSERT(memwrite(0, buffer, RMEM_BLOCK_SIZE) == 0);
 
-	memset(buffer, 0, DATA_SIZE);
-	TEST_ASSERT(memread(0, buffer, DATA_SIZE) == 0);
+	memset(buffer, 0, RMEM_BLOCK_SIZE);
+	TEST_ASSERT(memread(0, buffer, RMEM_BLOCK_SIZE) == 0);
+    memfree(0);
 
 	/* Checksum. */
-	for (int i = 0; i < DATA_SIZE; i++)
+	for (int i = 0; i < RMEM_BLOCK_SIZE; i++)
 		TEST_ASSERT(buffer[i] == 1);
 }
 
@@ -180,6 +279,10 @@ static void test_mm_rmem_read_write_cc(void)
 	for (int i = 0; i < NANVIX_PROC_MAX; i++)
 		nodes[i + 1] = i;
 
+    /* Alloc blocks that will be utilized. */
+    for (int i = 0; i < NANVIX_PROC_MAX; i++)
+        memalloc();
+
 	/* Create barrier. */
 	TEST_ASSERT((barrier = barrier_create(nodes, NANVIX_PROC_MAX + 1)) >= 0);
 
@@ -187,6 +290,7 @@ static void test_mm_rmem_read_write_cc(void)
 
 	/* Wait for slaves. */
 	TEST_ASSERT(barrier_wait(barrier) == 0);
+	TEST_ASSERT(barrier_unlink(barrier) == 0);
 
 	join_slaves();
 }
@@ -199,9 +303,11 @@ static void test_mm_rmem_read_write_cc(void)
  * @brief Unit tests.
  */
 struct test mm_rmem_tests_api[] = {
-	{ test_mm_rmem_read_write,    "Read Write"    },
-	{ test_mm_rmem_read_write_cc, "Read Write CC" },
 	{ test_mm_rmem_alloc,         "Alloc"         },
 	{ test_mm_rmem_free,          "Free"          },
+	{ test_mm_rmem_alloc_cc,      "Alloc CC"      },
+	{ test_mm_rmem_free_cc,       "Free CC"       },
+	{ test_mm_rmem_read_write,    "Read Write"    },
+	{ test_mm_rmem_read_write_cc, "Read Write CC" },
 	{ NULL,                       NULL            },
 };
