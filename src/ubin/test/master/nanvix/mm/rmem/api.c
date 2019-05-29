@@ -92,6 +92,38 @@ static void join_slaves(void)
 }
 
 /*============================================================================*
+ * API Test: Alloc                                                            *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Alloc
+ */
+static void test_mm_rmem_alloc(void)
+{
+	TEST_ASSERT(memalloc() == 0);
+    TEST_ASSERT(memalloc() == 1);
+    TEST_ASSERT(memalloc() == 2);
+    TEST_ASSERT(memalloc() == 3);
+}
+
+/*============================================================================*
+ * API Test: Free                                                             *
+ *============================================================================*/
+
+/**
+ * @brief API Test Free
+ */
+static void test_mm_rmem_free(void)
+{
+    TEST_ASSERT(memfree(1) == 0);
+    TEST_ASSERT(memalloc() == 1);
+    TEST_ASSERT(memfree(0) == 0);
+    TEST_ASSERT(memfree(2) == 0);
+    TEST_ASSERT(memalloc() == 0);
+    TEST_ASSERT(memalloc() == 2);
+}
+
+/*============================================================================*
  * API Test: Read Write                                                       *
  *============================================================================*/
 
@@ -169,5 +201,7 @@ static void test_mm_rmem_read_write_cc(void)
 struct test mm_rmem_tests_api[] = {
 	{ test_mm_rmem_read_write,    "Read Write"    },
 	{ test_mm_rmem_read_write_cc, "Read Write CC" },
+	{ test_mm_rmem_alloc,         "Alloc"         },
+	{ test_mm_rmem_free,          "Free"          },
 	{ NULL,                       NULL            },
 };

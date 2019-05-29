@@ -61,8 +61,9 @@ int memalloc(void)
 
 	/* Send operation header. */
 	assert(mailbox_write(server.outbox, &msg, MAILBOX_MSG_SIZE) == 0);
+    assert(sys_mailbox_read(get_inbox(), &msg, MAILBOX_MSG_SIZE) == MAILBOX_MSG_SIZE);
 
-	return (0);
+	return msg.blknum;
 }
 
 /*============================================================================*
@@ -88,6 +89,7 @@ int memfree(uint64_t blknum)
 	/* Build operation header. */
 	msg.header.source = sys_get_node_num();
 	msg.header.opcode = RMEM_MEMFREE;
+    msg.blknum = blknum;
 
 	/* Send operation header. */
 	assert(mailbox_write(server.outbox, &msg, MAILBOX_MSG_SIZE) == 0);
