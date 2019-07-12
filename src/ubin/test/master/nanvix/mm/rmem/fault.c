@@ -138,6 +138,7 @@ static void test_mm_rmem_invalid_read_size(void)
  */
 static void test_mm_rmem_invalid_free(void)
 {
+    TEST_ASSERT(memfree(-1) < 0);
     TEST_ASSERT(memfree(RMEM_SIZE/RMEM_BLOCK_SIZE) < 0);
 }
 
