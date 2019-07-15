@@ -208,7 +208,7 @@ found:
 		/* Check for a bad barrier leader. */
 		for (int i = 1; i < nnodes; i++)
 		{
-			if (nodenum < nodes[i])
+			if (nodenum == nodes[i])
 				goto error0;
 		}
 
