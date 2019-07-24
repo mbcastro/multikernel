@@ -35,6 +35,11 @@
  */
 #define TEST_ASSERT(x) { if (!(x)) exit(EXIT_FAILURE); }
 
+/**
+ * @brief Invalid alloc test flag.
+ */
+#define TEST_INV_ALLOC 0
+
 /*============================================================================*
  * API Test: Invalid Write                                                    *
  *============================================================================*/
@@ -49,6 +54,8 @@ static void test_mm_rmem_invalid_write(void)
 	memset(buffer, 1, DATA_SIZE);
 	TEST_ASSERT(memwrite(RMEM_SIZE, buffer, DATA_SIZE) < 0);
 	TEST_ASSERT(memwrite(RMEM_SIZE - DATA_SIZE/2, buffer, DATA_SIZE) < 0);
+    TEST_ASSERT(memwrite(RMEM_BLOCK_SIZE/2, buffer, RMEM_SIZE/RMEM_BLOCK_SIZE) < 0);
+    TEST_ASSERT(memwrite(0, buffer, RMEM_BLOCK_SIZE/2) < 0);
 }
 
 /*============================================================================*
@@ -76,6 +83,8 @@ static void test_mm_rmem_invalid_write_size(void)
 
 	memset(buffer, 1, DATA_SIZE);
 	TEST_ASSERT(memwrite(0, buffer, RMEM_BLOCK_SIZE + 1) < 0);
+    TEST_ASSERT(memwrite(RMEM_BLOCK_SIZE/2, buffer, RMEM_SIZE/RMEM_BLOCK_SIZE) < 0);
+    TEST_ASSERT(memwrite(0, buffer, RMEM_BLOCK_SIZE/2) < 0);
 }
 
 /*============================================================================*
@@ -92,6 +101,8 @@ static void test_mm_rmem_invalid_read(void)
 	memset(buffer, 1, DATA_SIZE);
 	TEST_ASSERT(memread(RMEM_SIZE, buffer, DATA_SIZE) < 0);
 	TEST_ASSERT(memread(RMEM_SIZE - DATA_SIZE/2, buffer, DATA_SIZE) < 0);
+    TEST_ASSERT(memread(RMEM_BLOCK_SIZE/2, buffer, RMEM_SIZE/RMEM_BLOCK_SIZE) < 0);
+    TEST_ASSERT(memread(0, buffer, RMEM_BLOCK_SIZE/2) < 0);
 }
 
 /*============================================================================*
@@ -119,6 +130,40 @@ static void test_mm_rmem_invalid_read_size(void)
 
 	memset(buffer, 1, DATA_SIZE);
 	TEST_ASSERT(memread(0, buffer, RMEM_BLOCK_SIZE + 1) < 0);
+    TEST_ASSERT(memread(RMEM_BLOCK_SIZE/2, buffer, RMEM_SIZE/RMEM_BLOCK_SIZE) < 0);
+    TEST_ASSERT(memread(0, buffer, RMEM_BLOCK_SIZE/2) < 0);
+}
+
+/*============================================================================*
+ * API Test: Invalid Alloc                                                    *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Invalid Alloc
+ */
+static void test_mm_rmem_invalid_alloc(void)
+{
+    if (TEST_INV_ALLOC)
+    {
+        for (int i = 0; i < RMEM_SIZE/RMEM_BLOCK_SIZE; i++)
+        {
+            TEST_ASSERT(memalloc() == i);
+        }
+        TEST_ASSERT(memalloc() < 0);
+    }
+}
+
+/*============================================================================*
+ * API Test: Invalid Free                                                     *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Invalid Free
+ */
+static void test_mm_rmem_invalid_free(void)
+{
+    TEST_ASSERT(memfree(-1) < 0);
+    TEST_ASSERT(memfree(RMEM_SIZE/RMEM_BLOCK_SIZE) < 0);
 }
 
 /*============================================================================*/
@@ -133,5 +178,7 @@ struct test mm_rmem_tests_fault[] = {
 	{ test_mm_rmem_invalid_read,       "Invalid Read"       },
 	{ test_mm_rmem_null_read,          "Null Read"          },
 	{ test_mm_rmem_invalid_read_size,  "Invalid Read Size"  },
+	{ test_mm_rmem_invalid_free,       "Invalid Free"       },
+	{ test_mm_rmem_invalid_alloc,      "Invalid Alloc"      },
 	{ NULL,                            NULL                 },
 };

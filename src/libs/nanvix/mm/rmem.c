@@ -123,17 +123,22 @@ int memread(uint64_t addr, void *buf, size_t n)
 	if (buf == NULL)
 		return (-EINVAL);
 
-	/* Invalid read size. */
-	if (n > RMEM_BLOCK_SIZE)
-		return (-EINVAL);
+    /* Bad addr to read. */
+    if (addr % RMEM_BLOCK_SIZE != 0)
+        return (-EFAULT);
+
+    /* Bad size to read. */
+    if (n % RMEM_BLOCK_SIZE != 0)
+        return (-EFAULT);
 
 	/* Nothing to do. */
-	if (n == 0)
+    if (n == 0)
 		return (0);
 
 	/* Build operation header. */
 	msg.header.source = sys_get_node_num();
 	msg.header.opcode = RMEM_READ;
+
 	msg.blknum = addr;
 	msg.size = n;
 
@@ -173,9 +178,13 @@ int memwrite(uint64_t addr, const void *buf, size_t n)
 	if (buf == NULL)
 		return (-EINVAL);
 
-	/* Invalid write size. */
-	if (n > RMEM_BLOCK_SIZE)
-		return (-EINVAL);
+    /* Bad addr to read. */
+    if (addr % RMEM_BLOCK_SIZE != 0)
+        return (-EFAULT);
+
+    /* Bad size to read. */
+    if (n % RMEM_BLOCK_SIZE != 0)
+        return (-EFAULT);
 
 	/* Nothing to do. */
 	if (n == 0)

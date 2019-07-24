@@ -50,7 +50,7 @@ static void test_mm_rmem_read_write_cc(int masternode, int nclusters)
 	int nodenum;
 	int barrier;
 	int nodes[nclusters + 1];
-	char buffer[DATA_SIZE];
+	static char buffer[RMEM_BLOCK_SIZE];
 
 	nodenum = sys_get_node_num();
 
@@ -62,15 +62,77 @@ static void test_mm_rmem_read_write_cc(int masternode, int nclusters)
 	/* Create barrier. */
 	TEST_ASSERT((barrier = barrier_create(nodes, nclusters + 1)) >= 0);
 
-	memset(buffer, 1, DATA_SIZE);
-	TEST_ASSERT(memwrite(nodenum*DATA_SIZE, buffer, DATA_SIZE) == 0);
+	memset(buffer, 1, RMEM_BLOCK_SIZE);
+	TEST_ASSERT(memwrite(nodenum*RMEM_BLOCK_SIZE, buffer, RMEM_BLOCK_SIZE) == 0);
 
-	memset(buffer, 0, DATA_SIZE);
-	TEST_ASSERT(memread(nodenum*DATA_SIZE, buffer, DATA_SIZE) == 0);
+	memset(buffer, 0, RMEM_BLOCK_SIZE);
+	TEST_ASSERT(memread(nodenum*RMEM_BLOCK_SIZE, buffer, RMEM_BLOCK_SIZE) == 0);
+    memfree(nodenum);
 
 	/* Checksum. */
-	for (int i = 0; i < DATA_SIZE; i++)
+	for (int i = 0; i < RMEM_BLOCK_SIZE; i++)
 		TEST_ASSERT(buffer[i] == 1);
+
+	/* Sync. */
+	TEST_ASSERT(barrier_wait(barrier) == 0);
+	TEST_ASSERT(barrier_unlink(barrier) == 0);
+}
+
+
+/*============================================================================*
+ * API Test: Alloc CC                                                         *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Alloc CC
+ */
+static void test_mm_rmem_alloc_cc(int masternode, int nclusters)
+{
+	/* int nodenum; */
+	int barrier;
+	int nodes[nclusters + 1];
+
+	/* nodenum = sys_get_node_num(); */
+
+	/* Build nodes list. */
+	nodes[0] = masternode;
+	for (int i = 0; i < nclusters; i++)
+		nodes[i + 1] = i;
+
+	/* Create barrier. */
+	TEST_ASSERT((barrier = barrier_create(nodes, nclusters + 1)) >= 0);
+
+    TEST_ASSERT(memalloc() >= 0);
+
+	/* Sync. */
+	TEST_ASSERT(barrier_wait(barrier) == 0);
+	TEST_ASSERT(barrier_unlink(barrier) == 0);
+}
+
+/*============================================================================*
+ * API Test: Free CC                                                          *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Free CC
+ */
+static void test_mm_rmem_free_cc(int masternode, int nclusters)
+{
+	int nodenum;
+	int barrier;
+	int nodes[nclusters + 1];
+
+	nodenum = sys_get_node_num();
+
+	/* Build nodes list. */
+	nodes[0] = masternode;
+	for (int i = 0; i < nclusters; i++)
+		nodes[i + 1] = i;
+
+	/* Create barrier. */
+	TEST_ASSERT((barrier = barrier_create(nodes, nclusters + 1)) >= 0);
+
+    TEST_ASSERT(memfree(nodenum) == 0);
 
 	/* Sync. */
 	TEST_ASSERT(barrier_wait(barrier) == 0);
@@ -80,7 +142,7 @@ static void test_mm_rmem_read_write_cc(int masternode, int nclusters)
 /*============================================================================*/
 
 /**
- * @brief Mailbox unit test.
+ * @brief Main unit tests.
  */
 int main2(int argc, char **argv)
 {
@@ -100,7 +162,14 @@ int main2(int argc, char **argv)
 		case 0:
 			test_mm_rmem_read_write_cc(masternode, nclusters);
 			break;
-
+        /* Alloc CC */
+        case 1:
+            test_mm_rmem_alloc_cc(masternode, nclusters);
+            break;
+        /* Free CC */
+        case 2:
+            test_mm_rmem_free_cc(masternode, nclusters);
+            break;
 		/* Should not happen. */
 		default:
 			return (-EXIT_FAILURE);

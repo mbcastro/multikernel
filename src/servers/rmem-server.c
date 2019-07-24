@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <inttypes.h>
 
 #include <nanvix/spawner.h>
 #include <nanvix/utils.h>
@@ -83,7 +84,8 @@ static char rmem[RMEM_SIZE];
 /**
  * @brief Map of blocks.
  */
-static int blocks[RMEM_NUM_BLOCKS];
+/* static int blocks[RMEM_NUM_BLOCKS]; */
+static bit_t blocks[RMEM_NUM_BLOCKS/32];
 
 /*============================================================================*
  * rmem_alloc()
@@ -94,7 +96,7 @@ static int blocks[RMEM_NUM_BLOCKS];
  */
 static inline void blocks_init(void)
 {
-    memset(blocks, 0, (RMEM_NUM_BLOCKS)*sizeof(int));
+    memset(blocks, 0, (RMEM_NUM_BLOCKS/32)*sizeof(uint32_t));
 }
 
 /*============================================================================*
@@ -104,23 +106,15 @@ static inline void blocks_init(void)
 /**
  * @brief Handles remote memory allocation.
  */
-static inline uint64_t rmem_malloc(void)
+static inline uint32_t rmem_malloc(void)
 {
-	/* Search for a free block. */
-    for (int i = 0; i < RMEM_NUM_BLOCKS; i++)
+	uint32_t bit = bitmap_first_free(blocks, RMEM_NUM_BLOCKS/8);
+	if (bit == BITMAP_FULL)
 	{
-		/* Found. */
-        if (blocks[i] == 0)
-		{
-			int blknum;
-
-            blknum = i;
-            blocks[i] = 1;
-
-            return (blknum);
-        }
-    }
-    return (-ENOMEM);
+		return -ENOMEM;
+	}
+    bitmap_set(blocks, bit);
+	return bit;
 }
 
 /*============================================================================*
@@ -132,7 +126,7 @@ static inline uint64_t rmem_malloc(void)
  *
  * @param blknum Target block.
  */
-static inline void rmem_memfree(uint64_t blknum)
+static inline void rmem_memfree(uint32_t blknum)
 {
 	/* Invalid block number. */
     if (blknum > RMEM_SIZE)
@@ -142,13 +136,13 @@ static inline void rmem_memfree(uint64_t blknum)
     }
 
 	/* Bad block number. */
-    if (blocks[blknum] != 1)
+    if (bitmap_check_bit(blocks, blknum) != 1)
     {
         printf("[nanvix][rmem] double block free\n");
         return;
     }
 
-    blocks[blknum] = 0;
+	bitmap_clear(blocks, blknum);
 }
 /*============================================================================*
  * rmem_write()                                                               *
@@ -179,8 +173,27 @@ static inline void rmem_write(int remote, uint64_t blknum, int size)
 		return;
 	}
 
+    /* Bad blknum read */
+    if (blknum % RMEM_BLOCK_SIZE != 0) {
+        printf("[nanvix][rmem] bad read\n");
+        return;
+    }
+
+    /* Bad size read. */
+    if (size % RMEM_BLOCK_SIZE != 0) {
+        printf("[nanvix][rmem] bad read size\n");
+        return;
+    }
+
+    /* Block not allocated. */
+    if (bitmap_check_bit(blocks, blknum/RMEM_BLOCK_SIZE) == 0)
+	{
+        printf("[nanvix][rmem] block not allocated\n");
+        return;
+    }
+
 	/* Invalid write size. */
-	if (size > RMEM_BLOCK_SIZE)
+	if (size > RMEM_SIZE || size < 0)
 	{
 		printf("[nanvix][rmem] invalid write size\n");
 		return;
@@ -223,10 +236,31 @@ static inline void rmem_read(int remote, uint64_t blknum, int size)
 		return;
 	}
 
-	/* Invalid read size. */
-	if (size > RMEM_BLOCK_SIZE)
+    /* Bad blknum read */
+    if (blknum % RMEM_BLOCK_SIZE != 0)
 	{
-		printf("[nanvix][rmem] invalid read size\n");
+        printf("[nanvix][rmem] bad read\n");
+        return;
+    }
+
+    /* Bad size read. */
+    if (size % RMEM_BLOCK_SIZE != 0)
+	{
+        printf("[nanvix][rmem] bad read size\n");
+        return;
+    }
+
+    /* Block not allocated. */
+    if (bitmap_check_bit(blocks, blknum/RMEM_BLOCK_SIZE) == 0)
+	{
+        printf("[nanvix][rmem] block not allocated\n");
+        return;
+    }
+
+	/* Invalid write size. */
+	if (size > RMEM_SIZE || size < 0)
+	{
+		printf("[nanvix][rmem] invalid write size\n");
 		return;
 	}
 
