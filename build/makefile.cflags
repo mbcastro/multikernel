@@ -22,11 +22,20 @@
 # SOFTWARE.
 #
 
-# Builds Everything
-all:
+ifeq ($(RELEASE), true)
 
-# Cleans Build Objects
-clean:
+	# Turn Off Debug Sections
+	export CFLAGS += -D NDEBUG
 
-# Cleans Everything
-distclean:
+	# Target-Specific Optimization Flags
+	include $(MAKEDIR)/makefile.cflags
+
+else
+
+	# Build with Level 0 Optimization
+	export CFLAGS += -O0
+
+	# Further Help on Debugging
+	export CFLAGS += -g
+
+endif

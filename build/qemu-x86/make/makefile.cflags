@@ -22,11 +22,9 @@
 # SOFTWARE.
 #
 
-# Builds Everything
-all:
+ifeq ($(RELEASE), true)
 
-# Cleans Build Objects
-clean:
+	# Switch to Level 3 Optimizations
+	export CFLAGS += -O3
 
-# Cleans Everything
-distclean:
+endif
