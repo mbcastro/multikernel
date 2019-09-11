@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# Copyright(c) 2011-2019 The Maintainers of Nanvix
+# Copyright(c) 2018 Pedro Henrique Penna <pedrohenriquepenna@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -22,27 +22,50 @@
 # SOFTWARE.
 #
 
-# Builds Everything
-all: all-libruntime
+#===============================================================================
+# Sources and Objects
+#===============================================================================
 
-# Cleans Build Objects
-clean: clean-libruntime
+# C Source Files
+SRC = $(wildcard *.c)
+
+# Object Files
+OBJ = $(SRC:.c=.$(OBJ_SUFFIX).o)
+
+#===============================================================================
+
+# Builds All Object Files
+all: $(OBJ)
+ifeq ($(VERBOSE), no)
+	@echo [AR] $(LIBRUNTIME)
+	@$(AR) $(ARFLAGS) $(LIBRUNTIME) $(OBJ)
+else
+	$(AR) $(ARFLAGS) $(LIBRUNTIME) $(OBJ)
+endif
+
+# Cleans All Object Files
+clean:
+ifeq ($(VERBOSE), no)
+	@echo [CLEAN] $(OBJ)
+	@rm -rf $(OBJ)
+else
+	rm -rf $(OBJ)
+endif
 
 # Cleans Everything
-distclean: distclean-libruntime
+distclean: clean
+ifeq ($(VERBOSE), no)
+	@echo [CLEAN] $(LIBRUNTIME)
+	@rm -rf $(LIBRUNTIME)
+else
+	rm -rf $(LIBRUNTIME)
+endif
 
-#===============================================================================
-# Runtime Lbirary
-#===============================================================================
-
-# Builds Name Server.
-all-libruntime:
-	$(MAKE) -C libruntime all
-
-# Cleans Name Server Build Objects
-clean-libruntime:
-	$(MAKE) -C libruntime clean
-
-# Cleans Name Server Build
-distclean-libruntime:
-	$(MAKE) -C libruntime distclean
+# Builds a C Source file
+%.$(OBJ_SUFFIX).o: %.c
+ifeq ($(VERBOSE), no)
+	@echo [CC] $@
+	@$(CC) $(CFLAGS) $< -c -o $@
+else
+	$(CC) $(CFLAGS) $< -c -o $@
+endif
