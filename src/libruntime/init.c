@@ -54,9 +54,13 @@ int __runtime_setup(int ring)
 		__stdportal_setup();
 	}
 
-	/* Initialize Name Service client*/
+	/* Initialize Name Service client. */
 	if ((ring - current_ring) >= 0)
 		__name_setup();
+
+	/* Initialize Named Mailbox facility. */
+	if ((ring - current_ring) >= 0)
+		__nanvix_mailbox_setup();
 
 	current_ring = ring;
 
@@ -68,13 +72,17 @@ int __runtime_setup(int ring)
  */
 int __runtime_cleanup(void)
 {
-	__stdportal_cleanup();
-	__stdmailbox_cleanup();
-	__stdsync_cleanup();
+	/* Clean up Name Service client. */
+	if (current_ring >= 2)
+		__nanvix_mailbox_setup();
 
 	/* Clean up Name Service client. */
 	if (current_ring >= 1)
 		__name_cleanup();
+
+	__stdportal_cleanup();
+	__stdmailbox_cleanup();
+	__stdsync_cleanup();
 
 	current_ring = 0;
 

@@ -36,7 +36,7 @@
 	extern int __runtime_setup(int ring);
 
 	/**
-	 * @brief Cleans runtime.
+	 * @brief Shuts down runtime.
 	 */
 	extern int __runtime_cleanup(void);
 
@@ -60,5 +60,24 @@
 	 */
 	extern int __name_cleanup(void);
 
-#endif /* NANVIX_RUNTIME_RUNTIME_H_ */
+/*============================================================================*
+ * Ring 2                                                                     *
+ *============================================================================*/
 
+	/**
+	 * @brief Initializes the Named Mailbox facility.
+	 *
+	 * @returns Upon successful completion, zero is returned. Upon
+	 * failure, a negative error code is returned instead.
+	 */
+	extern int __nanvix_mailbox_setup(void);
+
+	/**
+	 * @brief Shuts down Named Mailbox facility.
+	 *
+	 * @returns Upon successful completion, zero is returned. Upon
+	 * failure, a negative error code is returned instead.
+	 */
+	extern int __nanvix_mailbox_cleanup(void);
+
+#endif /* NANVIX_RUNTIME_RUNTIME_H_ */
