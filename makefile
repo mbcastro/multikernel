@@ -67,8 +67,8 @@ export LIBRUNTIME = $(LIBDIR)/libruntime-$(TARGET).a
 #
 # TODO: make this more generic.
 #
-export EXEC :=
-export BINARIES :=
+export EXEC := nanvix-zombie
+export BINARIES  = nanvix-zombie
 
 #===============================================================================
 # Target-Specific Make Rules

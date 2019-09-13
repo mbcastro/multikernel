@@ -23,13 +23,13 @@
 #
 
 # Builds Everything
-all: all-libruntime
+all: all-libruntime all-zombie
 
 # Cleans Build Objects
-clean: clean-libruntime
+clean: clean-libruntime clean-zombie
 
 # Cleans Everything
-distclean: distclean-libruntime
+distclean: distclean-libruntime distclean-zombie
 
 #===============================================================================
 # Runtime Lbirary
@@ -46,3 +46,19 @@ clean-libruntime:
 # Cleans Name Server Build
 distclean-libruntime:
 	$(MAKE) -C libruntime distclean
+
+#===============================================================================
+# Zombie Server
+#===============================================================================
+
+# Builds Zombie Server.
+all-zombie: all-libruntime
+	$(MAKE) -C zombie all
+
+# Cleans Zombie Server Build objects.
+clean-zombie:
+	$(MAKE) -C zombie clean
+
+# Cleans Zombie Server build.
+distclean-zombie:
+	$(MAKE) -C zombie distclean
