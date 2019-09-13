@@ -44,4 +44,9 @@
 	 */
 	#define NANVIX_MAILBOX_MAX (MAILBOX_CREATE_MAX + MAILBOX_OPEN_MAX)
 
+	/**
+	 * @brief Maximum number of portals that can be opened.
+	 */
+	#define NANVIX_PORTAL_MAX (PORTAL_CREATE_MAX + PORTAL_OPEN_MAX)
+
 #endif /* NANVIX_LIMITS_H_ */

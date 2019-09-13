@@ -80,4 +80,20 @@
 	 */
 	extern int __nanvix_mailbox_cleanup(void);
 
+	/**
+	 * @brief Initializes the Named Portal facility.
+	 *
+	 * @returns Upon successful completion, zero is returned. Upon
+	 * failure, a negative error code is returned instead.
+	 */
+	extern int __nanvix_portal_setup(void);
+
+	/**
+	 * @brief Shuts down named Portal facility.
+	 *
+	 * @returns Upon successful completion, zero is returned. Upon
+	 * failure, a negative error code is returned instead.
+	 */
+	extern int __nanvix_portal_cleanup(void);
+
 #endif /* NANVIX_RUNTIME_RUNTIME_H_ */

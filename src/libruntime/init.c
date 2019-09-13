@@ -58,9 +58,12 @@ int __runtime_setup(int ring)
 	if ((ring - current_ring) >= 0)
 		__name_setup();
 
-	/* Initialize Named Mailbox facility. */
+	/* Initialize Named IKC facilities. */
 	if ((ring - current_ring) >= 0)
+	{
 		__nanvix_mailbox_setup();
+		__nanvix_portal_setup();
+	}
 
 	current_ring = ring;
 
@@ -72,9 +75,12 @@ int __runtime_setup(int ring)
  */
 int __runtime_cleanup(void)
 {
-	/* Clean up Name Service client. */
+	/* Clean up IKC facilities. */
 	if (current_ring >= 2)
-		__nanvix_mailbox_setup();
+	{
+		__nanvix_portal_cleanup();
+		__nanvix_mailbox_cleanup();
+	}
 
 	/* Clean up Name Service client. */
 	if (current_ring >= 1)
