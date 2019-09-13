@@ -23,13 +23,13 @@
 #
 
 # Builds Everything
-all: all-libruntime all-zombie all-spawn all-name
+all: all-libruntime all-zombie all-spawn all-name all-test
 
 # Cleans Build Objects
-clean: clean-libruntime clean-zombie clean-spawn clean-name
+clean: clean-libruntime clean-zombie clean-spawn clean-name clean-test
 
 # Cleans Everything
-distclean: distclean-libruntime distclean-zombie distclean-spawn distclean-name
+distclean: distclean-libruntime distclean-zombie distclean-spawn distclean-name distclean-test
 
 #===============================================================================
 # Runtime Library
@@ -94,3 +94,19 @@ clean-name:
 # Cleans Name Server build.
 distclean-name:
 	$(MAKE) -C name distclean
+
+#===============================================================================
+# Test Server
+#===============================================================================
+
+# Builds Test Server.
+all-test: all-libruntime
+	$(MAKE) -C test all
+
+# Cleans Test Server Build objects.
+clean-test:
+	$(MAKE) -C test clean
+
+# Cleans Test Server build.
+distclean-test:
+	$(MAKE) -C test distclean
