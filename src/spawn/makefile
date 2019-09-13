@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# Copyright(c) 2011-2019 The Maintainers of Nanvix
+# Copyright(c) 2018 Pedro Henrique Penna <pedrohenriquepenna@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -22,59 +22,67 @@
 # SOFTWARE.
 #
 
-# Builds Everything
-all: all-libruntime all-zombie all-spawn
+#===============================================================================
+# Toolchain Configuration
+#===============================================================================
 
-# Cleans Build Objects
-clean: clean-libruntime clean-zombie clean-spawn
+# Libraries
+export LIBS  = -Wl,--whole-archive $(LIBRUNTIME) $(LIBC) $(LIBNANVIX) $(LIBKERNEL) $(LIBHAL)
+export LIBS += -Wl,--no-whole-archive $(THEIR_LIBS)
+
+#===============================================================================
+# Binaries Sources and Objects
+#===============================================================================
+
+# Binary
+EXEC = nanvix-spawn
+
+# C Source Files
+SRC = $(wildcard *.c)
+
+# Object Files
+OBJ = $(SRC:.c=.$(OBJ_SUFFIX).o)
+
+#===============================================================================
+
+ifeq ($(TARGET),unix64)
+LINKER_SCRIPT=
+else
+LINKER_SCRIPT = -L $(LINKERDIR)/ -T link.ld
+endif
+
+# Builds All Object Files
+all: $(OBJ)
+ifeq ($(VERBOSE), no)
+	@echo [CC] $(BINDIR)/$(EXEC)
+	@$(CC) $(LDFLAGS) $(LINKER_SCRIPT) -o $(BINDIR)/$(EXEC) $(OBJ) $(LIBS)
+else
+	$(CC) $(LDFLAGS) $(LINKER_SCRIPT) -o $(BINDIR)/$(EXEC) $(OBJ) $(LIBS)
+endif
+
+# Cleans All Object Files
+clean:
+ifeq ($(VERBOSE), no)
+	@echo [CLEAN] $(OBJ)
+	@rm -rf $(OBJ)
+else
+	rm -rf $(OBJ)
+endif
 
 # Cleans Everything
-distclean: distclean-libruntime distclean-zombie distclean-spawn
+distclean: clean
+ifeq ($(VERBOSE), no)
+	@echo [CLEAN] $(BINDIR)/$(EXEC)
+	@rm -rf $(BINDIR)/$(EXEC)
+else
+	rm -rf $(BINDIR)/$(EXEC)
+endif
 
-#===============================================================================
-# Runtime Lbirary
-#===============================================================================
-
-# Builds Name Server.
-all-libruntime:
-	$(MAKE) -C libruntime all
-
-# Cleans Name Server Build Objects
-clean-libruntime:
-	$(MAKE) -C libruntime clean
-
-# Cleans Name Server Build
-distclean-libruntime:
-	$(MAKE) -C libruntime distclean
-
-#===============================================================================
-# Zombie Server
-#===============================================================================
-
-# Builds Zombie Server.
-all-zombie: all-libruntime
-	$(MAKE) -C zombie all
-
-# Cleans Zombie Server Build objects.
-clean-zombie:
-	$(MAKE) -C zombie clean
-
-# Cleans Zombie Server build.
-distclean-zombie:
-	$(MAKE) -C zombie distclean
-
-#===============================================================================
-# Spawn Server
-#===============================================================================
-
-# Builds Spawn Server.
-all-spawn: all-libruntime
-	$(MAKE) -C spawn all
-
-# Cleans Spawn Server Build objects.
-clean-spawn:
-	$(MAKE) -C spawn clean
-
-# Cleans Spawn Server build.
-distclean-spawn:
-	$(MAKE) -C spawn distclean
+# Builds a C Source file
+%.$(OBJ_SUFFIX).o: %.c
+ifeq ($(VERBOSE), no)
+	@echo [CC] $@
+	@$(CC) $(CFLAGS) $< -c -o $@
+else
+	$(CC) $(CFLAGS) $< -c -o $@
+endif
