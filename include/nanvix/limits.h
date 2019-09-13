@@ -22,61 +22,26 @@
  * SOFTWARE.
  */
 
-#include <nanvix/runtime/runtime.h>
-#include <nanvix/runtime/stdikc.h>
-#include <ulibc/assert.h>
-#include <ulibc/stdio.h>
-#include <posix/errno.h>
+#ifndef NANVIX_LIMITS_H_
+#define NANVIX_LIMITS_H_
 
-/**
- * @brief Current runtime ring.
- */
-static int current_ring = 0;
+	#include <nanvix/hal/hal.h>
 
-/**
- * @todo TODO: provide a detailed description for this function.
- */
-int __runtime_setup(int ring)
-{
-	/* Invalid runtime ring. */
-	if (ring < 0)
-		return (-EINVAL);
+	/**
+	 * @brief Number of NoC nodes.
+	 */
+	#define NANVIX_NODES_NUM PROCESSOR_NOC_NODES_NUM
 
-	/* Nothing to do. */
-	if (ring < current_ring)
-		return (0);
+	/**
+	 * @brief Maximum length of a process name.
+	 *
+	 * @note The null character is included.
+	 */
+	#define NANVIX_PROC_NAME_MAX 64
 
-	/* Initialize unnamed IKC services. */
-	if ((ring - current_ring) >= 0)
-	{
-		__stdsync_setup();
-		__stdmailbox_setup();
-		__stdportal_setup();
-	}
+	/**
+	 * @brief Maximum number of mailboxes that can be opened.
+	 */
+	#define NANVIX_MAILBOX_MAX (MAILBOX_CREATE_MAX + MAILBOX_OPEN_MAX)
 
-	/* Initialize Name Service client*/
-	if ((ring - current_ring) >= 0)
-		__name_setup();
-
-	current_ring = ring;
-
-	return (0);
-}
-
-/**
- * @todo TODO: provide a detailed description for this function.
- */
-int __runtime_cleanup(void)
-{
-	__stdportal_cleanup();
-	__stdmailbox_cleanup();
-	__stdsync_cleanup();
-
-	/* Clean up Name Service client. */
-	if (current_ring >= 1)
-		__name_cleanup();
-
-	current_ring = 0;
-
-	return (0);
-}
+#endif /* NANVIX_LIMITS_H_ */

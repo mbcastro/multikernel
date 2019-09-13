@@ -68,13 +68,12 @@ export LIBRUNTIME = $(LIBDIR)/libruntime-$(TARGET).a
 # TODO: make this more generic.
 #
 export EXEC := nanvix-spawn
-export BINARIES  = nanvix-spawn
+export BINARIES  = nanvix-spawn nanvix-name
 ifeq ($(TARGET), unix64)
 export BINARIES += nanvix-zombie nanvix-zombie nanvix-zombie nanvix-zombie
 export BINARIES += nanvix-zombie nanvix-zombie nanvix-zombie nanvix-zombie
 export BINARIES += nanvix-zombie nanvix-zombie nanvix-zombie nanvix-zombie
 export BINARIES += nanvix-zombie nanvix-zombie nanvix-zombie nanvix-zombie
-export BINARIES += nanvix-zombie
 endif
 
 #===============================================================================

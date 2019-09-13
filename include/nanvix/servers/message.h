@@ -22,61 +22,19 @@
  * SOFTWARE.
  */
 
-#include <nanvix/runtime/runtime.h>
-#include <nanvix/runtime/stdikc.h>
-#include <ulibc/assert.h>
-#include <ulibc/stdio.h>
-#include <posix/errno.h>
+#ifndef NANVIX_SERVERS_MESSAGE_H_
+#define NANVIX_SERVERS_MESSAGE_H_
 
-/**
- * @brief Current runtime ring.
- */
-static int current_ring = 0;
+    #include <stdint.h>
 
-/**
- * @todo TODO: provide a detailed description for this function.
- */
-int __runtime_setup(int ring)
-{
-	/* Invalid runtime ring. */
-	if (ring < 0)
-		return (-EINVAL);
-
-	/* Nothing to do. */
-	if (ring < current_ring)
-		return (0);
-
-	/* Initialize unnamed IKC services. */
-	if ((ring - current_ring) >= 0)
+	/**
+	 * @brief Polymorphic message header.
+	 */
+	typedef struct
 	{
-		__stdsync_setup();
-		__stdmailbox_setup();
-		__stdportal_setup();
-	}
+		uint16_t source; /**< Source cluster. */
+		uint8_t  opcode; /**< Operation.      */
+		uint8_t  unused; /**< Not used.       */
+	} message_header;
 
-	/* Initialize Name Service client*/
-	if ((ring - current_ring) >= 0)
-		__name_setup();
-
-	current_ring = ring;
-
-	return (0);
-}
-
-/**
- * @todo TODO: provide a detailed description for this function.
- */
-int __runtime_cleanup(void)
-{
-	__stdportal_cleanup();
-	__stdmailbox_cleanup();
-	__stdsync_cleanup();
-
-	/* Clean up Name Service client. */
-	if (current_ring >= 1)
-		__name_cleanup();
-
-	current_ring = 0;
-
-	return (0);
-}
+#endif /* NANVIX_SERVERS_MESSAGE_H_ */

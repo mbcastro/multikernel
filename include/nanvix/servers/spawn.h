@@ -30,4 +30,9 @@
 	 */
 	#define SPAWN_SERVER_NODE 0
 
+	/**
+	 * @brief NoC node number for Name Server.
+	 */
+	#define NAME_SERVER_NODE 1
+
 #endif /* NANVIX_SERVERS_SPAWN_H_ */
