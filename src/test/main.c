@@ -45,6 +45,9 @@ int __main2(int argc, const char *argv[])
 		__runtime_setup(1);
 		test_name();
 
+		__runtime_setup(3);
+		test_rmem();
+
 		nanvix_printf("[nanvix][test] shutting down server\n");
 
 	__runtime_cleanup();

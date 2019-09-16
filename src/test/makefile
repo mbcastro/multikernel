@@ -38,8 +38,9 @@ export LIBS += -Wl,--no-whole-archive $(THEIR_LIBS)
 EXEC = nanvix-test
 
 # C Source Files
-SRC = $(wildcard *.c) \
-      $(wildcard name/*.c)
+SRC = $(wildcard *.c)      \
+      $(wildcard name/*.c) \
+      $(wildcard rmem/*.c)
 
 # Object Files
 OBJ = $(SRC:.c=.$(OBJ_SUFFIX).o)

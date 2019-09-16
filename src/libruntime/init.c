@@ -31,7 +31,7 @@
 /**
  * @brief Current runtime ring.
  */
-static int current_ring = 0;
+static int current_ring = -1;
 
 /**
  * @todo TODO: provide a detailed description for this function.
@@ -43,24 +43,29 @@ int __runtime_setup(int ring)
 		return (-EINVAL);
 
 	/* Nothing to do. */
-	if (ring < current_ring)
+	if (current_ring > ring)
 		return (0);
 
 	/* Initialize unnamed IKC services. */
-	if ((ring - current_ring) >= 0)
+	if ((current_ring < 0) && (ring >= 0))
 	{
+		nanvix_printf("[nanvix] initalizing ring 0\n");
 		__stdsync_setup();
 		__stdmailbox_setup();
 		__stdportal_setup();
 	}
 
 	/* Initialize Name Service client. */
-	if ((ring - current_ring) >= 0)
+	if ((current_ring < 1) && (ring >= 1))
+	{
+		nanvix_printf("[nanvix] initalizing ring 1\n");
 		__name_setup();
+	}
 
 	/* Initialize Named IKC facilities. */
-	if ((ring - current_ring) >= 0)
+	if ((current_ring < 2) && (ring >= 2))
 	{
+		nanvix_printf("[nanvix] initalizing ring 2\n");
 		__nanvix_mailbox_setup();
 		__nanvix_portal_setup();
 	}

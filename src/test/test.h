@@ -46,4 +46,9 @@
 	 */
 	extern void test_name(void);
 
+	/**
+	 * @brief Launches regression tests on RMem Service.
+	 */
+	extern void test_rmem(void);
+
 #endif /* _TEST_H_ */
