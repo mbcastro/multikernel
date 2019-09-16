@@ -96,4 +96,24 @@
 	 */
 	extern int __nanvix_portal_cleanup(void);
 
+/*============================================================================*
+ * Ring 3                                                                     *
+ *============================================================================*/
+
+	/**
+	 * @brief Initializes the RMem Service client.
+	 *
+	 * @returns Upon successful completion, zero is returned. Upon
+	 * failure, a negative error code is returned instead.
+	 */
+	extern int __nanvix_rmem_setup(void);
+
+	/**
+	 * @brief Shuts down the RMem Service client.
+	 *
+	 * @returns Upon successful completion, zero is returned. Upon
+	 * failure, a negative error code is returned instead.
+	 */
+	extern int __nanvix_rmem_cleanup(void);
+
 #endif /* NANVIX_RUNTIME_RUNTIME_H_ */

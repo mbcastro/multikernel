@@ -35,4 +35,9 @@
 	 */
 	#define NAME_SERVER_NODE 1
 
+	/**
+	 * @brief NoC node number for RMem Server.
+	 */
+	#define RMEM_SERVER_NODE 2
+
 #endif /* NANVIX_SERVERS_SPAWN_H_ */

@@ -65,6 +65,13 @@ int __runtime_setup(int ring)
 		__nanvix_portal_setup();
 	}
 
+	/* Initialize RMem Service client. */
+	if ((current_ring < 3) && (ring >= 3))
+	{
+		nanvix_printf("[nanvix] initalizing ring 3\n");
+		__nanvix_rmem_setup();
+	}
+
 	current_ring = ring;
 
 	return (0);
@@ -75,6 +82,10 @@ int __runtime_setup(int ring)
  */
 int __runtime_cleanup(void)
 {
+	/* Cleanup RMem Service client. */
+	if (current_ring >= 3)
+		__nanvix_rmem_cleanup();
+
 	/* Clean up IKC facilities. */
 	if (current_ring >= 2)
 	{
