@@ -22,31 +22,87 @@
  * SOFTWARE.
  */
 
-#ifndef NANVIX_LIMITS_H_
-#define NANVIX_LIMITS_H_
+OUTPUT_FORMAT("elf32-littleriscv")
+OUTPUT_ARCH("riscv")
 
-	#include <nanvix/hal/hal.h>
+ENTRY(_do_start)
 
-	/**
-	 * @brief Number of NoC nodes.
-	 */
-	#define NANVIX_NODES_NUM PROCESSOR_NOC_NODES_NUM
+/*
+ * RAM Configuration
+ */
+RAM_BASE = 0x80000000; /* Base Address: 2 GB */
+RAM_SIZE = 0x8000000;  /* Size: 128 MB       */
 
-	/**
-	 * @brief Maximum length of a process name.
-	 *
-	 * @note The null character is included.
-	 */
-	#define NANVIX_PROC_NAME_MAX 64
+/*
+ * Page Size (4 KB)
+ */
+PAGE_SIZE = 0x1000;
 
-	/**
-	 * @brief Maximum number of mailboxes that can be opened.
-	 */
-	#define NANVIX_MAILBOX_MAX (MAILBOX_CREATE_MAX + MAILBOX_OPEN_MAX)
+/*
+ * Boot Address
+ */
+BOOT_ADDR = RAM_BASE;
 
-	/**
-	 * @brief Maximum number of portals that can be opened.
-	 */
-	#define NANVIX_PORTAL_MAX (PORTAL_CREATE_MAX + PORTAL_OPEN_MAX)
+MEMORY
+{
+	ram(wxa!ri) : ORIGIN = BOOT_ADDR, LENGTH = RAM_SIZE
+}
 
-#endif /* NANVIX_LIMITS_H_ */
+SECTIONS
+{
+	. = BOOT_ADDR;
+
+	KERNEL_CODE_START = .;
+
+	/* Bootstrap. */
+	.bootstrap :
+	{
+		__BOOTSTRAP_START = .;
+		*boot*.o (.*)
+		__BOOTSTRAP_END = .;
+	} > ram
+
+	. = ALIGN(PAGE_SIZE);
+
+	/* Text. */
+	.text : AT(ADDR(.text))
+	{
+		__TEXT_START = .;
+		*(.text)
+		__TEXT_END = .;
+	} > ram
+
+	KERNEL_CODE_END = .;
+
+	. = ALIGN(PAGE_SIZE);
+
+	KERNEL_DATA_START = .;
+
+	/* Initialized data. */
+	.data : AT(ADDR(.data))
+	{
+		__DATA_START = .;
+		*(.rodata)
+		*(.data)
+		__DATA_END = .;
+	} > ram
+
+	/* Uninitialized data. */
+	.bss : AT(ADDR(.bss))
+	{
+		__BSS_START = .;
+		*(.bss)
+		__BSS_END = .;
+	} > ram
+
+	KERNEL_DATA_END = .;
+
+	. = ALIGN(PAGE_SIZE);
+
+	/* Discarded. */
+	/DISCARD/ :
+	{
+		*(.comment)
+		*(.note)
+	}
+}

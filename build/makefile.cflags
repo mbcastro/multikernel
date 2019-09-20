@@ -22,28 +22,20 @@
 # SOFTWARE.
 #
 
-sudo: required
+ifeq ($(RELEASE), true)
 
-language: C
+	# Turn Off Debug Sections
+	export CFLAGS += -D NDEBUG
 
-services:
-- docker
+	# Target-Specific Optimization Flags
+	include $(MAKEDIR)/makefile.cflags
 
-env:
-  global:
-      - MOUNT_DIR=/root/nanvix
+else
 
-jobs:
-  include:
-    # Build Debug
-    - stage: "Build Debug"
-      name: "Unix 64-bit"
-      script: docker run -v "$(pwd):/mnt" -p 4567:4567 nanvix/ubuntu:unix64        /bin/bash -l -c "cd /mnt && make contrib && make all"
+	# Build with Level 0 Optimization
+	export CFLAGS += -O0
 
-    # Build Release
-    - stage: "Build Release"
-      name: "Unix 64-bit"
-      script: docker run -v "$(pwd):/mnt" -p 4567:4567 nanvix/ubuntu:unix64        /bin/bash -l -c "cd /mnt && export RELEASE=true && make contrib && make all"
+	# Further Help on Debugging
+	export CFLAGS += -g
 
-notifications:
-  slack: nanvix:31ePVjsrXynUajPUDqy6I0hp
+endif

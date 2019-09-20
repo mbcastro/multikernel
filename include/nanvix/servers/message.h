@@ -22,31 +22,19 @@
  * SOFTWARE.
  */
 
-#ifndef NANVIX_LIMITS_H_
-#define NANVIX_LIMITS_H_
+#ifndef NANVIX_SERVERS_MESSAGE_H_
+#define NANVIX_SERVERS_MESSAGE_H_
 
-	#include <nanvix/hal/hal.h>
-
-	/**
-	 * @brief Number of NoC nodes.
-	 */
-	#define NANVIX_NODES_NUM PROCESSOR_NOC_NODES_NUM
+    #include <stdint.h>
 
 	/**
-	 * @brief Maximum length of a process name.
-	 *
-	 * @note The null character is included.
+	 * @brief Polymorphic message header.
 	 */
-	#define NANVIX_PROC_NAME_MAX 64
+	typedef struct
+	{
+		uint16_t source; /**< Source cluster. */
+		uint8_t  opcode; /**< Operation.      */
+		uint8_t  unused; /**< Not used.       */
+	} message_header;
 
-	/**
-	 * @brief Maximum number of mailboxes that can be opened.
-	 */
-	#define NANVIX_MAILBOX_MAX (MAILBOX_CREATE_MAX + MAILBOX_OPEN_MAX)
-
-	/**
-	 * @brief Maximum number of portals that can be opened.
-	 */
-	#define NANVIX_PORTAL_MAX (PORTAL_CREATE_MAX + PORTAL_OPEN_MAX)
-
-#endif /* NANVIX_LIMITS_H_ */
+#endif /* NANVIX_SERVERS_MESSAGE_H_ */

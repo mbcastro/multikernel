@@ -20,29 +20,26 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <ulibc/string.h>
+#include <ulibc/stdio.h>
 #include <stdarg.h>
-#include <string.h>
-#include <stdio.h>
 
 /**
- * @brief Prints a message.
- *
- * Prints a formated message tot he standard output device.
- * 
- * @param fmt Formatted message.
+ * @todo TODO: provide a detailed description for this function.
  */
-void kprintf(const char *fmt, ...)
+void debug(const char *modulename, const char *fmt, ...)
 {
-	int len;
 	va_list args;
+	int len = 80 - 2;
 	char strbuf[80];
 
-	sprintf(strbuf, "[INFO][nanvix][kernel] ");
-	len = 80 - 2 - strlen(strbuf);
-	strncat(strbuf, fmt, len);
-	strcat(strbuf, "\n");
+	((void) modulename);
+
+	nanvix_strncpy(strbuf, fmt, len);
+	nanvix_strcat(strbuf, "\n");
 
 	va_start(args, fmt);
-	vfprintf(stderr, strbuf, args);
+	nanvix_vfprintf(nanvix_stdout, strbuf, args);
 	va_end(args);
 }
+

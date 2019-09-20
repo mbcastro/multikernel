@@ -1,7 +1,8 @@
 #
 # MIT License
 #
-# Copyright(c) 2011-2019 The Maintainers of Nanvix
+# Copyright(c) 2011-2018 Pedro Henrique Penna <pedrohenriquepenna@gmail.com>
+#              2016-2018 Davidson Francis <davidsondfgl@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -22,28 +23,16 @@
 # SOFTWARE.
 #
 
-sudo: required
+layout split
+file bin/test-driver
+target remote localhost:1234
+handle SIGSEGV nostop noprint nopass
+set confirm off
+focus cmd
+define hook-stop
+	if $_isvoid ($_exitcode) != 1
+		quit
+	end
 
-language: C
-
-services:
-- docker
-
-env:
-  global:
-      - MOUNT_DIR=/root/nanvix
-
-jobs:
-  include:
-    # Build Debug
-    - stage: "Build Debug"
-      name: "Unix 64-bit"
-      script: docker run -v "$(pwd):/mnt" -p 4567:4567 nanvix/ubuntu:unix64        /bin/bash -l -c "cd /mnt && make contrib && make all"
-
-    # Build Release
-    - stage: "Build Release"
-      name: "Unix 64-bit"
-      script: docker run -v "$(pwd):/mnt" -p 4567:4567 nanvix/ubuntu:unix64        /bin/bash -l -c "cd /mnt && export RELEASE=true && make contrib && make all"
-
-notifications:
-  slack: nanvix:31ePVjsrXynUajPUDqy6I0hp
+	focus cmd
+end

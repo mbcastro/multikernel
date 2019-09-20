@@ -22,28 +22,9 @@
 # SOFTWARE.
 #
 
-sudo: required
+ifeq ($(RELEASE), true)
 
-language: C
+	# Switch to Level 3 Optimizations
+	export CFLAGS += -O3
 
-services:
-- docker
-
-env:
-  global:
-      - MOUNT_DIR=/root/nanvix
-
-jobs:
-  include:
-    # Build Debug
-    - stage: "Build Debug"
-      name: "Unix 64-bit"
-      script: docker run -v "$(pwd):/mnt" -p 4567:4567 nanvix/ubuntu:unix64        /bin/bash -l -c "cd /mnt && make contrib && make all"
-
-    # Build Release
-    - stage: "Build Release"
-      name: "Unix 64-bit"
-      script: docker run -v "$(pwd):/mnt" -p 4567:4567 nanvix/ubuntu:unix64        /bin/bash -l -c "cd /mnt && export RELEASE=true && make contrib && make all"
-
-notifications:
-  slack: nanvix:31ePVjsrXynUajPUDqy6I0hp
+endif

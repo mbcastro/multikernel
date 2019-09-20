@@ -22,31 +22,71 @@
  * SOFTWARE.
  */
 
-#ifndef NANVIX_LIMITS_H_
-#define NANVIX_LIMITS_H_
+OUTPUT_FORMAT("elf32-or1k")
+ENTRY(_do_start)
 
-	#include <nanvix/hal/hal.h>
+BOOT_ADDR = 0;
 
-	/**
-	 * @brief Number of NoC nodes.
-	 */
-	#define NANVIX_NODES_NUM PROCESSOR_NOC_NODES_NUM
+SECTIONS
+{
+	. = BOOT_ADDR;
 
-	/**
-	 * @brief Maximum length of a process name.
-	 *
-	 * @note The null character is included.
-	 */
-	#define NANVIX_PROC_NAME_MAX 64
+	EXCEPTIONS = .;
 
-	/**
-	 * @brief Maximum number of mailboxes that can be opened.
-	 */
-	#define NANVIX_MAILBOX_MAX (MAILBOX_CREATE_MAX + MAILBOX_OPEN_MAX)
+	KERNEL_CODE_START = .;
 
-	/**
-	 * @brief Maximum number of portals that can be opened.
-	 */
-	#define NANVIX_PORTAL_MAX (PORTAL_CREATE_MAX + PORTAL_OPEN_MAX)
+	/* Kernel code section. */
+	.bootstrap : AT(ADDR(.bootstrap))
+	{
+		__BOOTSTRAP_START = .;
+		*hooks*.o
+		*boot_code*.o
+		__BOOTSTRAP_END = .;
+	}
 
-#endif /* NANVIX_LIMITS_H_ */
+	. = ALIGN(8192);
+
+	/* Kernel code section. */
+	.text : AT(ADDR(.text))
+	{
+		__TEXT_START = .;
+		*(.text)
+		__TEXT_END = .;
+	}
+
+
+	KERNEL_CODE_END = .;
+
+	. = ALIGN(8192);
+
+	KERNEL_DATA_START = .;
+
+	/* Initialized kernel data section. */
+	.data ALIGN(8192) : AT(ADDR(.data))
+	{
+		__DATA_START = .;
+		*(.rodata)
+		*(.data)
+		__DATA_END = .;
+	}
+
+	/* Uninitialized kernel data section. */
+	.bss : AT(ADDR(.bss))
+	{
+		__BSS_START = .;
+		*boot_data*.o
+		*(.bss)
+		__BSS_END = .;
+	}
+
+	KERNEL_DATA_END = .;
+
+	. =ALIGN(8192);
+
+	/* Discarded. */
+	/DISCARD/ :
+	{
+		*(.comment)
+		*(.note)
+	}
+}

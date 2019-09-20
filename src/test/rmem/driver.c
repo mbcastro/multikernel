@@ -20,32 +20,29 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <stdarg.h>
-#include <string.h>
-#include <stdio.h>
+#include <ulibc/stdio.h>
+#include "../test.h"
+
+/* Import definitions. */
+extern struct test tests_rmem_api[];
+extern struct test tests_rmem_fault[];
 
 /**
- * @brief Panics the kernel.
- *
- * Writes a message to the standard output device and panics the
- * kernel.
- * 
- * @param fmt Formatted message.
+ * @todo TODO: provide a detailed description for this function.
  */
-void kpanic(const char *fmt, ...)
+void test_rmem(void)
 {
-	int len;
-	va_list args;
-	char strbuf[80];
+	/* Run API tests. */
+	for (int i = 0; tests_rmem_api[i].test_fn != NULL; i++)
+	{
+		nanvix_printf("[nanvix][test][rmem][api] %s\n", tests_rmem_api[i].name);
+		tests_rmem_api[i].test_fn();
+	}
 
-	sprintf(strbuf, "[PANIC][nanvix][kernel] ");
-	len = 80 - 2 - strlen(strbuf);
-	strncat(strbuf, fmt, len);
-	strcat(strbuf, "\n");
-
-	va_start(args, fmt);
-	vfprintf(stderr, strbuf, args);
-	va_end(args);
-
-	while(1) /* NOOP */;
+	/* Run fault injection tests. */
+	for (int i = 0; tests_rmem_fault[i].test_fn != NULL; i++)
+	{
+		nanvix_printf("[nanvix][test][rmem][fault] %s\n", tests_rmem_fault[i].name);
+		tests_rmem_fault[i].test_fn();
+	}
 }

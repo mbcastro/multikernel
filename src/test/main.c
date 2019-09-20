@@ -22,31 +22,35 @@
  * SOFTWARE.
  */
 
-#ifndef NANVIX_LIMITS_H_
-#define NANVIX_LIMITS_H_
+#include <nanvix/runtime/runtime.h>
+#include <nanvix/runtime/stdikc.h>
+#include <ulibc/assert.h>
+#include <ulibc/stdio.h>
+#include "test.h"
 
-	#include <nanvix/hal/hal.h>
+/**
+ * @brief Test Server
+ */
+int __main2(int argc, const char *argv[])
+{
+	((void) argc);
+	((void) argv);
 
-	/**
-	 * @brief Number of NoC nodes.
-	 */
-	#define NANVIX_NODES_NUM PROCESSOR_NOC_NODES_NUM
+	__runtime_setup(0);
 
-	/**
-	 * @brief Maximum length of a process name.
-	 *
-	 * @note The null character is included.
-	 */
-	#define NANVIX_PROC_NAME_MAX 64
+		/* Unblock spawner. */
+		nanvix_printf("[nanvix][test] server alive\n");
+		nanvix_assert(stdsync_fence() == 0);
 
-	/**
-	 * @brief Maximum number of mailboxes that can be opened.
-	 */
-	#define NANVIX_MAILBOX_MAX (MAILBOX_CREATE_MAX + MAILBOX_OPEN_MAX)
+		__runtime_setup(1);
+		test_name();
 
-	/**
-	 * @brief Maximum number of portals that can be opened.
-	 */
-	#define NANVIX_PORTAL_MAX (PORTAL_CREATE_MAX + PORTAL_OPEN_MAX)
+		__runtime_setup(3);
+		test_rmem();
 
-#endif /* NANVIX_LIMITS_H_ */
+		nanvix_printf("[nanvix][test] shutting down server\n");
+
+	__runtime_cleanup();
+
+	return (0);
+}

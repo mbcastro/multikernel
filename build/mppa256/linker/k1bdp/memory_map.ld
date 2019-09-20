@@ -22,31 +22,17 @@
  * SOFTWARE.
  */
 
-#ifndef NANVIX_LIMITS_H_
-#define NANVIX_LIMITS_H_
+/**
+ * Copyright (C) 2013-2014 Kalray SA.
+ *
+ * All rights reserved.
+ */
 
-	#include <nanvix/hal/hal.h>
-
-	/**
-	 * @brief Number of NoC nodes.
-	 */
-	#define NANVIX_NODES_NUM PROCESSOR_NOC_NODES_NUM
-
-	/**
-	 * @brief Maximum length of a process name.
-	 *
-	 * @note The null character is included.
-	 */
-	#define NANVIX_PROC_NAME_MAX 64
-
-	/**
-	 * @brief Maximum number of mailboxes that can be opened.
-	 */
-	#define NANVIX_MAILBOX_MAX (MAILBOX_CREATE_MAX + MAILBOX_OPEN_MAX)
-
-	/**
-	 * @brief Maximum number of portals that can be opened.
-	 */
-	#define NANVIX_PORTAL_MAX (PORTAL_CREATE_MAX + PORTAL_OPEN_MAX)
-
-#endif /* NANVIX_LIMITS_H_ */
+/*
+ * Available memory regions.
+ */
+MEMORY
+{
+    internal_mem           : ORIGIN = 0x00000000, LENGTH = 2M
+	upper_internal_memory  : ORIGIN = 0x00200000, LENGTH = 0
+}

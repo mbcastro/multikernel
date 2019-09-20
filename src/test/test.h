@@ -22,31 +22,33 @@
  * SOFTWARE.
  */
 
-#ifndef NANVIX_LIMITS_H_
-#define NANVIX_LIMITS_H_
+#ifndef _TEST_H_
+#define _TEST_H_
 
-	#include <nanvix/hal/hal.h>
-
-	/**
-	 * @brief Number of NoC nodes.
-	 */
-	#define NANVIX_NODES_NUM PROCESSOR_NOC_NODES_NUM
+	#include <ulibc/assert.h>
 
 	/**
-	 * @brief Maximum length of a process name.
-	 *
-	 * @note The null character is included.
+	 * @brief Asserts a logic expression.
 	 */
-	#define NANVIX_PROC_NAME_MAX 64
+	#define TEST_ASSERT(x) nanvix_assert(x)
 
 	/**
-	 * @brief Maximum number of mailboxes that can be opened.
+	 * @brief Unit test.
 	 */
-	#define NANVIX_MAILBOX_MAX (MAILBOX_CREATE_MAX + MAILBOX_OPEN_MAX)
+	struct test
+	{
+		void (*test_fn)(void); /**< Test function. */
+		const char *name;      /**< Test name.     */
+	};
 
 	/**
-	 * @brief Maximum number of portals that can be opened.
+	 * @brief Launches regression tests on Name Service.
 	 */
-	#define NANVIX_PORTAL_MAX (PORTAL_CREATE_MAX + PORTAL_OPEN_MAX)
+	extern void test_name(void);
 
-#endif /* NANVIX_LIMITS_H_ */
+	/**
+	 * @brief Launches regression tests on RMem Service.
+	 */
+	extern void test_rmem(void);
+
+#endif /* _TEST_H_ */

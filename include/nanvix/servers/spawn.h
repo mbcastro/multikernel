@@ -22,31 +22,22 @@
  * SOFTWARE.
  */
 
-#ifndef NANVIX_LIMITS_H_
-#define NANVIX_LIMITS_H_
-
-	#include <nanvix/hal/hal.h>
+#ifndef NANVIX_SERVERS_SPAWN_H_
+#define NANVIX_SERVERS_SPAWN_H_
 
 	/**
-	 * @brief Number of NoC nodes.
+	 * @brief NoC node number for Spawn Server.
 	 */
-	#define NANVIX_NODES_NUM PROCESSOR_NOC_NODES_NUM
+	#define SPAWN_SERVER_NODE 0
 
 	/**
-	 * @brief Maximum length of a process name.
-	 *
-	 * @note The null character is included.
+	 * @brief NoC node number for Name Server.
 	 */
-	#define NANVIX_PROC_NAME_MAX 64
+	#define NAME_SERVER_NODE 1
 
 	/**
-	 * @brief Maximum number of mailboxes that can be opened.
+	 * @brief NoC node number for RMem Server.
 	 */
-	#define NANVIX_MAILBOX_MAX (MAILBOX_CREATE_MAX + MAILBOX_OPEN_MAX)
+	#define RMEM_SERVER_NODE 2
 
-	/**
-	 * @brief Maximum number of portals that can be opened.
-	 */
-	#define NANVIX_PORTAL_MAX (PORTAL_CREATE_MAX + PORTAL_OPEN_MAX)
-
-#endif /* NANVIX_LIMITS_H_ */
+#endif /* NANVIX_SERVERS_SPAWN_H_ */

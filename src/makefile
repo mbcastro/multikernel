@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# Copyright (c) 2011-2018 Pedro Henrique Penna <pedrohenriquepenna@gmail.com>
+# Copyright(c) 2011-2019 The Maintainers of Nanvix
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -10,129 +10,119 @@
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
 #
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.  THE SOFTWARE IS PROVIDED
-# "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
-# LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
-# PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
-# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
-# ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
 #
 
-# Import Platform-Dependent Stuff
-ifeq ($(ARCH),$(filter $(ARCH),k1bdp k1bio))
-	include $(MAKEDIR)/makefile.mppa256
-else ifeq ($(ARCH),$(filter $(ARCH),unix))
-	include $(MAKEDIR)/makefile.unix
-endif
+# Builds Everything
+all: all-libruntime all-zombie all-spawn all-name all-rmem all-test
+
+# Cleans Build Objects
+clean: clean-libruntime clean-zombie clean-spawn clean-name clean-rmem clean-test
+
+# Cleans Everything
+distclean: distclean-libruntime distclean-zombie distclean-spawn distclean-name distclean-rmem distclean-test
 
 #===============================================================================
-# Toolchain
+# Runtime Library
 #===============================================================================
 
-# Compiler Options
-export CFLAGS += -D asm=__asm__ -D inline=__inline__
-export CFLAGS += -ansi -std=c99
-export CFLAGS += -Wall -Wextra -Werror
-export CFLAGS += -Winit-self -Wswitch-default -Wfloat-equal
-export CFLAGS += -Wundef -Wshadow -Wuninitialized
-export CFLAGS += -O3
+# Builds Runtime Library.
+all-libruntime:
+	$(MAKE) -C libruntime all
 
-ifeq ($(DEBUG),true)
-	export CFLAGS += -DDEBUG_NAME
-	export CFLAGS += -DDEBUG_SEMAPHORE
-	export CFLAGS += -DDEBUG_RMEM
-	export CFLAGS += -DDEBUG_SHM
-	export CFLAGS += -DDEBUG_MQUEUE
-endif
+# Cleans Run Time Library Build objects.
+clean-libruntime:
+	$(MAKE) -C libruntime clean
 
-ifeq ($(DEBUG_NAME),true)
-	export CFLAGS += -DDEBUG_NAME
-endif
-
-ifeq ($(DEBUG_SEMAPHORE),true)
-	export CFLAGS += -DDEBUG_SEMAPHORE
-endif
-
-ifeq ($(DEBUG_RMEM),true)
-	export CFLAGS += -DDEBUG_RMEM
-endif
-
-ifeq ($(DEBUG_SHM),true)
-	export CFLAGS += -DDEBUG_SHM
-endif
-
-ifeq ($(DEBUG_MQUEUE),true)
-	export CFLAGS += -DDEBUG_MQUEUE
-endif
-
-# Linker Options
-export LDFLAGS += 
-export ARFLAGS = rcs
+# Cleans Run Time Library build.
+distclean-libruntime:
+	$(MAKE) -C libruntime distclean
 
 #===============================================================================
-# Binaries & Libraries
+# Zombie Server
 #===============================================================================
 
-# Startup Routines
-export CRT0 = $(LIBDIR)/crt0.o
-export CRT1 = $(LIBDIR)/crt1.o
+# Builds Zombie Server.
+all-zombie: all-libruntime
+	$(MAKE) -C zombie all
 
-# System Services
-export SPAWNER0BIN = $(BINDIR)/spawner0
-export SPAWNER1BIN = $(BINDIR)/spawner1
+# Cleans Zombie Server Build objects.
+clean-zombie:
+	$(MAKE) -C zombie clean
+
+# Cleans Zombie Server build.
+distclean-zombie:
+	$(MAKE) -C zombie distclean
 
 #===============================================================================
+# Spawn Server
+#===============================================================================
 
-# Conflicts.
-.PHONY: kernel
-.PHONY: libs
-.PHONY: servers
-.PHONY: sbin
-.PHONY: ubin
+# Builds Spawn Server.
+all-spawn: all-libruntime
+	$(MAKE) -C spawn all
 
-# Builds everything.
-all: kernel libs servers sbin ubin 
+# Cleans Spawn Server Build objects.
+clean-spawn:
+	$(MAKE) -C spawn clean
 
-# Builds the kernel.
-kernel: clean
-	cd kernel && $(MAKE) all
+# Cleans Spawn Server build.
+distclean-spawn:
+	$(MAKE) -C spawn distclean
 
-# Builds user-level libraries.
-libs: kernel
-	mkdir -p $(LIBDIR)
-	cd libs && $(MAKE) all
+#===============================================================================
+# Name Server
+#===============================================================================
 
-# Builds system servers
-servers: kernel libs
-ifeq ($(BUILD_SERVERS),true)
-	cd servers && $(MAKE) all
-endif
+# Builds Name Server.
+all-name: all-libruntime
+	$(MAKE) -C name all
 
-# Builds system binaries.
-sbin: kernel servers libs
-	mkdir -p $(BINDIR)
-	cd sbin && $(MAKE) all
+# Cleans Name Server Build objects.
+clean-name:
+	$(MAKE) -C name clean
 
-# Builds user binaries.
-ubin: kernel servers libs sbin
-	mkdir -p $(BINDIR)
-	cd ubin && $(MAKE) all
+# Cleans Name Server build.
+distclean-name:
+	$(MAKE) -C name distclean
 
-# Cleans compilation files.
-clean:
-	cd kernel && $(MAKE) clean
-	cd servers && $(MAKE) clean
-	cd libs && $(MAKE) clean
-	cd sbin && $(MAKE) clean
-	cd ubin && $(MAKE) clean
+#===============================================================================
+# RMem Server
+#===============================================================================
 
-# Cleans everything.
-distclean:
-	cd kernel && $(MAKE) distclean
-	cd servers && $(MAKE) distclean
-	cd libs && $(MAKE) distclean
-	cd sbin && $(MAKE) distclean
-	cd ubin && $(MAKE) distclean
+# Builds RMem Server.
+all-rmem: all-libruntime
+	$(MAKE) -C rmem all
 
+# Cleans RMem Server Build objects.
+clean-rmem:
+	$(MAKE) -C rmem clean
+
+# Cleans RMem Server build.
+distclean-rmem:
+	$(MAKE) -C rmem distclean
+
+#===============================================================================
+# Test Server
+#===============================================================================
+
+# Builds Test Server.
+all-test: all-libruntime
+	$(MAKE) -C test all
+
+# Cleans Test Server Build objects.
+clean-test:
+	$(MAKE) -C test clean
+
+# Cleans Test Server build.
+distclean-test:
+	$(MAKE) -C test distclean
