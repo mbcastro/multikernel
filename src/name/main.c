@@ -22,6 +22,8 @@
  * SOFTWARE.
  */
 
+#define __NAME_SERVICE
+
 #include <nanvix/servers/message.h>
 #include <nanvix/servers/name.h>
 #include <nanvix/servers/spawn.h>

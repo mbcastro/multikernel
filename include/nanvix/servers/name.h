@@ -25,7 +25,8 @@
 #ifndef NANVIX_SERVERS_NAME_H_
 #define NANVIX_SERVERS_NAME_H_
 
-	#include <nanvix/servers/name.h>
+#if defined(__NAME_SERVICE)
+
 	#include <nanvix/servers/message.h>
 	#include <nanvix/limits.h>
 	#include <stdint.h>
@@ -51,6 +52,10 @@
 		int32_t nodenum;                 /**< NoC node.       */
 		char name[NANVIX_PROC_NAME_MAX]; /**< Portal name.    */
 	};
+
+#endif /* __NAME_SERVICE */
+
+#if defined(__NEED_NAME_CLIENT)
 
 	/**
 	 * @brief link a process name.
@@ -83,5 +88,7 @@
 	 * Upon failure, a negative error code is returned instead.
 	 */
 	extern int name_unlink(const char *name);
+
+#endif /* __NEED_NAME_CLIENT */
 
 #endif /* NANVIX_SERVERS_NAME_H_ */

@@ -25,7 +25,6 @@
 #ifndef NANVIX_SERVERS_RMEM_H_
 #define NANVIX_SERVERS_RMEM_H_
 
-	#include <nanvix/servers/name.h>
 	#include <nanvix/servers/message.h>
 	#include <nanvix/limits.h>
 	#include <stdint.h>

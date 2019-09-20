@@ -22,7 +22,10 @@
  * SOFTWARE.
  */
 
+#define __NEED_NAME_CLIENT
+
 #include <nanvix/servers/message.h>
+#include <nanvix/servers/name.h>
 #include <nanvix/servers/rmem.h>
 #include <nanvix/servers/spawn.h>
 #include <nanvix/runtime/stdikc.h>

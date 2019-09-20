@@ -20,6 +20,8 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#define __NEED_NAME_CLIENT
+
 #include <nanvix/runtime/stdikc.h>
 #include <nanvix/servers/name.h>
 #include <nanvix/sys/portal.h>

@@ -22,6 +22,8 @@
  * SOFTWARE.
  */
 
+#define __NEED_NAME_CLIENT
+
 #include <nanvix/runtime/stdikc.h>
 #include <nanvix/servers/name.h>
 #include <nanvix/sys/mailbox.h>
