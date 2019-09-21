@@ -22,43 +22,26 @@
  * SOFTWARE.
  */
 
+#define __NEED_RMEM_CLIENT
+
 #include <nanvix/servers/rmem.h>
 #include <ulibc/stdio.h>
 #include <ulibc/string.h>
 #include "../test.h"
 
 /*============================================================================*
- * API Test: Alloc                                                            *
+ * API Test: Alloc/Free                                                       *
  *============================================================================*/
 
 /**
- * @brief API Test: Alloc
+ * @brief API Test: Alloc/Free
  */
-static void test_rmem_alloc(void)
+static void test_rmem_alloc_free(void)
 {
-	TEST_ASSERT(nanvix_rmemalloc() == 0);
-	TEST_ASSERT(nanvix_rmemalloc() == 1);
-	TEST_ASSERT(nanvix_rmemalloc() == 2);
-	TEST_ASSERT(nanvix_rmemalloc() == 3);
-}
+	rpage_t blknum;
 
-/*============================================================================*
- * API Test: Free                                                             *
- *============================================================================*/
-
-/**
- * @brief API Test: Free
- */
-static void test_rmem_free(void)
-{
-	TEST_ASSERT(nanvix_rmemfree(1) == 0);
-	TEST_ASSERT(nanvix_rmemalloc() == 1);
-	TEST_ASSERT(nanvix_rmemfree(0) == 0);
-	TEST_ASSERT(nanvix_rmemfree(2) == 0);
-	TEST_ASSERT(nanvix_rmemalloc() == 0);
-	TEST_ASSERT(nanvix_rmemalloc() == 2);
-	for (int i = 0; i < 4; i++)
-	    TEST_ASSERT(nanvix_rmemfree(i) == 0);
+	TEST_ASSERT((blknum = nanvix_rmem_alloc()) != RMEM_NULL);
+	TEST_ASSERT(nanvix_rmem_free(blknum) == 0);
 }
 
 /*============================================================================*
@@ -70,19 +53,22 @@ static void test_rmem_free(void)
  */
 static void test_rmem_read_write(void)
 {
+	rpage_t blknum;
 	static char buffer[RMEM_BLOCK_SIZE];
 
-	nanvix_memset(buffer, 1, RMEM_BLOCK_SIZE);
-	nanvix_rmemalloc();
-	TEST_ASSERT(nanvix_rmemwrite(0, buffer, RMEM_BLOCK_SIZE) == 0);
+	TEST_ASSERT((blknum = nanvix_rmem_alloc()) != RMEM_NULL);
 
-	nanvix_memset(buffer, 0, RMEM_BLOCK_SIZE);
-	TEST_ASSERT(nanvix_rmemread(0, buffer, RMEM_BLOCK_SIZE) == 0);
-	nanvix_rmemfree(0);
+		nanvix_memset(buffer, 1, RMEM_BLOCK_SIZE);
+		TEST_ASSERT(nanvix_rmem_write(blknum, buffer) == RMEM_BLOCK_SIZE);
 
-	/* Checksum. */
-	for (int i = 0; i < RMEM_BLOCK_SIZE; i++)
-		TEST_ASSERT(buffer[i] == 1);
+		nanvix_memset(buffer, 0, RMEM_BLOCK_SIZE);
+		TEST_ASSERT(nanvix_rmem_read(blknum, buffer) == RMEM_BLOCK_SIZE);
+
+		/* Checksum. */
+		for (unsigned long i = 0; i < RMEM_BLOCK_SIZE; i++)
+			TEST_ASSERT(buffer[i] == 1);
+
+	TEST_ASSERT(nanvix_rmem_free(blknum) == 0);
 }
 
 /*============================================================================*/
@@ -93,8 +79,7 @@ static void test_rmem_read_write(void)
  * @brief Unit tests.
  */
 struct test tests_rmem_api[] = {
-	{ test_rmem_alloc,      "alloc"         },
-	{ test_rmem_free,       "free"          },
-	{ test_rmem_read_write, "read write"    },
-	{ NULL,                  NULL           },
+	{ test_rmem_alloc_free, "alloc/free" },
+	{ test_rmem_read_write, "read write" },
+	{ NULL,                  NULL        },
 };

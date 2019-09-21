@@ -22,20 +22,30 @@
  * SOFTWARE.
  */
 
+#define __NEED_RMEM_CLIENT
+
 #include <nanvix/servers/rmem.h>
 #include <ulibc/stdio.h>
 #include <ulibc/string.h>
 #include "../test.h"
 
 /**
- * @brief Buffer size (in bytes).
+ * @brief Dummy buffer.
  */
-#define DATA_SIZE 256
+char buffer[RMEM_BLOCK_SIZE];
+
+/*============================================================================*
+ * API Test: Invalid Free                                                     *
+ *============================================================================*/
 
 /**
- * @brief Invalid alloc test flag.
+ * @brief API Test: Invalid Free
  */
-#define TEST_INV_ALLOC 0
+static void test_rmem_invalid_free(void)
+{
+	TEST_ASSERT(nanvix_rmem_free(RMEM_NULL) == -EINVAL);
+	TEST_ASSERT(nanvix_rmem_free(RMEM_NUM_BLOCKS) == -EINVAL);
+}
 
 /*============================================================================*
  * API Test: Invalid Write                                                    *
@@ -46,42 +56,19 @@
  */
 static void test_rmem_invalid_write(void)
 {
-	char buffer[DATA_SIZE];
+	rpage_t blknum;
 
-	nanvix_memset(buffer, 1, DATA_SIZE);
-	TEST_ASSERT(nanvix_rmemwrite(RMEM_SIZE, buffer, DATA_SIZE) < 0);
-	TEST_ASSERT(nanvix_rmemwrite(RMEM_SIZE - DATA_SIZE/2, buffer, DATA_SIZE) < 0);
-	TEST_ASSERT(nanvix_rmemwrite(RMEM_BLOCK_SIZE/2, buffer, RMEM_SIZE/RMEM_BLOCK_SIZE) < 0);
-	TEST_ASSERT(nanvix_rmemwrite(0, buffer, RMEM_BLOCK_SIZE/2) < 0);
-}
+	nanvix_memset(buffer, 1, RMEM_BLOCK_SIZE);
 
-/*============================================================================*
- * API Test: Null Write                                                       *
- *============================================================================*/
+	/* Invalid block number. */
+	TEST_ASSERT(nanvix_rmem_write(RMEM_NULL, buffer) == 0);
+	TEST_ASSERT(nanvix_rmem_write(RMEM_NUM_BLOCKS, buffer) == 0);
+	TEST_ASSERT(nanvix_rmem_write(RMEM_NUM_BLOCKS + 1, buffer) == 0);
 
-/**
- * @brief API Test: Null Write
- */
-static void test_rmem_null_write(void)
-{
-	TEST_ASSERT(nanvix_rmemwrite(0, NULL, DATA_SIZE) < 0);
-}
-
-/*============================================================================*
- * API Test: Invalid Write Size                                               *
- *============================================================================*/
-
-/**
- * @brief API Test: Invalid Write Size
- */
-static void test_rmem_invalid_write_size(void)
-{
-	char buffer[DATA_SIZE];
-
-	nanvix_memset(buffer, 1, DATA_SIZE);
-	TEST_ASSERT(nanvix_rmemwrite(0, buffer, RMEM_BLOCK_SIZE + 1) < 0);
-	TEST_ASSERT(nanvix_rmemwrite(RMEM_BLOCK_SIZE/2, buffer, RMEM_SIZE/RMEM_BLOCK_SIZE) < 0);
-	TEST_ASSERT(nanvix_rmemwrite(0, buffer, RMEM_BLOCK_SIZE/2) < 0);
+	/* Invalid buffer. */
+	TEST_ASSERT((blknum = nanvix_rmem_alloc()) != RMEM_NULL);
+	TEST_ASSERT(nanvix_rmem_write(blknum, NULL) == 0);
+	TEST_ASSERT(nanvix_rmem_free(blknum) == 0);
 }
 
 /*============================================================================*
@@ -93,74 +80,19 @@ static void test_rmem_invalid_write_size(void)
  */
 static void test_rmem_invalid_read(void)
 {
-	char buffer[DATA_SIZE];
+	rpage_t blknum;
 
-	nanvix_memset(buffer, 1, DATA_SIZE);
-	TEST_ASSERT(nanvix_rmemread(RMEM_SIZE, buffer, DATA_SIZE) < 0);
-	TEST_ASSERT(nanvix_rmemread(RMEM_SIZE - DATA_SIZE/2, buffer, DATA_SIZE) < 0);
-	TEST_ASSERT(nanvix_rmemread(RMEM_BLOCK_SIZE/2, buffer, RMEM_SIZE/RMEM_BLOCK_SIZE) < 0);
-	TEST_ASSERT(nanvix_rmemread(0, buffer, RMEM_BLOCK_SIZE/2) < 0);
-}
+	nanvix_memset(buffer, 1, RMEM_BLOCK_SIZE);
 
-/*============================================================================*
- * API Test: Null Read                                                        *
- *============================================================================*/
+	/* Invalid block number. */
+	TEST_ASSERT(nanvix_rmem_read(RMEM_NULL, buffer) == 0);
+	TEST_ASSERT(nanvix_rmem_read(RMEM_NUM_BLOCKS, buffer) == 0);
+	TEST_ASSERT(nanvix_rmem_read(RMEM_NUM_BLOCKS + 1, buffer) == 0);
 
-/**
- * @brief API Test: Null Read
- */
-static void test_rmem_null_read(void)
-{
-	TEST_ASSERT(nanvix_rmemread(0, NULL, DATA_SIZE) < 0);
-}
-
-/*============================================================================*
- * API Test: Invalid Read Size                                                *
- *============================================================================*/
-
-/**
- * @brief API Test: Invalid Read Size
- */
-static void test_rmem_invalid_read_size(void)
-{
-	char buffer[DATA_SIZE];
-
-	nanvix_memset(buffer, 1, DATA_SIZE);
-	TEST_ASSERT(nanvix_rmemread(0, buffer, RMEM_BLOCK_SIZE + 1) < 0);
-	TEST_ASSERT(nanvix_rmemread(RMEM_BLOCK_SIZE/2, buffer, RMEM_SIZE/RMEM_BLOCK_SIZE) < 0);
-	TEST_ASSERT(nanvix_rmemread(0, buffer, RMEM_BLOCK_SIZE/2) < 0);
-}
-
-/*============================================================================*
- * API Test: Invalid Alloc                                                    *
- *============================================================================*/
-
-/**
- * @brief API Test: Invalid Alloc
- */
-static void test_rmem_invalid_alloc(void)
-{
-	if (TEST_INV_ALLOC)
-	{
-	    for (int i = 0; i < RMEM_SIZE/RMEM_BLOCK_SIZE; i++)
-	    {
-	        TEST_ASSERT(nanvix_rmemalloc() == i);
-	    }
-	    TEST_ASSERT(nanvix_rmemalloc() < 0);
-	}
-}
-
-/*============================================================================*
- * API Test: Invalid Free                                                     *
- *============================================================================*/
-
-/**
- * @brief API Test: Invalid Free
- */
-static void test_rmem_invalid_free(void)
-{
-	TEST_ASSERT(nanvix_rmemfree(-1) < 0);
-	TEST_ASSERT(nanvix_rmemfree(RMEM_SIZE/RMEM_BLOCK_SIZE) < 0);
+	/* Invalid buffer. */
+	TEST_ASSERT((blknum = nanvix_rmem_alloc()) != RMEM_NULL);
+	TEST_ASSERT(nanvix_rmem_read(blknum, NULL) == 0);
+	TEST_ASSERT(nanvix_rmem_free(blknum) == 0);
 }
 
 /*============================================================================*/
@@ -169,13 +101,8 @@ static void test_rmem_invalid_free(void)
  * @brief Unit tests.
  */
 struct test tests_rmem_fault[] = {
-	{ test_rmem_invalid_write,      "invalid write"      },
-	{ test_rmem_null_write,         "null write"         },
-	{ test_rmem_invalid_write_size, "invalid write size" },
-	{ test_rmem_invalid_read,       "invalid read"       },
-	{ test_rmem_null_read,          "null read"          },
-	{ test_rmem_invalid_read_size,  "invalid read size"  },
-	{ test_rmem_invalid_free,       "invalid free"       },
-	{ test_rmem_invalid_alloc,      "invalid alloc"      },
-	{ NULL,                          NULL                },
+	{ test_rmem_invalid_free,  "invalid free"  },
+	{ test_rmem_invalid_write, "invalid write" },
+	{ test_rmem_invalid_read,  "invalid read"  },
+	{ NULL,                     NULL           },
 };

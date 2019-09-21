@@ -27,7 +27,8 @@
 #===============================================================================
 
 # C Source Files
-SRC = $(wildcard *.c)
+SRC = $(wildcard *.c) \
+      $(wildcard rmem/*.c)
 
 # Object Files
 OBJ = $(SRC:.c=.$(OBJ_SUFFIX).o)

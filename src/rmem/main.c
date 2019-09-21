@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+#define __RMEM_SERVICE
 #define __NEED_NAME_CLIENT
 
 #include <nanvix/servers/message.h>
@@ -32,6 +33,7 @@
 #include <nanvix/runtime/runtime.h>
 #include <nanvix/runtime/utils.h>
 #include <nanvix/sys/mailbox.h>
+#include <nanvix/sys/noc.h>
 #include <nanvix/sys/portal.h>
 #include <nanvix/limits.h>
 #include <ulibc/assert.h>
@@ -46,11 +48,6 @@
 #else
 	#define rmem_debug(fmt, ...) { }
 #endif
-
-/**
- * @brief Number of remote memory blocks.
- */
-#define RMEM_NUM_BLOCKS (RMEM_SIZE/RMEM_BLOCK_SIZE)
 
 /**
  * @brief Server statistics.
@@ -80,46 +77,49 @@ static int inportal;
 
 /**
  * @brief Remote memory.
+ *
+ * @todo TODO: allocate this dynamically with kernel calls.
  */
-static char rmem[RMEM_SIZE];
+static char rmem[RMEM_NUM_BLOCKS][RMEM_BLOCK_SIZE];
 
 /**
  * @brief Map of blocks.
  */
-/* static int blocks[RMEM_NUM_BLOCKS]; */
-static bit_t blocks[RMEM_NUM_BLOCKS/32];
+static bitmap_t blocks[RMEM_NUM_BLOCKS/BITMAP_WORD_LENGTH];
 
 /*============================================================================*
- * rmem_alloc()                                                               *
- *============================================================================*/
-
-/**
- * @brief Initializes blocks array.
- */
-static inline void blocks_init(void)
-{
-    nanvix_memset(blocks, 0, (RMEM_NUM_BLOCKS/32)*sizeof(uint32_t));
-}
-
-/*============================================================================*
- * do_rmem_malloc()                                                           *
+ * do_rmem_alloc()                                                            *
  *============================================================================*/
 
 /**
  * @brief Handles remote memory allocation.
+ *
+ * @returns Upon successful completion, the number of the newly
+ * allocated remote memory block is allocated. Upon failure, @p
+ * RMEM_NULL is returned instead.
  */
-static inline uint32_t do_rmem_malloc(void)
+static inline rpage_t do_rmem_alloc(void)
 {
-	uint32_t bit = bitmap_first_free(blocks, RMEM_NUM_BLOCKS/8);
+	bitmap_t bit;
 
-	rmem_debug("memalloc block=%x", bit);
+	/* Find a free block. */
+	bit = bitmap_first_free(
+		blocks,
+		(RMEM_NUM_BLOCKS/BITMAP_WORD_LENGTH)*sizeof(bitmap_t)
+	);
 
+	/* Remote memory bank is full. */
 	if (bit == BITMAP_FULL)
-		return -ENOMEM;
+	{
+        nanvix_printf("[nanvix][rmem] remote memory full\n");
+		return (RMEM_NULL);
+	}
 
+	/* Allocate block. */
+	rmem_debug("rmem_alloc() blknum=%d", bit);
     bitmap_set(blocks, bit);
 
-	return bit;
+	return (bit);
 }
 
 /*============================================================================*
@@ -129,26 +129,35 @@ static inline uint32_t do_rmem_malloc(void)
 /**
  * @brief Handles remote memory free.
  *
- * @param blknum Target block.
+ * @param blknum Number of the target block.
+ *
+ * @returns Upon successful completion, zero is returned. Upon
+ * failure, a negative error code is returned instead.
  */
-static inline void do_rmem_free(uint32_t blknum)
+static inline int do_rmem_free(rpage_t blknum)
 {
+	rmem_debug("rmem_free blknum=%d", blknum);
+
 	/* Invalid block number. */
-    if (blknum > RMEM_SIZE)
+	if ((blknum == RMEM_NULL) || (blknum >= RMEM_NUM_BLOCKS))
     {
         nanvix_printf("[nanvix][rmem] invalid block number\n");
-        return;
+        return (-EINVAL);
     }
 
 	/* Bad block number. */
-    if (bitmap_check_bit(blocks, blknum) != 1)
+    if (!bitmap_check_bit(blocks, blknum))
     {
-        nanvix_printf("[nanvix][rmem] double block free\n");
-        return;
+        nanvix_printf("[nanvix][rmem] bad block\n");
+        return (-EFAULT);
     }
 
+	/* Free block. */
 	bitmap_clear(blocks, blknum);
+
+	return (0);
 }
+
 /*============================================================================*
  * do_rmem_write()                                                            *
  *============================================================================*/
@@ -156,56 +165,45 @@ static inline void do_rmem_free(uint32_t blknum)
 /**
  * @brief Handles a write request.
  *
- * @param inportal Input portal for data transfer.
- * @param remote   Remote client.
- * @param blknum   RMEM block.
- * @param size     Number of bytes to write.
+ * @param remote Remote client.
+ * @param blknum Number of the target block.
  */
-static inline void do_rmem_write(int remote, uint64_t blknum, int size)
+static inline int do_rmem_write(int remote, rpage_t blknum)
 {
-	rmem_debug("write nodenum=%d blknum=%d size=%d",
+	rmem_debug("write nodenum=%d blknum=%d",
 		remote,
-		blknum,
-		size
+		blknum
 	);
 
-	/* Invalid write. */
-	if ((blknum >= RMEM_SIZE) || (blknum + size > RMEM_SIZE))
-	{
-		nanvix_printf("[nanvix][rmem] invalid write\n");
-		return;
-	}
+	/*
+	 * FIXME: we should send an extra message to say what the remote
+	 * should do: either send data or abort.
+	 */
 
-    /* Bad blknum read */
-    if ((blknum % RMEM_BLOCK_SIZE) != 0)
-	{
-        nanvix_printf("[nanvix][rmem] bad read\n");
-        return;
+	/* Invalid block number. */
+	if ((blknum == RMEM_NULL) || (blknum >= RMEM_NUM_BLOCKS))
+    {
+        nanvix_printf("[nanvix][rmem] invalid block number\n");
+        return (-EINVAL);
     }
 
-    /* Bad size read. */
-    if ((size % RMEM_BLOCK_SIZE) != 0)
-	{
-        nanvix_printf("[nanvix][rmem] bad read size\n");
-        return;
+	/* Bad block number. */
+    if (!bitmap_check_bit(blocks, blknum))
+    {
+        nanvix_printf("[nanvix][rmem] bad block\n");
+        return (-EFAULT);
     }
 
-    /* Block not allocated. */
-    if (bitmap_check_bit(blocks, blknum/RMEM_BLOCK_SIZE) == 0)
-	{
-        nanvix_printf("[nanvix][rmem] block not allocated\n");
-        return;
-    }
+	nanvix_assert(portal_allow(inportal, remote) == 0);
+	nanvix_assert(
+		kportal_read(
+			inportal,
+			&rmem[blknum][0],
+			RMEM_BLOCK_SIZE
+		) == RMEM_BLOCK_SIZE
+	);
 
-	/* Invalid write size. */
-	if (size > RMEM_SIZE || size < 0)
-	{
-		nanvix_printf("[nanvix][rmem] invalid write size\n");
-		return;
-	}
-
-	kportal_allow(inportal, remote);
-	kportal_read(inportal, &rmem[blknum], size);
+	return (0);
 }
 
 /*============================================================================*
@@ -216,57 +214,55 @@ static inline void do_rmem_write(int remote, uint64_t blknum, int size)
  * @brief Handles a read request.
  *
  * @param remote Remote client.
- * @param blknum RMEM block.
- * @param size   Number of bytes to write.
+ * @param blknum Number of the target block.
+ *
+ * @returns Upon successful completion, zero is returned. Upon
+ * failure, a negative error code is returned instead.
  */
-static inline void do_rmem_read(int remote, uint64_t blknum, int size)
+static inline int do_rmem_read(int remote, rpage_t blknum)
 {
 	int outportal;
 
-	rmem_debug("read nodenum=%d blknum=%d size=%d",
+	rmem_debug("read nodenum=%d blknum=%d",
 		remote,
-		blknum,
-		size
+		blknum
 	);
 
-	/* Invalid read. */
-	if ((blknum >= RMEM_SIZE) || (blknum + size > RMEM_SIZE))
-	{
-		nanvix_printf("[nanvix][rmem] invalid read\n");
-		return;
-	}
+	/*
+	 * FIXME: we should send an extra message to say what the remote
+	 * should do: either wait for data or abort.
+	 */
 
-    /* Bad blknum read */
-    if (blknum % RMEM_BLOCK_SIZE != 0)
-	{
-        nanvix_printf("[nanvix][rmem] bad read\n");
-        return;
+	/* Invalid block number. */
+	if ((blknum == RMEM_NULL) || (blknum >= RMEM_NUM_BLOCKS))
+    {
+        nanvix_printf("[nanvix][rmem] invalid block number\n");
+        return (-EINVAL);
     }
 
-    /* Bad size read. */
-    if (size % RMEM_BLOCK_SIZE != 0)
-	{
-        nanvix_printf("[nanvix][rmem] bad read size\n");
-        return;
+	/* Bad block number. */
+    if (!bitmap_check_bit(blocks, blknum))
+    {
+        nanvix_printf("[nanvix][rmem] bad block\n");
+        return (-EFAULT);
     }
 
-    /* Block not allocated. */
-    if (bitmap_check_bit(blocks, blknum/RMEM_BLOCK_SIZE) == 0)
-	{
-        nanvix_printf("[nanvix][rmem] block not allocated\n");
-        return;
-    }
+	nanvix_assert((outportal =
+		kportal_open(
+			knode_get_num(),
+			remote)
+		) >= 0
+	);
+	nanvix_assert(
+		kportal_write(
+			outportal,
+			&rmem[blknum][0],
+			RMEM_BLOCK_SIZE
+		) == RMEM_BLOCK_SIZE
+	);
+	nanvix_assert(kportal_close(outportal) == 0);
 
-	/* Invalid write size. */
-	if (size > RMEM_SIZE || size < 0)
-	{
-		nanvix_printf("[nanvix][rmem] invalid write size\n");
-		return;
-	}
-
-	outportal = kportal_open(processor_node_get_num(core_get_id()), remote);
-	kportal_write(outportal, &rmem[blknum], size);
-	kportal_close(outportal);
+	return (0);
 }
 
 /*============================================================================*
@@ -296,28 +292,32 @@ static int do_rmem_loop(void)
 			/* Write to RMEM. */
 			case RMEM_WRITE:
 				stats.nwrites++;
-				stats.written += msg.size;
-				do_rmem_write(msg.header.source, msg.blknum, msg.size);
+				stats.written += RMEM_BLOCK_SIZE;
+				do_rmem_write(msg.header.source, msg.blknum);
 				break;
 
-			/* Read from RMEM. */
+			/* Read a page. */
 			case RMEM_READ:
 				stats.nreads++;
-				stats.read += msg.size;
-				do_rmem_read(msg.header.source, msg.blknum, msg.size);
+				stats.read += RMEM_BLOCK_SIZE;
+				do_rmem_read(msg.header.source, msg.blknum);
 				break;
 
-            /* Allocate RMEM. */
-            case RMEM_MEMALLOC:
-                msg.blknum = do_rmem_malloc();
-                source = kmailbox_open(msg.header.source);
+            /* Allocates a page. */
+            case RMEM_ALLOC:
+                msg.blknum = do_rmem_alloc();
+				msg.errcode = (msg.blknum == RMEM_NULL) ? -ENOMEM : 0;
+                nanvix_assert((source = kmailbox_open(msg.header.source)) >= 0);
                 nanvix_assert(kmailbox_write(source, &msg, sizeof(struct rmem_message)) == sizeof(struct rmem_message));
                 nanvix_assert(kmailbox_close(source) == 0);
                 break;
 
-            /* Free  RMEM. */
+            /* Free frees a page. */
             case RMEM_MEMFREE:
-                do_rmem_free(msg.blknum);
+				msg.errcode = do_rmem_free(msg.blknum);
+                nanvix_assert((source = kmailbox_open(msg.header.source)) >= 0);
+                nanvix_assert(kmailbox_write(source, &msg, sizeof(struct rmem_message)) == sizeof(struct rmem_message));
+                nanvix_assert(kmailbox_close(source) == 0);
                 break;
 
 			case RMEM_EXIT:
@@ -348,9 +348,23 @@ static int do_rmem_startup(void)
 	int ret;
 	char pathname[NANVIX_PROC_NAME_MAX];
 
-    blocks_init();
+	/* Messages should be small enough. */
+	nanvix_assert(sizeof(struct rmem_message) <= MAILBOX_MSG_SIZE);
 
-	nodenum = processor_node_get_num(core_get_id());
+	/* Bitmap word should be large enough. */
+	nanvix_assert(sizeof(rpage_t) >= sizeof(bitmap_t));
+
+	/* Clean bitmap. */
+    nanvix_memset(
+		blocks,
+		0,
+		(RMEM_NUM_BLOCKS/BITMAP_WORD_LENGTH)*sizeof(bitmap_t)
+	);
+
+	/* Fist block is special. */
+	bitmap_set(blocks, 0);
+
+	nodenum = knode_get_num();
 
 	/* Assign input mailbox. */
 	inbox = stdinbox_get();
