@@ -1,20 +1,25 @@
 /*
- * Copyright(C) 2011-2016 Pedro H. Penna <pedrohenriquepenna@gmail.com>
+ * MIT License
  *
- * This file is part of Nanvix.
+ * Copyright(c) 2011-2019 The Maintainers of Nanvix
  *
- * Nanvix is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 3 of the License, or
- * (at your option) any later version.
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  *
- * Nanvix is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
  *
- * You should have received a copy of the GNU General Public License
- * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  */
 
 #include <nanvix/runtime/utils.h>
@@ -22,12 +27,12 @@
 /**
  * @todo TODO: provide a detailed description for this function.
  */
-unsigned bitmap_nset(uint32_t *bitmap, size_t size)
+bitmap_t bitmap_nset(bitmap_t *bitmap, size_t size)
 {
-	unsigned count; /* Number of bits set. */
-	uint32_t *idx;  /* Loop index.         */
-	uint32_t *end;  /* End of bitmap.      */
-	uint32_t chunk; /* Working chunk.      */
+	bitmap_t count; /* Number of bits set. */
+	bitmap_t *idx;  /* Loop index.         */
+	bitmap_t *end;  /* End of bitmap.      */
+	bitmap_t chunk; /* Working chunk.      */
 
 	/* Count the number of bits set. */
 	count = 0;
@@ -52,7 +57,7 @@ unsigned bitmap_nset(uint32_t *bitmap, size_t size)
 /**
  * @todo TODO: provide a detailed description for this function.
  */
-unsigned bitmap_nclear(uint32_t *bitmap, size_t size)
+bitmap_t bitmap_nclear(bitmap_t *bitmap, size_t size)
 {
 	return ((size << 3) - bitmap_nset(bitmap, size));
 }
@@ -60,11 +65,11 @@ unsigned bitmap_nclear(uint32_t *bitmap, size_t size)
 /**
  * @todo TODO: provide a detailed description for this function.
  */
-bit_t bitmap_first_free(uint32_t *bitmap, size_t size)
+bitmap_t bitmap_first_free(bitmap_t *bitmap, size_t size)
 {
-    uint32_t *max;          /* Bitmap bondary. */
-    register uint32_t off;  /* Bit offset.     */
-    register uint32_t *idx; /* Bit index.      */
+    bitmap_t *max;          /* Bitmap bondary. */
+    register bitmap_t off;  /* Bit offset.     */
+    register bitmap_t *idx; /* Bit index.      */
 
     idx = bitmap;
     max = (idx + (size >> 2));
@@ -81,7 +86,7 @@ bit_t bitmap_first_free(uint32_t *bitmap, size_t size)
 			while (*idx & (0x1 << off))
 				off++;
 
-			return (((idx - bitmap) << 5) + off);
+			return (((idx - bitmap) << BITMAP_WORD_SHIFT) + off);
 		}
 
 		idx++;
@@ -93,8 +98,8 @@ bit_t bitmap_first_free(uint32_t *bitmap, size_t size)
 /**
  * @todo TODO: provide a detailed description for this function.
  */
-bit_t bitmap_check_bit(uint32_t *bitmap, uint32_t idx)
+bitmap_t bitmap_check_bit(bitmap_t *bitmap, bitmap_t idx)
 {
-	bit_t bit = (bitmap[idx >> 5] >> idx) & 1u;
+	bitmap_t bit = (bitmap[idx >> BITMAP_WORD_SHIFT] >> idx) & 1u;
 	return bit;
 }
