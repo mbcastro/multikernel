@@ -284,7 +284,13 @@ static int do_rmem_loop(void)
 	{
 		struct rmem_message msg;
 
-		kmailbox_read(inbox, &msg, sizeof(struct rmem_message));
+		nanvix_assert(
+			kmailbox_read(
+				inbox,
+				&msg,
+				sizeof(struct rmem_message)
+			) == sizeof(struct rmem_message)
+		);
 
 		/* handle write operation. */
 		switch (msg.header.opcode)
