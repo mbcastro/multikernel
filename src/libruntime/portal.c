@@ -25,6 +25,7 @@
 #include <nanvix/runtime/stdikc.h>
 #include <nanvix/servers/name.h>
 #include <nanvix/sys/portal.h>
+#include <nanvix/sys/noc.h>
 #include <nanvix/limits.h>
 #include <ulibc/assert.h>
 #include <ulibc/stdio.h>
@@ -208,7 +209,7 @@ int __nanvix_portal_setup(int local)
 		return (-EINVAL);
 
 	/* Bad local. */
-	if (local != processor_node_get_num(core_get_id()))
+	if (local != knode_get_num())
 		return (-EINVAL);
 
 	/* Nothing to do. */
@@ -243,7 +244,7 @@ static int portals_are_initialized(void )
 {
 	int nodenum;
 
-	nodenum = processor_node_get_num(core_get_id());
+	nodenum = knode_get_num();
 
 	return (initialized[nodenum]);
 }
@@ -263,7 +264,7 @@ int get_inportal(void)
 	if (!portals_are_initialized())
 		return (-EINVAL);
 
-	local = processor_node_get_num(core_get_id());
+	local = knode_get_num();
 
 	return (inportals[local]);
 }
@@ -284,7 +285,7 @@ int __nanvix_portal_cleanup(void)
 	if (!portals_are_initialized())
 		return (-EINVAL);
 
-	local = processor_node_get_num(core_get_id());
+	local = knode_get_num();
 
 	/* Destroy underlying unnamed input portal. */
 	if ((ret = kportal_unlink(inportals[local])) < 0)
@@ -345,7 +346,7 @@ int nanvix_portal_create(char *name)
 	if ((id = nanvix_portal_alloc()) < 0)
 		return (-EAGAIN);
 
-	nodenum = processor_node_get_num(core_get_id());
+	nodenum = knode_get_num();
 
 	/* Link name. */
 	if (name_link(nodenum, name) != 0)
@@ -393,7 +394,7 @@ int nanvix_portal_allow(int id, int nodenum)
 		return (-ENOTSUP);
 
 	/* Not the owner. */
-	if (portals[id].owner != processor_node_get_num(core_get_id()))
+	if (portals[id].owner != knode_get_num())
 		return (-EINVAL);
 
 	return (kportal_allow(portals[id].portalid, nodenum));
@@ -430,12 +431,12 @@ int nanvix_portal_open(char *name)
 		return (-EAGAIN);
 
 	/* Open underlying unnamed portal. */
-	if ((portalid = kportal_open(processor_node_get_num(core_get_id()), nodenum)) < 0)
+	if ((portalid = kportal_open(knode_get_num(), nodenum)) < 0)
 		goto error0;
 
 	/* Initialize portal. */
 	portals[id].portalid = portalid;
-	portals[id].owner = processor_node_get_num(core_get_id());
+	portals[id].owner = knode_get_num();
 	nanvix_portal_set_wronly(id);
 
 	return (id);
@@ -483,7 +484,7 @@ int nanvix_portal_read(int id, void *buf, size_t n)
 		return (-EINVAL);
 
 	/* Not the owner. */
-	if (portals[id].owner != processor_node_get_num(core_get_id()))
+	if (portals[id].owner != knode_get_num())
 		return (-EINVAL);
 
 	ret = kportal_aread(portals[id].portalid, buf, n);
@@ -529,7 +530,7 @@ int nanvix_portal_write(int id, const void *buf, size_t n)
 		return (-EINVAL);
 
 	/* Not the owner. */
-	if (portals[id].owner != processor_node_get_num(core_get_id()))
+	if (portals[id].owner != knode_get_num())
 		return (-EINVAL);
 
 	ret = kportal_awrite(portals[id].portalid, buf, n);
@@ -568,7 +569,7 @@ int nanvix_portal_close(int id)
 		return (-EINVAL);
 
 	/* Not the owner. */
-	if (portals[id].owner != processor_node_get_num(core_get_id()))
+	if (portals[id].owner != knode_get_num())
 		return (-EINVAL);
 
 	/* Close underlying unnamed portal. */
@@ -613,7 +614,7 @@ int nanvix_portal_unlink(int id)
 		return (-EAGAIN);
 
 	/* Not the owner. */
-	if (portals[id].owner != processor_node_get_num(core_get_id()))
+	if (portals[id].owner != knode_get_num())
 		return (-EINVAL);
 
 	/*
