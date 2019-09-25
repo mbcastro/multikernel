@@ -43,7 +43,12 @@
 #include <posix/errno.h>
 #include <stdint.h>
 
-#ifdef DEBUG_RMEM
+/**
+ * @brief Debug RMEM?
+ */
+#define __DEBUG_RMEM 0
+
+#if (__DEBUG_RMEM)
 	#define rmem_debug(fmt, ...) debug("rmem", fmt, __VA_ARGS__)
 #else
 	#define rmem_debug(fmt, ...) { }
@@ -290,6 +295,11 @@ static int do_rmem_loop(void)
 				&msg,
 				sizeof(struct rmem_message)
 			) == sizeof(struct rmem_message)
+		);
+
+		rmem_debug("rmem request source=%d opcode=%d",
+			msg.header.source,
+			msg.header.opcode
 		);
 
 		/* handle write operation. */
