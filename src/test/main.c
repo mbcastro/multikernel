@@ -29,6 +29,12 @@
 #include "test.h"
 
 /**
+ * Horizontal line for tests.
+ */
+const char *HLINE =
+	"------------------------------------------------------------------------";
+
+/**
  * @brief Test Server
  */
 int __main2(int argc, const char *argv[])

@@ -51,4 +51,9 @@
 	 */
 	extern void test_rmem(void);
 
+	/**
+	 * @brief Horizontal line for tests.
+	 */
+	extern const char *HLINE;
+
 #endif /* _TEST_H_ */
