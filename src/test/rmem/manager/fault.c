@@ -27,34 +27,34 @@
 #include <nanvix/servers/rmem.h>
 #include <ulibc/stdio.h>
 #include <ulibc/string.h>
-#include "../test.h"
+#include "../../test.h"
 
 /**
  * @brief Dummy buffer.
  */
-char buffer[RMEM_BLOCK_SIZE];
+static char buffer[RMEM_BLOCK_SIZE];
 
 /*============================================================================*
- * API Test: Invalid Free                                                     *
+ * Fault Injection Test: Invalid Free                                         *
  *============================================================================*/
 
 /**
- * @brief API Test: Invalid Free
+ * @brief Fault Injection Test: Invalid Free
  */
-static void test_rmem_invalid_free(void)
+static void test_rmem_manager_invalid_free(void)
 {
 	TEST_ASSERT(nanvix_rmem_free(RMEM_NULL) == -EINVAL);
 	TEST_ASSERT(nanvix_rmem_free(RMEM_NUM_BLOCKS) == -EINVAL);
 }
 
 /*============================================================================*
- * API Test: Invalid Write                                                    *
+ * Fault Injection Test: Invalid Write                                        *
  *============================================================================*/
 
 /**
- * @brief API Test: Invalid Write
+ * @brief Fault Injection Test: Invalid Write
  */
-static void test_rmem_invalid_write(void)
+static void test_rmem_manager_invalid_write(void)
 {
 	rpage_t blknum;
 
@@ -72,13 +72,13 @@ static void test_rmem_invalid_write(void)
 }
 
 /*============================================================================*
- * API Test: Invalid Read                                                     *
+ * Fault Injection Test: Invalid Read                                         *
  *============================================================================*/
 
 /**
- * @brief API Test: Invalid Read
+ * @brief Fault Injection Test: Invalid Read
  */
-static void test_rmem_invalid_read(void)
+static void test_rmem_manager_invalid_read(void)
 {
 	rpage_t blknum;
 
@@ -95,14 +95,16 @@ static void test_rmem_invalid_read(void)
 	TEST_ASSERT(nanvix_rmem_free(blknum) == 0);
 }
 
-/*============================================================================*/
+/*============================================================================*
+ * Test Driver Table                                                          *
+ *============================================================================*/
 
 /**
  * @brief Unit tests.
  */
-struct test tests_rmem_fault[] = {
-	{ test_rmem_invalid_free,  "invalid free"  },
-	{ test_rmem_invalid_write, "invalid write" },
-	{ test_rmem_invalid_read,  "invalid read"  },
+struct test tests_rmem_manager_fault[] = {
+	{ test_rmem_manager_invalid_free,  "invalid free"  },
+	{ test_rmem_manager_invalid_write, "invalid write" },
+	{ test_rmem_manager_invalid_read,  "invalid read"  },
 	{ NULL,                     NULL           },
 };

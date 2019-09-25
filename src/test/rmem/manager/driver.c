@@ -21,11 +21,12 @@
  */
 
 #include <ulibc/stdio.h>
-#include "../test.h"
+#include "../../test.h"
 
 /* Import definitions. */
-extern struct test tests_rmem_api[];
-extern struct test tests_rmem_fault[];
+extern struct test tests_rmem_manager_api[];
+extern struct test tests_rmem_manager_fault[];
+extern struct test tests_rmem_manager_stress[];
 
 /**
  * @todo TODO: provide a detailed description for this function.
@@ -33,16 +34,23 @@ extern struct test tests_rmem_fault[];
 void test_rmem(void)
 {
 	/* Run API tests. */
-	for (int i = 0; tests_rmem_api[i].test_fn != NULL; i++)
+	for (int i = 0; tests_rmem_manager_api[i].test_fn != NULL; i++)
 	{
-		nanvix_printf("[nanvix][test][rmem][api] %s\n", tests_rmem_api[i].name);
-		tests_rmem_api[i].test_fn();
+		nanvix_printf("[nanvix][test][rmem-manager][api] %s\n", tests_rmem_manager_api[i].name);
+		tests_rmem_manager_api[i].test_fn();
 	}
 
 	/* Run fault injection tests. */
-	for (int i = 0; tests_rmem_fault[i].test_fn != NULL; i++)
+	for (int i = 0; tests_rmem_manager_fault[i].test_fn != NULL; i++)
 	{
-		nanvix_printf("[nanvix][test][rmem][fault] %s\n", tests_rmem_fault[i].name);
-		tests_rmem_fault[i].test_fn();
+		nanvix_printf("[nanvix][test][rmem-manager][fault] %s\n", tests_rmem_manager_fault[i].name);
+		tests_rmem_manager_fault[i].test_fn();
+	}
+
+	/* Run stress tests. */
+	for (int i = 0; tests_rmem_manager_stress[i].test_fn != NULL; i++)
+	{
+		nanvix_printf("[nanvix][test][rmem-manager][stress] %s\n", tests_rmem_manager_stress[i].name);
+		tests_rmem_manager_stress[i].test_fn();
 	}
 }

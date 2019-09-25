@@ -25,9 +25,13 @@
 #define __NEED_RMEM_CLIENT
 
 #include <nanvix/servers/rmem.h>
-#include <ulibc/stdio.h>
 #include <ulibc/string.h>
-#include "../test.h"
+#include "../../test.h"
+
+/**
+ * @brief Dummy buffer.
+ */
+static char buffer[RMEM_BLOCK_SIZE];
 
 /*============================================================================*
  * API Test: Alloc/Free                                                       *
@@ -36,7 +40,7 @@
 /**
  * @brief API Test: Alloc/Free
  */
-static void test_rmem_alloc_free(void)
+static void test_rmem_manager_alloc_free(void)
 {
 	rpage_t blknum;
 
@@ -51,10 +55,9 @@ static void test_rmem_alloc_free(void)
 /**
  * @brief API Test: Read Write
  */
-static void test_rmem_read_write(void)
+static void test_rmem_manager_read_write(void)
 {
 	rpage_t blknum;
-	static char buffer[RMEM_BLOCK_SIZE];
 
 	TEST_ASSERT((blknum = nanvix_rmem_alloc()) != RMEM_NULL);
 
@@ -71,15 +74,15 @@ static void test_rmem_read_write(void)
 	TEST_ASSERT(nanvix_rmem_free(blknum) == 0);
 }
 
-/*============================================================================*/
-
-/*============================================================================*/
+/*============================================================================*
+ * Test Driver Table                                                          *
+ *============================================================================*/
 
 /**
  * @brief Unit tests.
  */
-struct test tests_rmem_api[] = {
-	{ test_rmem_alloc_free, "alloc/free" },
-	{ test_rmem_read_write, "read write" },
-	{ NULL,                  NULL        },
+struct test tests_rmem_manager_api[] = {
+	{ test_rmem_manager_alloc_free, "alloc/free" },
+	{ test_rmem_manager_read_write, "read write" },
+	{ NULL,                          NULL        },
 };
