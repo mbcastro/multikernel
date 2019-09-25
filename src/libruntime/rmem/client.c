@@ -281,7 +281,7 @@ int __nanvix_rmem_cleanup(void)
 	}
 
 	/* Close underlying IPC connectors. */
-	if (portal_close(server.outportal) < 0)
+	if (nanvix_portal_close(server.outportal) < 0)
 	{
 		nanvix_printf("[nanvix][rmem] cannot close outportal to server\n");
 		return (-EAGAIN);

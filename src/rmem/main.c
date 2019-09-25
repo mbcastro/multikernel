@@ -194,7 +194,7 @@ static inline int do_rmem_write(int remote, rpage_t blknum)
         return (-EFAULT);
     }
 
-	nanvix_assert(portal_allow(inportal, remote) == 0);
+	nanvix_assert(kportal_allow(inportal, remote) == 0);
 	nanvix_assert(
 		kportal_read(
 			inportal,
