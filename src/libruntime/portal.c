@@ -324,7 +324,7 @@ static void nanvix_portal_free(int id)
  * @returns Upon successful completion, the ID of the new portal is
  * returned. Upon failure, a negative error code is returned instead.
  */
-int nanvix_portal_create(char *name)
+int nanvix_portal_create(const char *name)
 {
 	int id;       /* Portal ID.                 */
 	int nodenum;  /* NoC node.                  */
@@ -412,7 +412,7 @@ int nanvix_portal_allow(int id, int nodenum)
  * @returns Upon successful completion, the ID of the target portal is
  * returned. Upon failure, a negative error code is returned instead.
  */
-int nanvix_portal_open(char *name)
+int nanvix_portal_open(const char *name)
 {
 	int id;	   /* Portal ID.				 */
 	int nodenum;  /* NoC node.				  */
