@@ -30,6 +30,16 @@
 #include "../../test.h"
 
 /**
+ * @brief Run bad read tests?
+ */
+#define __TEST_BAD_READ 0
+
+/**
+ * @brief Run bad write tests?
+ */
+#define __TEST_BAD_WRITE 0
+
+/**
  * @brief Dummy buffer.
  */
 static char buffer[RMEM_BLOCK_SIZE];
@@ -45,6 +55,19 @@ static void test_rmem_manager_invalid_free(void)
 {
 	TEST_ASSERT(nanvix_rmem_free(RMEM_NULL) == -EINVAL);
 	TEST_ASSERT(nanvix_rmem_free(RMEM_NUM_BLOCKS) == -EINVAL);
+}
+
+/*============================================================================*
+ * Fault Injection Test: Bad Free                                             *
+ *============================================================================*/
+
+/**
+ * @brief Fault Injection Test: Invalid Free
+ */
+static void test_rmem_manager_bad_free(void)
+{
+	TEST_ASSERT(nanvix_rmem_free(1) == -EFAULT);
+	TEST_ASSERT(nanvix_rmem_free(RMEM_NUM_BLOCKS - 1) == -EFAULT);
 }
 
 /*============================================================================*
@@ -72,6 +95,25 @@ static void test_rmem_manager_invalid_write(void)
 }
 
 /*============================================================================*
+ * Fault Injection Test: Bad Write                                            *
+ *============================================================================*/
+
+#if __TEST_BAD_WRITE
+
+/**
+ * @brief Fault Injection Test: Bad Write
+ */
+static void test_rmem_manager_bad_write(void)
+{
+	nanvix_memset(buffer, 1, RMEM_BLOCK_SIZE);
+
+	TEST_ASSERT(nanvix_rmem_write(1, buffer) == 0);
+	TEST_ASSERT(nanvix_rmem_write(RMEM_NUM_BLOCKS - 1, buffer) == 0);
+}
+
+#endif
+
+/*============================================================================*
  * Fault Injection Test: Invalid Read                                         *
  *============================================================================*/
 
@@ -96,6 +138,25 @@ static void test_rmem_manager_invalid_read(void)
 }
 
 /*============================================================================*
+ * Fault Injection Test: Bad Read                                             *
+ *============================================================================*/
+
+#if __TEST_BAD_READ
+
+/**
+ * @brief Fault Injection Test: Bad Read
+ */
+static void test_rmem_manager_bad_read(void)
+{
+	nanvix_memset(buffer, 1, RMEM_BLOCK_SIZE);
+
+	TEST_ASSERT(nanvix_rmem_read(1, buffer) == 0);
+	TEST_ASSERT(nanvix_rmem_read(RMEM_NUM_BLOCKS - 1, buffer) == 0);
+}
+
+#endif
+
+/*============================================================================*
  * Test Driver Table                                                          *
  *============================================================================*/
 
@@ -103,8 +164,15 @@ static void test_rmem_manager_invalid_read(void)
  * @brief Unit tests.
  */
 struct test tests_rmem_manager_fault[] = {
-	{ test_rmem_manager_invalid_free,  "invalid free"  },
+	{ test_rmem_manager_invalid_free,  "invalid free " },
+	{ test_rmem_manager_bad_free,      "bad free     " },
 	{ test_rmem_manager_invalid_write, "invalid write" },
-	{ test_rmem_manager_invalid_read,  "invalid read"  },
-	{ NULL,                     NULL           },
+#if __TEST_BAD_WRITE
+	{ test_rmem_manager_bad_write,     "bad write    " },
+#endif
+	{ test_rmem_manager_invalid_read,  "invalid read " },
+#if __TEST_BAD_READ
+	{ test_rmem_manager_bad_read,      "bad read     " },
+#endif
+	{ NULL,                             NULL           },
 };
