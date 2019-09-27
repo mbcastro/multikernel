@@ -216,6 +216,11 @@ size_t nanvix_rmem_write(rpage_t blknum, const void *buf)
 		) == 0
 	);
 
+	/*
+	 * FIXME: if we request a write on a bad block number
+	 * we will get stuck forever in the read.
+	 */
+
 	/* Send data. */
 	nanvix_assert(
 		nanvix_portal_write(

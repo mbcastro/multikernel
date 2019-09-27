@@ -148,7 +148,7 @@ static inline int do_rmem_free(rpage_t blknum)
 	/* Bad block number. */
     if (!bitmap_check_bit(blocks, blknum))
     {
-        nanvix_printf("[nanvix][rmem] bad block\n");
+        nanvix_printf("[nanvix][rmem] bad free block\n");
         return (-EFAULT);
     }
 
@@ -190,7 +190,7 @@ static inline int do_rmem_write(int remote, rpage_t blknum)
 	/* Bad block number. */
     if (!bitmap_check_bit(blocks, blknum))
     {
-        nanvix_printf("[nanvix][rmem] bad block\n");
+        nanvix_printf("[nanvix][rmem] bad write block\n");
         return (-EFAULT);
     }
 
@@ -243,7 +243,7 @@ static inline int do_rmem_read(int remote, rpage_t blknum)
 	/* Bad block number. */
     if (!bitmap_check_bit(blocks, blknum))
     {
-        nanvix_printf("[nanvix][rmem] bad block\n");
+        nanvix_printf("[nanvix][rmem] bad read block\n");
         return (-EFAULT);
     }
 
@@ -299,14 +299,14 @@ static int do_rmem_loop(void)
 			case RMEM_WRITE:
 				stats.nwrites++;
 				stats.written += RMEM_BLOCK_SIZE;
-				do_rmem_write(msg.header.source, msg.blknum);
+				shutdown = (do_rmem_write(msg.header.source, msg.blknum) < 0) ? 1 : 0;
 				break;
 
 			/* Read a page. */
 			case RMEM_READ:
 				stats.nreads++;
 				stats.read += RMEM_BLOCK_SIZE;
-				do_rmem_read(msg.header.source, msg.blknum);
+				shutdown = (do_rmem_read(msg.header.source, msg.blknum) < 0) ? 1 : 0;
 				break;
 
             /* Allocates a page. */
