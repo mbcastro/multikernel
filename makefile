@@ -44,6 +44,7 @@ export ROOTDIR    := $(CURDIR)
 export BINDIR     := $(ROOTDIR)/bin
 export BUILDDIR   := $(ROOTDIR)/build
 export CONTRIBDIR := $(ROOTDIR)/contrib
+export DOCDIR     := $(ROOTDIR)/doc
 export LINKERDIR  := $(BUILDDIR)/$(TARGET)/linker
 export MAKEDIR    := $(BUILDDIR)/$(TARGET)/make
 export INCDIR     := $(ROOTDIR)/include
@@ -127,6 +128,11 @@ clean: clean-target
 distclean: distclean-target
 	 @rm -rf $(BINDIR)
 	 @find $(SRCDIR) -name "*.o" -exec rm -rf {} \;
+
+# Builds documentation.
+documentation:
+	mkdir -p $(DOCDIR)
+	doxygen doxygen/doxygen.config
 
 #===============================================================================
 # Contrib Install and Uninstall Rules
