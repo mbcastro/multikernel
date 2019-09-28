@@ -35,6 +35,16 @@
 #define __VERBOSE_TESTS 0
 
 /**
+ * @brief Run alloc/free all test?
+ */
+#define __TEST_ALLOC_FREE_ALL (RMEM_SERVERS_NUM == 1)
+
+/**
+ * @brief run read/write all test?
+ */
+#define __TEST_READ_WRITE_ALL (RMEM_SERVERS_NUM == 1)
+
+/**
  * @brief Number of blocks to allocate.
  */
 #define NUM_BLOCKS 32
@@ -122,6 +132,8 @@ static void test_rmem_manager_alloc_free_interleaved(void)
  * Stress Test: Alloc/Free All                                                *
  *============================================================================*/
 
+#if __TEST_ALLOC_FREE_ALL
+
 /**
  * @brief Stress Test: Alloc/Free All
  */
@@ -150,6 +162,8 @@ static void test_rmem_manager_alloc_free_all(void)
 		#endif
 	}
 }
+
+#endif
 
 /*============================================================================*
  * Stress Test: Read/Write Sequential                                         *
@@ -250,6 +264,8 @@ static void test_rmem_manager_read_write_interleaved(void)
  * Stress Test: Read/Write All                                                *
  *============================================================================*/
 
+#if __TEST_READ_WRITE_ALL
+
 /**
  * @brief Stress Test: Read/Write All
  */
@@ -289,6 +305,8 @@ static void test_rmem_manager_read_write_all(void)
 	}
 }
 
+#endif
+
 /*============================================================================*
  * Test Driver Table                                                          *
  *============================================================================*/
@@ -299,9 +317,13 @@ static void test_rmem_manager_read_write_all(void)
 struct test tests_rmem_manager_stress[] = {
 	{ test_rmem_manager_alloc_free_sequential,  "alloc/free sequential " },
 	{ test_rmem_manager_alloc_free_interleaved, "alloc/free interleaved" },
+#if __TEST_ALLOC_FREE_ALL
 	{ test_rmem_manager_alloc_free_all,         "alloc/free all        " },
+#endif
 	{ test_rmem_manager_read_write_sequential,  "read/write sequential " },
 	{ test_rmem_manager_read_write_interleaved, "read/write interleaved" },
+#if __TEST_READ_WRITE_ALL
 	{ test_rmem_manager_read_write_all,         "read/write all        " },
+#endif
 	{ NULL,                                      NULL                    },
 };

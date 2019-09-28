@@ -47,8 +47,9 @@ static struct
 	int initialized; /**< Is the connection initialized? */
 	int outbox;      /**< Output mailbox for requests.   */
 	int outportal;   /**< Output portal for data.        */
-} server = {
-	0, -1, -1,
+} server[RMEM_SERVERS_NUM] = {
+	{ 0, -1, -1 },
+	{ 0, -1, -1 },
 };
 
 /*============================================================================*
@@ -60,6 +61,7 @@ static struct
  */
 rpage_t nanvix_rmem_alloc(void)
 {
+	static unsigned nallocs = 0;
 	struct rmem_message msg;
 
 	/* Build operation header. */
@@ -69,7 +71,7 @@ rpage_t nanvix_rmem_alloc(void)
 	/* Send operation header. */
 	nanvix_assert(
 		nanvix_mailbox_write(
-			server.outbox,
+			server[nallocs % RMEM_SERVERS_NUM].outbox,
 			&msg, sizeof(struct rmem_message)
 		) == 0
 	);
@@ -83,6 +85,7 @@ rpage_t nanvix_rmem_alloc(void)
 		) == sizeof(struct rmem_message)
 	);
 
+	nallocs++;
 	return (msg.blknum);
 }
 
@@ -95,10 +98,11 @@ rpage_t nanvix_rmem_alloc(void)
  */
 int nanvix_rmem_free(rpage_t blknum)
 {
+	int serverid;
 	struct rmem_message msg;
 
 	/* Invalid block number. */
-	if ((blknum == RMEM_NULL) || (blknum >= RMEM_NUM_BLOCKS))
+	if ((blknum == RMEM_NULL) || (RMEM_BLOCK_NUM(blknum) >= RMEM_NUM_BLOCKS))
 		return (-EINVAL);
 
 	/* Build operation header. */
@@ -106,10 +110,12 @@ int nanvix_rmem_free(rpage_t blknum)
 	msg.header.opcode = RMEM_MEMFREE;
 	msg.blknum = blknum;
 
+	serverid = RMEM_BLOCK_SERVER(blknum);
+
 	/* Send operation header. */
 	nanvix_assert(
 		nanvix_mailbox_write(
-			server.outbox,
+			server[serverid].outbox,
 			&msg,
 			sizeof(struct rmem_message)
 		) == 0
@@ -136,10 +142,11 @@ int nanvix_rmem_free(rpage_t blknum)
  */
 size_t nanvix_rmem_read(rpage_t blknum, void *buf)
 {
+	int serverid;
 	struct rmem_message msg;
 
 	/* Invalid block number. */
-	if ((blknum == RMEM_NULL) || (blknum >= RMEM_NUM_BLOCKS))
+	if ((blknum == RMEM_NULL) || (RMEM_BLOCK_NUM(blknum) >= RMEM_NUM_BLOCKS))
 		return (0);
 
 	/* Invalid buffer. */
@@ -152,10 +159,12 @@ size_t nanvix_rmem_read(rpage_t blknum, void *buf)
 
 	msg.blknum = blknum;
 
+	serverid = RMEM_BLOCK_SERVER(blknum);
+
 	/* Send operation header. */
 	nanvix_assert(
 		nanvix_mailbox_write(
-			server.outbox,
+			server[serverid].outbox,
 			&msg,
 			sizeof(struct rmem_message)
 		) == 0
@@ -165,7 +174,7 @@ size_t nanvix_rmem_read(rpage_t blknum, void *buf)
 	nanvix_assert(
 		kportal_allow(
 			stdinportal_get(),
-			RMEM_SERVER_NODE
+			rmem_servers[serverid].nodenum
 		) == 0
 	);
 	nanvix_assert(
@@ -197,10 +206,11 @@ size_t nanvix_rmem_read(rpage_t blknum, void *buf)
  */
 size_t nanvix_rmem_write(rpage_t blknum, const void *buf)
 {
+	int serverid;
 	struct rmem_message msg;
 
 	/* Invalid block number. */
-	if ((blknum == RMEM_NULL) || (blknum >= RMEM_NUM_BLOCKS))
+	if ((blknum == RMEM_NULL) || (RMEM_BLOCK_NUM(blknum) >= RMEM_NUM_BLOCKS))
 		return (0);
 
 	/* Invalid buffer. */
@@ -212,10 +222,12 @@ size_t nanvix_rmem_write(rpage_t blknum, const void *buf)
 	msg.header.opcode = RMEM_WRITE;
 	msg.blknum = blknum;
 
+	serverid = RMEM_BLOCK_SERVER(blknum);
+
 	/* Send operation header. */
 	nanvix_assert(
 		nanvix_mailbox_write(
-			server.outbox,
+			server[serverid].outbox,
 			&msg, sizeof(struct rmem_message)
 		) == 0
 	);
@@ -223,7 +235,7 @@ size_t nanvix_rmem_write(rpage_t blknum, const void *buf)
 	/* Send data. */
 	nanvix_assert(
 		nanvix_portal_write(
-			server.outportal,
+			server[serverid].outportal,
 			buf,
 			RMEM_BLOCK_SIZE
 		) == RMEM_BLOCK_SIZE
@@ -250,25 +262,30 @@ size_t nanvix_rmem_write(rpage_t blknum, const void *buf)
  */
 int __nanvix_rmem_setup(void)
 {
-	/* Nothing to do.  */
-	if (server.initialized)
-		return (0);
-
-	/* Open output mailbox */
-	if ((server.outbox = nanvix_mailbox_open("/rmem")) < 0)
+	/* Open connections to remote memory servers. */
+	for (int i = 0; i < RMEM_SERVERS_NUM; i++)
 	{
-		nanvix_printf("[nanvix][rmem] cannot open outbox to server\n");
-		return (server.outbox);
+		/* Nothing to do.  */
+		if (server[i].initialized)
+			continue;
+
+		/* Open output mailbox */
+		if ((server[i].outbox = nanvix_mailbox_open(rmem_servers[i].name)) < 0)
+		{
+			nanvix_printf("[nanvix][rmem] cannot open outbox to server\n");
+			return (server[i].outbox);
+		}
+
+		/* Open underlying IPC connectors. */
+		if ((server[i].outportal = nanvix_portal_open(rmem_servers[i].name)) < 0)
+		{
+			nanvix_printf("[nanvix][rmem] cannot open outportal to server\n");
+			return (server[i].outportal);
+		}
+
+		server[i].initialized = 1;
 	}
 
-	/* Open underlying IPC connectors. */
-	if ((server.outportal = nanvix_portal_open("/rmem")) < 0)
-	{
-		nanvix_printf("[nanvix][rmem] cannot open outportal to server\n");
-		return (server.outportal);
-	}
-
-	server.initialized = 1;
 
 	return (0);
 }
@@ -282,25 +299,29 @@ int __nanvix_rmem_setup(void)
  */
 int __nanvix_rmem_cleanup(void)
 {
-	/* Nothing to do.  */
-	if (!server.initialized)
-		return (0);
-
-	/* Close output mailbox */
-	if (nanvix_mailbox_close(server.outbox) < 0)
+	/* Close connections to remote memory servers. */
+	for (int i = 0; i < RMEM_SERVERS_NUM; i++)
 	{
-		nanvix_printf("[nanvix][rmem] cannot close outbox to server\n");
-		return (-EAGAIN);
-	}
+		/* Nothing to do.  */
+		if (!server[i].initialized)
+			continue;
 
-	/* Close underlying IPC connectors. */
-	if (nanvix_portal_close(server.outportal) < 0)
-	{
-		nanvix_printf("[nanvix][rmem] cannot close outportal to server\n");
-		return (-EAGAIN);
-	}
+		/* Close output mailbox */
+		if (nanvix_mailbox_close(server[i].outbox) < 0)
+		{
+			nanvix_printf("[nanvix][rmem] cannot close outbox to server\n");
+			return (-EAGAIN);
+		}
 
-	server.initialized = 0;
+		/* Close underlying IPC connectors. */
+		if (nanvix_portal_close(server[i].outportal) < 0)
+		{
+			nanvix_printf("[nanvix][rmem] cannot close outportal to server\n");
+			return (-EAGAIN);
+		}
+
+		server[i].initialized = 0;
+	}
 
 	return (0);
 }
