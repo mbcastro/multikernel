@@ -166,6 +166,9 @@ static inline int do_rmem_free(rpage_t blknum)
         return (-EFAULT);
     }
 
+	/* Clean block. */
+	nanvix_memset(&rmem[blknum][0], 0, RMEM_BLOCK_SIZE);
+
 	/* Free block. */
 	stats.nblocks--;
 	bitmap_clear(blocks, blknum);
