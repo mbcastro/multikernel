@@ -115,22 +115,24 @@ static inline rpage_t do_rmem_alloc(void)
 {
 	bitmap_t bit;
 
-	/* Find a free block. */
-	bit = bitmap_first_free(
-		blocks,
-		(RMEM_NUM_BLOCKS/BITMAP_WORD_LENGTH)*sizeof(bitmap_t)
-	);
-
-	/* Remote memory bank is full. */
-	if (bit == BITMAP_FULL)
+	/* Memory server is full. */
+	if (stats.nblocks == RMEM_NUM_BLOCKS)
 	{
-        nanvix_printf("[nanvix][rmem] remote memory full\n");
+	nanvix_printf("[nanvix][rmem] remote memory full\n");
 		return (RMEM_NULL);
 	}
 
+	/* Find a free block. */
+	nanvix_assert(
+		(bit = bitmap_first_free(
+			blocks,
+			(RMEM_NUM_BLOCKS/BITMAP_WORD_LENGTH)*sizeof(bitmap_t)
+		)) != BITMAP_FULL
+	);
+
 	/* Allocate block. */
 	stats.nblocks++;
-    bitmap_set(blocks, bit);
+	bitmap_set(blocks, bit);
 	rmem_debug("rmem_alloc() blknum=%d nblocks=%d/%d",
 		bit, stats.nblocks, RMEM_NUM_BLOCKS
 	);
@@ -154,17 +156,24 @@ static inline int do_rmem_free(rpage_t blknum)
 {
 	/* Invalid block number. */
 	if ((blknum == RMEM_NULL) || (blknum >= RMEM_NUM_BLOCKS))
-    {
-        nanvix_printf("[nanvix][rmem] invalid block number\n");
-        return (-EINVAL);
-    }
+	{
+		nanvix_printf("[nanvix][rmem] invalid block number\n");
+		return (-EINVAL);
+	}
+
+	/* Remote memory is empty. */
+	if (stats.nblocks == 1)
+	{
+		nanvix_printf("[nanvix][rmem] remote memory is empty\n");
+		return (-EFAULT);
+	}
 
 	/* Bad block number. */
-    if (!bitmap_check_bit(blocks, blknum))
-    {
-        nanvix_printf("[nanvix][rmem] bad free block\n");
-        return (-EFAULT);
-    }
+	if (!bitmap_check_bit(blocks, blknum))
+	{
+		nanvix_printf("[nanvix][rmem] bad free block\n");
+		return (-EFAULT);
+	}
 
 	/* Clean block. */
 	nanvix_memset(&rmem[blknum][0], 0, RMEM_BLOCK_SIZE);
@@ -418,6 +427,7 @@ static int do_rmem_startup(void)
 	);
 
 	/* Fist block is special. */
+	stats.nblocks++;
 	bitmap_set(blocks, 0);
 
 	/* Clean all blocks. */
