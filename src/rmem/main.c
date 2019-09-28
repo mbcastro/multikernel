@@ -212,17 +212,17 @@ static inline int do_rmem_write(int remote, rpage_t blknum)
 
 	/* Invalid block number. */
 	if ((blknum == RMEM_NULL) || (blknum >= RMEM_NUM_BLOCKS))
-    {
-        nanvix_printf("[nanvix][rmem] invalid block number\n");
-        return (-EINVAL);
-    }
+	{
+		nanvix_printf("[nanvix][rmem] invalid block number\n");
+		return (-EINVAL);
+	}
 
 	/* Bad block number. */
-    if (!bitmap_check_bit(blocks, blknum))
-    {
-        nanvix_printf("[nanvix][rmem] bad write block\n");
-        return (-EFAULT);
-    }
+	if (!bitmap_check_bit(blocks, blknum))
+	{
+		nanvix_printf("[nanvix][rmem] bad write block\n");
+		return (-EFAULT);
+	}
 
 	nanvix_assert(kportal_allow(inportal, remote) == 0);
 	nanvix_assert(
@@ -265,17 +265,17 @@ static inline int do_rmem_read(int remote, rpage_t blknum)
 
 	/* Invalid block number. */
 	if ((blknum == RMEM_NULL) || (blknum >= RMEM_NUM_BLOCKS))
-    {
-        nanvix_printf("[nanvix][rmem] invalid block number\n");
-        return (-EINVAL);
-    }
+	{
+		nanvix_printf("[nanvix][rmem] invalid block number\n");
+		return (-EINVAL);
+	}
 
 	/* Bad block number. */
-    if (!bitmap_check_bit(blocks, blknum))
-    {
-        nanvix_printf("[nanvix][rmem] bad read block\n");
-        return (-EFAULT);
-    }
+	if (!bitmap_check_bit(blocks, blknum))
+	{
+		nanvix_printf("[nanvix][rmem] bad read block\n");
+		return (-EFAULT);
+	}
 
 	nanvix_assert((outportal =
 		kportal_open(
@@ -351,8 +351,8 @@ static int do_rmem_loop(void)
 				stats.tread += (t1 - t0);
 				break;
 
-            /* Allocates a page. */
-            case RMEM_ALLOC:
+			/* Allocates a page. */
+			case RMEM_ALLOC:
 				stats.nallocs++;
 				kclock(&t0);
 					msg.blknum = do_rmem_alloc();
@@ -362,10 +362,10 @@ static int do_rmem_loop(void)
 					nanvix_assert(kmailbox_close(source) == 0);
 				kclock(&t1);
 				stats.talloc += (t1 - t0);
-                break;
+			    break;
 
-            /* Free frees a page. */
-            case RMEM_MEMFREE:
+			/* Free frees a page. */
+			case RMEM_MEMFREE:
 				stats.nfrees++;
 				kclock(&t0);
 					msg.errcode = do_rmem_free(msg.blknum);
@@ -374,7 +374,7 @@ static int do_rmem_loop(void)
 					nanvix_assert(kmailbox_close(source) == 0);
 				kclock(&t1);
 				stats.tfree += (t1 - t0);
-                break;
+			    break;
 
 			case RMEM_EXIT:
 				kclock(&stats.tshutdown);
@@ -420,7 +420,7 @@ static int do_rmem_startup(void)
 	nanvix_assert(sizeof(rpage_t) >= sizeof(bitmap_t));
 
 	/* Clean bitmap. */
-    nanvix_memset(
+	nanvix_memset(
 		blocks,
 		0,
 		(RMEM_NUM_BLOCKS/BITMAP_WORD_LENGTH)*sizeof(bitmap_t)
