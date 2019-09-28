@@ -417,6 +417,10 @@ static int do_rmem_startup(void)
 	/* Fist block is special. */
 	bitmap_set(blocks, 0);
 
+	/* Clean all blocks. */
+	for (unsigned long i = 0; i < RMEM_NUM_BLOCKS; i++)
+		nanvix_memset(&rmem[i][0], 0, RMEM_BLOCK_SIZE);
+
 	nodenum = knode_get_num();
 
 	/* Assign input mailbox. */
