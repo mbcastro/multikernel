@@ -161,11 +161,6 @@ size_t nanvix_rmem_read(rpage_t blknum, void *buf)
 		) == 0
 	);
 
-	/*
-	 * FIXME: if we request a read on a bad block number
-	 * we will get stuck forever in the read.
-	 */
-
 	/* Receive data. */
 	nanvix_assert(
 		kportal_allow(
@@ -181,7 +176,16 @@ size_t nanvix_rmem_read(rpage_t blknum, void *buf)
 		) == RMEM_BLOCK_SIZE
 	);
 
-	return (RMEM_BLOCK_SIZE);
+	/* Receive reply. */
+	nanvix_assert(
+		kmailbox_read(
+			stdinbox_get(),
+			&msg,
+			sizeof(struct rmem_message)
+		) == sizeof(struct rmem_message)
+	);
+
+	return ((msg.errcode < 0) ? 0 : RMEM_BLOCK_SIZE);
 }
 
 /*============================================================================*
@@ -216,11 +220,6 @@ size_t nanvix_rmem_write(rpage_t blknum, const void *buf)
 		) == 0
 	);
 
-	/*
-	 * FIXME: if we request a write on a bad block number
-	 * we will get stuck forever in the read.
-	 */
-
 	/* Send data. */
 	nanvix_assert(
 		nanvix_portal_write(
@@ -230,7 +229,16 @@ size_t nanvix_rmem_write(rpage_t blknum, const void *buf)
 		) == RMEM_BLOCK_SIZE
 	);
 
-	return (RMEM_BLOCK_SIZE);
+	/* Receive reply. */
+	nanvix_assert(
+		kmailbox_read(
+			stdinbox_get(),
+			&msg,
+			sizeof(struct rmem_message)
+		) == sizeof(struct rmem_message)
+	);
+
+	return ((msg.errcode < 0) ? 0 : RMEM_BLOCK_SIZE);
 }
 
 /*============================================================================*

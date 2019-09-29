@@ -200,15 +200,12 @@ static inline int do_rmem_free(rpage_t blknum)
  */
 static inline int do_rmem_write(int remote, rpage_t blknum)
 {
+	int ret = 0;
+
 	rmem_debug("write nodenum=%d blknum=%d",
 		remote,
 		blknum
 	);
-
-	/*
-	 * FIXME: we should send an extra message to say what the remote
-	 * should do: either send data or abort.
-	 */
 
 	/* Invalid block number. */
 	if ((blknum == RMEM_NULL) || (blknum >= RMEM_NUM_BLOCKS))
@@ -217,11 +214,15 @@ static inline int do_rmem_write(int remote, rpage_t blknum)
 		return (-EINVAL);
 	}
 
-	/* Bad block number. */
+	/*
+	 * Bad block number. Drop this read and return
+	 * an error. Note that we use the NULL block for this.
+	 */
 	if (!bitmap_check_bit(blocks, blknum))
 	{
 		nanvix_printf("[nanvix][rmem] bad write block\n");
-		return (-EFAULT);
+		blknum = 0;
+		ret = -EFAULT;
 	}
 
 	nanvix_assert(kportal_allow(inportal, remote) == 0);
@@ -233,7 +234,7 @@ static inline int do_rmem_write(int remote, rpage_t blknum)
 		) == RMEM_BLOCK_SIZE
 	);
 
-	return (0);
+	return (ret);
 }
 
 /*============================================================================*
@@ -251,17 +252,13 @@ static inline int do_rmem_write(int remote, rpage_t blknum)
  */
 static inline int do_rmem_read(int remote, rpage_t blknum)
 {
+	int ret = 0;
 	int outportal;
 
 	rmem_debug("read nodenum=%d blknum=%d",
 		remote,
 		blknum
 	);
-
-	/*
-	 * FIXME: we should send an extra message to say what the remote
-	 * should do: either wait for data or abort.
-	 */
 
 	/* Invalid block number. */
 	if ((blknum == RMEM_NULL) || (blknum >= RMEM_NUM_BLOCKS))
@@ -270,11 +267,15 @@ static inline int do_rmem_read(int remote, rpage_t blknum)
 		return (-EINVAL);
 	}
 
-	/* Bad block number. */
+	/*
+	 * Bad block number. Let us send a null block
+	 * and return an error instead.
+	 */
 	if (!bitmap_check_bit(blocks, blknum))
 	{
 		nanvix_printf("[nanvix][rmem] bad read block\n");
-		return (-EFAULT);
+		blknum = 0;
+		ret = -EFAULT;
 	}
 
 	nanvix_assert((outportal =
@@ -292,7 +293,7 @@ static inline int do_rmem_read(int remote, rpage_t blknum)
 	);
 	nanvix_assert(kportal_close(outportal) == 0);
 
-	return (0);
+	return (ret);
 }
 
 /*============================================================================*
@@ -337,7 +338,10 @@ static int do_rmem_loop(void)
 			case RMEM_WRITE:
 				stats.nwrites++;
 				kclock(&t0);
-					shutdown = (do_rmem_write(msg.header.source, msg.blknum) < 0) ? 1 : 0;
+					msg.errcode = do_rmem_write(msg.header.source, msg.blknum);
+					nanvix_assert((source = kmailbox_open(msg.header.source)) >= 0);
+					nanvix_assert(kmailbox_write(source, &msg, sizeof(struct rmem_message)) == sizeof(struct rmem_message));
+					nanvix_assert(kmailbox_close(source) == 0);
 				kclock(&t1);
 				stats.twrite += (t1 - t0);
 				break;
@@ -346,7 +350,10 @@ static int do_rmem_loop(void)
 			case RMEM_READ:
 				stats.nreads++;
 				kclock(&t0);
-					shutdown = (do_rmem_read(msg.header.source, msg.blknum) < 0) ? 1 : 0;
+					msg.errcode = do_rmem_read(msg.header.source, msg.blknum);
+					nanvix_assert((source = kmailbox_open(msg.header.source)) >= 0);
+					nanvix_assert(kmailbox_write(source, &msg, sizeof(struct rmem_message)) == sizeof(struct rmem_message));
+					nanvix_assert(kmailbox_close(source) == 0);
 				kclock(&t1);
 				stats.tread += (t1 - t0);
 				break;

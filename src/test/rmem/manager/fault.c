@@ -32,12 +32,12 @@
 /**
  * @brief Run bad read tests?
  */
-#define __TEST_BAD_READ 0
+#define __TEST_BAD_READ 1
 
 /**
  * @brief Run bad write tests?
  */
-#define __TEST_BAD_WRITE 0
+#define __TEST_BAD_WRITE 1
 
 /**
  * @brief Dummy buffer.
