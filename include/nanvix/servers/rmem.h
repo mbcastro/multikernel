@@ -27,9 +27,12 @@
 
 	#include <nanvix/kernel/kernel.h>
 
-#if defined(__RMEM_SERVICE)
+#if defined(__NEED_RMEM_CLIENT) || defined(__RMEM_SERVICE)
 
 	#include <nanvix/servers/message.h>
+	#include <nanvix/servers/spawn.h>
+	#include <stdint.h>
+	#include <stddef.h>
 
 #endif /* __RMEM_SERVICE */
 
@@ -58,10 +61,54 @@
 	 */
 	#define RMEM_NUM_BLOCKS (RMEM_SIZE/RMEM_BLOCK_SIZE)
 
-#if defined(__NEED_RMEM_CLIENT) || defined(__RMEM_SERVICE)
+	/**
+	 * @name Shifts for remote addresses.
+	 */
+	/**@{*/
+	#define RMEM_BLOCK_NUM_SHIFT    0ULL
+	#define RMEM_BLOCK_SERVER_SHIFT 56ULL
+	/**@}*/
 
-	#include <stdint.h>
-	#include <stddef.h>
+	/**
+	 * @name Masks for remote addresses.
+	 */
+	/**@{*/
+	#define RMEM_BLOCK_NUM_MASK    (0xffffffffULL << RMEM_BLOCK_NUM_SHIFT)    /**< Block Number  */
+	#define RMEM_BLOCK_SERVER_MASK (      0xffULL << RMEM_BLOCK_SERVER_SHIFT) /**< Server Number */
+	/**@}*/
+
+	/**
+	 * @brief Gets block number.
+	 *
+	 * The @p RMEM_BLOCK_NUM macro returns the number of the remote
+	 * memory block encoded in a remote memory address.
+	 *
+	 * @param x Target remote address.
+	 */
+	#define RMEM_BLOCK_NUM(x) \
+		(((x) & RMEM_BLOCK_NUM_MASK) >> RMEM_BLOCK_NUM_SHIFT)
+
+	/**
+	 * @brief Gets server number.
+	 *
+	 * The @p RMEM_BLOCK_SERVER macro returns the number of the remote
+	 * memory server encoded in a remote memory address.
+	 *
+	 * @param x Target remote address.
+	 */
+	#define RMEM_BLOCK_SERVER(x) \
+		(((x) & RMEM_BLOCK_SERVER_MASK) >> RMEM_BLOCK_SERVER_SHIFT)
+
+
+	/**
+	 * @brief Builds a remote memory address.
+	 */
+	#define RMEM_BLOCK(server, num) ( \
+		(((uint64_t)(server) << RMEM_BLOCK_SERVER_SHIFT) & RMEM_BLOCK_SERVER_MASK) | \
+		(((uint64_t)(num) << RMEM_BLOCK_NUM_SHIFT) & RMEM_BLOCK_NUM_MASK)            \
+	)
+
+#if defined(__NEED_RMEM_CLIENT) || defined(__RMEM_SERVICE)
 
 	/**
 	 * @brief Remote page number.
@@ -97,6 +144,15 @@
 		rpage_t blknum;        /**< Block number.   */
 		int errcode;           /**< Error code.     */
 	};
+
+	/**
+	 * @brief Table of RMem Servers.
+	 */
+	extern struct rmem_servers_info
+	{
+		int nodenum;
+		const char *name;
+	} rmem_servers[RMEM_SERVERS_NUM];
 
 #endif /* __RMEM_SERVICE */
 

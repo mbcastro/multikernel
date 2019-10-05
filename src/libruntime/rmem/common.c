@@ -22,32 +22,16 @@
  * SOFTWARE.
  */
 
-#ifndef NANVIX_SERVERS_SPAWN_H_
-#define NANVIX_SERVERS_SPAWN_H_
+#include <nanvix/servers/spawn.h>
 
-	/**
-	 * @brief Number of RMem Servers.
-	 */
-	#define RMEM_SERVERS_NUM 2
-
-	/**
-	 * @brief NoC node number for Spawn Server.
-	 */
-	#define SPAWN_SERVER_NODE 0
-
-	/**
-	 * @brief NoC node number for Name Server.
-	 */
-	#define NAME_SERVER_NODE 1
-
-	/**
-	 * @brief NoC node number for RMem Server.
-	 */
-	#define RMEM_SERVER_1_NODE 2
-
-	/**
-	 * @brief NoC node number for RMem Server.
-	 */
-	#define RMEM_SERVER_2_NODE 3
-
-#endif /* NANVIX_SERVERS_SPAWN_H_ */
+/**
+ * @brief Table of RMem Servers.
+ */
+struct rmem_servers_info
+{
+	int nodenum;
+	const char *name;
+} rmem_servers[RMEM_SERVERS_NUM] = {
+	{ RMEM_SERVER_1_NODE, "/rmem0" },
+	{ RMEM_SERVER_2_NODE, "/rmem1" },
+};
