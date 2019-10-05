@@ -25,32 +25,67 @@
 #ifndef NANVIX_SERVERS_RMEM_H_
 #define NANVIX_SERVERS_RMEM_H_
 
-	#include <nanvix/servers/name.h>
+	#include <nanvix/kernel/kernel.h>
+
+#if defined(__RMEM_SERVICE)
+
 	#include <nanvix/servers/message.h>
-	#include <nanvix/limits.h>
-	#include <stdint.h>
+
+#endif /* __RMEM_SERVICE */
+
+	/**
+	 * @brief Null remote address.
+	 */
+	#define RMEM_NULL 0
+
+	/**
+	 * @brief Remote memory shift.
+	 */
+	#define RMEM_BLOCK_SHIFT PAGE_SHIFT
 
 	/**
 	 * @brief Remote memory block size (in bytes).
 	 */
-	#define RMEM_BLOCK_SIZE 1024
+	#define RMEM_BLOCK_SIZE (1 << RMEM_BLOCK_SHIFT)
 
 	/**
 	 * @brief Remote memory size (in bytes).
-	 *
-	 * @bug FIXME: This is platform-dependent.
 	 */
-	#define RMEM_SIZE (256*1024*1024)
+	#define RMEM_SIZE (UMEM_SIZE/2)
+
+	/**
+	 * @brief Number of remote memory blocks.
+	 */
+	#define RMEM_NUM_BLOCKS (RMEM_SIZE/RMEM_BLOCK_SIZE)
+
+#if defined(__NEED_RMEM_CLIENT) || defined(__RMEM_SERVICE)
+
+	#include <stdint.h>
+	#include <stddef.h>
+
+	/**
+	 * @brief Remote page number.
+	 */
+	typedef uint64_t rpage_t;
+
+	/**
+	 * @brief Remote address.
+	 */
+	typedef uint64_t raddr_t;
+
+#endif /* __NEED_RMEM_CLIENT || __RMEM_SERVICE */
+
+#if defined(__RMEM_SERVICE)
 
 	/**
 	 * @brief Operations on remote memory.
 	 */
 	/**@{*/
-	#define RMEM_EXIT     0 /**< Exit Request. */
-	#define RMEM_READ     1 /**< Read.         */
-	#define RMEM_WRITE    2 /**< Write.        */
-	#define RMEM_MEMALLOC 3 /**< Alloc.        */
-	#define RMEM_MEMFREE  4 /**< Free.        */
+	#define RMEM_EXIT    0 /**< Exit.  */
+	#define RMEM_READ    1 /**< Read.  */
+	#define RMEM_WRITE   2 /**< Write. */
+	#define RMEM_ALLOC   3 /**< Alloc. */
+	#define RMEM_MEMFREE 4 /**< Free.  */
 	/**@}*/
 
 	/**
@@ -59,9 +94,13 @@
 	struct rmem_message
 	{
 		message_header header; /**< Message header. */
-		uint64_t blknum;       /**< Block number.   */
-		uint32_t size;         /**< Size.           */
+		rpage_t blknum;        /**< Block number.   */
+		int errcode;           /**< Error code.     */
 	};
+
+#endif /* __RMEM_SERVICE */
+
+#if defined(__NEED_RMEM_CLIENT)
 
 	/**
 	 * @brief Allocates a remote memory block.
@@ -70,40 +109,40 @@
 	 * allocated block in the remote memory is returned. Upon failure,
 	 * a negative error code is returned instead.
 	 */
-	extern int nanvix_rmemalloc(void);
+	extern rpage_t nanvix_rmem_alloc(void);
 
 	/**
 	 * @brief Frees a remote memory block.
 	 *
-	 * @param blknum Target remote memory block.
+	 * @param blknum Number of the target block.
 	 *
 	 * @returns Upon successful completion, zero is returned. Upon
 	 * failure, a negative error code is returned instead.
 	 */
-	extern int nanvix_rmemfree(uint64_t blknum);
+	extern int nanvix_rmem_free(rpage_t blknum);
 
 	/**
 	 * @brief Reads data from the remote memory.
 	 *
-	 * @param addr Remote address.
-	 * @param bug  Location where the data should be written to.
-	 * @param n    Number of bytes to read.
+	 * @param blknum Number of the target block.
+	 * @param buf    Location where the data should be written to.
 	 *
 	 * @returns Upon successful completion, zero is returned. Upon
 	 * failure, a negative error code is returned instead.
 	 */
-	extern int nanvix_rmemread(uint64_t addr, void *buf, size_t n);
+	extern size_t nanvix_rmem_read(rpage_t blknum, void *buf);
 
 	/**
 	 * @brief Writes data to the remote memory.
 	 *
-	 * @param addr Remote address.
-	 * @param bug  Location where the data should be read from.
-	 * @param n    Number of bytes to write.
+	 * @param blknum Number of the target block.
+	 * @param buf    Location where the data should be read from.
 	 *
 	 * @returns Upon successful completion, zero is returned. Upon
 	 * failure, a negative error code is returned instead.
 	 */
-	extern int nanvix_rmemwrite(uint64_t addr, const void *buf, size_t n);
+	extern size_t nanvix_rmem_write(rpage_t blknum, const void *buf);
+
+#endif /* __NEED_RMEM_CLIENT  */
 
 #endif /* NANVIX_SERVERS_RMEM_H_ */

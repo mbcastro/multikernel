@@ -44,6 +44,7 @@ export ROOTDIR    := $(CURDIR)
 export BINDIR     := $(ROOTDIR)/bin
 export BUILDDIR   := $(ROOTDIR)/build
 export CONTRIBDIR := $(ROOTDIR)/contrib
+export DOCDIR     := $(ROOTDIR)/doc
 export LINKERDIR  := $(BUILDDIR)/$(TARGET)/linker
 export MAKEDIR    := $(BUILDDIR)/$(TARGET)/make
 export INCDIR     := $(ROOTDIR)/include
@@ -68,7 +69,8 @@ export LIBRUNTIME = $(LIBDIR)/libruntime-$(TARGET).a
 # TODO: make this more generic.
 #
 export EXEC := nanvix-spawn
-export BINARIES  = nanvix-spawn nanvix-name nanvix-rmem nanvix-test
+export BINARIES  = nanvix-spawn nanvix-name
+export BINARIES += nanvix-rmem nanvix-test
 ifeq ($(TARGET), unix64)
 export BINARIES += nanvix-zombie nanvix-zombie nanvix-zombie nanvix-zombie
 export BINARIES += nanvix-zombie nanvix-zombie nanvix-zombie nanvix-zombie
@@ -88,7 +90,6 @@ include $(MAKEDIR)/makefile
 
 # Compiler Options
 export CFLAGS += -std=c99 -fno-builtin
-export CFLAGS += -pedantic-errors
 export CFLAGS += -Wall -Wextra -Werror -Wa,--warn
 export CFLAGS += -Winit-self -Wswitch-default -Wfloat-equal
 export CFLAGS += -Wundef -Wshadow -Wuninitialized -Wlogical-op
@@ -127,6 +128,11 @@ clean: clean-target
 distclean: distclean-target
 	 @rm -rf $(BINDIR)
 	 @find $(SRCDIR) -name "*.o" -exec rm -rf {} \;
+
+# Builds documentation.
+documentation:
+	mkdir -p $(DOCDIR)
+	doxygen doxygen/doxygen.config
 
 #===============================================================================
 # Contrib Install and Uninstall Rules

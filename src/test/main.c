@@ -29,6 +29,12 @@
 #include "test.h"
 
 /**
+ * Horizontal line for tests.
+ */
+const char *HLINE =
+	"------------------------------------------------------------------------";
+
+/**
  * @brief Test Server
  */
 int __main2(int argc, const char *argv[])
@@ -40,7 +46,6 @@ int __main2(int argc, const char *argv[])
 
 		/* Unblock spawner. */
 		nanvix_printf("[nanvix][test] server alive\n");
-		nanvix_assert(stdsync_fence() == 0);
 
 		__runtime_setup(1);
 		test_name();
@@ -49,6 +54,7 @@ int __main2(int argc, const char *argv[])
 		test_rmem();
 
 		nanvix_printf("[nanvix][test] shutting down server\n");
+		nanvix_assert(stdsync_fence() == 0);
 
 	__runtime_cleanup();
 

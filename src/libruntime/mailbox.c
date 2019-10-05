@@ -22,9 +22,12 @@
  * SOFTWARE.
  */
 
+#define __NEED_NAME_CLIENT
+
 #include <nanvix/runtime/stdikc.h>
 #include <nanvix/servers/name.h>
 #include <nanvix/sys/mailbox.h>
+#include <nanvix/sys/noc.h>
 #include <nanvix/limits.h>
 #include <ulibc/assert.h>
 #include <ulibc/stdio.h>
@@ -83,7 +86,7 @@ static int mailboxes_are_initialized(void )
 {
 	int nodenum;
 
-	nodenum = processor_node_get_num(core_get_id());
+	nodenum = knode_get_num();
 
 	return (initialized[nodenum]);
 }
@@ -265,7 +268,7 @@ int nanvix_mailbox_create(const char *name)
 	if ((mbxid = nanvix_mailbox_alloc()) < 0)
 		return (-EAGAIN);
 
-	nodenum = processor_node_get_num(core_get_id());
+	nodenum = knode_get_num();
 
 	/* Link name. */
 	if (name_link(nodenum, name) != 0)
@@ -317,7 +320,7 @@ int nanvix_mailbox_open(const char *name)
 
 	/* Initialize mailbox. */
 	mailboxes[mbxid].fd = fd;
-	mailboxes[mbxid].owner = processor_node_get_num(core_get_id());
+	mailboxes[mbxid].owner = knode_get_num();
 	nanvix_mailbox_set_wronly(mbxid);
 
 	return (mbxid);
@@ -345,7 +348,7 @@ int nanvix_mailbox_read(int mbxid, void *buf, size_t n)
 		return (-EINVAL);
 
 	/* Not the owner. */
-	if (mailboxes[mbxid].owner != processor_node_get_num(core_get_id()))
+	if (mailboxes[mbxid].owner != knode_get_num())
 		return (-EPERM);
 
 	/* Operation no supported. */
@@ -381,7 +384,7 @@ int nanvix_mailbox_write(int mbxid, const void *buf, size_t n)
 		return (-EINVAL);
 
 	/* Not the owner. */
-	if (mailboxes[mbxid].owner != processor_node_get_num(core_get_id()))
+	if (mailboxes[mbxid].owner != knode_get_num())
 		return (-EPERM);
 
 	/*  Invalid mailbox. */
@@ -419,7 +422,7 @@ int nanvix_mailbox_close(int mbxid)
 		return (-EINVAL);
 
 	/* Not the owner. */
-	if (mailboxes[mbxid].owner != processor_node_get_num(core_get_id()))
+	if (mailboxes[mbxid].owner != knode_get_num())
 		return (-EPERM);
 
 	/*  Invalid mailbox. */
@@ -452,7 +455,7 @@ int nanvix_mailbox_unlink(int mbxid)
 		return (-EINVAL);
 
 	/* Not the owner. */
-	if (mailboxes[mbxid].owner != processor_node_get_num(core_get_id()))
+	if (mailboxes[mbxid].owner != knode_get_num())
 		return (-EPERM);
 
 	/*  Invalid mailbox. */
@@ -486,7 +489,7 @@ int nanvix_mailbox_get_inbox(void)
 		return (-1);
 	}
 
-	local = processor_node_get_num(core_get_id());
+	local = knode_get_num();
 
 	return (inboxes[local]);
 }
@@ -502,7 +505,7 @@ int __nanvix_mailbox_setup(void)
 {
 	int local;
 
-	local = processor_node_get_num(core_get_id());
+	local = knode_get_num();
 
 	/* Nothing to do. */
 	if (initialized[local])
@@ -530,7 +533,7 @@ int __nanvix_mailbox_cleanup(void)
 	if (!mailboxes_are_initialized())
 		return (-EINVAL);
 
-	local = processor_node_get_num(core_get_id());
+	local = knode_get_num();
 
 	initialized[local] = 0;
 

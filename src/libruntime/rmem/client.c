@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2011-2018 Pedro Henrique Penna <pedrohenriquepenna@gmail.com>
+ * Copyright(c) 2011-2019 The Maintainers of Nanvix
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -10,15 +10,19 @@
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.  THE SOFTWARE IS PROVIDED
- * "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
- * LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
- * PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
- * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
- * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
- * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  */
+
+#define __RMEM_SERVICE
 
 #include <nanvix/servers/rmem.h>
 #include <nanvix/servers/spawn.h>
@@ -28,6 +32,7 @@
 #include <nanvix/sys/mailbox.h>
 #include <nanvix/sys/portal.h>
 #include <nanvix/sys/mutex.h>
+#include <nanvix/sys/noc.h>
 #include <ulibc/assert.h>
 #include <ulibc/string.h>
 #include <ulibc/stdio.h>
@@ -42,148 +47,198 @@ static struct
 	int initialized; /**< Is the connection initialized? */
 	int outbox;      /**< Output mailbox for requests.   */
 	int outportal;   /**< Output portal for data.        */
-} server;
+} server = {
+	0, -1, -1,
+};
 
 /*============================================================================*
- * nanvix_rmemalloc()                                                         *
+ * nanvix_rmem_alloc()                                                        *
  *============================================================================*/
 
 /**
  * @todo TODO: Provide a detailed description for this function.
  */
-int nanvix_rmemalloc(void)
+rpage_t nanvix_rmem_alloc(void)
 {
 	struct rmem_message msg;
 
 	/* Build operation header. */
-	msg.header.source = processor_node_get_num(core_get_id());
-	msg.header.opcode = RMEM_MEMALLOC;
+	msg.header.source = knode_get_num();
+	msg.header.opcode = RMEM_ALLOC;
 
 	/* Send operation header. */
-	nanvix_assert(nanvix_mailbox_write(server.outbox, &msg, sizeof(struct rmem_message)) == 0);
-	nanvix_assert(kmailbox_read(stdinbox_get(), &msg, sizeof(struct rmem_message)) == sizeof(struct rmem_message));
+	nanvix_assert(
+		nanvix_mailbox_write(
+			server.outbox,
+			&msg, sizeof(struct rmem_message)
+		) == 0
+	);
 
-	return msg.blknum;
+	/* Receive reply. */
+	nanvix_assert(
+		kmailbox_read(
+			stdinbox_get(),
+			&msg,
+			sizeof(struct rmem_message)
+		) == sizeof(struct rmem_message)
+	);
+
+	return (msg.blknum);
 }
 
 /*============================================================================*
- * nanvix_rmemfree()                                                          *
+ * nanvix_rmem_free()                                                         *
  *============================================================================*/
 
 /**
  * @todo TODO: Provide a detailed description for this function.
  */
-int nanvix_rmemfree(uint64_t blknum)
+int nanvix_rmem_free(rpage_t blknum)
 {
 	struct rmem_message msg;
 
-	/* Invalid read. */
-	if ((blknum >= RMEM_SIZE/RMEM_BLOCK_SIZE))
+	/* Invalid block number. */
+	if ((blknum == RMEM_NULL) || (blknum >= RMEM_NUM_BLOCKS))
 		return (-EINVAL);
 
 	/* Build operation header. */
-	msg.header.source = processor_node_get_num(core_get_id());
+	msg.header.source = knode_get_num();
 	msg.header.opcode = RMEM_MEMFREE;
 	msg.blknum = blknum;
 
 	/* Send operation header. */
-	nanvix_assert(nanvix_mailbox_write(server.outbox, &msg, sizeof(struct rmem_message)) == 0);
+	nanvix_assert(
+		nanvix_mailbox_write(
+			server.outbox,
+			&msg,
+			sizeof(struct rmem_message)
+		) == 0
+	);
 
-	return (0);
+	/* Receive reply. */
+	nanvix_assert(
+		kmailbox_read(
+			stdinbox_get(),
+			&msg,
+			sizeof(struct rmem_message)
+		) == sizeof(struct rmem_message)
+	);
+
+	return (msg.errcode);
 }
 
 /*============================================================================*
- * nanvix_rmemread()                                                          *
+ * nanvix_rmem_read()                                                         *
  *============================================================================*/
 
 /**
  * @todo TODO: Provide a detailed description for this function.
  */
-int nanvix_rmemread(uint64_t addr, void *buf, size_t n)
+size_t nanvix_rmem_read(rpage_t blknum, void *buf)
 {
 	struct rmem_message msg;
 
-	/* Invalid read. */
-	if ((addr >= RMEM_SIZE) || ((addr + n) > RMEM_SIZE))
-		return (-EINVAL);
+	/* Invalid block number. */
+	if ((blknum == RMEM_NULL) || (blknum >= RMEM_NUM_BLOCKS))
+		return (0);
 
-	/* Null read. */
+	/* Invalid buffer. */
 	if (buf == NULL)
-		return (-EINVAL);
-
-	/* Bad addr to read. */
-	if ((addr % RMEM_BLOCK_SIZE) != 0)
-	    return (-EFAULT);
-
-	/* Bad size to read. */
-	if ((n % RMEM_BLOCK_SIZE) != 0)
-	    return (-EFAULT);
-
-	/* Nothing to do. */
-	if (n == 0)
 		return (0);
 
 	/* Build operation header. */
-	msg.header.source = processor_node_get_num(core_get_id());
+	msg.header.source = knode_get_num();
 	msg.header.opcode = RMEM_READ;
 
-	msg.blknum = addr;
-	msg.size = n;
+	msg.blknum = blknum;
 
 	/* Send operation header. */
-	nanvix_assert(nanvix_mailbox_write(server.outbox, &msg, sizeof(struct rmem_message)) == 0);
+	nanvix_assert(
+		nanvix_mailbox_write(
+			server.outbox,
+			&msg,
+			sizeof(struct rmem_message)
+		) == 0
+	);
 
-	/* Recieve data. */
-	nanvix_assert(kportal_allow(stdinportal_get(), RMEM_SERVER_NODE) == 0);
-	nanvix_assert(kportal_read(stdinportal_get(), buf, n) == (int) n);
+	/* Receive data. */
+	nanvix_assert(
+		kportal_allow(
+			stdinportal_get(),
+			RMEM_SERVER_NODE
+		) == 0
+	);
+	nanvix_assert(
+		kportal_read(
+			stdinportal_get(),
+			buf,
+			RMEM_BLOCK_SIZE
+		) == RMEM_BLOCK_SIZE
+	);
 
-	return (0);
+	/* Receive reply. */
+	nanvix_assert(
+		kmailbox_read(
+			stdinbox_get(),
+			&msg,
+			sizeof(struct rmem_message)
+		) == sizeof(struct rmem_message)
+	);
+
+	return ((msg.errcode < 0) ? 0 : RMEM_BLOCK_SIZE);
 }
 
 /*============================================================================*
- * nanvix_rmemwrite()                                                         *
+ * nanvix_rmem_write()                                                        *
  *============================================================================*/
 
 /**
  * @todo TODO: Provide a detailed description for this function.
  */
-int nanvix_rmemwrite(uint64_t addr, const void *buf, size_t n)
+size_t nanvix_rmem_write(rpage_t blknum, const void *buf)
 {
 	struct rmem_message msg;
 
-	/* Invalid write. */
-	if ((addr >= RMEM_SIZE) || ((addr + n) > RMEM_SIZE))
-		return (-EINVAL);
+	/* Invalid block number. */
+	if ((blknum == RMEM_NULL) || (blknum >= RMEM_NUM_BLOCKS))
+		return (0);
 
-	/* Null write. */
+	/* Invalid buffer. */
 	if (buf == NULL)
-		return (-EINVAL);
-
-	/* Bad addr to read. */
-	if ((addr % RMEM_BLOCK_SIZE) != 0)
-	    return (-EFAULT);
-
-	/* Bad size to read. */
-	if ((n % RMEM_BLOCK_SIZE) != 0)
-	    return (-EFAULT);
-
-	/* Nothing to do. */
-	if (n == 0)
 		return (0);
 
 	/* Build operation header. */
-	msg.header.source = processor_node_get_num(core_get_id());
+	msg.header.source = knode_get_num();
 	msg.header.opcode = RMEM_WRITE;
-	msg.blknum = addr;
-	msg.size = n;
+	msg.blknum = blknum;
 
 	/* Send operation header. */
-	nanvix_assert(nanvix_mailbox_write(server.outbox, &msg, sizeof(struct rmem_message)) == 0);
+	nanvix_assert(
+		nanvix_mailbox_write(
+			server.outbox,
+			&msg, sizeof(struct rmem_message)
+		) == 0
+	);
 
 	/* Send data. */
-	nanvix_assert(nanvix_portal_write(server.outportal, buf, n) == (int) n);
+	nanvix_assert(
+		nanvix_portal_write(
+			server.outportal,
+			buf,
+			RMEM_BLOCK_SIZE
+		) == RMEM_BLOCK_SIZE
+	);
 
-	return (0);
+	/* Receive reply. */
+	nanvix_assert(
+		kmailbox_read(
+			stdinbox_get(),
+			&msg,
+			sizeof(struct rmem_message)
+		) == sizeof(struct rmem_message)
+	);
+
+	return ((msg.errcode < 0) ? 0 : RMEM_BLOCK_SIZE);
 }
 
 /*============================================================================*
@@ -239,7 +294,7 @@ int __nanvix_rmem_cleanup(void)
 	}
 
 	/* Close underlying IPC connectors. */
-	if (portal_close(server.outportal) < 0)
+	if (nanvix_portal_close(server.outportal) < 0)
 	{
 		nanvix_printf("[nanvix][rmem] cannot close outportal to server\n");
 		return (-EAGAIN);

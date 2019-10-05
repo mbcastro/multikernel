@@ -36,7 +36,7 @@
 	 * @returns Upon successful completion, the ID of the new portal is
 	 * returned. Upon failure, a negative error code is returned instead.
 	 */
-	extern int nanvix_portal_create(char *name);
+	extern int nanvix_portal_create(const char *name);
 
 	/**
 	 * @brief Opens a portal.
@@ -46,7 +46,7 @@
 	 * @returns Upon successful completion, the ID of the target portal is
 	 * returned. Upon failure, a negative error code is returned instead.
 	 */
-	extern int nanvix_portal_open(char *name);
+	extern int nanvix_portal_open(const char *name);
 
 	/**
 	 * @brief Enables read operations on a portal.

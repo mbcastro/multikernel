@@ -20,7 +20,10 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#define __NEED_NAME_CLIENT
+
 #include <nanvix/servers/name.h>
+#include <nanvix/limits.h>
 #include <ulibc/stdio.h>
 #include <ulibc/string.h>
 #include "../test.h"

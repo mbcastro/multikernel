@@ -47,8 +47,13 @@
 	extern void test_name(void);
 
 	/**
-	 * @brief Launches regression tests on RMem Service.
+	 * @brief Launches regression tests on RMem Manager.
 	 */
 	extern void test_rmem(void);
+
+	/**
+	 * @brief Horizontal line for tests.
+	 */
+	extern const char *HLINE;
 
 #endif /* _TEST_H_ */
