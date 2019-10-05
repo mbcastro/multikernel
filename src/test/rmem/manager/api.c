@@ -75,6 +75,54 @@ static void test_rmem_manager_read_write(void)
 }
 
 /*============================================================================*
+ * API Test: Consistency                                                      *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Consistency
+ */
+static void test_rmem_manager_consistency(void)
+{
+	rpage_t blknum1;
+	rpage_t blknum2;
+	rpage_t blknum3;
+
+	TEST_ASSERT((blknum1 = nanvix_rmem_alloc()) != RMEM_NULL);
+	TEST_ASSERT((blknum2 = nanvix_rmem_alloc()) != RMEM_NULL);
+	TEST_ASSERT((blknum3 = nanvix_rmem_alloc()) != RMEM_NULL);
+
+		/* First round. */
+		nanvix_memset(buffer, 1, RMEM_BLOCK_SIZE);
+		TEST_ASSERT(nanvix_rmem_write(blknum1, buffer) == RMEM_BLOCK_SIZE);
+
+		/* Second round. */
+        nanvix_memset(buffer, 2, RMEM_BLOCK_SIZE);
+        TEST_ASSERT(nanvix_rmem_write(blknum2, buffer) == RMEM_BLOCK_SIZE);
+
+		/* Third round. */
+        nanvix_memset(buffer, 3, RMEM_BLOCK_SIZE);
+        TEST_ASSERT(nanvix_rmem_write(blknum3, buffer) == RMEM_BLOCK_SIZE);
+
+		/* Checksum. */
+		nanvix_memset(buffer, 9, RMEM_BLOCK_SIZE);
+		TEST_ASSERT(nanvix_rmem_read(blknum1, buffer) == RMEM_BLOCK_SIZE);
+		for (unsigned long i = 0; i < RMEM_BLOCK_SIZE; i++)
+			TEST_ASSERT(buffer[i] == 1);
+		nanvix_memset(buffer, 9, RMEM_BLOCK_SIZE);
+		TEST_ASSERT(nanvix_rmem_read(blknum2, buffer) == RMEM_BLOCK_SIZE);
+		for (unsigned long i = 0; i < RMEM_BLOCK_SIZE; i++)
+			TEST_ASSERT(buffer[i] == 2);
+		nanvix_memset(buffer, 9, RMEM_BLOCK_SIZE);
+		TEST_ASSERT(nanvix_rmem_read(blknum3, buffer) == RMEM_BLOCK_SIZE);
+		for (unsigned long i = 0; i < RMEM_BLOCK_SIZE; i++)
+			TEST_ASSERT(buffer[i] == 3);
+
+	TEST_ASSERT(nanvix_rmem_free(blknum1) == 0);
+	TEST_ASSERT(nanvix_rmem_free(blknum2) == 0);
+	TEST_ASSERT(nanvix_rmem_free(blknum3) == 0);
+}
+
+/*============================================================================*
  * Test Driver Table                                                          *
  *============================================================================*/
 
@@ -84,5 +132,6 @@ static void test_rmem_manager_read_write(void)
 struct test tests_rmem_manager_api[] = {
 	{ test_rmem_manager_alloc_free, "alloc/free" },
 	{ test_rmem_manager_read_write, "read write" },
+	{ test_rmem_manager_consistency, "consistency" },
 	{ NULL,                          NULL        },
 };
