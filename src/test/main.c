@@ -52,6 +52,7 @@ int __main2(int argc, const char *argv[])
 
 		__runtime_setup(3);
 		test_rmem();
+		test_rmem_cache();
 
 		nanvix_printf("[nanvix][test] shutting down server\n");
 		nanvix_assert(stdsync_fence() == 0);

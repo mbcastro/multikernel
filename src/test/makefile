@@ -40,7 +40,8 @@ EXEC = nanvix-test
 # C Source Files
 SRC = $(wildcard *.c)              \
       $(wildcard name/*.c)         \
-      $(wildcard rmem/manager/*.c)
+      $(wildcard rmem/manager/*.c) \
+      $(wildcard rmem/cache/*.c)
 
 # Object Files
 OBJ = $(SRC:.c=.$(OBJ_SUFFIX).o)
