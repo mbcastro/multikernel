@@ -50,9 +50,9 @@ int __runtime_setup(int ring)
 	if ((current_ring < 0) && (ring >= 0))
 	{
 		nanvix_printf("[nanvix] initalizing ring 0\n");
-		__stdsync_setup();
-		__stdmailbox_setup();
-		__stdportal_setup();
+		nanvix_assert(__stdsync_setup() == 0);
+		nanvix_assert(__stdmailbox_setup() == 0);
+		nanvix_assert(__stdportal_setup() == 0);
 	}
 
 	/* Initialize Name Service client. */
@@ -102,9 +102,9 @@ int __runtime_cleanup(void)
 	if (current_ring >= 1)
 		__name_cleanup();
 
-	__stdportal_cleanup();
-	__stdmailbox_cleanup();
-	__stdsync_cleanup();
+	nanvix_assert(__stdportal_cleanup() == 0);
+	nanvix_assert(__stdmailbox_cleanup() == 0);
+	nanvix_assert(__stdsync_cleanup() == 0);
 
 	current_ring = 0;
 
