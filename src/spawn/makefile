@@ -26,16 +26,30 @@
 # Toolchain Configuration
 #===============================================================================
 
+# Compiler Options
+ifneq ($(LIBLWIP),)
+CFLAGS += -I $(INCDIR)/posix
+endif
+
 # Libraries
-export LIBS  = -Wl,--whole-archive $(LIBRUNTIME) $(LIBC) $(LIBNANVIX) $(LIBKERNEL) $(LIBHAL)
-export LIBS += -Wl,--no-whole-archive $(THEIR_LIBS)
+LIBS := -Wl,--whole-archive
+LIBS += $(LIBDIR)/$(LIBHAL)
+LIBS += $(LIBDIR)/$(LIBKERNEL)
+LIBS += -Wl,--no-whole-archive
+LIBS += $(LIBDIR)/$(LIBRUNTIME)
+LIBS += $(LIBDIR)/$(LIBC)
+LIBS += $(LIBDIR)/$(LIBNANVIX)
+ifneq ($(LIBLWIP),)
+LIBS += $(LIBDIR)/$(LIBLWIP)
+endif
+LIBS += $(LIBDIR)/$(KLIB) $(THEIR_LIBS)
 
 #===============================================================================
 # Binaries Sources and Objects
 #===============================================================================
 
 # Binary
-EXEC = nanvix-spawn
+EXEC = nanvix-spawn.$(TARGET)
 
 # C Source Files
 SRC = $(wildcard *.c)
@@ -54,7 +68,7 @@ endif
 # Builds All Object Files
 all: $(OBJ)
 ifeq ($(VERBOSE), no)
-	@echo [CC] $(BINDIR)/$(EXEC)
+	@echo [CC] $(EXEC)
 	@$(CC) $(LDFLAGS) $(LINKER_SCRIPT) -o $(BINDIR)/$(EXEC) $(OBJ) $(LIBS)
 else
 	$(CC) $(LDFLAGS) $(LINKER_SCRIPT) -o $(BINDIR)/$(EXEC) $(OBJ) $(LIBS)
@@ -72,13 +86,13 @@ endif
 # Cleans Everything
 distclean: clean
 ifeq ($(VERBOSE), no)
-	@echo [CLEAN] $(BINDIR)/$(EXEC)
+	@echo [CLEAN] $(EXEC)
 	@rm -rf $(BINDIR)/$(EXEC)
 else
 	rm -rf $(BINDIR)/$(EXEC)
 endif
 
-# Builds a C Source file
+# Builds a C source file.
 %.$(OBJ_SUFFIX).o: %.c
 ifeq ($(VERBOSE), no)
 	@echo [CC] $@
