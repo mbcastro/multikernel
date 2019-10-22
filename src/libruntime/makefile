@@ -30,21 +30,24 @@
 SRC = $(wildcard *.c) \
       $(wildcard rmem/*.c)
 
+#===============================================================================
 # Object Files
+#===============================================================================
+
 OBJ = $(SRC:.c=.$(OBJ_SUFFIX).o)
 
 #===============================================================================
 
-# Builds All Object Files
+# Builds all object files.
 all: $(OBJ)
 ifeq ($(VERBOSE), no)
 	@echo [AR] $(LIBRUNTIME)
-	@$(AR) $(ARFLAGS) $(LIBRUNTIME) $(OBJ)
+	@$(AR) $(ARFLAGS) $(LIBDIR)/$(LIBRUNTIME) $(OBJ)
 else
-	$(AR) $(ARFLAGS) $(LIBRUNTIME) $(OBJ)
+	$(AR) $(ARFLAGS) $(LIBDIR)/$(LIBRUNTIME) $(OBJ)
 endif
 
-# Cleans All Object Files
+# Cleans all object files.
 clean:
 ifeq ($(VERBOSE), no)
 	@echo [CLEAN] $(OBJ)
@@ -53,16 +56,16 @@ else
 	rm -rf $(OBJ)
 endif
 
-# Cleans Everything
+# Cleans everything.
 distclean: clean
 ifeq ($(VERBOSE), no)
 	@echo [CLEAN] $(LIBRUNTIME)
-	@rm -rf $(LIBRUNTIME)
+	@rm -rf $(LIBDIR)/$(LIBRUNTIME)
 else
-	rm -rf $(LIBRUNTIME)
+	rm -rf $(LIBDIR)/$(LIBRUNTIME)
 endif
 
-# Builds a C Source file
+# Builds a C source file.
 %.$(OBJ_SUFFIX).o: %.c
 ifeq ($(VERBOSE), no)
 	@echo [CC] $@
