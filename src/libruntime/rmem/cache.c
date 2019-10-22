@@ -55,7 +55,11 @@ static cache_slot cache_lines[RMEM_CACHE_LENGTH] = {
 	[0 ... (RMEM_CACHE_LENGTH - 1)] = {.pgnum = RMEM_NULL, .age = 0, .ref_count = 0}
 };
 
-static int time_cache = 0;
+/**
+ * @brief Discrete cache time.
+ */
+static unsigned cache_time = 0;
+
 static int cache_policy = RMEM_CACHE_FIFO;
 static int write_num = RMEM_CACHE_WRITE_BACK;
 
@@ -73,7 +77,7 @@ static int write_num = RMEM_CACHE_WRITE_BACK;
  */
 static int nanvix_rcache_page_search(rpage_t pgnum)
 {
-	time_cache++;
+	cache_time++;
 
 	for (int i = 0; i < RMEM_CACHE_LENGTH; i++)
 	{
@@ -100,14 +104,14 @@ static int nanvix_rcache_age_update_lru(rpage_t pgnum)
 {
 	int idx;
 
-	time_cache++;
+	cache_time++;
 
 	if (cache_policy == RMEM_CACHE_LRU)
 	{
 		if ((idx = nanvix_rcache_page_search(pgnum)) < 0)
 		    return (-EFAULT);
 
-		cache_lines[idx].age = time_cache;
+		cache_lines[idx].age = cache_time;
 	}
 
 	return (0);
@@ -124,12 +128,12 @@ static int nanvix_rcache_age_update(rpage_t pgnum)
 {
 	int idx;
 
-	time_cache++;
+	cache_time++;
 
 	if ((idx = nanvix_rcache_page_search(pgnum)) < 0)
 		return (-EFAULT);
 
-	cache_lines[idx].age = time_cache;
+	cache_lines[idx].age = cache_time;
 	return 0;
 }
 
@@ -151,7 +155,7 @@ static int nanvix_rcache_fifo(void)
 	int age;
 	int min_age;
 
-	time_cache++;
+	cache_time++;
 
 	/* Cache has space. */
 	for (int i = 0; i < RMEM_CACHE_LENGTH; i++)
@@ -207,7 +211,7 @@ static int nanvix_rcache_lifo(void)
 	int age;
 	int max_age;
 
-	time_cache++;
+	cache_time++;
 
 	/* Cache has space. */
 	for (int i = 0; i < RMEM_CACHE_LENGTH; i++)
@@ -264,7 +268,7 @@ static int nanvix_rcache_replacement_policies(void)
  */
 int nanvix_rcache_select_replacement_policy(int num)
 {
-	time_cache++;
+	cache_time++;
 
 	switch (num)
 	{
@@ -288,7 +292,7 @@ int nanvix_rcache_select_replacement_policy(int num)
  */
 int nanvix_rcache_select_write(int num)
 {
-	time_cache++;
+	cache_time++;
 
 	switch (num)
 	{
@@ -313,7 +317,7 @@ rpage_t nanvix_rcache_alloc(void)
 {
 	rpage_t pgnum;
 
-	time_cache++;
+	cache_time++;
 
 	/* Forward allocation to remote memory. */
 	if ((pgnum = nanvix_rmem_alloc()) == (rpage_t) -ENOMEM)
@@ -335,7 +339,7 @@ int nanvix_rcache_flush(rpage_t pgnum)
 	int err;
 	int idx;
 
-	time_cache++;
+	cache_time++;
 
 	/* Invalid page number. */
 	if ((pgnum == RMEM_NULL) || (RMEM_BLOCK_NUM(pgnum) >= RMEM_NUM_BLOCKS))
@@ -361,7 +365,7 @@ int nanvix_rcache_flush(rpage_t pgnum)
  */
 int nanvix_rcache_free(rpage_t pgnum)
 {
-	time_cache++;
+	cache_time++;
 
 	/* Invalid page number. */
 	if ((pgnum == RMEM_NULL) || (RMEM_BLOCK_NUM(pgnum) >= RMEM_NUM_BLOCKS))
@@ -390,7 +394,7 @@ void *nanvix_rcache_get(rpage_t pgnum)
 	int err;
 	int idx;
 
-	time_cache++;
+	cache_time++;
 
 	/* Invalid page number. */
 	if ((pgnum == RMEM_NULL) || (RMEM_BLOCK_NUM(pgnum) >= RMEM_NUM_BLOCKS))
@@ -430,7 +434,7 @@ int nanvix_rcache_put(rpage_t pgnum)
 {
 	int idx;
 
-	time_cache++;
+	cache_time++;
 
 	/* Invalid page number. */
 	if ((pgnum == RMEM_NULL) || (RMEM_BLOCK_NUM(pgnum) >= RMEM_NUM_BLOCKS))
