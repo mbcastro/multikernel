@@ -33,7 +33,7 @@
 /**
  * @brief Page cache length.
  */
-#define RMEM_CACHE_LENGTH 5
+#define RMEM_CACHE_LENGTH 32
 
 /**
  * @brief Page cache.
