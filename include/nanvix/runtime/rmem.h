@@ -37,6 +37,11 @@
 #if defined(__NEED_RMEM_CACHE)
 
 	/**
+	 * @brief Length of page cache.
+	 */
+	#define RMEM_CACHE_LENGTH 32
+
+	/**
 	 * @name Page replacement policies.
 	 */
 	/**@{*/

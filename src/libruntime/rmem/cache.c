@@ -31,9 +31,14 @@
 #include <posix/errno.h>
 
 /**
- * @brief Page cache length.
+ * @brief Cache statistics.
  */
-#define RMEM_CACHE_LENGTH 32
+static struct
+{
+	unsigned nmisses; /**< Number of misses.     */
+	unsigned nhits;   /**< Number of hits.       */
+	unsigned nallocs; /**< Number of allocations */
+} stats = { 0, 0, 0 };
 
 /**
  * @brief Page cache.
@@ -314,6 +319,7 @@ rpage_t nanvix_rcache_alloc(void)
 	if ((pgnum = nanvix_rmem_alloc()) == (rpage_t) -ENOMEM)
 		return (RMEM_NULL);
 
+	stats.nallocs++;
 	return (pgnum);
 }
 
@@ -368,6 +374,7 @@ int nanvix_rcache_free(rpage_t pgnum)
 		    cache_lines[i].pgnum = RMEM_NULL;
 	}
 
+	stats.nallocs--;
 	return (nanvix_rmem_free(pgnum));
 }
 
@@ -391,11 +398,13 @@ void *nanvix_rcache_get(rpage_t pgnum)
 
 	if ((idx = nanvix_rcache_page_search(pgnum)) >= 0)
 	{
+	    stats.nhits++;
 		nanvix_rcache_age_update_lru(pgnum);
 		cache_lines[idx].ref_count++;
 		return (cache_lines[idx].pages);
 	}
 
+	stats.nmisses++;
 	if ((idx = nanvix_rcache_replacement_policies()) < 0)
 		return (NULL);
 
