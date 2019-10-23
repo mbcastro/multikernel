@@ -40,6 +40,8 @@ export RELEASE ?= no
 # Installation Prefix
 export PREFIX ?= $(HOME)
 
+export ADDONS ?=
+
 #===============================================================================
 # Directories
 #===============================================================================
@@ -93,6 +95,7 @@ export CFLAGS += -fno-stack-protector
 export CFLAGS += -Wno-unused-function
 export CFLAGS += -I $(INCDIR)
 export CFLAGS += -I $(ROOTDIR)/src/lwip/src/include
+export CFLAGS += $(ADDONS)
 
 # Additional C Flags
 include $(BUILDDIR)/makefile.cflags
