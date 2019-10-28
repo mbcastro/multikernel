@@ -25,12 +25,12 @@
 #ifndef _TEST_H_
 #define _TEST_H_
 
-	#include <ulibc/assert.h>
+	#include <nanvix/ulib.h>
 
 	/**
 	 * @brief Asserts a logic expression.
 	 */
-	#define TEST_ASSERT(x) nanvix_assert(x)
+	#define TEST_ASSERT(x) uassert(x)
 
 	/**
 	 * @brief Unit test.

@@ -37,10 +37,7 @@
 #include <nanvix/sys/perf.h>
 #include <nanvix/sys/portal.h>
 #include <nanvix/limits.h>
-#include <ulibc/assert.h>
-#include <ulibc/stdio.h>
-#include <ulibc/stdlib.h>
-#include <ulibc/string.h>
+#include <nanvix/ulib.h>
 #include <posix/errno.h>
 #include <stdint.h>
 
@@ -161,12 +158,12 @@ static inline rpage_t do_rmem_alloc(void)
 	/* Memory server is full. */
 	if (stats.nblocks == RMEM_NUM_BLOCKS)
 	{
-	nanvix_printf("[nanvix][rmem] remote memory full\n");
+	uprintf("[nanvix][rmem] remote memory full");
 		return (RMEM_NULL);
 	}
 
 	/* Find a free block. */
-	nanvix_assert(
+	uassert(
 		(bit = bitmap_first_free(
 			blocks,
 			(RMEM_NUM_BLOCKS/BITMAP_WORD_LENGTH)*sizeof(bitmap_t)
@@ -204,26 +201,26 @@ static inline int do_rmem_free(rpage_t blknum)
 	/* Invalid block number. */
 	if ((_blknum == RMEM_NULL) || (_blknum >= RMEM_NUM_BLOCKS))
 	{
-		nanvix_printf("[nanvix][rmem] invalid block number\n");
+		uprintf("[nanvix][rmem] invalid block number");
 		return (-EINVAL);
 	}
 
 	/* Remote memory is empty. */
 	if (stats.nblocks == 1)
 	{
-		nanvix_printf("[nanvix][rmem] remote memory is empty\n");
+		uprintf("[nanvix][rmem] remote memory is empty");
 		return (-EFAULT);
 	}
 
 	/* Bad block number. */
 	if (!bitmap_check_bit(blocks, _blknum))
 	{
-		nanvix_printf("[nanvix][rmem] bad free block\n");
+		uprintf("[nanvix][rmem] bad free block");
 		return (-EFAULT);
 	}
 
 	/* Clean block. */
-	nanvix_memset(&rmem[_blknum][0], 0, RMEM_BLOCK_SIZE);
+	umemset(&rmem[_blknum][0], 0, RMEM_BLOCK_SIZE);
 
 	/* Free block. */
 	stats.nblocks--;
@@ -260,7 +257,7 @@ static inline int do_rmem_write(int remote, rpage_t blknum)
 	/* Invalid block number. */
 	if ((_blknum == RMEM_NULL) || (_blknum >= RMEM_NUM_BLOCKS))
 	{
-		nanvix_printf("[nanvix][rmem] invalid block number\n");
+		uprintf("[nanvix][rmem] invalid block number");
 		return (-EINVAL);
 	}
 
@@ -270,13 +267,13 @@ static inline int do_rmem_write(int remote, rpage_t blknum)
 	 */
 	if (!bitmap_check_bit(blocks, _blknum))
 	{
-		nanvix_printf("[nanvix][rmem] bad write block\n");
+		uprintf("[nanvix][rmem] bad write block");
 		_blknum = 0;
 		ret = -EFAULT;
 	}
 
-	nanvix_assert(kportal_allow(inportal, remote) == 0);
-	nanvix_assert(
+	uassert(kportal_allow(inportal, remote) == 0);
+	uassert(
 		kportal_read(
 			inportal,
 			&rmem[_blknum][0],
@@ -316,7 +313,7 @@ static inline int do_rmem_read(int remote, rpage_t blknum)
 	/* Invalid block number. */
 	if ((_blknum == RMEM_NULL) || (_blknum >= RMEM_NUM_BLOCKS))
 	{
-		nanvix_printf("[nanvix][rmem] invalid block number\n");
+		uprintf("[nanvix][rmem] invalid block number");
 		return (-EINVAL);
 	}
 
@@ -326,25 +323,25 @@ static inline int do_rmem_read(int remote, rpage_t blknum)
 	 */
 	if (!bitmap_check_bit(blocks, _blknum))
 	{
-		nanvix_printf("[nanvix][rmem] bad read block\n");
+		uprintf("[nanvix][rmem] bad read block");
 		_blknum = 0;
 		ret = -EFAULT;
 	}
 
-	nanvix_assert((outportal =
+	uassert((outportal =
 		kportal_open(
 			knode_get_num(),
 			remote)
 		) >= 0
 	);
-	nanvix_assert(
+	uassert(
 		kportal_write(
 			outportal,
 			&rmem[_blknum][0],
 			RMEM_BLOCK_SIZE
 		) == RMEM_BLOCK_SIZE
 	);
-	nanvix_assert(kportal_close(outportal) == 0);
+	uassert(kportal_close(outportal) == 0);
 
 	return (ret);
 }
@@ -371,7 +368,7 @@ static int do_rmem_loop(void)
 		int source;
 		struct rmem_message msg;
 
-		nanvix_assert(
+		uassert(
 			kmailbox_read(
 				inbox,
 				&msg,
@@ -392,9 +389,9 @@ static int do_rmem_loop(void)
 				stats.nwrites++;
 				kclock(&t0);
 					msg.errcode = do_rmem_write(msg.header.source, msg.blknum);
-					nanvix_assert((source = kmailbox_open(msg.header.source)) >= 0);
-					nanvix_assert(kmailbox_write(source, &msg, sizeof(struct rmem_message)) == sizeof(struct rmem_message));
-					nanvix_assert(kmailbox_close(source) == 0);
+					uassert((source = kmailbox_open(msg.header.source)) >= 0);
+					uassert(kmailbox_write(source, &msg, sizeof(struct rmem_message)) == sizeof(struct rmem_message));
+					uassert(kmailbox_close(source) == 0);
 				kclock(&t1);
 				stats.twrite += (t1 - t0);
 				break;
@@ -404,9 +401,9 @@ static int do_rmem_loop(void)
 				stats.nreads++;
 				kclock(&t0);
 					msg.errcode = do_rmem_read(msg.header.source, msg.blknum);
-					nanvix_assert((source = kmailbox_open(msg.header.source)) >= 0);
-					nanvix_assert(kmailbox_write(source, &msg, sizeof(struct rmem_message)) == sizeof(struct rmem_message));
-					nanvix_assert(kmailbox_close(source) == 0);
+					uassert((source = kmailbox_open(msg.header.source)) >= 0);
+					uassert(kmailbox_write(source, &msg, sizeof(struct rmem_message)) == sizeof(struct rmem_message));
+					uassert(kmailbox_close(source) == 0);
 				kclock(&t1);
 				stats.tread += (t1 - t0);
 				break;
@@ -417,9 +414,9 @@ static int do_rmem_loop(void)
 				kclock(&t0);
 					msg.blknum = do_rmem_alloc();
 					msg.errcode = (msg.blknum == RMEM_NULL) ? -ENOMEM : 0;
-					nanvix_assert((source = kmailbox_open(msg.header.source)) >= 0);
-					nanvix_assert(kmailbox_write(source, &msg, sizeof(struct rmem_message)) == sizeof(struct rmem_message));
-					nanvix_assert(kmailbox_close(source) == 0);
+					uassert((source = kmailbox_open(msg.header.source)) >= 0);
+					uassert(kmailbox_write(source, &msg, sizeof(struct rmem_message)) == sizeof(struct rmem_message));
+					uassert(kmailbox_close(source) == 0);
 				kclock(&t1);
 				stats.talloc += (t1 - t0);
 			    break;
@@ -429,9 +426,9 @@ static int do_rmem_loop(void)
 				stats.nfrees++;
 				kclock(&t0);
 					msg.errcode = do_rmem_free(msg.blknum);
-					nanvix_assert((source = kmailbox_open(msg.header.source)) >= 0);
-					nanvix_assert(kmailbox_write(source, &msg, sizeof(struct rmem_message)) == sizeof(struct rmem_message));
-					nanvix_assert(kmailbox_close(source) == 0);
+					uassert((source = kmailbox_open(msg.header.source)) >= 0);
+					uassert(kmailbox_write(source, &msg, sizeof(struct rmem_message)) == sizeof(struct rmem_message));
+					uassert(kmailbox_close(source) == 0);
 				kclock(&t1);
 				stats.tfree += (t1 - t0);
 			    break;
@@ -448,7 +445,7 @@ static int do_rmem_loop(void)
 	}
 
 	/* Dump statistics. */
-	nanvix_printf("[nanvix][rmem] talloc=%d nallocs=%d tfree=%d nfrees=%d tread=%d nreads=%d twrite=%d nwrites=%d\n",
+	uprintf("[nanvix][rmem] talloc=%d nallocs=%d tfree=%d nfrees=%d tread=%d nreads=%d twrite=%d nwrites=%d",
 			stats.talloc, stats.nallocs,
 			stats.tfree, stats.nfrees,
 			stats.tread, stats.nreads,
@@ -474,13 +471,13 @@ static int do_rmem_startup(void)
 	const char *servername;
 
 	/* Messages should be small enough. */
-	nanvix_assert(sizeof(struct rmem_message) <= MAILBOX_MSG_SIZE);
+	uassert(sizeof(struct rmem_message) <= MAILBOX_MSG_SIZE);
 
 	/* Bitmap word should be large enough. */
-	nanvix_assert(sizeof(rpage_t) >= sizeof(bitmap_t));
+	uassert(sizeof(rpage_t) >= sizeof(bitmap_t));
 
 	/* Clean bitmap. */
-	nanvix_memset(
+	umemset(
 		blocks,
 		0,
 		(RMEM_NUM_BLOCKS/BITMAP_WORD_LENGTH)*sizeof(bitmap_t)
@@ -492,7 +489,7 @@ static int do_rmem_startup(void)
 
 	/* Clean all blocks. */
 	for (unsigned long i = 0; i < RMEM_NUM_BLOCKS; i++)
-		nanvix_memset(&rmem[i][0], 0, RMEM_BLOCK_SIZE);
+		umemset(&rmem[i][0], 0, RMEM_BLOCK_SIZE);
 
 	nodenum = knode_get_num();
 
@@ -541,19 +538,19 @@ int do_rmem_server(void)
 {
 	int ret;
 
-	nanvix_printf("[nanvix][rmem] booting up server\n");
+	uprintf("[nanvix][rmem] booting up server");
 
 	if ((ret = do_rmem_startup()) < 0)
 		goto error;
 
 	/* Unblock spawner. */
-	nanvix_assert(stdsync_fence() == 0);
-	nanvix_printf("[nanvix][rmem] server alive\n");
+	uassert(stdsync_fence() == 0);
+	uprintf("[nanvix][rmem] server alive");
 
 	if ((ret = do_rmem_loop()) < 0)
 		goto error;
 
-	nanvix_printf("[nanvix][rmem] shutting down server\n");
+	uprintf("[nanvix][rmem] shutting down server");
 
 	if ((ret = do_rmem_shutdown()) < 0)
 		goto error;

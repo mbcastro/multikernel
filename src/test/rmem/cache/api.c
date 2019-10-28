@@ -25,8 +25,7 @@
 #define __NEED_RMEM_CACHE
 
 #include <nanvix/runtime/rmem.h>
-#include <ulibc/stdio.h>
-#include <ulibc/string.h>
+#include <nanvix/ulib.h>
 #include "../../test.h"
 
 /*============================================================================*
@@ -61,7 +60,7 @@ static void test_rmem_rcache_put_write(void)
 
 	TEST_ASSERT((page_num = nanvix_rcache_alloc()) != RMEM_NULL);
 	TEST_ASSERT((cache_data = nanvix_rcache_get(page_num)) != NULL);
-	nanvix_memset(cache_data, 1, RMEM_BLOCK_SIZE);
+	umemset(cache_data, 1, RMEM_BLOCK_SIZE);
 
 	nanvix_rcache_select_write(RMEM_CACHE_WRITE_BACK);
 	TEST_ASSERT(nanvix_rcache_put(page_num) == 0);
@@ -92,7 +91,7 @@ static void test_rmem_rcache_get_flush(void)
 	{
 		TEST_ASSERT((page_num[i] = nanvix_rcache_alloc()) != RMEM_NULL);
 		TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[i])) != NULL);
-		nanvix_memset(cache_data, i, RMEM_BLOCK_SIZE);
+		umemset(cache_data, i, RMEM_BLOCK_SIZE);
 	}
 
 	for (int i = 0; i < 5; i++)
@@ -126,7 +125,7 @@ static void test_rmem_rcache_fifo(void)
 	{
 		TEST_ASSERT((page_num[i] = nanvix_rcache_alloc()) != RMEM_NULL);
 		TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[i])) != NULL);
-		nanvix_memset(cache_data, i, RMEM_BLOCK_SIZE);
+		umemset(cache_data, i, RMEM_BLOCK_SIZE);
 	}
 
 	for (int i = 0; i < 5; i++)
@@ -176,7 +175,7 @@ static void test_rmem_rcache_lifo(void)
 	{
 		TEST_ASSERT((page_num[i] = nanvix_rcache_alloc()) != RMEM_NULL);
 		TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[i])) != NULL);
-		nanvix_memset(cache_data, i, RMEM_BLOCK_SIZE);
+		umemset(cache_data, i, RMEM_BLOCK_SIZE);
 	}
 
 	for (int i = 0; i < 5; i++)
@@ -226,7 +225,7 @@ static void test_rmem_rcache_lru(void)
 	{
 		TEST_ASSERT((page_num[i] = nanvix_rcache_alloc()) != RMEM_NULL);
 		TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[i])) != NULL);
-		nanvix_memset(cache_data, i, RMEM_BLOCK_SIZE);
+		umemset(cache_data, i, RMEM_BLOCK_SIZE);
 	}
 
 	for (int i = 0; i < 5; i++)

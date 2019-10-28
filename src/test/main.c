@@ -24,8 +24,7 @@
 
 #include <nanvix/runtime/runtime.h>
 #include <nanvix/runtime/stdikc.h>
-#include <ulibc/assert.h>
-#include <ulibc/stdio.h>
+#include <nanvix/ulib.h>
 #include "test.h"
 
 /**
@@ -45,7 +44,7 @@ int __main2(int argc, const char *argv[])
 	__runtime_setup(0);
 
 		/* Unblock spawner. */
-		nanvix_printf("[nanvix][test] server alive\n");
+		uprintf("[nanvix][test] server alive");
 
 		__runtime_setup(1);
 		test_name();
@@ -54,8 +53,8 @@ int __main2(int argc, const char *argv[])
 		test_rmem();
 		test_rmem_cache();
 
-		nanvix_printf("[nanvix][test] shutting down server\n");
-		nanvix_assert(stdsync_fence() == 0);
+		uprintf("[nanvix][test] shutting down server");
+		uassert(stdsync_fence() == 0);
 
 	__runtime_cleanup();
 

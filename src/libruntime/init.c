@@ -24,8 +24,7 @@
 
 #include <nanvix/runtime/runtime.h>
 #include <nanvix/runtime/stdikc.h>
-#include <ulibc/assert.h>
-#include <ulibc/stdio.h>
+#include <nanvix/ulib.h>
 #include <posix/errno.h>
 
 /**
@@ -49,23 +48,23 @@ int __runtime_setup(int ring)
 	/* Initialize unnamed IKC services. */
 	if ((current_ring < 0) && (ring >= 0))
 	{
-		nanvix_printf("[nanvix] initalizing ring 0\n");
-		nanvix_assert(__stdsync_setup() == 0);
-		nanvix_assert(__stdmailbox_setup() == 0);
-		nanvix_assert(__stdportal_setup() == 0);
+		uprintf("[nanvix] initalizing ring 0");
+		uassert(__stdsync_setup() == 0);
+		uassert(__stdmailbox_setup() == 0);
+		uassert(__stdportal_setup() == 0);
 	}
 
 	/* Initialize Name Service client. */
 	if ((current_ring < 1) && (ring >= 1))
 	{
-		nanvix_printf("[nanvix] initalizing ring 1\n");
+		uprintf("[nanvix] initalizing ring 1");
 		__name_setup();
 	}
 
 	/* Initialize Named IKC facilities. */
 	if ((current_ring < 2) && (ring >= 2))
 	{
-		nanvix_printf("[nanvix] initalizing ring 2\n");
+		uprintf("[nanvix] initalizing ring 2");
 		__nanvix_mailbox_setup();
 		__nanvix_portal_setup();
 	}
@@ -73,7 +72,7 @@ int __runtime_setup(int ring)
 	/* Initialize RMem Service client. */
 	if ((current_ring < 3) && (ring >= 3))
 	{
-		nanvix_printf("[nanvix] initalizing ring 3\n");
+		uprintf("[nanvix] initalizing ring 3");
 		__nanvix_rmem_setup();
 	}
 
@@ -102,9 +101,9 @@ int __runtime_cleanup(void)
 	if (current_ring >= 1)
 		__name_cleanup();
 
-	nanvix_assert(__stdportal_cleanup() == 0);
-	nanvix_assert(__stdmailbox_cleanup() == 0);
-	nanvix_assert(__stdsync_cleanup() == 0);
+	uassert(__stdportal_cleanup() == 0);
+	uassert(__stdmailbox_cleanup() == 0);
+	uassert(__stdsync_cleanup() == 0);
 
 	current_ring = 0;
 

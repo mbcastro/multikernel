@@ -24,8 +24,7 @@
 
 #include <nanvix/servers/name.h>
 #include <nanvix/limits.h>
-#include <ulibc/stdio.h>
-#include <ulibc/string.h>
+#include <nanvix/ulib.h>
 #include "../test.h"
 
 /*============================================================================*
@@ -42,7 +41,7 @@ static void test_name_link_unlink(void)
 
 	nodenum = processor_node_get_num(core_get_id());
 
-	nanvix_strcpy(pathname, "cool-name");
+	ustrcpy(pathname, "cool-name");
 	TEST_ASSERT(name_link(nodenum, pathname) == 0);
 	TEST_ASSERT(name_unlink(pathname) == 0);
 }
@@ -61,7 +60,7 @@ static void test_name_lookup(void)
 
 	nodenum = processor_node_get_num(core_get_id());
 
-	nanvix_strcpy(pathname, "cool-name");
+	ustrcpy(pathname, "cool-name");
 	TEST_ASSERT(name_link(nodenum, pathname) == 0);
 	TEST_ASSERT(name_lookup(pathname) == nodenum);
 	TEST_ASSERT(name_unlink(pathname) == 0);

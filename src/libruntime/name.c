@@ -29,7 +29,7 @@
 #include <nanvix/runtime/stdikc.h>
 #include <nanvix/sys/mailbox.h>
 #include <nanvix/sys/mutex.h>
-#include <ulibc/string.h>
+#include <nanvix/ulib.h>
 #include <posix/errno.h>
 #include <posix/stdbool.h>
 
@@ -114,7 +114,7 @@ int name_lookup(const char *name)
 		return (-EINVAL);
 
 	/* Bad name. */
-	if ((nanvix_strlen(name) >= (NANVIX_PROC_NAME_MAX - 1)) || (!nanvix_strcmp(name, "")))
+	if ((ustrlen(name) >= (NANVIX_PROC_NAME_MAX - 1)) || (!ustrcmp(name, "")))
 		return (-EINVAL);
 
 	/* Initilize name client. */
@@ -125,7 +125,7 @@ int name_lookup(const char *name)
 	msg.header.source = processor_node_get_num(core_get_id());
 	msg.header.opcode = NAME_LOOKUP;
 	msg.nodenum = -1;
-	nanvix_strcpy(msg.name, name);
+	ustrcpy(msg.name, name);
 
 	nanvix_mutex_lock(&lock);
 
@@ -164,7 +164,7 @@ int name_link(int nodenum, const char *name)
 		return (-EINVAL);
 
 	/* Bad name. */
-	if ((nanvix_strlen(name) >= (NANVIX_PROC_NAME_MAX - 1)) || (!nanvix_strcmp(name, "")))
+	if ((ustrlen(name) >= (NANVIX_PROC_NAME_MAX - 1)) || (!ustrcmp(name, "")))
 		return (-EINVAL);
 
 	/* Initilize name client. */
@@ -175,7 +175,7 @@ int name_link(int nodenum, const char *name)
 	msg.header.source = processor_node_get_num(core_get_id());
 	msg.header.opcode = NAME_LINK;
 	msg.nodenum = nodenum;
-	nanvix_strcpy(msg.name, name);
+	ustrcpy(msg.name, name);
 
 	nanvix_mutex_lock(&lock);
 
@@ -194,7 +194,7 @@ int name_link(int nodenum, const char *name)
 
 	if (msg.header.opcode == NAME_SUCCESS)
 	{
-		nanvix_strcpy(process_name[core_get_id()], name);
+		ustrcpy(process_name[core_get_id()], name);
 		return (0);
 	}
 
@@ -221,7 +221,7 @@ int name_unlink(const char *name)
 		return (-EINVAL);
 
 	/* Bad name. */
-	if ((nanvix_strlen(name) >= (NANVIX_PROC_NAME_MAX - 1)) || (!nanvix_strcmp(name, "")))
+	if ((ustrlen(name) >= (NANVIX_PROC_NAME_MAX - 1)) || (!ustrcmp(name, "")))
 		return (-EINVAL);
 
 	/* Initilize name client. */
@@ -232,7 +232,7 @@ int name_unlink(const char *name)
 	msg.header.source = processor_node_get_num(core_get_id());
 	msg.header.opcode = NAME_UNLINK;
 	msg.nodenum = -1;
-	nanvix_strcpy(msg.name, name);
+	ustrcpy(msg.name, name);
 
 	nanvix_mutex_lock(&lock);
 

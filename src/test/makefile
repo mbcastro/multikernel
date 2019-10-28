@@ -42,7 +42,7 @@ LIBS += $(LIBDIR)/$(LIBNANVIX)
 ifneq ($(LIBLWIP),)
 LIBS += $(LIBDIR)/$(LIBLWIP)
 endif
-LIBS += $(LIBDIR)/$(KLIB) $(THEIR_LIBS)
+LIBS += $(LIBDIR)/$(BARELIB) $(THEIR_LIBS)
 
 #===============================================================================
 # Binaries Sources and Objects

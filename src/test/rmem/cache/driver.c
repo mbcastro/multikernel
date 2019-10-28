@@ -20,7 +20,7 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <ulibc/stdio.h>
+#include <nanvix/ulib.h>
 #include "../../test.h"
 
 /* Import definitions. */
@@ -34,7 +34,7 @@ void test_rmem_cache(void)
 	/* Run API tests. */
 	for (int i = 0; tests_rmem_cache_api[i].test_fn != NULL; i++)
 	{
-		nanvix_printf("[nanvix][test][rmem][cache][api] %s\n", tests_rmem_cache_api[i].name);
+		uprintf("[nanvix][test][rmem][cache][api] %s\n", tests_rmem_cache_api[i].name);
 		tests_rmem_cache_api[i].test_fn();
 	}
 }

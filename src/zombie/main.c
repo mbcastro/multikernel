@@ -24,8 +24,7 @@
 
 #include <nanvix/runtime/runtime.h>
 #include <nanvix/runtime/stdikc.h>
-#include <ulibc/assert.h>
-#include <ulibc/stdio.h>
+#include <nanvix/ulib.h>
 
 /**
  * @brief Zombie server
@@ -37,8 +36,8 @@ int __main2(int argc, const char *argv[])
 
 	__runtime_setup(0);
 
-		nanvix_printf("[nanvix][zombie] server alive\n");
-		nanvix_assert(stdsync_fence() == 0);
+		uprintf("[nanvix][zombie] server alive");
+		uassert(stdsync_fence() == 0);
 
 	__runtime_cleanup();
 
