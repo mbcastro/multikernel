@@ -452,7 +452,7 @@ static int do_rmem_loop(void)
 			stats.talloc, stats.nallocs,
 			stats.tfree, stats.nfrees,
 			stats.tread, stats.nreads,
-			stats.twrite, stats.nallocs
+			stats.twrite, stats.nwrites
 	);
 
 	return (0);
