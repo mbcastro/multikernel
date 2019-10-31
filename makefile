@@ -40,6 +40,8 @@ export RELEASE ?= no
 # Installation Prefix
 export PREFIX ?= $(HOME)
 
+export ADDONS ?=
+
 #===============================================================================
 # Directories
 #===============================================================================
@@ -62,7 +64,7 @@ export TOOLSDIR   := $(ROOTDIR)/utils
 #===============================================================================
 
 # Libraries
-export KLIB       := klib-$(TARGET).a
+export BARELIB    := barelib-$(TARGET).a
 export LIBHAL     := libhal-$(TARGET).a
 export LIBKERNEL  := libkernel-$(TARGET).a
 export LIBNANVIX  := libnanvix-$(TARGET).a
@@ -93,6 +95,7 @@ export CFLAGS += -fno-stack-protector
 export CFLAGS += -Wno-unused-function
 export CFLAGS += -I $(INCDIR)
 export CFLAGS += -I $(ROOTDIR)/src/lwip/src/include
+export CFLAGS += $(ADDONS)
 
 # Additional C Flags
 include $(BUILDDIR)/makefile.cflags

@@ -29,9 +29,7 @@
 #include <nanvix/sys/mailbox.h>
 #include <nanvix/sys/noc.h>
 #include <nanvix/limits.h>
-#include <ulibc/assert.h>
-#include <ulibc/stdio.h>
-#include <ulibc/string.h>
+#include <nanvix/ulib.h>
 #include <posix/errno.h>
 
 /**
@@ -218,7 +216,7 @@ static int nanvix_mailbox_alloc(void)
 		}
 	}
 
-	nanvix_printf("[NAME] mailbox table overflow\n");
+	uprintf("[NAME] mailbox table overflow\n");
 
 	return (-1);
 }
@@ -257,7 +255,7 @@ int nanvix_mailbox_create(const char *name)
 		return (-EINVAL);
 
 	/* Check name length. */
-	if (nanvix_strlen(name) > MAILBOX_MSG_SIZE)
+	if (ustrlen(name) > MAILBOX_MSG_SIZE)
 		return (-EINVAL);
 
 	/* Runtime not initialized. */
@@ -277,7 +275,7 @@ int nanvix_mailbox_create(const char *name)
 	/* Initialize mailbox. */
 	mailboxes[mbxid].fd = fd;
 	mailboxes[mbxid].owner = nodenum;
-	nanvix_strcpy(mailboxes[mbxid].name, name);
+	ustrcpy(mailboxes[mbxid].name, name);
 
 	/* Initialize named inbox. */
 	named_inboxes[core_get_id()] = mbxid;

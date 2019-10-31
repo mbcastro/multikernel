@@ -25,8 +25,7 @@
 #include <nanvix/runtime/runtime.h>
 #include <nanvix/runtime/stdikc.h>
 #include <nanvix/servers/spawn.h>
-#include <ulibc/assert.h>
-#include <ulibc/stdio.h>
+#include <nanvix/ulib.h>
 
 /*============================================================================*
  * __main2()                                                                  *
@@ -47,9 +46,9 @@ int __main2(int argc, const char *argv[])
 
 	__runtime_setup(0);
 
-		nanvix_printf("[nanvix][spawn] waiting for servers....\n");
-		nanvix_assert(stdsync_fence() == 0);
-		nanvix_printf("[nanvix][spawn] system alive\n");
+		uprintf("[nanvix][spawn] waiting for servers....");
+		uassert(stdsync_fence() == 0);
+		uprintf("[nanvix][spawn] system alive");
 
 	__runtime_cleanup();
 

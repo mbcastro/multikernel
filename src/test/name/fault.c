@@ -24,8 +24,7 @@
 
 #include <nanvix/servers/name.h>
 #include <nanvix/limits.h>
-#include <ulibc/stdio.h>
-#include <ulibc/string.h>
+#include <nanvix/ulib.h>
 #include "../test.h"
 
 /*============================================================================*
@@ -56,7 +55,7 @@ static void test_name_bad_link(void)
 
 	nodenum = processor_node_get_num(core_get_id());
 
-	nanvix_memset(pathname, 1, NANVIX_PROC_NAME_MAX + 1);
+	umemset(pathname, 1, NANVIX_PROC_NAME_MAX + 1);
 
 	/* Link invalid names. */
 	TEST_ASSERT(name_link(nodenum, pathname) < 0);
@@ -79,7 +78,7 @@ static void test_name_double_link(void)
 	nodenum = processor_node_get_num(core_get_id());
 
 	/* Link name. */
-	nanvix_strcpy(pathname, "cool-name");
+	ustrcpy(pathname, "cool-name");
 	TEST_ASSERT(name_link(nodenum, pathname) == 0);
 	TEST_ASSERT(name_link(nodenum, pathname) < 0);
 	TEST_ASSERT(name_unlink(pathname) == 0);
@@ -96,7 +95,7 @@ static void test_name_invalid_unlink(void)
 {
 	char pathname[NANVIX_PROC_NAME_MAX + 1];
 
-	nanvix_memset(pathname, 1, NANVIX_PROC_NAME_MAX + 1);
+	umemset(pathname, 1, NANVIX_PROC_NAME_MAX + 1);
 
 	/* Unlink invalid names. */
 	TEST_ASSERT(name_unlink(pathname) < 0);
@@ -166,7 +165,7 @@ static void test_name_invalid_lookup(void)
 {
 	char pathname[NANVIX_PROC_NAME_MAX + 1];
 
-	nanvix_memset(pathname, 1, NANVIX_PROC_NAME_MAX + 1);
+	umemset(pathname, 1, NANVIX_PROC_NAME_MAX + 1);
 
 	/* Lookup invalid names. */
 	TEST_ASSERT(name_lookup(pathname) < 0);

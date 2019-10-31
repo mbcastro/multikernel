@@ -24,7 +24,7 @@ tags
 *.vscode/
 
 # KLib Headers
-include/nanvix/klib.h
+include/nanvix/barelib.h
 include/posix/decl.h
 include/posix/stdarg.h
 include/posix/stddef.h
@@ -48,7 +48,7 @@ include/nanvix/runtime/stdikc.h
 include/nanvix/sys/
 
 # C Library
-include/ulibc/
+include/nanvix/ulib.h
 
 # Excludes
 !img/*

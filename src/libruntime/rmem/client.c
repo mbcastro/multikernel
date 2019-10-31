@@ -33,9 +33,7 @@
 #include <nanvix/sys/portal.h>
 #include <nanvix/sys/mutex.h>
 #include <nanvix/sys/noc.h>
-#include <ulibc/assert.h>
-#include <ulibc/string.h>
-#include <ulibc/stdio.h>
+#include <nanvix/ulib.h>
 #include <posix/errno.h>
 #include <posix/stdbool.h>
 
@@ -69,7 +67,7 @@ rpage_t nanvix_rmem_alloc(void)
 	msg.header.opcode = RMEM_ALLOC;
 
 	/* Send operation header. */
-	nanvix_assert(
+	uassert(
 		nanvix_mailbox_write(
 			server[nallocs % RMEM_SERVERS_NUM].outbox,
 			&msg, sizeof(struct rmem_message)
@@ -77,7 +75,7 @@ rpage_t nanvix_rmem_alloc(void)
 	);
 
 	/* Receive reply. */
-	nanvix_assert(
+	uassert(
 		kmailbox_read(
 			stdinbox_get(),
 			&msg,
@@ -113,7 +111,7 @@ int nanvix_rmem_free(rpage_t blknum)
 	serverid = RMEM_BLOCK_SERVER(blknum);
 
 	/* Send operation header. */
-	nanvix_assert(
+	uassert(
 		nanvix_mailbox_write(
 			server[serverid].outbox,
 			&msg,
@@ -122,7 +120,7 @@ int nanvix_rmem_free(rpage_t blknum)
 	);
 
 	/* Receive reply. */
-	nanvix_assert(
+	uassert(
 		kmailbox_read(
 			stdinbox_get(),
 			&msg,
@@ -162,7 +160,7 @@ size_t nanvix_rmem_read(rpage_t blknum, void *buf)
 	serverid = RMEM_BLOCK_SERVER(blknum);
 
 	/* Send operation header. */
-	nanvix_assert(
+	uassert(
 		nanvix_mailbox_write(
 			server[serverid].outbox,
 			&msg,
@@ -171,13 +169,13 @@ size_t nanvix_rmem_read(rpage_t blknum, void *buf)
 	);
 
 	/* Receive data. */
-	nanvix_assert(
+	uassert(
 		kportal_allow(
 			stdinportal_get(),
 			rmem_servers[serverid].nodenum
 		) == 0
 	);
-	nanvix_assert(
+	uassert(
 		kportal_read(
 			stdinportal_get(),
 			buf,
@@ -186,7 +184,7 @@ size_t nanvix_rmem_read(rpage_t blknum, void *buf)
 	);
 
 	/* Receive reply. */
-	nanvix_assert(
+	uassert(
 		kmailbox_read(
 			stdinbox_get(),
 			&msg,
@@ -225,7 +223,7 @@ size_t nanvix_rmem_write(rpage_t blknum, const void *buf)
 	serverid = RMEM_BLOCK_SERVER(blknum);
 
 	/* Send operation header. */
-	nanvix_assert(
+	uassert(
 		nanvix_mailbox_write(
 			server[serverid].outbox,
 			&msg, sizeof(struct rmem_message)
@@ -233,7 +231,7 @@ size_t nanvix_rmem_write(rpage_t blknum, const void *buf)
 	);
 
 	/* Send data. */
-	nanvix_assert(
+	uassert(
 		nanvix_portal_write(
 			server[serverid].outportal,
 			buf,
@@ -242,7 +240,7 @@ size_t nanvix_rmem_write(rpage_t blknum, const void *buf)
 	);
 
 	/* Receive reply. */
-	nanvix_assert(
+	uassert(
 		kmailbox_read(
 			stdinbox_get(),
 			&msg,
@@ -272,14 +270,14 @@ int __nanvix_rmem_setup(void)
 		/* Open output mailbox */
 		if ((server[i].outbox = nanvix_mailbox_open(rmem_servers[i].name)) < 0)
 		{
-			nanvix_printf("[nanvix][rmem] cannot open outbox to server\n");
+			uprintf("[nanvix][rmem] cannot open outbox to server\n");
 			return (server[i].outbox);
 		}
 
 		/* Open underlying IPC connectors. */
 		if ((server[i].outportal = nanvix_portal_open(rmem_servers[i].name)) < 0)
 		{
-			nanvix_printf("[nanvix][rmem] cannot open outportal to server\n");
+			uprintf("[nanvix][rmem] cannot open outportal to server\n");
 			return (server[i].outportal);
 		}
 
@@ -309,14 +307,14 @@ int __nanvix_rmem_cleanup(void)
 		/* Close output mailbox */
 		if (nanvix_mailbox_close(server[i].outbox) < 0)
 		{
-			nanvix_printf("[nanvix][rmem] cannot close outbox to server\n");
+			uprintf("[nanvix][rmem] cannot close outbox to server\n");
 			return (-EAGAIN);
 		}
 
 		/* Close underlying IPC connectors. */
 		if (nanvix_portal_close(server[i].outportal) < 0)
 		{
-			nanvix_printf("[nanvix][rmem] cannot close outportal to server\n");
+			uprintf("[nanvix][rmem] cannot close outportal to server\n");
 			return (-EAGAIN);
 		}
 

@@ -20,8 +20,7 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <ulibc/string.h>
-#include <ulibc/stdio.h>
+#include <nanvix/ulib.h>
 #include <stdarg.h>
 
 /**
@@ -35,11 +34,11 @@ void debug(const char *modulename, const char *fmt, ...)
 
 	((void) modulename);
 
-	nanvix_strncpy(strbuf, fmt, len);
-	nanvix_strcat(strbuf, "\n");
+	ustrncpy(strbuf, fmt, len);
+	ustrcat(strbuf, "\n");
 
 	va_start(args, fmt);
-	nanvix_vfprintf(nanvix_stdout, strbuf, args);
+	uprintf(strbuf, args);
 	va_end(args);
 }
 

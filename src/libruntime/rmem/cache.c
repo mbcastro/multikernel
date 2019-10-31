@@ -26,8 +26,7 @@
 #define __NEED_RMEM_CACHE
 
 #include <nanvix/runtime/rmem.h>
-#include <ulibc/string.h>
-#include <ulibc/stdio.h>
+#include <nanvix/ulib.h>
 #include <posix/errno.h>
 
 /**

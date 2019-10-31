@@ -25,8 +25,7 @@
 #define __NEED_RMEM_CLIENT
 
 #include <nanvix/servers/rmem.h>
-#include <ulibc/stdio.h>
-#include <ulibc/string.h>
+#include <nanvix/ulib.h>
 #include "../../test.h"
 
 /**
@@ -81,7 +80,7 @@ static void test_rmem_manager_invalid_write(void)
 {
 	rpage_t blknum;
 
-	nanvix_memset(buffer, 1, RMEM_BLOCK_SIZE);
+	umemset(buffer, 1, RMEM_BLOCK_SIZE);
 
 	/* Invalid block number. */
 	TEST_ASSERT(nanvix_rmem_write(RMEM_NULL, buffer) == 0);
@@ -105,7 +104,7 @@ static void test_rmem_manager_invalid_write(void)
  */
 static void test_rmem_manager_bad_write(void)
 {
-	nanvix_memset(buffer, 1, RMEM_BLOCK_SIZE);
+	umemset(buffer, 1, RMEM_BLOCK_SIZE);
 
 	TEST_ASSERT(nanvix_rmem_write(1, buffer) == 0);
 	TEST_ASSERT(nanvix_rmem_write(RMEM_NUM_BLOCKS - 1, buffer) == 0);
@@ -124,7 +123,7 @@ static void test_rmem_manager_invalid_read(void)
 {
 	rpage_t blknum;
 
-	nanvix_memset(buffer, 1, RMEM_BLOCK_SIZE);
+	umemset(buffer, 1, RMEM_BLOCK_SIZE);
 
 	/* Invalid block number. */
 	TEST_ASSERT(nanvix_rmem_read(RMEM_NULL, buffer) == 0);
@@ -148,7 +147,7 @@ static void test_rmem_manager_invalid_read(void)
  */
 static void test_rmem_manager_bad_read(void)
 {
-	nanvix_memset(buffer, 1, RMEM_BLOCK_SIZE);
+	umemset(buffer, 1, RMEM_BLOCK_SIZE);
 
 	TEST_ASSERT(nanvix_rmem_read(1, buffer) == 0);
 	TEST_ASSERT(nanvix_rmem_read(RMEM_NUM_BLOCKS - 1, buffer) == 0);

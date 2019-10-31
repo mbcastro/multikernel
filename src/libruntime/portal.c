@@ -27,9 +27,7 @@
 #include <nanvix/sys/portal.h>
 #include <nanvix/sys/noc.h>
 #include <nanvix/limits.h>
-#include <ulibc/assert.h>
-#include <ulibc/stdio.h>
-#include <ulibc/string.h>
+#include <nanvix/ulib.h>
 #include <posix/errno.h>
 
 /**
@@ -335,7 +333,7 @@ int nanvix_portal_create(const char *name)
 		return (-EINVAL);
 
 	/* Check name length. */
-	if (nanvix_strlen(name) > MAILBOX_MSG_SIZE)
+	if (ustrlen(name) > MAILBOX_MSG_SIZE)
 		return (-EINVAL);
 
 	/* Runtime not initialized. */
@@ -355,7 +353,7 @@ int nanvix_portal_create(const char *name)
 	/* Initialize portal. */
 	portals[id].portalid = portalid;
 	portals[id].owner = nodenum;
-	nanvix_strcpy(portals[id].name, name);
+	ustrcpy(portals[id].name, name);
 
 	return (id);
 

@@ -32,10 +32,7 @@
 #include <nanvix/runtime/utils.h>
 #include <nanvix/sys/mailbox.h>
 #include <nanvix/limits.h>
-#include <ulibc/assert.h>
-#include <ulibc/stdio.h>
-#include <ulibc/stdlib.h>
-#include <ulibc/string.h>
+#include <nanvix/ulib.h>
 #include <posix/errno.h>
 #include <stdint.h>
 
@@ -86,10 +83,10 @@ static void do_name_init(void)
 	for (int i = 0; i < NANVIX_NODES_NUM; i++)
 	{
 		names[i].nodenum = i;
-		nanvix_strcpy(names[i].name, "");
+		ustrcpy(names[i].name, "");
 	}
 
-	nanvix_strcpy(names[NAME_SERVER_NODE].name, "/io0");
+	ustrcpy(names[NAME_SERVER_NODE].name, "/io0");
 
 	inbox = stdinbox_get();
 }
@@ -115,7 +112,7 @@ static int do_name_lookup(const char *name)
 	for (int i = 0; i < NANVIX_NODES_NUM; i++)
 	{
 		/* Found. */
-		if (!nanvix_strcmp(name, names[i].name))
+		if (!ustrcmp(name, names[i].name))
 			return (names[i].nodenum);
 	}
 
@@ -148,7 +145,7 @@ static int do_name_link(int nodenum, char *name)
 	/* Check that the name is not already used */
 	for (int i = 0; i < NANVIX_NODES_NUM; i++)
 	{
-		if (nanvix_strcmp(names[i].name, name) == 0)
+		if (ustrcmp(names[i].name, name) == 0)
 			return (-EINVAL);
 	}
 
@@ -168,10 +165,10 @@ static int do_name_link(int nodenum, char *name)
 found:
 
 	/* Entry not available */
-	if (nanvix_strcmp(names[index].name, ""))
+	if (ustrcmp(names[index].name, ""))
 		return (-EINVAL);
 
-	nanvix_strcpy(names[index].name, name);
+	ustrcpy(names[index].name, name);
 
 	return (++nr_registration);
 }
@@ -195,14 +192,14 @@ static int do_name_unlink(char *name)
 
 	name_debug("unlink name=%s", name);
 
-	while (i < NANVIX_NODES_NUM && nanvix_strcmp(name, names[i].name))
+	while (i < NANVIX_NODES_NUM && ustrcmp(name, names[i].name))
 	{
 		i++;
 	}
 
 	if (i < NANVIX_NODES_NUM)
 	{
-		nanvix_strcpy(names[i].name, "");
+		ustrcpy(names[i].name, "");
 		return (--nr_registration);
 	}
 
@@ -224,19 +221,19 @@ int do_name_server(void)
 	int source;
 	int shutdown = 0;
 
-	nanvix_printf("[nanvix][name] booting up server\n");
+	uprintf("[nanvix][name] booting up server");
 
 	do_name_init();
 
 	/* Unblock spawner. */
-	nanvix_assert(stdsync_fence() == 0);
-	nanvix_printf("[nanvix][name] server alive\n");
+	uassert(stdsync_fence() == 0);
+	uprintf("[nanvix][name] server alive");
 
 	while (!shutdown)
 	{
 		struct name_message msg;
 
-		nanvix_assert(kmailbox_read(inbox, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
+		uassert(kmailbox_read(inbox, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
 
 		name_debug("received request opcode=%d", msg.header.opcode);
 
@@ -251,9 +248,9 @@ int do_name_server(void)
 				/* Send response. */
 				source = kmailbox_open(msg.header.source);
 
-				nanvix_assert(source >= 0);
-				nanvix_assert(kmailbox_write(source, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
-				nanvix_assert(kmailbox_close(source) == 0);
+				uassert(source >= 0);
+				uassert(kmailbox_write(source, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
+				uassert(kmailbox_close(source) == 0);
 
 				break;
 
@@ -267,13 +264,13 @@ int do_name_server(void)
 				else
 					msg.header.opcode = NAME_FAIL;
 
-				nanvix_assert(nr_registration >= 0);
+				uassert(nr_registration >= 0);
 
 				/* Send acknowledgement. */
 				source = kmailbox_open(msg.header.source);
-				nanvix_assert(source >= 0);
-				nanvix_assert(kmailbox_write(source, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
-				nanvix_assert(kmailbox_close(source) == 0);
+				uassert(source >= 0);
+				uassert(kmailbox_write(source, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
+				uassert(kmailbox_close(source) == 0);
 
 				break;
 
@@ -287,13 +284,13 @@ int do_name_server(void)
 				else
 					msg.header.opcode = NAME_FAIL;
 
-				nanvix_assert(nr_registration >= 0);
+				uassert(nr_registration >= 0);
 
 				/* Send acknowledgement. */
 				source = kmailbox_open(msg.header.source);
-				nanvix_assert(source >= 0);
-				nanvix_assert(kmailbox_write(source, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
-				nanvix_assert(kmailbox_close(source) == 0);
+				uassert(source >= 0);
+				uassert(kmailbox_write(source, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
+				uassert(kmailbox_close(source) == 0);
 
 				break;
 
@@ -307,7 +304,7 @@ int do_name_server(void)
 		}
 	}
 
-	nanvix_printf("[nanvix][name] shutting down server\n");
+	uprintf("[nanvix][name] shutting down server");
 
 	return (EXIT_SUCCESS);
 }

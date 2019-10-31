@@ -25,7 +25,7 @@
 #define __NEED_RMEM_CLIENT
 
 #include <nanvix/servers/rmem.h>
-#include <ulibc/string.h>
+#include <nanvix/ulib.h>
 #include "../../test.h"
 
 /**
@@ -61,10 +61,10 @@ static void test_rmem_manager_read_write(void)
 
 	TEST_ASSERT((blknum = nanvix_rmem_alloc()) != RMEM_NULL);
 
-		nanvix_memset(buffer, 1, RMEM_BLOCK_SIZE);
+		umemset(buffer, 1, RMEM_BLOCK_SIZE);
 		TEST_ASSERT(nanvix_rmem_write(blknum, buffer) == RMEM_BLOCK_SIZE);
 
-		nanvix_memset(buffer, 0, RMEM_BLOCK_SIZE);
+		umemset(buffer, 0, RMEM_BLOCK_SIZE);
 		TEST_ASSERT(nanvix_rmem_read(blknum, buffer) == RMEM_BLOCK_SIZE);
 
 		/* Checksum. */
@@ -92,27 +92,27 @@ static void test_rmem_manager_consistency(void)
 	TEST_ASSERT((blknum3 = nanvix_rmem_alloc()) != RMEM_NULL);
 
 		/* First round. */
-		nanvix_memset(buffer, 1, RMEM_BLOCK_SIZE);
+		umemset(buffer, 1, RMEM_BLOCK_SIZE);
 		TEST_ASSERT(nanvix_rmem_write(blknum1, buffer) == RMEM_BLOCK_SIZE);
 
 		/* Second round. */
-        nanvix_memset(buffer, 2, RMEM_BLOCK_SIZE);
+        umemset(buffer, 2, RMEM_BLOCK_SIZE);
         TEST_ASSERT(nanvix_rmem_write(blknum2, buffer) == RMEM_BLOCK_SIZE);
 
 		/* Third round. */
-        nanvix_memset(buffer, 3, RMEM_BLOCK_SIZE);
+        umemset(buffer, 3, RMEM_BLOCK_SIZE);
         TEST_ASSERT(nanvix_rmem_write(blknum3, buffer) == RMEM_BLOCK_SIZE);
 
 		/* Checksum. */
-		nanvix_memset(buffer, 9, RMEM_BLOCK_SIZE);
+		umemset(buffer, 9, RMEM_BLOCK_SIZE);
 		TEST_ASSERT(nanvix_rmem_read(blknum1, buffer) == RMEM_BLOCK_SIZE);
 		for (unsigned long i = 0; i < RMEM_BLOCK_SIZE; i++)
 			TEST_ASSERT(buffer[i] == 1);
-		nanvix_memset(buffer, 9, RMEM_BLOCK_SIZE);
+		umemset(buffer, 9, RMEM_BLOCK_SIZE);
 		TEST_ASSERT(nanvix_rmem_read(blknum2, buffer) == RMEM_BLOCK_SIZE);
 		for (unsigned long i = 0; i < RMEM_BLOCK_SIZE; i++)
 			TEST_ASSERT(buffer[i] == 2);
-		nanvix_memset(buffer, 9, RMEM_BLOCK_SIZE);
+		umemset(buffer, 9, RMEM_BLOCK_SIZE);
 		TEST_ASSERT(nanvix_rmem_read(blknum3, buffer) == RMEM_BLOCK_SIZE);
 		for (unsigned long i = 0; i < RMEM_BLOCK_SIZE; i++)
 			TEST_ASSERT(buffer[i] == 3);
