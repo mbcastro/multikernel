@@ -22,10 +22,40 @@
  * SOFTWARE.
  */
 
+#define SPAWN_SERVER
+
 #include <nanvix/runtime/runtime.h>
 #include <nanvix/runtime/stdikc.h>
 #include <nanvix/servers/spawn.h>
+#include <nanvix/sys/fmutex.h>
+#include <nanvix/sys/noc.h>
+#include <nanvix/sys/thread.h>
 #include <nanvix/ulib.h>
+
+/* Import definitions. */
+extern const int SERVERS_NUM;
+extern const struct serverinfo *SERVERS;
+
+/*============================================================================*
+ * __main2()                                                                  *
+ *============================================================================*/
+
+/**
+ * @brief Server wrapper.
+ */
+static void *server(void *args)
+{
+	int servernum;
+	int (*main_fn) (void);
+
+	servernum = ((int *)args)[0];
+
+	/* Spawn server. */
+	main_fn = SERVERS[servernum].main;
+	main_fn();
+
+	return (NULL);
+}
 
 /*============================================================================*
  * __main2()                                                                  *
@@ -41,14 +71,34 @@
  */
 int __main2(int argc, const char *argv[])
 {
+	int args[THREAD_MAX];
+	kthread_t tids[THREAD_MAX];
+
 	((void) argc);
 	((void) argv);
 
+	uassert(SERVERS_NUM <= (THREAD_MAX - 1));
+
 	__runtime_setup(0);
 
-		uprintf("[nanvix][spawn] waiting for servers....");
+		uprintf("[nanvix][spawn] attached to node %d", knode_get_num());
+		uprintf("[nanvix][spawn] listening to inbox %d", stdinbox_get());
+		uprintf("[nanvix][spawn] syncing in sync %d", stdsync_get());
+
+		/* Spawn servers. */
+		uprintf("[nanvix][spawn] spawning servers....");
+		for (int i = 0; i < SERVERS_NUM; i++)
+		{
+			args[i] = i;
+			uassert(kthread_create(&tids[i], server, &args[i]) == 0);
+		}
+
+		uprintf("[nanvix][spawn] waiting for remote kernels....");
 		uassert(stdsync_fence() == 0);
-		uprintf("[nanvix][spawn] system alive");
+
+		/* Wait for servers. */
+		for (int i = 0; i < SERVERS_NUM; i++)
+			uassert(kthread_join(tids[i], NULL) == 0);
 
 	__runtime_cleanup();
 

@@ -22,54 +22,17 @@
  * SOFTWARE.
  */
 
-#ifndef NANVIX_SERVERS_SPAWN_H_
-#define NANVIX_SERVERS_SPAWN_H_
+#include <nanvix/sys/thread.h>
+#include <nanvix/ulib.h>
 
-	/**
-	 * @brief Number of RMem Servers.
-	 */
-	#define RMEM_SERVERS_NUM 2
+/**
+ * @brief Hello word server!
+ */
+int hello_server(void)
+{
+	uprintf("[nanvix][hello] hello word from server %d",
+		kthread_self()
+	);
 
-	/**
-	 * @brief NoC node number for Spawn Server.
-	 */
-	#define SPAWN_SERVER_NODE 0
-
-	/**
-	 * @brief NoC node number for Name Server.
-	 */
-	#define NAME_SERVER_NODE 0
-
-	/**
-	 * @brief NoC node number for RMem Server.
-	 */
-	#define RMEM_SERVER_1_NODE 1
-
-	/**
-	 * @brief NoC node number for RMem Server.
-	 */
-	#define RMEM_SERVER_2_NODE 0
-
-#ifdef SPAWN_SERVER
-
-	/**
-	 * @brief Declares the servers table.
-	 *
-	 * @param n Number of servers.
-	 * @param x Servers table.
-	 */
-	#define SPAWN_SERVERS(n, x)      \
-		const int SERVERS_NUM = n;   \
-		const struct serverinfo *SERVERS = x;
-
-	/**
-	 * @brief Server information.
-	 */
-	struct serverinfo
-	{
-		int (*main) (void); /**< Main function. */
-	};
-
-#endif /* SPAWN_SERVER*/
-
-#endif /* NANVIX_SERVERS_SPAWN_H_ */
+	return (0);
+}

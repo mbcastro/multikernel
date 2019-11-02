@@ -22,54 +22,26 @@
  * SOFTWARE.
  */
 
-#ifndef NANVIX_SERVERS_SPAWN_H_
-#define NANVIX_SERVERS_SPAWN_H_
+#define SPAWN_SERVER
 
-	/**
-	 * @brief Number of RMem Servers.
-	 */
-	#define RMEM_SERVERS_NUM 2
+#include <nanvix/servers/spawn.h>
 
-	/**
-	 * @brief NoC node number for Spawn Server.
-	 */
-	#define SPAWN_SERVER_NODE 0
+/* Import definitions. */
+extern int hello_server(void);
+extern int name_server(void);
+extern int rmem_server(void);
 
-	/**
-	 * @brief NoC node number for Name Server.
-	 */
-	#define NAME_SERVER_NODE 0
+/**
+ * @brief Number of servers.
+ */
+#define SPAWN_SERVERS_NUM 2
 
-	/**
-	 * @brief NoC node number for RMem Server.
-	 */
-	#define RMEM_SERVER_1_NODE 1
+/**
+ * @brief Table of servers.
+ */
+const struct serverinfo spawn_servers[SPAWN_SERVERS_NUM] = {
+	{ name_server  },
+	{ rmem_server  },
+};
 
-	/**
-	 * @brief NoC node number for RMem Server.
-	 */
-	#define RMEM_SERVER_2_NODE 0
-
-#ifdef SPAWN_SERVER
-
-	/**
-	 * @brief Declares the servers table.
-	 *
-	 * @param n Number of servers.
-	 * @param x Servers table.
-	 */
-	#define SPAWN_SERVERS(n, x)      \
-		const int SERVERS_NUM = n;   \
-		const struct serverinfo *SERVERS = x;
-
-	/**
-	 * @brief Server information.
-	 */
-	struct serverinfo
-	{
-		int (*main) (void); /**< Main function. */
-	};
-
-#endif /* SPAWN_SERVER*/
-
-#endif /* NANVIX_SERVERS_SPAWN_H_ */
+SPAWN_SERVERS(SPAWN_SERVERS_NUM, spawn_servers)

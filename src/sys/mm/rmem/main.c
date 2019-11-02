@@ -506,6 +506,13 @@ static int do_rmem_startup(void)
 	if ((ret = name_link(nodenum, servername)) < 0)
 		return (ret);
 
+	/* Unblock spawner. */
+	uprintf("[nanvix][rmem] server alive");
+	uprintf("[nanvix][rmem] attached to node %d", knode_get_num());
+	uprintf("[nanvix][rmem] listening to mailbox %d", inbox);
+	uprintf("[nanvix][rmem] listening to portal %d", inportal);
+	uprintf("[nanvix][rmem] syncing in sync %d", stdsync_get());
+
 	return (0);
 }
 
@@ -544,7 +551,6 @@ int do_rmem_server(void)
 		goto error;
 
 	/* Unblock spawner. */
-	uassert(stdsync_fence() == 0);
 	uprintf("[nanvix][rmem] server alive");
 
 	if ((ret = do_rmem_loop()) < 0)
@@ -568,19 +574,13 @@ error:
 /**
  * @brief Handles remote memory requests.
  *
- * @param argc Argument count (unused).
- * @param argv Argument list (unused).
- *
  * @returns Always returns zero.
  */
-int __main2(int argc, const char *argv[])
+int rmem_server(void)
 {
-	((void) argc);
-	((void) argv);
-
 	__runtime_setup(1);
 
-	do_rmem_server();
+		do_rmem_server();
 
 	__runtime_cleanup();
 

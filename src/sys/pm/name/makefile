@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# Copyright(c) 2018 Pedro Henrique Penna <pedrohenriquepenna@gmail.com>
+# Copyright(c) 2011-2019 The Maintainers of Nanvix
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -22,34 +22,12 @@
 # SOFTWARE.
 #
 
-#===============================================================================
-# Toolchain Configuration
-#===============================================================================
-
-# Compiler Options
-ifneq ($(LIBLWIP),)
-CFLAGS += -I $(INCDIR)/posix
-endif
-
-# Libraries
-LIBS := -Wl,--whole-archive
-LIBS += $(LIBDIR)/$(LIBHAL)
-LIBS += $(LIBDIR)/$(LIBKERNEL)
-LIBS += -Wl,--no-whole-archive
-LIBS += $(LIBDIR)/$(LIBRUNTIME)
-LIBS += $(LIBDIR)/$(LIBC)
-LIBS += $(LIBDIR)/$(LIBNANVIX)
-ifneq ($(LIBLWIP),)
-LIBS += $(LIBDIR)/$(LIBLWIP)
-endif
-LIBS += $(LIBDIR)/$(BARELIB) $(THEIR_LIBS)
+# Module Name
+MODULE = nanvix-name.$(OBJ_SUFFIX).a
 
 #===============================================================================
-# Binaries Sources and Objects
+# Sources and Objects
 #===============================================================================
-
-# Binary
-EXEC = nanvix-name.$(TARGET)
 
 # C Source Files
 SRC = $(wildcard *.c)
@@ -59,19 +37,13 @@ OBJ = $(SRC:.c=.$(OBJ_SUFFIX).o)
 
 #===============================================================================
 
-ifeq ($(TARGET),unix64)
-LINKER_SCRIPT=
-else
-LINKER_SCRIPT = -L $(LINKERDIR)/ -T link.ld
-endif
-
 # Builds All Object Files
 all: $(OBJ)
 ifeq ($(VERBOSE), no)
-	@echo [CC] $(EXEC)
-	@$(CC) $(LDFLAGS) $(LINKER_SCRIPT) -o $(BINDIR)/$(EXEC) $(OBJ) $(LIBS)
+	@echo [AR] $(MODULE)
+	@$(AR) $(ARFLAGS) $(LIBDIR)/$(MODULE) $(OBJ)
 else
-	$(CC) $(LDFLAGS) $(LINKER_SCRIPT) -o $(BINDIR)/$(EXEC) $(OBJ) $(LIBS)
+	$(AR) $(ARFLAGS) $(LIBDIR)/$(MODULE) $(OBJ)
 endif
 
 # Cleans All Object Files
@@ -86,13 +58,13 @@ endif
 # Cleans Everything
 distclean: clean
 ifeq ($(VERBOSE), no)
-	@echo [CLEAN] $(EXEC)
-	@rm -rf $(BINDIR)/$(EXEC)
+	@echo [CLEAN] $(MODULE)
+	@rm -rf $(LIBDIR)/$(MODULE)
 else
-	rm -rf $(BINDIR)/$(EXEC)
+	rm -rf $(LIBDIR)/$(MODULE)
 endif
 
-# Builds a C source file.
+# Builds a C Source file
 %.$(OBJ_SUFFIX).o: %.c
 ifeq ($(VERBOSE), no)
 	@echo [CC] $@
