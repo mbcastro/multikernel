@@ -84,17 +84,17 @@ static void test_rmem_rcache_put_write(void)
  */
 static void test_rmem_rcache_get_flush(void)
 {
-	rpage_t page_num[5];
+	rpage_t page_num[RMEM_CACHE_LENGTH];
 	static char *cache_data;
 
-	for (int i = 0; i < 5; i++)
+	for (int i = 0; i < RMEM_CACHE_LENGTH; i++)
 	{
 		TEST_ASSERT((page_num[i] = nanvix_rcache_alloc()) != RMEM_NULL);
 		TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[i])) != NULL);
 		umemset(cache_data, i, RMEM_BLOCK_SIZE);
 	}
 
-	for (int i = 0; i < 5; i++)
+	for (int i = 0; i < RMEM_CACHE_LENGTH; i++)
 		TEST_ASSERT(nanvix_rcache_flush(page_num[i]) == 0);
 
 	TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[3])) != NULL);
@@ -103,7 +103,7 @@ static void test_rmem_rcache_get_flush(void)
 	for (int i = 0; i < RMEM_BLOCK_SIZE; i++)
 		TEST_ASSERT(cache_data[i] == 3);
 
-	for (int i = 0; i < 5; i++)
+	for (int i = 0; i < RMEM_CACHE_LENGTH; i++)
 		TEST_ASSERT(nanvix_rcache_free(page_num[i]) == 0);
 }
 
@@ -116,24 +116,24 @@ static void test_rmem_rcache_get_flush(void)
  */
 static void test_rmem_rcache_fifo(void)
 {
-	rpage_t page_num[6];
+	rpage_t page_num[RMEM_CACHE_LENGTH+1];
 	static char *cache_data;
 
 	nanvix_rcache_select_replacement_policy(RMEM_CACHE_FIFO);
 
-	for (int i = 0; i < 5; i++)
+	for (int i = 0; i < RMEM_CACHE_LENGTH; i++)
 	{
 		TEST_ASSERT((page_num[i] = nanvix_rcache_alloc()) != RMEM_NULL);
 		TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[i])) != NULL);
 		umemset(cache_data, i, RMEM_BLOCK_SIZE);
 	}
 
-	for (int i = 0; i < 5; i++)
+	for (int i = 0; i < RMEM_CACHE_LENGTH; i++)
 		TEST_ASSERT(nanvix_rcache_flush(page_num[i]) == 0);
 
 	/* Eviction will occur */
-	TEST_ASSERT((page_num[5] = nanvix_rcache_alloc()) != RMEM_NULL);
-	TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[5])) != NULL);
+	TEST_ASSERT((page_num[RMEM_CACHE_LENGTH] = nanvix_rcache_alloc()) != RMEM_NULL);
+	TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[RMEM_CACHE_LENGTH])) != NULL);
 
 	/* Checksum */
 	for (int i = 0; i < RMEM_BLOCK_SIZE; i++)
@@ -152,9 +152,9 @@ static void test_rmem_rcache_fifo(void)
 	/* Check if the page was evicted */
 	TEST_ASSERT(nanvix_rcache_flush(page_num[1]) < 0);
 
-	for (int i = 0; i < 5; i++)
+	for (int i = 0; i < RMEM_CACHE_LENGTH; i++)
 		TEST_ASSERT(nanvix_rcache_free(page_num[i]) == 0);
-	TEST_ASSERT(nanvix_rcache_free(page_num[5]) == 0);
+	TEST_ASSERT(nanvix_rcache_free(page_num[RMEM_CACHE_LENGTH]) == 0);
 }
 
 /*============================================================================*
@@ -166,45 +166,45 @@ static void test_rmem_rcache_fifo(void)
  */
 static void test_rmem_rcache_lifo(void)
 {
-	rpage_t page_num[6];
+	rpage_t page_num[RMEM_CACHE_LENGTH+1];
 	static char *cache_data;
 
 	nanvix_rcache_select_replacement_policy(RMEM_CACHE_LIFO);
 
-	for (int i = 0; i < 5; i++)
+	for (int i = 0; i < RMEM_CACHE_LENGTH; i++)
 	{
 		TEST_ASSERT((page_num[i] = nanvix_rcache_alloc()) != RMEM_NULL);
 		TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[i])) != NULL);
 		umemset(cache_data, i, RMEM_BLOCK_SIZE);
 	}
 
-	for (int i = 0; i < 5; i++)
+	for (int i = 0; i < RMEM_CACHE_LENGTH; i++)
 		TEST_ASSERT(nanvix_rcache_flush(page_num[i]) == 0);
 
 	/* Eviction will occur */
-	TEST_ASSERT((page_num[6] = nanvix_rcache_alloc()) != RMEM_NULL);
-	TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[6])) != NULL);
+	TEST_ASSERT((page_num[RMEM_CACHE_LENGTH] = nanvix_rcache_alloc()) != RMEM_NULL);
+	TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[RMEM_CACHE_LENGTH])) != NULL);
 
 	/* Checksum */
 	for (int i = 0; i < RMEM_BLOCK_SIZE; i++)
 		TEST_ASSERT(cache_data[i] == 0);
 
 	/* Check if the page was evicted */
-	TEST_ASSERT(nanvix_rcache_flush(page_num[4]) < 0);
+	TEST_ASSERT(nanvix_rcache_flush(page_num[RMEM_CACHE_LENGTH-1]) < 0);
 
 	/* Another eviction will occur */
-	TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[4])) != NULL);
+	TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[RMEM_CACHE_LENGTH-1])) != NULL);
 
 	/* Checksum */
 	for (int i = 0; i < RMEM_BLOCK_SIZE; i++)
-		TEST_ASSERT(cache_data[i] == 4);
+		TEST_ASSERT(cache_data[i] == RMEM_CACHE_LENGTH-1);
 
 	/* Check if the page was evicted */
-	TEST_ASSERT(nanvix_rcache_flush(page_num[5]) < 0);
+	TEST_ASSERT(nanvix_rcache_flush(page_num[RMEM_CACHE_LENGTH]) < 0);
 
-	for (int i = 0; i < 5; i++)
+	for (int i = 0; i < RMEM_CACHE_LENGTH; i++)
 		TEST_ASSERT(nanvix_rcache_free(page_num[i]) == 0);
-	TEST_ASSERT(nanvix_rcache_free(page_num[5]) == 0);
+	TEST_ASSERT(nanvix_rcache_free(page_num[RMEM_CACHE_LENGTH]) == 0);
 }
 
 /*============================================================================*
@@ -216,24 +216,24 @@ static void test_rmem_rcache_lifo(void)
  */
 static void test_rmem_rcache_lru(void)
 {
-	rpage_t page_num[6];
+	rpage_t page_num[RMEM_CACHE_LENGTH+1];
 	static char *cache_data;
 
 	nanvix_rcache_select_replacement_policy(RMEM_CACHE_LRU);
 
-	for (int i = 0; i < 5; i++)
+	for (int i = 0; i < RMEM_CACHE_LENGTH; i++)
 	{
 		TEST_ASSERT((page_num[i] = nanvix_rcache_alloc()) != RMEM_NULL);
 		TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[i])) != NULL);
 		umemset(cache_data, i, RMEM_BLOCK_SIZE);
 	}
 
-	for (int i = 0; i < 5; i++)
+	for (int i = 0; i < RMEM_CACHE_LENGTH; i++)
 		TEST_ASSERT(nanvix_rcache_flush(page_num[i]) == 0);
 
 	/* Eviction will occur */
-	TEST_ASSERT((page_num[6] = nanvix_rcache_alloc()) != RMEM_NULL);
-	TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[6])) != NULL);
+	TEST_ASSERT((page_num[RMEM_CACHE_LENGTH] = nanvix_rcache_alloc()) != RMEM_NULL);
+	TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[RMEM_CACHE_LENGTH])) != NULL);
 
 	/* Checksum */
 	for (int i = 0; i < RMEM_BLOCK_SIZE; i++)
@@ -257,7 +257,7 @@ static void test_rmem_rcache_lru(void)
 
 	for (int i = 0; i < 5; i++)
 		TEST_ASSERT(nanvix_rcache_free(page_num[i]) == 0);
-	TEST_ASSERT(nanvix_rcache_free(page_num[5]) == 0);
+	TEST_ASSERT(nanvix_rcache_free(page_num[RMEM_CACHE_LENGTH]) == 0);
 }
 
 /*============================================================================*
