@@ -34,7 +34,7 @@ void test_rmem_cache(void)
 	/* Run API tests. */
 	for (int i = 0; tests_rmem_cache_api[i].test_fn != NULL; i++)
 	{
-		uprintf("[nanvix][test][rmem][cache][api] %s\n", tests_rmem_cache_api[i].name);
+		uprintf("[nanvix][test][rmem][cache][api] %s", tests_rmem_cache_api[i].name);
 		tests_rmem_cache_api[i].test_fn();
 	}
 }

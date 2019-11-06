@@ -35,14 +35,14 @@ void test_name(void)
 	/* Run API tests. */
 	for (int i = 0; tests_name_api[i].test_fn != NULL; i++)
 	{
-		uprintf("[nanvix][test][name][api] %s\n", tests_name_api[i].name);
+		uprintf("[nanvix][test][name][api] %s", tests_name_api[i].name);
 		tests_name_api[i].test_fn();
 	}
 
 	/* Run fault injection tests. */
 	for (int i = 0; tests_name_fault[i].test_fn != NULL; i++)
 	{
-		uprintf("[nanvix][test][name][fault] %s\n", tests_name_fault[i].name);
+		uprintf("[nanvix][test][name][fault] %s", tests_name_fault[i].name);
 		tests_name_fault[i].test_fn();
 	}
 }

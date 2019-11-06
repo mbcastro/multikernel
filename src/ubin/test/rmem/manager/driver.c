@@ -36,21 +36,21 @@ void test_rmem(void)
 	/* Run API tests. */
 	for (int i = 0; tests_rmem_manager_api[i].test_fn != NULL; i++)
 	{
-		uprintf("[nanvix][test][rmem-manager][api] %s\n", tests_rmem_manager_api[i].name);
+		uprintf("[nanvix][test][rmem-manager][api] %s", tests_rmem_manager_api[i].name);
 		tests_rmem_manager_api[i].test_fn();
 	}
 
 	/* Run fault injection tests. */
 	for (int i = 0; tests_rmem_manager_fault[i].test_fn != NULL; i++)
 	{
-		uprintf("[nanvix][test][rmem-manager][fault] %s\n", tests_rmem_manager_fault[i].name);
+		uprintf("[nanvix][test][rmem-manager][fault] %s", tests_rmem_manager_fault[i].name);
 		tests_rmem_manager_fault[i].test_fn();
 	}
 
 	/* Run stress tests. */
 	for (int i = 0; tests_rmem_manager_stress[i].test_fn != NULL; i++)
 	{
-		uprintf("[nanvix][test][rmem-manager][stress] %s\n", tests_rmem_manager_stress[i].name);
+		uprintf("[nanvix][test][rmem-manager][stress] %s", tests_rmem_manager_stress[i].name);
 		tests_rmem_manager_stress[i].test_fn();
 	}
 }
