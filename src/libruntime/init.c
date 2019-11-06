@@ -65,22 +65,22 @@ int __runtime_setup(int ring)
 	if ((current_ring[tid] < 1) && (ring >= 1))
 	{
 		uprintf("[nanvix][thread %d] initalizing ring 1", tid);
-		__name_setup();
+		uassert(__name_setup() == 0);
 	}
 
 	/* Initialize Named IKC facilities. */
 	if ((current_ring[tid] < 2) && (ring >= 2))
 	{
 		uprintf("[nanvix][thread %d] initalizing ring 2", tid);
-		__nanvix_mailbox_setup();
-		__nanvix_portal_setup();
+		uassert(__nanvix_mailbox_setup() == 0);
+		uassert(__nanvix_portal_setup() == 0);
 	}
 
 	/* Initialize RMem Service client. */
 	if ((current_ring[tid] < 3) && (ring >= 3))
 	{
 		uprintf("[nanvix][thread %d] initalizing ring 3", tid);
-		__nanvix_rmem_setup();
+		uassert(__nanvix_rmem_setup() == 0);
 	}
 
 	current_ring[tid] = ring;
@@ -99,18 +99,18 @@ int __runtime_cleanup(void)
 
 	/* Cleanup RMem Service client. */
 	if (current_ring[tid] >= 3)
-		__nanvix_rmem_cleanup();
+		uassert(__nanvix_rmem_cleanup() == 0);
 
 	/* Clean up IKC facilities. */
 	if (current_ring[tid] >= 2)
 	{
-		__nanvix_portal_cleanup();
-		__nanvix_mailbox_cleanup();
+		uassert(__nanvix_portal_cleanup() == 0);
+		uassert(__nanvix_mailbox_cleanup() == 0);
 	}
 
 	/* Clean up Name Service client. */
 	if (current_ring[tid] >= 1)
-		__name_cleanup();
+		uassert(__name_cleanup() == 0);
 
 	uassert(__stdportal_cleanup() == 0);
 	uassert(__stdmailbox_cleanup() == 0);
