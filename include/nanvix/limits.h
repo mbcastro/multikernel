@@ -25,7 +25,7 @@
 #ifndef NANVIX_LIMITS_H_
 #define NANVIX_LIMITS_H_
 
-	#include <nanvix/hal/hal.h>
+	#include <nanvix/hal.h>
 
 	/**
 	 * @brief Number of NoC nodes.
