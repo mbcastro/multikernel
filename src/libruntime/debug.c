@@ -24,18 +24,22 @@
 #include <stdarg.h>
 
 /**
+ * @brief String length.
+ */
+#define STRING_LENGTH 80
+
+/**
  * @todo TODO: provide a detailed description for this function.
  */
 void debug(const char *modulename, const char *fmt, ...)
 {
 	va_list args;
-	int len = 80 - 2;
-	char strbuf[80];
+	int len = STRING_LENGTH - 2;
+	char strbuf[STRING_LENGTH];
 
 	((void) modulename);
 
 	ustrncpy(strbuf, fmt, len);
-	ustrcat(strbuf, "\n");
 
 	va_start(args, fmt);
 	uprintf(strbuf, args);
