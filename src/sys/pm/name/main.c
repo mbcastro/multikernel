@@ -37,10 +37,10 @@
 #include <posix/errno.h>
 #include <stdint.h>
 
-#define DEBUG_NAME
+#define __DEBUG_NAME 0
 
-#ifdef DEBUG_NAME
-	#define name_debug(fmt, ...) debug("name", fmt, __VA_ARGS__)
+#if (__DEBUG_NAME)
+	#define name_debug(fmt, ...) uprintf(fmt, __VA_ARGS__)
 #else
 	#define name_debug(fmt, ...) { }
 #endif

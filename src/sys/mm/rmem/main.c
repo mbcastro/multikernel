@@ -47,7 +47,7 @@
 #define __DEBUG_RMEM 0
 
 #if (__DEBUG_RMEM)
-	#define rmem_debug(fmt, ...) debug("rmem", fmt, __VA_ARGS__)
+	#define rmem_debug(fmt, ...) uprintf(fmt, __VA_ARGS__)
 #else
 	#define rmem_debug(fmt, ...) { }
 #endif
