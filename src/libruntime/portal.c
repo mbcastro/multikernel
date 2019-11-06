@@ -266,7 +266,6 @@ int get_inportal(void)
  */
 int __nanvix_portal_cleanup(void)
 {
-	int ret;
 	int local;
 
 	/* Uninitialized named portal facility. */
@@ -274,10 +273,6 @@ int __nanvix_portal_cleanup(void)
 		return (-EINVAL);
 
 	local = knode_get_num();
-
-	/* Destroy underlying unnamed input portal. */
-	if ((ret = kportal_unlink(inportals[local])) < 0)
-		return (ret);
 
 	initialized[local] = 0;
 
