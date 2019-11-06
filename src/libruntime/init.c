@@ -116,7 +116,7 @@ int __runtime_cleanup(void)
 	uassert(__stdmailbox_cleanup() == 0);
 	uassert(__stdsync_cleanup() == 0);
 
-	current_ring[tid] = 0;
+	current_ring[tid] = -1;
 
 	return (0);
 }
