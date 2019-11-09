@@ -35,6 +35,7 @@
 /* Import definitions. */
 extern const int SERVERS_NUM;
 extern const struct serverinfo *SERVERS;
+extern const char *spawner_name;
 
 /*============================================================================*
  * __main2()                                                                  *
@@ -81,24 +82,28 @@ int __main2(int argc, const char *argv[])
 
 	__runtime_setup(0);
 
-		uprintf("[nanvix][spawn] attached to node %d", knode_get_num());
-		uprintf("[nanvix][spawn] listening to inbox %d", stdinbox_get());
-		uprintf("[nanvix][spawn] syncing in sync %d", stdsync_get());
+		uprintf("[nanvix][%s] attached to node %d", spawner_name, knode_get_num());
+		uprintf("[nanvix][%s] listening to inbox %d", spawner_name, stdinbox_get());
+		uprintf("[nanvix][%s] syncing in sync %d", spawner_name, stdsync_get());
+
+		uprintf("[nanvix][%s] waiting for remote kernels...", spawner_name);
+		uassert(stdsync_fence() == 0);
 
 		/* Spawn servers. */
-		uprintf("[nanvix][spawn] spawning servers....");
+		uprintf("[nanvix][%s] spawning servers...", spawner_name);
 		for (int i = 0; i < SERVERS_NUM; i++)
 		{
 			args[i] = i;
 			uassert(kthread_create(&tids[i], server, &args[i]) == 0);
 		}
 
-		uprintf("[nanvix][spawn] waiting for remote kernels....");
-		uassert(stdsync_fence() == 0);
+		uprintf("[nanvix][%s] broadcasting shutdown signal...", spawner_name);
 
 		/* Wait for servers. */
 		for (int i = 0; i < SERVERS_NUM; i++)
 			uassert(kthread_join(tids[i], NULL) == 0);
+
+		uprintf("[nanvix][%s] shutting down...", spawner_name);
 
 	__runtime_cleanup();
 

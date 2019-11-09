@@ -33,14 +33,13 @@ extern int rmem_server(void);
 /**
  * @brief Number of servers.
  */
-#define SPAWN_SERVERS_NUM 2
+#define SPAWN_SERVERS_NUM 1
 
 /**
  * @brief Table of servers.
  */
 const struct serverinfo spawn_servers[SPAWN_SERVERS_NUM] = {
-	{ rmem_server  },
-	{ hello_server },
+	{ rmem_server },
 };
 
-SPAWN_SERVERS(SPAWN_SERVERS_NUM, spawn_servers)
+SPAWN_SERVERS(SPAWN_SERVERS_NUM, spawn_servers, "spawn1")

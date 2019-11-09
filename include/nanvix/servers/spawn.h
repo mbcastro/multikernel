@@ -28,7 +28,7 @@
 	/**
 	 * @brief Number of RMem Servers.
 	 */
-	#define RMEM_SERVERS_NUM 2
+	#define RMEM_SERVERS_NUM 1
 
 	/**
 	 * @brief NoC node number for Spawn Server.
@@ -57,10 +57,12 @@
 	 *
 	 * @param n Number of servers.
 	 * @param x Servers table.
+	 * @param y Spawner name.
 	 */
-	#define SPAWN_SERVERS(n, x)      \
-		const int SERVERS_NUM = n;   \
-		const struct serverinfo *SERVERS = x;
+	#define SPAWN_SERVERS(n, x, y)            \
+		const int SERVERS_NUM = n;            \
+		const struct serverinfo *SERVERS = x; \
+		const char *spawner_name = y;
 
 	/**
 	 * @brief Server information.

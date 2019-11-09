@@ -33,5 +33,4 @@ struct rmem_servers_info
 	const char *name;
 } rmem_servers[RMEM_SERVERS_NUM] = {
 	{ RMEM_SERVER_1_NODE, "/rmem0" },
-	{ RMEM_SERVER_2_NODE, "/rmem1" },
 };

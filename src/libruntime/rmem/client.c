@@ -46,8 +46,7 @@ static struct
 	int outbox;      /**< Output mailbox for requests.   */
 	int outportal;   /**< Output portal for data.        */
 } server[RMEM_SERVERS_NUM] = {
-	{ 0, -1, -1 },
-	{ 0, -1, -1 },
+	[0 ... (RMEM_SERVERS_NUM - 1)] = { 0, -1, -1 }
 };
 
 /*============================================================================*
