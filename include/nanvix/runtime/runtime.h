@@ -40,6 +40,13 @@
 	 */
 	extern int __runtime_cleanup(void);
 
+	/**
+	 * @brief Shuts down nanvix.
+	 *
+	 * @returns Always zero.
+	 */
+	extern int nanvix_shutdown(void);
+
 /*============================================================================*
  * Ring 1                                                                     *
  *============================================================================*/
