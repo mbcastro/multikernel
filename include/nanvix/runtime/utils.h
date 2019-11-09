@@ -26,8 +26,8 @@
 #define NANVIX_RUNTIME_UTILS_H_
 
 	#include <posix/errno.h>
-	#include <stddef.h>
-	#include <stdint.h>
+	#include <posix/stddef.h>
+	#include <posix/stdint.h>
 
 /*============================================================================*
  * Bitmap                                                                     *

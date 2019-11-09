@@ -26,7 +26,7 @@
 #define NANVIX_RUNTIME_MAILBOX_H_
 
 	#include <nanvix/sys/mailbox.h>
-	#include <sys/types.h>
+	#include <posix/sys/types.h>
 
 	/**
 	 * @brief Get named input mailbox.
