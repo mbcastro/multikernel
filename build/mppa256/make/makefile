@@ -80,9 +80,8 @@ all-k1bdp:
 		LIBNAVNIX=libnanvix-k1bdp.a                    \
 		LIBKERNEL=libkernel-k1bdp.a                    \
 		LIBHAL=libhal-k1bdp.a                          \
-		BARELIB=klib-k1bdp.a                           \
-		OBJ_SUFFIX=k1bdp                               \
-		EXEC=test-driver.k1bdp
+		BARELIB=barelib-k1bdp.a                        \
+		OBJ_SUFFIX=k1bdp
 
 # Builds everything for ioddr node variant.
 all-k1bio:
@@ -95,8 +94,7 @@ all-k1bio:
 		LIBNANVIX=libnanvix-k1bio.a                     \
 		LIBKERNEL=libkernel-k1bio.a                     \
 		LIBHAL=libhal-k1bio.a                           \
-		BARELIB=klib-k1bio.a                            \
-		EXEC=test-driver.k1bio                          \
+		BARELIB=barelib-k1bio.a                         \
 		OBJ_SUFFIX=k1bio
 
 # Cleans object files.
@@ -123,9 +121,8 @@ distclean-k1bdp: clean-k1bdp
 		LIBNANVIX=libnanvix-k1bdp.a   \
 		LIBKERNEL=libkernel-k1bdp.a   \
 		LIBHAL=libhal-k1bdp.a         \
-		BARELIB=klib-k1bdp.a          \
-		OBJ_SUFFIX=k1bdp              \
-		EXEC=test-driver.k1bdp
+		BARELIB=barelib-k1bdp.a       \
+		OBJ_SUFFIX=k1bdp
 
 # Cleans everything for ioddr variant.
 distclean-k1bio: clean-k1bio
@@ -135,6 +132,5 @@ distclean-k1bio: clean-k1bio
 		LIBNANVIX=libnanvix-k1bio.a   \
 		LIBKERNEL=libkernel-k1bio.a   \
 		LIBHAL=libhal-k1bio.a         \
-		BARELIB=klib-k1bio.a          \
-		OBJ_SUFFIX=k1bio              \
-		EXEC=test-driver.k1bio
+		BARELIB=barelib-k1bio.a       \
+		OBJ_SUFFIX=k1bio

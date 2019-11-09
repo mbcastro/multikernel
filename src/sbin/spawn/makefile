@@ -71,7 +71,7 @@ endif
 # Builds All Object Files
 all: spawn0 spawn1
 
-spawn0: main.o spawn0.o
+spawn0: main.$(OBJ_SUFFIX).o spawn0.$(OBJ_SUFFIX).o
 ifeq ($(VERBOSE), no)
 	@echo [CC] nanvix-$@.$(OBJ_SUFFIX)
 	@$(CC) $(LDFLAGS) $(LINKER_SCRIPT) -o $(BINDIR)/nanvix-$@.$(OBJ_SUFFIX) $^ $(LIBS)
@@ -79,7 +79,7 @@ else
 	$(CC) $(LDFLAGS) $(LINKER_SCRIPT) -o $(BINDIR)/nanvix-$@.$(OBJ_SUFFIX) $^ $(LIBS)
 endif
 
-spawn1: main.o spawn1.o
+spawn1: main.$(OBJ_SUFFIX).o spawn1.$(OBJ_SUFFIX).o
 ifeq ($(VERBOSE), no)
 	@echo [CC] nanvix-$@.$(OBJ_SUFFIX)
 	@$(CC) $(LDFLAGS) $(LINKER_SCRIPT) -o $(BINDIR)/nanvix-$@.$(OBJ_SUFFIX) $^ $(LIBS)

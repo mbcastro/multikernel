@@ -49,7 +49,7 @@ LIBS += $(LIBDIR)/$(BARELIB) $(THEIR_LIBS)
 #===============================================================================
 
 # Binary
-EXEC = nanvix-test.$(TARGET)
+EXEC = nanvix-test.$(OBJ_SUFFIX)
 
 # C Source Files
 SRC = $(wildcard *.c)              \
