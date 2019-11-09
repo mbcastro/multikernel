@@ -257,3 +257,29 @@ error1:
 	nanvix_mutex_unlock(&lock);
 	return (-EAGAIN);
 }
+
+/*============================================================================*
+ * name_shutdown()                                                            *
+ *============================================================================*/
+
+/**
+ * @todo TODO: provide a detailed description for this function.
+ */
+int name_shutdown(void)
+{
+	int ret;
+	struct name_message msg;
+
+	/* Initilize name client. */
+	if (!initialized)
+		return (-EAGAIN);
+
+	/* Build operation header. */
+	msg.header.source = processor_node_get_num(core_get_id());
+	msg.header.opcode = NAME_EXIT;
+
+		if ((ret = kmailbox_write(server, &msg, sizeof(struct name_message))) != sizeof(struct name_message))
+			return (ret);
+
+	return (0);
+}
