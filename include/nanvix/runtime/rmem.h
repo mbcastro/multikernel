@@ -32,7 +32,7 @@
 #endif /* NANVIX_RUNTIME_RMEM_H_ */
 
 	#include <nanvix/servers/rmem.h>
-	#include <stddef.h>
+	#include <posix/stddef.h>
 
 #if defined(__NEED_RMEM_CACHE)
 

@@ -22,35 +22,26 @@
  * SOFTWARE.
  */
 
+#define __NEED_NAME_CLIENT
+#define __NEED_RMEM_CLIENT
+
 #include <nanvix/runtime/runtime.h>
-#include <nanvix/runtime/stdikc.h>
-#include <nanvix/servers/spawn.h>
+#include <nanvix/servers/name.h>
+#include <nanvix/servers/rmem.h>
 #include <nanvix/ulib.h>
 
-/*============================================================================*
- * __main2()                                                                  *
- *============================================================================*/
-
 /**
- * @brief Spawns servers and user processes.
- *
- * @param argc Argument count (unused).
- * @param argv Argument list (unused).
- *
- * @returns Always returns zero.
+ * The nanvix_shutdown() function shuts down sends a shutdown signal
+ * to all system services, asking them to terminate.
  */
-int __main2(int argc, const char *argv[])
+int nanvix_shutdown(void)
 {
-	((void) argc);
-	((void) argv);
+	__runtime_setup(3);
 
-	__runtime_setup(0);
-
-		uprintf("[nanvix][spawn] waiting for servers....");
-		uassert(stdsync_fence() == 0);
-		uprintf("[nanvix][spawn] system alive");
-
-	__runtime_cleanup();
+	/* Broadcast shutdown signal. */
+	uassert(name_shutdown() == 0);
+	for (int i = 0; i < RMEM_SERVERS_NUM; i++)
+		uassert(nanvix_rmem_shutdown(i) == 0);
 
 	return (0);
 }

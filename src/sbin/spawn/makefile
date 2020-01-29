@@ -31,11 +31,17 @@ ifneq ($(LIBLWIP),)
 CFLAGS += -I $(INCDIR)/posix
 endif
 
+# Modules
+MODULES := $(LIBDIR)/nanvix-hello.$(OBJ_SUFFIX).a \
+           $(LIBDIR)/nanvix-rmem.$(OBJ_SUFFIX).a  \
+           $(LIBDIR)/nanvix-name.$(OBJ_SUFFIX).a
+
 # Libraries
 LIBS := -Wl,--whole-archive
 LIBS += $(LIBDIR)/$(LIBHAL)
 LIBS += $(LIBDIR)/$(LIBKERNEL)
 LIBS += -Wl,--no-whole-archive
+LIBS += $(MODULES)
 LIBS += $(LIBDIR)/$(LIBRUNTIME)
 LIBS += $(LIBDIR)/$(LIBC)
 LIBS += $(LIBDIR)/$(LIBNANVIX)
@@ -47,9 +53,6 @@ LIBS += $(LIBDIR)/$(BARELIB) $(THEIR_LIBS)
 #===============================================================================
 # Binaries Sources and Objects
 #===============================================================================
-
-# Binary
-EXEC = nanvix-name.$(TARGET)
 
 # C Source Files
 SRC = $(wildcard *.c)
@@ -66,12 +69,22 @@ LINKER_SCRIPT = -L $(LINKERDIR)/ -T link.ld
 endif
 
 # Builds All Object Files
-all: $(OBJ)
+all: spawn0 spawn1
+
+spawn0: main.$(OBJ_SUFFIX).o spawn0.$(OBJ_SUFFIX).o
 ifeq ($(VERBOSE), no)
-	@echo [CC] $(EXEC)
-	@$(CC) $(LDFLAGS) $(LINKER_SCRIPT) -o $(BINDIR)/$(EXEC) $(OBJ) $(LIBS)
+	@echo [CC] nanvix-$@.$(OBJ_SUFFIX)
+	@$(CC) $(LDFLAGS) $(LINKER_SCRIPT) -o $(BINDIR)/nanvix-$@.$(OBJ_SUFFIX) $^ $(LIBS)
 else
-	$(CC) $(LDFLAGS) $(LINKER_SCRIPT) -o $(BINDIR)/$(EXEC) $(OBJ) $(LIBS)
+	$(CC) $(LDFLAGS) $(LINKER_SCRIPT) -o $(BINDIR)/nanvix-$@.$(OBJ_SUFFIX) $^ $(LIBS)
+endif
+
+spawn1: main.$(OBJ_SUFFIX).o spawn1.$(OBJ_SUFFIX).o
+ifeq ($(VERBOSE), no)
+	@echo [CC] nanvix-$@.$(OBJ_SUFFIX)
+	@$(CC) $(LDFLAGS) $(LINKER_SCRIPT) -o $(BINDIR)/nanvix-$@.$(OBJ_SUFFIX) $^ $(LIBS)
+else
+	$(CC) $(LDFLAGS) $(LINKER_SCRIPT) -o $(BINDIR)/nanvix-$@.$(OBJ_SUFFIX) $^ $(LIBS)
 endif
 
 # Cleans All Object Files
@@ -86,10 +99,10 @@ endif
 # Cleans Everything
 distclean: clean
 ifeq ($(VERBOSE), no)
-	@echo [CLEAN] $(EXEC)
-	@rm -rf $(BINDIR)/$(EXEC)
+	@echo [CLEAN] nanvix-spawn?.$(OBJ_SUFFIX)
+	@rm -rf $(BINDIR)/nanvix-spawn?.$(OBJ_SUFFIX)
 else
-	rm -rf $(BINDIR)/$(EXEC)
+	rm -rf $(BINDIR)/nanvix-spawn?.$(OBJ_SUFFIX)
 endif
 
 # Builds a C source file.

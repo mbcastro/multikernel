@@ -31,13 +31,16 @@
 #include <nanvix/runtime/runtime.h>
 #include <nanvix/runtime/utils.h>
 #include <nanvix/sys/mailbox.h>
+#include <nanvix/sys/noc.h>
 #include <nanvix/limits.h>
 #include <nanvix/ulib.h>
 #include <posix/errno.h>
 #include <stdint.h>
 
-#ifdef DEBUG_NAME
-	#define name_debug(fmt, ...) debug("name", fmt, __VA_ARGS__)
+#define __DEBUG_NAME 0
+
+#if (__DEBUG_NAME)
+	#define name_debug(fmt, ...) uprintf(fmt, __VA_ARGS__)
 #else
 	#define name_debug(fmt, ...) { }
 #endif
@@ -88,7 +91,13 @@ static void do_name_init(void)
 
 	ustrcpy(names[NAME_SERVER_NODE].name, "/io0");
 
-	inbox = stdinbox_get();
+	uassert((inbox = stdinbox_get() >= 0));
+
+	/* Unblock spawner. */
+	uprintf("[nanvix][name] server alive");
+	uprintf("[nanvix][name] attached to node %d", knode_get_num());
+	uprintf("[nanvix][name] listening to inbox %d", inbox);
+	uprintf("[nanvix][name] syncing in sync %d", stdsync_get());
 }
 
 /*=======================================================================*
@@ -213,7 +222,7 @@ static int do_name_unlink(char *name)
 /**
  * @brief Handles remote name requests.
  *
- * @returns Always returns EXIT_SUCCESS.
+ * @returns Always returns 0.
  */
 int do_name_server(void)
 {
@@ -224,10 +233,6 @@ int do_name_server(void)
 	uprintf("[nanvix][name] booting up server");
 
 	do_name_init();
-
-	/* Unblock spawner. */
-	uassert(stdsync_fence() == 0);
-	uprintf("[nanvix][name] server alive");
 
 	while (!shutdown)
 	{
@@ -306,7 +311,7 @@ int do_name_server(void)
 
 	uprintf("[nanvix][name] shutting down server");
 
-	return (EXIT_SUCCESS);
+	return (0);
 }
 
 /*============================================================================*
@@ -316,19 +321,13 @@ int do_name_server(void)
 /**
  * @brief Handles remote name requests.
  *
- * @param argc Argument count (unused).
- * @param argv Argument list (unused).
- *
  * @returns Always returns zero.
  */
-int __main2(int argc, const char *argv[])
+int name_server(void)
 {
-	((void) argc);
-	((void) argv);
-
 	__runtime_setup(0);
 
-	do_name_server();
+		do_name_server();
 
 	__runtime_cleanup();
 

@@ -23,74 +23,42 @@
 #
 
 # Builds Everything
-all: all-libruntime all-sbin all-sys all-ubin
+all: all-zombie all-test
 
 # Cleans Build Objects
-clean: clean-libruntime clean-sbin clean-sys clean-ubin
+clean: clean-zombie clean-test
 
 # Cleans Everything
-distclean: distclean-libruntime distclean-sbin distclean-sys distclean-ubin
+distclean: distclean-zombie distclean-test
 
 #===============================================================================
-# Runtime Library
+# Zombie Server
 #===============================================================================
 
-# Builds Runtime Library.
-all-libruntime:
-	$(MAKE) -C libruntime all
+# Builds Zombie Server.
+all-zombie:
+	$(MAKE) -C zombie all
 
-# Cleans Run Time Library Build objects.
-clean-libruntime:
-	$(MAKE) -C libruntime clean
+# Cleans Zombie Server Build objects.
+clean-zombie:
+	$(MAKE) -C zombie clean
 
-# Cleans Run Time Library build.
-distclean-libruntime:
-	$(MAKE) -C libruntime distclean
-
-#===============================================================================
-# Superuser Binaries
-#===============================================================================
-
-# Builds Superuser Binaries.
-all-sbin: all-libruntime all-sys
-	$(MAKE) -C sbin all
-
-# Cleans Superuser Binaries Build objects.
-clean-sbin:
-	$(MAKE) -C sbin clean
-
-# Cleans Superuser Binaries build.
-distclean-sbin:
-	$(MAKE) -C sbin distclean
+# Cleans Zombie Server build.
+distclean-zombie:
+	$(MAKE) -C zombie distclean
 
 #===============================================================================
-# System Services
+# Test Server
 #===============================================================================
 
-# Builds system services.
-all-sys: all-libruntime
-	$(MAKE) -C sys all
+# Builds Test Server.
+all-test:
+	$(MAKE) -C test all
 
-# cleans objects of system services.
-clean-sys:
-	$(MAKE) -C sys clean
+# Cleans Test Server Build objects.
+clean-test:
+	$(MAKE) -C test clean
 
-# Cleans build of system services.
-distclean-sys:
-	$(MAKE) -C sys distclean
-
-#===============================================================================
-# User Binaries
-#===============================================================================
-
-# Builds User Binaries.
-all-ubin: all-libruntime
-	$(MAKE) -C ubin all
-
-# Cleans User Binaries Build objects.
-clean-ubin:
-	$(MAKE) -C ubin clean
-
-# Cleans User Binaries build.
-distclean-ubin:
-	$(MAKE) -C ubin distclean
+# Cleans Test Server build.
+distclean-test:
+	$(MAKE) -C test distclean

@@ -71,9 +71,6 @@ export LIBNANVIX  := libnanvix-$(TARGET).a
 export LIBC       := libc-$(TARGET).a
 export LIBRUNTIME := libruntime-$(TARGET).a
 
-# Binaries
-export EXEC := test-driver.$(TARGET)
-
 #===============================================================================
 # Target-Specific Make Rules
 #===============================================================================

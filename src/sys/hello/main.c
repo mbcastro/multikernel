@@ -22,15 +22,17 @@
  * SOFTWARE.
  */
 
-#include <nanvix/servers/spawn.h>
+#include <nanvix/sys/thread.h>
+#include <nanvix/ulib.h>
 
 /**
- * @brief Table of RMem Servers.
+ * @brief Hello word server!
  */
-struct rmem_servers_info
+int hello_server(void)
 {
-	int nodenum;
-	const char *name;
-} rmem_servers[RMEM_SERVERS_NUM] = {
-	{ RMEM_SERVER_1_NODE, "/rmem0" },
-};
+	uprintf("[nanvix][hello] hello word from server %d",
+		kthread_self()
+	);
+
+	return (0);
+}

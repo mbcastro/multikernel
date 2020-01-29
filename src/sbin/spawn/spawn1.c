@@ -22,15 +22,24 @@
  * SOFTWARE.
  */
 
+#define SPAWN_SERVER
+
 #include <nanvix/servers/spawn.h>
 
+/* Import definitions. */
+extern int hello_server(void);
+extern int rmem_server(void);
+
 /**
- * @brief Table of RMem Servers.
+ * @brief Number of servers.
  */
-struct rmem_servers_info
-{
-	int nodenum;
-	const char *name;
-} rmem_servers[RMEM_SERVERS_NUM] = {
-	{ RMEM_SERVER_1_NODE, "/rmem0" },
+#define SPAWN_SERVERS_NUM 1
+
+/**
+ * @brief Table of servers.
+ */
+const struct serverinfo spawn_servers[SPAWN_SERVERS_NUM] = {
+	{ rmem_server },
 };
+
+SPAWN_SERVERS(SPAWN_SERVERS_NUM, spawn_servers, "spawn1")

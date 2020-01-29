@@ -198,28 +198,18 @@ static int initialized[NANVIX_NODES_NUM] = { 0 , };
 /**
  * @todo TODO: Provide a detailed description for this function.
  */
-int __nanvix_portal_setup(int local)
+int __nanvix_portal_setup(void)
 {
-	int portalid;
+	int local;
 
-	/* Invalid local. */
-	if ((local < 0) || (local > NANVIX_NODES_NUM))
-		return (-EINVAL);
-
-	/* Bad local. */
-	if (local != knode_get_num())
-		return (-EINVAL);
+	local = knode_get_num();
 
 	/* Nothing to do. */
 	if (initialized[local])
 		return (0);
 
-	/* Create underlying unnamed input portal. */
-	if ((portalid = kportal_create(local)) < 0)
-		return (portalid);
-
 	/* Initialize named portals facility. */
-	inportals[local] = portalid;
+	inportals[local] = stdinportal_get();
 	initialized[local] = 1;
 
 	return (0);
@@ -238,7 +228,7 @@ int __nanvix_portal_setup(int local)
  *
  * @note This function is @b NOT thread safe.
  */
-static int portals_are_initialized(void )
+static int portals_are_initialized(void)
 {
 	int nodenum;
 
@@ -276,7 +266,6 @@ int get_inportal(void)
  */
 int __nanvix_portal_cleanup(void)
 {
-	int ret;
 	int local;
 
 	/* Uninitialized named portal facility. */
@@ -284,10 +273,6 @@ int __nanvix_portal_cleanup(void)
 		return (-EINVAL);
 
 	local = knode_get_num();
-
-	/* Destroy underlying unnamed input portal. */
-	if ((ret = kportal_unlink(inportals[local])) < 0)
-		return (ret);
 
 	initialized[local] = 0;
 

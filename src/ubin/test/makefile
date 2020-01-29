@@ -49,10 +49,13 @@ LIBS += $(LIBDIR)/$(BARELIB) $(THEIR_LIBS)
 #===============================================================================
 
 # Binary
-EXEC = nanvix-spawn.$(TARGET)
+EXEC = nanvix-test.$(OBJ_SUFFIX)
 
 # C Source Files
-SRC = $(wildcard *.c)
+SRC = $(wildcard *.c)              \
+      $(wildcard name/*.c)         \
+      $(wildcard rmem/manager/*.c) \
+      $(wildcard rmem/cache/*.c)
 
 # Object Files
 OBJ = $(SRC:.c=.$(OBJ_SUFFIX).o)

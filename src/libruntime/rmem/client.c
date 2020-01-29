@@ -46,8 +46,7 @@ static struct
 	int outbox;      /**< Output mailbox for requests.   */
 	int outportal;   /**< Output portal for data.        */
 } server[RMEM_SERVERS_NUM] = {
-	{ 0, -1, -1 },
-	{ 0, -1, -1 },
+	[0 ... (RMEM_SERVERS_NUM - 1)] = { 0, -1, -1 }
 };
 
 /*============================================================================*
@@ -249,6 +248,36 @@ size_t nanvix_rmem_write(rpage_t blknum, const void *buf)
 	);
 
 	return ((msg.errcode < 0) ? 0 : RMEM_BLOCK_SIZE);
+}
+
+/*============================================================================*
+ * nanvix_rmem_shutdown()                                                     *
+ *============================================================================*/
+
+/**
+ * @todo TODO: Provide a detailed description for this function.
+ */
+int nanvix_rmem_shutdown(int servernum)
+{
+	struct rmem_message msg;
+
+	/* Invalid server ID. */
+	if (!WITHIN(servernum, 0, RMEM_SERVERS_NUM))
+		return (-EINVAL);
+
+	/* Build operation header. */
+	msg.header.source = knode_get_num();
+	msg.header.opcode = RMEM_EXIT;
+
+	/* Send operation header. */
+	uassert(
+		nanvix_mailbox_write(
+			server[servernum].outbox,
+			&msg, sizeof(struct rmem_message)
+		) == 0
+	);
+
+	return (0);
 }
 
 /*============================================================================*

@@ -28,7 +28,7 @@
 	/**
 	 * @brief Number of RMem Servers.
 	 */
-	#define RMEM_SERVERS_NUM 2
+	#define RMEM_SERVERS_NUM 1
 
 	/**
 	 * @brief NoC node number for Spawn Server.
@@ -38,16 +38,40 @@
 	/**
 	 * @brief NoC node number for Name Server.
 	 */
-	#define NAME_SERVER_NODE 1
+	#define NAME_SERVER_NODE 0
 
 	/**
 	 * @brief NoC node number for RMem Server.
 	 */
-	#define RMEM_SERVER_1_NODE 2
+	#define RMEM_SERVER_1_NODE 1
 
 	/**
 	 * @brief NoC node number for RMem Server.
 	 */
-	#define RMEM_SERVER_2_NODE 3
+	#define RMEM_SERVER_2_NODE 0
+
+#ifdef SPAWN_SERVER
+
+	/**
+	 * @brief Declares the servers table.
+	 *
+	 * @param n Number of servers.
+	 * @param x Servers table.
+	 * @param y Spawner name.
+	 */
+	#define SPAWN_SERVERS(n, x, y)            \
+		const int SERVERS_NUM = n;            \
+		const struct serverinfo *SERVERS = x; \
+		const char *spawner_name = y;
+
+	/**
+	 * @brief Server information.
+	 */
+	struct serverinfo
+	{
+		int (*main) (void); /**< Main function. */
+	};
+
+#endif /* SPAWN_SERVER*/
 
 #endif /* NANVIX_SERVERS_SPAWN_H_ */

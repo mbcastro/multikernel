@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# Copyright(c) 2018 Pedro Henrique Penna <pedrohenriquepenna@gmail.com>
+# Copyright(c) 2011-2019 The Maintainers of Nanvix
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -22,81 +22,59 @@
 # SOFTWARE.
 #
 
-#===============================================================================
-# Toolchain Configuration
-#===============================================================================
+# Builds Everything
+all: all-name all-rmem all-hello
 
-# Compiler Options
-ifneq ($(LIBLWIP),)
-CFLAGS += -I $(INCDIR)/posix
-endif
-
-# Libraries
-LIBS := -Wl,--whole-archive
-LIBS += $(LIBDIR)/$(LIBHAL)
-LIBS += $(LIBDIR)/$(LIBKERNEL)
-LIBS += -Wl,--no-whole-archive
-LIBS += $(LIBDIR)/$(LIBRUNTIME)
-LIBS += $(LIBDIR)/$(LIBC)
-LIBS += $(LIBDIR)/$(LIBNANVIX)
-ifneq ($(LIBLWIP),)
-LIBS += $(LIBDIR)/$(LIBLWIP)
-endif
-LIBS += $(LIBDIR)/$(BARELIB) $(THEIR_LIBS)
-
-#===============================================================================
-# Binaries Sources and Objects
-#===============================================================================
-
-# Binary
-EXEC = nanvix-rmem.$(TARGET)
-
-# C Source Files
-SRC = $(wildcard *.c)
-
-# Object Files
-OBJ = $(SRC:.c=.$(OBJ_SUFFIX).o)
-
-#===============================================================================
-
-ifeq ($(TARGET),unix64)
-LINKER_SCRIPT=
-else
-LINKER_SCRIPT = -L $(LINKERDIR)/ -T link.ld
-endif
-
-# Builds All Object Files
-all: $(OBJ)
-ifeq ($(VERBOSE), no)
-	@echo [CC] $(EXEC)
-	@$(CC) $(LDFLAGS) $(LINKER_SCRIPT) -o $(BINDIR)/$(EXEC) $(OBJ) $(LIBS)
-else
-	$(CC) $(LDFLAGS) $(LINKER_SCRIPT) -o $(BINDIR)/$(EXEC) $(OBJ) $(LIBS)
-endif
-
-# Cleans All Object Files
-clean:
-ifeq ($(VERBOSE), no)
-	@echo [CLEAN] $(OBJ)
-	@rm -rf $(OBJ)
-else
-	rm -rf $(OBJ)
-endif
+# Cleans Build Objects
+clean: clean-name clean-rmem clean-hello
 
 # Cleans Everything
-distclean: clean
-ifeq ($(VERBOSE), no)
-	@echo [CLEAN] $(EXEC)
-	@rm -rf $(BINDIR)/$(EXEC)
-else
-	rm -rf $(BINDIR)/$(EXEC)
-endif
+distclean: distclean-name distclean-rmem distclean-hello
 
-# Builds a C source file.
-%.$(OBJ_SUFFIX).o: %.c
-ifeq ($(VERBOSE), no)
-	@echo [CC] $@
-	@$(CC) $(CFLAGS) $< -c -o $@
-else
-	$(CC) $(CFLAGS) $< -c -o $@
-endif
+#===============================================================================
+# Name Server
+#===============================================================================
+
+# Builds Name Server.
+all-name:
+	$(MAKE) -C pm/name all
+
+# Cleans Name Server Build objects.
+clean-name:
+	$(MAKE) -C pm/name clean
+
+# Cleans Name Server build.
+distclean-name:
+	$(MAKE) -C pm/name distclean
+
+#===============================================================================
+# RMem Server
+#===============================================================================
+
+# Builds RMem Server.
+all-rmem:
+	$(MAKE) -C mm/rmem all
+
+# Cleans RMem Server Build objects.
+clean-rmem:
+	$(MAKE) -C mm/rmem clean
+
+# Cleans RMem Server build.
+distclean-rmem:
+	$(MAKE) -C mm/rmem distclean
+
+#===============================================================================
+# Hello Server
+#===============================================================================
+
+# Builds Hello Server.
+all-hello:
+	$(MAKE) -C hello all
+
+# Cleans Hello Server Build objects.
+clean-hello:
+	$(MAKE) -C hello clean
+
+# Cleans Hello Server build.
+distclean-hello:
+	$(MAKE) -C hello distclean

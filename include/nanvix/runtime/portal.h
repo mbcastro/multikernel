@@ -26,7 +26,7 @@
 #define NANVIX_RUNTIME_PORTAL_H_
 
 	#include <nanvix/sys/portal.h>
-	#include <sys/types.h>
+	#include <posix/sys/types.h>
 
 	/**
 	 * @brief Creates a portal.

@@ -82,12 +82,20 @@
 	/**
 	 * @brief Unlink a process name.
 	 *
-	 * @param name	    Name of the process to unlink.
+	 * @param name Name of the process to unlink.
 	 *
-	 * @returns Upon successful completion 0 is returned.
-	 * Upon failure, a negative error code is returned instead.
+	 * @returns Upon successful completion 0 is returned. Upon
+	 * failure, a negative error code is returned instead.
 	 */
 	extern int name_unlink(const char *name);
+
+	/**
+	 * @brief Shutdowns the name server.
+	 *
+	 * @returns Upon successful completion 0 is returned. Upon
+	 * failure, a negative error code is returned instead.
+	 */
+	extern int name_shutdown(void);
 
 #endif /* __NEED_NAME_CLIENT */
 
