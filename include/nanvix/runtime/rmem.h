@@ -36,18 +36,25 @@
 
 #if defined(__NEED_RMEM_CACHE)
 
+	#ifndef __RMEM_CACHE_BLOCK_SIZE
+	#define RMEM_CACHE_BLOCK_SIZE 1
+	#endif
+
 	/**
 	 * @brief Length of page cache.
 	 */
+	#ifndef __RMEM_CACHE_LENGTH
 	#define RMEM_CACHE_LENGTH 32
+	#endif
 
 	/**
 	 * @name Page replacement policies.
 	 */
 	/**@{*/
-	#define RMEM_CACHE_FIFO 0 /**< First In First Out  */
-	#define RMEM_CACHE_LIFO 1 /**< Last In First Out   */
-	#define RMEM_CACHE_LRU  2 /**< Least Recently Used */
+	#define RMEM_CACHE_FIFO  0 /**< First In First Out  */
+	#define RMEM_CACHE_LIFO  1 /**< Last In First Out   */
+	#define RMEM_CACHE_LRU   2 /**< Least Recently Used */
+	#define RMEM_CACHE_AGING 3 /**< Aging               */
 	/**@}*/
 
 	/**
@@ -66,6 +73,11 @@
 	 * is returned instead.
 	 */
 	extern rpage_t nanvix_rcache_alloc(void);
+
+	/**
+	 * @brief Cleans the cache..
+	 */
+	extern void nanvix_rcache_clean(void);
 
 	/**
 	 * @brief Frees a remote page.
@@ -96,7 +108,7 @@
 	 * @returns Upon successful completion, zero is returned. Upon failure a
 	 * negative error code is returned instead.
 	 */
-	extern int nanvix_rcache_put(rpage_t pgnum);
+	extern int nanvix_rcache_put(rpage_t pgnum, int strike);
 
 	/**
 	 * @brief Flushes changes on a remote page.

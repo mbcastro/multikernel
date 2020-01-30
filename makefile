@@ -103,10 +103,10 @@ export ARFLAGS = rc
 #===============================================================================
 
 # Image Source
-export IMGSRC = $(IMGDIR)/$(TARGET).img
+export IMGSRC ?= $(IMGDIR)/$(TARGET).img
 
 # Image Name
-export IMAGE = ulibc-debug.img
+export IMAGE = multikernel-debug.img
 
 # Builds everything.
 all: | make-dirs image
