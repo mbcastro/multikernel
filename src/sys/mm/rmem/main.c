@@ -166,7 +166,7 @@ static inline rpage_t do_rmem_alloc(void)
 	uassert(
 		(bit = bitmap_first_free(
 			blocks,
-			(RMEM_NUM_BLOCKS/BITMAP_WORD_LENGTH)*sizeof(bitmap_t)
+			RMEM_NUM_BLOCKS
 		)) != BITMAP_FULL
 	);
 
