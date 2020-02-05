@@ -52,10 +52,11 @@ LIBS += $(LIBDIR)/$(BARELIB) $(THEIR_LIBS)
 EXEC = nanvix-test.$(OBJ_SUFFIX)
 
 # C Source Files
-SRC = $(wildcard *.c)              \
-      $(wildcard name/*.c)         \
-      $(wildcard rmem/manager/*.c) \
-      $(wildcard rmem/cache/*.c)
+SRC = $(wildcard *.c)                \
+      $(wildcard name/*.c)           \
+      $(wildcard rmem/manager/*.c)   \
+      $(wildcard rmem/cache/*.c)     \
+      $(wildcard rmem/interface/*.c)
 
 # Object Files
 OBJ = $(SRC:.c=.$(OBJ_SUFFIX).o)
