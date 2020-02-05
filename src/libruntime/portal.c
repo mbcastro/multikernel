@@ -24,6 +24,7 @@
 
 #include <nanvix/runtime/stdikc.h>
 #include <nanvix/servers/name.h>
+#include <nanvix/sys/thread.h>
 #include <nanvix/sys/portal.h>
 #include <nanvix/sys/noc.h>
 #include <nanvix/limits.h>
@@ -380,7 +381,7 @@ int nanvix_portal_allow(int id, int nodenum)
 	if (portals[id].owner != knode_get_num())
 		return (-EINVAL);
 
-	return (kportal_allow(portals[id].portalid, nodenum));
+	return (kportal_allow(portals[id].portalid, nodenum, kthread_self()));
 }
 
 /*============================================================================*
@@ -395,7 +396,7 @@ int nanvix_portal_allow(int id, int nodenum)
  * @returns Upon successful completion, the ID of the target portal is
  * returned. Upon failure, a negative error code is returned instead.
  */
-int nanvix_portal_open(const char *name)
+int nanvix_portal_open(const char *name, int port)
 {
 	int id;	   /* Portal ID.				 */
 	int nodenum;  /* NoC node.				  */
@@ -414,7 +415,7 @@ int nanvix_portal_open(const char *name)
 		return (-EAGAIN);
 
 	/* Open underlying unnamed portal. */
-	if ((portalid = kportal_open(knode_get_num(), nodenum)) < 0)
+	if ((portalid = kportal_open(knode_get_num(), nodenum, port)) < 0)
 		goto error0;
 
 	/* Initialize portal. */
