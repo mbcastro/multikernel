@@ -167,6 +167,16 @@ size_t nanvix_rmem_read(rpage_t blknum, void *buf)
 		) == 0
 	);
 
+	/* Wait acknowledge. */
+	uassert(
+		kmailbox_read(
+			stdinbox_get(),
+			&msg,
+			sizeof(struct rmem_message)
+		) == sizeof(struct rmem_message)
+	);
+	uassert(msg.header.opcode == RMEM_ACK);
+
 	/* Receive data. */
 	uassert(
 		kportal_allow(
@@ -312,7 +322,6 @@ int __nanvix_rmem_setup(void)
 
 		server[i].initialized = 1;
 	}
-
 
 	return (0);
 }

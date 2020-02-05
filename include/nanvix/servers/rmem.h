@@ -128,11 +128,12 @@
 	 * @brief Operations on remote memory.
 	 */
 	/**@{*/
-	#define RMEM_EXIT    0 /**< Exit.  */
-	#define RMEM_READ    1 /**< Read.  */
-	#define RMEM_WRITE   2 /**< Write. */
-	#define RMEM_ALLOC   3 /**< Alloc. */
-	#define RMEM_MEMFREE 4 /**< Free.  */
+	#define RMEM_EXIT    0 /**< Exit        */
+	#define RMEM_READ    1 /**< Read        */
+	#define RMEM_WRITE   2 /**< Write       */
+	#define RMEM_ALLOC   3 /**< Alloc       */
+	#define RMEM_MEMFREE 4 /**< Free        */
+	#define RMEM_ACK     5 /**< Acknowledge */
 	/**@}*/
 
 	/**

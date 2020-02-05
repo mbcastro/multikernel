@@ -293,15 +293,21 @@ static inline int do_rmem_write(int remote, rpage_t blknum)
  *
  * @param remote Remote client.
  * @param blknum Number of the target block.
+ * @param outbox Output mailbox to remote client.
  *
  * @returns Upon successful completion, zero is returned. Upon
  * failure, a negative error code is returned instead.
  */
-static inline int do_rmem_read(int remote, rpage_t blknum)
+static inline int do_rmem_read(int remote, rpage_t blknum, int outbox)
 {
 	int ret = 0;
 	int outportal;
 	rpage_t _blknum;
+	struct rmem_message msg;
+
+	/* Build operation header. */	
+	msg.header.source = knode_get_num();
+	msg.header.opcode = RMEM_ACK;
 
 	rmem_debug("read() nodenum=%d blknum=%x",
 		remote,
@@ -333,6 +339,12 @@ static inline int do_rmem_read(int remote, rpage_t blknum)
 			knode_get_num(),
 			remote)
 		) >= 0
+	);
+	uassert(
+		kmailbox_write(outbox,
+			&msg,
+			sizeof(struct rmem_message)
+		) == sizeof(struct rmem_message)
 	);
 	uassert(
 		kportal_write(
@@ -400,8 +412,8 @@ static int do_rmem_loop(void)
 			case RMEM_READ:
 				stats.nreads++;
 				kclock(&t0);
-					msg.errcode = do_rmem_read(msg.header.source, msg.blknum);
 					uassert((source = kmailbox_open(msg.header.source)) >= 0);
+					msg.errcode = do_rmem_read(msg.header.source, msg.blknum, source);
 					uassert(kmailbox_write(source, &msg, sizeof(struct rmem_message)) == sizeof(struct rmem_message));
 					uassert(kmailbox_close(source) == 0);
 				kclock(&t1);
