@@ -36,12 +36,12 @@
 /**
  * @brief Run alloc/free all test?
  */
-#define __TEST_ALLOC_FREE_ALL (RMEM_SERVERS_NUM == 1)
+#define __TEST_ALLOC_FREE_ALL 0
 
 /**
  * @brief run read/write all test?
  */
-#define __TEST_READ_WRITE_ALL (RMEM_SERVERS_NUM == 1)
+#define __TEST_READ_WRITE_ALL 0
 
 /**
  * @brief Number of blocks to allocate.
