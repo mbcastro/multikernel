@@ -225,7 +225,7 @@ static inline int do_rmem_free(rpage_t blknum)
 	/* Free block. */
 	stats.nblocks--;
 	bitmap_clear(blocks, _blknum);
-	rmem_debug("rmem_free blknum=%d nblocks=%d/%d",
+	rmem_debug("rmem_free() blknum=%d nblocks=%d/%d",
 		_blknum, stats.nblocks, RMEM_NUM_BLOCKS
 	);
 
@@ -247,7 +247,7 @@ static inline int do_rmem_write(int remote, rpage_t blknum)
 	int ret = 0;
 	rpage_t _blknum;
 
-	rmem_debug("write nodenum=%d blknum=%x",
+	rmem_debug("write() nodenum=%d blknum=%x",
 		remote,
 		blknum
 	);
@@ -303,7 +303,7 @@ static inline int do_rmem_read(int remote, rpage_t blknum)
 	int outportal;
 	rpage_t _blknum;
 
-	rmem_debug("read nodenum=%d blknum=%d",
+	rmem_debug("read() nodenum=%d blknum=%x",
 		remote,
 		blknum
 	);
