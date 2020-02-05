@@ -470,7 +470,7 @@ int nanvix_portal_read(int id, void *buf, size_t n)
 	if (portals[id].owner != knode_get_num())
 		return (-EINVAL);
 
-	ret = kportal_aread(portals[id].portalid, buf, n);
+	ret = kportal_read(portals[id].portalid, buf, n);
 
 	return (ret);
 }
@@ -516,7 +516,7 @@ int nanvix_portal_write(int id, const void *buf, size_t n)
 	if (portals[id].owner != knode_get_num())
 		return (-EINVAL);
 
-	ret = kportal_awrite(portals[id].portalid, buf, n);
+	ret = kportal_write(portals[id].portalid, buf, n);
 
 	return (ret);
 }
