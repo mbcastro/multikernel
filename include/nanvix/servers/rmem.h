@@ -44,7 +44,7 @@
 	/**
 	 * @brief Remote memory shift.
 	 */
-	#define RMEM_BLOCK_SHIFT PAGE_SHIFT
+	#define RMEM_BLOCK_SHIFT 12
 
 	/**
 	 * @brief Remote memory block size (in bytes).
@@ -54,7 +54,7 @@
 	/**
 	 * @brief Remote memory size (in bytes).
 	 */
-	#define RMEM_SIZE ((65536*1024)/2)
+	#define RMEM_SIZE (512*1024)
 
 	/**
 	 * @brief Number of remote memory blocks.
