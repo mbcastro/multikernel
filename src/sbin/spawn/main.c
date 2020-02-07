@@ -97,7 +97,7 @@ int __main2(int argc, const char *argv[])
 		}
 
 		uassert(stdsync_fence() == 0);
-		uprintf("[nanvix][%s] broadcasting shutdown signal...", spawner_name);
+		uprintf("[nanvix][%s] waiting shutdown signal...", spawner_name);
 
 		/* Wait for servers. */
 		for (int i = 0; i < SERVERS_NUM; i++)

@@ -124,18 +124,25 @@ int __runtime_cleanup(void)
 
 	/* Cleanup RMem Service client. */
 	if (current_ring[tid] >= 3)
+	{
+		uprintf("[nanvix][thread %d] shutting down ring 3", tid);
 		uassert(__nanvix_rmem_cleanup() == 0);
+	}
 
 	/* Clean up IKC facilities. */
 	if (current_ring[tid] >= 2)
 	{
+		uprintf("[nanvix][thread %d] shutting down ring 2", tid);
 		uassert(__nanvix_portal_cleanup() == 0);
 		uassert(__nanvix_mailbox_cleanup() == 0);
 	}
 
 	/* Clean up Name Service client. */
 	if (current_ring[tid] >= 1)
+	{
+		uprintf("[nanvix][thread %d] shutting down ring 1", tid);
 		uassert(__name_cleanup() == 0);
+	}
 
 	uassert(__stdportal_cleanup() == 0);
 	uassert(__stdmailbox_cleanup() == 0);

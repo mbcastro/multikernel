@@ -58,6 +58,8 @@ int __main2(int argc, const char *argv[])
 
 		uprintf("[nanvix][test] shutting down server");
 
+	nanvix_shutdown();
+
 	__runtime_cleanup();
 
 	return (0);
