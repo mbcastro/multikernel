@@ -43,12 +43,11 @@
 	/**
 	 * @brief NoC node number for RMem Server.
 	 */
-	#define RMEM_SERVER_1_NODE 1
-
-	/**
-	 * @brief NoC node number for RMem Server.
-	 */
-	#define RMEM_SERVER_2_NODE 0
+	#ifdef __mppa256__
+		#define RMEM_SERVER_1_NODE 4
+	#else
+		#define RMEM_SERVER_1_NODE 1
+	#endif
 
 #ifdef SPAWN_SERVER
 

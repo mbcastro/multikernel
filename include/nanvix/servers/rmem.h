@@ -44,7 +44,7 @@
 	/**
 	 * @brief Remote memory shift.
 	 */
-	#define RMEM_BLOCK_SHIFT PAGE_SHIFT
+	#define RMEM_BLOCK_SHIFT 12
 
 	/**
 	 * @brief Remote memory block size (in bytes).
@@ -54,7 +54,7 @@
 	/**
 	 * @brief Remote memory size (in bytes).
 	 */
-	#define RMEM_SIZE ((65536*1024)/2)
+	#define RMEM_SIZE (512*1024)
 
 	/**
 	 * @brief Number of remote memory blocks.
@@ -66,15 +66,15 @@
 	 */
 	/**@{*/
 	#define RMEM_BLOCK_NUM_SHIFT    0ULL
-	#define RMEM_BLOCK_SERVER_SHIFT 56ULL
+	#define RMEM_BLOCK_SERVER_SHIFT 24ULL
 	/**@}*/
 
 	/**
 	 * @name Masks for remote addresses.
 	 */
 	/**@{*/
-	#define RMEM_BLOCK_NUM_MASK    (0xffffffffULL << RMEM_BLOCK_NUM_SHIFT)    /**< Block Number  */
-	#define RMEM_BLOCK_SERVER_MASK (      0xffULL << RMEM_BLOCK_SERVER_SHIFT) /**< Server Number */
+	#define RMEM_BLOCK_NUM_MASK    (0xffffff << RMEM_BLOCK_NUM_SHIFT)    /**< Block Number  */
+	#define RMEM_BLOCK_SERVER_MASK (    0xff << RMEM_BLOCK_SERVER_SHIFT) /**< Server Number */
 	/**@}*/
 
 	/**
@@ -104,8 +104,8 @@
 	 * @brief Builds a remote memory address.
 	 */
 	#define RMEM_BLOCK(server, num) ( \
-		(((uint64_t)(server) << RMEM_BLOCK_SERVER_SHIFT) & RMEM_BLOCK_SERVER_MASK) | \
-		(((uint64_t)(num) << RMEM_BLOCK_NUM_SHIFT) & RMEM_BLOCK_NUM_MASK)            \
+		(((word_t)(server) << RMEM_BLOCK_SERVER_SHIFT) & RMEM_BLOCK_SERVER_MASK) | \
+		(((word_t)(num) << RMEM_BLOCK_NUM_SHIFT) & RMEM_BLOCK_NUM_MASK)            \
 	)
 
 #if defined(__NEED_RMEM_CLIENT) || defined(__RMEM_SERVICE)
@@ -113,12 +113,12 @@
 	/**
 	 * @brief Remote page number.
 	 */
-	typedef uint64_t rpage_t;
+	typedef word_t rpage_t;
 
 	/**
 	 * @brief Remote address.
 	 */
-	typedef uint64_t raddr_t;
+	typedef word_t raddr_t;
 
 #endif /* __NEED_RMEM_CLIENT || __RMEM_SERVICE */
 
@@ -128,11 +128,12 @@
 	 * @brief Operations on remote memory.
 	 */
 	/**@{*/
-	#define RMEM_EXIT    0 /**< Exit.  */
-	#define RMEM_READ    1 /**< Read.  */
-	#define RMEM_WRITE   2 /**< Write. */
-	#define RMEM_ALLOC   3 /**< Alloc. */
-	#define RMEM_MEMFREE 4 /**< Free.  */
+	#define RMEM_EXIT    0 /**< Exit        */
+	#define RMEM_READ    1 /**< Read        */
+	#define RMEM_WRITE   2 /**< Write       */
+	#define RMEM_ALLOC   3 /**< Alloc       */
+	#define RMEM_MEMFREE 4 /**< Free        */
+	#define RMEM_ACK     5 /**< Acknowledge */
 	/**@}*/
 
 	/**

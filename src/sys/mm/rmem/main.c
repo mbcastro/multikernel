@@ -32,6 +32,7 @@
 #include <nanvix/runtime/stdikc.h>
 #include <nanvix/runtime/runtime.h>
 #include <nanvix/runtime/utils.h>
+#include <nanvix/sys/thread.h>
 #include <nanvix/sys/mailbox.h>
 #include <nanvix/sys/noc.h>
 #include <nanvix/sys/perf.h>
@@ -40,6 +41,11 @@
 #include <nanvix/ulib.h>
 #include <posix/errno.h>
 #include <stdint.h>
+
+/**
+ * @brief Port Nnumber for RMem client.
+ */
+#define RMEM_SERVER_PORT_NUM 2
 
 /**
  * @brief Debug RMEM?
@@ -225,7 +231,7 @@ static inline int do_rmem_free(rpage_t blknum)
 	/* Free block. */
 	stats.nblocks--;
 	bitmap_clear(blocks, _blknum);
-	rmem_debug("rmem_free blknum=%d nblocks=%d/%d",
+	rmem_debug("rmem_free() blknum=%d nblocks=%d/%d",
 		_blknum, stats.nblocks, RMEM_NUM_BLOCKS
 	);
 
@@ -247,7 +253,7 @@ static inline int do_rmem_write(int remote, rpage_t blknum)
 	int ret = 0;
 	rpage_t _blknum;
 
-	rmem_debug("write nodenum=%d blknum=%x",
+	rmem_debug("write() nodenum=%d blknum=%x",
 		remote,
 		blknum
 	);
@@ -272,7 +278,7 @@ static inline int do_rmem_write(int remote, rpage_t blknum)
 		ret = -EFAULT;
 	}
 
-	uassert(kportal_allow(inportal, remote) == 0);
+	uassert(kportal_allow(inportal, remote, RMEM_SERVER_PORT_NUM) == 0);
 	uassert(
 		kportal_read(
 			inportal,
@@ -293,17 +299,23 @@ static inline int do_rmem_write(int remote, rpage_t blknum)
  *
  * @param remote Remote client.
  * @param blknum Number of the target block.
+ * @param outbox Output mailbox to remote client.
  *
  * @returns Upon successful completion, zero is returned. Upon
  * failure, a negative error code is returned instead.
  */
-static inline int do_rmem_read(int remote, rpage_t blknum)
+static inline int do_rmem_read(int remote, rpage_t blknum, int outbox, int outport)
 {
 	int ret = 0;
 	int outportal;
 	rpage_t _blknum;
+	struct rmem_message msg;
 
-	rmem_debug("read nodenum=%d blknum=%d",
+	/* Build operation header. */
+	msg.header.source = knode_get_num();
+	msg.header.opcode = RMEM_ACK;
+
+	rmem_debug("read() nodenum=%d blknum=%x",
 		remote,
 		blknum
 	);
@@ -331,8 +343,15 @@ static inline int do_rmem_read(int remote, rpage_t blknum)
 	uassert((outportal =
 		kportal_open(
 			knode_get_num(),
-			remote)
+			remote,
+			outport)
 		) >= 0
+	);
+	uassert(
+		kmailbox_write(outbox,
+			&msg,
+			sizeof(struct rmem_message)
+		) == sizeof(struct rmem_message)
 	);
 	uassert(
 		kportal_write(
@@ -400,8 +419,8 @@ static int do_rmem_loop(void)
 			case RMEM_READ:
 				stats.nreads++;
 				kclock(&t0);
-					msg.errcode = do_rmem_read(msg.header.source, msg.blknum);
 					uassert((source = kmailbox_open(msg.header.source)) >= 0);
+					msg.errcode = do_rmem_read(msg.header.source, msg.blknum, source, msg.header.port);
 					uassert(kmailbox_write(source, &msg, sizeof(struct rmem_message)) == sizeof(struct rmem_message));
 					uassert(kmailbox_close(source) == 0);
 				kclock(&t1);

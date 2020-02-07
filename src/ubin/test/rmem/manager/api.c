@@ -131,7 +131,7 @@ static void test_rmem_manager_consistency(void)
  */
 struct test tests_rmem_manager_api[] = {
 	{ test_rmem_manager_alloc_free, "alloc/free" },
-	{ test_rmem_manager_read_write, "read write" },
+	{ test_rmem_manager_read_write, "read/write" },
 	{ test_rmem_manager_consistency, "consistency" },
 	{ NULL,                          NULL        },
 };

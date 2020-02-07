@@ -100,6 +100,5 @@ bitmap_t bitmap_first_free(bitmap_t *bitmap, size_t size)
  */
 bitmap_t bitmap_check_bit(bitmap_t *bitmap, bitmap_t idx)
 {
-	bitmap_t bit = (bitmap[idx >> BITMAP_WORD_SHIFT] >> idx) & 1u;
-	return bit;
+	return (bitmap[IDX(idx)] & (1 << OFF(idx)));
 }

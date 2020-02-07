@@ -46,7 +46,7 @@
 	 * @returns Upon successful completion, the ID of the target portal is
 	 * returned. Upon failure, a negative error code is returned instead.
 	 */
-	extern int nanvix_portal_open(const char *name);
+	extern int nanvix_portal_open(const char *name, int port);
 
 	/**
 	 * @brief Enables read operations on a portal.

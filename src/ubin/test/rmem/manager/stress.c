@@ -36,12 +36,12 @@
 /**
  * @brief Run alloc/free all test?
  */
-#define __TEST_ALLOC_FREE_ALL (RMEM_SERVERS_NUM == 1)
+#define __TEST_ALLOC_FREE_ALL 0
 
 /**
  * @brief run read/write all test?
  */
-#define __TEST_READ_WRITE_ALL (RMEM_SERVERS_NUM == 1)
+#define __TEST_READ_WRITE_ALL 0
 
 /**
  * @brief Number of blocks to allocate.
@@ -69,23 +69,19 @@ static void test_rmem_manager_alloc_free_sequential(void)
 {
 	rpage_t blks[NUM_BLOCKS];
 
-	#if (__VERBOSE_TESTS)
-	nanvix_puts(HLINE);
-	#endif
-
 	for (unsigned long i = 0; i < NUM_BLOCKS; i++)
 	{
 		TEST_ASSERT((blks[i] = nanvix_rmem_alloc()) != RMEM_NULL);
 		#if (__VERBOSE_TESTS)
-			uprintf("rmem_alloc() blknum=%d\n", blks[i]);
+			uprintf("rmem_alloc() blknum=%d", blks[i]);
 		#endif
 	}
 	for (unsigned long i = 0; i < NUM_BLOCKS; i++)
 	{
-		TEST_ASSERT(nanvix_rmem_free(blks[i]) == 0);
 		#if (__VERBOSE_TESTS)
-			uprintf("rmem_free()  blknum=%d\n", blks[i]);
+			uprintf("rmem_free()  blknum=%d", blks[i]);
 		#endif
+		TEST_ASSERT(nanvix_rmem_free(blks[i]) == 0);
 	}
 }
 
@@ -100,29 +96,25 @@ static void test_rmem_manager_alloc_free_interleaved(void)
 {
 	rpage_t blks[NUM_BLOCKS];
 
-	#if (__VERBOSE_TESTS)
-	nanvix_puts(HLINE);
-	#endif
-
 	for (unsigned long i = 0; i < NUM_BLOCKS; i++)
 	{
 		TEST_ASSERT((blks[i] = nanvix_rmem_alloc()) != RMEM_NULL);
 		#if (__VERBOSE_TESTS)
-			uprintf("rmem_alloc() blknum=%d\n", blks[i]);
+			uprintf("rmem_alloc() blknum=%d", blks[i]);
 		#endif
 	}
 	for (unsigned long i = 0; i < NUM_BLOCKS; i += 2)
 	{
 		TEST_ASSERT(nanvix_rmem_free(blks[i]) == 0);
 		#if (__VERBOSE_TESTS)
-			uprintf("rmem_free()  blknum=%d\n", blks[i]);
+			uprintf("rmem_free()  blknum=%d", blks[i]);
 		#endif
 	}
 	for (unsigned long i = 1; i < NUM_BLOCKS; i += 2)
 	{
 		TEST_ASSERT(nanvix_rmem_free(blks[i]) == 0);
 		#if (__VERBOSE_TESTS)
-			uprintf("rmem_free()  blknum=%d\n", blks[i]);
+			uprintf("rmem_free()  blknum=%d", blks[i]);
 		#endif
 	}
 }
@@ -138,9 +130,6 @@ static void test_rmem_manager_alloc_free_interleaved(void)
  */
 static void test_rmem_manager_alloc_free_all(void)
 {
-	#if (__VERBOSE_TESTS)
-	nanvix_puts(HLINE);
-	#endif
 
 	for (unsigned long i = 1; i < RMEM_NUM_BLOCKS; i++)
 	{
@@ -148,7 +137,7 @@ static void test_rmem_manager_alloc_free_all(void)
 
 		TEST_ASSERT((blknum = nanvix_rmem_alloc()) != RMEM_NULL);
 		#if (__VERBOSE_TESTS)
-			uprintf("rmem_alloc() blknum=%d\n", blknum);
+			uprintf("rmem_alloc() blknum=%d", blknum);
 		#endif
 	}
 	for (unsigned long i = 1; i < RMEM_NUM_BLOCKS; i++)
@@ -157,7 +146,7 @@ static void test_rmem_manager_alloc_free_all(void)
 
 		TEST_ASSERT(nanvix_rmem_free(blknum) == 0);
 		#if (__VERBOSE_TESTS)
-			uprintf("rmem_free()  blknum=%d\n", blknum);
+			uprintf("rmem_free()  blknum=%d", blknum);
 		#endif
 	}
 }
@@ -175,10 +164,6 @@ static void test_rmem_manager_read_write_sequential(void)
 {
 	rpage_t blks[NUM_BLOCKS];
 
-	#if (__VERBOSE_TESTS)
-	nanvix_puts(HLINE);
-	#endif
-
 	/* Allocate many blocks.*/
 	for (unsigned long i = 0; i < NUM_BLOCKS; i++)
 		TEST_ASSERT((blks[i] = nanvix_rmem_alloc()) != RMEM_NULL);
@@ -190,12 +175,12 @@ static void test_rmem_manager_read_write_sequential(void)
 		umemset(buffer2, 0, RMEM_BLOCK_SIZE);
 
 		#if (__VERBOSE_TESTS)
-			uprintf("rmem_write() blknum=%d\n", blks[i]);
+			uprintf("rmem_write() blknum=%d", blks[i]);
 		#endif
 		TEST_ASSERT(nanvix_rmem_write(blks[i], buffer1) == RMEM_BLOCK_SIZE);
 
 		#if (__VERBOSE_TESTS)
-			uprintf("rmem_read()  blknum=%d\n", blks[i]);
+			uprintf("rmem_read()  blknum=%d", blks[i]);
 		#endif
 		TEST_ASSERT(nanvix_rmem_read(blks[i], buffer2) == RMEM_BLOCK_SIZE);
 		TEST_ASSERT(umemcmp(buffer1, buffer2, RMEM_BLOCK_SIZE) == 0);
@@ -218,10 +203,6 @@ static void test_rmem_manager_read_write_interleaved(void)
 {
 	rpage_t blks[NUM_BLOCKS];
 
-	#if (__VERBOSE_TESTS)
-	nanvix_puts(HLINE);
-	#endif
-
 	/* Allocate many blocks.*/
 	for (unsigned long i = 0; i < NUM_BLOCKS; i++)
 		TEST_ASSERT((blks[i] = nanvix_rmem_alloc()) != RMEM_NULL);
@@ -234,7 +215,7 @@ static void test_rmem_manager_read_write_interleaved(void)
 			umemset(buffer1, i + 1, RMEM_BLOCK_SIZE);
 
 			#if (__VERBOSE_TESTS)
-				uprintf("rmem_write() blknum=%d\n", blks[i]);
+				uprintf("rmem_write() blknum=%d", blks[i]);
 			#endif
 			TEST_ASSERT(nanvix_rmem_write(blks[i], buffer1) == RMEM_BLOCK_SIZE);
 		}
@@ -247,7 +228,7 @@ static void test_rmem_manager_read_write_interleaved(void)
 			umemset(buffer2, 0, RMEM_BLOCK_SIZE);
 
 			#if (__VERBOSE_TESTS)
-				uprintf("rmem_read()  blknum=%d\n", blks[i]);
+				uprintf("rmem_read()  blknum=%d", blks[i]);
 			#endif
 			TEST_ASSERT(nanvix_rmem_read(blks[i], buffer2) == RMEM_BLOCK_SIZE);
 			TEST_ASSERT(umemcmp(buffer1, buffer2, RMEM_BLOCK_SIZE) == 0);
@@ -270,9 +251,6 @@ static void test_rmem_manager_read_write_interleaved(void)
  */
 static void test_rmem_manager_read_write_all(void)
 {
-	#if (__VERBOSE_TESTS)
-	nanvix_puts(HLINE);
-	#endif
 
 	for (unsigned long i = 1; i < RMEM_NUM_BLOCKS; i++)
 	{
@@ -284,7 +262,7 @@ static void test_rmem_manager_read_write_all(void)
 		TEST_ASSERT(nanvix_rmem_write(blknum, buffer1) == RMEM_BLOCK_SIZE);
 
 		#if (__VERBOSE_TESTS)
-			uprintf("rmem_write() blknum=%d\n", blknum);
+			uprintf("rmem_write() blknum=%d", blknum);
 		#endif
 	}
 	for (unsigned long i = 1; i < RMEM_NUM_BLOCKS; i++)
@@ -295,7 +273,7 @@ static void test_rmem_manager_read_write_all(void)
 		umemset(buffer2, 0, RMEM_BLOCK_SIZE);
 
 		#if (__VERBOSE_TESTS)
-			uprintf("rmem_read()  blknum=%d\n", blknum);
+			uprintf("rmem_read()  blknum=%d", blknum);
 		#endif
 
 		TEST_ASSERT(nanvix_rmem_read(blknum, buffer2) == RMEM_BLOCK_SIZE);

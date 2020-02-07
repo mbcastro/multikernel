@@ -34,7 +34,7 @@
 	{
 		uint16_t source; /**< Source cluster. */
 		uint8_t  opcode; /**< Operation.      */
-		uint8_t  unused; /**< Not used.       */
+		uint8_t  port;   /**< Port Number     */
 	} message_header;
 
 #endif /* NANVIX_SERVERS_MESSAGE_H_ */

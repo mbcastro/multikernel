@@ -57,6 +57,11 @@
 	extern void test_rmem_cache(void);
 
 	/**
+	 * @brief Launches regression tests on RMem Interface.
+	 */
+	extern void test_rmem_interface(void);
+
+	/**
 	 * @brief Horizontal line for tests.
 	 */
 	extern const char *HLINE;

@@ -38,6 +38,11 @@
 #include <posix/stdbool.h>
 
 /**
+ * @brief Port Nnumber for RMem client.
+ */
+#define RMEM_SERVER_PORT_NUM 2
+
+/**
  * @brief Remote memory server connection.
  */
 static struct
@@ -153,6 +158,7 @@ size_t nanvix_rmem_read(rpage_t blknum, void *buf)
 	/* Build operation header. */
 	msg.header.source = knode_get_num();
 	msg.header.opcode = RMEM_READ;
+	msg.header.port = kthread_self();
 
 	msg.blknum = blknum;
 
@@ -167,11 +173,22 @@ size_t nanvix_rmem_read(rpage_t blknum, void *buf)
 		) == 0
 	);
 
+	/* Wait acknowledge. */
+	uassert(
+		kmailbox_read(
+			stdinbox_get(),
+			&msg,
+			sizeof(struct rmem_message)
+		) == sizeof(struct rmem_message)
+	);
+	uassert(msg.header.opcode == RMEM_ACK);
+
 	/* Receive data. */
 	uassert(
 		kportal_allow(
 			stdinportal_get(),
-			rmem_servers[serverid].nodenum
+			rmem_servers[serverid].nodenum,
+			kthread_self()
 		) == 0
 	);
 	uassert(
@@ -304,7 +321,7 @@ int __nanvix_rmem_setup(void)
 		}
 
 		/* Open underlying IPC connectors. */
-		if ((server[i].outportal = nanvix_portal_open(rmem_servers[i].name)) < 0)
+		if ((server[i].outportal = nanvix_portal_open(rmem_servers[i].name, RMEM_SERVER_PORT_NUM)) < 0)
 		{
 			uprintf("[nanvix][rmem] cannot open outportal to server\n");
 			return (server[i].outportal);
@@ -312,7 +329,6 @@ int __nanvix_rmem_setup(void)
 
 		server[i].initialized = 1;
 	}
-
 
 	return (0);
 }
