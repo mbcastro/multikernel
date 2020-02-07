@@ -45,8 +45,8 @@ int __main2(int argc, const char *argv[])
 	__runtime_setup(0);
 
 		/* Unblock spawner. */
-		uprintf("[nanvix][test] server alive");
 		uassert(stdsync_fence() == 0);
+		uprintf("[nanvix][test] server alive");
 
 		__runtime_setup(1);
 		test_name();
