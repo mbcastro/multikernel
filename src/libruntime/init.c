@@ -25,6 +25,7 @@
 #include <nanvix/runtime/runtime.h>
 #include <nanvix/runtime/stdikc.h>
 #include <nanvix/sys/thread.h>
+#include <nanvix/sys/perf.h>
 #include <nanvix/ulib.h>
 #include <posix/errno.h>
 
@@ -34,6 +35,27 @@
 static int current_ring[THREAD_MAX] = {
 	[0 ... (THREAD_MAX - 1)] = -1
 };
+
+/**
+ * @brief Forces a platform-independent delay.
+ *
+ * @param cycles Delay in cycles.
+ *
+ * @author João Vicente Souto
+ */
+static void delay(uint64_t cycles)
+{
+	uint64_t t0, t1;
+
+	for (int i = 0; i < PROCESSOR_CLUSTERS_NUM; ++i)
+	{
+		kclock(&t0);
+
+		do
+			kclock(&t1);
+		while ((t1 - t0) < cycles);
+	}
+}
 
 /**
  * @todo TODO: provide a detailed description for this function.
@@ -65,6 +87,7 @@ int __runtime_setup(int ring)
 	if ((current_ring[tid] < 1) && (ring >= 1))
 	{
 		uprintf("[nanvix][thread %d] initalizing ring 1", tid);
+		delay(CLUSTER_FREQ);
 		uassert(__name_setup() == 0);
 	}
 
@@ -72,6 +95,7 @@ int __runtime_setup(int ring)
 	if ((current_ring[tid] < 2) && (ring >= 2))
 	{
 		uprintf("[nanvix][thread %d] initalizing ring 2", tid);
+		delay(CLUSTER_FREQ);
 		uassert(__nanvix_mailbox_setup() == 0);
 		uassert(__nanvix_portal_setup() == 0);
 	}
@@ -80,6 +104,7 @@ int __runtime_setup(int ring)
 	if ((current_ring[tid] < 3) && (ring >= 3))
 	{
 		uprintf("[nanvix][thread %d] initalizing ring 3", tid);
+		delay(CLUSTER_FREQ);
 		uassert(__nanvix_rmem_setup() == 0);
 	}
 
