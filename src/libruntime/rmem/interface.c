@@ -52,6 +52,11 @@ static rpage_t rmem_table[RMEM_TABLE_LENGTH] = {
 	[0 ... (RMEM_TABLE_LENGTH - 1)] = RMEM_NULL
 };
 
+/**
+ * @brief Current break value for remote memory.
+ */
+static int rbrk = 1;
+
 /*============================================================================*
  * nanvix_rlookup()                                                           *
  *============================================================================*/
@@ -96,6 +101,70 @@ static int nanvix_rlookup(raddr_t *base, raddr_t *offset, const void *ptr)
 }
 
 /*============================================================================*
+ * nanvix_rexpand()                                                           *
+ *============================================================================*/
+
+/**
+ * @brief Increases the break value of the remote memory.
+ *
+ * @param n Number of block to expand.
+ *
+ * @returns Upon successful completion, the previous break value of the
+ * remote memory is returned. Upon failure, a negative error code is
+ * returned instead.
+ */
+static int nanvix_rexpand(int n)
+{
+	int old_rbrk;
+
+	/* Invalid heap increase. */
+	if (n <= 0)
+		return (-EINVAL);
+
+	/* Not enough memory.*/
+	if ((rbrk + n) >= RMEM_TABLE_LENGTH)
+		return (-ENOMEM);
+
+	/* Increase heap value. */
+	old_rbrk = rbrk;
+	rbrk += n;
+
+	return (old_rbrk);
+}
+
+/*============================================================================*
+ * nanvix_rfree()                                                             *
+ *============================================================================*/
+
+/**
+ * @brief Decreases the break value of the remote memory.
+ *
+ * @param n Number of block to contract.
+ *
+ * @returns Upon successful completion, the previous break value of the
+ * remote memory is returned. Upon failure, a negative error code is
+ * returned instead.
+ */
+static int nanvix_rcontract(int n)
+{
+	int old_rbrk;
+
+	/* Invalid heap decrease. */
+	if (n <= 0)
+		return (-EINVAL);
+
+	/* Bad heap decrease. */
+	if ((rbrk - n) < 1)
+		return (-EINVAL);
+
+	/* Increase heap value. */
+	old_rbrk = rbrk;
+	rbrk -= n;
+
+	return (old_rbrk);
+}
+
+/*============================================================================*
  * nanvix_ralloc()                                                            *
  *============================================================================*/
 
@@ -105,36 +174,19 @@ static int nanvix_rlookup(raddr_t *base, raddr_t *offset, const void *ptr)
  */
 void *nanvix_ralloc(size_t n)
 {
-	raddr_t base;
+	int base;
 	rpage_t pgnum;
 
 	/* Invalid allocation size */
 	if (n == 0)
 		return (NULL);
 
-	n = TRUNCATE(n, RMEM_BLOCK_SIZE);
-
-	/* Bad allocation size. */
-	if (n > RMEM_BLOCK_SIZE)
-		return (NULL);
-
 	/*
 	 * Find an empty slot in the
 	 * remote memory table.
 	 */
-	for (int i = 1; i < RMEM_TABLE_LENGTH; i++)
-	{
-		/* Found. */
-		if (rmem_table[i] == RMEM_NULL)
-		{
-			base = i;
-			goto found;
-		}
-	}
-
-	return (NULL);
-
-found:
+	if ((base = nanvix_rexpand(n)) < 0)
+		return (NULL);
 
 	/* Allocate page. */
 	if ((pgnum = nanvix_rcache_alloc()) == RMEM_NULL)
@@ -167,14 +219,23 @@ int nanvix_rfree(void *ptr)
 	if ((err = nanvix_rlookup(&base, NULL, ptr)) < 0)
 		return (err);
 
-	/* Free underlying remote page. */
-	if ((err = nanvix_rcache_free(rmem_table[base])) < 0)
-		return (err);
+	/* Invalid address. */
+	if ((rbrk - base) < 1)
+		return (-EFAULT);
 
-	/* Update remote memory table. */
-	rmem_table[base] = RMEM_NULL;
+	for (int i = base; i < rbrk; i++)
+	{
+		/* Free underlying remote page. */
+		if ((err = nanvix_rcache_free(rmem_table[i])) < 0)
+			return (err);
 
-	return (0);
+		/* Update remote memory table. */
+		rmem_table[i] = RMEM_NULL;
+	}
+
+	err = nanvix_rcontract(rbrk - base);
+
+	return ((err < 0) ? err : 0);
 }
 
 /*============================================================================*
