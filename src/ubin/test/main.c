@@ -55,6 +55,9 @@ int __main2(int argc, const char *argv[])
 		test_rmem();
 		test_rmem_cache();
 		test_rmem_interface();
+#ifdef __mppa256__
+		test_posix();
+#endif
 
 		uprintf("[nanvix][test] shutting down server");
 

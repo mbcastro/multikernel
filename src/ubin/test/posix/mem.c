@@ -22,53 +22,49 @@
  * SOFTWARE.
  */
 
-#ifndef _TEST_H_
-#define _TEST_H_
+#define __NEED_RMEM_CACHE
 
-	#include <nanvix/ulib.h>
+#include <nanvix/runtime/rmem.h>
+#include <nanvix/ulib.h>
+#include "../test.h"
 
-	/**
-	 * @brief Asserts a logic expression.
-	 */
-	#define TEST_ASSERT(x) uassert(x)
+/**
+ * @brief Magic number.
+ */
+const unsigned MAGIC = 0xdeadbeef;
 
-	/**
-	 * @brief Unit test.
-	 */
-	struct test
-	{
-		void (*test_fn)(void); /**< Test function. */
-		const char *name;      /**< Test name.     */
-	};
+extern void *nanvix_malloc(size_t size);
+extern void nanvix_free(void *ptr);
 
-	/**
-	 * @brief Launches regression tests on Name Service.
-	 */
-	extern void test_name(void);
+/*============================================================================*
+ * API Test: Read/Write                                                       *
+ *============================================================================*/
 
-	/**
-	 * @brief Launches regression tests on RMem Manager.
-	 */
-	extern void test_rmem(void);
+/**
+ * @brief API Test: Read/Write
+ */
+static void test_api_mem_read_write(void)
+{
+	unsigned *ptr;
 
-	/**
-	 * @brief Launches regression tests on RMem Cache.
-	 */
-	extern void test_rmem_cache(void);
+	TEST_ASSERT((ptr = nanvix_malloc(sizeof(unsigned))) != RMEM_NULL);
 
-	/**
-	 * @brief Launches regression tests on RMem Interface.
-	 */
-	extern void test_rmem_interface(void);
+	uprintf("allocate %x", ptr);
 
-	/**
-	 * @brief Launches regression tests on POSIX interface.
-	 */
-	extern void test_posix(void);
+	*ptr = MAGIC;
 
-	/**
-	 * @brief Horizontal line for tests.
-	 */
-	extern const char *HLINE;
+	/* Checksum. */
+	TEST_ASSERT(*ptr == MAGIC);
 
-#endif /* _TEST_H_ */
+	nanvix_free(ptr);
+}
+
+/*============================================================================*/
+
+/**
+ * @brief Unit tests.
+ */
+struct test tests_mem_api[] = {
+	{ test_api_mem_read_write, "memory read/write" },
+	{ NULL,                     NULL               },
+};
