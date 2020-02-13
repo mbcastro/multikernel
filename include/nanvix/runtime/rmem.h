@@ -185,4 +185,14 @@
 	 */
 	extern size_t nanvix_rwrite(void *ptr, const void *buf, size_t n);
 
+	/**
+	 * @brief Handles a remote page fault.
+	 *
+	 * @param vaddr Faulting virtual address.
+	 *
+	 * @returns Upon successful completion, zero is returned. Upon
+	 * failure, a negative error code is returned instead.
+	 */
+	extern int nanvix_rfault(vaddr_t vaddr);
+
 #endif /* NANVIX_RUNTIME_RMEM_H_ */

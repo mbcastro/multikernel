@@ -277,3 +277,64 @@ size_t nanvix_rwrite(void *ptr, const void *buf, size_t n)
 
 	return (n);
 }
+
+/*============================================================================*
+ * nanvix_rfault()                                                            *
+ *============================================================================*/
+
+/**
+ * @brief Page maps.
+ */
+static struct
+{
+	vaddr_t laddr; /**< Local address.                         */
+	void *raddr;   /**< Pointer to locally-mapped remote page. */
+} maps[RMEM_CACHE_SIZE] = {
+	[0 ... (RMEM_CACHE_SIZE - 1)] = { RMEM_NULL, NULL }
+};
+
+/**
+ * @brief Handles a page fault.
+ */
+int nanvix_rfault(vaddr_t vaddr)
+{
+	int idx = 0;  /* Idex to table of page maps.  */
+	void *lptr;   /* Local pointer.               */
+	void *rptr;   /* Remote pointer.              */
+	raddr_t base; /* Base address of remote page. */
+
+	vaddr &= PAGE_MASK;
+	lptr = (void *)RADDR_INV(vaddr);
+
+	/* Lookup remote address. */
+	if (nanvix_rlookup(&base, NULL, lptr) < 0)
+		return (-EFAULT);
+
+	/* Get cached remote page. */
+	if ((rptr = nanvix_rcache_get(rmem_table[base])) == NULL)
+		return (-EFAULT);
+
+	/* Unlink old page page from there. */
+	for (int i = 0; i < RMEM_CACHE_SIZE; i++)
+	{
+		/* Found. */
+		if (maps[i].raddr == rptr)
+		{
+			uassert(page_unmap(maps[idx = i].laddr) == 0);
+			goto done;
+		}
+
+		/* Remember this index. */
+		if (maps[i].raddr == rptr)
+			idx = 0;
+	}
+
+done:
+
+	/* Link page. */
+	maps[idx].raddr = rptr;
+	maps[idx].laddr = vaddr;
+	uassert(page_link((vaddr_t) rptr, (vaddr_t) vaddr) == 0);
+
+	return (0);
+}
