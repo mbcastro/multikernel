@@ -61,51 +61,17 @@ static void test_rmem_interface_alloc_free_sequential(void)
 
 	for (int i = 0; i < NUM_BLOCKS; i++)
 	{
-		TEST_ASSERT((blks[i] = nanvix_ralloc(RMEM_BLOCK_SIZE)) != NULL);
+		TEST_ASSERT((blks[i] = nanvix_ralloc(1)) != NULL);
 		#if (__VERBOSE_TESTS)
 			uprintf("ralloc() blknum=%d", blks[i]);
 		#endif
 	}
-	for (int i = 0; i < NUM_BLOCKS; i++)
+	for (int i = NUM_BLOCKS - 1; i >= 0; i--)
 	{
 		#if (__VERBOSE_TESTS)
 			uprintf("rfree()  blknum=%d", blks[i]);
 		#endif
 		TEST_ASSERT(nanvix_rfree(blks[i]) == 0);
-	}
-}
-
-/*============================================================================*
- * Stress Test: Alloc/Free Interleaved                                        *
- *============================================================================*/
-
-/**
- * @brief Stress Test: Alloc/Free
- */
-static void test_rmem_interface_alloc_free_interleaved(void)
-{
-	void *blks[NUM_BLOCKS];
-
-	for (int i = 0; i < NUM_BLOCKS; i++)
-	{
-		TEST_ASSERT((blks[i] = nanvix_ralloc(RMEM_BLOCK_SIZE)) != NULL);
-		#if (__VERBOSE_TESTS)
-			uprintf("ralloc() blknum=%d", blks[i]);
-		#endif
-	}
-	for (int i = 0; i < NUM_BLOCKS; i += 2)
-	{
-		TEST_ASSERT(nanvix_rfree(blks[i]) == 0);
-		#if (__VERBOSE_TESTS)
-			uprintf("rfree()  blknum=%d", blks[i]);
-		#endif
-	}
-	for (int i = 1; i < NUM_BLOCKS; i += 2)
-	{
-		TEST_ASSERT(nanvix_rfree(blks[i]) == 0);
-		#if (__VERBOSE_TESTS)
-			uprintf("rfree()  blknum=%d", blks[i]);
-		#endif
 	}
 }
 
@@ -122,7 +88,7 @@ static void test_rmem_interface_read_write_sequential(void)
 
 	/* Allocate many blocks.*/
 	for (int i = 0; i < NUM_BLOCKS; i++)
-		TEST_ASSERT((blks[i] = nanvix_ralloc(RMEM_BLOCK_SIZE)) != NULL);
+		TEST_ASSERT((blks[i] = nanvix_ralloc(1)) != NULL);
 
 	/* Read and write. */
 	for (int i = 0; i < NUM_BLOCKS; i++)
@@ -144,55 +110,7 @@ static void test_rmem_interface_read_write_sequential(void)
 	}
 
 	/* Free all blocks. */
-	for (int i = 0; i < NUM_BLOCKS; i++)
-		TEST_ASSERT(nanvix_rfree(blks[i]) == 0);
-}
-
-/*============================================================================*
- * Stress Test: Read/Write Interleaved                                        *
- *============================================================================*/
-
-/**
- * @brief Stress Test: Read/Write Interleaved
- */
-static void test_rmem_interface_read_write_interleaved(void)
-{
-	void *blks[NUM_BLOCKS];
-
-	/* Allocate many blocks.*/
-	for (int i = 0; i < NUM_BLOCKS; i++)
-		TEST_ASSERT((blks[i] = nanvix_ralloc(RMEM_BLOCK_SIZE)) != NULL);
-
-	/* Read and write. */
-	for (int j = 0; j < 2; j++)
-	{
-		for (int i = j; i < NUM_BLOCKS; i +=2)
-		{
-			umemset(buffer1, i + 1, RMEM_BLOCK_SIZE);
-
-			#if (__VERBOSE_TESTS)
-				uprintf("rwrite() blknum=%d", blks[i]);
-			#endif
-			TEST_ASSERT(nanvix_rwrite(blks[i], buffer1, RMEM_BLOCK_SIZE) == RMEM_BLOCK_SIZE);
-		}
-	}
-	for (int j = 0; j < 2; j++)
-	{
-		for (int i = j; i < NUM_BLOCKS; i +=2)
-		{
-			umemset(buffer1, i + 1, RMEM_BLOCK_SIZE);
-			umemset(buffer2, 0, RMEM_BLOCK_SIZE);
-
-			#if (__VERBOSE_TESTS)
-				uprintf("rread()  blknum=%d", blks[i]);
-			#endif
-			TEST_ASSERT(nanvix_rread(buffer2, blks[i], RMEM_BLOCK_SIZE) == RMEM_BLOCK_SIZE);
-			TEST_ASSERT(umemcmp(buffer1, buffer2, RMEM_BLOCK_SIZE) == 0);
-		}
-	}
-
-	/* Free all blocks. */
-	for (int i = 0; i < NUM_BLOCKS; i++)
+	for (int i = NUM_BLOCKS - 1; i >= 0; i--)
 		TEST_ASSERT(nanvix_rfree(blks[i]) == 0);
 }
 
@@ -205,8 +123,6 @@ static void test_rmem_interface_read_write_interleaved(void)
  */
 struct test tests_rmem_interface_stress[] = {
 	{ test_rmem_interface_alloc_free_sequential,  "alloc/free sequential " },
-	{ test_rmem_interface_alloc_free_interleaved, "alloc/free interleaved" },
 	{ test_rmem_interface_read_write_sequential,  "read/write sequential " },
-	{ test_rmem_interface_read_write_interleaved, "read/write interleaved" },
 	{ NULL,                                       NULL                     },
 };

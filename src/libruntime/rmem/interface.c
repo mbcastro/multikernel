@@ -77,7 +77,7 @@ static int nanvix_rlookup(raddr_t *base, raddr_t *offset, const void *ptr)
 	raddr_t _offset;
 
 	/* Invalid remote address. */
-	if (ptr == RMEM_NULL)
+	if (ptr == NULL)
 		return (-EFAULT);
 
 	_base = ((raddr_t) ptr) >> RMEM_BLOCK_SHIFT;
@@ -212,7 +212,7 @@ int nanvix_rfree(void *ptr)
 	ptr = (void *)RADDR_INV(ptr);
 
 	/* Invalid remote address. */
-	if (ptr == RMEM_NULL)
+	if (ptr == NULL)
 		return (-EFAULT);
 
 	/* Lookup remote address. */
@@ -261,7 +261,7 @@ size_t nanvix_rread(void *buf, const void *ptr, size_t n)
 		return (0);
 
 	/* Invalid remote address. */
-	if (ptr == RMEM_NULL)
+	if (ptr == NULL)
 	{
 		errno = EFAULT;
 		return (0);
@@ -320,7 +320,7 @@ size_t nanvix_rwrite(void *ptr, const void *buf, size_t n)
 		return (0);
 
 	/* Invalid remote address. */
-	if (ptr == RMEM_NULL)
+	if (ptr == NULL)
 	{
 		errno = EFAULT;
 		return (0);

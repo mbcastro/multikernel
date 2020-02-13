@@ -39,8 +39,8 @@ static char buffer[RMEM_BLOCK_SIZE];
  */
 static void test_rmem_interface_invalid_alloc(void)
 {
-	TEST_ASSERT((nanvix_ralloc(0)) == RMEM_NULL);
-	TEST_ASSERT((nanvix_ralloc(RMEM_BLOCK_SIZE + 1)) == RMEM_NULL);
+	TEST_ASSERT((nanvix_ralloc(0)) == NULL);
+	TEST_ASSERT((nanvix_ralloc(RMEM_SIZE/RMEM_BLOCK_SHIFT + 1)) == NULL);
 }
 
 /*============================================================================*
@@ -52,7 +52,6 @@ static void test_rmem_interface_invalid_alloc(void)
  */
 static void test_rmem_interface_invalid_free(void)
 {
-	TEST_ASSERT((nanvix_rfree(RMEM_NULL)) < 0);
 	TEST_ASSERT((nanvix_rfree(NULL)) < 0);
 	TEST_ASSERT((nanvix_rfree(&test_rmem_interface_invalid_free)) < 0);
 }
@@ -68,7 +67,7 @@ static void test_rmem_interface_invalid_read(void)
 {
 	void *ptr;
 
-	TEST_ASSERT((ptr = nanvix_ralloc(RMEM_BLOCK_SIZE)) != RMEM_NULL);
+	TEST_ASSERT((ptr = nanvix_ralloc(1)) != NULL);
 
 		TEST_ASSERT(nanvix_rread(NULL, ptr, RMEM_BLOCK_SIZE) == 0);
 		TEST_ASSERT(nanvix_rread(buffer, NULL, RMEM_BLOCK_SIZE) == 0);
@@ -88,7 +87,7 @@ static void test_rmem_interface_invalid_write(void)
 {
 	void *ptr;
 
-	TEST_ASSERT((ptr = nanvix_ralloc(RMEM_BLOCK_SIZE)) != RMEM_NULL);
+	TEST_ASSERT((ptr = nanvix_ralloc(1)) != NULL);
 
 		TEST_ASSERT(nanvix_rwrite(NULL, ptr, RMEM_BLOCK_SIZE) == 0);
 		TEST_ASSERT(nanvix_rwrite(NULL, buffer, RMEM_BLOCK_SIZE) == 0);
