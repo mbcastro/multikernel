@@ -23,6 +23,7 @@
 #define __NEED_RMEM_CACHE
 
 #include <nanvix/runtime/rmem.h>
+#include <nanvix/sys/page.h>
 #include <nanvix/const.h>
 #include <nanvix/ulib.h>
 #include <posix/errno.h>
@@ -33,6 +34,16 @@
  * @brief Length of remote memory table.
  */
 #define RMEM_TABLE_LENGTH 1024
+
+/**
+ * @brief Computes a remote address.
+ */
+#define RADDR(x) (UBASE_VIRT + ((x) << RMEM_BLOCK_SHIFT))
+
+/**
+ * @brief Computes a remote address (reverse).
+ */
+#define RADDR_INV(x) ((vaddr_t)(x) - UBASE_VIRT)
 
 /**
  * @brief Remote memory table
@@ -131,7 +142,7 @@ found:
 
 	rmem_table[base] = pgnum;
 
-	return ((void *) (base << RMEM_BLOCK_SHIFT));
+	return ((void *) RADDR(base));
 }
 
 /*============================================================================*
@@ -145,6 +156,8 @@ int nanvix_rfree(void *ptr)
 {
 	int err;      /* Error code.   */
 	raddr_t base; /* Base address. */
+
+	ptr = (void *)RADDR_INV(ptr);
 
 	/* Invalid remote address. */
 	if (ptr == RMEM_NULL)
@@ -179,6 +192,8 @@ size_t nanvix_rread(void *buf, const void *ptr, size_t n)
 	int err;        /* Error code.         */
 	raddr_t base;   /* Base address.       */
 	raddr_t offset; /* Offset address.     */
+
+	ptr = (void *)RADDR_INV(ptr);
 
 	/* Nothing to do. */
 	if (n == 0)
@@ -236,6 +251,8 @@ size_t nanvix_rwrite(void *ptr, const void *buf, size_t n)
 	int err;        /* Error code.         */
 	raddr_t base;   /* Base address.       */
 	raddr_t offset; /* Offset address.     */
+
+	ptr = (void *)RADDR_INV(ptr);
 
 	/* Nothing to do. */
 	if (n == 0)

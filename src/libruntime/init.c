@@ -22,9 +22,12 @@
  * SOFTWARE.
  */
 
+#include <nanvix/runtime/rmem.h>
 #include <nanvix/runtime/runtime.h>
 #include <nanvix/runtime/stdikc.h>
 #include <nanvix/sys/thread.h>
+#include <nanvix/sys/excp.h>
+#include <nanvix/sys/page.h>
 #include <nanvix/sys/perf.h>
 #include <nanvix/ulib.h>
 #include <posix/errno.h>
@@ -35,6 +38,46 @@
 static int current_ring[THREAD_MAX] = {
 	[0 ... (THREAD_MAX - 1)] = -1
 };
+
+/**
+ * @brief ID of exception handler thread.
+ */
+static kthread_t exception_handler_tid;
+
+/**
+ * @brief User-space exception handler.
+ *
+ * @param args Arguments for the thread (unused).
+ *
+ * @returns Always return NULL.
+ */
+static void *nanvix_exception_handler(void *args)
+{
+	vaddr_t vaddr;
+	struct exception excp;
+
+	UNUSED(args);
+
+	uassert(__stdsync_setup() == 0);
+	uassert(__stdmailbox_setup() == 0);
+	uassert(__stdportal_setup() == 0);
+	uassert(__name_setup() == 0);
+	uassert(__nanvix_mailbox_setup() == 0);
+	uassert(__nanvix_portal_setup() == 0);
+
+	while (1)
+	{
+		if (excp_pause(&excp) != 0)
+			break;
+
+		vaddr = exception_get_addr(&excp);
+		uassert(nanvix_rfault(vaddr) == 0);
+
+		uassert(excp_resume() == 0);
+	}
+
+	return (NULL);
+}
 
 /**
  * @brief Forces a platform-independent delay.
@@ -106,6 +149,7 @@ int __runtime_setup(int ring)
 		uprintf("[nanvix][thread %d] initalizing ring 3", tid);
 		delay(CLUSTER_FREQ);
 		uassert(__nanvix_rmem_setup() == 0);
+		uassert(kthread_create(&exception_handler_tid, &nanvix_exception_handler, NULL) == 0);
 	}
 
 	current_ring[tid] = ring;
@@ -127,6 +171,7 @@ int __runtime_cleanup(void)
 	{
 		uprintf("[nanvix][thread %d] shutting down ring 3", tid);
 		uassert(__nanvix_rmem_cleanup() == 0);
+		uassert(kthread_join(exception_handler_tid, NULL) == 0);
 	}
 
 	/* Clean up IKC facilities. */
