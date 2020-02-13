@@ -26,6 +26,7 @@
 #define NANVIX_RUNTIME_RMEM_H_
 
 	#include <stddef.h>
+	#include <nanvix/sys/page.h>
 
 #if defined(__NEED_RMEM_CACHE)
 
@@ -33,16 +34,24 @@
 
 	#include <nanvix/servers/rmem.h>
 
+	/**
+	 * @#brief Size of a block in the page cache.
+	 */
 	#ifndef __RMEM_CACHE_BLOCK_SIZE
 	#define RMEM_CACHE_BLOCK_SIZE 1
 	#endif
 
 	/**
-	 * @brief Length of page cache.
+	 * @brief Length of the page cache.
 	 */
 	#ifndef __RMEM_CACHE_LENGTH
 	#define RMEM_CACHE_LENGTH 32
 	#endif
+
+	/**
+	 * @brief Size of the page cache.
+	 */
+	#define RMEM_CACHE_SIZE (RMEM_CACHE_BLOCK_SIZE*RMEM_CACHE_LENGTH)
 
 	/**
 	 * @name Page replacement policies.

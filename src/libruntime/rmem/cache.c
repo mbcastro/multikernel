@@ -45,7 +45,7 @@ static struct
 typedef struct
 {
 	rpage_t pgnum;
-	char pages[RMEM_BLOCK_SIZE];
+	char pages[RMEM_BLOCK_SIZE] ALIGN(PAGE_SIZE);
 #ifdef __RMEM_CACHE_AGING
 	uint32_t age;
 #else
@@ -54,8 +54,8 @@ typedef struct
 	int ref_count;
 } cache_slot;
 
-static cache_slot cache_lines[RMEM_CACHE_BLOCK_SIZE*RMEM_CACHE_LENGTH] = {
-	[0 ... ((RMEM_CACHE_BLOCK_SIZE*RMEM_CACHE_LENGTH) - 1)] = {.pgnum = RMEM_NULL, .age = 0, .ref_count = 0}
+static cache_slot cache_lines[RMEM_CACHE_SIZE] = {
+	[0 ... ((RMEM_CACHE_SIZE) - 1)] = {.pgnum = RMEM_NULL, .age = 0, .ref_count = 0}
 };
 
 /**
