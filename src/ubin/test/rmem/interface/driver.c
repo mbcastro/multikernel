@@ -26,6 +26,7 @@
 /* Import definitions. */
 extern struct test tests_rmem_interface_api[];
 extern struct test tests_rmem_interface_fault[];
+extern struct test tests_rmem_interface_stress[];
 
 /**
  * @todo TODO: provide a detailed description for this function.
@@ -35,7 +36,7 @@ void test_rmem_interface(void)
 	/* Run API tests. */
 	for (int i = 0; tests_rmem_interface_api[i].test_fn != NULL; i++)
 	{
-		uprintf("[nanvix][test][rmem-interface][api] %s",
+		uprintf("[nanvix][test][rmem][interface][api] %s",
 				tests_rmem_interface_api[i].name
 		);
 		tests_rmem_interface_api[i].test_fn();
@@ -44,9 +45,18 @@ void test_rmem_interface(void)
 	/* Run fault injection tests. */
 	for (int i = 0; tests_rmem_interface_fault[i].test_fn != NULL; i++)
 	{
-		uprintf("[nanvix][test][rmem-interface][fault] %s",
+		uprintf("[nanvix][test][rmem][interface][fault] %s",
 				tests_rmem_interface_fault[i].name
 		);
 		tests_rmem_interface_fault[i].test_fn();
+	}
+
+	/* Run stress injection tests. */
+	for (int i = 0; tests_rmem_interface_stress[i].test_fn != NULL; i++)
+	{
+		uprintf("[nanvix][test][rmem][interface][stress] %s",
+				tests_rmem_interface_stress[i].name
+		);
+		tests_rmem_interface_stress[i].test_fn();
 	}
 }

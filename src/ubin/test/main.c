@@ -24,7 +24,6 @@
 
 #include <nanvix/runtime/runtime.h>
 #include <nanvix/runtime/stdikc.h>
-#include <nanvix/sys/perf.h>
 #include <nanvix/ulib.h>
 #include <posix/stdint.h>
 #include "test.h"
@@ -34,27 +33,6 @@
  */
 const char *HLINE =
 	"------------------------------------------------------------------------";
-
-/**
- * @brief Forces a platform-independent delay.
- *
- * @param cycles Delay in cycles.
- *
- * @author João Vicente Souto
- */
-static void delay(uint64_t cycles)
-{
-	uint64_t t0, t1;
-
-	for (int i = 0; i < PROCESSOR_CLUSTERS_NUM; ++i)
-	{
-		kclock(&t0);
-
-		do
-			kclock(&t1);
-		while ((t1 - t0) < cycles);
-	}
-}
 
 /**
  * @brief Test Server
@@ -67,10 +45,8 @@ int __main2(int argc, const char *argv[])
 	__runtime_setup(0);
 
 		/* Unblock spawner. */
-		uprintf("[nanvix][test] server alive");
 		uassert(stdsync_fence() == 0);
-
-		delay(CLUSTER_FREQ);
+		uprintf("[nanvix][test] server alive");
 
 		__runtime_setup(1);
 		test_name();
@@ -81,6 +57,8 @@ int __main2(int argc, const char *argv[])
 		test_rmem_interface();
 
 		uprintf("[nanvix][test] shutting down server");
+
+	nanvix_shutdown();
 
 	__runtime_cleanup();
 

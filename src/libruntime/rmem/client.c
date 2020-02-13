@@ -29,6 +29,7 @@
 #include <nanvix/runtime/stdikc.h>
 #include <nanvix/runtime/mailbox.h>
 #include <nanvix/runtime/portal.h>
+#include <nanvix/sys/excp.h>
 #include <nanvix/sys/mailbox.h>
 #include <nanvix/sys/portal.h>
 #include <nanvix/sys/mutex.h>
@@ -330,6 +331,10 @@ int __nanvix_rmem_setup(void)
 		server[i].initialized = 1;
 	}
 
+#if (CLUSTER_HAS_TLB_SHOOTDOWN)
+	uassert(excp_ctrl(EXCEPTION_PAGE_FAULT, EXCP_ACTION_HANDLE) == 0);
+#endif
+
 	return (0);
 }
 
@@ -342,6 +347,10 @@ int __nanvix_rmem_setup(void)
  */
 int __nanvix_rmem_cleanup(void)
 {
+#if (CLUSTER_HAS_TLB_SHOOTDOWN)
+	uassert(excp_ctrl(EXCEPTION_PAGE_FAULT, EXCP_ACTION_IGNORE) == 0);
+#endif
+
 	/* Close connections to remote memory servers. */
 	for (int i = 0; i < RMEM_SERVERS_NUM; i++)
 	{

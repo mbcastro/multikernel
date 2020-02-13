@@ -23,6 +23,7 @@
 #define __NEED_RMEM_CACHE
 
 #include <nanvix/runtime/rmem.h>
+#include <nanvix/sys/page.h>
 #include <nanvix/const.h>
 #include <nanvix/ulib.h>
 #include <posix/errno.h>
@@ -35,11 +36,26 @@
 #define RMEM_TABLE_LENGTH 1024
 
 /**
+ * @brief Computes a remote address.
+ */
+#define RADDR(x) (UBASE_VIRT + ((x) << RMEM_BLOCK_SHIFT))
+
+/**
+ * @brief Computes a remote address (reverse).
+ */
+#define RADDR_INV(x) ((vaddr_t)(x) - UBASE_VIRT)
+
+/**
  * @brief Remote memory table
  */
 static rpage_t rmem_table[RMEM_TABLE_LENGTH] = {
 	[0 ... (RMEM_TABLE_LENGTH - 1)] = RMEM_NULL
 };
+
+/**
+ * @brief Current break value for remote memory.
+ */
+static int rbrk = 1;
 
 /*============================================================================*
  * nanvix_rlookup()                                                           *
@@ -61,7 +77,7 @@ static int nanvix_rlookup(raddr_t *base, raddr_t *offset, const void *ptr)
 	raddr_t _offset;
 
 	/* Invalid remote address. */
-	if (ptr == RMEM_NULL)
+	if (ptr == NULL)
 		return (-EFAULT);
 
 	_base = ((raddr_t) ptr) >> RMEM_BLOCK_SHIFT;
@@ -85,6 +101,70 @@ static int nanvix_rlookup(raddr_t *base, raddr_t *offset, const void *ptr)
 }
 
 /*============================================================================*
+ * nanvix_rexpand()                                                           *
+ *============================================================================*/
+
+/**
+ * @brief Increases the break value of the remote memory.
+ *
+ * @param n Number of block to expand.
+ *
+ * @returns Upon successful completion, the previous break value of the
+ * remote memory is returned. Upon failure, a negative error code is
+ * returned instead.
+ */
+static int nanvix_rexpand(int n)
+{
+	int old_rbrk;
+
+	/* Invalid heap increase. */
+	if (n <= 0)
+		return (-EINVAL);
+
+	/* Not enough memory.*/
+	if ((rbrk + n) >= RMEM_TABLE_LENGTH)
+		return (-ENOMEM);
+
+	/* Increase heap value. */
+	old_rbrk = rbrk;
+	rbrk += n;
+
+	return (old_rbrk);
+}
+
+/*============================================================================*
+ * nanvix_rfree()                                                             *
+ *============================================================================*/
+
+/**
+ * @brief Decreases the break value of the remote memory.
+ *
+ * @param n Number of block to contract.
+ *
+ * @returns Upon successful completion, the previous break value of the
+ * remote memory is returned. Upon failure, a negative error code is
+ * returned instead.
+ */
+static int nanvix_rcontract(int n)
+{
+	int old_rbrk;
+
+	/* Invalid heap decrease. */
+	if (n <= 0)
+		return (-EINVAL);
+
+	/* Bad heap decrease. */
+	if ((rbrk - n) < 1)
+		return (-EINVAL);
+
+	/* Increase heap value. */
+	old_rbrk = rbrk;
+	rbrk -= n;
+
+	return (old_rbrk);
+}
+
+/*============================================================================*
  * nanvix_ralloc()                                                            *
  *============================================================================*/
 
@@ -94,36 +174,19 @@ static int nanvix_rlookup(raddr_t *base, raddr_t *offset, const void *ptr)
  */
 void *nanvix_ralloc(size_t n)
 {
-	raddr_t base;
+	int base;
 	rpage_t pgnum;
 
 	/* Invalid allocation size */
 	if (n == 0)
 		return (NULL);
 
-	n = TRUNCATE(n, RMEM_BLOCK_SIZE);
-
-	/* Bad allocation size. */
-	if (n > RMEM_BLOCK_SIZE)
-		return (NULL);
-
 	/*
 	 * Find an empty slot in the
 	 * remote memory table.
 	 */
-	for (int i = 1; i < RMEM_TABLE_LENGTH; i++)
-	{
-		/* Found. */
-		if (rmem_table[i] == RMEM_NULL)
-		{
-			base = i;
-			goto found;
-		}
-	}
-
-	return (NULL);
-
-found:
+	if ((base = nanvix_rexpand(n)) < 0)
+		return (NULL);
 
 	/* Allocate page. */
 	if ((pgnum = nanvix_rcache_alloc()) == RMEM_NULL)
@@ -131,7 +194,7 @@ found:
 
 	rmem_table[base] = pgnum;
 
-	return ((void *) (base << RMEM_BLOCK_SHIFT));
+	return ((void *) RADDR(base));
 }
 
 /*============================================================================*
@@ -146,22 +209,33 @@ int nanvix_rfree(void *ptr)
 	int err;      /* Error code.   */
 	raddr_t base; /* Base address. */
 
+	ptr = (void *)RADDR_INV(ptr);
+
 	/* Invalid remote address. */
-	if (ptr == RMEM_NULL)
+	if (ptr == NULL)
 		return (-EFAULT);
 
 	/* Lookup remote address. */
 	if ((err = nanvix_rlookup(&base, NULL, ptr)) < 0)
 		return (err);
 
-	/* Free underlying remote page. */
-	if ((err = nanvix_rcache_free(rmem_table[base])) < 0)
-		return (err);
+	/* Invalid address. */
+	if ((rbrk - base) < 1)
+		return (-EFAULT);
 
-	/* Update remote memory table. */
-	rmem_table[base] = RMEM_NULL;
+	for (int i = base; i < rbrk; i++)
+	{
+		/* Free underlying remote page. */
+		if ((err = nanvix_rcache_free(rmem_table[i])) < 0)
+			return (err);
 
-	return (0);
+		/* Update remote memory table. */
+		rmem_table[i] = RMEM_NULL;
+	}
+
+	err = nanvix_rcontract(rbrk - base);
+
+	return ((err < 0) ? err : 0);
 }
 
 /*============================================================================*
@@ -180,12 +254,14 @@ size_t nanvix_rread(void *buf, const void *ptr, size_t n)
 	raddr_t base;   /* Base address.       */
 	raddr_t offset; /* Offset address.     */
 
+	ptr = (void *)RADDR_INV(ptr);
+
 	/* Nothing to do. */
 	if (n == 0)
 		return (0);
 
 	/* Invalid remote address. */
-	if (ptr == RMEM_NULL)
+	if (ptr == NULL)
 	{
 		errno = EFAULT;
 		return (0);
@@ -237,12 +313,14 @@ size_t nanvix_rwrite(void *ptr, const void *buf, size_t n)
 	raddr_t base;   /* Base address.       */
 	raddr_t offset; /* Offset address.     */
 
+	ptr = (void *)RADDR_INV(ptr);
+
 	/* Nothing to do. */
 	if (n == 0)
 		return (0);
 
 	/* Invalid remote address. */
-	if (ptr == RMEM_NULL)
+	if (ptr == NULL)
 	{
 		errno = EFAULT;
 		return (0);
@@ -276,4 +354,65 @@ size_t nanvix_rwrite(void *ptr, const void *buf, size_t n)
 	umemcpy(&rptr[offset], buf, n);
 
 	return (n);
+}
+
+/*============================================================================*
+ * nanvix_rfault()                                                            *
+ *============================================================================*/
+
+/**
+ * @brief Page maps.
+ */
+static struct
+{
+	vaddr_t laddr; /**< Local address.                         */
+	void *raddr;   /**< Pointer to locally-mapped remote page. */
+} maps[RMEM_CACHE_SIZE] = {
+	[0 ... (RMEM_CACHE_SIZE - 1)] = { RMEM_NULL, NULL }
+};
+
+/**
+ * @brief Handles a page fault.
+ */
+int nanvix_rfault(vaddr_t vaddr)
+{
+	int idx = 0;  /* Idex to table of page maps.  */
+	void *lptr;   /* Local pointer.               */
+	void *rptr;   /* Remote pointer.              */
+	raddr_t base; /* Base address of remote page. */
+
+	vaddr &= PAGE_MASK;
+	lptr = (void *)RADDR_INV(vaddr);
+
+	/* Lookup remote address. */
+	if (nanvix_rlookup(&base, NULL, lptr) < 0)
+		return (-EFAULT);
+
+	/* Get cached remote page. */
+	if ((rptr = nanvix_rcache_get(rmem_table[base])) == NULL)
+		return (-EFAULT);
+
+	/* Unlink old page page from there. */
+	for (int i = 0; i < RMEM_CACHE_SIZE; i++)
+	{
+		/* Found. */
+		if (maps[i].raddr == rptr)
+		{
+			uassert(page_unmap(maps[idx = i].laddr) == 0);
+			goto done;
+		}
+
+		/* Remember this index. */
+		if (maps[i].raddr == rptr)
+			idx = 0;
+	}
+
+done:
+
+	/* Link page. */
+	maps[idx].raddr = rptr;
+	maps[idx].laddr = vaddr;
+	uassert(page_link((vaddr_t) rptr, (vaddr_t) vaddr) == 0);
+
+	return (0);
 }

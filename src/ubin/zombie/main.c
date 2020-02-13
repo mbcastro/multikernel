@@ -36,8 +36,8 @@ int __main2(int argc, const char *argv[])
 
 	__runtime_setup(0);
 
-		uprintf("[nanvix][zombie] server alive");
 		uassert(stdsync_fence() == 0);
+		uprintf("[nanvix][zombie] server alive");
 
 	__runtime_cleanup();
 

@@ -42,21 +42,18 @@ static char buffer[RMEM_BLOCK_SIZE];
  */
 static void test_rmem_interface_alloc_free(void)
 {
-	for (size_t i = 1; i <= RMEM_BLOCK_SIZE; i = (i << 1))
-	{
-		void *ptr;
+	void *ptr;
 
 #if (__VERBOSE_TESTS)
-		uprintf("ralloc() size=%d\n", i);
+	uprintf("ralloc() size=%d\n", 1);
 #endif
 
-		TEST_ASSERT((ptr = nanvix_ralloc(i)) != RMEM_NULL);
-		TEST_ASSERT(nanvix_rfree(ptr) == 0);
+	TEST_ASSERT((ptr = nanvix_ralloc(1)) != NULL);
+	TEST_ASSERT(nanvix_rfree(ptr) == 0);
 
 #if (__VERBOSE_TESTS)
-		uprintf("rfree()  ptr=%x\n", ptr);
+	uprintf("rfree()  ptr=%x\n", ptr);
 #endif
-	}
 }
 
 /*============================================================================*
@@ -70,7 +67,7 @@ static void test_rmem_interface_read_write(void)
 {
 	char *ptr;
 
-	TEST_ASSERT((ptr = nanvix_ralloc(RMEM_BLOCK_SIZE)) != RMEM_NULL);
+	TEST_ASSERT((ptr = nanvix_ralloc(1)) != NULL);
 
 	for (size_t base = 0; base < RMEM_BLOCK_SIZE; base = (base == 0) ? 1 : (base << 1))
 	{
@@ -106,7 +103,7 @@ static void test_rmem_interface_read_write(void)
  * @brief Unit tests.
  */
 struct test tests_rmem_interface_api[] = {
-	{ test_rmem_interface_alloc_free, "alloc/free" },
-	{ test_rmem_interface_read_write, "read/write" },
-	{ NULL,                            NULL        },
+	{ test_rmem_interface_alloc_free, "alloc/free"      },
+	{ test_rmem_interface_read_write, "read/write"      },
+	{ NULL,                            NULL             },
 };

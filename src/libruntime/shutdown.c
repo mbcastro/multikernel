@@ -39,9 +39,10 @@ int nanvix_shutdown(void)
 	__runtime_setup(3);
 
 	/* Broadcast shutdown signal. */
-	uassert(name_shutdown() == 0);
 	for (int i = 0; i < RMEM_SERVERS_NUM; i++)
 		uassert(nanvix_rmem_shutdown(i) == 0);
+
+	uassert(name_shutdown() == 0);
 
 	return (0);
 }

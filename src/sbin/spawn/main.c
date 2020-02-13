@@ -87,7 +87,6 @@ int __main2(int argc, const char *argv[])
 		uprintf("[nanvix][%s] syncing in sync %d", spawner_name, stdsync_get());
 
 		uprintf("[nanvix][%s] waiting for remote kernels...", spawner_name);
-		uassert(stdsync_fence() == 0);
 
 		/* Spawn servers. */
 		uprintf("[nanvix][%s] spawning servers...", spawner_name);
@@ -97,11 +96,15 @@ int __main2(int argc, const char *argv[])
 			uassert(kthread_create(&tids[i], server, &args[i]) == 0);
 		}
 
-		uprintf("[nanvix][%s] broadcasting shutdown signal...", spawner_name);
+		uassert(stdsync_fence() == 0);
+		uprintf("[nanvix][%s] waiting shutdown signal...", spawner_name);
 
 		/* Wait for servers. */
 		for (int i = 0; i < SERVERS_NUM; i++)
+		{
 			uassert(kthread_join(tids[i], NULL) == 0);
+			uprintf("[nanvix][%s] server %d down...", spawner_name, i);
+		}
 
 		uprintf("[nanvix][%s] shutting down...", spawner_name);
 

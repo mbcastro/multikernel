@@ -26,6 +26,7 @@
 #define NANVIX_RUNTIME_RMEM_H_
 
 	#include <stddef.h>
+	#include <nanvix/sys/page.h>
 
 #if defined(__NEED_RMEM_CACHE)
 
@@ -33,16 +34,24 @@
 
 	#include <nanvix/servers/rmem.h>
 
+	/**
+	 * @#brief Size of a block in the page cache.
+	 */
 	#ifndef __RMEM_CACHE_BLOCK_SIZE
 	#define RMEM_CACHE_BLOCK_SIZE 1
 	#endif
 
 	/**
-	 * @brief Length of page cache.
+	 * @brief Length of the page cache.
 	 */
 	#ifndef __RMEM_CACHE_LENGTH
 	#define RMEM_CACHE_LENGTH 32
 	#endif
+
+	/**
+	 * @brief Size of the page cache.
+	 */
+	#define RMEM_CACHE_SIZE (RMEM_CACHE_BLOCK_SIZE*RMEM_CACHE_LENGTH)
 
 	/**
 	 * @name Page replacement policies.
@@ -175,5 +184,15 @@
 	 * @returns The number of bytes written to remote memory.
 	 */
 	extern size_t nanvix_rwrite(void *ptr, const void *buf, size_t n);
+
+	/**
+	 * @brief Handles a remote page fault.
+	 *
+	 * @param vaddr Faulting virtual address.
+	 *
+	 * @returns Upon successful completion, zero is returned. Upon
+	 * failure, a negative error code is returned instead.
+	 */
+	extern int nanvix_rfault(vaddr_t vaddr);
 
 #endif /* NANVIX_RUNTIME_RMEM_H_ */
