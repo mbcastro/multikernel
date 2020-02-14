@@ -188,11 +188,16 @@ void *nanvix_vmem_alloc(size_t n)
 	if ((base = nanvix_vmem_expand(n)) < 0)
 		return (NULL);
 
-	/* Allocate page. */
-	if ((pgnum = nanvix_rcache_alloc()) == RMEM_NULL)
-		return (NULL);
+	for (size_t i = 0; i < n; i++)
+	{
+		uprintf("allocating page %d/%d", i, n);
+		/* Allocate page. */
+		if ((pgnum = nanvix_rcache_alloc()) == RMEM_NULL)
+			return (NULL);
 
-	rmem_table[base] = pgnum;
+		rmem_table[base + i] = pgnum;
+	}
+
 
 	return ((void *) RADDR(base));
 }
