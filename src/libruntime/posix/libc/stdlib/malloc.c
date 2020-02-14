@@ -110,13 +110,16 @@ void nanvix_free(void *ptr)
 static void *expand(unsigned nblocks)
 {
 	struct block *p;
+	size_t n;
 
 	/* Expand in at least NALLOC blocks. */
 	if (nblocks < NALLOC)
 		nblocks = NALLOC;
 	
+	n = TRUNCATE(nblocks*SIZEOF_BLOCK, PAGE_SIZE)/PAGE_SIZE;
+
 	/* Request more memory to the kernel. */
-	if ((p = nanvix_vmem_alloc(1)) == NULL)
+	if ((p = nanvix_vmem_alloc(n)) == NULL)
 		return (NULL);
 	
 	p->nblocks = nblocks;
