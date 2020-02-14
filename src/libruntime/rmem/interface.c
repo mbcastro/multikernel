@@ -58,7 +58,7 @@ static rpage_t rmem_table[RMEM_TABLE_LENGTH] = {
 static int rbrk = 1;
 
 /*============================================================================*
- * nanvix_rlookup()                                                           *
+ * nanvix_vmem_lookup()                                                       *
  *============================================================================*/
 
 /**
@@ -71,7 +71,7 @@ static int rbrk = 1;
  * @returns Upon successful completion, zero is returned. Upon
  * failure, a negative error code is returned instead.
  */
-static int nanvix_rlookup(raddr_t *base, raddr_t *offset, const void *ptr)
+static int nanvix_vmem_lookup(raddr_t *base, raddr_t *offset, const void *ptr)
 {
 	raddr_t _base;
 	raddr_t _offset;
@@ -101,7 +101,7 @@ static int nanvix_rlookup(raddr_t *base, raddr_t *offset, const void *ptr)
 }
 
 /*============================================================================*
- * nanvix_rexpand()                                                           *
+ * nanvix_vmem_expand()                                                       *
  *============================================================================*/
 
 /**
@@ -113,7 +113,7 @@ static int nanvix_rlookup(raddr_t *base, raddr_t *offset, const void *ptr)
  * remote memory is returned. Upon failure, a negative error code is
  * returned instead.
  */
-static int nanvix_rexpand(int n)
+static int nanvix_vmem_expand(int n)
 {
 	int old_rbrk;
 
@@ -133,7 +133,7 @@ static int nanvix_rexpand(int n)
 }
 
 /*============================================================================*
- * nanvix_rfree()                                                             *
+ * nanvix_vmem_contract()                                                     *
  *============================================================================*/
 
 /**
@@ -145,7 +145,7 @@ static int nanvix_rexpand(int n)
  * remote memory is returned. Upon failure, a negative error code is
  * returned instead.
  */
-static int nanvix_rcontract(int n)
+static int nanvix_vmem_contract(int n)
 {
 	int old_rbrk;
 
@@ -165,14 +165,14 @@ static int nanvix_rcontract(int n)
 }
 
 /*============================================================================*
- * nanvix_ralloc()                                                            *
+ * nanvix_vmem_alloc()                                                        *
  *============================================================================*/
 
 /**
  * @todo TODO: Provide a detailed description for this function.
  * @todo TODO: Enable arbitrary remote memory allocation.
  */
-void *nanvix_ralloc(size_t n)
+void *nanvix_vmem_alloc(size_t n)
 {
 	int base;
 	rpage_t pgnum;
@@ -185,26 +185,31 @@ void *nanvix_ralloc(size_t n)
 	 * Find an empty slot in the
 	 * remote memory table.
 	 */
-	if ((base = nanvix_rexpand(n)) < 0)
+	if ((base = nanvix_vmem_expand(n)) < 0)
 		return (NULL);
 
-	/* Allocate page. */
-	if ((pgnum = nanvix_rcache_alloc()) == RMEM_NULL)
-		return (NULL);
+	for (size_t i = 0; i < n; i++)
+	{
+		uprintf("allocating page %d/%d", i, n);
+		/* Allocate page. */
+		if ((pgnum = nanvix_rcache_alloc()) == RMEM_NULL)
+			return (NULL);
 
-	rmem_table[base] = pgnum;
+		rmem_table[base + i] = pgnum;
+	}
+
 
 	return ((void *) RADDR(base));
 }
 
 /*============================================================================*
- * nanvix_rfree()                                                             *
+ * nanvix_vmem_free()                                                         *
  *============================================================================*/
 
 /**
  * @todo TODO: Provide a detailed description for this function.
  */
-int nanvix_rfree(void *ptr)
+int nanvix_vmem_free(void *ptr)
 {
 	int err;      /* Error code.   */
 	raddr_t base; /* Base address. */
@@ -216,7 +221,7 @@ int nanvix_rfree(void *ptr)
 		return (-EFAULT);
 
 	/* Lookup remote address. */
-	if ((err = nanvix_rlookup(&base, NULL, ptr)) < 0)
+	if ((err = nanvix_vmem_lookup(&base, NULL, ptr)) < 0)
 		return (err);
 
 	/* Invalid address. */
@@ -233,13 +238,13 @@ int nanvix_rfree(void *ptr)
 		rmem_table[i] = RMEM_NULL;
 	}
 
-	err = nanvix_rcontract(rbrk - base);
+	err = nanvix_vmem_contract(rbrk - base);
 
 	return ((err < 0) ? err : 0);
 }
 
 /*============================================================================*
- * nanvix_rread()                                                             *
+ * nanvix_vmem_read()                                                         *
  *============================================================================*/
 
 /**
@@ -247,7 +252,7 @@ int nanvix_rfree(void *ptr)
  * @todo TODO: Enable arbitrary read offset.
  * @todo TODO: Enable arbitrary read sizes.
  */
-size_t nanvix_rread(void *buf, const void *ptr, size_t n)
+size_t nanvix_vmem_read(void *buf, const void *ptr, size_t n)
 {
 	char *rptr;     /* Cached remote page. */
 	int err;        /* Error code.         */
@@ -268,7 +273,7 @@ size_t nanvix_rread(void *buf, const void *ptr, size_t n)
 	}
 
 	/* Lookup remote address. */
-	if ((err = nanvix_rlookup(&base, &offset, ptr)) < 0)
+	if ((err = nanvix_vmem_lookup(&base, &offset, ptr)) < 0)
 	{
 		errno = -err;
 		return (0);
@@ -298,7 +303,7 @@ size_t nanvix_rread(void *buf, const void *ptr, size_t n)
 }
 
 /*============================================================================*
- * nanvix_rwrite()                                                            *
+ * nanvix_vmem_write()                                                        *
  *============================================================================*/
 
 /**
@@ -306,7 +311,7 @@ size_t nanvix_rread(void *buf, const void *ptr, size_t n)
  * @todo TODO: Enable arbitrary write offset.
  * @todo TODO: Enable arbitrary write sizes.
  */
-size_t nanvix_rwrite(void *ptr, const void *buf, size_t n)
+size_t nanvix_vmem_write(void *ptr, const void *buf, size_t n)
 {
 	char *rptr;     /* Cached remote page. */
 	int err;        /* Error code.         */
@@ -327,7 +332,7 @@ size_t nanvix_rwrite(void *ptr, const void *buf, size_t n)
 	}
 
 	/* Lookup remote address. */
-	if ((err = nanvix_rlookup(&base, &offset, ptr)) < 0)
+	if ((err = nanvix_vmem_lookup(&base, &offset, ptr)) < 0)
 	{
 		errno = -err;
 		return (0);
@@ -385,7 +390,7 @@ int nanvix_rfault(vaddr_t vaddr)
 	lptr = (void *)RADDR_INV(vaddr);
 
 	/* Lookup remote address. */
-	if (nanvix_rlookup(&base, NULL, lptr) < 0)
+	if (nanvix_vmem_lookup(&base, NULL, lptr) < 0)
 		return (-EFAULT);
 
 	/* Get cached remote page. */

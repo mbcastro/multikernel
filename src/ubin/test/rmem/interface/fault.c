@@ -39,8 +39,8 @@ static char buffer[RMEM_BLOCK_SIZE];
  */
 static void test_rmem_interface_invalid_alloc(void)
 {
-	TEST_ASSERT((nanvix_ralloc(0)) == NULL);
-	TEST_ASSERT((nanvix_ralloc(RMEM_SIZE/RMEM_BLOCK_SHIFT + 1)) == NULL);
+	TEST_ASSERT((nanvix_vmem_alloc(0)) == NULL);
+	TEST_ASSERT((nanvix_vmem_alloc(RMEM_SIZE/RMEM_BLOCK_SHIFT + 1)) == NULL);
 }
 
 /*============================================================================*
@@ -52,8 +52,8 @@ static void test_rmem_interface_invalid_alloc(void)
  */
 static void test_rmem_interface_invalid_free(void)
 {
-	TEST_ASSERT((nanvix_rfree(NULL)) < 0);
-	TEST_ASSERT((nanvix_rfree(&test_rmem_interface_invalid_free)) < 0);
+	TEST_ASSERT((nanvix_vmem_free(NULL)) < 0);
+	TEST_ASSERT((nanvix_vmem_free(&test_rmem_interface_invalid_free)) < 0);
 }
 
 /*============================================================================*
@@ -67,13 +67,13 @@ static void test_rmem_interface_invalid_read(void)
 {
 	void *ptr;
 
-	TEST_ASSERT((ptr = nanvix_ralloc(1)) != NULL);
+	TEST_ASSERT((ptr = nanvix_vmem_alloc(1)) != NULL);
 
-		TEST_ASSERT(nanvix_rread(NULL, ptr, RMEM_BLOCK_SIZE) == 0);
-		TEST_ASSERT(nanvix_rread(buffer, NULL, RMEM_BLOCK_SIZE) == 0);
-		TEST_ASSERT(nanvix_rread(buffer, ptr, RMEM_BLOCK_SIZE + 1) == 0);
+		TEST_ASSERT(nanvix_vmem_read(NULL, ptr, RMEM_BLOCK_SIZE) == 0);
+		TEST_ASSERT(nanvix_vmem_read(buffer, NULL, RMEM_BLOCK_SIZE) == 0);
+		TEST_ASSERT(nanvix_vmem_read(buffer, ptr, RMEM_BLOCK_SIZE + 1) == 0);
 
-	TEST_ASSERT(nanvix_rfree(ptr) == 0);
+	TEST_ASSERT(nanvix_vmem_free(ptr) == 0);
 }
 
 /*============================================================================*
@@ -87,13 +87,13 @@ static void test_rmem_interface_invalid_write(void)
 {
 	void *ptr;
 
-	TEST_ASSERT((ptr = nanvix_ralloc(1)) != NULL);
+	TEST_ASSERT((ptr = nanvix_vmem_alloc(1)) != NULL);
 
-		TEST_ASSERT(nanvix_rwrite(NULL, ptr, RMEM_BLOCK_SIZE) == 0);
-		TEST_ASSERT(nanvix_rwrite(NULL, buffer, RMEM_BLOCK_SIZE) == 0);
-		TEST_ASSERT(nanvix_rwrite(ptr, buffer, RMEM_BLOCK_SIZE + 1) == 0);
+		TEST_ASSERT(nanvix_vmem_write(NULL, ptr, RMEM_BLOCK_SIZE) == 0);
+		TEST_ASSERT(nanvix_vmem_write(NULL, buffer, RMEM_BLOCK_SIZE) == 0);
+		TEST_ASSERT(nanvix_vmem_write(ptr, buffer, RMEM_BLOCK_SIZE + 1) == 0);
 
-	TEST_ASSERT(nanvix_rfree(ptr) == 0);
+	TEST_ASSERT(nanvix_vmem_free(ptr) == 0);
 }
 
 /*============================================================================*/

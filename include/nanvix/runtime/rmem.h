@@ -151,7 +151,7 @@
 	 * allocated remote memory area is returned. Upon failure, a null
 	 * pointer is returned instead.
 	 */
-	extern void *nanvix_ralloc(size_t n);
+	extern void *nanvix_vmem_alloc(size_t n);
 
 	/**
 	 * @brief Frees remote memory.
@@ -161,7 +161,7 @@
 	 * @returns Upon successful completion, zero is returned. Upon
 	 * failure, a negative error code is returned instead.
 	 */
-	extern int nanvix_rfree(void *ptr);
+	extern int nanvix_vmem_free(void *ptr);
 
 	/**
 	 * @brief Reads data from remote memory.
@@ -172,7 +172,7 @@
 	 *
 	 * @returns The number of bytes read from remote memory.
 	 */
-	extern size_t nanvix_rread(void *buf, const void *ptr, size_t n);
+	extern size_t nanvix_vmem_read(void *buf, const void *ptr, size_t n);
 
 	/**
 	 * @brief Writes data to remote memory.
@@ -183,7 +183,7 @@
 	 *
 	 * @returns The number of bytes written to remote memory.
 	 */
-	extern size_t nanvix_rwrite(void *ptr, const void *buf, size_t n);
+	extern size_t nanvix_vmem_write(void *ptr, const void *buf, size_t n);
 
 	/**
 	 * @brief Handles a remote page fault.

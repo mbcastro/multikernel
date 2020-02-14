@@ -23,13 +23,13 @@
 #
 
 # Builds everything.
-all: all-rcache
+all: all-rcache all-vmem
 
 # Cleans up build objects.
-clean: clean-rcache
+clean: clean-rcache clean-vmem
 
 # Cleans up everything.
-distclean: distclean-rcache
+distclean: distclean-rcache distclean-vmem
 
 #===============================================================================
 # RMem Cache Benchmarks
@@ -46,3 +46,19 @@ clean-rcache:
 # Cleans up everything from RMem Cache benchmarks.
 distclean-rcache:
 	$(MAKE) -C rcache distclean
+
+#===============================================================================
+# VMem Allocator Benchmarks
+#===============================================================================
+
+# Builds VMem Allocator benchmarks.
+all-vmem:
+	$(MAKE) -C vmem all
+
+# Cleans up build objects of VMem Allocator benchmarks.
+clean-vmem:
+	$(MAKE) -C vmem clean
+
+# Cleans up everything from VMem Allocator benchmarks.
+distclean-vmem:
+	$(MAKE) -C vmem distclean

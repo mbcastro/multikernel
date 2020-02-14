@@ -61,7 +61,7 @@ static void test_rmem_interface_alloc_free_sequential(void)
 
 	for (int i = 0; i < NUM_BLOCKS; i++)
 	{
-		TEST_ASSERT((blks[i] = nanvix_ralloc(1)) != NULL);
+		TEST_ASSERT((blks[i] = nanvix_vmem_alloc(1)) != NULL);
 		#if (__VERBOSE_TESTS)
 			uprintf("ralloc() blknum=%d", blks[i]);
 		#endif
@@ -71,7 +71,7 @@ static void test_rmem_interface_alloc_free_sequential(void)
 		#if (__VERBOSE_TESTS)
 			uprintf("rfree()  blknum=%d", blks[i]);
 		#endif
-		TEST_ASSERT(nanvix_rfree(blks[i]) == 0);
+		TEST_ASSERT(nanvix_vmem_free(blks[i]) == 0);
 	}
 }
 
@@ -88,7 +88,7 @@ static void test_rmem_interface_read_write_sequential(void)
 
 	/* Allocate many blocks.*/
 	for (int i = 0; i < NUM_BLOCKS; i++)
-		TEST_ASSERT((blks[i] = nanvix_ralloc(1)) != NULL);
+		TEST_ASSERT((blks[i] = nanvix_vmem_alloc(1)) != NULL);
 
 	/* Read and write. */
 	for (int i = 0; i < NUM_BLOCKS; i++)
@@ -99,19 +99,19 @@ static void test_rmem_interface_read_write_sequential(void)
 		#if (__VERBOSE_TESTS)
 			uprintf("rwrite() blknum=%d", blks[i]);
 		#endif
-		TEST_ASSERT(nanvix_rwrite(blks[i], buffer1, RMEM_BLOCK_SIZE) == RMEM_BLOCK_SIZE);
+		TEST_ASSERT(nanvix_vmem_write(blks[i], buffer1, RMEM_BLOCK_SIZE) == RMEM_BLOCK_SIZE);
 
 		#if (__VERBOSE_TESTS)
 			uprintf("rread()  blknum=%d", blks[i]);
 		#endif
-		TEST_ASSERT(nanvix_rread(buffer2, blks[i], RMEM_BLOCK_SIZE) == RMEM_BLOCK_SIZE);
+		TEST_ASSERT(nanvix_vmem_read(buffer2, blks[i], RMEM_BLOCK_SIZE) == RMEM_BLOCK_SIZE);
 		TEST_ASSERT(umemcmp(buffer1, buffer2, RMEM_BLOCK_SIZE) == 0);
 
 	}
 
 	/* Free all blocks. */
 	for (int i = NUM_BLOCKS - 1; i >= 0; i--)
-		TEST_ASSERT(nanvix_rfree(blks[i]) == 0);
+		TEST_ASSERT(nanvix_vmem_free(blks[i]) == 0);
 }
 
 /*============================================================================*
