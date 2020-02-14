@@ -48,8 +48,8 @@ static void test_rmem_interface_alloc_free(void)
 	uprintf("ralloc() size=%d\n", 1);
 #endif
 
-	TEST_ASSERT((ptr = nanvix_ralloc(1)) != NULL);
-	TEST_ASSERT(nanvix_rfree(ptr) == 0);
+	TEST_ASSERT((ptr = nanvix_vmem_alloc(1)) != NULL);
+	TEST_ASSERT(nanvix_vmem_free(ptr) == 0);
 
 #if (__VERBOSE_TESTS)
 	uprintf("rfree()  ptr=%x\n", ptr);
@@ -67,7 +67,7 @@ static void test_rmem_interface_read_write(void)
 {
 	char *ptr;
 
-	TEST_ASSERT((ptr = nanvix_ralloc(1)) != NULL);
+	TEST_ASSERT((ptr = nanvix_vmem_alloc(1)) != NULL);
 
 	for (size_t base = 0; base < RMEM_BLOCK_SIZE; base = (base == 0) ? 1 : (base << 1))
 	{
@@ -79,7 +79,7 @@ static void test_rmem_interface_read_write(void)
 
 		/* Aligned read. */
 		umemset(buffer, 1, RMEM_BLOCK_SIZE);
-		TEST_ASSERT(nanvix_rwrite(&ptr[base], buffer, n) == n);
+		TEST_ASSERT(nanvix_vmem_write(&ptr[base], buffer, n) == n);
 
 #if (__VERBOSE_TESTS)
 		uprintf("rread()  base=%d n=%d\n", base, n);
@@ -87,14 +87,14 @@ static void test_rmem_interface_read_write(void)
 
 		/* Aligned write. */
 		umemset(buffer, 0, RMEM_BLOCK_SIZE);
-		TEST_ASSERT(nanvix_rread(buffer, &ptr[base], n) == n);
+		TEST_ASSERT(nanvix_vmem_read(buffer, &ptr[base], n) == n);
 
 		/* Checksum. */
 		for (size_t i = 0; i < n; i++)
 			TEST_ASSERT(buffer[i] == 1);
 	}
 
-	TEST_ASSERT(nanvix_rfree(ptr) == 0);
+	TEST_ASSERT(nanvix_vmem_free(ptr) == 0);
 }
 
 /*============================================================================*/

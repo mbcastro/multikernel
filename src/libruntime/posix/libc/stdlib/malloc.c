@@ -116,7 +116,7 @@ static void *expand(unsigned nblocks)
 		nblocks = NALLOC;
 	
 	/* Request more memory to the kernel. */
-	if ((p = nanvix_ralloc(1)) == NULL)
+	if ((p = nanvix_vmem_alloc(1)) == NULL)
 		return (NULL);
 	
 	p->nblocks = nblocks;
