@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# Copyright(c) 2011-2019 The Maintainers of Nanvix
+# Copyright(c) 2018 Pedro Henrique Penna <pedrohenriquepenna@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -22,59 +22,82 @@
 # SOFTWARE.
 #
 
-# Builds everything.
-all: all-rcache all-vmem all-posix-mem
-
-# Cleans up build objects.
-clean: clean-rcache clean-vmem clean-posix-mem
-
-# Cleans up everything.
-distclean: distclean-rcache distclean-vmem distclean-posix-mem
-
 #===============================================================================
-# RMem Cache Benchmarks
+# Toolchain Configuration
 #===============================================================================
 
-# Builds RMem Cache benchmarks.
-all-rcache:
-	$(MAKE) -C rcache all
+# Compiler Options
+ifneq ($(LIBLWIP),)
+CFLAGS += -I $(INCDIR)/posix
+endif
 
-# Cleans up build objects of RMem Cache benchmarks.
-clean-rcache:
-	$(MAKE) -C rcache clean
-
-# Cleans up everything from RMem Cache benchmarks.
-distclean-rcache:
-	$(MAKE) -C rcache distclean
-
-#===============================================================================
-# VMem Allocator Benchmarks
-#===============================================================================
-
-# Builds VMem Allocator benchmarks.
-all-vmem:
-	$(MAKE) -C vmem all
-
-# Cleans up build objects of VMem Allocator benchmarks.
-clean-vmem:
-	$(MAKE) -C vmem clean
-
-# Cleans up everything from VMem Allocator benchmarks.
-distclean-vmem:
-	$(MAKE) -C vmem distclean
+# Libraries
+LIBS := -Wl,--whole-archive
+LIBS += $(LIBDIR)/$(LIBHAL)
+LIBS += $(LIBDIR)/$(LIBKERNEL)
+LIBS += -Wl,--no-whole-archive
+LIBS += $(LIBDIR)/$(LIBRUNTIME)
+LIBS += $(LIBDIR)/$(LIBC)
+LIBS += $(LIBDIR)/$(LIBNANVIX)
+ifneq ($(LIBLWIP),)
+LIBS += $(LIBDIR)/$(LIBLWIP)
+endif
+LIBS += $(LIBDIR)/$(BARELIB) $(THEIR_LIBS)
 
 #===============================================================================
-# POSIX Allocator Benchmarks
+# Binaries Sources and Objects
 #===============================================================================
 
-# Builds POSIX Allocator benchmarks.
-all-posix-mem:
-	$(MAKE) -C posix-mem all
+# Binary
+EXEC = nanvix-benchmark-posix-mem.$(OBJ_SUFFIX)
 
-# Cleans up build objects of POSIX Allocator benchmarks.
-clean-posix-mem:
-	$(MAKE) -C posix-mem clean
+# C Source Files
+SRC = $(wildcard *.c) \
+      $(wildcard workload/*.c)
 
-# Cleans up everything from POSIX Allocator benchmarks.
-distclean-posix-mem:
-	$(MAKE) -C posix-mem distclean
+# Object Files
+OBJ = $(SRC:.c=.$(OBJ_SUFFIX).o)
+
+#===============================================================================
+
+ifeq ($(TARGET),unix64)
+LINKER_SCRIPT=
+else
+LINKER_SCRIPT = -L $(LINKERDIR)/ -T link.ld
+endif
+
+# Builds All Object Files
+all: $(OBJ)
+ifeq ($(VERBOSE), no)
+	@echo [CC] $(EXEC)
+	@$(CC) $(LDFLAGS) $(LINKER_SCRIPT) -o $(BINDIR)/$(EXEC) $(OBJ) $(LIBS)
+else
+	$(CC) $(LDFLAGS) $(LINKER_SCRIPT) -o $(BINDIR)/$(EXEC) $(OBJ) $(LIBS)
+endif
+
+# Cleans All Object Files
+clean:
+ifeq ($(VERBOSE), no)
+	@echo [CLEAN] $(OBJ)
+	@rm -rf $(OBJ)
+else
+	rm -rf $(OBJ)
+endif
+
+# Cleans Everything
+distclean: clean
+ifeq ($(VERBOSE), no)
+	@echo [CLEAN] $(EXEC)
+	@rm -rf $(BINDIR)/$(EXEC)
+else
+	rm -rf $(BINDIR)/$(EXEC)
+endif
+
+# Builds a C source file.
+%.$(OBJ_SUFFIX).o: %.c
+ifeq ($(VERBOSE), no)
+	@echo [CC] $@
+	@$(CC) $(CFLAGS) $< -c -o $@
+else
+	$(CC) $(CFLAGS) $< -c -o $@
+endif
