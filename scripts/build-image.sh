@@ -22,7 +22,19 @@
 
 BINDIR=$1
 
-source "scripts/arch/mppa256.sh"
+if [ -z $TARGET ]; then
+	echo "$0: missing target architecture"
+	exit 1
+fi
+
+if [ $TARGET == "mppa256" ]; then
+	source "scripts/arch/mppa256.sh"
+elif [ $TARGET == "unix" ]; then
+	source "scripts/arch/unix.sh"
+else
+	echo "unkown architecture"
+	exit 1
+fi
 
 #
 # Missing arguments.

@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# Copyright (c) 211-218 Pedro Henrique Penna <pedrohenriquepenna@gmail.com>
+# Copyright(c) 2011-2019 The Maintainers of Nanvix
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -10,32 +10,55 @@
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
 #
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.  THE SOFTWARE IS PROVIDED
-# "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
-# LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
-# PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
-# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
-# ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
 #
 
-# Conflicts
-.PHONY: test
+# Builds Everything
+all: all-zombie all-test
+
+# Cleans Build Objects
+clean: clean-zombie clean-test
+
+# Cleans Everything
+distclean: distclean-zombie distclean-test
 
 #===============================================================================
+# Zombie Server
+#===============================================================================
 
-# Builds everything.
-all: test
+# Builds Zombie Server.
+all-zombie:
+	$(MAKE) -C zombie all
 
-# Builds Test-Driver Utility.
-test:
-	cd test && $(MAKE) all
+# Cleans Zombie Server Build objects.
+clean-zombie:
+	$(MAKE) -C zombie clean
 
-# Cleans compilation files.
-clean:
-	cd test && $(MAKE) clean
+# Cleans Zombie Server build.
+distclean-zombie:
+	$(MAKE) -C zombie distclean
 
-# Cleans everything.
-distclean: clean
-	cd test && $(MAKE) distclean
+#===============================================================================
+# Test Server
+#===============================================================================
+
+# Builds Test Server.
+all-test:
+	$(MAKE) -C test all
+
+# Cleans Test Server Build objects.
+clean-test:
+	$(MAKE) -C test clean
+
+# Cleans Test Server build.
+distclean-test:
+	$(MAKE) -C test distclean

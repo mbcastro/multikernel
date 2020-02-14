@@ -1,8 +1,0 @@
-@startuml
-
-!include kernel.uml
-!include libs.uml
-
-libs.nanvix ..>  kernel : <<use>>
-
-@enduml
