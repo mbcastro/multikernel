@@ -23,13 +23,14 @@
 #
 
 # Builds Everything
-all: all-libruntime all-sbin all-sys all-ubin
+all: all-libruntime all-sbin all-sys all-ubin all-benchmarks
 
 # Cleans Build Objects
-clean: clean-libruntime clean-sbin clean-sys clean-ubin
+clean: clean-libruntime clean-sbin clean-sys clean-ubin clean-benchmarks
 
 # Cleans Everything
-distclean: distclean-libruntime distclean-sbin distclean-sys distclean-ubin
+distclean: distclean-libruntime distclean-sbin distclean-sys distclean-ubin \
+	distclean-benchmarks
 
 #===============================================================================
 # Runtime Library
@@ -94,3 +95,19 @@ clean-ubin:
 # Cleans User Binaries build.
 distclean-ubin:
 	$(MAKE) -C ubin distclean
+
+#===============================================================================
+# Benchmarks
+#===============================================================================
+
+# Builds User Binaries.
+all-benchmarks: all-libruntime
+	$(MAKE) -C benchmarks all
+
+# Cleans User Binaries Build objects.
+clean-benchmarks:
+	$(MAKE) -C benchmarks clean
+
+# Cleans User Binaries build.
+distclean-benchmarks:
+	$(MAKE) -C benchmarks distclean

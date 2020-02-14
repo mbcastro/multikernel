@@ -431,7 +431,7 @@ int nanvix_rcache_flush(rpage_t pgnum)
 			return (err);
 	}
 #ifdef CACHE_DEBUG
-	uprintf("[benchmark] %d misses, %d hits\n", stats.nmisses, stats.nhits);
+	uprintf("[benchmark] %d misses, %d hits", stats.nmisses, stats.nhits);
 #endif
 	return (0);
 }
@@ -503,7 +503,7 @@ void *nanvix_rcache_get(rpage_t pgnum)
 	nanvix_rcache_age_update(pgnum);
 
 #ifdef CACHE_DEBUG
-	uprintf("[benchmark] %d misses, %d hits\n", stats.nmisses, stats.nhits);
+	uprintf("[benchmark] %d misses, %d hits", stats.nmisses, stats.nhits);
 #endif
 	return (cache_lines[idx].pages);
 }
@@ -540,7 +540,7 @@ int nanvix_rcache_put(rpage_t pgnum, int strike)
 	cache_lines[idx].ref_count--;
 
 #ifdef CACHE_DEBUG
-	uprintf("[benchmark] %d misses, %d hits\n", stats.nmisses, stats.nhits);
+	uprintf("[benchmark] %d misses, %d hits", stats.nmisses, stats.nhits);
 #endif
 	return (0);
 }
