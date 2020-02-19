@@ -63,25 +63,29 @@ static cache_slot cache_lines[RMEM_CACHE_SIZE] = {
  */
 static unsigned cache_time = 0;
 
-#ifdef __RMEM_CACHE_FIFO
-	static int cache_policy = RMEM_CACHE_FIFO;
-#elif defined(__RMEM_CACHE_LRU)
-	static int cache_policy = RMEM_CACHE_LRU;
-#elif defined(__RMEM_CACHE_AGING)
-	static int cache_policy = RMEM_CACHE_AGING;
-#elif defined(__RMEM_CACHE_LIFO)
-	static int cache_policy = RMEM_CACHE_LIFO;
-#else
-	static int cache_policy = RMEM_CACHE_FIFO;
+/**
+ * @brief Default cache replacement policy.
+ */
+#ifndef __RMEM_CACHE_DEFAULT_REPLACEMENT
+#define __RMEM_CACHE_DEFAULT_REPLACEMENT RMEM_CACHE_FIFO
 #endif
 
-#ifdef __RMEM_CACHE_WRITE_BACK
-	static int write_num = RMEM_CACHE_WRITE_BACK;
-#elif defined(__RMEM_CACHE_WRITE_THROUGH)
-	static int write_num = RMEM_CACHE_WRITE_THROUGH;
-#else
-	static int write_num = RMEM_CACHE_WRITE_BACK;
+/**
+ * @brief Default cache write policy.
+ */
+#ifndef __RMEM_CACHE_DEFAULT_WRITE
+#define __RMEM_CACHE_DEFAULT_WRITE RMEM_CACHE_WRITE_BACK
 #endif
+
+/**
+ * @brief Cache replacement policy.
+ */
+static int cache_policy = __RMEM_CACHE_DEFAULT_REPLACEMENT;
+
+/**
+ * @brief Cache write policy.
+ */
+static int write_num = __RMEM_CACHE_DEFAULT_WRITE;
 
 /*============================================================================*
  * nanvix_rcache_clean()                                                      *
