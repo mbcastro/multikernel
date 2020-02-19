@@ -133,9 +133,7 @@ static int nanvix_rcache_page_search(rpage_t pgnum)
 			for (int j = 0; j < RMEM_CACHE_BLOCK_SIZE; j++)
 			{
 				if (cache_lines[i*RMEM_CACHE_BLOCK_SIZE+j].pgnum == pgnum)
-				{
 					return (i*RMEM_CACHE_BLOCK_SIZE+j);
-				}
 			}
 		}
 	}
@@ -238,9 +236,7 @@ static int nanvix_rcache_fifo(void)
 	for (int i = 0; i < RMEM_CACHE_LENGTH; i++)
 	{
 		if (cache_lines[i*RMEM_CACHE_BLOCK_SIZE].pgnum == RMEM_NULL)
-		{
 		    return (i*RMEM_CACHE_BLOCK_SIZE);
-		}
 	}
 
 	/* No space. Make evict. */
