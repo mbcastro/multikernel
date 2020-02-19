@@ -140,6 +140,14 @@
 	 */
 	extern int nanvix_rcache_select_write(int num);
 
+	/**
+	 * @brief Initializes the page cache.
+	 *
+	 * @returns Upon successful completion, zero is returned. Upon
+	 * failure a negative error code is returned instead.
+	 */
+	extern int __nanvix_rcache_setup(void);
+
 #endif /* __NEED_RMEM_CACHE */
 
 	/**

@@ -30,6 +30,11 @@
 #include <posix/errno.h>
 
 /**
+ * @brief Is the page cache initialized?
+ */
+static int initialized = 0;
+
+/**
  * @brief Cache statistics.
  */
 static struct
@@ -546,5 +551,36 @@ int nanvix_rcache_put(rpage_t pgnum, int strike)
 #ifdef CACHE_DEBUG
 	uprintf("[benchmark] %d misses, %d hits", stats.nmisses, stats.nhits);
 #endif
+	return (0);
+}
+
+/*============================================================================*
+ * nanvix_rcache_setup()                                                      *
+ *============================================================================*/
+
+/**
+ * The nanvix_rcache_setup() function initializes the page cache.
+ */
+int __nanvix_rcache_setup(void)
+{
+	/* Page cache already initialized. */
+	if (!initialized)
+		return (0);
+
+	/* Initialize page cache statistics. */
+	stats.nmisses = 0;
+	stats.nhits = 0;
+	stats.nallocs = 0;
+
+	/* Page cache lines. */
+	for (int i = 0; i < RMEM_CACHE_SIZE; i++)
+	{
+		cache_lines[i].pgnum = RMEM_NULL;
+		cache_lines[i].age = 0;
+		cache_lines[i].ref_count = 0;
+	}
+
+	initialized = 1;
+
 	return (0);
 }
