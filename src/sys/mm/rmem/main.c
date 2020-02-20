@@ -432,7 +432,7 @@ static int do_rmem_loop(void)
 				stats.nallocs++;
 				kclock(&t0);
 					msg.blknum = do_rmem_alloc();
-					msg.errcode = (msg.blknum == RMEM_NULL) ? -ENOMEM : 0;
+					msg.errcode = (msg.blknum == RMEM_NULL) ? RMEM_NULL : msg.blknum;
 					uassert((source = kmailbox_open(msg.header.source)) >= 0);
 					uassert(kmailbox_write(source, &msg, sizeof(struct rmem_message)) == sizeof(struct rmem_message));
 					uassert(kmailbox_close(source) == 0);
