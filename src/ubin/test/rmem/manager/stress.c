@@ -59,6 +59,29 @@ static char buffer1[RMEM_BLOCK_SIZE];
 static char buffer2[RMEM_BLOCK_SIZE];
 
 /*============================================================================*
+ * Stress Injection Test: Alloc Overflow                                      *
+ *============================================================================*/
+
+/**
+ * @brief Stress Injection Test: Alloc Overflow
+ */
+static void test_rmem_manager_alloc_overflow(void)
+{
+	static rpage_t blks[RMEM_NUM_BLOCKS];
+
+	/* Allocate all blocks. */
+	for (unsigned long i = 1; i < RMEM_NUM_BLOCKS; i++)
+		TEST_ASSERT((blks[i] = nanvix_rmem_alloc()) != RMEM_NULL);
+
+	/* Fail. */
+	TEST_ASSERT(nanvix_rmem_alloc() == RMEM_NULL);
+
+	/* Free all blocks. */
+	for (unsigned long i = 1; i < RMEM_NUM_BLOCKS; i++)
+		TEST_ASSERT(nanvix_rmem_free(blks[i]) == 0);
+}
+
+/*============================================================================*
  * Stress Test: Alloc/Free Sequential                                         *
  *============================================================================*/
 
@@ -292,6 +315,7 @@ static void test_rmem_manager_read_write_all(void)
  * @brief Unit tests.
  */
 struct test tests_rmem_manager_stress[] = {
+	{ test_rmem_manager_alloc_overflow,         "alloc overflow        " },
 	{ test_rmem_manager_alloc_free_sequential,  "alloc/free sequential " },
 	{ test_rmem_manager_alloc_free_interleaved, "alloc/free interleaved" },
 #if __TEST_ALLOC_FREE_ALL
