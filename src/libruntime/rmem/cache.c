@@ -349,6 +349,7 @@ int nanvix_rcache_select_replacement_policy(int num)
 		case RMEM_CACHE_FIFO:
 		case RMEM_CACHE_LIFO:
 		case RMEM_CACHE_LRU:
+		case RMEM_CACHE_AGING:
 			cache_policy = num;
 			break;
 		default:
