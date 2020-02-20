@@ -372,7 +372,7 @@ int nanvix_rcache_select_write(int num)
 	{
 		case RMEM_CACHE_WRITE_THROUGH:
 		case RMEM_CACHE_WRITE_BACK:
-			write_policy = num;
+			cache_policy = num;
 			break;
 		default:
 			return (-EFAULT);
@@ -477,7 +477,7 @@ int nanvix_rcache_free(rpage_t pgnum)
 void *nanvix_rcache_get(rpage_t pgnum)
 {
 	int err;
-	int idx;
+	void *ptr;
 
 	cache_time++;
 
@@ -485,32 +485,52 @@ void *nanvix_rcache_get(rpage_t pgnum)
 	if ((pgnum == RMEM_NULL) || (RMEM_BLOCK_NUM(pgnum) >= RMEM_NUM_BLOCKS))
 		return (NULL);
 
-	if ((idx = nanvix_rcache_page_search(pgnum)) >= 0)
+	/* Normal mode. */
+	if (cache_policy != RMEM_CACHE_BYPASS)
 	{
-	    stats.nhits++;
-		nanvix_rcache_age_update_lru(pgnum);
-		cache_lines[idx].ref_count++;
-		return (cache_lines[idx].pages);
-	}
+		int idx;
 
-	stats.nmisses++;
-	if ((idx = nanvix_rcache_replacement_policies()) < 0)
-		return (NULL);
-	/* Load page remote page. */
-	for (int i = 0; i < RMEM_CACHE_BLOCK_SIZE; i++)
-	{
-		if ((err = nanvix_rmem_read((rpage_t)(pgnum+i), cache_lines[idx+i].pages)) < 0)
+		if ((idx = nanvix_rcache_page_search(pgnum)) >= 0)
+		{
+			stats.nhits++;
+			nanvix_rcache_age_update_lru(pgnum);
+			cache_lines[idx].ref_count++;
+			return (cache_lines[idx].pages);
+		}
+
+		stats.nmisses++;
+		if ((idx = nanvix_rcache_replacement_policies()) < 0)
 			return (NULL);
-		cache_lines[idx+i].pgnum = (rpage_t)(pgnum+i);
-	}
+		/* Load page remote page. */
+		for (int i = 0; i < RMEM_CACHE_BLOCK_SIZE; i++)
+		{
+			if ((err = nanvix_rmem_read((rpage_t)(pgnum+i), cache_lines[idx+i].pages)) < 0)
+				return (NULL);
+			cache_lines[idx+i].pgnum = (rpage_t)(pgnum+i);
+		}
 
-	cache_lines[idx].ref_count++;
-	nanvix_rcache_age_update(pgnum);
+		cache_lines[idx].ref_count++;
+		nanvix_rcache_age_update(pgnum);
+
+		ptr = cache_lines[idx].pages;
+	}
+	/* Bypass mode. */
+	else
+	{
+		stats.nmisses++;
+
+		if ((err = nanvix_rmem_read(pgnum, cache_lines[0].pages)) < 0)
+			return (NULL);
+
+		cache_lines[0].pgnum = pgnum;
+		ptr = cache_lines[0].pages;
+	}
 
 #ifdef CACHE_DEBUG
 	uprintf("[benchmark] %d misses, %d hits", stats.nmisses, stats.nhits);
 #endif
-	return (cache_lines[idx].pages);
+
+	return (ptr);
 }
 
 /*============================================================================*
@@ -530,19 +550,32 @@ int nanvix_rcache_put(rpage_t pgnum, int strike)
 	if ((pgnum == RMEM_NULL) || (RMEM_BLOCK_NUM(pgnum) >= RMEM_NUM_BLOCKS))
 		return (-EFAULT);
 
-	if ((idx = nanvix_rcache_page_search(pgnum)) < 0)
-		return (-EFAULT);
+	if (cache_policy != RMEM_CACHE_BYPASS)
+	{
+		if ((idx = nanvix_rcache_page_search(pgnum)) < 0)
+			return (-EFAULT);
 
-	if (cache_policy == RMEM_CACHE_LRU)
-		cache_lines[idx].age += strike;
+		if (cache_policy == RMEM_CACHE_LRU)
+			cache_lines[idx].age += strike;
 
-	if (cache_lines[idx].ref_count <= 0)
-		return (-EFAULT);
+		if (cache_lines[idx].ref_count <= 0)
+			return (-EFAULT);
 
-	if ((write_policy == RMEM_CACHE_WRITE_THROUGH) && (nanvix_rcache_flush(pgnum) < 0))
-		return (-EFAULT);
+		if ((write_policy == RMEM_CACHE_WRITE_THROUGH) && (nanvix_rcache_flush(pgnum) < 0))
+			return (-EFAULT);
 
-	cache_lines[idx].ref_count--;
+		cache_lines[idx].ref_count--;
+	}
+	else
+	{
+		int err;
+
+		if (cache_lines[0].pgnum != pgnum)
+			return (-EFAULT);
+
+		if ((err = nanvix_rmem_write(pgnum, cache_lines[0].pages)) < 0)
+			return (err);
+	}
 
 #ifdef CACHE_DEBUG
 	uprintf("[benchmark] %d misses, %d hits", stats.nmisses, stats.nhits);

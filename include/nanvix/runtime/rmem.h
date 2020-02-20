@@ -57,10 +57,11 @@
 	 * @name Page replacement policies.
 	 */
 	/**@{*/
-	#define RMEM_CACHE_FIFO  0 /**< First In First Out  */
-	#define RMEM_CACHE_LIFO  1 /**< Last In First Out   */
-	#define RMEM_CACHE_LRU   2 /**< Least Recently Used */
-	#define RMEM_CACHE_AGING 3 /**< Aging               */
+	#define RMEM_CACHE_BYPASS 0 /**< Bypass Mode         */
+	#define RMEM_CACHE_FIFO   1 /**< First In First Out  */
+	#define RMEM_CACHE_LIFO   2 /**< Last In First Out   */
+	#define RMEM_CACHE_LRU    3 /**< Least Recently Used */
+	#define RMEM_CACHE_AGING  4 /**< Aging               */
 	/**@}*/
 
 	/**
