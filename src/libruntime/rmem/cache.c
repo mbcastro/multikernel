@@ -85,7 +85,7 @@ static int cache_policy = __RMEM_CACHE_DEFAULT_REPLACEMENT;
 /**
  * @brief Cache write policy.
  */
-static int write_num = __RMEM_CACHE_DEFAULT_WRITE;
+static int write_policy = __RMEM_CACHE_DEFAULT_WRITE;
 
 /*============================================================================*
  * nanvix_rcache_clean()                                                      *
@@ -371,7 +371,7 @@ int nanvix_rcache_select_write(int num)
 	{
 		case RMEM_CACHE_WRITE_THROUGH:
 		case RMEM_CACHE_WRITE_BACK:
-			cache_policy = num;
+			write_policy = num;
 			break;
 		default:
 			return (-EFAULT);
@@ -538,7 +538,7 @@ int nanvix_rcache_put(rpage_t pgnum, int strike)
 	if (cache_lines[idx].ref_count <= 0)
 		return (-EFAULT);
 
-	if ((write_num == RMEM_CACHE_WRITE_THROUGH) && (nanvix_rcache_flush(pgnum) < 0))
+	if ((write_policy == RMEM_CACHE_WRITE_THROUGH) && (nanvix_rcache_flush(pgnum) < 0))
 		return (-EFAULT);
 
 	cache_lines[idx].ref_count--;
