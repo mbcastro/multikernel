@@ -190,7 +190,6 @@ void *nanvix_vmem_alloc(size_t n)
 
 	for (size_t i = 0; i < n; i++)
 	{
-		uprintf("allocating page %d/%d", i, n);
 		/* Allocate page. */
 		if ((pgnum = nanvix_rcache_alloc()) == RMEM_NULL)
 			return (NULL);

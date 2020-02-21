@@ -57,10 +57,11 @@
 	 * @name Page replacement policies.
 	 */
 	/**@{*/
-	#define RMEM_CACHE_FIFO  0 /**< First In First Out  */
-	#define RMEM_CACHE_LIFO  1 /**< Last In First Out   */
-	#define RMEM_CACHE_LRU   2 /**< Least Recently Used */
-	#define RMEM_CACHE_AGING 3 /**< Aging               */
+	#define RMEM_CACHE_BYPASS 0 /**< Bypass Mode         */
+	#define RMEM_CACHE_FIFO   1 /**< First In First Out  */
+	#define RMEM_CACHE_LIFO   2 /**< Last In First Out   */
+	#define RMEM_CACHE_LRU    3 /**< Least Recently Used */
+	#define RMEM_CACHE_AGING  4 /**< Aging               */
 	/**@}*/
 
 	/**
@@ -139,6 +140,14 @@
 	 * @param num Number of the policy.
 	 */
 	extern int nanvix_rcache_select_write(int num);
+
+	/**
+	 * @brief Initializes the page cache.
+	 *
+	 * @returns Upon successful completion, zero is returned. Upon
+	 * failure a negative error code is returned instead.
+	 */
+	extern int __nanvix_rcache_setup(void);
 
 #endif /* __NEED_RMEM_CACHE */
 
