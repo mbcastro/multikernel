@@ -44,6 +44,9 @@ static struct
 	unsigned nallocs; /**< Number of allocations */
 } stats = { 0, 0, 0 };
 
+#ifndef AGE_TYPE
+	#define AGE_TYPE uint32_t
+#endif
 /**
  * @brief Page cache.
  */
@@ -51,11 +54,7 @@ typedef struct
 {
 	rpage_t pgnum;
 	char pages[RMEM_BLOCK_SIZE] ALIGN(PAGE_SIZE);
-#ifdef __RMEM_CACHE_AGING
-	uint32_t age;
-#else
-	int age;
-#endif
+	AGE_TYPE age;
 	int ref_count;
 } cache_slot;
 
@@ -143,13 +142,13 @@ static int nanvix_rcache_page_search(rpage_t pgnum)
 
 static void nanvix_update_aging(rpage_t pgnum)
 {
-	int temp_age;
+	AGE_TYPE temp_age;
 	for (int i = 0; i < RMEM_CACHE_LENGTH; i++)
 	{
 		temp_age = cache_lines[i*RMEM_CACHE_BLOCK_SIZE].age;
-		temp_age = (unsigned)(temp_age) >> 1;
+		temp_age = (temp_age) >> 1;
 		if (cache_lines[i*RMEM_CACHE_BLOCK_SIZE].pgnum == pgnum)
-			temp_age = 1 << 31 | temp_age;
+			temp_age = (AGE_TYPE)1 << (sizeof(AGE_TYPE)*8-1) | temp_age;
 		cache_lines[i*RMEM_CACHE_BLOCK_SIZE].age = temp_age;
 	}
 }
@@ -202,6 +201,9 @@ static int nanvix_rcache_age_update(rpage_t pgnum)
 	cache_time++;
 
 	if (cache_policy == RMEM_CACHE_AGING) {
+		if ((idx = nanvix_rcache_page_search(pgnum)) < 0)
+			return (-EFAULT);
+		cache_lines[idx].age = 0;
 		nanvix_update_aging(pgnum);
 	} else {
 		if ((idx = nanvix_rcache_page_search(pgnum)) < 0)
@@ -227,8 +229,8 @@ static int nanvix_rcache_age_update(rpage_t pgnum)
 static int nanvix_rcache_fifo(void)
 {
 	int idx;
-	int age;
-	int min_age;
+	AGE_TYPE age;
+	AGE_TYPE min_age;
 
 	cache_time++;
 
@@ -373,7 +375,7 @@ int nanvix_rcache_select_write(int num)
 	{
 		case RMEM_CACHE_WRITE_THROUGH:
 		case RMEM_CACHE_WRITE_BACK:
-			cache_policy = num;
+			write_policy = num;
 			break;
 		default:
 			return (-EFAULT);
