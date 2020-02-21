@@ -255,7 +255,7 @@ int nanvix_mailbox_create(const char *name)
 		return (-EINVAL);
 
 	/* Check name length. */
-	if (ustrlen(name) > MAILBOX_MSG_SIZE)
+	if (ustrlen(name) > KMAILBOX_MESSAGE_SIZE)
 		return (-EINVAL);
 
 	/* Runtime not initialized. */
