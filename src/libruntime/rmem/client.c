@@ -70,6 +70,8 @@ rpage_t nanvix_rmem_alloc(void)
 	/* Build operation header. */
 	msg.header.source = knode_get_num();
 	msg.header.opcode = RMEM_ALLOC;
+	msg.header.portal_port = kthread_self();
+	msg.header.mailbox_port = kthread_self();
 
 	/* Send operation header. */
 	uassert(
@@ -114,6 +116,8 @@ int nanvix_rmem_free(rpage_t blknum)
 	/* Build operation header. */
 	msg.header.source = knode_get_num();
 	msg.header.opcode = RMEM_MEMFREE;
+	msg.header.portal_port = kthread_self();
+	msg.header.mailbox_port = kthread_self();
 	msg.blknum = blknum;
 
 	serverid = RMEM_BLOCK_SERVER(blknum);
@@ -162,7 +166,8 @@ size_t nanvix_rmem_read(rpage_t blknum, void *buf)
 	/* Build operation header. */
 	msg.header.source = knode_get_num();
 	msg.header.opcode = RMEM_READ;
-	msg.header.port = kthread_self();
+	msg.header.portal_port = kthread_self();
+	msg.header.mailbox_port = kthread_self();
 
 	msg.blknum = blknum;
 
@@ -192,7 +197,7 @@ size_t nanvix_rmem_read(rpage_t blknum, void *buf)
 		kportal_allow(
 			stdinportal_get(),
 			rmem_servers[serverid].nodenum,
-			kthread_self()
+			msg.header.portal_port
 		) == 0
 	);
 	uassert(
@@ -235,12 +240,14 @@ size_t nanvix_rmem_write(rpage_t blknum, const void *buf)
 	if (buf == NULL)
 		return (0);
 
+	serverid = RMEM_BLOCK_SERVER(blknum);
+
 	/* Build operation header. */
 	msg.header.source = knode_get_num();
 	msg.header.opcode = RMEM_WRITE;
+	msg.header.portal_port = server[serverid].outportal % PORTAL_PORT_NR;
+	msg.header.mailbox_port = kthread_self();
 	msg.blknum = blknum;
-
-	serverid = RMEM_BLOCK_SERVER(blknum);
 
 	/* Send operation header. */
 	uassert(
@@ -289,6 +296,8 @@ int nanvix_rmem_shutdown(int servernum)
 	/* Build operation header. */
 	msg.header.source = knode_get_num();
 	msg.header.opcode = RMEM_EXIT;
+	msg.header.portal_port = kthread_self();
+	msg.header.mailbox_port = kthread_self();
 
 	/* Send operation header. */
 	uassert(
@@ -318,7 +327,7 @@ int __nanvix_rmem_setup(void)
 			continue;
 
 		/* Open output mailbox */
-		if ((server[i].outbox = nanvix_mailbox_open(rmem_servers[i].name)) < 0)
+		if ((server[i].outbox = nanvix_mailbox_open(rmem_servers[i].name, RMEM_SERVER_PORT_NUM)) < 0)
 		{
 			uprintf("[nanvix][rmem] cannot open outbox to server\n");
 			return (server[i].outbox);

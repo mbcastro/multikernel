@@ -248,7 +248,7 @@ static inline int do_rmem_free(rpage_t blknum)
  * @param remote Remote client.
  * @param blknum Number of the target block.
  */
-static inline int do_rmem_write(int remote, rpage_t blknum)
+static inline int do_rmem_write(int remote, rpage_t blknum, int remote_port)
 {
 	int ret = 0;
 	rpage_t _blknum;
@@ -278,7 +278,7 @@ static inline int do_rmem_write(int remote, rpage_t blknum)
 		ret = -EFAULT;
 	}
 
-	uassert(kportal_allow(inportal, remote, RMEM_SERVER_PORT_NUM) == 0);
+	uassert(kportal_allow(inportal, remote, remote_port) == 0);
 	uassert(
 		kportal_read(
 			inportal,
@@ -347,6 +347,7 @@ static inline int do_rmem_read(int remote, rpage_t blknum, int outbox, int outpo
 			outport)
 		) >= 0
 	);
+	msg.header.portal_port = outportal % PORTAL_PORT_NR;
 	uassert(
 		kmailbox_write(outbox,
 			&msg,
@@ -395,8 +396,9 @@ static int do_rmem_loop(void)
 			) == sizeof(struct rmem_message)
 		);
 
-		rmem_debug("rmem request source=%d opcode=%d",
+		rmem_debug("rmem request source=%d port=%d opcode=%d",
 			msg.header.source,
+			msg.header.portal_port,
 			msg.header.opcode
 		);
 
@@ -407,8 +409,8 @@ static int do_rmem_loop(void)
 			case RMEM_WRITE:
 				stats.nwrites++;
 				kclock(&t0);
-					msg.errcode = do_rmem_write(msg.header.source, msg.blknum);
-					uassert((source = kmailbox_open(msg.header.source)) >= 0);
+					msg.errcode = do_rmem_write(msg.header.source, msg.blknum, msg.header.portal_port);
+					uassert((source = kmailbox_open(msg.header.source, msg.header.mailbox_port)) >= 0);
 					uassert(kmailbox_write(source, &msg, sizeof(struct rmem_message)) == sizeof(struct rmem_message));
 					uassert(kmailbox_close(source) == 0);
 				kclock(&t1);
@@ -419,8 +421,8 @@ static int do_rmem_loop(void)
 			case RMEM_READ:
 				stats.nreads++;
 				kclock(&t0);
-					uassert((source = kmailbox_open(msg.header.source)) >= 0);
-					msg.errcode = do_rmem_read(msg.header.source, msg.blknum, source, msg.header.port);
+					uassert((source = kmailbox_open(msg.header.source, msg.header.mailbox_port)) >= 0);
+					msg.errcode = do_rmem_read(msg.header.source, msg.blknum, source, msg.header.portal_port);
 					uassert(kmailbox_write(source, &msg, sizeof(struct rmem_message)) == sizeof(struct rmem_message));
 					uassert(kmailbox_close(source) == 0);
 				kclock(&t1);
@@ -433,7 +435,7 @@ static int do_rmem_loop(void)
 				kclock(&t0);
 					msg.blknum = do_rmem_alloc();
 					msg.errcode = (msg.blknum == RMEM_NULL) ? RMEM_NULL : msg.blknum;
-					uassert((source = kmailbox_open(msg.header.source)) >= 0);
+					uassert((source = kmailbox_open(msg.header.source, msg.header.mailbox_port)) >= 0);
 					uassert(kmailbox_write(source, &msg, sizeof(struct rmem_message)) == sizeof(struct rmem_message));
 					uassert(kmailbox_close(source) == 0);
 				kclock(&t1);
@@ -445,7 +447,7 @@ static int do_rmem_loop(void)
 				stats.nfrees++;
 				kclock(&t0);
 					msg.errcode = do_rmem_free(msg.blknum);
-					uassert((source = kmailbox_open(msg.header.source)) >= 0);
+					uassert((source = kmailbox_open(msg.header.source, msg.header.mailbox_port)) >= 0);
 					uassert(kmailbox_write(source, &msg, sizeof(struct rmem_message)) == sizeof(struct rmem_message));
 					uassert(kmailbox_close(source) == 0);
 				kclock(&t1);

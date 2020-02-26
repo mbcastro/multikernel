@@ -47,11 +47,12 @@
 	 * @brief Opens a mailbox.
 	 *
 	 * @param name Mailbox name.
+	 * @param port Remote port.
 	 *
 	 * @returns Upon successful completion, the ID of the target mailbox is
 	 * returned. Upon failure, a negative error code is returned instead.
 	 */
-	extern int nanvix_mailbox_open(const char *name);
+	extern int nanvix_mailbox_open(const char *name, int port);
 
 	/**
 	 * @brief Reads data from a mailbox.

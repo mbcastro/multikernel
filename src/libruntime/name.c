@@ -34,6 +34,11 @@
 #include <posix/stdbool.h>
 
 /**
+ * @brief Port Nnumber for RMem client.
+ */
+#define NAME_SERVER_PORT_NUM 1
+
+/**
  * @brief Mailbox for small messages.
  */
 static int server;
@@ -67,7 +72,7 @@ int __name_setup(void)
 		return (0);
 
 	/* Open connection with Name Server. */
-	if ((server = kmailbox_open(NAME_SERVER_NODE)) < 0)
+	if ((server = kmailbox_open(NAME_SERVER_NODE, NAME_SERVER_PORT_NUM)) < 0)
 		return (-1);
 
 	nanvix_mutex_init(&lock);
@@ -124,6 +129,7 @@ int name_lookup(const char *name)
 	/* Build operation header. */
 	msg.header.source = processor_node_get_num(core_get_id());
 	msg.header.opcode = NAME_LOOKUP;
+	msg.header.mailbox_port = kthread_self();
 	msg.nodenum = -1;
 	ustrcpy(msg.name, name);
 
@@ -174,6 +180,7 @@ int name_link(int nodenum, const char *name)
 	/* Build operation header. */
 	msg.header.source = processor_node_get_num(core_get_id());
 	msg.header.opcode = NAME_LINK;
+	msg.header.mailbox_port = kthread_self();
 	msg.nodenum = nodenum;
 	ustrcpy(msg.name, name);
 
@@ -231,6 +238,7 @@ int name_unlink(const char *name)
 	/* Build operation header. */
 	msg.header.source = processor_node_get_num(core_get_id());
 	msg.header.opcode = NAME_UNLINK;
+	msg.header.mailbox_port = kthread_self();
 	msg.nodenum = -1;
 	ustrcpy(msg.name, name);
 
@@ -277,6 +285,7 @@ int name_shutdown(void)
 	/* Build operation header. */
 	msg.header.source = processor_node_get_num(core_get_id());
 	msg.header.opcode = NAME_EXIT;
+	msg.header.mailbox_port = kthread_self();
 
 		if ((ret = kmailbox_write(server, &msg, sizeof(struct name_message))) != sizeof(struct name_message))
 			return (ret);

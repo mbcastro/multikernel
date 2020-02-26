@@ -251,7 +251,7 @@ int do_name_server(void)
 				msg.nodenum = do_name_lookup(msg.name);
 
 				/* Send response. */
-				source = kmailbox_open(msg.header.source);
+				source = kmailbox_open(msg.header.source, msg.header.mailbox_port);
 
 				uassert(source >= 0);
 				uassert(kmailbox_write(source, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
@@ -272,7 +272,7 @@ int do_name_server(void)
 				uassert(nr_registration >= 0);
 
 				/* Send acknowledgement. */
-				source = kmailbox_open(msg.header.source);
+				source = kmailbox_open(msg.header.source, msg.header.mailbox_port);
 				uassert(source >= 0);
 				uassert(kmailbox_write(source, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
 				uassert(kmailbox_close(source) == 0);
@@ -292,7 +292,7 @@ int do_name_server(void)
 				uassert(nr_registration >= 0);
 
 				/* Send acknowledgement. */
-				source = kmailbox_open(msg.header.source);
+				source = kmailbox_open(msg.header.source, msg.header.mailbox_port);
 				uassert(source >= 0);
 				uassert(kmailbox_write(source, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
 				uassert(kmailbox_close(source) == 0);

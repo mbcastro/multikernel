@@ -49,8 +49,6 @@ static void test_api_mem_read_write(void)
 
 	TEST_ASSERT((ptr = nanvix_malloc(sizeof(unsigned))) != RMEM_NULL);
 
-	uprintf("allocate %x", ptr);
-
 	*ptr = MAGIC;
 
 	/* Checksum. */
