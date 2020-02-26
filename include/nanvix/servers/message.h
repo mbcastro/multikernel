@@ -34,6 +34,7 @@
 	{
 		uint16_t source;       /**< Source cluster. */
 		uint8_t  opcode;       /**< Operation.      */
+		uint8_t  mailbox_port; /**< Port Number     */
 		uint8_t  portal_port;  /**< Port Number     */
 	} message_header;
 

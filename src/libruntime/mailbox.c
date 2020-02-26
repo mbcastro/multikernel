@@ -294,7 +294,7 @@ error0:
 /**
  * @todo TODO: provide a detailed description for this function.
 */
-int nanvix_mailbox_open(const char *name)
+int nanvix_mailbox_open(const char *name, int port)
 {
 	int fd;      /* NoC connector. */
 	int nodenum; /* NoC node.      */
@@ -313,7 +313,7 @@ int nanvix_mailbox_open(const char *name)
 		return (-EAGAIN);
 
 	/* Open underlying HW channel. */
-	if ((fd = kmailbox_open(nodenum)) < 0)
+	if ((fd = kmailbox_open(nodenum, port)) < 0)
 		goto error0;
 
 	/* Initialize mailbox. */

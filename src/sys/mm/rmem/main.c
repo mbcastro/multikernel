@@ -409,8 +409,8 @@ static int do_rmem_loop(void)
 			case RMEM_WRITE:
 				stats.nwrites++;
 				kclock(&t0);
-					uassert((source = kmailbox_open(msg.header.source)) >= 0);
 					msg.errcode = do_rmem_write(msg.header.source, msg.blknum, msg.header.portal_port);
+					uassert((source = kmailbox_open(msg.header.source, msg.header.mailbox_port)) >= 0);
 					uassert(kmailbox_write(source, &msg, sizeof(struct rmem_message)) == sizeof(struct rmem_message));
 					uassert(kmailbox_close(source) == 0);
 				kclock(&t1);
@@ -421,7 +421,7 @@ static int do_rmem_loop(void)
 			case RMEM_READ:
 				stats.nreads++;
 				kclock(&t0);
-					uassert((source = kmailbox_open(msg.header.source)) >= 0);
+					uassert((source = kmailbox_open(msg.header.source, msg.header.mailbox_port)) >= 0);
 					msg.errcode = do_rmem_read(msg.header.source, msg.blknum, source, msg.header.portal_port);
 					uassert(kmailbox_write(source, &msg, sizeof(struct rmem_message)) == sizeof(struct rmem_message));
 					uassert(kmailbox_close(source) == 0);
@@ -435,7 +435,7 @@ static int do_rmem_loop(void)
 				kclock(&t0);
 					msg.blknum = do_rmem_alloc();
 					msg.errcode = (msg.blknum == RMEM_NULL) ? RMEM_NULL : msg.blknum;
-					uassert((source = kmailbox_open(msg.header.source)) >= 0);
+					uassert((source = kmailbox_open(msg.header.source, msg.header.mailbox_port)) >= 0);
 					uassert(kmailbox_write(source, &msg, sizeof(struct rmem_message)) == sizeof(struct rmem_message));
 					uassert(kmailbox_close(source) == 0);
 				kclock(&t1);
@@ -447,7 +447,7 @@ static int do_rmem_loop(void)
 				stats.nfrees++;
 				kclock(&t0);
 					msg.errcode = do_rmem_free(msg.blknum);
-					uassert((source = kmailbox_open(msg.header.source)) >= 0);
+					uassert((source = kmailbox_open(msg.header.source, msg.header.mailbox_port)) >= 0);
 					uassert(kmailbox_write(source, &msg, sizeof(struct rmem_message)) == sizeof(struct rmem_message));
 					uassert(kmailbox_close(source) == 0);
 				kclock(&t1);
