@@ -43,6 +43,13 @@
 #include <stdint.h>
 
 /**
+ * @brief Bad rmeote geometry for remote memory?
+ */
+#if (RMEM_NUM_BLOCKS%(BITMAP_WORD_LENGTH/8) != 0)
+#error "bad geometry for remote memory"
+#endif
+
+/**
  * @brief Port Nnumber for RMem client.
  */
 #define RMEM_SERVER_PORT_NUM 2
