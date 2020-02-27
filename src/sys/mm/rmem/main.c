@@ -109,17 +109,16 @@ static int serverid;
  *
  * @todo TODO: allocate this dynamically with kernel calls.
  */
-static char rmem[RMEM_NUM_BLOCKS][RMEM_BLOCK_SIZE];
-
-/**
- * @brief Page frame owners.
- */
-static nanvix_pid_t owners[RMEM_NUM_BLOCKS];
+static struct
+{
+	char blocks[RMEM_NUM_BLOCKS][RMEM_BLOCK_SIZE];       /**< Blocks         */
+	nanvix_pid_t owners[RMEM_NUM_BLOCKS];                /**< Owners         */
+	bitmap_t bitmap[RMEM_NUM_BLOCKS/BITMAP_WORD_LENGTH]; /**< Allocation Map */
+} rmem;
 
 /**
  * @brief Map of blocks.
  */
-static bitmap_t blocks[RMEM_NUM_BLOCKS/BITMAP_WORD_LENGTH];
 
 /*============================================================================*
  * rmem_server_get_name()                                                     *
@@ -186,15 +185,15 @@ static inline rpage_t do_rmem_alloc(nanvix_pid_t owner)
 	/* Find a free block. */
 	uassert(
 		(bit = bitmap_first_free(
-			blocks,
+			rmem.bitmap,
 			(RMEM_NUM_BLOCKS/BITMAP_WORD_LENGTH)*sizeof(bitmap_t)
 		)) != BITMAP_FULL
 	);
 
 	/* Allocate block. */
 	stats.nblocks++;
-	bitmap_set(blocks, bit);
-	owners[bit] = owner;
+	bitmap_set(rmem.bitmap, bit);
+	rmem.owners[bit] = owner;
 	rmem_debug("rmem_alloc() blknum=%d nblocks=%d/%d",
 		bit, stats.nblocks, RMEM_NUM_BLOCKS
 	);
@@ -236,25 +235,25 @@ static inline int do_rmem_free(rpage_t blknum, nanvix_pid_t owner)
 	}
 
 	/* Bad block number. */
-	if (!bitmap_check_bit(blocks, _blknum))
+	if (!bitmap_check_bit(rmem.bitmap, _blknum))
 	{
 		uprintf("[nanvix][rmem] bad free block");
 		return (-EFAULT);
 	}
 
 	/* Memory violation. */
-	if (owners[_blknum] != owner)
+	if (rmem.owners[_blknum] != owner)
 	{
 		uprintf("[nanvix][rmem] memory violation");
 		return (-EFAULT);
 	}
 
 	/* Clean block. */
-	umemset(&rmem[_blknum][0], 0, RMEM_BLOCK_SIZE);
+	umemset(&rmem.blocks[_blknum][0], 0, RMEM_BLOCK_SIZE);
 
 	/* Free block. */
 	stats.nblocks--;
-	bitmap_clear(blocks, _blknum);
+	bitmap_clear(rmem.bitmap, _blknum);
 	rmem_debug("rmem_free() blknum=%d nblocks=%d/%d",
 		_blknum, stats.nblocks, RMEM_NUM_BLOCKS
 	);
@@ -295,7 +294,7 @@ static inline int do_rmem_write(int remote, rpage_t blknum, int remote_port)
 	 * Bad block number. Drop this read and return
 	 * an error. Note that we use the NULL block for this.
 	 */
-	if (!bitmap_check_bit(blocks, _blknum))
+	if (!bitmap_check_bit(rmem.bitmap, _blknum))
 	{
 		uprintf("[nanvix][rmem] bad write block");
 		_blknum = 0;
@@ -306,7 +305,7 @@ static inline int do_rmem_write(int remote, rpage_t blknum, int remote_port)
 	uassert(
 		kportal_read(
 			inportal,
-			&rmem[_blknum][0],
+			&rmem.blocks[_blknum][0],
 			RMEM_BLOCK_SIZE
 		) == RMEM_BLOCK_SIZE
 	);
@@ -357,7 +356,7 @@ static inline int do_rmem_read(int remote, rpage_t blknum, int outbox, int outpo
 	 * Bad block number. Let us send a null block
 	 * and return an error instead.
 	 */
-	if (!bitmap_check_bit(blocks, _blknum))
+	if (!bitmap_check_bit(rmem.bitmap, _blknum))
 	{
 		uprintf("[nanvix][rmem] bad read block");
 		_blknum = 0;
@@ -381,7 +380,7 @@ static inline int do_rmem_read(int remote, rpage_t blknum, int outbox, int outpo
 	uassert(
 		kportal_write(
 			outportal,
-			&rmem[_blknum][0],
+			&rmem.blocks[_blknum][0],
 			RMEM_BLOCK_SIZE
 		) == RMEM_BLOCK_SIZE
 	);
@@ -523,18 +522,18 @@ static int do_rmem_startup(void)
 
 	/* Clean bitmap. */
 	umemset(
-		blocks,
+		rmem.bitmap,
 		0,
 		(RMEM_NUM_BLOCKS/BITMAP_WORD_LENGTH)*sizeof(bitmap_t)
 	);
 
 	/* Fist block is special. */
 	stats.nblocks++;
-	bitmap_set(blocks, 0);
+	bitmap_set(rmem.bitmap, 0);
 
 	/* Clean all blocks. */
 	for (unsigned long i = 0; i < RMEM_NUM_BLOCKS; i++)
-		umemset(&rmem[i][0], 0, RMEM_BLOCK_SIZE);
+		umemset(&rmem.blocks[i][0], 0, RMEM_BLOCK_SIZE);
 
 	nodenum = knode_get_num();
 
