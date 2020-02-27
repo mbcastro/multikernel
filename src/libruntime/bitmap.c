@@ -34,6 +34,11 @@ bitmap_t bitmap_nset(bitmap_t *bitmap, size_t size)
 	bitmap_t *end;  /* End of bitmap.      */
 	bitmap_t chunk; /* Working chunk.      */
 
+	/**
+	 * @brief Assert bitmap size.
+	 */
+	((void) sizeof(char[(((sizeof(bitmap_t)) == (BITMAP_WORD_LENGTH/8)) ? 1 : -1)]));
+
 	/* Count the number of bits set. */
 	count = 0;
 	end = (bitmap + (size >> 2));
