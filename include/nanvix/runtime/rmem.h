@@ -25,7 +25,7 @@
 #ifndef NANVIX_RUNTIME_RMEM_H_
 #define NANVIX_RUNTIME_RMEM_H_
 
-	#include <stddef.h>
+	#include <posix/stddef.h>
 	#include <nanvix/sys/page.h>
 
 #if defined(__NEED_RMEM_CACHE)

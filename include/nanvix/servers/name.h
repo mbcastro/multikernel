@@ -29,7 +29,7 @@
 
 	#include <nanvix/servers/message.h>
 	#include <nanvix/limits.h>
-	#include <stdint.h>
+	#include <posix/stdint.h>
 
 	/**
 	 * @brief Operation types for Name Server.

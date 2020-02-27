@@ -31,8 +31,8 @@
 
 	#include <nanvix/servers/message.h>
 	#include <nanvix/servers/spawn.h>
-	#include <stdint.h>
-	#include <stddef.h>
+	#include <posix/stdint.h>
+	#include <posix/stddef.h>
 
 #endif /* __RMEM_SERVICE */
 
