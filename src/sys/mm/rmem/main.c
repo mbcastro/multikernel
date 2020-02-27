@@ -38,6 +38,7 @@
 #include <nanvix/sys/perf.h>
 #include <nanvix/sys/portal.h>
 #include <nanvix/limits.h>
+#include <nanvix/types.h>
 #include <nanvix/ulib.h>
 #include <posix/errno.h>
 #include <stdint.h>
@@ -111,6 +112,11 @@ static int serverid;
 static char rmem[RMEM_NUM_BLOCKS][RMEM_BLOCK_SIZE];
 
 /**
+ * @brief Page frame owners.
+ */
+static nanvix_pid_t owners[RMEM_NUM_BLOCKS];
+
+/**
  * @brief Map of blocks.
  */
 static bitmap_t blocks[RMEM_NUM_BLOCKS/BITMAP_WORD_LENGTH];
@@ -160,18 +166,20 @@ static int rmem_server_get_id(void)
 /**
  * @brief Handles remote memory allocation.
  *
+ * @param owner Owner of the block.
+ *
  * @returns Upon successful completion, the number of the newly
  * allocated remote memory block is allocated. Upon failure, @p
  * RMEM_NULL is returned instead.
  */
-static inline rpage_t do_rmem_alloc(void)
+static inline rpage_t do_rmem_alloc(nanvix_pid_t owner)
 {
 	bitmap_t bit;
 
 	/* Memory server is full. */
 	if (stats.nblocks == RMEM_NUM_BLOCKS)
 	{
-	uprintf("[nanvix][rmem] remote memory full");
+		uprintf("[nanvix][rmem] remote memory full");
 		return (RMEM_NULL);
 	}
 
@@ -186,6 +194,7 @@ static inline rpage_t do_rmem_alloc(void)
 	/* Allocate block. */
 	stats.nblocks++;
 	bitmap_set(blocks, bit);
+	owners[bit] = owner;
 	rmem_debug("rmem_alloc() blknum=%d nblocks=%d/%d",
 		bit, stats.nblocks, RMEM_NUM_BLOCKS
 	);
@@ -201,11 +210,12 @@ static inline rpage_t do_rmem_alloc(void)
  * @brief Handles remote memory free.
  *
  * @param blknum Number of the target block.
+ * @param owner Owner of the target block.
  *
  * @returns Upon successful completion, zero is returned. Upon
  * failure, a negative error code is returned instead.
  */
-static inline int do_rmem_free(rpage_t blknum)
+static inline int do_rmem_free(rpage_t blknum, nanvix_pid_t owner)
 {
 	rpage_t _blknum;
 
@@ -229,6 +239,13 @@ static inline int do_rmem_free(rpage_t blknum)
 	if (!bitmap_check_bit(blocks, _blknum))
 	{
 		uprintf("[nanvix][rmem] bad free block");
+		return (-EFAULT);
+	}
+
+	/* Memory violation. */
+	if (owners[_blknum] != owner)
+	{
+		uprintf("[nanvix][rmem] memory violation");
 		return (-EFAULT);
 	}
 
@@ -440,7 +457,7 @@ static int do_rmem_loop(void)
 			case RMEM_ALLOC:
 				stats.nallocs++;
 				kclock(&t0);
-					msg.blknum = do_rmem_alloc();
+					msg.blknum = do_rmem_alloc(msg.header.source);
 					msg.errcode = (msg.blknum == RMEM_NULL) ? RMEM_NULL : msg.blknum;
 					uassert((source = kmailbox_open(msg.header.source, msg.header.mailbox_port)) >= 0);
 					uassert(kmailbox_write(source, &msg, sizeof(struct rmem_message)) == sizeof(struct rmem_message));
@@ -453,7 +470,7 @@ static int do_rmem_loop(void)
 			case RMEM_MEMFREE:
 				stats.nfrees++;
 				kclock(&t0);
-					msg.errcode = do_rmem_free(msg.blknum);
+					msg.errcode = do_rmem_free(msg.blknum, msg.header.source);
 					uassert((source = kmailbox_open(msg.header.source, msg.header.mailbox_port)) >= 0);
 					uassert(kmailbox_write(source, &msg, sizeof(struct rmem_message)) == sizeof(struct rmem_message));
 					uassert(kmailbox_close(source) == 0);
