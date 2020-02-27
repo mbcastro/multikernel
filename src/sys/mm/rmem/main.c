@@ -35,6 +35,7 @@
 #include <nanvix/sys/thread.h>
 #include <nanvix/sys/mailbox.h>
 #include <nanvix/sys/noc.h>
+#include <nanvix/sys/page.h>
 #include <nanvix/sys/perf.h>
 #include <nanvix/sys/portal.h>
 #include <nanvix/limits.h>
@@ -111,7 +112,7 @@ static int serverid;
  */
 static struct
 {
-	char blocks[RMEM_NUM_BLOCKS][RMEM_BLOCK_SIZE];       /**< Blocks         */
+	char *blocks;                                        /**< Blocks         */
 	nanvix_pid_t owners[RMEM_NUM_BLOCKS];                /**< Owners         */
 	bitmap_t bitmap[RMEM_NUM_BLOCKS/BITMAP_WORD_LENGTH]; /**< Allocation Map */
 } rmem;
@@ -249,7 +250,7 @@ static inline int do_rmem_free(rpage_t blknum, nanvix_pid_t owner)
 	}
 
 	/* Clean block. */
-	umemset(&rmem.blocks[_blknum][0], 0, RMEM_BLOCK_SIZE);
+	umemset(&rmem.blocks[_blknum*RMEM_BLOCK_SIZE], 0, RMEM_BLOCK_SIZE);
 
 	/* Free block. */
 	stats.nblocks--;
@@ -305,7 +306,7 @@ static inline int do_rmem_write(int remote, rpage_t blknum, int remote_port)
 	uassert(
 		kportal_read(
 			inportal,
-			&rmem.blocks[_blknum][0],
+			&rmem.blocks[_blknum*RMEM_BLOCK_SIZE],
 			RMEM_BLOCK_SIZE
 		) == RMEM_BLOCK_SIZE
 	);
@@ -380,7 +381,7 @@ static inline int do_rmem_read(int remote, rpage_t blknum, int outbox, int outpo
 	uassert(
 		kportal_write(
 			outportal,
-			&rmem.blocks[_blknum][0],
+			&rmem.blocks[_blknum*RMEM_BLOCK_SIZE],
 			RMEM_BLOCK_SIZE
 		) == RMEM_BLOCK_SIZE
 	);
@@ -504,6 +505,16 @@ static int do_rmem_loop(void)
  *============================================================================*/
 
 /**
+ * @brief Start address of remote memory area.
+ */
+#define RMEM_START UBASE_VIRT
+
+/**
+ * @brief End address of remote memory area.
+ */
+#define RMEM_END (UBASE_VIRT + RMEM_SIZE)
+
+/**
  * @brief Initializes the remote memory server.
  *
  * @returns Upon successful completion zero is returned. Upon failure,
@@ -520,6 +531,15 @@ static int do_rmem_startup(void)
 	/* Bitmap word should be large enough. */
 	uassert(sizeof(rpage_t) >= sizeof(bitmap_t));
 
+	/* Physical memory should be big enough. */
+	uassert(RMEM_SIZE <=  UMEM_SIZE);
+	uassert((RMEM_SIZE%PAGE_SIZE) == 0);
+
+	/* Allocate physical memory. */
+	rmem.blocks = (char *) RMEM_START;
+	for (vaddr_t vaddr = RMEM_START; vaddr < RMEM_END; vaddr += PAGE_SIZE)
+		uassert(page_alloc(vaddr) == 0);
+
 	/* Clean bitmap. */
 	umemset(
 		rmem.bitmap,
@@ -533,7 +553,7 @@ static int do_rmem_startup(void)
 
 	/* Clean all blocks. */
 	for (unsigned long i = 0; i < RMEM_NUM_BLOCKS; i++)
-		umemset(&rmem.blocks[i][0], 0, RMEM_BLOCK_SIZE);
+		umemset(&rmem.blocks[i*RMEM_BLOCK_SIZE], 0, RMEM_BLOCK_SIZE);
 
 	nodenum = knode_get_num();
 
@@ -556,6 +576,7 @@ static int do_rmem_startup(void)
 	uprintf("[nanvix][rmem] listening to mailbox %d", inbox);
 	uprintf("[nanvix][rmem] listening to portal %d", inportal);
 	uprintf("[nanvix][rmem] syncing in sync %d", stdsync_get());
+	uprintf("[nanvix][rmem] memory size %d KB", RMEM_SIZE/KB);
 
 	return (0);
 }
