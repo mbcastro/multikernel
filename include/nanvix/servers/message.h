@@ -25,7 +25,7 @@
 #ifndef NANVIX_SERVERS_MESSAGE_H_
 #define NANVIX_SERVERS_MESSAGE_H_
 
-    #include <stdint.h>
+    #include <posix/stdint.h>
 
 	/**
 	 * @brief Polymorphic message header.

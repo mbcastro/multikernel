@@ -25,7 +25,7 @@
 #ifndef NANVIX_LIMITS_H_
 #define NANVIX_LIMITS_H_
 
-	#include <nanvix/hal.h>
+	#include <nanvix/sys/portal.h>
 
 	/**
 	 * @brief Number of NoC nodes.
@@ -47,6 +47,6 @@
 	/**
 	 * @brief Maximum number of portals that can be opened.
 	 */
-	#define NANVIX_PORTAL_MAX (PORTAL_CREATE_MAX + PORTAL_OPEN_MAX)
+	#define NANVIX_PORTAL_MAX KPORTAL_MAX
 
 #endif /* NANVIX_LIMITS_H_ */

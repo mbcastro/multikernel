@@ -25,7 +25,7 @@
 #ifndef NANVIX_RUNTIME_RMEM_H_
 #define NANVIX_RUNTIME_RMEM_H_
 
-	#include <stddef.h>
+	#include <posix/stddef.h>
 	#include <nanvix/sys/page.h>
 
 #if defined(__NEED_RMEM_CACHE)
@@ -60,7 +60,7 @@
 	#define RMEM_CACHE_BYPASS 0 /**< Bypass Mode         */
 	#define RMEM_CACHE_FIFO   1 /**< First In First Out  */
 	#define RMEM_CACHE_LIFO   2 /**< Last In First Out   */
-	#define RMEM_CACHE_LRU    3 /**< Least Recently Used */
+	#define RMEM_CACHE_NFU    3 /**< Not Frequently Used */
 	#define RMEM_CACHE_AGING  4 /**< Aging               */
 	/**@}*/
 

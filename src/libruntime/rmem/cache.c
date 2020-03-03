@@ -154,24 +154,24 @@ static void nanvix_update_aging(rpage_t pgnum)
 }
 
 /*============================================================================*
- * nanvix_rcache_age_update_lru()                                             *
+ * nanvix_rcache_age_update_nfu()                                             *
  *============================================================================*/
 
 /**
- * @brief Evicts pages from the cache based on the LRU replacement policy.
+ * @brief Evicts pages from the cache based on the NFU replacement policy.
  *
  * @param pgnum Number of the target page.
  *
  * @returns Upon successful completion, the index of the page is
  * returned. Upon failure a negative error code is returned instead.
  */
-static int nanvix_rcache_age_update_lru(rpage_t pgnum)
+static int nanvix_rcache_age_update_nfu(rpage_t pgnum)
 {
 	int idx;
 
 	cache_time++;
 
-	if (cache_policy == RMEM_CACHE_LRU)
+	if (cache_policy == RMEM_CACHE_NFU)
 	{
 		if ((idx = nanvix_rcache_page_search(pgnum)) < 0)
 		    return (-EFAULT);
@@ -258,13 +258,13 @@ static int nanvix_rcache_fifo(void)
 }
 
 /*============================================================================*
- * nanvix_rcache_lru()                                                        *
+ * nanvix_rcache_nfu()                                                        *
  *============================================================================*/
 
 /**
  * @todo TODO: provide a detailed description for this function.
  */
-static int nanvix_rcache_lru(void)
+static int nanvix_rcache_nfu(void)
 {
 	return (nanvix_rcache_fifo());
 }
@@ -332,7 +332,7 @@ static int nanvix_rcache_replacement_policies(void)
 	if (cache_policy == RMEM_CACHE_LIFO)
 		return (nanvix_rcache_lifo());
 
-	return (nanvix_rcache_lru());
+	return (nanvix_rcache_nfu());
 }
 
 /*============================================================================*
@@ -350,7 +350,7 @@ int nanvix_rcache_select_replacement_policy(int num)
 	{
 		case RMEM_CACHE_FIFO:
 		case RMEM_CACHE_LIFO:
-		case RMEM_CACHE_LRU:
+		case RMEM_CACHE_NFU:
 		case RMEM_CACHE_AGING:
 			cache_policy = num;
 			break;
@@ -496,7 +496,7 @@ void *nanvix_rcache_get(rpage_t pgnum)
 		if ((idx = nanvix_rcache_page_search(pgnum)) >= 0)
 		{
 			stats.nhits++;
-			nanvix_rcache_age_update_lru(pgnum);
+			nanvix_rcache_age_update_nfu(pgnum);
 			cache_lines[idx].ref_count++;
 			return (cache_lines[idx].pages);
 		}
@@ -558,7 +558,7 @@ int nanvix_rcache_put(rpage_t pgnum, int strike)
 		if ((idx = nanvix_rcache_page_search(pgnum)) < 0)
 			return (-EFAULT);
 
-		if (cache_policy == RMEM_CACHE_LRU)
+		if (cache_policy == RMEM_CACHE_NFU)
 			cache_lines[idx].age += strike;
 
 		if (cache_lines[idx].ref_count <= 0)

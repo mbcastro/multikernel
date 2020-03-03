@@ -245,7 +245,7 @@ size_t nanvix_rmem_write(rpage_t blknum, const void *buf)
 	/* Build operation header. */
 	msg.header.source = knode_get_num();
 	msg.header.opcode = RMEM_WRITE;
-	msg.header.portal_port = server[serverid].outportal % PORTAL_PORT_NR;
+	msg.header.portal_port = server[serverid].outportal % KPORTAL_PORT_NR;
 	msg.header.mailbox_port = kthread_self();
 	msg.blknum = blknum;
 

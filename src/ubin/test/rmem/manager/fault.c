@@ -26,6 +26,7 @@
 
 #include <nanvix/servers/rmem.h>
 #include <nanvix/ulib.h>
+#include <posix/errno.h>
 #include "../../test.h"
 
 /**

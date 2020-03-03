@@ -263,16 +263,16 @@ static void test_rmem_rcache_lifo(void)
 }
 
 /*============================================================================*
- * API Test: Cache lru                                                        *
+ * API Test: Cache nfu                                                        *
  *============================================================================*/
 
 /**
- * @brief API Test: Cache lru
+ * @brief API Test: Cache nfu
  */
-static void test_rmem_rcache_lru(void)
+static void test_rmem_rcache_nfu(void)
 {
 
-	nanvix_rcache_select_replacement_policy(RMEM_CACHE_LRU);
+	nanvix_rcache_select_replacement_policy(RMEM_CACHE_NFU);
 
 	for (int i = 0; i < (RMEM_CACHE_LENGTH+1)*RMEM_CACHE_BLOCK_SIZE; i++)
 	{
@@ -408,7 +408,7 @@ struct test tests_rmem_cache_api[] = {
 	{ test_rmem_rcache_get_flush,  "get flush"  },
 	{ test_rmem_rcache_fifo,       "fifo"       },
 	{ test_rmem_rcache_lifo,       "lifo"       },
-	{ test_rmem_rcache_lru,        "lru"        },
+	{ test_rmem_rcache_nfu,        "nfu"        },
 	{ test_rmem_rcache_aging,      "aging"      },
 	{ NULL,                         NULL        },
 };
