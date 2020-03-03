@@ -35,46 +35,46 @@ distclean: distclean-rcache distclean-vmem distclean-posix-mem
 # RMem Cache Benchmarks
 #===============================================================================
 
-# Builds RMem Cache benchmarks.
+# Builds RMem Cache benchmark.
 all-rcache:
 	$(MAKE) -C rcache all
 
-# Cleans up build objects of RMem Cache benchmarks.
+# Cleans up build objects of RMem Cache benchmark.
 clean-rcache:
 	$(MAKE) -C rcache clean
 
-# Cleans up everything from RMem Cache benchmarks.
+# Cleans up everything from RMem Cache benchmark.
 distclean-rcache:
 	$(MAKE) -C rcache distclean
 
 #===============================================================================
-# VMem Allocator Benchmarks
+# VMem Allocator Benchmark
 #===============================================================================
 
-# Builds VMem Allocator benchmarks.
+# Builds VMem Allocator benchmark.
 all-vmem:
 	$(MAKE) -C vmem all
 
-# Cleans up build objects of VMem Allocator benchmarks.
+# Cleans up build objects of VMem Allocator benchmark.
 clean-vmem:
 	$(MAKE) -C vmem clean
 
-# Cleans up everything from VMem Allocator benchmarks.
+# Cleans up everything from VMem Allocator benchmark.
 distclean-vmem:
 	$(MAKE) -C vmem distclean
 
 #===============================================================================
-# POSIX Allocator Benchmarks
+# POSIX Allocator Benchmark
 #===============================================================================
 
-# Builds POSIX Allocator benchmarks.
+# Builds POSIX Allocator benchmark.
 all-posix-mem:
 	$(MAKE) -C posix-mem all
 
-# Cleans up build objects of POSIX Allocator benchmarks.
+# Cleans up build objects of POSIX Allocator benchmark.
 clean-posix-mem:
 	$(MAKE) -C posix-mem clean
 
-# Cleans up everything from POSIX Allocator benchmarks.
+# Cleans up everything from POSIX Allocator benchmark.
 distclean-posix-mem:
 	$(MAKE) -C posix-mem distclean
