@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# Copyright(c) 2011-2020 The Maintainers of Nanvix
+# Copyright(c) 2018 Pedro Henrique Penna <pedrohenriquepenna@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -22,75 +22,82 @@
 # SOFTWARE.
 #
 
-# Builds Everything
-all: all-zombie all-test all-bench all-apps
+#===============================================================================
+# Toolchain Configuration
+#===============================================================================
 
-# Cleans Build Objects
-clean: clean-zombie clean-test clean-bench clean-apps
+# Compiler Options
+ifneq ($(LIBLWIP),)
+CFLAGS += -I $(INCDIR)/posix
+endif
+
+# Libraries
+LIBS := -Wl,--whole-archive
+LIBS += $(LIBDIR)/$(LIBHAL)
+LIBS += $(LIBDIR)/$(LIBKERNEL)
+LIBS += -Wl,--no-whole-archive
+LIBS += $(LIBDIR)/$(LIBRUNTIME)
+LIBS += $(LIBDIR)/$(LIBC)
+LIBS += $(LIBDIR)/$(LIBNANVIX)
+ifneq ($(LIBLWIP),)
+LIBS += $(LIBDIR)/$(LIBLWIP)
+endif
+LIBS += $(LIBDIR)/$(BARELIB) $(THEIR_LIBS)
+
+#===============================================================================
+# Binaries Sources and Objects
+#===============================================================================
+
+# Binary
+EXEC = nanvix-app-qsort.$(OBJ_SUFFIX)
+
+# C Source Files
+SRC = $(wildcard *.c) \
+      $(wildcard workload/*.c)
+
+# Object Files
+OBJ = $(SRC:.c=.$(OBJ_SUFFIX).o)
+
+#===============================================================================
+
+ifeq ($(TARGET),unix64)
+LINKER_SCRIPT=
+else
+LINKER_SCRIPT = -L $(LINKERDIR)/ -T link.ld
+endif
+
+# Builds All Object Files
+all: $(OBJ)
+ifeq ($(VERBOSE), no)
+	@echo [CC] $(EXEC)
+	@$(CC) $(LDFLAGS) $(LINKER_SCRIPT) -o $(BINDIR)/$(EXEC) $(OBJ) $(LIBS)
+else
+	$(CC) $(LDFLAGS) $(LINKER_SCRIPT) -o $(BINDIR)/$(EXEC) $(OBJ) $(LIBS)
+endif
+
+# Cleans All Object Files
+clean:
+ifeq ($(VERBOSE), no)
+	@echo [CLEAN] $(OBJ)
+	@rm -rf $(OBJ)
+else
+	rm -rf $(OBJ)
+endif
 
 # Cleans Everything
-distclean: distclean-zombie distclean-test distclean-bench distclean-apps
+distclean: clean
+ifeq ($(VERBOSE), no)
+	@echo [CLEAN] $(EXEC)
+	@rm -rf $(BINDIR)/$(EXEC)
+else
+	rm -rf $(BINDIR)/$(EXEC)
+endif
 
-#===============================================================================
-# Zombie Server
-#===============================================================================
-
-# Builds Zombie Server.
-all-zombie:
-	$(MAKE) -C zombie all
-
-# Cleans Zombie Server Build objects.
-clean-zombie:
-	$(MAKE) -C zombie clean
-
-# Cleans Zombie Server build.
-distclean-zombie:
-	$(MAKE) -C zombie distclean
-
-#===============================================================================
-# Test Server
-#===============================================================================
-
-# Builds Test Server.
-all-test:
-	$(MAKE) -C test all
-
-# Cleans Test Server Build objects.
-clean-test:
-	$(MAKE) -C test clean
-
-# Cleans Test Server build.
-distclean-test:
-	$(MAKE) -C test distclean
-
-#===============================================================================
-# Apps
-#===============================================================================
-
-# Builds Apps.
-all-apps:
-	$(MAKE) -C apps all
-
-# Cleans build objects..
-clean-apps:
-	$(MAKE) -C apps clean
-
-# Cleans build.
-distclean-apps:
-	$(MAKE) -C apps distclean
-
-#===============================================================================
-# Benchmarks
-#===============================================================================
-
-# Builds Benchmarks.
-all-bench:
-	$(MAKE) -C bench all
-
-# Cleans build objects..
-clean-bench:
-	$(MAKE) -C bench clean
-
-# Cleans build.
-distclean-bench:
-	$(MAKE) -C bench distclean
+# Builds a C source file.
+%.$(OBJ_SUFFIX).o: %.c
+ifeq ($(VERBOSE), no)
+	@echo [CC] $@
+	@$(CC) $(CFLAGS) $< -c -o $@
+else
+	$(CC) $(CFLAGS) $< -c -o $@
+endif
