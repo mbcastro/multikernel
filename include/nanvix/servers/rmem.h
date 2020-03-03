@@ -54,7 +54,7 @@
 	/**
 	 * @brief Remote memory size (in bytes).
 	 */
-	#define RMEM_SIZE (512*1024)
+	#define RMEM_SIZE (32*1024*1024)
 
 	/**
 	 * @brief Number of remote memory blocks.
