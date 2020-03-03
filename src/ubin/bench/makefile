@@ -23,14 +23,14 @@
 #
 
 # Builds everything.
-all: all-rcache all-vmem all-posix-mem all-memwrite
+all: all-rcache all-vmem all-posix-mem all-memread all-memwrite
 
 # Cleans up build objects.
-clean: clean-rcache clean-vmem clean-posix-mem clean-memwrite
+clean: clean-rcache clean-vmem clean-posix-mem clean-memread clean-memwrite
 
 # Cleans up everything.
 distclean: distclean-rcache distclean-vmem distclean-posix-mem \
-	distclean-memwrite
+	distclean-memread distclean-memwrite
 
 #===============================================================================
 # RMem Cache Benchmarks
@@ -79,6 +79,22 @@ clean-posix-mem:
 # Cleans up everything from POSIX Allocator benchmark.
 distclean-posix-mem:
 	$(MAKE) -C posix-mem distclean
+
+#===============================================================================
+# Memory Read
+#===============================================================================
+
+# Builds Memory Read benchmark.
+all-memread:
+	$(MAKE) -C memread all
+
+# Cleans up build object.
+clean-memread:
+	$(MAKE) -C memread clean
+
+# Cleans up everything.
+distclean-memread:
+	$(MAKE) -C memread distclean
 
 #===============================================================================
 # Memory Write
