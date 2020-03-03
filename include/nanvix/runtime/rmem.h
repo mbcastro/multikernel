@@ -34,6 +34,8 @@
 
 	#include <nanvix/servers/rmem.h>
 
+#endif /* __NEED_RMEM_CACHE */
+
 	/**
 	 * @#brief Size of a block in the page cache.
 	 */
@@ -71,6 +73,8 @@
 	#define RMEM_CACHE_WRITE_BACK    0 /**< Write Back    */
 	#define RMEM_CACHE_WRITE_THROUGH 1 /**< Write Through */
 	/**@}*/
+
+#if defined(__NEED_RMEM_CACHE)
 
 	/**
 	 * @brief Allocates a remote page.
@@ -128,6 +132,16 @@
 	extern int nanvix_rcache_flush(rpage_t pgnum);
 
 	/**
+	 * @brief Initializes the page cache.
+	 *
+	 * @returns Upon successful completion, zero is returned. Upon
+	 * failure a negative error code is returned instead.
+	 */
+	extern int __nanvix_rcache_setup(void);
+
+#endif /* __NEED_RMEM_CACHE */
+
+	/**
 	 * @brief Selects the cache replacement_policy.
 	 *
 	 * @param num Number of the replacement policy.
@@ -140,16 +154,6 @@
 	 * @param num Number of the policy.
 	 */
 	extern int nanvix_rcache_select_write(int num);
-
-	/**
-	 * @brief Initializes the page cache.
-	 *
-	 * @returns Upon successful completion, zero is returned. Upon
-	 * failure a negative error code is returned instead.
-	 */
-	extern int __nanvix_rcache_setup(void);
-
-#endif /* __NEED_RMEM_CACHE */
 
 	/**
 	 * @brief Allocates remote memory.
