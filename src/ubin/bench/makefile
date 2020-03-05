@@ -23,13 +23,13 @@
 #
 
 # Builds everything.
-all: all-rcache all-vmem all-posix-mem all-memread all-memwrite
+all: all-rcache all-vmem all-pgfault all-memread all-memwrite
 
 # Cleans up build objects.
-clean: clean-rcache clean-vmem clean-posix-mem clean-memread clean-memwrite
+clean: clean-rcache clean-vmem clean-pgfault clean-memread clean-memwrite
 
 # Cleans up everything.
-distclean: distclean-rcache distclean-vmem distclean-posix-mem \
+distclean: distclean-rcache distclean-vmem distclean-pgfault \
 	distclean-memread distclean-memwrite
 
 #===============================================================================
@@ -65,20 +65,20 @@ distclean-vmem:
 	$(MAKE) -C vmem distclean
 
 #===============================================================================
-# POSIX Allocator Benchmark
+# Page Fault Benchmark
 #===============================================================================
 
-# Builds POSIX Allocator benchmark.
-all-posix-mem:
-	$(MAKE) -C posix-mem all
+# Builds Page Fault benchmark.
+all-pgfault:
+	$(MAKE) -C pgfault all
 
-# Cleans up build objects of POSIX Allocator benchmark.
-clean-posix-mem:
-	$(MAKE) -C posix-mem clean
+# Cleans up build objects.
+clean-pgfault:
+	$(MAKE) -C pgfault clean
 
-# Cleans up everything from POSIX Allocator benchmark.
-distclean-posix-mem:
-	$(MAKE) -C posix-mem distclean
+# Cleans up everything.
+distclean-pgfault:
+	$(MAKE) -C pgfault distclean
 
 #===============================================================================
 # Memory Read

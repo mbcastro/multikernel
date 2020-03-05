@@ -22,27 +22,18 @@
  * SOFTWARE.
  */
 
-#define __NEED_RMEM_CACHE
-
+#include <nanvix/servers/rmem.h>
 #include <nanvix/runtime/rmem.h>
 #include <nanvix/runtime/runtime.h>
 #include <nanvix/runtime/stdikc.h>
 #include <nanvix/sys/perf.h>
 #include <nanvix/ulib.h>
-#include <nanvix/ulib.h>
 
-#define NUM_ITERATIONS 1000
+/*============================================================================*
+ * Benchmark                                                                  *
+ *============================================================================*/
 
-
-/**
- * @brief Number of pages.
- */
-#define NUM_PAGES 64
-
-/**
- * @brief Workload Size.
- */
-#define WORKLOAD_SIZE RMEM_CACHE_LENGTH
+#define NUM_PAGES RMEM_CACHE_SIZE
 
 extern void *nanvix_malloc(size_t size);
 extern void nanvix_free(void *ptr);
@@ -52,48 +43,54 @@ extern void nanvix_free(void *ptr);
  */
 static char buffer[RMEM_BLOCK_SIZE];
 
-void benchmark_posix_mem(unsigned freq)
+void benchmark_pgfault(void)
 {
-	unsigned seed = 2;
 	unsigned char *ptr;
-	uint64_t time_alloc, time_rw, time_free;
+	uint64_t time_alloc, time_kernel, time_free;
 
 	umemset(buffer, 0, RMEM_BLOCK_SIZE);
 
 	/* Allocate many blocks.*/
-	uprintf("[nanvix][benchmark] allocating pages...");
+#ifndef NDEBUG
+	uprintf("[benchmarks][pgfault] allocating memory...");
+#endif
 		perf_start(0, PERF_CYCLES);
 		uassert((ptr = nanvix_malloc(NUM_PAGES*RMEM_BLOCK_SIZE)) != NULL);
 		perf_stop(0);
 		time_alloc = perf_read(0);
 
-	uprintf("[nanvix][benchmark] writing to memory...");
+	/* Warmup. */
+	for (int i = 0; i < NUM_PAGES; i++)
+		umemcpy(&ptr[i*RMEM_BLOCK_SIZE], buffer, RMEM_BLOCK_SIZE);
+
+#ifndef NDEBUG
+	uprintf("[benchmarks][pgfault] benchmarking...");
+#endif
 	perf_start(0, PERF_CYCLES);
-	for (int i = 0; i < NUM_ITERATIONS; i++)
-	{
-		unsigned type;
-		unsigned page;
-
-		type = urand_r(&seed)%100;
-
-		page = urand_r(&seed);
-		page = (type <= freq) ?
-			page%WORKLOAD_SIZE :
-			page%(NUM_PAGES - WORKLOAD_SIZE) + WORKLOAD_SIZE;
-
-		umemcpy(&ptr[page*RMEM_BLOCK_SIZE], buffer, RMEM_BLOCK_SIZE);
-	}
+	for (int i = 0; i < NUM_PAGES; i++)
+		umemcpy(&ptr[i*RMEM_BLOCK_SIZE], buffer, RMEM_BLOCK_SIZE);
 	perf_stop(0);
-	time_rw = perf_read(0);
+	time_kernel = perf_read(0);
 
 	/* Free all blocks. */
-	uprintf("[nanvix][benchmark] freeing pages...");
+#ifndef NDEBUG
+	uprintf("[benchmarks][pgfault] freeing memory...");
+#endif
 	perf_start(0, PERF_CYCLES);
 		nanvix_free(ptr);
 	perf_stop(0);
 	time_free = perf_read(0);
 
-	uprintf("[nanvix][benchmark] alloc %l write %l free %l", time_alloc, time_rw, time_free);
+
+#ifndef NDEBUG
+	uprintf("[benchmarks][pgfault] alloc %l write %l free %l",
+#else
+	uprintf("[benchmarks][pgfault] %l %l %l",
+#endif
+		time_alloc,
+		time_kernel,
+		time_free
+	);
 }
 
 /**
@@ -108,11 +105,11 @@ int __main2(int argc, const char *argv[])
 
 		/* Unblock spawner. */
 		uassert(stdsync_fence() == 0);
-		uprintf("[nanvix][benchmark] server alive");
+		uprintf("[benchmarks][pgfault] server alive");
 
 		__runtime_setup(3);
 
-		benchmark_posix_mem(90);
+		benchmark_pgfault();
 
 		nanvix_shutdown();
 
