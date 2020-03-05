@@ -23,14 +23,15 @@
 #
 
 # Builds everything.
-all: all-rcache all-vmem all-pgfault all-memread all-memwrite
+all: all-rcache all-vmem all-pgfault all-memalloc all-memread all-memwrite
 
 # Cleans up build objects.
-clean: clean-rcache clean-vmem clean-pgfault clean-memread clean-memwrite
+clean: clean-rcache clean-vmem clean-pgfault clean-memalloc clean-memread \
+	clean-memwrite
 
 # Cleans up everything.
 distclean: distclean-rcache distclean-vmem distclean-pgfault \
-	distclean-memread distclean-memwrite
+	distclean-memalloc distclean-memread distclean-memwrite
 
 #===============================================================================
 # RMem Cache Benchmarks
@@ -79,6 +80,22 @@ clean-pgfault:
 # Cleans up everything.
 distclean-pgfault:
 	$(MAKE) -C pgfault distclean
+
+#===============================================================================
+# Memory Allocation
+#===============================================================================
+
+# Builds Memory Allocation benchmark.
+all-memalloc:
+	$(MAKE) -C memalloc all
+
+# Cleans up build object.
+clean-memalloc:
+	$(MAKE) -C memalloc clean
+
+# Cleans up everything.
+distclean-memalloc:
+	$(MAKE) -C memalloc distclean
 
 #===============================================================================
 # Memory Read
