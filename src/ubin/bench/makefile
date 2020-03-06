@@ -23,15 +23,14 @@
 #
 
 # Builds everything.
-all: all-rcache all-vmem all-pgfault all-memalloc all-memread all-memwrite
+all: all-rcache all-pgfault all-memalloc all-memread all-memwrite
 
 # Cleans up build objects.
-clean: clean-rcache clean-vmem clean-pgfault clean-memalloc clean-memread \
-	clean-memwrite
+clean: clean-rcache clean-pgfault clean-memalloc clean-memread clean-memwrite
 
 # Cleans up everything.
-distclean: distclean-rcache distclean-vmem distclean-pgfault \
-	distclean-memalloc distclean-memread distclean-memwrite
+distclean: distclean-rcache distclean-pgfault distclean-memalloc \
+	distclean-memread distclean-memwrite
 
 #===============================================================================
 # RMem Cache Benchmarks
@@ -48,22 +47,6 @@ clean-rcache:
 # Cleans up everything from RMem Cache benchmark.
 distclean-rcache:
 	$(MAKE) -C rcache distclean
-
-#===============================================================================
-# VMem Allocator Benchmark
-#===============================================================================
-
-# Builds VMem Allocator benchmark.
-all-vmem:
-	$(MAKE) -C vmem all
-
-# Cleans up build objects of VMem Allocator benchmark.
-clean-vmem:
-	$(MAKE) -C vmem clean
-
-# Cleans up everything from VMem Allocator benchmark.
-distclean-vmem:
-	$(MAKE) -C vmem distclean
 
 #===============================================================================
 # Page Fault Benchmark
