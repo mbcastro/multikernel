@@ -49,7 +49,7 @@ LIBS += $(LIBDIR)/$(BARELIB) $(THEIR_LIBS)
 #===============================================================================
 
 # Binary
-EXEC = nanvix-benchmark-vmem.$(OBJ_SUFFIX)
+EXEC = nanvix-benchmark-memread.$(OBJ_SUFFIX)
 
 # C Source Files
 SRC = $(wildcard *.c) \

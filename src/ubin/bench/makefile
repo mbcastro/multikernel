@@ -23,13 +23,14 @@
 #
 
 # Builds everything.
-all: all-rcache all-vmem all-posix-mem
+all: all-rcache all-pgfault all-memalloc all-memread all-memwrite
 
 # Cleans up build objects.
-clean: clean-rcache clean-vmem clean-posix-mem
+clean: clean-rcache clean-pgfault clean-memalloc clean-memread clean-memwrite
 
 # Cleans up everything.
-distclean: distclean-rcache distclean-vmem distclean-posix-mem
+distclean: distclean-rcache distclean-pgfault distclean-memalloc \
+	distclean-memread distclean-memwrite
 
 #===============================================================================
 # RMem Cache Benchmarks
@@ -48,33 +49,65 @@ distclean-rcache:
 	$(MAKE) -C rcache distclean
 
 #===============================================================================
-# VMem Allocator Benchmark
+# Page Fault Benchmark
 #===============================================================================
 
-# Builds VMem Allocator benchmark.
-all-vmem:
-	$(MAKE) -C vmem all
+# Builds Page Fault benchmark.
+all-pgfault:
+	$(MAKE) -C pgfault all
 
-# Cleans up build objects of VMem Allocator benchmark.
-clean-vmem:
-	$(MAKE) -C vmem clean
+# Cleans up build objects.
+clean-pgfault:
+	$(MAKE) -C pgfault clean
 
-# Cleans up everything from VMem Allocator benchmark.
-distclean-vmem:
-	$(MAKE) -C vmem distclean
+# Cleans up everything.
+distclean-pgfault:
+	$(MAKE) -C pgfault distclean
 
 #===============================================================================
-# POSIX Allocator Benchmark
+# Memory Allocation
 #===============================================================================
 
-# Builds POSIX Allocator benchmark.
-all-posix-mem:
-	$(MAKE) -C posix-mem all
+# Builds Memory Allocation benchmark.
+all-memalloc:
+	$(MAKE) -C memalloc all
 
-# Cleans up build objects of POSIX Allocator benchmark.
-clean-posix-mem:
-	$(MAKE) -C posix-mem clean
+# Cleans up build object.
+clean-memalloc:
+	$(MAKE) -C memalloc clean
 
-# Cleans up everything from POSIX Allocator benchmark.
-distclean-posix-mem:
-	$(MAKE) -C posix-mem distclean
+# Cleans up everything.
+distclean-memalloc:
+	$(MAKE) -C memalloc distclean
+
+#===============================================================================
+# Memory Read
+#===============================================================================
+
+# Builds Memory Read benchmark.
+all-memread:
+	$(MAKE) -C memread all
+
+# Cleans up build object.
+clean-memread:
+	$(MAKE) -C memread clean
+
+# Cleans up everything.
+distclean-memread:
+	$(MAKE) -C memread distclean
+
+#===============================================================================
+# Memory Write
+#===============================================================================
+
+# Builds Memory Write benchmark.
+all-memwrite:
+	$(MAKE) -C memwrite all
+
+# Cleans up build object.
+clean-memwrite:
+	$(MAKE) -C memwrite clean
+
+# Cleans up everything.
+distclean-memwrite:
+	$(MAKE) -C memwrite distclean
