@@ -24,7 +24,7 @@
 
 #define __NEED_RMEM_CLIENT
 
-#include <nanvix/servers/rmem.h>
+#include <nanvix/runtime/rmem.h>
 #include <nanvix/ulib.h>
 #include <posix/errno.h>
 #include "../../test.h"

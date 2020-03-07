@@ -20,7 +20,7 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#define __NEED_RMEM_CACHE
+#define __NEED_RMEM_MANAGER
 
 #include <nanvix/runtime/rmem.h>
 #include "../../test.h"

@@ -22,8 +22,8 @@
  * SOFTWARE.
  */
 
+#define __NEED_RMEM_MANAGER
 
-#include <nanvix/servers/rmem.h>
 #include <nanvix/runtime/rmem.h>
 #include <nanvix/ulib.h>
 #include "../../test.h"

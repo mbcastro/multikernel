@@ -22,7 +22,8 @@
  * SOFTWARE.
  */
 
-#include <nanvix/servers/rmem.h>
+#define __NEED_RMEM_MANAGER
+
 #include <nanvix/runtime/rmem.h>
 #include <nanvix/runtime/runtime.h>
 #include <nanvix/runtime/stdikc.h>

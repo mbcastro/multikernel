@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-#define __RMEM_SERVICE
+#define __NEED_RMEM_SERVICE
 #define __NEED_NAME_CLIENT
 
 #include <nanvix/servers/message.h>
