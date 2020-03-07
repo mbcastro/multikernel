@@ -49,7 +49,7 @@
 	/**
 	 * @brief Launches regression tests on RMem Manager.
 	 */
-	extern void test_rmem(void);
+	extern void test_rmem_stub(void);
 
 	/**
 	 * @brief Launches regression tests on RMem Cache.
@@ -59,10 +59,10 @@
 	/**
 	 * @brief Launches regression tests on RMem Interface.
 	 */
-	extern void test_rmem_interface(void);
+	extern void test_rmem_manager(void);
 
 	/**
-	 * @brief Launches regression tests on POSIX interface.
+	 * @brief Launches regression tests on POSIX manager.
 	 */
 	extern void test_posix(void);
 

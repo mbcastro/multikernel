@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright(c) 2011-2020 The Maintainers of Nanvix
+ * Copyright (c) 2011-2018 Pedro Henrique Penna <pedrohenriquepenna@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -10,26 +10,26 @@
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.  THE SOFTWARE IS PROVIDED
+ * "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
+ * LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+ * PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+ * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+ * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#define __NEED_RMEM_CLIENT
+#define __NEED_MM_MANAGER
 
 #include <nanvix/runtime/rmem.h>
 #include <nanvix/ulib.h>
 #include "../../test.h"
 
+#define __VERBOSE_TESTS 0
+
 /**
- * @brief Dummy buffer.
+ * @brief Dummy buffer used for tests.
  */
 static char buffer[RMEM_BLOCK_SIZE];
 
@@ -42,96 +42,68 @@ static char buffer[RMEM_BLOCK_SIZE];
  */
 static void test_rmem_manager_alloc_free(void)
 {
-	rpage_t blknum;
+	void *ptr;
 
-	TEST_ASSERT((blknum = nanvix_rmem_alloc()) != RMEM_NULL);
-	TEST_ASSERT(nanvix_rmem_free(blknum) == 0);
+#if (__VERBOSE_TESTS)
+	uprintf("ralloc() size=%d\n", 1);
+#endif
+
+	TEST_ASSERT((ptr = nanvix_vmem_alloc(1)) != NULL);
+	TEST_ASSERT(nanvix_vmem_free(ptr) == 0);
+
+#if (__VERBOSE_TESTS)
+	uprintf("rfree()  ptr=%x\n", ptr);
+#endif
 }
 
 /*============================================================================*
- * API Test: Read Write                                                       *
+ * API Test: Read/Write                                                       *
  *============================================================================*/
 
 /**
- * @brief API Test: Read Write
+ * @brief API Test: Read/Write
  */
 static void test_rmem_manager_read_write(void)
 {
-	rpage_t blknum;
+	char *ptr;
 
-	TEST_ASSERT((blknum = nanvix_rmem_alloc()) != RMEM_NULL);
+	TEST_ASSERT((ptr = nanvix_vmem_alloc(1)) != NULL);
 
+	for (size_t base = 0; base < RMEM_BLOCK_SIZE; base = (base == 0) ? 1 : (base << 1))
+	{
+		size_t n = RMEM_BLOCK_SIZE - base;
+
+#if (__VERBOSE_TESTS)
+		uprintf("rwrite() base=%d n=%d\n", base, n);
+#endif
+
+		/* Aligned read. */
 		umemset(buffer, 1, RMEM_BLOCK_SIZE);
-		TEST_ASSERT(nanvix_rmem_write(blknum, buffer) == RMEM_BLOCK_SIZE);
+		TEST_ASSERT(nanvix_vmem_write(&ptr[base], buffer, n) == n);
 
+#if (__VERBOSE_TESTS)
+		uprintf("rread()  base=%d n=%d\n", base, n);
+#endif
+
+		/* Aligned write. */
 		umemset(buffer, 0, RMEM_BLOCK_SIZE);
-		TEST_ASSERT(nanvix_rmem_read(blknum, buffer) == RMEM_BLOCK_SIZE);
+		TEST_ASSERT(nanvix_vmem_read(buffer, &ptr[base], n) == n);
 
 		/* Checksum. */
-		for (unsigned long i = 0; i < RMEM_BLOCK_SIZE; i++)
+		for (size_t i = 0; i < n; i++)
 			TEST_ASSERT(buffer[i] == 1);
+	}
 
-	TEST_ASSERT(nanvix_rmem_free(blknum) == 0);
+	TEST_ASSERT(nanvix_vmem_free(ptr) == 0);
 }
 
-/*============================================================================*
- * API Test: Consistency                                                      *
- *============================================================================*/
-
-/**
- * @brief API Test: Consistency
- */
-static void test_rmem_manager_consistency(void)
-{
-	rpage_t blknum1;
-	rpage_t blknum2;
-	rpage_t blknum3;
-
-	TEST_ASSERT((blknum1 = nanvix_rmem_alloc()) != RMEM_NULL);
-	TEST_ASSERT((blknum2 = nanvix_rmem_alloc()) != RMEM_NULL);
-	TEST_ASSERT((blknum3 = nanvix_rmem_alloc()) != RMEM_NULL);
-
-		/* First round. */
-		umemset(buffer, 1, RMEM_BLOCK_SIZE);
-		TEST_ASSERT(nanvix_rmem_write(blknum1, buffer) == RMEM_BLOCK_SIZE);
-
-		/* Second round. */
-        umemset(buffer, 2, RMEM_BLOCK_SIZE);
-        TEST_ASSERT(nanvix_rmem_write(blknum2, buffer) == RMEM_BLOCK_SIZE);
-
-		/* Third round. */
-        umemset(buffer, 3, RMEM_BLOCK_SIZE);
-        TEST_ASSERT(nanvix_rmem_write(blknum3, buffer) == RMEM_BLOCK_SIZE);
-
-		/* Checksum. */
-		umemset(buffer, 9, RMEM_BLOCK_SIZE);
-		TEST_ASSERT(nanvix_rmem_read(blknum1, buffer) == RMEM_BLOCK_SIZE);
-		for (unsigned long i = 0; i < RMEM_BLOCK_SIZE; i++)
-			TEST_ASSERT(buffer[i] == 1);
-		umemset(buffer, 9, RMEM_BLOCK_SIZE);
-		TEST_ASSERT(nanvix_rmem_read(blknum2, buffer) == RMEM_BLOCK_SIZE);
-		for (unsigned long i = 0; i < RMEM_BLOCK_SIZE; i++)
-			TEST_ASSERT(buffer[i] == 2);
-		umemset(buffer, 9, RMEM_BLOCK_SIZE);
-		TEST_ASSERT(nanvix_rmem_read(blknum3, buffer) == RMEM_BLOCK_SIZE);
-		for (unsigned long i = 0; i < RMEM_BLOCK_SIZE; i++)
-			TEST_ASSERT(buffer[i] == 3);
-
-	TEST_ASSERT(nanvix_rmem_free(blknum1) == 0);
-	TEST_ASSERT(nanvix_rmem_free(blknum2) == 0);
-	TEST_ASSERT(nanvix_rmem_free(blknum3) == 0);
-}
-
-/*============================================================================*
- * Test Driver Table                                                          *
- *============================================================================*/
+/*============================================================================*/
 
 /**
  * @brief Unit tests.
  */
 struct test tests_rmem_manager_api[] = {
-	{ test_rmem_manager_alloc_free, "alloc/free" },
-	{ test_rmem_manager_read_write, "read/write" },
-	{ test_rmem_manager_consistency, "consistency" },
-	{ NULL,                          NULL        },
+	{ test_rmem_manager_alloc_free, "alloc/free"      },
+	{ test_rmem_manager_read_write, "read/write"      },
+	{ NULL,                            NULL             },
 };

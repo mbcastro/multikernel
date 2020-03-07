@@ -27,7 +27,7 @@
 
 	#include <nanvix/servers/rmem.h>
 
-#if defined(__NEED_RMEM_CLIENT)
+#if defined(__NEED_MM_STUB)
 
 	/**
 	 * @brief Allocates a remote memory block.
@@ -80,7 +80,7 @@
 	 */
 	extern int nanvix_rmem_shutdown(int serverid);
 
-#endif /* __NEED_RMEM_CLIENT */
+#endif /* __NEED_MM_STUB */
 
 #endif /* NANVIX_RUNTIME_MM_STUB_H_ */
 

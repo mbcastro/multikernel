@@ -28,7 +28,7 @@
 	#include <posix/stddef.h>
 	#include <nanvix/sys/page.h>
 
-#if defined(__NEED_RMEM_MANAGER)
+#if defined(__NEED_MM_MANAGER)
 
 	/**
 	 * @brief Handles a remote page fault.
@@ -83,7 +83,7 @@
 	 */
 	extern size_t nanvix_vmem_write(void *ptr, const void *buf, size_t n);
 
-#endif /* __NEED_RMEM_MANAGER */
+#endif /* __NEED_MM_MANAGER */
 
 #endif /* NANVIX_RUNTIME_MM_MANAGER_H_ */
 

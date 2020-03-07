@@ -23,7 +23,7 @@
  */
 
 #define __NEED_NAME_CLIENT
-#define __NEED_RMEM_CLIENT
+#define __NEED_MM_STUB
 
 #include <nanvix/servers/spawn.h>
 #include <nanvix/runtime/runtime.h>

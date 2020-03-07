@@ -24,39 +24,33 @@
 #include "../../test.h"
 
 /* Import definitions. */
-extern struct test tests_rmem_interface_api[];
-extern struct test tests_rmem_interface_fault[];
-extern struct test tests_rmem_interface_stress[];
+extern struct test tests_rmem_stub_api[];
+extern struct test tests_rmem_stub_fault[];
+extern struct test tests_rmem_stub_stress[];
 
 /**
  * @todo TODO: provide a detailed description for this function.
  */
-void test_rmem_interface(void)
+void test_rmem_stub(void)
 {
 	/* Run API tests. */
-	for (int i = 0; tests_rmem_interface_api[i].test_fn != NULL; i++)
+	for (int i = 0; tests_rmem_stub_api[i].test_fn != NULL; i++)
 	{
-		uprintf("[nanvix][test][rmem][interface][api] %s",
-				tests_rmem_interface_api[i].name
-		);
-		tests_rmem_interface_api[i].test_fn();
+		uprintf("[nanvix][test][rmem][stub][api] %s", tests_rmem_stub_api[i].name);
+		tests_rmem_stub_api[i].test_fn();
 	}
 
 	/* Run fault injection tests. */
-	for (int i = 0; tests_rmem_interface_fault[i].test_fn != NULL; i++)
+	for (int i = 0; tests_rmem_stub_fault[i].test_fn != NULL; i++)
 	{
-		uprintf("[nanvix][test][rmem][interface][fault] %s",
-				tests_rmem_interface_fault[i].name
-		);
-		tests_rmem_interface_fault[i].test_fn();
+		uprintf("[nanvix][test][rmem][stub][fault] %s", tests_rmem_stub_fault[i].name);
+		tests_rmem_stub_fault[i].test_fn();
 	}
 
-	/* Run stress injection tests. */
-	for (int i = 0; tests_rmem_interface_stress[i].test_fn != NULL; i++)
+	/* Run stress tests. */
+	for (int i = 0; tests_rmem_stub_stress[i].test_fn != NULL; i++)
 	{
-		uprintf("[nanvix][test][rmem][interface][stress] %s",
-				tests_rmem_interface_stress[i].name
-		);
-		tests_rmem_interface_stress[i].test_fn();
+		uprintf("[nanvix][test][rmem][stub][stress] %s", tests_rmem_stub_stress[i].name);
+		tests_rmem_stub_stress[i].test_fn();
 	}
 }
