@@ -47,6 +47,12 @@ static struct
 #ifndef AGE_TYPE
 	#define AGE_TYPE uint32_t
 #endif
+
+int update_count = 0;
+
+#ifndef UPDATE_FREQ
+	#define UPDATE_FREQ 1
+#endif
 /**
  * @brief Page cache.
  */
@@ -142,14 +148,38 @@ static int nanvix_rcache_page_search(rpage_t pgnum)
 
 static void nanvix_update_aging(rpage_t pgnum)
 {
-	AGE_TYPE temp_age;
-	for (int i = 0; i < RMEM_CACHE_LENGTH; i++)
+	AGE_TYPE temp_age = 0;
+	update_count++;
+	if (UPDATE_FREQ == update_count)
 	{
-		temp_age = cache_lines[i*RMEM_CACHE_BLOCK_SIZE].age;
-		temp_age = (temp_age) >> 1;
-		if (cache_lines[i*RMEM_CACHE_BLOCK_SIZE].pgnum == pgnum)
-			temp_age = (AGE_TYPE)1 << (sizeof(AGE_TYPE)*8-1) | temp_age;
-		cache_lines[i*RMEM_CACHE_BLOCK_SIZE].age = temp_age;
+		for (int i = 0; i < RMEM_CACHE_LENGTH; i++)
+		{
+			temp_age = cache_lines[i*RMEM_CACHE_BLOCK_SIZE].age;
+			temp_age = (temp_age) >> 1;
+			if (cache_lines[i*RMEM_CACHE_BLOCK_SIZE].pgnum == pgnum)
+			{
+				if (cache_lines[i*RMEM_CACHE_BLOCK_SIZE].ref_count == 1)
+				{
+					temp_age = (AGE_TYPE)1 << (sizeof(AGE_TYPE)*8-1) | temp_age;
+					cache_lines[i*RMEM_CACHE_BLOCK_SIZE].ref_count = (UPDATE_FREQ == 1 ? 1 : 0);
+				} else {
+					temp_age = (AGE_TYPE)0 << (sizeof(AGE_TYPE)*8-1) | temp_age;
+				}
+			}
+			cache_lines[i*RMEM_CACHE_BLOCK_SIZE].age = temp_age;
+		}
+		update_count = 0;
+	} else {
+		for (int i = 0; i < RMEM_CACHE_LENGTH; i++)
+		{
+			if (cache_lines[i*RMEM_CACHE_BLOCK_SIZE].pgnum == pgnum)
+			{
+				if (cache_lines[i*RMEM_CACHE_BLOCK_SIZE].ref_count == 0)
+				{
+					cache_lines[i*RMEM_CACHE_BLOCK_SIZE].ref_count++;
+				}
+			}
+		}
 	}
 }
 
@@ -173,10 +203,28 @@ static int nanvix_rcache_age_update_nfu(rpage_t pgnum)
 
 	if (cache_policy == RMEM_CACHE_NFU)
 	{
-		if ((idx = nanvix_rcache_page_search(pgnum)) < 0)
-		    return (-EFAULT);
+		update_count++;
+		if (UPDATE_FREQ == update_count)
+		{
+			if ((idx = nanvix_rcache_page_search(pgnum)) < 0)
+				return (-EFAULT);
 
-		cache_lines[idx].age += cache_time;
+			if (cache_lines[idx].ref_count == 1)
+			{
+				cache_lines[idx].age++;
+				cache_lines[idx].ref_count = (UPDATE_FREQ == 1 ? 1 : 0);
+			}
+			update_count = 0;
+
+		} else {
+			if ((idx = nanvix_rcache_page_search(pgnum)) < 0)
+				return (-EFAULT);
+
+			if (cache_lines[idx].ref_count == 0)
+			{
+				cache_lines[idx].ref_count++;
+			}
+		}
 	} else if (cache_policy == RMEM_CACHE_AGING) {
 		if ((idx = nanvix_rcache_page_search(pgnum)) < 0)
 		    return (-EFAULT);
@@ -204,7 +252,14 @@ static int nanvix_rcache_age_update(rpage_t pgnum)
 		if ((idx = nanvix_rcache_page_search(pgnum)) < 0)
 			return (-EFAULT);
 		cache_lines[idx].age = 0;
+		cache_lines[idx].ref_count = 1;
 		nanvix_update_aging(pgnum);
+	} else if (cache_policy == RMEM_CACHE_NFU) {
+		if ((idx = nanvix_rcache_page_search(pgnum)) < 0)
+			return (-EFAULT);
+
+		cache_lines[idx].age = 1;
+		cache_lines[idx].ref_count = 1;
 	} else {
 		if ((idx = nanvix_rcache_page_search(pgnum)) < 0)
 			return (-EFAULT);
