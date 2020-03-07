@@ -39,7 +39,7 @@ distclean: distclean-qsort
 all-qsort:
 	$(MAKE) -C qsort all
 
-# Cleans up build objects of Quick Sorbenchmark.
+# Cleans up build objects.
 clean-qsort:
 	$(MAKE) -C qsort clean
 

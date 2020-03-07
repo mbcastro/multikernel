@@ -89,9 +89,9 @@ int __main2(int argc, const char *argv[])
 
 
 #ifndef NDEBUG
-		uprintf("[benchmarks][memalloc] alloc %l sort %l free %l",
+		uprintf("[apps][qsort] alloc %l sort %l free %l",
 #else
-		uprintf("[benchmarks][memalloc] %l %l %l",
+		uprintf("[apps][qsort] %l %l %l",
 #endif
 			time_alloc,
 			time_sort,
