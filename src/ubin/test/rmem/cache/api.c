@@ -97,39 +97,39 @@ static void test_rmem_rcache_put_write(void)
 static void test_rmem_rcache_get_flush(void)
 {
 
-	// The sum is for the last page RMEM_CACHE_BLOCK_SIZE (bad block problem)
+	/* Alloc every page available.
+	 * The sum is for the last page RMEM_CACHE_BLOCK_SIZE (bad block problem).
+	 */
 	for (int i = 0; i < (RMEM_CACHE_LENGTH+1)*RMEM_CACHE_BLOCK_SIZE; i++)
-	{
 		TEST_ASSERT((page_num[i] = nanvix_rcache_alloc()) != RMEM_NULL);
-	}
 
+	/* Get and flush to every page possible except the last one allocated. */
 	for (int i = 0; i < RMEM_CACHE_LENGTH; i++)
 	{
-		for (int j = 0; j < RMEM_CACHE_BLOCK_SIZE; j++)
-		{
-			TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[i*RMEM_CACHE_BLOCK_SIZE+j])) != NULL);
-			umemset(cache_data, i+1, RMEM_BLOCK_SIZE);
-		}
+		TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[i*RMEM_CACHE_BLOCK_SIZE])) != NULL);
+		umemset(cache_data, i+1, RMEM_BLOCK_SIZE);
 	}
 
 	for (int i = 0; i < RMEM_CACHE_LENGTH; i++)
 		TEST_ASSERT(nanvix_rcache_flush(page_num[i]) == 0);
 
+	/* Evict to test flush on server side. */
+	TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[RMEM_CACHE_LENGTH*RMEM_CACHE_BLOCK_SIZE])) != NULL);
+
+	/* Check if every page has the correct value. */
 	for (int i = 0; i < RMEM_CACHE_LENGTH; i++)
 	{
-		for (int j = 0; j < RMEM_CACHE_BLOCK_SIZE; j++)
-		{
-			TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[i*RMEM_CACHE_BLOCK_SIZE+j])) != NULL);
+		TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[i*RMEM_CACHE_BLOCK_SIZE])) != NULL);
 
-			/* Checksum */
-			for (size_t w = 0; w < RMEM_BLOCK_SIZE; w++)
-				TEST_ASSERT(cache_data[w] == (char)(i+1));
-		}
+		/* Checksum */
+		for (size_t w = 0; w < RMEM_BLOCK_SIZE; w++)
+			TEST_ASSERT(cache_data[w] == (char)(i+1));
 	}
+
+	/* Free all used pages. */
 	for (int i = 0; i < (RMEM_CACHE_LENGTH+1)*RMEM_CACHE_BLOCK_SIZE; i++)
-	{
 		TEST_ASSERT(nanvix_rcache_free(page_num[i]) == 0);
-	}
+
 	nanvix_rcache_clean();
 }
 
@@ -145,54 +145,31 @@ static void test_rmem_rcache_fifo(void)
 
 	nanvix_rcache_select_replacement_policy(RMEM_CACHE_FIFO);
 
+	/* Allocate every page available plus one for evict purposes. */
 	for (int i = 0; i < (RMEM_CACHE_LENGTH+1)*RMEM_CACHE_BLOCK_SIZE; i++)
-	{
 		TEST_ASSERT((page_num[i] = nanvix_rcache_alloc()) != RMEM_NULL);
-	}
 
+	/* Get every page to put it in the cache. */
 	for (int i = 0; i < RMEM_CACHE_LENGTH; i++)
 	{
-		for (int j = 0; j < RMEM_CACHE_BLOCK_SIZE; j++)
-		{
-			TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[i*RMEM_CACHE_BLOCK_SIZE+j])) != NULL);
-			umemset(cache_data, i+1, RMEM_BLOCK_SIZE);
-		}
+		TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[i*RMEM_CACHE_BLOCK_SIZE])) != NULL);
+		umemset(cache_data, i+1, RMEM_BLOCK_SIZE);
 	}
 
+	/* Flush every page to server. */
 	for (int i = 0; i < RMEM_CACHE_LENGTH; i++)
 		TEST_ASSERT(nanvix_rcache_flush(page_num[i*RMEM_CACHE_BLOCK_SIZE]) == 0);
 
-	/* Eviction will occur */
-	/* for (int i = 0; i < RMEM_CACHE_BLOCK_SIZE; i++) */
-		/* TEST_ASSERT((page_num[RMEM_CACHE_LENGTH*RMEM_CACHE_BLOCK_SIZE+i] = nanvix_rcache_alloc()) != RMEM_NULL); */
-
+	/* Evict a page. */
 	TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[RMEM_CACHE_LENGTH*RMEM_CACHE_BLOCK_SIZE])) != NULL);
 
-	/* Checksum */
-	for (size_t i = 0; i < RMEM_BLOCK_SIZE; i++)
-		TEST_ASSERT(cache_data[i] == (char)(0));
-
-	/* Check if the page was evicted */
+	/* Check if the correct page was evicted */
 	TEST_ASSERT(nanvix_rcache_flush(page_num[0*RMEM_CACHE_BLOCK_SIZE]) < 0);
 
-	/* Another eviction will occur */
-	for (int i = 0; i < RMEM_CACHE_BLOCK_SIZE; i++)
-	{
-		TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[0*RMEM_CACHE_BLOCK_SIZE+i])) != NULL);
-
-		/* Checksum */
-		for (size_t j = 0; j < RMEM_BLOCK_SIZE; j++)
-			TEST_ASSERT(cache_data[j] == (char)(1));
-	}
-
-	/* Check if the page was evicted */
-	TEST_ASSERT(nanvix_rcache_flush(page_num[1*RMEM_CACHE_BLOCK_SIZE]) < 0);
-
+	/* Free pages. */
 	for (int i = 0; i < (RMEM_CACHE_LENGTH+1)*RMEM_CACHE_BLOCK_SIZE; i++)
 		TEST_ASSERT(nanvix_rcache_free(page_num[i]) == 0);
 
-	/* for (int i = 0; i < RMEM_CACHE_BLOCK_SIZE; i++) */
-		/* TEST_ASSERT(nanvix_rcache_free(page_num[RMEM_CACHE_LENGTH*RMEM_CACHE_BLOCK_SIZE+i]) == 0); */
 	nanvix_rcache_clean();
 }
 
@@ -208,56 +185,30 @@ static void test_rmem_rcache_lifo(void)
 
 	nanvix_rcache_select_replacement_policy(RMEM_CACHE_LIFO);
 
+	/* Allocate every page available. */
 	for (int i = 0; i < (RMEM_CACHE_LENGTH+1)*RMEM_CACHE_BLOCK_SIZE; i++)
-	{
 		TEST_ASSERT((page_num[i] = nanvix_rcache_alloc()) != RMEM_NULL);
-	}
 
+	/* Get every page to put it in the cache. */
 	for (int i = 0; i < RMEM_CACHE_LENGTH; i++)
 	{
-		for (int j = 0; j < RMEM_CACHE_BLOCK_SIZE; j++)
-		{
-			TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[i*RMEM_CACHE_BLOCK_SIZE+j])) != NULL);
-			umemset(cache_data, i+1, RMEM_BLOCK_SIZE);
-		}
+		TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[i*RMEM_CACHE_BLOCK_SIZE])) != NULL);
+		umemset(cache_data, i+1, RMEM_BLOCK_SIZE);
 	}
 
+	/* Flush every page to the server. */
 	for (int i = 0; i < RMEM_CACHE_LENGTH; i++)
 		TEST_ASSERT(nanvix_rcache_flush(page_num[i*RMEM_CACHE_BLOCK_SIZE]) == 0);
 
 	/* Eviction will occur */
-	/* for (int i = 0; i < RMEM_CACHE_BLOCK_SIZE; i++) */
-		/* TEST_ASSERT((page_num[RMEM_CACHE_LENGTH*RMEM_CACHE_BLOCK_SIZE+i] = nanvix_rcache_alloc()) != RMEM_NULL); */
-
 	TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[RMEM_CACHE_LENGTH*RMEM_CACHE_BLOCK_SIZE])) != NULL);
 
-	/* Checksum */
-	for (size_t i = 0; i < RMEM_BLOCK_SIZE; i++)
-	{
-		TEST_ASSERT(cache_data[i] == (char)(0));
-	}
-
-	/* Check if the page was evicted */
+	/* Check if the correct page was evicted */
 	TEST_ASSERT(nanvix_rcache_flush(page_num[(RMEM_CACHE_LENGTH-1)*RMEM_CACHE_BLOCK_SIZE]) < 0);
 
-	/* Another eviction will occur */
-	for (int i = 0; i < RMEM_CACHE_BLOCK_SIZE; i++)
-	{
-		TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[(RMEM_CACHE_LENGTH-1)*RMEM_CACHE_BLOCK_SIZE+i])) != NULL);
-
-		/* Checksum */
-		for (size_t j = 0; j < RMEM_BLOCK_SIZE; j++)
-			TEST_ASSERT(cache_data[j] == (char)(RMEM_CACHE_LENGTH));
-	}
-
-	/* Check if the page was evicted */
-	TEST_ASSERT(nanvix_rcache_flush(page_num[RMEM_CACHE_LENGTH*RMEM_CACHE_BLOCK_SIZE]) < 0);
-
+	/* Free every used page. */
 	for (int i = 0; i < (RMEM_CACHE_LENGTH+1)*RMEM_CACHE_BLOCK_SIZE; i++)
 		TEST_ASSERT(nanvix_rcache_free(page_num[i]) == 0);
-
-	/* for (int i = 0; i < RMEM_CACHE_BLOCK_SIZE; i++) */
-		/* TEST_ASSERT(nanvix_rcache_free(page_num[RMEM_CACHE_LENGTH*RMEM_CACHE_BLOCK_SIZE+i]) == 0); */
 
 	nanvix_rcache_clean();
 }
@@ -274,58 +225,39 @@ static void test_rmem_rcache_nfu(void)
 
 	nanvix_rcache_select_replacement_policy(RMEM_CACHE_NFU);
 
+	/* Allocate every page available. */
 	for (int i = 0; i < (RMEM_CACHE_LENGTH+1)*RMEM_CACHE_BLOCK_SIZE; i++)
-	{
 		TEST_ASSERT((page_num[i] = nanvix_rcache_alloc()) != RMEM_NULL);
-	}
 
+	/* Get every page to put it in the cache. */
 	for (int i = 0; i < RMEM_CACHE_LENGTH; i++)
 	{
-		for (int j = 0; j < RMEM_CACHE_BLOCK_SIZE; j++)
-		{
-			TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[i*RMEM_CACHE_BLOCK_SIZE+j])) != NULL);
-			umemset(cache_data, i+1, RMEM_BLOCK_SIZE);
-		}
+		TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[i*RMEM_CACHE_BLOCK_SIZE])) != NULL);
+		umemset(cache_data, i+1, RMEM_BLOCK_SIZE);
 	}
+
+	/* Flush every page to the server. */
 	for (int i = 0; i < RMEM_CACHE_LENGTH; i++)
 		TEST_ASSERT(nanvix_rcache_flush(page_num[i]) == 0);
 
+	/* Access all pages except one for controlled test. */
+	int page_exception_value = RMEM_CACHE_LENGTH >> 1;
+	for (int i = 0; i < RMEM_CACHE_LENGTH; i++)
+	{
+		if (i != page_exception_value)
+			TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[i*RMEM_CACHE_BLOCK_SIZE])) != NULL);
+	}
+
 	/* Eviction will occur */
-	/* TEST_ASSERT((page_num[RMEM_CACHE_LENGTH*RMEM_CACHE_BLOCK_SIZE] = nanvix_rcache_alloc()) != RMEM_NULL); */
 	TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[RMEM_CACHE_LENGTH*RMEM_CACHE_BLOCK_SIZE])) != NULL);
 
-	/* Checksum */
-	for (size_t i = 0; i < RMEM_BLOCK_SIZE; i++)
-		TEST_ASSERT(cache_data[i] == (char)(0));
+	/* Check if the correct page was evicted */
+	TEST_ASSERT(nanvix_rcache_flush(page_num[page_exception_value*RMEM_CACHE_BLOCK_SIZE]) < 0);
 
-	/* Check if the page was evicted */
-	TEST_ASSERT(nanvix_rcache_flush(page_num[0*RMEM_CACHE_BLOCK_SIZE]) < 0);
-
-	/* Another access on page 1 */
-	for (int i = 0; i < RMEM_CACHE_BLOCK_SIZE; i++)
-	{
-		TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[1*RMEM_CACHE_BLOCK_SIZE])) != NULL);
-
-		/* Checksum */
-		for (size_t j = 0; j < RMEM_BLOCK_SIZE; j++)
-			TEST_ASSERT(cache_data[j] == (char)(2));
-	}
-	/* Another eviction will occur */
-	for (int i = 0; i < RMEM_CACHE_BLOCK_SIZE; i++)
-	{
-		TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[0*RMEM_CACHE_BLOCK_SIZE])) != NULL);
-
-		/* Checksum */
-		for (size_t j = 0; j < RMEM_BLOCK_SIZE; j++)
-			TEST_ASSERT(cache_data[j] == (char)(1));
-	}
-
-	/* Check if the page was evicted */
-	TEST_ASSERT(nanvix_rcache_flush(page_num[2*RMEM_CACHE_BLOCK_SIZE]) < 0);
-
+	/* Free every used page. */
 	for (int i = 0; i < (RMEM_CACHE_LENGTH+1)*RMEM_CACHE_BLOCK_SIZE; i++)
 		TEST_ASSERT(nanvix_rcache_free(page_num[i]) == 0);
-	/* TEST_ASSERT(nanvix_rcache_free(page_num[RMEM_CACHE_LENGTH*RMEM_CACHE_BLOCK_SIZE]) == 0); */
+
 	nanvix_rcache_clean();
 }
 
@@ -335,64 +267,44 @@ static void test_rmem_rcache_nfu(void)
 
 /**
  * @brief API Test: Cache Aging
+ * Important: This test is a bit different from the others. We check if the page
+ * was not evicted, instead of evicted. This behaviour is justified by the
+ * age resolution. The test can not be generic without consider the age type and
+ * the size of the cache with defines.
  */
 static void test_rmem_rcache_aging(void)
 {
 
 	nanvix_rcache_select_replacement_policy(RMEM_CACHE_AGING);
 
+	/* Allocate every page available. */
 	for (int i = 0; i < (RMEM_CACHE_LENGTH+1)*RMEM_CACHE_BLOCK_SIZE; i++)
-	{
 		TEST_ASSERT((page_num[i] = nanvix_rcache_alloc()) != RMEM_NULL);
-	}
 
+	/* Get and flush to every page possible except the last one allocated. */
 	for (int i = 0; i < RMEM_CACHE_LENGTH; i++)
 	{
-		for (int j = 0; j < RMEM_CACHE_BLOCK_SIZE; j++)
-		{
-			TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[i*RMEM_CACHE_BLOCK_SIZE+j])) != NULL);
-			umemset(cache_data, i+1, RMEM_BLOCK_SIZE);
-		}
+		TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[i*RMEM_CACHE_BLOCK_SIZE])) != NULL);
+		umemset(cache_data, i+1, RMEM_BLOCK_SIZE);
 	}
+
+	/* Flush every page to the server. */
 	for (int i = 0; i < RMEM_CACHE_LENGTH; i++)
 		TEST_ASSERT(nanvix_rcache_flush(page_num[i]) == 0);
 
+	/* Get one page to control the test. */
+	TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[0*RMEM_CACHE_BLOCK_SIZE])) != NULL);
+
 	/* Eviction will occur */
-	/* TEST_ASSERT((page_num[RMEM_CACHE_LENGTH*RMEM_CACHE_BLOCK_SIZE] = nanvix_rcache_alloc()) != RMEM_NULL); */
 	TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[RMEM_CACHE_LENGTH*RMEM_CACHE_BLOCK_SIZE])) != NULL);
 
-	/* Checksum */
-	for (size_t i = 0; i < RMEM_BLOCK_SIZE; i++)
-		TEST_ASSERT(cache_data[i] == (char)(0));
+	/* Check if the correct page was evicted */
+	TEST_ASSERT(nanvix_rcache_flush(page_num[0*RMEM_CACHE_BLOCK_SIZE]) == 0);
 
-	/* Check if the page was evicted */
-	TEST_ASSERT(nanvix_rcache_flush(page_num[0*RMEM_CACHE_BLOCK_SIZE]) < 0);
-
-	/* Another access on page 1 */
-	for (int i = 0; i < RMEM_CACHE_BLOCK_SIZE; i++)
-	{
-		TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[1*RMEM_CACHE_BLOCK_SIZE])) != NULL);
-
-		/* Checksum */
-		for (size_t j = 0; j < RMEM_BLOCK_SIZE; j++)
-			TEST_ASSERT(cache_data[j] == (char)(2));
-	}
-	/* Another eviction will occur */
-	for (int i = 0; i < RMEM_CACHE_BLOCK_SIZE; i++)
-	{
-		TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[0*RMEM_CACHE_BLOCK_SIZE])) != NULL);
-
-		/* Checksum */
-		for (size_t j = 0; j < RMEM_BLOCK_SIZE; j++)
-			TEST_ASSERT(cache_data[j] == (char)(1));
-	}
-
-	/* Check if the page was evicted */
-	TEST_ASSERT(nanvix_rcache_flush(page_num[2*RMEM_CACHE_BLOCK_SIZE]) < 0);
-
+	/* Free every used page. */
 	for (int i = 0; i < (RMEM_CACHE_LENGTH+1)*RMEM_CACHE_BLOCK_SIZE; i++)
 		TEST_ASSERT(nanvix_rcache_free(page_num[i]) == 0);
-	/* TEST_ASSERT(nanvix_rcache_free(page_num[RMEM_CACHE_LENGTH*RMEM_CACHE_BLOCK_SIZE]) == 0); */
+
 	nanvix_rcache_clean();
 }
 /*============================================================================*

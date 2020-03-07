@@ -47,6 +47,12 @@ static struct
 #ifndef AGE_TYPE
 	#define AGE_TYPE uint32_t
 #endif
+
+int update_count = 0;
+
+#ifndef UPDATE_FREQ
+	#define UPDATE_FREQ 1
+#endif
 /**
  * @brief Page cache.
  */
@@ -142,14 +148,38 @@ static int nanvix_rcache_page_search(rpage_t pgnum)
 
 static void nanvix_update_aging(rpage_t pgnum)
 {
-	AGE_TYPE temp_age;
-	for (int i = 0; i < RMEM_CACHE_LENGTH; i++)
+	AGE_TYPE temp_age = 0;
+	update_count++;
+	if (UPDATE_FREQ == update_count)
 	{
-		temp_age = cache_lines[i*RMEM_CACHE_BLOCK_SIZE].age;
-		temp_age = (temp_age) >> 1;
-		if (cache_lines[i*RMEM_CACHE_BLOCK_SIZE].pgnum == pgnum)
-			temp_age = (AGE_TYPE)1 << (sizeof(AGE_TYPE)*8-1) | temp_age;
-		cache_lines[i*RMEM_CACHE_BLOCK_SIZE].age = temp_age;
+		for (int i = 0; i < RMEM_CACHE_LENGTH; i++)
+		{
+			temp_age = cache_lines[i*RMEM_CACHE_BLOCK_SIZE].age;
+			temp_age = (temp_age) >> 1;
+			if (cache_lines[i*RMEM_CACHE_BLOCK_SIZE].pgnum == pgnum)
+			{
+				if (cache_lines[i*RMEM_CACHE_BLOCK_SIZE].ref_count == 1)
+				{
+					temp_age = (AGE_TYPE)1 << (sizeof(AGE_TYPE)*8-1) | temp_age;
+					cache_lines[i*RMEM_CACHE_BLOCK_SIZE].ref_count = (UPDATE_FREQ == 1 ? 1 : 0);
+				} else {
+					temp_age = (AGE_TYPE)0 << (sizeof(AGE_TYPE)*8-1) | temp_age;
+				}
+			}
+			cache_lines[i*RMEM_CACHE_BLOCK_SIZE].age = temp_age;
+		}
+		update_count = 0;
+	} else {
+		for (int i = 0; i < RMEM_CACHE_LENGTH; i++)
+		{
+			if (cache_lines[i*RMEM_CACHE_BLOCK_SIZE].pgnum == pgnum)
+			{
+				if (cache_lines[i*RMEM_CACHE_BLOCK_SIZE].ref_count == 0)
+				{
+					cache_lines[i*RMEM_CACHE_BLOCK_SIZE].ref_count++;
+				}
+			}
+		}
 	}
 }
 
@@ -173,10 +203,28 @@ static int nanvix_rcache_age_update_nfu(rpage_t pgnum)
 
 	if (cache_policy == RMEM_CACHE_NFU)
 	{
-		if ((idx = nanvix_rcache_page_search(pgnum)) < 0)
-		    return (-EFAULT);
+		update_count++;
+		if (UPDATE_FREQ == update_count)
+		{
+			if ((idx = nanvix_rcache_page_search(pgnum)) < 0)
+				return (-EFAULT);
 
-		cache_lines[idx].age += cache_time;
+			if (cache_lines[idx].ref_count == 1)
+			{
+				cache_lines[idx].age++;
+				cache_lines[idx].ref_count = (UPDATE_FREQ == 1 ? 1 : 0);
+			}
+			update_count = 0;
+
+		} else {
+			if ((idx = nanvix_rcache_page_search(pgnum)) < 0)
+				return (-EFAULT);
+
+			if (cache_lines[idx].ref_count == 0)
+			{
+				cache_lines[idx].ref_count++;
+			}
+		}
 	} else if (cache_policy == RMEM_CACHE_AGING) {
 		if ((idx = nanvix_rcache_page_search(pgnum)) < 0)
 		    return (-EFAULT);
@@ -204,7 +252,14 @@ static int nanvix_rcache_age_update(rpage_t pgnum)
 		if ((idx = nanvix_rcache_page_search(pgnum)) < 0)
 			return (-EFAULT);
 		cache_lines[idx].age = 0;
+		cache_lines[idx].ref_count = 1;
 		nanvix_update_aging(pgnum);
+	} else if (cache_policy == RMEM_CACHE_NFU) {
+		if ((idx = nanvix_rcache_page_search(pgnum)) < 0)
+			return (-EFAULT);
+
+		cache_lines[idx].age = 1;
+		cache_lines[idx].ref_count = 1;
 	} else {
 		if ((idx = nanvix_rcache_page_search(pgnum)) < 0)
 			return (-EFAULT);
@@ -212,6 +267,57 @@ static int nanvix_rcache_age_update(rpage_t pgnum)
 		cache_lines[idx].age = cache_time;
 	}
 	return 0;
+}
+/*============================================================================*
+ * msbDebruijn32()                                                            *
+ *============================================================================*/
+
+/**
+ * @brief Search a value for its most significant bit that is setted.
+ *
+ * @param v Value to be used for bit search.
+ *
+ * @returns Upon successful completion, the index for the msb setted bit is
+ * returned.
+ */
+uint32_t msbDeBruijn32( uint32_t v )
+{
+    static const int MultiplyDeBruijnBitPosition[32] =
+    {
+    0, 9, 1, 10, 13, 21, 2, 29, 11, 14, 16, 18, 22, 25, 3, 30,
+    8, 12, 20, 28, 15, 17, 24, 7, 19, 27, 23, 6, 26, 5, 4, 31
+    };
+
+    v |= v >> 1; // first round down to one less than a power of 2
+    v |= v >> 2;
+    v |= v >> 4;
+    v |= v >> 8;
+    v |= v >> 16;
+
+    return MultiplyDeBruijnBitPosition[( uint32_t )( v * 0x07C4ACDDU ) >> 27];
+}
+
+/*============================================================================*
+ * random_mod()                                                               *
+ *============================================================================*/
+
+/**
+ * @brief Generate a random number and it's mod by parameter value.
+ *
+ * @param v Value to be used for mod operation.
+ *
+ * @returns Upon successful completion, the mod for the random number and a
+ * value is returned.
+ */
+int random_mod(int v)
+{
+    int random_number = urand();
+    uint32_t msb = msbDeBruijn32(random_number);
+    uint32_t mod_power_two = ~((0x1 << msb ) - 1) & v;
+    while(mod_power_two < (uint32_t)v)
+        mod_power_two -= v;
+    random_number = mod_power_two;
+    return random_number;
 }
 
 /*============================================================================*
@@ -229,6 +335,7 @@ static int nanvix_rcache_age_update(rpage_t pgnum)
 static int nanvix_rcache_fifo(void)
 {
 	int idx;
+	int draw_count = 1;
 	AGE_TYPE age;
 	AGE_TYPE min_age;
 
@@ -245,15 +352,33 @@ static int nanvix_rcache_fifo(void)
 	min_age = cache_lines[idx = 0].age;
 	for (int i = 1; i < RMEM_CACHE_LENGTH; i++)
 	{
-		if ((age = cache_lines[i*RMEM_CACHE_BLOCK_SIZE].age) < min_age)
+		age = cache_lines[i*RMEM_CACHE_BLOCK_SIZE].age;
+		if (age < min_age)
 		{
 		    idx = i*RMEM_CACHE_BLOCK_SIZE;
 		    min_age = age;
+		} else if (age == min_age) {
+			draw_count++;
 		}
 	}
+
+	if (draw_count > 1)
+	{
+        int random_number = random_mod(draw_count);
+		int encounter_number = 0;
+		for (int i = (idx/RMEM_CACHE_BLOCK_SIZE); i < RMEM_CACHE_LENGTH; i++)
+		{
+			if ((age = cache_lines[i*RMEM_CACHE_BLOCK_SIZE].age) == min_age)
+			{
+				if (encounter_number == random_number)
+					idx = i*RMEM_CACHE_BLOCK_SIZE;
+				encounter_number++;
+			}
+		}
+	}
+
 	if (nanvix_rcache_flush(cache_lines[idx].pgnum) < 0)
 		return (-EFAULT);
-
 	return (idx);
 }
 
