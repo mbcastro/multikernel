@@ -23,13 +23,13 @@
 #
 
 # Builds everything.
-all: all-qsort
+all: all-qsort all-sha1
 
 # Cleans up build objects.
-clean: clean-qsort
+clean: clean-qsort clean-sha1
 
 # Cleans up everything.
-distclean: distclean-qsort
+distclean: distclean-qsort distclean-sha1
 
 #===============================================================================
 # Quick Sort Benchmarks
@@ -39,10 +39,26 @@ distclean: distclean-qsort
 all-qsort:
 	$(MAKE) -C qsort all
 
-# Cleans up build objects of Quick Sorbenchmark.
+# Cleans up build objects.
 clean-qsort:
 	$(MAKE) -C qsort clean
 
 # Cleans up everything from Quick Sort.
 distclean-qsort:
 	$(MAKE) -C qsort distclean
+
+#===============================================================================
+# SHA-1
+#===============================================================================
+
+# Builds SHA-1.
+all-sha1:
+	$(MAKE) -C sha1 all
+
+# Cleans up build objects.
+clean-sha1:
+	$(MAKE) -C sha1 clean
+
+# Cleans up everything
+distclean-sha1:
+	$(MAKE) -C sha1 distclean
