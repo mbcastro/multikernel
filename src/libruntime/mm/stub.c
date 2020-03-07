@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-#define __RMEM_SERVICE
+#define __NEED_RMEM_SERVICE
 
 #include <nanvix/servers/rmem.h>
 #include <nanvix/servers/spawn.h>

@@ -22,7 +22,8 @@
  * SOFTWARE.
  */
 
-#define __NEED_RMEM_CLIENT
+#define __NEED_RMEM_SERVICE
+#define __NEED_MM_STUB
 #define __NEED_RMEM_CACHE
 
 #include <nanvix/runtime/rmem.h>

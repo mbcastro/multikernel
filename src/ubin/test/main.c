@@ -52,9 +52,9 @@ int __main2(int argc, const char *argv[])
 		test_name();
 
 		__runtime_setup(3);
-		test_rmem();
+		test_rmem_stub();
 		test_rmem_cache();
-		test_rmem_interface();
+		test_rmem_manager();
 #ifdef __mppa256__
 		test_posix();
 #endif

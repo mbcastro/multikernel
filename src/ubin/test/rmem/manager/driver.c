@@ -31,26 +31,32 @@ extern struct test tests_rmem_manager_stress[];
 /**
  * @todo TODO: provide a detailed description for this function.
  */
-void test_rmem(void)
+void test_rmem_manager(void)
 {
 	/* Run API tests. */
 	for (int i = 0; tests_rmem_manager_api[i].test_fn != NULL; i++)
 	{
-		uprintf("[nanvix][test][rmem-manager][api] %s", tests_rmem_manager_api[i].name);
+		uprintf("[nanvix][test][rmem][manager][api] %s",
+				tests_rmem_manager_api[i].name
+		);
 		tests_rmem_manager_api[i].test_fn();
 	}
 
 	/* Run fault injection tests. */
 	for (int i = 0; tests_rmem_manager_fault[i].test_fn != NULL; i++)
 	{
-		uprintf("[nanvix][test][rmem-manager][fault] %s", tests_rmem_manager_fault[i].name);
+		uprintf("[nanvix][test][rmem][manager][fault] %s",
+				tests_rmem_manager_fault[i].name
+		);
 		tests_rmem_manager_fault[i].test_fn();
 	}
 
-	/* Run stress tests. */
+	/* Run stress injection tests. */
 	for (int i = 0; tests_rmem_manager_stress[i].test_fn != NULL; i++)
 	{
-		uprintf("[nanvix][test][rmem-manager][stress] %s", tests_rmem_manager_stress[i].name);
+		uprintf("[nanvix][test][rmem][manager][stress] %s",
+				tests_rmem_manager_stress[i].name
+		);
 		tests_rmem_manager_stress[i].test_fn();
 	}
 }
