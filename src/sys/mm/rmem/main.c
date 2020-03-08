@@ -490,11 +490,9 @@ static int do_rmem_loop(void)
 	}
 
 	/* Dump statistics. */
-	uprintf("[nanvix][rmem] talloc=%d nallocs=%d tfree=%d nfrees=%d tread=%d nreads=%d twrite=%d nwrites=%d",
-			stats.talloc, stats.nallocs,
-			stats.tfree, stats.nfrees,
-			stats.tread, stats.nreads,
-			stats.twrite, stats.nwrites
+	uprintf("[nanvix][rmem] nallocs=%d nfrees=%d nreads=%d nwrites=%d",
+			stats.nallocs, stats.nfrees,
+			stats.nreads, stats.nwrites
 	);
 
 	return (0);

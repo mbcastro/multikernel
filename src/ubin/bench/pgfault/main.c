@@ -45,7 +45,7 @@ static char buffer[RMEM_BLOCK_SIZE];
 void benchmark_pgfault(void)
 {
 	unsigned char *ptr;
-	uint64_t time_alloc, time_kernel, time_free;
+	uint64_t time_alloc, time_remote, time_local, time_free;
 
 	umemset(buffer, 0, RMEM_BLOCK_SIZE);
 
@@ -58,10 +58,6 @@ void benchmark_pgfault(void)
 		perf_stop(0);
 		time_alloc = perf_read(0);
 
-	/* Warmup. */
-	for (int i = 0; i < NUM_PAGES; i++)
-		umemcpy(&ptr[i*RMEM_BLOCK_SIZE], buffer, RMEM_BLOCK_SIZE);
-
 #ifndef NDEBUG
 	uprintf("[benchmarks][pgfault] benchmarking...");
 #endif
@@ -69,7 +65,12 @@ void benchmark_pgfault(void)
 	for (int i = 0; i < NUM_PAGES; i++)
 		umemcpy(&ptr[i*RMEM_BLOCK_SIZE], buffer, RMEM_BLOCK_SIZE);
 	perf_stop(0);
-	time_kernel = perf_read(0);
+	time_remote = perf_read(0);
+	perf_start(0, PERF_CYCLES);
+	for (int i = 0; i < NUM_PAGES; i++)
+		umemcpy(&ptr[i*RMEM_BLOCK_SIZE], buffer, RMEM_BLOCK_SIZE);
+	perf_stop(0);
+	time_local = perf_read(0);
 
 	/* Free all blocks. */
 #ifndef NDEBUG
@@ -82,12 +83,13 @@ void benchmark_pgfault(void)
 
 
 #ifndef NDEBUG
-	uprintf("[benchmarks][pgfault] alloc %l write %l free %l",
+	uprintf("[benchmarks][pgfault] alloc %l remote %l local %l free %l",
 #else
-	uprintf("[benchmarks][pgfault] %l %l %l",
+	uprintf("[benchmarks][pgfault] %l %l %l %l",
 #endif
 		time_alloc,
-		time_kernel,
+		time_remote,
+		time_local,
 		time_free
 	);
 }

@@ -649,6 +649,12 @@ void *nanvix_rcache_get(rpage_t pgnum)
 	{
 		stats.nmisses++;
 
+		if (cache_lines[0].pgnum != RMEM_NULL)
+		{
+			if (nanvix_rcache_flush(cache_lines[0].pgnum))
+				return (NULL);
+		}
+
 		if ((err = nanvix_rmem_read(pgnum, cache_lines[0].pages)) < 0)
 			return (NULL);
 
