@@ -54,18 +54,32 @@ int update_count = 0;
 #ifndef UPDATE_FREQ
 	#define UPDATE_FREQ 1
 #endif
-/**
- * @brief Page cache.
+
+/*
+ * @brief Tuple structure.
  */
-typedef struct
+struct tuple
+{
+	int slot_idx;
+	int block_idx;
+	int error;
+};
+
+/**
+ * @brief Cache slot representation.
+ */
+struct cache_slot
 {
 	rpage_t pgnum;
 	char pages[RMEM_BLOCK_SIZE] ALIGN(PAGE_SIZE);
 	AGE_TYPE age;
 	int ref_count;
-} cache_slot;
+};
 
-static cache_slot cache_lines[RMEM_CACHE_SIZE] = {
+/*
+ * @brief Page cache.
+ */
+static struct cache_slot cache_lines[RMEM_CACHE_SIZE] = {
 	[0 ... ((RMEM_CACHE_SIZE) - 1)] = {.pgnum = RMEM_NULL, .age = 0, .ref_count = 0}
 };
 
@@ -126,10 +140,11 @@ void nanvix_rcache_clean(void)
  * @returns Upon successful completion, the page index is
  * returned. Upon failure a negative error code is returned instead.
  */
-static int nanvix_rcache_page_search(rpage_t pgnum)
+static struct tuple nanvix_rcache_page_search(rpage_t pgnum)
 {
 	cache_time++;
 	int pgnum_block;
+	struct tuple indexes;
 
 	for (int i = 0; i < RMEM_CACHE_LENGTH; i++)
 	{
@@ -139,7 +154,33 @@ static int nanvix_rcache_page_search(rpage_t pgnum)
 			for (int j = 0; j < RMEM_CACHE_BLOCK_SIZE; j++)
 			{
 				if (cache_lines[i*RMEM_CACHE_BLOCK_SIZE+j].pgnum == pgnum)
-					return (i*RMEM_CACHE_BLOCK_SIZE+j);
+				{
+					indexes.slot_idx = i*RMEM_CACHE_BLOCK_SIZE;
+					indexes.block_idx = j;
+					indexes.error = 0;
+					return indexes;
+				}
+			}
+		}
+	}
+
+	indexes.error = (-EFAULT);
+	return indexes;
+}
+
+static int nanvix_rcache_page_search_slot(rpage_t pgnum)
+{
+	cache_time++;
+	int pgnum_block;
+
+	for (int i = 0; i < RMEM_CACHE_LENGTH; i++)
+	{ pgnum_block = (int)(pgnum) - (int)(cache_lines[i*RMEM_CACHE_BLOCK_SIZE].pgnum);
+		if (pgnum_block >= 0 && pgnum_block < RMEM_CACHE_BLOCK_SIZE && cache_lines[i*RMEM_CACHE_BLOCK_SIZE].pgnum != RMEM_NULL)
+		{
+			for (int j = 0; j < RMEM_CACHE_BLOCK_SIZE; j++)
+			{
+				if (cache_lines[i*RMEM_CACHE_BLOCK_SIZE+j].pgnum == pgnum)
+					return (i*RMEM_CACHE_BLOCK_SIZE);
 			}
 		}
 	}
@@ -147,7 +188,7 @@ static int nanvix_rcache_page_search(rpage_t pgnum)
 	return (-EFAULT);
 }
 
-static void nanvix_update_aging(rpage_t pgnum)
+static void nanvix_rcache_aging(int idx)
 {
 	AGE_TYPE temp_age = 0;
 	update_count++;
@@ -157,12 +198,12 @@ static void nanvix_update_aging(rpage_t pgnum)
 		{
 			temp_age = cache_lines[i*RMEM_CACHE_BLOCK_SIZE].age;
 			temp_age = (temp_age) >> 1;
-			if (cache_lines[i*RMEM_CACHE_BLOCK_SIZE].pgnum == pgnum)
+			if (i*RMEM_CACHE_BLOCK_SIZE == idx)
 			{
-				if (cache_lines[i*RMEM_CACHE_BLOCK_SIZE].ref_count == 1)
+				if (cache_lines[idx].ref_count == 1)
 				{
 					temp_age = (AGE_TYPE)1 << (sizeof(AGE_TYPE)*8-1) | temp_age;
-					cache_lines[i*RMEM_CACHE_BLOCK_SIZE].ref_count = (UPDATE_FREQ == 1 ? 1 : 0);
+					cache_lines[idx].ref_count = (UPDATE_FREQ == 1 ? 1 : 0);
 				} else {
 					temp_age = (AGE_TYPE)0 << (sizeof(AGE_TYPE)*8-1) | temp_age;
 				}
@@ -171,15 +212,9 @@ static void nanvix_update_aging(rpage_t pgnum)
 		}
 		update_count = 0;
 	} else {
-		for (int i = 0; i < RMEM_CACHE_LENGTH; i++)
+		if (cache_lines[idx].ref_count == 0)
 		{
-			if (cache_lines[i*RMEM_CACHE_BLOCK_SIZE].pgnum == pgnum)
-			{
-				if (cache_lines[i*RMEM_CACHE_BLOCK_SIZE].ref_count == 0)
-				{
-					cache_lines[i*RMEM_CACHE_BLOCK_SIZE].ref_count++;
-				}
-			}
+			cache_lines[idx].ref_count++;
 		}
 	}
 }
@@ -196,76 +231,66 @@ static void nanvix_update_aging(rpage_t pgnum)
  * @returns Upon successful completion, the index of the page is
  * returned. Upon failure a negative error code is returned instead.
  */
-static int nanvix_rcache_age_update_nfu(rpage_t pgnum)
+static int nanvix_rcache_age_update(rpage_t pgnum)
 {
-	int idx;
+	struct tuple idx = nanvix_rcache_page_search(pgnum);
+	int slot = idx.slot_idx;
+	int error = idx.error;
 
 	cache_time++;
+
+	if (error < 0)
+		return (-EFAULT);
 
 	if (cache_policy == RMEM_CACHE_NFU)
 	{
 		update_count++;
 		if (UPDATE_FREQ == update_count)
 		{
-			if ((idx = nanvix_rcache_page_search(pgnum)) < 0)
-				return (-EFAULT);
-
-			if (cache_lines[idx].ref_count == 1)
+			if (cache_lines[slot].ref_count == 1)
 			{
-				cache_lines[idx].age++;
-				cache_lines[idx].ref_count = (UPDATE_FREQ == 1 ? 1 : 0);
+				cache_lines[slot].age++;
+				cache_lines[slot].ref_count = (UPDATE_FREQ == 1 ? 1 : 0);
 			}
 			update_count = 0;
-
 		} else {
-			if ((idx = nanvix_rcache_page_search(pgnum)) < 0)
-				return (-EFAULT);
-
-			if (cache_lines[idx].ref_count == 0)
-			{
-				cache_lines[idx].ref_count++;
-			}
+			if (cache_lines[slot].ref_count == 0)
+				cache_lines[slot].ref_count++;
 		}
 	} else if (cache_policy == RMEM_CACHE_AGING) {
-		if ((idx = nanvix_rcache_page_search(pgnum)) < 0)
-		    return (-EFAULT);
-
-		nanvix_update_aging(pgnum);
+		nanvix_rcache_aging(slot);
 	}
 
 	return (0);
 }
 
 /*============================================================================*
- * nanvix_rcache_age_update()                                                 *
+ * nanvix_rcache_age_init()                                                   *
  *============================================================================*/
 
 /**
  * @todo TODO: provide a detailed description for this function.
  */
-static int nanvix_rcache_age_update(rpage_t pgnum)
+static int nanvix_rcache_age_init(rpage_t pgnum)
 {
-	int idx;
+	struct tuple idx = nanvix_rcache_page_search(pgnum);
+	int slot = idx.slot_idx;
+	int error = idx.error;
 
 	cache_time++;
 
+	if (error < 0)
+		return (-EFAULT);
+
 	if (cache_policy == RMEM_CACHE_AGING) {
-		if ((idx = nanvix_rcache_page_search(pgnum)) < 0)
-			return (-EFAULT);
-		cache_lines[idx].age = 0;
-		cache_lines[idx].ref_count = 1;
-		nanvix_update_aging(pgnum);
+		cache_lines[slot].age = 0;
+		cache_lines[slot].ref_count = 1;
+		nanvix_rcache_aging(pgnum);
 	} else if (cache_policy == RMEM_CACHE_NFU) {
-		if ((idx = nanvix_rcache_page_search(pgnum)) < 0)
-			return (-EFAULT);
-
-		cache_lines[idx].age = 1;
-		cache_lines[idx].ref_count = 1;
+		cache_lines[slot].age = 1;
+		cache_lines[slot].ref_count = 1;
 	} else {
-		if ((idx = nanvix_rcache_page_search(pgnum)) < 0)
-			return (-EFAULT);
-
-		cache_lines[idx].age = cache_time;
+		cache_lines[slot].age = cache_time;
 	}
 	return 0;
 }
@@ -335,7 +360,7 @@ int random_mod(int v)
  */
 static int nanvix_rcache_fifo(void)
 {
-	int idx;
+	int slot_idx;
 	int draw_count = 1;
 	AGE_TYPE age;
 	AGE_TYPE min_age;
@@ -350,13 +375,13 @@ static int nanvix_rcache_fifo(void)
 	}
 
 	/* No space. Make evict. */
-	min_age = cache_lines[idx = 0].age;
+	min_age = cache_lines[slot_idx = 0].age;
 	for (int i = 1; i < RMEM_CACHE_LENGTH; i++)
 	{
 		age = cache_lines[i*RMEM_CACHE_BLOCK_SIZE].age;
 		if (age < min_age)
 		{
-		    idx = i*RMEM_CACHE_BLOCK_SIZE;
+		    slot_idx = i*RMEM_CACHE_BLOCK_SIZE;
 		    min_age = age;
 		} else if (age == min_age) {
 			draw_count++;
@@ -367,20 +392,20 @@ static int nanvix_rcache_fifo(void)
 	{
         int random_number = random_mod(draw_count);
 		int encounter_number = 0;
-		for (int i = (idx/RMEM_CACHE_BLOCK_SIZE); i < RMEM_CACHE_LENGTH; i++)
+		for (int i = (slot_idx/RMEM_CACHE_BLOCK_SIZE); i < RMEM_CACHE_LENGTH; i++)
 		{
 			if ((age = cache_lines[i*RMEM_CACHE_BLOCK_SIZE].age) == min_age)
 			{
 				if (encounter_number == random_number)
-					idx = i*RMEM_CACHE_BLOCK_SIZE;
+					slot_idx = i*RMEM_CACHE_BLOCK_SIZE;
 				encounter_number++;
 			}
 		}
 	}
 
-	if (nanvix_rcache_flush(cache_lines[idx].pgnum) < 0)
+	if (nanvix_rcache_flush(cache_lines[slot_idx].pgnum) < 0)
 		return (-EFAULT);
-	return (idx);
+	return (slot_idx);
 }
 
 /*============================================================================*
@@ -409,7 +434,7 @@ static int nanvix_rcache_nfu(void)
  */
 static int nanvix_rcache_lifo(void)
 {
-	int idx;
+	int slot_idx;
 	int age;
 	int max_age;
 
@@ -423,20 +448,20 @@ static int nanvix_rcache_lifo(void)
 	}
 
 	/* No space. Make evict. */
-	max_age = cache_lines[idx = 0].age;
+	max_age = cache_lines[slot_idx = 0].age;
 	for (int i = 1; i < RMEM_CACHE_LENGTH; i++)
 	{
 		if ((age = cache_lines[i*RMEM_CACHE_BLOCK_SIZE].age) > max_age)
 		{
-		    idx = i*RMEM_CACHE_BLOCK_SIZE;
+		    slot_idx = i*RMEM_CACHE_BLOCK_SIZE;
 		    max_age = age;
 		}
 	}
 
-	if (nanvix_rcache_flush(cache_lines[idx].pgnum) < 0)
+	if (nanvix_rcache_flush(cache_lines[slot_idx].pgnum) < 0)
 		return (-EFAULT);
 
-	return idx;
+	return slot_idx;
 }
 
 /*============================================================================*
@@ -541,30 +566,26 @@ rpage_t nanvix_rcache_alloc(void)
 int nanvix_rcache_flush(rpage_t pgnum)
 {
 	int err;
-	int idx;
-	int pgnum_block;
-	int pgnum_abs;
-	int idx_abs;
+
+	/* Search for page in the cache. */
+	struct tuple idx = nanvix_rcache_page_search(pgnum);
+	int slot = idx.slot_idx;
+	int block = idx.block_idx;
+	int error = idx.error;
 
 	cache_time++;
+
+	if (error < 0)
+		return (-EFAULT);
 
 	/* Invalid page number. */
 	if ((pgnum == RMEM_NULL) || (RMEM_BLOCK_NUM(pgnum) >= RMEM_NUM_BLOCKS))
 		return (-EFAULT);
 
-	/* Search for page in the cache. */
-	if ((idx = nanvix_rcache_page_search(pgnum)) < 0)
-		return (-EFAULT);
-
-	pgnum_block = idx%RMEM_CACHE_BLOCK_SIZE;
-	pgnum_abs = (int)(pgnum - pgnum_block);
-	idx_abs = idx - pgnum_block;
 	/* Write page back to remote memory. */
-	for (int i = 0; i < RMEM_CACHE_BLOCK_SIZE; i++)
-	{
-		if ((err = nanvix_rmem_write((rpage_t)(pgnum_abs+i), cache_lines[idx_abs+i].pages)) < 0)
-			return (err);
-	}
+	if ((err = nanvix_rmem_write((rpage_t)(pgnum), cache_lines[slot+block].pages)) < 0)
+		return (err);
+
 #ifdef CACHE_DEBUG
 	uprintf("[benchmark] %d misses, %d hits", stats.nmisses, stats.nhits);
 #endif
@@ -607,7 +628,13 @@ int nanvix_rcache_free(rpage_t pgnum)
 void *nanvix_rcache_get(rpage_t pgnum)
 {
 	int err;
+	int evict_idx;
 	void *ptr;
+
+	struct tuple idx = nanvix_rcache_page_search(pgnum);
+	int slot = idx.slot_idx;
+	int block = idx.block_idx;
+	int error = idx.error;
 
 	cache_time++;
 
@@ -618,31 +645,29 @@ void *nanvix_rcache_get(rpage_t pgnum)
 	/* Normal mode. */
 	if (cache_policy != RMEM_CACHE_BYPASS)
 	{
-		int idx;
-
-		if ((idx = nanvix_rcache_page_search(pgnum)) >= 0)
+		if (error >= 0)
 		{
 			stats.nhits++;
-			nanvix_rcache_age_update_nfu(pgnum);
-			cache_lines[idx].ref_count++;
-			return (cache_lines[idx].pages);
+			nanvix_rcache_age_update(pgnum);
+			cache_lines[slot].ref_count++;
+			return (cache_lines[slot+block].pages);
 		}
 
 		stats.nmisses++;
-		if ((idx = nanvix_rcache_replacement_policies()) < 0)
+		if ((evict_idx = nanvix_rcache_replacement_policies()) < 0)
 			return (NULL);
 		/* Load page remote page. */
 		for (int i = 0; i < RMEM_CACHE_BLOCK_SIZE; i++)
 		{
-			if ((err = nanvix_rmem_read((rpage_t)(pgnum+i), cache_lines[idx+i].pages)) < 0)
+			if ((err = nanvix_rmem_read((rpage_t)(pgnum+i), cache_lines[evict_idx+i].pages)) < 0)
 				return (NULL);
-			cache_lines[idx+i].pgnum = (rpage_t)(pgnum+i);
+			cache_lines[evict_idx+i].pgnum = (rpage_t)(pgnum+i);
 		}
 
-		cache_lines[idx].ref_count++;
-		nanvix_rcache_age_update(pgnum);
+		cache_lines[evict_idx].ref_count++;
+		nanvix_rcache_age_init(pgnum);
 
-		ptr = cache_lines[idx].pages;
+		ptr = cache_lines[evict_idx].pages;
 	}
 	/* Bypass mode. */
 	else
@@ -678,9 +703,14 @@ void *nanvix_rcache_get(rpage_t pgnum)
  */
 int nanvix_rcache_put(rpage_t pgnum, int strike)
 {
-	int idx;
+	struct tuple idx = nanvix_rcache_page_search(pgnum);
+	int slot = idx.slot_idx;
+	int error = idx.error;
 
 	cache_time++;
+
+	if (error < 0)
+		return (-EFAULT);
 
 	/* Invalid page number. */
 	if ((pgnum == RMEM_NULL) || (RMEM_BLOCK_NUM(pgnum) >= RMEM_NUM_BLOCKS))
@@ -688,19 +718,16 @@ int nanvix_rcache_put(rpage_t pgnum, int strike)
 
 	if (cache_policy != RMEM_CACHE_BYPASS)
 	{
-		if ((idx = nanvix_rcache_page_search(pgnum)) < 0)
-			return (-EFAULT);
-
 		if (cache_policy == RMEM_CACHE_NFU)
-			cache_lines[idx].age += strike;
+			cache_lines[slot].age += strike;
 
-		if (cache_lines[idx].ref_count <= 0)
+		if (cache_lines[slot].ref_count <= 0)
 			return (-EFAULT);
 
 		if ((write_policy == RMEM_CACHE_WRITE_THROUGH) && (nanvix_rcache_flush(pgnum) < 0))
 			return (-EFAULT);
 
-		cache_lines[idx].ref_count--;
+		cache_lines[slot].ref_count--;
 	}
 	else
 	{
