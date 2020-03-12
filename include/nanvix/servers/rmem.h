@@ -152,6 +152,7 @@
 	extern struct rmem_servers_info
 	{
 		int nodenum;
+		int portnum;
 		const char *name;
 	} rmem_servers[RMEM_SERVERS_NUM];
 

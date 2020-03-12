@@ -39,11 +39,6 @@
 #include <posix/stdbool.h>
 
 /**
- * @brief Port Nnumber for RMem client.
- */
-#define RMEM_SERVER_PORT_NUM 2
-
-/**
  * @brief Remote memory server connection.
  */
 static struct
@@ -327,19 +322,20 @@ int __nanvix_rmem_setup(void)
 			continue;
 
 		/* Open output mailbox */
-		if ((server[i].outbox = nanvix_mailbox_open(rmem_servers[i].name, RMEM_SERVER_PORT_NUM)) < 0)
+		if ((server[i].outbox = nanvix_mailbox_open(rmem_servers[i].name, rmem_servers[i].portnum)) < 0)
 		{
 			uprintf("[nanvix][rmem] cannot open outbox to server\n");
 			return (server[i].outbox);
 		}
 
 		/* Open underlying IPC connectors. */
-		if ((server[i].outportal = nanvix_portal_open(rmem_servers[i].name, RMEM_SERVER_PORT_NUM)) < 0)
+		if ((server[i].outportal = nanvix_portal_open(rmem_servers[i].name, rmem_servers[i].portnum)) < 0)
 		{
 			uprintf("[nanvix][rmem] cannot open outportal to server\n");
 			return (server[i].outportal);
 		}
 
+		uprintf("nanvix[rmem] connection with rmem server %d established", i);
 		server[i].initialized = 1;
 	}
 
