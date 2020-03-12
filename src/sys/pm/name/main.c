@@ -91,13 +91,13 @@ static void do_name_init(void)
 
 	ustrcpy(names[NAME_SERVER_NODE].name, "/io0");
 
-	uassert((inbox = stdinbox_get() >= 0));
+	uassert((inbox = stdinbox_get()) >= 0);
 
 	/* Unblock spawner. */
 	uprintf("[nanvix][name] server alive");
-	uprintf("[nanvix][name] attached to node %d", knode_get_num());
-	uprintf("[nanvix][name] listening to inbox %d", inbox);
+	uprintf("[nanvix][name] listening to mailbox %d", inbox);
 	uprintf("[nanvix][name] syncing in sync %d", stdsync_get());
+	uprintf("[nanvix][name] attached to node %d", knode_get_num());
 }
 
 /*=======================================================================*
@@ -251,9 +251,7 @@ int do_name_server(void)
 				msg.nodenum = do_name_lookup(msg.name);
 
 				/* Send response. */
-				source = kmailbox_open(msg.header.source, msg.header.mailbox_port);
-
-				uassert(source >= 0);
+				uassert((source = kmailbox_open(msg.header.source, msg.header.mailbox_port)) >= 0);
 				uassert(kmailbox_write(source, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
 				uassert(kmailbox_close(source) == 0);
 
@@ -272,8 +270,7 @@ int do_name_server(void)
 				uassert(nr_registration >= 0);
 
 				/* Send acknowledgement. */
-				source = kmailbox_open(msg.header.source, msg.header.mailbox_port);
-				uassert(source >= 0);
+				uassert((source = kmailbox_open(msg.header.source, msg.header.mailbox_port)) >= 0);
 				uassert(kmailbox_write(source, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
 				uassert(kmailbox_close(source) == 0);
 
@@ -292,8 +289,7 @@ int do_name_server(void)
 				uassert(nr_registration >= 0);
 
 				/* Send acknowledgement. */
-				source = kmailbox_open(msg.header.source, msg.header.mailbox_port);
-				uassert(source >= 0);
+				uassert((source = kmailbox_open(msg.header.source, msg.header.mailbox_port)) >= 0);
 				uassert(kmailbox_write(source, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
 				uassert(kmailbox_close(source) == 0);
 
