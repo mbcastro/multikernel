@@ -34,9 +34,9 @@
 #include <posix/stdbool.h>
 
 /**
- * @brief Port Nnumber for RMem client.
+ * @brief Port number for name server client.
  */
-#define NAME_SERVER_PORT_NUM 1
+#define NAME_SERVER_PORT_NUM 2
 
 /**
  * @brief Mailbox for small messages.
