@@ -37,8 +37,8 @@
 /**
  * @brief Current runtime ring.
  */
-static int current_ring[THREAD_MAX] = {
-	[0 ... (THREAD_MAX - 1)] = -1
+static int current_ring[THREAD_MAX + 1] = {
+	[0 ... (THREAD_MAX)] = -1
 };
 
 /**
