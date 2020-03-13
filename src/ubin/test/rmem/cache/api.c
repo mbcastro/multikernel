@@ -300,6 +300,7 @@ static void test_rmem_rcache_aging(void)
 
 	/* Check if the correct page was evicted */
 	TEST_ASSERT(nanvix_rcache_flush(page_num[0*RMEM_CACHE_BLOCK_SIZE]) == 0);
+	TEST_ASSERT(nanvix_rcache_flush(page_num[1*RMEM_CACHE_BLOCK_SIZE]) < 0);
 
 	/* Free every used page. */
 	for (int i = 0; i < (RMEM_CACHE_LENGTH+1)*RMEM_CACHE_BLOCK_SIZE; i++)
