@@ -106,8 +106,11 @@ static void test_rmem_rcache_get_flush(void)
 	/* Get and flush to every page possible except the last one allocated. */
 	for (int i = 0; i < RMEM_CACHE_LENGTH; i++)
 	{
-		TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[i*RMEM_CACHE_BLOCK_SIZE])) != NULL);
-		umemset(cache_data, i+1, RMEM_BLOCK_SIZE);
+		for (int j = 0; j < RMEM_CACHE_BLOCK_SIZE; j++)
+		{
+			TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[i*RMEM_CACHE_BLOCK_SIZE+j])) != NULL);
+			umemset(cache_data, i*RMEM_CACHE_BLOCK_SIZE+j, RMEM_BLOCK_SIZE);
+		}
 	}
 
 	for (int i = 0; i < RMEM_CACHE_LENGTH; i++)
@@ -119,11 +122,14 @@ static void test_rmem_rcache_get_flush(void)
 	/* Check if every page has the correct value. */
 	for (int i = 0; i < RMEM_CACHE_LENGTH; i++)
 	{
-		TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[i*RMEM_CACHE_BLOCK_SIZE])) != NULL);
+		for (int j = 0; j < RMEM_CACHE_BLOCK_SIZE; j++)
+		{
+			TEST_ASSERT((cache_data = nanvix_rcache_get(page_num[i*RMEM_CACHE_BLOCK_SIZE+j])) != NULL);
 
-		/* Checksum */
-		for (size_t w = 0; w < RMEM_BLOCK_SIZE; w++)
-			TEST_ASSERT(cache_data[w] == (char)(i+1));
+			/* Checksum */
+			for (size_t w = 0; w < RMEM_BLOCK_SIZE; w++)
+				TEST_ASSERT(cache_data[w] == (char)(i*RMEM_CACHE_BLOCK_SIZE+j));
+		}
 	}
 
 	/* Free all used pages. */
