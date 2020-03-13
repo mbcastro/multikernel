@@ -30,7 +30,8 @@
 struct rmem_servers_info
 {
 	int nodenum;
+	int portnum;
 	const char *name;
 } rmem_servers[RMEM_SERVERS_NUM] = {
-	{ RMEM_SERVER_1_NODE, "/rmem0" },
+	{ RMEM_SERVER_1_NODE, 2, "/rmem0" },
 };

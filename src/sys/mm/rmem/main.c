@@ -643,7 +643,7 @@ int rmem_server(void)
 {
 	__runtime_setup(1);
 
-		do_rmem_server();
+		uassert(do_rmem_server() == 0);
 
 	__runtime_cleanup();
 
