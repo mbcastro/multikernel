@@ -23,13 +23,13 @@
 #
 
 # Builds everything.
-all: all-qsort all-sha1 all-dijkstra
+all: all-qsort all-sha1 all-dijkstra all-patricia
 
 # Cleans up build objects.
-clean: clean-qsort clean-sha1 clean-dijkstra
+clean: clean-qsort clean-sha1 clean-dijkstra clean-patricia
 
 # Cleans up everything.
-distclean: distclean-qsort distclean-sha1 distclean-dijkstra
+distclean: distclean-qsort distclean-sha1 distclean-dijkstra distclean-patricia
 
 #===============================================================================
 # Quick Sort Benchmarks
@@ -78,3 +78,19 @@ clean-dijkstra:
 # Cleans up everything
 distclean-dijkstra:
 	$(MAKE) -C dijkstra distclean
+
+#===============================================================================
+# Patricia
+#===============================================================================
+
+# Builds SHA-1.
+all-patricia:
+	$(MAKE) -C patricia all
+
+# Cleans up build objects.
+clean-patricia:
+	$(MAKE) -C patricia clean
+
+# Cleans up everything
+distclean-patricia:
+	$(MAKE) -C patricia distclean
