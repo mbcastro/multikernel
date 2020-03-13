@@ -22,10 +22,8 @@
  * $Id: patricia.c,v 1.1.1.1 2000/11/06 19:53:17 mguthaus Exp $
  */
 
-#include <stdlib.h>	/* free(), malloc() */
-#include <string.h>	/* bcopy() */
+#include <nanvix/ulib.h>
 #include "patricia.h"
-
 
 /*
  * Private function used to return whether
