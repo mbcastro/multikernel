@@ -403,9 +403,11 @@ static int nanvix_rcache_fifo(void)
 		}
 	}
 
-	if (nanvix_rcache_flush(cache_lines[slot_idx].pgnum) < 0)
-		return (-EFAULT);
-	return (slot_idx);
+	for (int i = 0; i < RMEM_CACHE_BLOCK_SIZE; i++)
+		if (nanvix_rcache_flush(cache_lines[slot_idx+i].pgnum) < 0)
+			return (-EFAULT);
+
+	return slot_idx;
 }
 
 /*============================================================================*
@@ -458,8 +460,9 @@ static int nanvix_rcache_lifo(void)
 		}
 	}
 
-	if (nanvix_rcache_flush(cache_lines[slot_idx].pgnum) < 0)
-		return (-EFAULT);
+	for (int i = 0; i < RMEM_CACHE_BLOCK_SIZE; i++)
+		if (nanvix_rcache_flush(cache_lines[slot_idx+i].pgnum) < 0)
+			return (-EFAULT);
 
 	return slot_idx;
 }
