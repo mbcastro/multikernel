@@ -54,15 +54,13 @@ struct MyNode {
 	double bar;
 };
 
-int
-main(int argc, char **argv)
+int __main2(int argc, const char *argv[])
 {
 	struct ptree *phead;
 	struct ptree *p,*pfind;
 	struct ptree_mask *pm;
 	FILE *fp;
 	char line[128];
-	char addr_str[16];
 	struct in_addr addr;
 	unsigned long mask=0xffffffff;
 	float time;

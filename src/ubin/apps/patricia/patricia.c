@@ -196,7 +196,7 @@ pat_remove(struct ptree *n, struct ptree *head)
 	struct ptree_mask *buf, *pm;
 	int i;
 
-	if (!n || !n->p_m || !t)
+	if (((n == NULL)) || (n->p_m == NULL))
 		return 0;
 
 	/*
