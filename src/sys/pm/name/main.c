@@ -30,6 +30,8 @@
 #include <nanvix/runtime/stdikc.h>
 #include <nanvix/runtime/runtime.h>
 #include <nanvix/sys/mailbox.h>
+#include <nanvix/sys/semaphore.h>
+#include <nanvix/limits.h>
 #include <nanvix/ulib.h>
 #include <posix/errno.h>
 #include <posix/stdint.h>
@@ -78,7 +80,7 @@ static struct
 /**
  * @brief Initializes the name server.
  */
-static void do_name_init(void)
+static void do_name_init(struct nanvix_semaphore *lock)
 {
 	/* Initialize lookup table. */
 	for (int i = 0; i < NANVIX_PROC_MAX; i++)
@@ -94,6 +96,8 @@ static void do_name_init(void)
 	uprintf("[nanvix][name] listening to mailbox %d", inbox);
 	uprintf("[nanvix][name] syncing in sync %d", stdsync_get());
 	uprintf("[nanvix][name] attached to node %d", knode_get_num());
+
+	nanvix_semaphore_up(lock);
 }
 
 /*=======================================================================*
@@ -263,13 +267,12 @@ static int do_name_unlink(const struct name_message *request)
  *
  * @returns Always returns 0.
  */
-int do_name_server(void)
+int do_name_server(struct nanvix_semaphore *lock)
 {
 	int shutdown = 0;
 
 	uprintf("[nanvix][name] booting up server");
-
-	do_name_init();
+	do_name_init(lock);
 
 	while (!shutdown)
 	{
@@ -366,13 +369,9 @@ int do_name_server(void)
  *
  * @returns Always returns zero.
  */
-int name_server(void)
+int name_server(struct nanvix_semaphore *lock)
 {
-	__runtime_setup(0);
-
-		do_name_server();
-
-	__runtime_cleanup();
+	do_name_server(lock);
 
 	return (0);
 }

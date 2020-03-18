@@ -36,6 +36,7 @@
 #include <nanvix/sys/noc.h>
 #include <nanvix/sys/page.h>
 #include <nanvix/sys/perf.h>
+#include <nanvix/sys/semaphore.h>
 #include <nanvix/sys/portal.h>
 #include <nanvix/limits.h>
 #include <nanvix/types.h>
@@ -517,7 +518,7 @@ static int do_rmem_loop(void)
  * @returns Upon successful completion zero is returned. Upon failure,
  * a negative error code is returned instead.
  */
-static int do_rmem_startup(void)
+static int do_rmem_startup(struct nanvix_semaphore *lock)
 {
 	int ret;
 	const char *servername;
@@ -575,6 +576,8 @@ static int do_rmem_startup(void)
 	uprintf("[nanvix][rmem] syncing in sync %d", stdsync_get());
 	uprintf("[nanvix][rmem] memory size %d KB", RMEM_SIZE/KB);
 
+	nanvix_semaphore_up(lock);
+
 	return (0);
 }
 
@@ -603,13 +606,13 @@ static int do_rmem_shutdown(void)
  * @returns Upon successful completion zero is returned. Upon failure,
  * a negative error code is returned instead.
  */
-int do_rmem_server(void)
+static int do_rmem_server(struct nanvix_semaphore *lock)
 {
 	int ret;
 
 	uprintf("[nanvix][rmem] booting up server");
 
-	if ((ret = do_rmem_startup()) < 0)
+	if ((ret = do_rmem_startup(lock)) < 0)
 		goto error;
 
 	/* Unblock spawner. */
@@ -638,13 +641,9 @@ error:
  *
  * @returns Always returns zero.
  */
-int rmem_server(void)
+int rmem_server(struct nanvix_semaphore *lock)
 {
-	__runtime_setup(1);
-
-		uassert(do_rmem_server() == 0);
-
-	__runtime_cleanup();
+	uassert(do_rmem_server(lock) == 0);
 
 	return (0);
 }

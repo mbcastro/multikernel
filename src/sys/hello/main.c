@@ -23,16 +23,19 @@
  */
 
 #include <nanvix/sys/thread.h>
+#include <nanvix/sys/semaphore.h>
 #include <nanvix/ulib.h>
 
 /**
  * @brief Hello word server!
  */
-int hello_server(void)
+int hello_server(struct nanvix_semaphore *lock)
 {
 	uprintf("[nanvix][hello] hello word from server %d",
 		kthread_self()
 	);
+
+	nanvix_semaphore_up(lock);
 
 	return (0);
 }
