@@ -37,5 +37,7 @@ int hello_server(struct nanvix_semaphore *lock)
 
 	nanvix_semaphore_up(lock);
 
+	while(1);
+
 	return (0);
 }
