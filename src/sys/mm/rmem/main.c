@@ -42,7 +42,7 @@
 #include <nanvix/types.h>
 #include <nanvix/ulib.h>
 #include <posix/errno.h>
-#include <stdint.h>
+#include <posix/stdint.h>
 
 /**
  * @brief Bad rmeote geometry for remote memory?
