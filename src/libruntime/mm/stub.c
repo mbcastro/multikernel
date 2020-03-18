@@ -324,18 +324,18 @@ int __nanvix_rmem_setup(void)
 		/* Open output mailbox */
 		if ((server[i].outbox = nanvix_mailbox_open(rmem_servers[i].name, rmem_servers[i].portnum)) < 0)
 		{
-			uprintf("[nanvix][rmem] cannot open outbox to server\n");
+			uprintf("[nanvix][rmem] cannot open outbox to server");
 			return (server[i].outbox);
 		}
 
 		/* Open underlying IPC connectors. */
 		if ((server[i].outportal = nanvix_portal_open(rmem_servers[i].name, rmem_servers[i].portnum)) < 0)
 		{
-			uprintf("[nanvix][rmem] cannot open outportal to server\n");
+			uprintf("[nanvix][rmem] cannot open outportal to server");
 			return (server[i].outportal);
 		}
 
-		uprintf("nanvix[rmem] connection with rmem server %d established", i);
+		uprintf("[nanvix][rmem] connection with server established");
 		server[i].initialized = 1;
 	}
 
@@ -369,14 +369,14 @@ int __nanvix_rmem_cleanup(void)
 		/* Close output mailbox */
 		if (nanvix_mailbox_close(server[i].outbox) < 0)
 		{
-			uprintf("[nanvix][rmem] cannot close outbox to server\n");
+			uprintf("[nanvix][rmem] cannot close outbox to server");
 			return (-EAGAIN);
 		}
 
 		/* Close underlying IPC connectors. */
 		if (nanvix_portal_close(server[i].outportal) < 0)
 		{
-			uprintf("[nanvix][rmem] cannot close outportal to server\n");
+			uprintf("[nanvix][rmem] cannot close outportal to server");
 			return (-EAGAIN);
 		}
 
