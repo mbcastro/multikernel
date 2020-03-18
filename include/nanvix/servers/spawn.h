@@ -112,6 +112,21 @@
 		int (*main) (struct nanvix_semaphore *); /**< Main Function */
 	};
 
+	/**
+	 * @brief Initializes the spawn barrier.
+	 */
+	extern void spawn_barrier_setup(void);
+
+	/**
+	 * @brief Shutdowns the spawn barrier.
+	 */
+	extern void spawn_barrier_cleanup(void);
+
+	/**
+	 * @brief Waits on the startup barrier
+	 */
+	extern void spawn_barrier_wait(void);
+
 #endif /* SPAWN_SERVER*/
 
 #endif /* NANVIX_SERVERS_SPAWN_H_ */

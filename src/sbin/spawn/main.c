@@ -98,6 +98,9 @@ int __main2(int argc, const char *argv[])
 		uprintf("[nanvix][%s] listening to inbox %d", spawner_name, stdinbox_get());
 		uprintf("[nanvix][%s] syncing in sync %d", spawner_name, stdsync_get());
 
+		uassert(stdsync_fence() == 0);
+		spawn_barrier_setup();
+
 		/* Spawn servers. */
 		for (int ring = SPAWN_RING_FIRST; ring <= SPAWN_RING_LAST; ring++)
 		{
@@ -111,6 +114,8 @@ int __main2(int argc, const char *argv[])
 					nanvix_semaphore_down(&lock);
 				}
 			}
+
+			spawn_barrier_wait();
 		}
 
 		uassert(stdsync_fence() == 0);
@@ -122,6 +127,9 @@ int __main2(int argc, const char *argv[])
 			uassert(kthread_join(tids[i], NULL) == 0);
 			uprintf("[nanvix][%s] server %d down...", spawner_name, i);
 		}
+
+		spawn_barrier_wait();
+		spawn_barrier_cleanup();
 
 		uprintf("[nanvix][%s] shutting down...", spawner_name);
 
