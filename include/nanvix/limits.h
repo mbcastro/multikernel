@@ -45,6 +45,11 @@
 	#define NANVIX_MAILBOX_MAX KMAILBOX_MAX
 
 	/**
+	 * @brief Maximum size for a mailbox message.
+	 */
+	#define NANVIX_MAILBOX_MESSAGE_SIZE KMAILBOX_MESSAGE_SIZE
+
+	/**
 	 * @brief Maximum number of portals that can be opened.
 	 */
 	#define NANVIX_PORTAL_MAX KPORTAL_MAX
