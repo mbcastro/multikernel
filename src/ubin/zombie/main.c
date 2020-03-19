@@ -41,5 +41,8 @@ int __main2(int argc, const char *argv[])
 
 	__runtime_cleanup();
 
+	while (1)
+		/* noop*/ ;
+
 	return (0);
 }
