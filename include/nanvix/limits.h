@@ -42,7 +42,7 @@
 	/**
 	 * @brief Maximum number of mailboxes that can be opened.
 	 */
-	#define NANVIX_MAILBOX_MAX (MAILBOX_CREATE_MAX + MAILBOX_OPEN_MAX)
+	#define NANVIX_MAILBOX_MAX KMAILBOX_MAX
 
 	/**
 	 * @brief Maximum number of portals that can be opened.
