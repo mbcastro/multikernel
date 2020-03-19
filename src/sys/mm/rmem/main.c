@@ -42,7 +42,7 @@
 #include <nanvix/types.h>
 #include <nanvix/ulib.h>
 #include <posix/errno.h>
-#include <stdint.h>
+#include <posix/stdint.h>
 
 /**
  * @brief Bad rmeote geometry for remote memory?
@@ -524,7 +524,7 @@ static int do_rmem_startup(void)
 	const char *servername;
 
 	/* Messages should be small enough. */
-	uassert(sizeof(struct rmem_message) <= MAILBOX_MSG_SIZE);
+	uassert(sizeof(struct rmem_message) <= NANVIX_MAILBOX_MESSAGE_SIZE);
 
 	/* Bitmap word should be large enough. */
 	uassert(sizeof(rpage_t) >= sizeof(bitmap_t));
