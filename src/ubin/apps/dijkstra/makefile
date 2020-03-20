@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# Copyright(c) 2011-2020 The Maintainers of Nanvix
+# Copyright(c) 2018 Pedro Henrique Penna <pedrohenriquepenna@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -22,59 +22,82 @@
 # SOFTWARE.
 #
 
-# Builds everything.
-all: all-qsort all-sha1 all-dijkstra
-
-# Cleans up build objects.
-clean: clean-qsort clean-sha1 clean-dijkstra
-
-# Cleans up everything.
-distclean: distclean-qsort distclean-sha1 distclean-dijkstra
-
 #===============================================================================
-# Quick Sort Benchmarks
+# Toolchain Configuration
 #===============================================================================
 
-# Builds Quick Sort.
-all-qsort:
-	$(MAKE) -C qsort all
+# Compiler Options
+ifneq ($(LIBLWIP),)
+CFLAGS += -I $(INCDIR)/posix
+endif
 
-# Cleans up build objects.
-clean-qsort:
-	$(MAKE) -C qsort clean
-
-# Cleans up everything from Quick Sort.
-distclean-qsort:
-	$(MAKE) -C qsort distclean
-
-#===============================================================================
-# SHA-1
-#===============================================================================
-
-# Builds SHA-1.
-all-sha1:
-	$(MAKE) -C sha1 all
-
-# Cleans up build objects.
-clean-sha1:
-	$(MAKE) -C sha1 clean
-
-# Cleans up everything
-distclean-sha1:
-	$(MAKE) -C sha1 distclean
+# Libraries
+LIBS := -Wl,--whole-archive
+LIBS += $(LIBDIR)/$(LIBHAL)
+LIBS += $(LIBDIR)/$(LIBKERNEL)
+LIBS += -Wl,--no-whole-archive
+LIBS += $(LIBDIR)/$(LIBRUNTIME)
+LIBS += $(LIBDIR)/$(LIBC)
+LIBS += $(LIBDIR)/$(LIBNANVIX)
+ifneq ($(LIBLWIP),)
+LIBS += $(LIBDIR)/$(LIBLWIP)
+endif
+LIBS += $(LIBDIR)/$(BARELIB) $(THEIR_LIBS)
 
 #===============================================================================
-# DIJKSTRA
+# Binaries Sources and Objects
 #===============================================================================
 
-# Builds DIJKSTRA.
-all-dijkstra:
-	$(MAKE) -C dijkstra all
+# Binary
+EXEC = nanvix-app-dijkstra.$(OBJ_SUFFIX)
 
-# Cleans up build objects.
-clean-dijkstra:
-	$(MAKE) -C dijkstra clean
+# C Source Files
+SRC = $(wildcard *.c) \
+      $(wildcard workload/*.c)
 
-# Cleans up everything
-distclean-dijkstra:
-	$(MAKE) -C dijkstra distclean
+# Object Files
+OBJ = $(SRC:.c=.$(OBJ_SUFFIX).o)
+
+#===============================================================================
+
+ifeq ($(TARGET),unix64)
+LINKER_SCRIPT=
+else
+LINKER_SCRIPT = -L $(LINKERDIR)/ -T link.ld
+endif
+
+# Builds All Object Files
+all: $(OBJ)
+ifeq ($(VERBOSE), no)
+	@echo [CC] $(EXEC)
+	@$(CC) $(LDFLAGS) $(LINKER_SCRIPT) -o $(BINDIR)/$(EXEC) $(OBJ) $(LIBS)
+else
+	$(CC) $(LDFLAGS) $(LINKER_SCRIPT) -o $(BINDIR)/$(EXEC) $(OBJ) $(LIBS)
+endif
+
+# Cleans All Object Files
+clean:
+ifeq ($(VERBOSE), no)
+	@echo [CLEAN] $(OBJ)
+	@rm -rf $(OBJ)
+else
+	rm -rf $(OBJ)
+endif
+
+# Cleans Everything
+distclean: clean
+ifeq ($(VERBOSE), no)
+	@echo [CLEAN] $(EXEC)
+	@rm -rf $(BINDIR)/$(EXEC)
+else
+	rm -rf $(BINDIR)/$(EXEC)
+endif
+
+# Builds a C source file.
+%.$(OBJ_SUFFIX).o: %.c
+ifeq ($(VERBOSE), no)
+	@echo [CC] $@
+	@$(CC) $(CFLAGS) $< -c -o $@
+else
+	$(CC) $(CFLAGS) $< -c -o $@
+endif
