@@ -31,7 +31,6 @@ extern struct test tests_rmem_cache_api[];
  */
 void test_rmem_cache(void)
 {
-	usrand(9876);
 	/* Run API tests. */
 	for (int i = 0; tests_rmem_cache_api[i].test_fn != NULL; i++)
 	{

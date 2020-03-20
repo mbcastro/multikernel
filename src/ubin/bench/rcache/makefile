@@ -23,16 +23,16 @@
 #
 
 # Builds everything.
-all: all-array
+all: all-array all-model
 
 # Cleans up build objects.
-clean: clean-array
+clean: clean-array clean-model
 
 # Cleans up everything.
-distclean: distclean-array
+distclean: distclean-array distclean-model
 
 #===============================================================================
-# RMem Cache Benchmarks
+# RMem Cache Benchmarks Array
 #===============================================================================
 
 # Builds RMem Cache Array benchmarks.
@@ -46,3 +46,19 @@ clean-array:
 # Cleans up everything from RMem Cache Array benchmark.
 distclean-array:
 	$(MAKE) -C array distclean
+
+#===============================================================================
+# RMem Cache Benchmarks Model
+#===============================================================================
+
+# Builds RMem Cache model benchmarks.
+all-model:
+	$(MAKE) -C model all
+
+# Cleans up build objects of RMem Cache model benchmark.
+clean-model:
+	$(MAKE) -C model clean
+
+# Cleans up everything from RMem Cache model benchmark.
+distclean-model:
+	$(MAKE) -C model distclean

@@ -338,9 +338,9 @@ uint32_t msbDeBruijn32( uint32_t v )
 int random_mod(int v)
 {
     int random_number = urand();
-    uint32_t msb = msbDeBruijn32(random_number);
-    uint32_t mod_power_two = ~((0x1 << msb ) - 1) & v;
-    while(mod_power_two < (uint32_t)v)
+    uint32_t msb = msbDeBruijn32(v);
+    uint32_t mod_power_two = ((0x1 << msb ) - 1) & random_number;
+    while(mod_power_two > (uint32_t)v)
         mod_power_two -= v;
     random_number = mod_power_two;
     return random_number;
@@ -721,6 +721,11 @@ int nanvix_rcache_put(rpage_t pgnum, int strike)
 
 	if (cache_policy != RMEM_CACHE_BYPASS)
 	{
+
+#ifndef USE_STRIKES
+		strike = 0;
+#endif
+
 		if (cache_policy == RMEM_CACHE_NFU)
 			cache_lines[slot].age += strike;
 
