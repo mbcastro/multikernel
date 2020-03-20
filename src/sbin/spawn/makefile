@@ -70,7 +70,7 @@ LINKER_SCRIPT = -L $(LINKERDIR)/ -T link.ld
 endif
 
 # Builds All Object Files
-all: spawn0 spawn1
+all: spawn0 spawn1 spawn2 spawn3
 
 spawn0: main.$(OBJ_SUFFIX).o barrier.$(OBJ_SUFFIX).o spawn0.$(OBJ_SUFFIX).o
 ifeq ($(VERBOSE), no)
@@ -81,6 +81,22 @@ else
 endif
 
 spawn1: main.$(OBJ_SUFFIX).o barrier.$(OBJ_SUFFIX).o spawn1.$(OBJ_SUFFIX).o
+ifeq ($(VERBOSE), no)
+	@echo [CC] nanvix-$@.$(OBJ_SUFFIX)
+	@$(CC) $(LDFLAGS) $(LINKER_SCRIPT) -o $(BINDIR)/nanvix-$@.$(OBJ_SUFFIX) $^ $(LIBS)
+else
+	$(CC) $(LDFLAGS) $(LINKER_SCRIPT) -o $(BINDIR)/nanvix-$@.$(OBJ_SUFFIX) $^ $(LIBS)
+endif
+
+spawn2: main.$(OBJ_SUFFIX).o barrier.$(OBJ_SUFFIX).o spawn2.$(OBJ_SUFFIX).o
+ifeq ($(VERBOSE), no)
+	@echo [CC] nanvix-$@.$(OBJ_SUFFIX)
+	@$(CC) $(LDFLAGS) $(LINKER_SCRIPT) -o $(BINDIR)/nanvix-$@.$(OBJ_SUFFIX) $^ $(LIBS)
+else
+	$(CC) $(LDFLAGS) $(LINKER_SCRIPT) -o $(BINDIR)/nanvix-$@.$(OBJ_SUFFIX) $^ $(LIBS)
+endif
+
+spawn3: main.$(OBJ_SUFFIX).o barrier.$(OBJ_SUFFIX).o spawn3.$(OBJ_SUFFIX).o
 ifeq ($(VERBOSE), no)
 	@echo [CC] nanvix-$@.$(OBJ_SUFFIX)
 	@$(CC) $(LDFLAGS) $(LINKER_SCRIPT) -o $(BINDIR)/nanvix-$@.$(OBJ_SUFFIX) $^ $(LIBS)

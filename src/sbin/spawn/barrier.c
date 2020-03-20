@@ -62,7 +62,9 @@ void spawn_barrier_setup(void)
 {
 	int nodes[SPAWNERS_NUM] = {
 		SPAWN_SERVER_0_NODE,
-		SPAWN_SERVER_1_NODE
+		SPAWN_SERVER_1_NODE,
+		SPAWN_SERVER_2_NODE,
+		SPAWN_SERVER_3_NODE
 	};
 
 	/* Leader. */

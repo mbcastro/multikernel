@@ -31,7 +31,7 @@
 	 * @name Number of Servers
 	 */
 	/**@{*/
-	#define SPAWNERS_NUM      2 /**< Spawn Servers */
+	#define SPAWNERS_NUM      4 /**< Spawn Servers */
 	#define NAME_SERVERS_NUM  1 /**< Name Servers  */
 	#define RMEM_SERVERS_NUM  1 /**< RMem Servers  */
 	#define SHM_SERVERS_NUM   1 /**< SHM Servers  */
@@ -47,6 +47,8 @@
 	#elif defined(__unix64__)
 		#define SPAWN_SERVER_0_NODE 0 /**< Spawn Server 0 */
 		#define SPAWN_SERVER_1_NODE 1 /**< Spawn Server 1 */
+		#define SPAWN_SERVER_2_NODE 2 /**< Spawn Server 2 */
+		#define SPAWN_SERVER_3_NODE 3 /**< Spawn Server 3 */
 	#endif
 	/**@}*/
 
@@ -60,6 +62,7 @@
 	#elif defined(__unix64__)
 		#define NAME_SERVER_NODE    0 /**< Name Server  */
 		#define RMEM_SERVER_0_NODE  1 /**< RMem Server  */
+		#define SHM_SERVER_1_NODE   2 /**< SHM Server   */
 	#endif
 	/**@}*/
 
