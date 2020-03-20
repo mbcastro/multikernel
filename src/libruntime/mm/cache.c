@@ -721,6 +721,11 @@ int nanvix_rcache_put(rpage_t pgnum, int strike)
 
 	if (cache_policy != RMEM_CACHE_BYPASS)
 	{
+
+#ifndef USE_STRIKES
+		strike = 0;
+#endif
+
 		if (cache_policy == RMEM_CACHE_NFU)
 			cache_lines[slot].age += strike;
 
