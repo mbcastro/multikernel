@@ -145,6 +145,14 @@ static int do_name_link(int nodenum, char *name)
 {
 	int index;          /* Index where the process will be stored. */
 
+	/* Invalid node number. */
+	if ((nodenum < 0 ) || (nodenum >= NANVIX_NODES_NUM))
+		return (-EINVAL);
+
+	/* Invalid name */
+	if ((name == NULL)|| (!ustrcmp(name, "")))
+		return (-EINVAL);
+
 	name_debug("link nodenum=%d name=%s", nodenum, name);
 
 	/* No entry available. */
@@ -198,6 +206,9 @@ static int do_name_unlink(char *name)
 {
 	/* Search for portal name. */
 	int i = 0;
+	/* Invalid name. */
+	if (name == NULL)
+		return (-EINVAL);
 
 	name_debug("unlink name=%s", name);
 
