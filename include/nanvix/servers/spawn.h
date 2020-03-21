@@ -33,7 +33,7 @@
 	/**@{*/
 	#define SPAWNERS_NUM      2 /**< Spawn Servers */
 	#define NAME_SERVERS_NUM  1 /**< Name Servers  */
-	#define RMEM_SERVERS_NUM  1 /**< RMem Servers  */
+	#define RMEM_SERVERS_NUM  2 /**< RMem Servers  */
 	/**@}*/
 
 	/**
@@ -56,9 +56,11 @@
 	#if defined(__mppa256__)
 		#define NAME_SERVER_NODE   0 /**< Name Server */
 		#define RMEM_SERVER_0_NODE 4 /**< RMem Server */
+		#define RMEM_SERVER_1_NODE 0 /**< RMem Server */
 	#elif defined(__unix64__)
 		#define NAME_SERVER_NODE    0 /**< Name Server  */
 		#define RMEM_SERVER_0_NODE  1 /**< RMem Server  */
+		#define RMEM_SERVER_1_NODE  0 /**< RMem Server  */
 	#endif
 	/**@}*/
 
