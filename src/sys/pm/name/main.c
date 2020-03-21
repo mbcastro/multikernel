@@ -84,12 +84,11 @@ static void do_name_init(void)
 {
 	/* Initialize lookup table. */
 	for (int i = 0; i < NANVIX_NODES_NUM; i++)
-	{
-		names[i].nodenum = i;
-		ustrcpy(names[i].name, "");
-	}
+		names[i].nodenum = -1;
 
-	ustrcpy(names[NAME_SERVER_NODE].name, "/io0");
+
+	names[0].nodenum = knode_get_num();
+	ustrcpy(names[0].name, "/io0");
 
 	uassert((inbox = stdinbox_get()) >= 0);
 
@@ -170,7 +169,7 @@ static int do_name_link(int nodenum, char *name)
 	for (int i = 0; i < NANVIX_NODES_NUM; i++)
 	{
 		/* Found. */
-		if (names[i].nodenum == nodenum)
+		if (names[i].nodenum == -1)
 		{
 			index = i;
 			goto found;
@@ -181,11 +180,8 @@ static int do_name_link(int nodenum, char *name)
 
 found:
 
-	/* Entry not available */
-	if (ustrcmp(names[index].name, ""))
-		return (-EINVAL);
-
 	nr_registration++;
+	names[index].nodenum = nodenum;
 	ustrcpy(names[index].name, name);
 
 	return (0);
@@ -205,24 +201,27 @@ found:
  */
 static int do_name_unlink(char *name)
 {
-	/* Search for portal name. */
-	int i = 0;
 	/* Invalid name. */
 	if (name == NULL)
 		return (-EINVAL);
 
 	name_debug("unlink name=%s", name);
 
-	while (i < NANVIX_NODES_NUM && ustrcmp(name, names[i].name))
+	/* Search for name */
+	for (int i = 0; i < NANVIX_NODES_NUM; i++)
 	{
-		i++;
-	}
+		/* Skip invalid entries. */
+		if (names[i].nodenum == -1)
+			continue;
 
-	if (i < NANVIX_NODES_NUM)
-	{
-		ustrcpy(names[i].name, "");
+		/* Found*/
+		if (ustrcmp(names[i].name, name) == 0)
+		{
 			nr_registration--;
+			ustrcpy(names[i].name, "");
+			names[i].nodenum = -1;
 			return (0);
+		}
 	}
 
 	return (-ENOENT);
