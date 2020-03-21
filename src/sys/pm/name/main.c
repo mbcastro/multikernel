@@ -138,8 +138,8 @@ static int do_name_lookup(const char *name)
  * @param nodenum Target NoC node.
  * @param name    Name of the process to register.
  *
- * @returns Upon successful registration the number of name registered
- * is returned. Upon failure, a negative error code is returned instead.
+ * @returns Upon successful completion zero is returned. Upon failure,
+ * a negative error code is returned instead.
  */
 static int do_name_link(int nodenum, char *name)
 {
@@ -185,9 +185,10 @@ found:
 	if (ustrcmp(names[index].name, ""))
 		return (-EINVAL);
 
+	nr_registration++;
 	ustrcpy(names[index].name, name);
 
-	return (++nr_registration);
+	return (0);
 }
 
 /*=======================================================================*
@@ -199,8 +200,8 @@ found:
  *
  * @param name Name of the process to unlink.
  *
- * @returns Upon successful registration the new number of name registered
- * is returned. Upon failure, a negative error code is returned instead.
+ * @returns Upon successful completion zero is returned. Upon failure,
+ * a negative error code is returned instead.
  */
 static int do_name_unlink(char *name)
 {
@@ -220,7 +221,8 @@ static int do_name_unlink(char *name)
 	if (i < NANVIX_NODES_NUM)
 	{
 		ustrcpy(names[i].name, "");
-		return (--nr_registration);
+			nr_registration--;
+			return (0);
 	}
 
 	return (-ENOENT);
@@ -237,7 +239,6 @@ static int do_name_unlink(char *name)
  */
 int do_name_server(void)
 {
-	int tmp;
 	int source;
 	int shutdown = 0;
 
@@ -271,14 +272,8 @@ int do_name_server(void)
 			/* Add name. */
 			case NAME_LINK:
 				stats.nlinks++;
-				tmp = nr_registration;
-
-				if (do_name_link(msg.nodenum, msg.name) == (tmp + 1))
-					msg.header.opcode = NAME_SUCCESS;
-				else
-					msg.header.opcode = NAME_FAIL;
-
-				uassert(nr_registration >= 0);
+				msg.header.opcode =  (do_name_link(msg.nodenum, msg.name) < 0) ?
+					 NAME_FAIL : NAME_SUCCESS;
 
 				/* Send acknowledgement. */
 				uassert((source = kmailbox_open(msg.header.source, msg.header.mailbox_port)) >= 0);
@@ -290,14 +285,8 @@ int do_name_server(void)
 			/* Remove name. */
 			case NAME_UNLINK:
 				stats.nunlinks++;
-				tmp = nr_registration;
-
-				if ((tmp > 0) && (do_name_unlink(msg.name) == (tmp - 1)))
-					msg.header.opcode = NAME_SUCCESS;
-				else
-					msg.header.opcode = NAME_FAIL;
-
-				uassert(nr_registration >= 0);
+				msg.header.opcode =  (do_name_unlink(msg.name) < 0) ?
+					 NAME_FAIL : NAME_SUCCESS;
 
 				/* Send acknowledgement. */
 				uassert((source = kmailbox_open(msg.header.source, msg.header.mailbox_port)) >= 0);
