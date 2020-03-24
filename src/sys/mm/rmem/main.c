@@ -613,18 +613,27 @@ static int do_rmem_server(struct nanvix_semaphore *lock)
 	uprintf("[nanvix][rmem] booting up server");
 
 	if ((ret = do_rmem_startup(lock)) < 0)
+	{
+		uprintf("[nanvix][rmem] failed to startup server!");
 		goto error;
+	}
 
 	/* Unblock spawner. */
 	uprintf("[nanvix][rmem] server alive");
 
 	if ((ret = do_rmem_loop()) < 0)
+	{
+		uprintf("[nanvix][rmem] failed to launch server!");
 		goto error;
+	}
 
 	uprintf("[nanvix][rmem] shutting down server");
 
 	if ((ret = do_rmem_shutdown()) < 0)
+	{
+		uprintf("[nanvix][rmem] failed to shutdown server!");
 		goto error;
+	}
 
 	return (0);
 
