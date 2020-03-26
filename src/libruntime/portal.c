@@ -609,3 +609,24 @@ int nanvix_portal_unlink(int id)
 
 	return (0);
 }
+
+/*============================================================================*
+ * nanvix_portal_get_port()                                                   *
+ *============================================================================*/
+
+/**
+ * @todo TODO: Provide a detailed description for this function.
+ */
+int nanvix_portal_get_port(int portalid)
+{
+
+	/* Invalid portal ID.*/
+	if (!nanvix_portal_is_valid(portalid))
+		return (-EINVAL);
+
+	/*  Bad portal. */
+	if (!nanvix_portal_is_used(portalid))
+		return (-EINVAL);
+
+	return (portals[portalid].portalid % KPORTAL_PORT_NR);
+}
