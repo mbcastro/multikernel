@@ -107,4 +107,15 @@
 	 */
 	extern int nanvix_portal_read(int id, void *buf, size_t n);
 
+	/**
+	 * @brief Returns the port number of a portal.
+	 *
+	 * @bpara portalid ID of the target portal.
+	 *
+	 * @returns Upon successful completion the port number where the
+	 * target portal is hooked up is returned. Upon failure, a negative
+	 * error code is returned instead.
+	 */
+	extern int nanvix_portal_get_port(int portalid);
+
 #endif /* NANVIX_RUNTIME_PORTAL_H_ */
