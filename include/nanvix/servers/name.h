@@ -25,7 +25,9 @@
 #ifndef NANVIX_SERVERS_NAME_H_
 #define NANVIX_SERVERS_NAME_H_
 
-#if defined(__NAME_SERVICE)
+	#ifndef __NAME_SERVICE
+	#error "do not include this file"
+	#endif
 
 	#include <nanvix/servers/message.h>
 	#include <nanvix/limits.h>
@@ -52,51 +54,5 @@
 		int32_t nodenum;                 /**< NoC node.       */
 		char name[NANVIX_PROC_NAME_MAX]; /**< Portal name.    */
 	};
-
-#endif /* __NAME_SERVICE */
-
-#if defined(__NEED_NAME_CLIENT)
-
-	/**
-	 * @brief link a process name.
-	 *
-	 * @param nodenum NoC node ID of the process to link.
-	 * @param name   Name of the process to link.
-	 *
-	 * @returns Upon successful completion 0 is returned.
-	 * Upon failure, a negative error code is returned instead.
-	 */
-	extern int name_link(int nodenum, const char *name);
-
-	/**
-	 * @brief Converts a name into a NoC node ID.
-	 *
-	 * @param name Target name.
-	 *
-	 * @returns Upon successful completion the NoC node ID whose name is @p
-	 * name is returned. Upon failure, a negative error code is returned
-	 * instead.
-	 */
-	extern int name_lookup(const char *name);
-
-	/**
-	 * @brief Unlink a process name.
-	 *
-	 * @param name Name of the process to unlink.
-	 *
-	 * @returns Upon successful completion 0 is returned. Upon
-	 * failure, a negative error code is returned instead.
-	 */
-	extern int name_unlink(const char *name);
-
-	/**
-	 * @brief Shutdowns the name server.
-	 *
-	 * @returns Upon successful completion 0 is returned. Upon
-	 * failure, a negative error code is returned instead.
-	 */
-	extern int name_shutdown(void);
-
-#endif /* __NEED_NAME_CLIENT */
 
 #endif /* NANVIX_SERVERS_NAME_H_ */

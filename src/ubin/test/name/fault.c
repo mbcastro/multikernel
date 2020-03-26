@@ -22,7 +22,8 @@
 
 #define __NEED_NAME_CLIENT
 
-#include <nanvix/servers/name.h>
+#include <nanvix/runtime/name.h>
+#include <nanvix/sys/noc.h>
 #include <nanvix/limits.h>
 #include <nanvix/ulib.h>
 #include "../test.h"
@@ -53,7 +54,7 @@ static void test_name_bad_link(void)
 	int nodenum;
 	char pathname[NANVIX_PROC_NAME_MAX + 1];
 
-	nodenum = processor_node_get_num(core_get_id());
+	nodenum = knode_get_num();
 
 	umemset(pathname, 1, NANVIX_PROC_NAME_MAX + 1);
 
@@ -75,7 +76,7 @@ static void test_name_double_link(void)
 	int nodenum;
 	char pathname[NANVIX_PROC_NAME_MAX];
 
-	nodenum = processor_node_get_num(core_get_id());
+	nodenum = knode_get_num();
 
 	/* Link name. */
 	ustrcpy(pathname, "cool-name");
@@ -114,7 +115,7 @@ static void test_name_bad_unlink(void)
 {
 	int nodenum;
 
-	nodenum = processor_node_get_num(core_get_id());
+	nodenum = knode_get_num();
 
 	/* Unlink missing name. */
 	TEST_ASSERT(name_link(nodenum, "cool-name") == 0);
@@ -133,7 +134,7 @@ static void test_name_double_unlink(void)
 {
 	int nodenum;
 
-	nodenum = processor_node_get_num(core_get_id());
+	nodenum = knode_get_num();
 
 	/* Unlink missing name. */
 	TEST_ASSERT(name_link(nodenum, "cool-name") == 0);

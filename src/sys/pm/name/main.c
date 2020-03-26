@@ -84,12 +84,11 @@ static void do_name_init(void)
 {
 	/* Initialize lookup table. */
 	for (int i = 0; i < NANVIX_NODES_NUM; i++)
-	{
-		names[i].nodenum = i;
-		ustrcpy(names[i].name, "");
-	}
+		names[i].nodenum = -1;
 
-	ustrcpy(names[NAME_SERVER_NODE].name, "/io0");
+
+	names[0].nodenum = knode_get_num();
+	ustrcpy(names[0].name, "/io0");
 
 	uassert((inbox = stdinbox_get()) >= 0);
 
@@ -138,12 +137,20 @@ static int do_name_lookup(const char *name)
  * @param nodenum Target NoC node.
  * @param name    Name of the process to register.
  *
- * @returns Upon successful registration the number of name registered
- * is returned. Upon failure, a negative error code is returned instead.
+ * @returns Upon successful completion zero is returned. Upon failure,
+ * a negative error code is returned instead.
  */
 static int do_name_link(int nodenum, char *name)
 {
 	int index;          /* Index where the process will be stored. */
+
+	/* Invalid node number. */
+	if ((nodenum < 0 ) || (nodenum >= NANVIX_NODES_NUM))
+		return (-EINVAL);
+
+	/* Invalid name */
+	if ((name == NULL)|| (!ustrcmp(name, "")))
+		return (-EINVAL);
 
 	name_debug("link nodenum=%d name=%s", nodenum, name);
 
@@ -162,7 +169,7 @@ static int do_name_link(int nodenum, char *name)
 	for (int i = 0; i < NANVIX_NODES_NUM; i++)
 	{
 		/* Found. */
-		if (names[i].nodenum == nodenum)
+		if (names[i].nodenum == -1)
 		{
 			index = i;
 			goto found;
@@ -173,13 +180,11 @@ static int do_name_link(int nodenum, char *name)
 
 found:
 
-	/* Entry not available */
-	if (ustrcmp(names[index].name, ""))
-		return (-EINVAL);
-
+	nr_registration++;
+	names[index].nodenum = nodenum;
 	ustrcpy(names[index].name, name);
 
-	return (++nr_registration);
+	return (0);
 }
 
 /*=======================================================================*
@@ -191,25 +196,32 @@ found:
  *
  * @param name Name of the process to unlink.
  *
- * @returns Upon successful registration the new number of name registered
- * is returned. Upon failure, a negative error code is returned instead.
+ * @returns Upon successful completion zero is returned. Upon failure,
+ * a negative error code is returned instead.
  */
 static int do_name_unlink(char *name)
 {
-	/* Search for portal name. */
-	int i = 0;
+	/* Invalid name. */
+	if (name == NULL)
+		return (-EINVAL);
 
 	name_debug("unlink name=%s", name);
 
-	while (i < NANVIX_NODES_NUM && ustrcmp(name, names[i].name))
+	/* Search for name */
+	for (int i = 0; i < NANVIX_NODES_NUM; i++)
 	{
-		i++;
-	}
+		/* Skip invalid entries. */
+		if (names[i].nodenum == -1)
+			continue;
 
-	if (i < NANVIX_NODES_NUM)
-	{
-		ustrcpy(names[i].name, "");
-		return (--nr_registration);
+		/* Found*/
+		if (ustrcmp(names[i].name, name) == 0)
+		{
+			nr_registration--;
+			ustrcpy(names[i].name, "");
+			names[i].nodenum = -1;
+			return (0);
+		}
 	}
 
 	return (-ENOENT);
@@ -226,7 +238,6 @@ static int do_name_unlink(char *name)
  */
 int do_name_server(void)
 {
-	int tmp;
 	int source;
 	int shutdown = 0;
 
@@ -260,14 +271,8 @@ int do_name_server(void)
 			/* Add name. */
 			case NAME_LINK:
 				stats.nlinks++;
-				tmp = nr_registration;
-
-				if (do_name_link(msg.nodenum, msg.name) == (tmp + 1))
-					msg.header.opcode = NAME_SUCCESS;
-				else
-					msg.header.opcode = NAME_FAIL;
-
-				uassert(nr_registration >= 0);
+				msg.header.opcode =  (do_name_link(msg.nodenum, msg.name) < 0) ?
+					 NAME_FAIL : NAME_SUCCESS;
 
 				/* Send acknowledgement. */
 				uassert((source = kmailbox_open(msg.header.source, msg.header.mailbox_port)) >= 0);
@@ -279,14 +284,8 @@ int do_name_server(void)
 			/* Remove name. */
 			case NAME_UNLINK:
 				stats.nunlinks++;
-				tmp = nr_registration;
-
-				if ((tmp > 0) && (do_name_unlink(msg.name) == (tmp - 1)))
-					msg.header.opcode = NAME_SUCCESS;
-				else
-					msg.header.opcode = NAME_FAIL;
-
-				uassert(nr_registration >= 0);
+				msg.header.opcode =  (do_name_unlink(msg.name) < 0) ?
+					 NAME_FAIL : NAME_SUCCESS;
 
 				/* Send acknowledgement. */
 				uassert((source = kmailbox_open(msg.header.source, msg.header.mailbox_port)) >= 0);

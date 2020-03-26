@@ -29,6 +29,7 @@
 #include <nanvix/runtime/stdikc.h>
 #include <nanvix/sys/mailbox.h>
 #include <nanvix/sys/mutex.h>
+#include <nanvix/sys/noc.h>
 #include <nanvix/ulib.h>
 #include <posix/errno.h>
 #include <posix/stdbool.h>
@@ -127,7 +128,7 @@ int name_lookup(const char *name)
 		return (-EAGAIN);
 
 	/* Build operation header. */
-	msg.header.source = processor_node_get_num(core_get_id());
+	msg.header.source = knode_get_num();
 	msg.header.opcode = NAME_LOOKUP;
 	msg.header.mailbox_port = kthread_self();
 	msg.nodenum = -1;
@@ -178,7 +179,7 @@ int name_link(int nodenum, const char *name)
 		return (-EAGAIN);
 
 	/* Build operation header. */
-	msg.header.source = processor_node_get_num(core_get_id());
+	msg.header.source = knode_get_num();
 	msg.header.opcode = NAME_LINK;
 	msg.header.mailbox_port = kthread_self();
 	msg.nodenum = nodenum;
@@ -236,7 +237,7 @@ int name_unlink(const char *name)
 		return (-EAGAIN);
 
 	/* Build operation header. */
-	msg.header.source = processor_node_get_num(core_get_id());
+	msg.header.source = knode_get_num();
 	msg.header.opcode = NAME_UNLINK;
 	msg.header.mailbox_port = kthread_self();
 	msg.nodenum = -1;
@@ -283,7 +284,7 @@ int name_shutdown(void)
 		return (-EAGAIN);
 
 	/* Build operation header. */
-	msg.header.source = processor_node_get_num(core_get_id());
+	msg.header.source = knode_get_num();
 	msg.header.opcode = NAME_EXIT;
 	msg.header.mailbox_port = kthread_self();
 

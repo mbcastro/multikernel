@@ -22,7 +22,8 @@
 
 #define __NEED_NAME_CLIENT
 
-#include <nanvix/servers/name.h>
+#include <nanvix/runtime/name.h>
+#include <nanvix/sys/noc.h>
 #include <nanvix/limits.h>
 #include <nanvix/ulib.h>
 #include "../test.h"
@@ -39,7 +40,7 @@ static void test_name_link_unlink(void)
 	int nodenum;
 	char pathname[NANVIX_PROC_NAME_MAX];
 
-	nodenum = processor_node_get_num(core_get_id());
+	nodenum = knode_get_num();
 
 	ustrcpy(pathname, "cool-name");
 	TEST_ASSERT(name_link(nodenum, pathname) == 0);
@@ -58,7 +59,7 @@ static void test_name_lookup(void)
 	int nodenum;
 	char pathname[NANVIX_PROC_NAME_MAX];
 
-	nodenum = processor_node_get_num(core_get_id());
+	nodenum = knode_get_num();
 
 	ustrcpy(pathname, "cool-name");
 	TEST_ASSERT(name_link(nodenum, pathname) == 0);
