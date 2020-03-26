@@ -20,6 +20,8 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+/* Must come first. */
+#define __NEED_RESOURCE
 
 #include <nanvix/runtime/stdikc.h>
 #include <nanvix/runtime/name.h>
@@ -31,23 +33,26 @@
 #include <posix/errno.h>
 
 /**
- * @brief Portal flags.
- */
-/**@{*/
-#define PORTAL_USED   (1 << 0) /**< Used?	   */
-#define PORTAL_WRONLY (1 << 1) /**< Write-only? */
-/**@}*/
-
-/**
  * @brief Table of portals.
  */
-static struct
+static struct named_portal
 {
-	int portalid;                    /**< Underlying unnamed portal. */
-	int flags;                       /**< Flags.                     */
-	int owner;                       /**< Owner node.                */
-	char name[NANVIX_PROC_NAME_MAX]; /**< Name.                      */
+	/*
+	 * XXX: Don't Touch! This Must Come First!
+	 */
+	struct resource resource;        /**< Generic resource information. */
+
+	int portalid;                    /**< Underlying unnamed portal.    */
+	int owner;                       /**< Owner node.                   */
+	char name[NANVIX_PROC_NAME_MAX]; /**< Name.                         */
 } portals[NANVIX_PORTAL_MAX];
+
+/**
+ * @brief Pool of named portals.
+ */
+static const struct resource_pool pool_portals = {
+	portals, NANVIX_PORTAL_MAX, sizeof(struct named_portal)
+};
 
 /*============================================================================*
  * nanvix_portal_is_valid()                                                   *
@@ -64,121 +69,7 @@ static struct
  */
 static inline int nanvix_portal_is_valid(int id)
 {
-	return ((id >=0) && (id < NANVIX_PORTAL_MAX));
-}
-
-/*============================================================================*
- * nanvix_portal_is_used()                                                    *
- *============================================================================*/
-
-/**
- * @brief Asserts whether or not a portal is in use.
- *
- * @param id ID of the target portal.
- *
- * @returns One if the portal is in use, and zero otherwise.
- *
- * @note This function is @b NOT thread safe.
- */
-static inline int nanvix_portal_is_used(int id)
-{
-	return (portals[id].flags & PORTAL_USED);
-}
-
-/*============================================================================*
- * nanvix_portal_is_wronly()                                                  *
- *============================================================================*/
-
-/**
- * @brief Asserts whether or not a portal is write-only.
- *
- * @param id ID of the target portal.
- *
- * @returns One if the portal is write-only and false otherwise.
- *
- * @note This function is @b NOT thread safe.
- */
-static inline int nanvix_portal_is_wronly(int id)
-{
-	return (portals[id].flags & PORTAL_WRONLY);
-}
-
-/*===========================================================================*
- * nanvix_portal_clear_flags()                                               *
- *===========================================================================*/
-
-/**
- * @brief Clears the flags of a portal.
- *
- * @param id ID of the target portal.
- *
- * @note This function is @b NOT thread safe.
- */
-static inline void nanvix_portal_clear_flags(int id)
-{
-	portals[id].flags = 0;
-}
-
-/*============================================================================*
- * nanvix_portal_set_used()                                                   *
- *============================================================================*/
-
-/**
- * @brief Sets a portal as in use.
- *
- * @param id ID of the target portal.
- *
- * @note This function is @b NOT thread safe.
- */
-static inline void nanvix_portal_set_used(int id)
-{
-	portals[id].flags |= PORTAL_USED;
-}
-
-/*============================================================================*
- * nanvix_portal_set_wronly()                                                 *
- *============================================================================*/
-
-/**
- * @brief Sets a portal as write-only.
- *
- * @param id ID of the target portal.
- *
- * @note This function is @b NOT thread safe.
- */
-static inline void nanvix_portal_set_wronly(int id)
-{
-	portals[id].flags |= PORTAL_WRONLY;
-}
-
-/*============================================================================*
- * nanvix_portal_alloc()                                                      *
- *============================================================================*/
-
-/**
- * @brief Allocates a portal.
- *
- * @return Upon successful completion, the ID of the newly allocated
- * portal is returned. Upon failure, -1 is returned instead.
- *
- * @note this function is @b not thread safe.
- */
-static int nanvix_portal_alloc(void)
-{
-	/* Search for a free portal. */
-	for (int i = 0; i < NANVIX_PORTAL_MAX; i++)
-	{
-		/* Found. */
-		if (!nanvix_portal_is_used(i))
-		{
-			nanvix_portal_set_used(i);
-			return (i);
-		}
-	}
-
-	kprintf("[nanvix][runtime][ipc][portal] portal table overflow\n");
-
-	return (-1);
+	return ((id >= 0) && (id < NANVIX_PORTAL_MAX));
 }
 
 /*============================================================================*
@@ -280,22 +171,6 @@ int __nanvix_portal_cleanup(void)
 }
 
 /*============================================================================*
- * nanvix_portal_free()                                                       *
- *============================================================================*/
-
-/**
- * @brief Frees a portal.
- *
- * @param id ID of the target portal.
- *
- * @note This function is @b NOT thread safe.
- */
-static void nanvix_portal_free(int id)
-{
-	nanvix_portal_clear_flags(id);
-}
-
-/*============================================================================*
  * nanvix_portal_create()                                                     *
  *============================================================================*/
 
@@ -326,7 +201,7 @@ int nanvix_portal_create(const char *name)
 		return (-EAGAIN);
 
 	/* Allocate portal. */
-	if ((id = nanvix_portal_alloc()) < 0)
+	if ((id = resource_alloc(&pool_portals)) < 0)
 		return (-EAGAIN);
 
 	nodenum = knode_get_num();
@@ -340,10 +215,12 @@ int nanvix_portal_create(const char *name)
 	portals[id].owner = nodenum;
 	ustrcpy(portals[id].name, name);
 
+	resource_set_rdonly(&portals[id].resource);
+
 	return (id);
 
 error0:
-	nanvix_portal_free(id);
+	resource_free(&pool_portals, id);
 	return (-EAGAIN);
 }
 
@@ -369,11 +246,11 @@ int nanvix_portal_allow(int id, int nodenum)
 		return (-EINVAL);
 
 	/*  Bad portal. */
-	if (!nanvix_portal_is_used(id))
+	if (!resource_is_used(&portals[id].resource))
 		return (-EINVAL);
 
 	/* Operation no supported. */
-	if (nanvix_portal_is_wronly(id))
+	if (!resource_is_rdonly(&portals[id].resource))
 		return (-ENOTSUP);
 
 	/* Not the owner. */
@@ -410,7 +287,7 @@ int nanvix_portal_open(const char *name, int port)
 		return (-EAGAIN);
 
 	/* Allocate a portal. */
-	if ((id = nanvix_portal_alloc()) < 0)
+	if ((id = resource_alloc(&pool_portals)) < 0)
 		return (-EAGAIN);
 
 	/* Open underlying unnamed portal. */
@@ -420,12 +297,12 @@ int nanvix_portal_open(const char *name, int port)
 	/* Initialize portal. */
 	portals[id].portalid = portalid;
 	portals[id].owner = knode_get_num();
-	nanvix_portal_set_wronly(id);
+	resource_set_wronly(&portals[id].resource);
 
 	return (id);
 
 error0:
-	nanvix_portal_free(id);
+	resource_free(&pool_portals, id);
 	return (-EAGAIN);
 }
 
@@ -451,11 +328,11 @@ int nanvix_portal_read(int id, void *buf, size_t n)
 		return (-EINVAL);
 
 	/*  Bad portal. */
-	if (!nanvix_portal_is_used(id))
+	if (!resource_is_used(&portals[id].resource))
 		return (-EINVAL);
 
 	/* Operation no supported. */
-	if (nanvix_portal_is_wronly(id))
+	if (!resource_is_rdonly(&portals[id].resource))
 		return (-ENOTSUP);
 
 	/* Invalid buffer. */
@@ -497,11 +374,11 @@ int nanvix_portal_write(int id, const void *buf, size_t n)
 		return (-EINVAL);
 
 	/* Bad portal. */
-	if (!nanvix_portal_is_used(id))
+	if (!resource_is_used(&portals[id].resource))
 		return (-EINVAL);
 
 	/*  Invalid portal. */
-	if (!nanvix_portal_is_wronly(id))
+	if (!resource_is_wronly(&portals[id].resource))
 		return (-EINVAL);
 
 	/* Invalid buffer. */
@@ -544,11 +421,11 @@ int nanvix_portal_close(int id)
 		return (-EINVAL);
 
 	/* Bad portal. */
-	if (!nanvix_portal_is_used(id))
+	if (!resource_is_used(&portals[id].resource))
 		return (-EINVAL);
 
 	/*  Invalid portal. */
-	if (!nanvix_portal_is_wronly(id))
+	if (!resource_is_wronly(&portals[id].resource))
 		return (-EINVAL);
 
 	/* Not the owner. */
@@ -559,7 +436,7 @@ int nanvix_portal_close(int id)
 	if ((err = kportal_close(portals[id].portalid)) != 0)
 		return (err);
 
-	nanvix_portal_free(id);
+	resource_free(&pool_portals, id);
 
 	return (0);
 }
@@ -585,11 +462,11 @@ int nanvix_portal_unlink(int id)
 		return (-EINVAL);
 
 	/* Bad portal. */
-	if (!nanvix_portal_is_used(id))
+	if (!resource_is_used(&portals[id].resource))
 		return (-EINVAL);
 
 	/*  Invalid portal. */
-	if (nanvix_portal_is_wronly(id))
+	if (!resource_is_rdonly(&portals[id].resource))
 		return (-EINVAL);
 
 	/* Unlink name. */
@@ -605,7 +482,7 @@ int nanvix_portal_unlink(int id)
 	 * destroyed when unloading the runtime system
 	 */
 
-	nanvix_portal_free(id);
+	resource_free(&pool_portals, id);
 
 	return (0);
 }
@@ -619,13 +496,12 @@ int nanvix_portal_unlink(int id)
  */
 int nanvix_portal_get_port(int portalid)
 {
-
 	/* Invalid portal ID.*/
 	if (!nanvix_portal_is_valid(portalid))
 		return (-EINVAL);
 
 	/*  Bad portal. */
-	if (!nanvix_portal_is_used(portalid))
+	if (!resource_is_used(&portals[portalid].resource))
 		return (-EINVAL);
 
 	return (portals[portalid].portalid % KPORTAL_PORT_NR);
