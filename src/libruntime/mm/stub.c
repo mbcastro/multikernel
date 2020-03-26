@@ -64,8 +64,8 @@ rpage_t nanvix_rmem_alloc(void)
 	/* Build operation header. */
 	msg.header.source = knode_get_num();
 	msg.header.opcode = RMEM_ALLOC;
-	msg.header.portal_port = kthread_self();
-	msg.header.mailbox_port = kthread_self();
+	msg.header.portal_port = stdinportal_get_port();
+	msg.header.mailbox_port = stdinbox_get_port();
 
 	/* Send operation header. */
 	uassert(
@@ -110,8 +110,8 @@ int nanvix_rmem_free(rpage_t blknum)
 	/* Build operation header. */
 	msg.header.source = knode_get_num();
 	msg.header.opcode = RMEM_MEMFREE;
-	msg.header.portal_port = kthread_self();
-	msg.header.mailbox_port = kthread_self();
+	msg.header.portal_port = stdinportal_get_port();
+	msg.header.mailbox_port = stdinbox_get_port();
 	msg.blknum = blknum;
 
 	serverid = RMEM_BLOCK_SERVER(blknum);
@@ -160,8 +160,8 @@ size_t nanvix_rmem_read(rpage_t blknum, void *buf)
 	/* Build operation header. */
 	msg.header.source = knode_get_num();
 	msg.header.opcode = RMEM_READ;
-	msg.header.portal_port = kthread_self();
-	msg.header.mailbox_port = kthread_self();
+	msg.header.portal_port = stdinportal_get_port();
+	msg.header.mailbox_port = stdinbox_get_port();
 
 	msg.blknum = blknum;
 
@@ -240,7 +240,7 @@ size_t nanvix_rmem_write(rpage_t blknum, const void *buf)
 	msg.header.source = knode_get_num();
 	msg.header.opcode = RMEM_WRITE;
 	msg.header.portal_port = nanvix_portal_get_port(server[serverid].outportal);
-	msg.header.mailbox_port = kthread_self();
+	msg.header.mailbox_port = stdinbox_get_port();
 	msg.blknum = blknum;
 
 	/* Send operation header. */
@@ -290,8 +290,8 @@ int nanvix_rmem_shutdown(int servernum)
 	/* Build operation header. */
 	msg.header.source = knode_get_num();
 	msg.header.opcode = RMEM_EXIT;
-	msg.header.portal_port = kthread_self();
-	msg.header.mailbox_port = kthread_self();
+	msg.header.portal_port = stdinportal_get_port();
+	msg.header.mailbox_port = stdinbox_get_port();
 
 	/* Send operation header. */
 	uassert(
