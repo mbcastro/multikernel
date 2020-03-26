@@ -22,6 +22,9 @@
  * SOFTWARE.
  */
 
+/* Must come first. */
+#define __NEED_RESOURCE
+
 #include <nanvix/runtime/stdikc.h>
 #include <nanvix/runtime/name.h>
 #include <nanvix/sys/mailbox.h>
@@ -46,13 +49,24 @@ static int named_inboxes[NANVIX_NODES_NUM];
 /**
  * @brief Table of mailboxes.
  */
-static struct
+static struct named_mailbox
 {
-	int fd;                          /**< NoC connector. */
-	int flags;                       /**< Flags.         */
-	int owner;                       /**< Owner node.    */
-	char name[NANVIX_PROC_NAME_MAX]; /**< Name.          */
+	/*
+	 * XXX: Don't Touch! This Must Come First!
+	 */
+	struct resource resource;        /**< Generic resource information. */
+
+	int fd;                          /**< NoC connector.                */
+	int owner;                       /**< Owner node.                   */
+	char name[NANVIX_PROC_NAME_MAX]; /**< Name.                         */
 } mailboxes[NANVIX_MAILBOX_MAX];
+
+/**
+ * @brief Pool of named mailboxs.
+ */
+static const struct resource_pool pool_mailboxes = {
+	mailboxes, NANVIX_PORTAL_MAX, sizeof(struct named_mailbox)
+};
 
 /**
  * @brief Input HAL mailbox.
@@ -106,136 +120,6 @@ static inline int nanvix_mailbox_is_valid(int mbxid)
 }
 
 /*============================================================================*
- * nanvix_mailbox_is_used()                                                   *
- *============================================================================*/
-
-/**
- * @brief Asserts whether or not a mailbox is in use.
- *
- * @param mbxid ID of the target mailbox.
- *
- * @returns One if the mailbox is in use, and zero otherwise.
- *
- * @note This function is @b NOT thread safe.
- */
-static inline int nanvix_mailbox_is_used(int mbxid)
-{
-	return (mailboxes[mbxid].flags & MAILBOX_USED);
-}
-
-/*============================================================================*
- * nanvix_mailbox_is_wronly()                                                 *
- *============================================================================*/
-
-/**
- * @brief Asserts whether or not a mailbox is write-only.
- *
- * @param mbxid ID of the target mailbox.
- *
- * @returns One if the mailbox is write-only and false otherwise.
- *
- * @note This function is @b NOT thread safe.
- */
-static inline int nanvix_mailbox_is_wronly(int mbxid)
-{
-	return (mailboxes[mbxid].flags & MAILBOX_WRONLY);
-}
-
-/*===========================================================================*
- * nanvix_mailbox_clear_flags()                                              *
- *===========================================================================*/
-
-/**
- * @brief Clears the flags of a mailbox.
- *
- * @param mbxid ID of the target mailbox.
- *
- * @note This function is @b NOT thread safe.
- */
-static inline void nanvix_mailbox_clear_flags(int mbxid)
-{
-	mailboxes[mbxid].flags = 0;
-}
-
-/*============================================================================*
- * nanvix_mailbox_set_used()                                                  *
- *============================================================================*/
-
-/**
- * @brief Sets a mailbox as in use.
- *
- * @param mbxid ID of the target mailbox.
- *
- * @note This function is @b NOT thread safe.
- */
-static inline void nanvix_mailbox_set_used(int mbxid)
-{
-	mailboxes[mbxid].flags |= MAILBOX_USED;
-}
-
-/*============================================================================*
- * nanvix_mailbox_set_wronly()                                                *
- *============================================================================*/
-
-/**
- * @brief Sets a mailbox as write-only.
- *
- * @param mbxid ID of the target mailbox.
- *
- * @note This function is @b NOT thread safe.
- */
-static inline void nanvix_mailbox_set_wronly(int mbxid)
-{
-	mailboxes[mbxid].flags |= MAILBOX_WRONLY;
-}
-
-/*============================================================================*
- * nanvix_mailbox_alloc()                                                     *
- *============================================================================*/
-
-/**
- * @brief Allocates a mailbox.
- *
- * @return Upon successful completion, the ID of the newly allocated
- * mailbox is returned. Upon failure, -1 is returned instead.
- *
- * @note this function is @b not thread safe.
- */
-static int nanvix_mailbox_alloc(void)
-{
-	/* Search for a free mailbox. */
-	for (int i = 0; i < NANVIX_MAILBOX_MAX; i++)
-	{
-		/* Found. */
-		if (!nanvix_mailbox_is_used(i))
-		{
-			nanvix_mailbox_set_used(i);
-			return (i);
-		}
-	}
-
-	uprintf("[NAME] mailbox table overflow\n");
-
-	return (-1);
-}
-
-/*============================================================================*
- * nanvix_mailbox_free()                                                      *
- *============================================================================*/
-
-/**
- * @brief Frees a mailbox.
- *
- * @param mbxid ID of the target mailbox.
- *
- * @note This function is @b NOT thread safe.
- */
-static void nanvix_mailbox_free(int mbxid)
-{
-	nanvix_mailbox_clear_flags(mbxid);
-}
-
-/*============================================================================*
  * nanvix_mailbox_create()                                                    *
  *============================================================================*/
 
@@ -261,7 +145,7 @@ int nanvix_mailbox_create(const char *name)
 		return (-EAGAIN);
 
 	/* Allocate mailbox. */
-	if ((mbxid = nanvix_mailbox_alloc()) < 0)
+	if ((mbxid = resource_alloc(&pool_mailboxes)) < 0)
 		return (-EAGAIN);
 
 	nodenum = knode_get_num();
@@ -277,11 +161,12 @@ int nanvix_mailbox_create(const char *name)
 
 	/* Initialize named inbox. */
 	named_inboxes[core_get_id()] = mbxid;
+	resource_set_rdonly(&mailboxes[mbxid].resource);
 
 	return (mbxid);
 
 error0:
-	nanvix_mailbox_free(mbxid);
+	resource_free(&pool_mailboxes, mbxid);
 	return (-EAGAIN);
 }
 
@@ -307,7 +192,7 @@ int nanvix_mailbox_open(const char *name, int port)
 		return (-EAGAIN);
 
 	/* Allocate a mailbox. */
-	if ((mbxid = nanvix_mailbox_alloc()) < 0)
+	if ((mbxid = resource_alloc(&pool_mailboxes)) < 0)
 		return (-EAGAIN);
 
 	/* Open underlying HW channel. */
@@ -317,12 +202,12 @@ int nanvix_mailbox_open(const char *name, int port)
 	/* Initialize mailbox. */
 	mailboxes[mbxid].fd = fd;
 	mailboxes[mbxid].owner = knode_get_num();
-	nanvix_mailbox_set_wronly(mbxid);
+	resource_set_wronly(&mailboxes[mbxid].resource);
 
 	return (mbxid);
 
 error0:
-	nanvix_mailbox_free(mbxid);
+	resource_free(&pool_mailboxes, mbxid);
 	return (-EAGAIN);
 }
 
@@ -340,7 +225,7 @@ int nanvix_mailbox_read(int mbxid, void *buf, size_t n)
 		return (-EINVAL);
 
 	/*  Bad mailbox. */
-	if (!nanvix_mailbox_is_used(mbxid))
+	if (!resource_is_used(&mailboxes[mbxid].resource))
 		return (-EINVAL);
 
 	/* Not the owner. */
@@ -348,7 +233,7 @@ int nanvix_mailbox_read(int mbxid, void *buf, size_t n)
 		return (-EPERM);
 
 	/* Operation no supported. */
-	if (nanvix_mailbox_is_wronly(mbxid))
+	if (!resource_is_rdonly(&mailboxes[mbxid].resource))
 		return (-ENOTSUP);
 
 	/* Invalid buffer. */
@@ -376,7 +261,7 @@ int nanvix_mailbox_write(int mbxid, const void *buf, size_t n)
 		return (-EINVAL);
 
 	/* Bad mailbox. */
-	if (!nanvix_mailbox_is_used(mbxid))
+	if (!resource_is_used(&mailboxes[mbxid].resource))
 		return (-EINVAL);
 
 	/* Not the owner. */
@@ -384,7 +269,7 @@ int nanvix_mailbox_write(int mbxid, const void *buf, size_t n)
 		return (-EPERM);
 
 	/*  Invalid mailbox. */
-	if (!nanvix_mailbox_is_wronly(mbxid))
+	if (!resource_is_wronly(&mailboxes[mbxid].resource))
 		return (-EINVAL);
 
 	/* Invalid buffer. */
@@ -414,7 +299,7 @@ int nanvix_mailbox_close(int mbxid)
 		return (-EINVAL);
 
 	/* Bad mailbox. */
-	if (!nanvix_mailbox_is_used(mbxid))
+	if (!resource_is_used(&mailboxes[mbxid].resource))
 		return (-EINVAL);
 
 	/* Not the owner. */
@@ -422,13 +307,13 @@ int nanvix_mailbox_close(int mbxid)
 		return (-EPERM);
 
 	/*  Invalid mailbox. */
-	if (!nanvix_mailbox_is_wronly(mbxid))
+	if (!resource_is_wronly(&mailboxes[mbxid].resource))
 		return (-EINVAL);
 
 	if ((r = kmailbox_close(mailboxes[mbxid].fd)) != 0)
 		return (r);
 
-	nanvix_mailbox_free(mbxid);
+	resource_free(&pool_mailboxes, mbxid);
 
 	return (0);
 }
@@ -447,7 +332,7 @@ int nanvix_mailbox_unlink(int mbxid)
 		return (-EINVAL);
 
 	/* Bad mailbox. */
-	if (!nanvix_mailbox_is_used(mbxid))
+	if (!resource_is_used(&mailboxes[mbxid].resource))
 		return (-EINVAL);
 
 	/* Not the owner. */
@@ -455,14 +340,14 @@ int nanvix_mailbox_unlink(int mbxid)
 		return (-EPERM);
 
 	/*  Invalid mailbox. */
-	if (nanvix_mailbox_is_wronly(mbxid))
+	if (!resource_is_rdonly(&mailboxes[mbxid].resource))
 		return (-EINVAL);
 
 	/* Unlink name. */
 	if (name_unlink(mailboxes[mbxid].name) != 0)
 		return (-EAGAIN);
 
-	nanvix_mailbox_free(mbxid);
+	resource_free(&pool_mailboxes, mbxid);
 
 	return (0);
 }
