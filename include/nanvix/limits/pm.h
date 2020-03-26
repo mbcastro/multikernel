@@ -22,10 +22,15 @@
  * SOFTWARE.
  */
 
-#ifndef NANVIX_LIMITS_H_
-#define NANVIX_LIMITS_H_
+#ifndef NANVIX_LIMITS_PM_H_
+#define NANVIX_LIMITS_PM_H_
 
-	#include <nanvix/limits/name.h>
-	#include <nanvix/limits/pm.h>
+	#include <nanvix/sys/noc.h>
 
-#endif /* NANVIX_LIMITS_H_ */
+	/**
+	 * @brief Number of NoC nodes.
+	 */
+	#define NANVIX_NODES_NUM PROCESSOR_NOC_NODES_NUM
+
+#endif /* NANVIX_LIMITS_PM_H_ */
+
