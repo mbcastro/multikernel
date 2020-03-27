@@ -51,7 +51,8 @@
 	struct name_message
 	{
 		message_header header;           /**< Message header. */
-		int32_t nodenum;                 /**< NoC node.       */
+		int nodenum;                     /**< NoC node.       */
+		int errcode;                     /**< Error code.     */
 		char name[NANVIX_PROC_NAME_MAX]; /**< Portal name.    */
 	};
 

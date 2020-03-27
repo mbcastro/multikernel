@@ -86,7 +86,6 @@ static void do_name_init(void)
 	for (int i = 0; i < NANVIX_NODES_NUM; i++)
 		names[i].nodenum = -1;
 
-
 	names[0].nodenum = knode_get_num();
 	ustrcpy(names[0].name, "/io0");
 
@@ -106,22 +105,39 @@ static void do_name_init(void)
 /**
  * @brief Converts a name into a NoC node number.
  *
- * @param name Target name.
+ * @param requet   Request.
+ * @param response Response.
  *
- * @returns Upon successful completion the NoC node number whose name is @p
- * name is returned. Upon failure, a negative error code is returned
- * instead.
+ * @returns Upon successful completion zero is returned. Upon failure, a
+ * negative error code is returned instead.
  */
-static int do_name_lookup(const char *name)
+static int do_name_lookup(
+	const struct name_message *request,
+	struct name_message *response
+)
 {
+	const char *name;
+
+	response->nodenum = -1;
+
+	name = request->name;
+
+	stats.nlookups++;
 	name_debug("lookup name=%s", name);
+
+	/* Invalid name */
+	if ((name == NULL) || (!ustrcmp(name, "")))
+		return (-EINVAL);
 
 	/* Search for portal name. */
 	for (int i = 0; i < NANVIX_NODES_NUM; i++)
 	{
 		/* Found. */
 		if (!ustrcmp(name, names[i].name))
-			return (names[i].nodenum);
+		{
+			response->nodenum = names[i].nodenum;
+			return (0);
+		}
 	}
 
 	return (-ENOENT);
@@ -134,15 +150,22 @@ static int do_name_lookup(const char *name)
 /**
  * @brief Register a process name.
  *
- * @param nodenum Target NoC node.
- * @param name    Name of the process to register.
+ * @param requet Request.
  *
  * @returns Upon successful completion zero is returned. Upon failure,
  * a negative error code is returned instead.
  */
-static int do_name_link(int nodenum, char *name)
+static int do_name_link(const struct name_message *request)
 {
-	int index;          /* Index where the process will be stored. */
+	int index;
+	int nodenum;
+	const char *name;
+
+	name = request->name;
+	nodenum = request->nodenum;
+
+	stats.nlinks++;
+	name_debug("link nodenum=%d name=%s", nodenum, name);
 
 	/* Invalid node number. */
 	if ((nodenum < 0 ) || (nodenum >= NANVIX_NODES_NUM))
@@ -151,8 +174,6 @@ static int do_name_link(int nodenum, char *name)
 	/* Invalid name */
 	if ((name == NULL)|| (!ustrcmp(name, "")))
 		return (-EINVAL);
-
-	name_debug("link nodenum=%d name=%s", nodenum, name);
 
 	/* No entry available. */
 	if (nr_registration >= NANVIX_NODES_NUM)
@@ -188,24 +209,29 @@ found:
 }
 
 /*=======================================================================*
- *do_name_unlink()                                                       *
+ * do_name_unlink()                                                      *
  *=======================================================================*/
 
 /**
  * @brief Remove a name
  *
- * @param name Name of the process to unlink.
+ * @param requet Request.
  *
- * @returns Upon successful completion zero is returned. Upon failure,
- * a negative error code is returned instead.
+ * @returns Upon successful completion zero is returned. Upon failure, a
+ * negative error code is returned instead.
  */
-static int do_name_unlink(char *name)
+static int do_name_unlink(const struct name_message *request)
 {
-	/* Invalid name. */
-	if (name == NULL)
-		return (-EINVAL);
+	const char *name;
 
+	name = request->name;
+
+	stats.nlinks++;
 	name_debug("unlink name=%s", name);
+
+	/* Invalid name */
+	if ((name == NULL)|| (!ustrcmp(name, "")))
+		return (-EINVAL);
 
 	/* Search for name */
 	for (int i = 0; i < NANVIX_NODES_NUM; i++)
@@ -238,7 +264,6 @@ static int do_name_unlink(char *name)
  */
 int do_name_server(void)
 {
-	int source;
 	int shutdown = 0;
 
 	uprintf("[nanvix][name] booting up server");
@@ -247,51 +272,42 @@ int do_name_server(void)
 
 	while (!shutdown)
 	{
-		struct name_message msg;
+		int outbox;
+		int reply = 0;
+		int ret = -ENOSYS;
+		struct name_message request;
+		struct name_message response;
 
-		uassert(kmailbox_read(inbox, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
+		uassert(
+			kmailbox_read(
+				inbox,
+				&request,
+				sizeof(struct name_message)
+			) == sizeof(struct name_message)
+		);
 
 		name_debug("received request opcode=%d", msg.header.opcode);
 
 		/* Handle name requests. */
-		switch (msg.header.opcode)
+		switch (request.header.opcode)
 		{
 			/* Lookup. */
 			case NAME_LOOKUP:
-				stats.nlookups++;
-				msg.nodenum = do_name_lookup(msg.name);
-
-				/* Send response. */
-				uassert((source = kmailbox_open(msg.header.source, msg.header.mailbox_port)) >= 0);
-				uassert(kmailbox_write(source, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
-				uassert(kmailbox_close(source) == 0);
-
+				ret = do_name_lookup(&request, &response);
+				reply = 1;
 				break;
 
 			/* Add name. */
 			case NAME_LINK:
-				stats.nlinks++;
-				msg.header.opcode =  (do_name_link(msg.nodenum, msg.name) < 0) ?
-					 NAME_FAIL : NAME_SUCCESS;
-
-				/* Send acknowledgement. */
-				uassert((source = kmailbox_open(msg.header.source, msg.header.mailbox_port)) >= 0);
-				uassert(kmailbox_write(source, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
-				uassert(kmailbox_close(source) == 0);
-
+				ret =  do_name_link(&request);
+				reply = 1;
 				break;
 
 			/* Remove name. */
 			case NAME_UNLINK:
 				stats.nunlinks++;
-				msg.header.opcode =  (do_name_unlink(msg.name) < 0) ?
-					 NAME_FAIL : NAME_SUCCESS;
-
-				/* Send acknowledgement. */
-				uassert((source = kmailbox_open(msg.header.source, msg.header.mailbox_port)) >= 0);
-				uassert(kmailbox_write(source, &msg, sizeof(struct name_message)) == sizeof(struct name_message));
-				uassert(kmailbox_close(source) == 0);
-
+				ret = do_name_unlink(&request);
+				reply = 1;
 				break;
 
 			case NAME_EXIT:
@@ -302,9 +318,37 @@ int do_name_server(void)
 			default:
 				break;
 		}
+
+		/* No reply? */
+		if (!reply)
+			continue;
+
+		response.errcode = ret;
+		message_header_build(
+			&response.header,
+			(ret <= 0) ? NAME_FAIL : NAME_SUCCESS
+		);
+
+		uassert((
+			outbox = kmailbox_open(
+				request.header.source,
+				request.header.mailbox_port
+			)) >= 0
+		);
+		uassert(
+			kmailbox_write(
+				outbox,
+				&response,
+				sizeof(struct name_message
+			)) == sizeof(struct name_message)
+		);
+		uassert(kmailbox_close(outbox) == 0);
 	}
 
-	uprintf("[nanvix][name] shutting down server");
+	/* Dump statistics. */
+	uprintf("[nanvix][name] links=%d lookups=%d unlinks=%d",
+			stats.nlinks, stats.nlookups, stats.nunlinks
+	);
 
 	return (0);
 }

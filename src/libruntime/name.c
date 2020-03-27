@@ -128,9 +128,7 @@ int name_lookup(const char *name)
 		return (-EAGAIN);
 
 	/* Build operation header. */
-	msg.header.source = knode_get_num();
-	msg.header.opcode = NAME_LOOKUP;
-	msg.header.mailbox_port = kthread_self();
+	message_header_build(&msg.header, NAME_LOOKUP);
 	msg.nodenum = -1;
 	ustrcpy(msg.name, name);
 
@@ -179,9 +177,7 @@ int name_link(int nodenum, const char *name)
 		return (-EAGAIN);
 
 	/* Build operation header. */
-	msg.header.source = knode_get_num();
-	msg.header.opcode = NAME_LINK;
-	msg.header.mailbox_port = kthread_self();
+	message_header_build(&msg.header, NAME_LINK);
 	msg.nodenum = nodenum;
 	ustrcpy(msg.name, name);
 
@@ -197,16 +193,13 @@ int name_link(int nodenum, const char *name)
 
 	nanvix_mutex_unlock(&lock);
 
-	if ((msg.header.opcode != NAME_SUCCESS) && (msg.header.opcode != NAME_FAIL))
-		return (-EAGAIN);
-
 	if (msg.header.opcode == NAME_SUCCESS)
 	{
 		ustrcpy(process_name[core_get_id()], name);
 		return (0);
 	}
 
-	return (-1);
+	return (msg.errcode);
 
 error1:
 	nanvix_mutex_unlock(&lock);
@@ -237,9 +230,7 @@ int name_unlink(const char *name)
 		return (-EAGAIN);
 
 	/* Build operation header. */
-	msg.header.source = knode_get_num();
-	msg.header.opcode = NAME_UNLINK;
-	msg.header.mailbox_port = kthread_self();
+	message_header_build(&msg.header, NAME_UNLINK);
 	msg.nodenum = -1;
 	ustrcpy(msg.name, name);
 
@@ -254,13 +245,10 @@ int name_unlink(const char *name)
 
 	nanvix_mutex_unlock(&lock);
 
-	if ((msg.header.opcode != NAME_SUCCESS) && (msg.header.opcode != NAME_FAIL))
-		return (-EAGAIN);
-
 	if (msg.header.opcode == NAME_SUCCESS)
 		return (0);
 
-	return (-1);
+	return (msg.errcode);
 
 error1:
 	nanvix_mutex_unlock(&lock);
@@ -284,12 +272,10 @@ int name_shutdown(void)
 		return (-EAGAIN);
 
 	/* Build operation header. */
-	msg.header.source = knode_get_num();
-	msg.header.opcode = NAME_EXIT;
-	msg.header.mailbox_port = kthread_self();
+	message_header_build(&msg.header, NAME_EXIT);
 
-		if ((ret = kmailbox_write(server, &msg, sizeof(struct name_message))) != sizeof(struct name_message))
-			return (ret);
+	if ((ret = kmailbox_write(server, &msg, sizeof(struct name_message))) != sizeof(struct name_message))
+		return (ret);
 
 	return (0);
 }
