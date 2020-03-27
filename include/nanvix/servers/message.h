@@ -39,6 +39,14 @@
 	} message_header;
 
 	/**
+	 * @brief Prints a message header in a string.
+	 *
+	 * @param str Target string.
+	 * @param h   Target message header.
+	 */
+	extern void message_header_sprint(char *str, message_header *h);
+
+	/**
 	 * @brief Builds a message header.
 	 *
 	 * @param h      Target message header.

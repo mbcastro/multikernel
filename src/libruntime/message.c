@@ -29,7 +29,25 @@
 #include <nanvix/ulib.h>
 
 /**
- * The message_header_build() function builds a message header pointed
+ * The message_header_sprint() function prints the message header
+ * pointed to by @p h in the string pointed to by @p str.
+ */
+void message_header_sprint(char *str, message_header *h)
+{
+	const char *fmt = "source=%d mailbox_port=%d portal_port=%d opcode=%d";
+
+	uassert(h != NULL);
+
+	usprintf(str, fmt,
+		h->source,
+		h->mailbox_port,
+		h->portal_port,
+		h->opcode
+	);
+}
+
+/**
+ * The message_header_build2() function builds a message header pointed
  * to by @p h. The opcode of the message is set to @p opcode.
  */
 void message_header_build2(
