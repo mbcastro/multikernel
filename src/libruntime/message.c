@@ -22,41 +22,34 @@
  * SOFTWARE.
  */
 
-#ifndef NANVIX_SERVERS_MESSAGE_H_
-#define NANVIX_SERVERS_MESSAGE_H_
+#include <nanvix/servers/message.h>
+#include <nanvix/runtime/stdikc.h>
+#include <nanvix/sys/noc.h>
+#include <posix/stdint.h>
+#include <nanvix/ulib.h>
 
-    #include <posix/stdint.h>
+/**
+ * The message_header_build() function builds a message header pointed
+ * to by @p h. The opcode of the message is set to @p opcode.
+ */
+void message_header_build2(
+	message_header *h,
+	uint8_t opcode,
+	uint8_t portal_port
+)
+{
+	uassert(h != NULL);
 
-	/**
-	 * @brief Polymorphic message header.
-	 */
-	typedef struct
-	{
-		uint16_t source;      /**< Source cluster. */
-		uint8_t opcode;       /**< Operation.      */
-		uint8_t mailbox_port; /**< Port Number     */
-		uint8_t portal_port;  /**< Port Number     */
-	} message_header;
+	h->source = knode_get_num();
+	h->opcode = opcode;
+	h->mailbox_port = stdinbox_get_port();
+	h->portal_port = portal_port;
+}
 
-	/**
-	 * @brief Builds a message header.
-	 *
-	 * @param h      Target message header.
-	 * @param opcode Opcode of the message.
-	 */
-	extern void message_header_build(message_header *h, uint8_t opcode);
-
-	/**
-	 * @brief Builds a message header.
-	 *
-	 * @param h           Target message header.
-	 * @param opcode      Opcode of the message.
-	 * @param portal_port Port number for portal.
-	 */
-	extern void message_header_build2(
-		message_header *h,
-		uint8_t opcode,
-		uint8_t portal_port
-	);
-
-#endif /* NANVIX_SERVERS_MESSAGE_H_ */
+/**
+ * @see message_header_build2().
+ */
+void message_header_build(message_header *h, uint8_t opcode)
+{
+	message_header_build2(h, opcode, stdinportal_get_port());
+}
