@@ -504,5 +504,9 @@ int nanvix_portal_get_port(int portalid)
 	if (!resource_is_used(&portals[portalid].resource))
 		return (-EINVAL);
 
+	/*  Bad portal. */
+	if (!resource_is_wronly(&portals[portalid].resource))
+		return (-EINVAL);
+
 	return (portals[portalid].portalid % KPORTAL_PORT_NR);
 }
