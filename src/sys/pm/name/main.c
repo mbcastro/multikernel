@@ -40,6 +40,7 @@
 #define __DEBUG_NAME 0
 
 #if (__DEBUG_NAME)
+	static char debug_str[64];
 	#define name_debug(fmt, ...) uprintf(fmt, __VA_ARGS__)
 #else
 	#define name_debug(fmt, ...) { }
@@ -286,7 +287,10 @@ int do_name_server(void)
 			) == sizeof(struct name_message)
 		);
 
-		name_debug("received request opcode=%d", msg.header.opcode);
+		#if (__DEBUG_NAME)
+		message_header_sprint(debug_str, &request.header);
+		uprintf("rmem request %s", debug_str);
+		#endif
 
 		/* Handle name requests. */
 		switch (request.header.opcode)
