@@ -49,6 +49,11 @@
 	/**@}*/
 
 	/**
+	 * @brief Port number for name server client.
+	 */
+	#define NAME_SERVER_PORT_NUM 2
+
+	/**
 	 * @brief Name Server message.
 	 */
 	struct name_message

@@ -28,7 +28,7 @@
 #include <nanvix/sys/thread.h>
 #include <nanvix/sys/portal.h>
 #include <nanvix/sys/noc.h>
-#include <nanvix/limits.h>
+#include <nanvix/limits/name.h>
 #include <nanvix/pm.h>
 #include <nanvix/ulib.h>
 #include <posix/errno.h>

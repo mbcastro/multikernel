@@ -29,18 +29,10 @@
 #include <nanvix/runtime/name.h>
 #include <nanvix/sys/mailbox.h>
 #include <nanvix/sys/noc.h>
-#include <nanvix/limits.h>
+#include <nanvix/limits/name.h>
 #include <nanvix/pm.h>
 #include <nanvix/ulib.h>
 #include <posix/errno.h>
-
-/**
- * @brief Mailbox flags.
- */
-/**@{*/
-#define MAILBOX_USED   (1 << 0)
-#define MAILBOX_WRONLY (1 << 1)
-/**@}*/
 
 /**
  * @brief Input named mailbox.

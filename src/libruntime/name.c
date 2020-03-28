@@ -34,11 +34,6 @@
 #include <posix/stdbool.h>
 
 /**
- * @brief Port number for name server client.
- */
-#define NAME_SERVER_PORT_NUM 2
-
-/**
  * @brief Mailbox for small messages.
  */
 static int server;
@@ -104,29 +99,26 @@ int name_lookup(const char *name)
 	int ret;
 	struct name_message msg;
 
-	/* Invalid name. */
-	if ((ret = name_is_valid(name)) < 0)
-		return (ret);
-
 	/* Initilize name client. */
 	if (!initialized)
 		return (-EAGAIN);
+
+	/* Invalid name. */
+	if ((ret = name_is_valid(name)) < 0)
+		return (ret);
 
 	/* Build operation header. */
 	message_header_build(&msg.header, NAME_LOOKUP);
 	msg.nodenum = -1;
 	ustrcpy(msg.name, name);
 
-		if (kmailbox_write(server, &msg, sizeof(struct name_message)) != sizeof(struct name_message))
-			goto error1;
+	if ((ret = kmailbox_write(server, &msg, sizeof(struct name_message))) != sizeof(struct name_message))
+		return (ret);
 
-		if (kmailbox_read(stdinbox_get(), &msg, sizeof(struct name_message)) != sizeof(struct name_message))
-			goto error1;
+	if ((ret = kmailbox_read(stdinbox_get(), &msg, sizeof(struct name_message))) != sizeof(struct name_message))
+		return (ret);
 
 	return (msg.nodenum);
-
-error1:
-	return (-EAGAIN);
 }
 
 /*============================================================================*
@@ -141,6 +133,10 @@ int name_link(int nodenum, const char *name)
 	int ret;
 	struct name_message msg;
 
+	/* Initilize name client. */
+	if (!initialized)
+		return (-EAGAIN);
+
 	/* Invalid NoC node ID. */
 	if (!proc_is_valid(nodenum))
 		return (-EINVAL);
@@ -149,30 +145,21 @@ int name_link(int nodenum, const char *name)
 	if ((ret = name_is_valid(name)) < 0)
 		return (ret);
 
-	/* Initilize name client. */
-	if (!initialized)
-		return (-EAGAIN);
-
 	/* Build operation header. */
 	message_header_build(&msg.header, NAME_LINK);
 	msg.nodenum = nodenum;
 	ustrcpy(msg.name, name);
 
-		/* Send link request. */
-		if (kmailbox_write(server, &msg, sizeof(struct name_message)) != sizeof(struct name_message))
-			goto error1;
+	if ((ret = kmailbox_write(server, &msg, sizeof(struct name_message))) != sizeof(struct name_message))
+		return (ret);
 
-		/* Wait server response */
-		if (kmailbox_read(stdinbox_get(), &msg, sizeof(struct name_message)) != sizeof(struct name_message))
-			goto error1;
+	if ((ret = kmailbox_read(stdinbox_get(), &msg, sizeof(struct name_message))) != sizeof(struct name_message))
+		return (ret);
 
 	if (msg.header.opcode == NAME_SUCCESS)
 		return (0);
 
 	return (msg.errcode);
-
-error1:
-	return (-EAGAIN);
 }
 
 /*============================================================================*
@@ -187,33 +174,29 @@ int name_unlink(const char *name)
 	int ret;
 	struct name_message msg;
 
-	/* Invalid name. */
-	if ((ret = name_is_valid(name)) < 0)
-		return (ret);
-
 	/* Initilize name client. */
 	if (!initialized)
 		return (-EAGAIN);
+
+	/* Invalid name. */
+	if ((ret = name_is_valid(name)) < 0)
+		return (ret);
 
 	/* Build operation header. */
 	message_header_build(&msg.header, NAME_UNLINK);
 	msg.nodenum = -1;
 	ustrcpy(msg.name, name);
 
-		if (kmailbox_write(server, &msg, sizeof(struct name_message)) != sizeof(struct name_message))
-			goto error1;
+	if ((ret = kmailbox_write(server, &msg, sizeof(struct name_message))) != sizeof(struct name_message))
+		return (ret);
 
-		/* Wait server response */
-		if (kmailbox_read(stdinbox_get(), &msg, sizeof(struct name_message)) != sizeof(struct name_message))
-			goto error1;
+	if ((ret = kmailbox_read(stdinbox_get(), &msg, sizeof(struct name_message))) != sizeof(struct name_message))
+		return (ret);
 
 	if (msg.header.opcode == NAME_SUCCESS)
 		return (0);
 
 	return (msg.errcode);
-
-error1:
-	return (-EAGAIN);
 }
 
 /*============================================================================*

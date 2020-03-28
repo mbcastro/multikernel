@@ -29,12 +29,10 @@
 #include <nanvix/servers/spawn.h>
 #include <nanvix/runtime/stdikc.h>
 #include <nanvix/runtime/runtime.h>
-#include <nanvix/runtime/utils.h>
 #include <nanvix/sys/mailbox.h>
-#include <nanvix/limits.h>
 #include <nanvix/ulib.h>
 #include <posix/errno.h>
-#include <stdint.h>
+#include <posix/stdint.h>
 
 #define __DEBUG_NAME 0
 
