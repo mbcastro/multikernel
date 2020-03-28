@@ -49,12 +49,6 @@ static int server;
  */
 static bool initialized = false;
 
-
-/**
- * @brief Mailbox module lock.
- */
-static struct nanvix_mutex lock;
-
 /*============================================================================*
  * __name_setup()                                                             *
  *============================================================================*/
@@ -72,7 +66,6 @@ int __name_setup(void)
 	if ((server = kmailbox_open(NAME_SERVER_NODE, NAME_SERVER_PORT_NUM)) < 0)
 		return (-1);
 
-	nanvix_mutex_init(&lock);
 	initialized = true;
 
 	return (0);
@@ -128,20 +121,15 @@ int name_lookup(const char *name)
 	msg.nodenum = -1;
 	ustrcpy(msg.name, name);
 
-	nanvix_mutex_lock(&lock);
-
 		if (kmailbox_write(server, &msg, sizeof(struct name_message)) != sizeof(struct name_message))
 			goto error1;
 
 		if (kmailbox_read(stdinbox_get(), &msg, sizeof(struct name_message)) != sizeof(struct name_message))
 			goto error1;
 
-	nanvix_mutex_unlock(&lock);
-
 	return (msg.nodenum);
 
 error1:
-	nanvix_mutex_unlock(&lock);
 	return (-EAGAIN);
 }
 
@@ -177,8 +165,6 @@ int name_link(int nodenum, const char *name)
 	msg.nodenum = nodenum;
 	ustrcpy(msg.name, name);
 
-	nanvix_mutex_lock(&lock);
-
 		/* Send link request. */
 		if (kmailbox_write(server, &msg, sizeof(struct name_message)) != sizeof(struct name_message))
 			goto error1;
@@ -187,15 +173,12 @@ int name_link(int nodenum, const char *name)
 		if (kmailbox_read(stdinbox_get(), &msg, sizeof(struct name_message)) != sizeof(struct name_message))
 			goto error1;
 
-	nanvix_mutex_unlock(&lock);
-
 	if (msg.header.opcode == NAME_SUCCESS)
 		return (0);
 
 	return (msg.errcode);
 
 error1:
-	nanvix_mutex_unlock(&lock);
 	return (-EAGAIN);
 }
 
@@ -227,8 +210,6 @@ int name_unlink(const char *name)
 	msg.nodenum = -1;
 	ustrcpy(msg.name, name);
 
-	nanvix_mutex_lock(&lock);
-
 		if (kmailbox_write(server, &msg, sizeof(struct name_message)) != sizeof(struct name_message))
 			goto error1;
 
@@ -236,15 +217,12 @@ int name_unlink(const char *name)
 		if (kmailbox_read(stdinbox_get(), &msg, sizeof(struct name_message)) != sizeof(struct name_message))
 			goto error1;
 
-	nanvix_mutex_unlock(&lock);
-
 	if (msg.header.opcode == NAME_SUCCESS)
 		return (0);
 
 	return (msg.errcode);
 
 error1:
-	nanvix_mutex_unlock(&lock);
 	return (-EAGAIN);
 }
 
