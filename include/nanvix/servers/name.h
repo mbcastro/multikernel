@@ -30,7 +30,8 @@
 	#endif
 
 	#include <nanvix/servers/message.h>
-	#include <nanvix/limits.h>
+	#include <nanvix/limits/name.h>
+	#include <nanvix/pm.h>
 	#include <nanvix/ulib.h>
 	#include <posix/stdint.h>
 	#include <posix/errno.h>

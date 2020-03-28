@@ -31,7 +31,6 @@
 #include <nanvix/runtime/runtime.h>
 #include <nanvix/runtime/utils.h>
 #include <nanvix/sys/mailbox.h>
-#include <nanvix/sys/noc.h>
 #include <nanvix/limits.h>
 #include <nanvix/ulib.h>
 #include <posix/errno.h>
@@ -62,7 +61,7 @@ static int inbox = -1;
 static struct {
 	int nodenum;                     /**< NoC node.     */
 	char name[NANVIX_PROC_NAME_MAX]; /**< Process name. */
-} names[NANVIX_NODES_NUM];
+} names[NANVIX_PROC_MAX];
 
 /**
  * @brief Server stats.
@@ -84,7 +83,7 @@ static struct
 static void do_name_init(void)
 {
 	/* Initialize lookup table. */
-	for (int i = 0; i < NANVIX_NODES_NUM; i++)
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
 		names[i].nodenum = -1;
 
 	names[0].nodenum = knode_get_num();
@@ -132,7 +131,7 @@ static int do_name_lookup(
 		return (ret);
 
 	/* Search for portal name. */
-	for (int i = 0; i < NANVIX_NODES_NUM; i++)
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
 	{
 		/* Found. */
 		if (!ustrcmp(name, names[i].name))
@@ -171,7 +170,7 @@ static int do_name_link(const struct name_message *request)
 	name_debug("link nodenum=%d name=%s", nodenum, name);
 
 	/* Invalid node number. */
-	if ((nodenum < 0 ) || (nodenum >= NANVIX_NODES_NUM))
+	if (!proc_is_valid(nodenum))
 		return (-EINVAL);
 
 	/* Invalid name. */
@@ -179,18 +178,18 @@ static int do_name_link(const struct name_message *request)
 		return (ret);
 
 	/* No entry available. */
-	if (nr_registration >= NANVIX_NODES_NUM)
+	if (nr_registration >= NANVIX_PROC_MAX)
 		return (-EINVAL);
 
 	/* Check that the name is not already used */
-	for (int i = 0; i < NANVIX_NODES_NUM; i++)
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
 	{
 		if (ustrcmp(names[i].name, name) == 0)
 			return (-EINVAL);
 	}
 
 	/* Find index. */
-	for (int i = 0; i < NANVIX_NODES_NUM; i++)
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
 	{
 		/* Found. */
 		if (names[i].nodenum == -1)
@@ -238,7 +237,7 @@ static int do_name_unlink(const struct name_message *request)
 		return (ret);
 
 	/* Search for name */
-	for (int i = 0; i < NANVIX_NODES_NUM; i++)
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
 	{
 		/* Skip invalid entries. */
 		if (names[i].nodenum == -1)

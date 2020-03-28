@@ -29,6 +29,7 @@
 #include <nanvix/sys/portal.h>
 #include <nanvix/sys/noc.h>
 #include <nanvix/limits.h>
+#include <nanvix/pm.h>
 #include <nanvix/ulib.h>
 #include <posix/errno.h>
 
@@ -79,12 +80,12 @@ static inline int nanvix_portal_is_valid(int id)
 /**
  * @brief input portals.
  */
-static int inportals[NANVIX_NODES_NUM];
+static int inportals[NANVIX_PROC_MAX];
 
 /**
  * @brief Is the named portals facility initialized?
  */
-static int initialized[NANVIX_NODES_NUM] = { 0 , };
+static int initialized[NANVIX_PROC_MAX] = { 0 , };
 
 /**
  * @todo TODO: Provide a detailed description for this function.

@@ -29,7 +29,6 @@
 #include <nanvix/runtime/stdikc.h>
 #include <nanvix/sys/mailbox.h>
 #include <nanvix/sys/mutex.h>
-#include <nanvix/sys/noc.h>
 #include <nanvix/ulib.h>
 #include <posix/errno.h>
 #include <posix/stdbool.h>
@@ -143,7 +142,7 @@ int name_link(int nodenum, const char *name)
 	struct name_message msg;
 
 	/* Invalid NoC node ID. */
-	if (nodenum < 0)
+	if (!proc_is_valid(nodenum))
 		return (-EINVAL);
 
 	/* Invalid name. */

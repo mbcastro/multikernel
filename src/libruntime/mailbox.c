@@ -30,6 +30,7 @@
 #include <nanvix/sys/mailbox.h>
 #include <nanvix/sys/noc.h>
 #include <nanvix/limits.h>
+#include <nanvix/pm.h>
 #include <nanvix/ulib.h>
 #include <posix/errno.h>
 
@@ -44,7 +45,7 @@
 /**
  * @brief Input named mailbox.
  */
-static int named_inboxes[NANVIX_NODES_NUM];
+static int named_inboxes[NANVIX_PROC_MAX];
 
 /**
  * @brief Table of mailboxes.
@@ -71,13 +72,13 @@ static const struct resource_pool pool_mailboxes = {
 /**
  * @brief Input HAL mailbox.
  */
-static int inboxes[NANVIX_NODES_NUM];
+static int inboxes[NANVIX_PROC_MAX];
 
 /**
  *
  * @brief Is the inbox initialized ?
  */
-static int initialized[NANVIX_NODES_NUM] = { 0, };
+static int initialized[NANVIX_PROC_MAX] = { 0, };
 
 /*============================================================================*
  * mailboxes_are_initialized()                                                *
