@@ -49,10 +49,6 @@ static int server;
  */
 static bool initialized = false;
 
-/**
-* @brief Name linked to the process.
-*/
-static char process_name[NANVIX_NODES_NUM][NANVIX_PROC_NAME_MAX];
 
 /**
  * @brief Mailbox module lock.
@@ -194,10 +190,7 @@ int name_link(int nodenum, const char *name)
 	nanvix_mutex_unlock(&lock);
 
 	if (msg.header.opcode == NAME_SUCCESS)
-	{
-		ustrcpy(process_name[core_get_id()], name);
 		return (0);
-	}
 
 	return (msg.errcode);
 
