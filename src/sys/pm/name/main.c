@@ -117,6 +117,7 @@ static int do_name_lookup(
 	struct name_message *response
 )
 {
+	int ret;
 	const char *name;
 
 	response->nodenum = -1;
@@ -126,9 +127,9 @@ static int do_name_lookup(
 	stats.nlookups++;
 	name_debug("lookup name=%s", name);
 
-	/* Invalid name */
-	if ((name == NULL) || (!ustrcmp(name, "")))
-		return (-EINVAL);
+	/* Invalid name. */
+	if ((ret = name_is_valid(name)) < 0)
+		return (ret);
 
 	/* Search for portal name. */
 	for (int i = 0; i < NANVIX_NODES_NUM; i++)
@@ -158,6 +159,7 @@ static int do_name_lookup(
  */
 static int do_name_link(const struct name_message *request)
 {
+	int ret;
 	int index;
 	int nodenum;
 	const char *name;
@@ -172,9 +174,9 @@ static int do_name_link(const struct name_message *request)
 	if ((nodenum < 0 ) || (nodenum >= NANVIX_NODES_NUM))
 		return (-EINVAL);
 
-	/* Invalid name */
-	if ((name == NULL)|| (!ustrcmp(name, "")))
-		return (-EINVAL);
+	/* Invalid name. */
+	if ((ret = name_is_valid(name)) < 0)
+		return (ret);
 
 	/* No entry available. */
 	if (nr_registration >= NANVIX_NODES_NUM)
@@ -223,6 +225,7 @@ found:
  */
 static int do_name_unlink(const struct name_message *request)
 {
+	int ret;
 	const char *name;
 
 	name = request->name;
@@ -230,9 +233,9 @@ static int do_name_unlink(const struct name_message *request)
 	stats.nlinks++;
 	name_debug("unlink name=%s", name);
 
-	/* Invalid name */
-	if ((name == NULL)|| (!ustrcmp(name, "")))
-		return (-EINVAL);
+	/* Invalid name. */
+	if ((ret = name_is_valid(name)) < 0)
+		return (ret);
 
 	/* Search for name */
 	for (int i = 0; i < NANVIX_NODES_NUM; i++)

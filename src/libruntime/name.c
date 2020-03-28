@@ -102,15 +102,12 @@ int __name_cleanup(void)
  */
 int name_lookup(const char *name)
 {
+	int ret;
 	struct name_message msg;
 
 	/* Invalid name. */
-	if (name == NULL)
-		return (-EINVAL);
-
-	/* Bad name. */
-	if ((ustrlen(name) >= (NANVIX_PROC_NAME_MAX - 1)) || (!ustrcmp(name, "")))
-		return (-EINVAL);
+	if ((ret = name_is_valid(name)) < 0)
+		return (ret);
 
 	/* Initilize name client. */
 	if (!initialized)
@@ -142,6 +139,7 @@ error1:
  */
 int name_link(int nodenum, const char *name)
 {
+	int ret;
 	struct name_message msg;
 
 	/* Invalid NoC node ID. */
@@ -149,12 +147,8 @@ int name_link(int nodenum, const char *name)
 		return (-EINVAL);
 
 	/* Invalid name. */
-	if (name == NULL)
-		return (-EINVAL);
-
-	/* Bad name. */
-	if ((ustrlen(name) >= (NANVIX_PROC_NAME_MAX - 1)) || (!ustrcmp(name, "")))
-		return (-EINVAL);
+	if ((ret = name_is_valid(name)) < 0)
+		return (ret);
 
 	/* Initilize name client. */
 	if (!initialized)
@@ -191,15 +185,12 @@ error1:
  */
 int name_unlink(const char *name)
 {
+	int ret;
 	struct name_message msg;
 
 	/* Invalid name. */
-	if (name == NULL)
-		return (-EINVAL);
-
-	/* Bad name. */
-	if ((ustrlen(name) >= (NANVIX_PROC_NAME_MAX - 1)) || (!ustrcmp(name, "")))
-		return (-EINVAL);
+	if ((ret = name_is_valid(name)) < 0)
+		return (ret);
 
 	/* Initilize name client. */
 	if (!initialized)
