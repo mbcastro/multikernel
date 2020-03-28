@@ -71,14 +71,12 @@
 	extern size_t nanvix_rmem_write(rpage_t blknum, const void *buf);
 
 	/**
-	 * @brief Shutdowns a remote memory server.
-	 *
-	 * @param serverid ID of the target server.
+	 * @brief Shutdowns aall remote memory servers.
 	 *
 	 * @returns Upon successful completion 0 is returned. Upon
 	 * failure, a negative error code is returned instead.
 	 */
-	extern int nanvix_rmem_shutdown(int serverid);
+	extern int nanvix_rmem_shutdown(void);
 
 #endif /* __NEED_MM_STUB */
 

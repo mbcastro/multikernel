@@ -58,8 +58,15 @@ static struct
  */
 rpage_t nanvix_rmem_alloc(void)
 {
+	int serverid;
 	static unsigned nallocs = 0;
 	struct rmem_message msg;
+
+	serverid = nallocs % RMEM_SERVERS_NUM;
+
+	/* Client not initialized.  */
+	if (!server[serverid].initialized)
+		return (-EINVAL);
 
 	/* Build operation header. */
 	message_header_build(&msg.header, RMEM_ALLOC);
@@ -67,7 +74,7 @@ rpage_t nanvix_rmem_alloc(void)
 	/* Send operation header. */
 	uassert(
 		nanvix_mailbox_write(
-			server[nallocs % RMEM_SERVERS_NUM].outbox,
+			server[serverid].outbox,
 			&msg, sizeof(struct rmem_message)
 		) == 0
 	);
@@ -104,11 +111,15 @@ int nanvix_rmem_free(rpage_t blknum)
 	if ((blknum == RMEM_NULL) || (RMEM_BLOCK_NUM(blknum) >= RMEM_NUM_BLOCKS))
 		return (-EINVAL);
 
+	serverid = RMEM_BLOCK_SERVER(blknum);
+
+	/* Client not initialized.  */
+	if (!server[serverid].initialized)
+		return (-EINVAL);
+
 	/* Build operation header. */
 	message_header_build(&msg.header, RMEM_MEMFREE);
 	msg.blknum = blknum;
-
-	serverid = RMEM_BLOCK_SERVER(blknum);
 
 	/* Send operation header. */
 	uassert(
@@ -151,12 +162,16 @@ size_t nanvix_rmem_read(rpage_t blknum, void *buf)
 	if (buf == NULL)
 		return (0);
 
+	serverid = RMEM_BLOCK_SERVER(blknum);
+
+	/* Client not initialized.  */
+	if (!server[serverid].initialized)
+		return (0);
+
 	/* Build operation header. */
 	message_header_build(&msg.header, RMEM_READ);
 
 	msg.blknum = blknum;
-
-	serverid = RMEM_BLOCK_SERVER(blknum);
 
 	/* Send operation header. */
 	uassert(
@@ -227,6 +242,10 @@ size_t nanvix_rmem_write(rpage_t blknum, const void *buf)
 
 	serverid = RMEM_BLOCK_SERVER(blknum);
 
+	/* Client not initialized.  */
+	if (!server[serverid].initialized)
+		return (0);
+
 	/* Build operation header. */
 	message_header_build2(
 		&msg.header,
@@ -271,24 +290,23 @@ size_t nanvix_rmem_write(rpage_t blknum, const void *buf)
 /**
  * @todo TODO: Provide a detailed description for this function.
  */
-int nanvix_rmem_shutdown(int servernum)
+int nanvix_rmem_shutdown(void)
 {
 	struct rmem_message msg;
-
-	/* Invalid server ID. */
-	if (!WITHIN(servernum, 0, RMEM_SERVERS_NUM))
-		return (-EINVAL);
 
 	/* Build operation header. */
 	message_header_build(&msg.header, RMEM_EXIT);
 
-	/* Send operation header. */
-	uassert(
-		nanvix_mailbox_write(
-			server[servernum].outbox,
-			&msg, sizeof(struct rmem_message)
-		) == 0
-	);
+	/* Broadcast shutdown signal. */
+	for (int i = 0; i < RMEM_SERVERS_NUM; i++)
+	{
+		uassert(
+			nanvix_mailbox_write(
+				server[i].outbox,
+				&msg, sizeof(struct rmem_message)
+			) == 0
+		);
+	}
 
 	return (0);
 }
