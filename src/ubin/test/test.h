@@ -67,6 +67,11 @@
 	extern void test_posix(void);
 
 	/**
+	 * @brief Launches regression tests on POSIX SHM regions.
+	 */
+	extern void test_posix_shm(void);
+
+	/**
 	 * @brief Horizontal line for tests.
 	 */
 	extern const char *HLINE;
