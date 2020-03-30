@@ -22,11 +22,13 @@
  * SOFTWARE.
  */
 
-#ifndef NANVIX_LIMITS_H_
-#define NANVIX_LIMITS_H_
+#include <nanvix/runtime/shm.h>
+#include <posix/sys/types.h>
 
-	#include <nanvix/limits/name.h>
-	#include <nanvix/limits/pm.h>
-	#include <nanvix/limits/shm.h>
-
-#endif /* NANVIX_LIMITS_H_ */
+/**
+ * @todo TODO: provide a detailed description for this function.
+ */
+int nanvix_ftruncate(int fd, off_t length)
+{
+	return (__nanvix_mtruncate(fd, length));
+}

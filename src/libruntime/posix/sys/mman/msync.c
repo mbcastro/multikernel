@@ -22,11 +22,29 @@
  * SOFTWARE.
  */
 
-#ifndef NANVIX_LIMITS_H_
-#define NANVIX_LIMITS_H_
+#include <nanvix/runtime/shm.h>
+#include <posix/sys/mman.h>
+#include <posix/sys/types.h>
+#include <posix/errno.h>
 
-	#include <nanvix/limits/name.h>
-	#include <nanvix/limits/pm.h>
-	#include <nanvix/limits/shm.h>
+/**
+ * @todo TODO: provide a detailed description for this function.
+ */
+int nanvix_msync(void *addr, size_t len, int flags)
+{
+	/* Invalid flags. */
+	if ((flags & NANVIX_MS_ASYNC) && (flags & NANVIX_MS_SYNC))
+	{
+		errno = EINVAL;
+		return (-1);
+	}
 
-#endif /* NANVIX_LIMITS_H_ */
+	return (
+		__nanvix_msync(
+			addr,
+			len,
+			flags & NANVIX_MS_SYNC,
+			flags & NANVIX_MS_INVALIDATE
+		)
+	);
+}

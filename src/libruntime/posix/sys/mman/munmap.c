@@ -22,11 +22,21 @@
  * SOFTWARE.
  */
 
-#ifndef NANVIX_LIMITS_H_
-#define NANVIX_LIMITS_H_
+#include <nanvix/runtime/shm.h>
+#include <posix/sys/types.h>
+#include <posix/errno.h>
 
-	#include <nanvix/limits/name.h>
-	#include <nanvix/limits/pm.h>
-	#include <nanvix/limits/shm.h>
+/**
+ * @todo TODO: provide a detailed description for this function.
+ */
+int nanvix_munmap(void *addr, size_t len)
+{
+	/* Invalid length. */
+	if (len == 0)
+	{
+		errno = EINVAL;
+		return (-1);
+	}
 
-#endif /* NANVIX_LIMITS_H_ */
+	return (__nanvix_munmap(addr, len));
+}

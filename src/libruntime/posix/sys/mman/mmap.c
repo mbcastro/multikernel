@@ -22,28 +22,68 @@
  * SOFTWARE.
  */
 
-#define __NEED_MM_STUB
-
-#include <nanvix/servers/spawn.h>
-#include <nanvix/runtime/name.h>
-#include <nanvix/runtime/runtime.h>
-#include <nanvix/runtime/rmem.h>
 #include <nanvix/runtime/shm.h>
-#include <nanvix/ulib.h>
+#include <posix/sys/mman.h>
+#include <posix/sys/types.h>
+#include <posix/sys/stat.h>
+#include <posix/stddef.h>
+#include <posix/errno.h>
 
 /**
- * The nanvix_shutdown() function shuts down sends a shutdown signal
- * to all system services, asking them to terminate.
+ * @todo TODO: provide a detailed description for this function.
  */
-int nanvix_shutdown(void)
+void *nanvix_mmap(void *addr, size_t len, int prot, int flags, int fd, off_t off)
 {
-	__runtime_setup(SPAWN_RING_LAST);
+	void *map;
 
-	uassert(nanvix_shm_shutdown() == 0);
+	((void)addr);
 
-	/* Broadcast shutdown signal. */
-	uassert(nanvix_rmem_shutdown() == 0);
-	uassert(name_shutdown() == 0);
+	/* Invalid length. */
+	if (len == 0)
+	{
+		errno = EINVAL;
+		return (NANVIX_MAP_FAILED);
+	}
 
-	return (0);
+	/* Protection not supported.*/
+	if ((prot & NANVIX_PROT_EXEC) || (prot & NANVIX_PROT_NONE))
+	{
+		errno = ENOTSUP;
+		return (NANVIX_MAP_FAILED);
+	}
+
+	/* Missing protection. */
+	if (!((prot & NANVIX_PROT_WRITE) || (prot & NANVIX_PROT_READ)))
+	{
+		errno = EINVAL;
+		return (NANVIX_MAP_FAILED);
+	}
+
+	/* Fixed mapping not supported. */
+	if (flags == NANVIX_MAP_FIXED)
+	{
+		errno = ENOTSUP;
+		return (NANVIX_MAP_FAILED);
+	}
+
+	/* Invalid mapping. */
+	if ((flags != NANVIX_MAP_SHARED) && (flags != NANVIX_MAP_PRIVATE))
+	{
+		errno = EINVAL;
+		return (NANVIX_MAP_FAILED);
+	}
+
+	map = __nanvix_mmap(
+		len,
+		prot & NANVIX_PROT_WRITE,
+		flags == NANVIX_MAP_SHARED,
+		fd,
+		off
+	);
+
+	/* Map failed. */
+	if (map == NULL)
+		return (NANVIX_MAP_FAILED);
+
+	return (map);
 }

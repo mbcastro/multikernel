@@ -22,11 +22,23 @@
  * SOFTWARE.
  */
 
-#ifndef NANVIX_LIMITS_H_
-#define NANVIX_LIMITS_H_
+#include <nanvix/runtime/shm.h>
 
-	#include <nanvix/limits/name.h>
-	#include <nanvix/limits/pm.h>
-	#include <nanvix/limits/shm.h>
-
-#endif /* NANVIX_LIMITS_H_ */
+/**
+ * The shm_unlink() removes the name of the shared memory region named
+ * by the string pointed to by @p name. 
+ *
+ * If one or more references to the shared memory region exist when the
+ * region is unlinked, the @p name is removed before shm_unlink()
+ * returns, but the removal of the memory region contents are postponed
+ * until all open and map references to the shared memory region have
+ * been removed.
+ *
+ * Even if the region continues to exist after the last shm_unlink(),
+ * reuse of the name shall subsequently cause shm_open() to behave as if
+ * no shared memory region of this name exists.
+ */
+int nanvix_shm_unlink(const char *name)
+{
+	return (__nanvix_shm_unlink(name));
+}

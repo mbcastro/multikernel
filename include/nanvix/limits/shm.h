@@ -22,11 +22,17 @@
  * SOFTWARE.
  */
 
-#ifndef NANVIX_LIMITS_H_
-#define NANVIX_LIMITS_H_
+#ifndef NANVIX_LIMITS_SHM_H_
+#define NANVIX_LIMITS_SHM_H_
 
-	#include <nanvix/limits/name.h>
-	#include <nanvix/limits/pm.h>
-	#include <nanvix/limits/shm.h>
+	/**
+	 * @name Limits on Shared Memory Regions
+	 */
+	/**@{*/
+	#define SHM_OPEN_MAX             8  /**< Maximum number of opened shared memory regions. */
+	#define SHM_MAX                128  /**< Maximum number of shared memory regions.        */
+	#define SHM_NAME_MAX            64  /**< Maximum length for a shared memory region name. */
+	#define SHM_MAP_SIZE_MAX  (64*1024) /**< Maximum mapping size (in bytes).                */
+	/**@}*/
 
-#endif /* NANVIX_LIMITS_H_ */
+#endif /* NANVIX_LIMITS_SHM_H_ */

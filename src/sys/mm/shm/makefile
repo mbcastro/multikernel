@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# Copyright(c) 2018 Pedro Henrique Penna <pedrohenriquepenna@gmail.com>
+# Copyright(c) 2011-2020 The Maintainers of Nanvix
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -22,37 +22,11 @@
 # SOFTWARE.
 #
 
-#===============================================================================
-# Toolchain Configuration
-#===============================================================================
-
-# Compiler Options
-ifneq ($(LIBLWIP),)
-CFLAGS += -I $(INCDIR)/posix
-endif
-
-# Modules
-MODULES := $(LIBDIR)/nanvix-hello.$(OBJ_SUFFIX).a \
-           $(LIBDIR)/nanvix-rmem.$(OBJ_SUFFIX).a  \
-           $(LIBDIR)/nanvix-shm.$(OBJ_SUFFIX).a   \
-           $(LIBDIR)/nanvix-name.$(OBJ_SUFFIX).a
-
-# Libraries
-LIBS := -Wl,--whole-archive
-LIBS += $(LIBDIR)/$(LIBHAL)
-LIBS += $(LIBDIR)/$(LIBKERNEL)
-LIBS += -Wl,--no-whole-archive
-LIBS += $(MODULES)
-LIBS += $(LIBDIR)/$(LIBRUNTIME)
-LIBS += $(LIBDIR)/$(LIBC)
-LIBS += $(LIBDIR)/$(LIBNANVIX)
-ifneq ($(LIBLWIP),)
-LIBS += $(LIBDIR)/$(LIBLWIP)
-endif
-LIBS += $(LIBDIR)/$(BARELIB) $(THEIR_LIBS)
+# Module Name
+MODULE = nanvix-shm.$(OBJ_SUFFIX).a
 
 #===============================================================================
-# Binaries Sources and Objects
+# Sources and Objects
 #===============================================================================
 
 # C Source Files
@@ -63,29 +37,13 @@ OBJ = $(SRC:.c=.$(OBJ_SUFFIX).o)
 
 #===============================================================================
 
-ifeq ($(TARGET),unix64)
-LINKER_SCRIPT=
-else
-LINKER_SCRIPT = -L $(LINKERDIR)/ -T link.ld
-endif
-
 # Builds All Object Files
-all: spawn0 spawn1
-
-spawn0: main.$(OBJ_SUFFIX).o barrier.$(OBJ_SUFFIX).o spawn0.$(OBJ_SUFFIX).o
+all: $(OBJ)
 ifeq ($(VERBOSE), no)
-	@echo [CC] nanvix-$@.$(OBJ_SUFFIX)
-	@$(CC) $(LDFLAGS) $(LINKER_SCRIPT) -o $(BINDIR)/nanvix-$@.$(OBJ_SUFFIX) $^ $(LIBS)
+	@echo [AR] $(MODULE)
+	@$(AR) $(ARFLAGS) $(LIBDIR)/$(MODULE) $(OBJ)
 else
-	$(CC) $(LDFLAGS) $(LINKER_SCRIPT) -o $(BINDIR)/nanvix-$@.$(OBJ_SUFFIX) $^ $(LIBS)
-endif
-
-spawn1: main.$(OBJ_SUFFIX).o barrier.$(OBJ_SUFFIX).o spawn1.$(OBJ_SUFFIX).o
-ifeq ($(VERBOSE), no)
-	@echo [CC] nanvix-$@.$(OBJ_SUFFIX)
-	@$(CC) $(LDFLAGS) $(LINKER_SCRIPT) -o $(BINDIR)/nanvix-$@.$(OBJ_SUFFIX) $^ $(LIBS)
-else
-	$(CC) $(LDFLAGS) $(LINKER_SCRIPT) -o $(BINDIR)/nanvix-$@.$(OBJ_SUFFIX) $^ $(LIBS)
+	$(AR) $(ARFLAGS) $(LIBDIR)/$(MODULE) $(OBJ)
 endif
 
 # Cleans All Object Files
@@ -100,10 +58,10 @@ endif
 # Cleans Everything
 distclean: clean
 ifeq ($(VERBOSE), no)
-	@echo [CLEAN] nanvix-spawn?.$(OBJ_SUFFIX)
-	@rm -rf $(BINDIR)/nanvix-spawn?.$(OBJ_SUFFIX)
+	@echo [CLEAN] $(MODULE)
+	@rm -rf $(LIBDIR)/$(MODULE)
 else
-	rm -rf $(BINDIR)/nanvix-spawn?.$(OBJ_SUFFIX)
+	rm -rf $(LIBDIR)/$(MODULE)
 endif
 
 # Builds a C source file.
@@ -114,3 +72,4 @@ ifeq ($(VERBOSE), no)
 else
 	$(CC) $(CFLAGS) $< -c -o $@
 endif
+

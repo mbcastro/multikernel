@@ -23,9 +23,11 @@
  */
 
 #define __NEED_MM_MANAGER
+#define __SHM_SERVICE
 #define SPAWN_SERVER
 
 #include <nanvix/runtime/rmem.h>
+#include <nanvix/runtime/shm.h>
 #include <nanvix/runtime/runtime.h>
 #include <nanvix/runtime/stdikc.h>
 #include <nanvix/servers/spawn.h>
@@ -147,6 +149,14 @@ int __runtime_setup(int ring)
 		uassert(__nanvix_portal_setup() == 0);
 	}
 
+	/* Initialize Ring 3. */
+	if ((current_ring[tid] < SPAWN_RING_3) && (ring >= SPAWN_RING_3))
+	{
+		uprintf("[nanvix][thread %d] initalizing ring 3", tid);
+		delay(CLUSTER_FREQ);
+		uassert(__nanvix_shm_setup() == 0);
+	}
+
 	/* Initialize Ring 4. */
 	if ((current_ring[tid] < SPAWN_RING_4) && (ring >= SPAWN_RING_4))
 	{
@@ -176,6 +186,13 @@ int __runtime_cleanup(void)
 		uprintf("[nanvix][thread %d] shutting down ring 4", tid);
 		uassert(__nanvix_rmem_cleanup() == 0);
 		uassert(kthread_join(exception_handler_tid, NULL) == 0);
+	}
+
+	/* Initialize Ring 3. */
+	if (current_ring[tid] >= SPAWN_RING_3)
+	{
+		uprintf("[nanvix][thread %d] shutting down ring 3", tid);
+		uassert(__nanvix_shm_cleanup() == 0);
 	}
 
 	/* Initialize Ring 2. */

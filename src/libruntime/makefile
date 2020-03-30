@@ -27,8 +27,12 @@
 #===============================================================================
 
 # C Source Files
-SRC = $(wildcard *.c) \
+SRC = $(wildcard *.c)                        \
       $(wildcard posix/libc/stdlib/malloc.c) \
+      $(wildcard posix/sys/mman/*.c)         \
+      $(wildcard posix/unistd/*.c)           \
+      $(wildcard mm/shm/*.c)                 \
+      $(wildcard fs/*.c)                     \
       $(wildcard mm/*.c)
 
 #===============================================================================
