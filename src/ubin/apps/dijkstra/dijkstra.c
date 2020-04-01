@@ -29,7 +29,8 @@
 #include <posix/stddef.h>
 
 #define NUM_NODES 100
-#define NONE 0
+#define NONE 9999
+#define NDEBUG
 
 /*
  * Dijkstra routine from MiBench Benchmark.
@@ -49,7 +50,6 @@ struct node
 /* Item struct definition. */
 struct item
 {
-	struct item *next;
 	int node;
 	int dist;
 	int prev;
@@ -59,12 +59,17 @@ struct item
 struct item *head = NULL;
 
 /* Print path for comparison purposes. */
-void print_path (struct node *path_nodes, int node)
+void print_path (struct node *path_nodes, int start_node, int end_node)
 {
-	if (path_nodes[node].prev != NONE)
-		print_path(path_nodes, path_nodes[node].prev);
+	int actual_node = end_node, node = NONE;
+	/* uprintf (" %d", actual_node); */
+	while (actual_node != start_node)
+	{
+		node = path_nodes[actual_node].prev;
+		uprintf (" %d", node);
+		actual_node = node;
+	}
 
-	uprintf (" %d", node);
 }
 
 /* Global queue size. */
@@ -72,6 +77,10 @@ int queue_count = 0;
 
 /* Node path. */
 struct node path_nodes[NUM_NODES];
+/* Queue. */
+struct item *queue;
+int queue_rear = NUM_NODES*NUM_NODES-1, queue_front = 0;
+int queue_size = 0;
 
 /*
  * @brief Enqueues a node with it's distance and previous element.
@@ -83,25 +92,13 @@ struct node path_nodes[NUM_NODES];
  */
 int enqueue (int node, int dist, int prev)
 {
-	struct item *new = (struct item*) nanvix_malloc(sizeof(struct item));
-	struct item *last = head;
-
-	if (!new)
-		return (-1);
-
-	new->node = node;
-	new->dist = dist;
-	new->prev = prev;
-	new->next = NULL;
-
-	if (!last)
-		head = new;
-	else
-	{
-		while (last->next) last = last->next;
-		last->next = new;
-	}
-	queue_count++;
+	if (queue_size == NUM_NODES*NUM_NODES)
+		return -1;
+	queue_rear = (queue_rear+1)%(NUM_NODES*NUM_NODES);
+	queue[queue_rear].node = node;
+	queue[queue_rear].dist = dist;
+	queue[queue_rear].prev = prev;
+	queue_size++;
 	return 0;
 }
 
@@ -114,19 +111,15 @@ int enqueue (int node, int dist, int prev)
  */
 int dequeue (int *dequeue_node, int *dequeue_dist, int *dequeue_prev)
 {
-	struct item *kill = head;
-
-	if (head)
-	{
-		*dequeue_node = head->node;
-		*dequeue_dist = head->dist;
-		*dequeue_prev = head->prev;
-		head = head->next;
-		nanvix_free(kill);
-		queue_count--;
-		return 0;
-	}
-	return (-1);
+	if (queue_size == 0)
+		return -1;
+	struct item it = queue[queue_front];
+	*dequeue_node = it.node;
+	*dequeue_dist = it.dist;
+	*dequeue_prev = it.prev;
+	queue_front = (queue_front+1)%(NUM_NODES*NUM_NODES);
+	queue_size--;
+	return 0;
 }
 
 /*
@@ -137,12 +130,13 @@ int dequeue (int *dequeue_node, int *dequeue_dist, int *dequeue_prev)
  * will be analysed to see if its path will be the lowest possible. The analysis
  * will be done for each node adjacent to queue nodes.
  */
-int nanvix_dijkstra(int* adj_matrix, int node_start, int node_end)
+int nanvix_dijkstra(int adj_matrix[NUM_NODES][NUM_NODES], int node_start, int node_end)
 {
 	/* Item infromation returned from dequeue. */
 	int dequeue_prev, dequeue_node, dequeue_cost, dequeue_dist;
 	int err;
 
+	queue =  nanvix_malloc(NUM_NODES*NUM_NODES*sizeof(struct item));
 	/* Initial path. */
 	for (int i = 0; i < NUM_NODES; i++)
 	{
@@ -165,12 +159,12 @@ int nanvix_dijkstra(int* adj_matrix, int node_start, int node_end)
 
 		if ((err = enqueue (node_start, 0, NONE)) == -1) return -1;
 
-		while (queue_count > 0)
+		while (queue_size > 0)
 		{
 			if ((err = dequeue (&dequeue_node, &dequeue_dist, &dequeue_prev)) == -1) return -1;
 
 			for (int i = 0; i < NUM_NODES; i++)
-				if ((dequeue_cost = adj_matrix[dequeue_node*NUM_NODES+i]) != NONE)
+				if ((dequeue_cost = adj_matrix[dequeue_node][i]) != NONE)
 					if ((NONE == path_nodes[i].dist) || (path_nodes[i].dist > (dequeue_cost + dequeue_dist)))
 					{
 						path_nodes[i].dist = dequeue_dist + dequeue_cost;
@@ -182,9 +176,10 @@ int nanvix_dijkstra(int* adj_matrix, int node_start, int node_end)
 #ifdef NDEBUG
 		uprintf("Shortest path is %d in cost. ", path_nodes[node_end].dist);
 		uprintf("Path is: ");
-		print_path(path_nodes, node_end);
+		print_path(path_nodes, node_start, node_end);
 		uprintf("\n");
 #endif
 	}
+	nanvix_free(queue);
 	return 0;
 }
