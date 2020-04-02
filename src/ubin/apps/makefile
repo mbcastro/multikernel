@@ -23,13 +23,13 @@
 #
 
 # Builds everything.
-all: all-qsort all-sha1 all-dijkstra
+all: all-qsort all-sha1 all-dijkstra all-dummy
 
 # Cleans up build objects.
-clean: clean-qsort clean-sha1 clean-dijkstra
+clean: clean-qsort clean-sha1 clean-dijkstra clean-dummy
 
 # Cleans up everything.
-distclean: distclean-qsort distclean-sha1 distclean-dijkstra
+distclean: distclean-qsort distclean-sha1 distclean-dijkstra distclean-dummy
 
 #===============================================================================
 # Quick Sort Benchmarks
@@ -78,3 +78,19 @@ clean-dijkstra:
 # Cleans up everything
 distclean-dijkstra:
 	$(MAKE) -C dijkstra distclean
+
+#===============================================================================
+# DUMMY
+#===============================================================================
+
+# Builds dummy.
+all-dummy:
+	$(MAKE) -C dummy all
+
+# Cleans up build objects.
+clean-dummy:
+	$(MAKE) -C dummy clean
+
+# Cleans up everything
+distclean-dummy:
+	$(MAKE) -C dummy distclean
