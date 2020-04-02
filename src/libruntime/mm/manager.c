@@ -197,7 +197,6 @@ void *nanvix_vmem_alloc(size_t n)
 		rmem_table[base + i] = pgnum;
 	}
 
-
 	return ((void *) RADDR(base));
 }
 
@@ -393,6 +392,7 @@ int nanvix_rfault(vaddr_t vaddr)
 		return (-EFAULT);
 
 	/* Get cached remote page. */
+	uprintf("Table base: %d\n", rmem_table[base]);
 	if ((rptr = nanvix_rcache_get(rmem_table[base])) == NULL)
 		return (-EFAULT);
 
