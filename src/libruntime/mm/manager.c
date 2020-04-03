@@ -407,8 +407,7 @@ int nanvix_rfault(vaddr_t vaddr)
 		}
 
 		/* Remember this index. */
-		if (maps[i].raddr == rptr)
-			idx = 0;
+		idx = i;
 	}
 
 done:
