@@ -46,7 +46,7 @@
 /**
  * @brief Number of blocks to allocate.
  */
-#define NUM_BLOCKS 32
+#define NUM_BLOCKS 256
 
 /**
  * @brief Dummy buffer 1.
@@ -54,9 +54,14 @@
 static char buffer1[RMEM_BLOCK_SIZE];
 
 /**
- * @brief Receive buffer.
+ * @brief Dummy buffer 2.
  */
 static char buffer2[RMEM_BLOCK_SIZE];
+
+/**
+ * @brief Dummy buffer 3.
+ */
+static unsigned buffer3[RMEM_BLOCK_SIZE/sizeof(unsigned)];
 
 /*============================================================================*
  * Stress Test: Alloc/Free Sequential                                         *
@@ -308,6 +313,100 @@ static void test_rmem_stub_read_write_all(void)
 #endif
 
 /*============================================================================*
+ * Stress Test: Consistency                                                   *
+ *============================================================================*/
+
+/**
+ * @brief Stress Test: Consistency
+ */
+static void test_rmem_stub_consistency_raw(void)
+{
+	rpage_t numbers;
+
+	for (unsigned i = 1; i <= NUM_BLOCKS; i++)
+	{
+		TEST_ASSERT((numbers = nanvix_rmem_alloc()) != RMEM_NULL);
+
+		umemset(buffer1, i + 1, RMEM_BLOCK_SIZE);
+		umemset(buffer2, i + 1, RMEM_BLOCK_SIZE);
+
+		TEST_ASSERT(nanvix_rmem_write(numbers, buffer1) == RMEM_BLOCK_SIZE);
+
+#if 0
+		umemset(buffer1, 0, RMEM_BLOCK_SIZE);
+#endif
+
+		TEST_ASSERT(nanvix_rmem_read(numbers, buffer1) == RMEM_BLOCK_SIZE);
+
+		TEST_ASSERT(umemcmp(buffer1, buffer2, RMEM_BLOCK_SIZE) == 0);
+
+		TEST_ASSERT(nanvix_rmem_free(numbers) == 0);
+	}
+}
+
+/*============================================================================*
+ * Stress Test: Consistency                                                   *
+ *============================================================================*/
+
+/**
+ * @brief Stress Test: Consistency
+ */
+static void test_rmem_stub_consistency(void)
+{
+	rpage_t numbers;
+
+	for (unsigned i = 1; i <= NUM_BLOCKS; i++)
+	{
+		TEST_ASSERT((numbers = nanvix_rmem_alloc()) != RMEM_NULL);
+
+		for (unsigned j = 0; j < RMEM_BLOCK_SIZE/sizeof(unsigned); j++)
+			buffer3[j] = (i - 1)*RMEM_NUM_BLOCKS + j;
+
+		TEST_ASSERT(nanvix_rmem_write(numbers, buffer3) == RMEM_BLOCK_SIZE);
+		TEST_ASSERT(nanvix_rmem_read(numbers, buffer3) == RMEM_BLOCK_SIZE);
+
+		for (unsigned j = 0; j < RMEM_BLOCK_SIZE/sizeof(unsigned); j++)
+			TEST_ASSERT(buffer3[j] == (i - 1)*RMEM_NUM_BLOCKS + j);
+
+		TEST_ASSERT(nanvix_rmem_free(numbers) == 0);
+	}
+}
+
+/*============================================================================*
+ * Stress Test: Consistency 2-Step                                            *
+ *============================================================================*/
+
+/**
+ * @brief Stress Test: Consistency 2-Step
+ */
+static void test_rmem_stub_consistency2(void)
+{
+	rpage_t numbers;
+
+	for (unsigned i = 1; i <= NUM_BLOCKS; i++)
+	{
+		TEST_ASSERT((numbers = nanvix_rmem_alloc()) != RMEM_NULL);
+
+		for (unsigned j = 0; j < RMEM_BLOCK_SIZE/sizeof(unsigned); j++)
+			buffer3[j] = (i - 1)*RMEM_NUM_BLOCKS + j;
+
+		TEST_ASSERT(nanvix_rmem_write(numbers, buffer3) == RMEM_BLOCK_SIZE);
+	}
+
+	for (unsigned i = 1; i <= NUM_BLOCKS; i++)
+	{
+		numbers = i;
+
+		TEST_ASSERT(nanvix_rmem_read(numbers, buffer3) == RMEM_BLOCK_SIZE);
+
+		for (unsigned j = 0; j < RMEM_BLOCK_SIZE/sizeof(unsigned); j++)
+			TEST_ASSERT(buffer3[j] == (i - 1)*RMEM_NUM_BLOCKS + j);
+
+		TEST_ASSERT(nanvix_rmem_free(numbers) == 0);
+	}
+}
+
+/*============================================================================*
  * Test Driver Table                                                          *
  *============================================================================*/
 
@@ -317,6 +416,9 @@ static void test_rmem_stub_read_write_all(void)
 struct test tests_rmem_stub_stress[] = {
 	{ test_rmem_stub_alloc_free_sequential,  "alloc/free sequential " },
 	{ test_rmem_stub_alloc_free_interleaved, "alloc/free interleaved" },
+	{ test_rmem_stub_consistency_raw,        "consistency raw       " },
+	{ test_rmem_stub_consistency,            "consistency           " },
+	{ test_rmem_stub_consistency2,           "consistency 2-step    " },
 #if __TEST_ALLOC_FREE_ALL
 	{ test_rmem_stub_alloc_free_all,         "alloc/free all        " },
 	{ test_rmem_stub_alloc_overflow,         "alloc overflow        " },

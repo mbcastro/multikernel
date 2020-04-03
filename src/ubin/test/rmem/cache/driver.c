@@ -25,6 +25,7 @@
 
 /* Import definitions. */
 extern struct test tests_rmem_cache_api[];
+extern struct test tests_rmem_cache_stress[];
 
 /**
  * @todo TODO: provide a detailed description for this function.
@@ -36,5 +37,12 @@ void test_rmem_cache(void)
 	{
 		uprintf("[nanvix][test][rmem][cache][api] %s", tests_rmem_cache_api[i].name);
 		tests_rmem_cache_api[i].test_fn();
+	}
+
+	/* Run stress tests. */
+	for (int i = 0; tests_rmem_cache_stress[i].test_fn != NULL; i++)
+	{
+		uprintf("[nanvix][test][rmem][cache][stress] %s", tests_rmem_cache_stress[i].name);
+		tests_rmem_cache_stress[i].test_fn();
 	}
 }
