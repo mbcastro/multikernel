@@ -85,8 +85,6 @@ static void test_rmem_rcache_consistency2(void)
 		for (unsigned j = 0; j < RMEM_BLOCK_SIZE/sizeof(unsigned); j++)
 			cached_data[j] = (i - 1)*RMEM_NUM_BLOCKS + j;
 
-		TEST_ASSERT(nanvix_rcache_flush(numbers) == 0);
-		TEST_ASSERT(nanvix_rcache_put(numbers, 0) == 0);
 	}
 
 	for (unsigned i = 1; i <= NUM_BLOCKS; i++)
