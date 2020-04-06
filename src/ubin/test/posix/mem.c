@@ -26,10 +26,12 @@
 #include <nanvix/ulib.h>
 #include "../test.h"
 
+#define NUM_BLOCKS 256
 /**
  * @brief Magic number.
  */
 const unsigned MAGIC = 0xdeadbeef;
+static unsigned buffer[4*PAGE_SIZE*sizeof(unsigned)];
 
 extern void *nanvix_malloc(size_t size);
 extern void nanvix_free(void *ptr);
@@ -55,6 +57,51 @@ static void test_api_mem_read_write(void)
 	nanvix_free(ptr);
 }
 
+/*============================================================================*
+ * Stress Test: Consistency                                                   *
+ *============================================================================*/
+
+/**
+ * @brief Stress Test: Consistency
+ */
+static void test_strees_mem_consistency(void)
+{
+	unsigned* numbers;
+
+	for (unsigned i = 1; i <= NUM_BLOCKS; i++)
+	{
+		uprintf("%d\n", i);
+		TEST_ASSERT((numbers = nanvix_malloc(sizeof(unsigned))) != RMEM_NULL);
+
+		*numbers = i-1;
+		TEST_ASSERT(*numbers == i-1);
+
+		nanvix_free(numbers);
+	}
+}
+
+/*============================================================================*
+ * Stress Test: Consistency 2-Step                                            *
+ *============================================================================*/
+
+/**
+ * @brief Stress Test: Consistency 2-Step
+ */
+static void test_strees_mem_consistency2(void)
+{
+
+	for (unsigned i = 1; i <= 4*PAGE_SIZE*sizeof(unsigned); i++)
+	{
+		buffer[i-1] = i-1;
+	}
+
+	for (unsigned i = 1; i <= 4*PAGE_SIZE*sizeof(unsigned); i++)
+	{
+		TEST_ASSERT(buffer[i-1] == i-1);
+	}
+	nanvix_free(buffer);
+}
+
 /*============================================================================*/
 
 /**
@@ -62,5 +109,7 @@ static void test_api_mem_read_write(void)
  */
 struct test tests_mem_api[] = {
 	{ test_api_mem_read_write, "memory read/write" },
+	{ test_strees_mem_consistency,            "consistency "           },
+	{ test_strees_mem_consistency2,           "consistency 2-step"     },
 	{ NULL,                     NULL               },
 };
