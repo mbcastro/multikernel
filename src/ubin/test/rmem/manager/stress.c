@@ -36,7 +36,7 @@
 /**
  * @brief Number of blocks to allocate.
  */
-#define NUM_BLOCKS 32
+#define NUM_BLOCKS 8
 
 /**
  * @brief Dummy buffer 1.
@@ -47,6 +47,11 @@ static char buffer1[RMEM_BLOCK_SIZE];
  * @brief Receive buffer.
  */
 static char buffer2[RMEM_BLOCK_SIZE];
+
+/**
+ * @brief Dummy buffer 3.
+ */
+static unsigned buffer3[RMEM_BLOCK_SIZE/sizeof(unsigned)];
 
 /*============================================================================*
  * Stress Test: Alloc/Free Sequential                                         *
@@ -115,6 +120,110 @@ static void test_rmem_manager_read_write_sequential(void)
 }
 
 /*============================================================================*
+ * Stress Test: Consistency                                                   *
+ *============================================================================*/
+
+/**
+ * @brief Stress Test: Consistency
+ */
+static void test_rmem_manager_consistency_raw(void)
+{
+	void *numbers;
+
+	for (unsigned i = 1; i <= NUM_BLOCKS; i++)
+	{
+		TEST_ASSERT((numbers = nanvix_vmem_alloc(1)) != RMEM_NULL);
+
+		umemset(buffer1, i + 1, RMEM_BLOCK_SIZE);
+		umemset(buffer2, i + 1, RMEM_BLOCK_SIZE);
+
+		TEST_ASSERT(nanvix_vmem_write(numbers, buffer1, RMEM_BLOCK_SIZE) == RMEM_BLOCK_SIZE);
+
+		umemset(buffer1, 0, RMEM_BLOCK_SIZE);
+
+		TEST_ASSERT(nanvix_vmem_read(buffer1, numbers, RMEM_BLOCK_SIZE) == RMEM_BLOCK_SIZE);
+
+		TEST_ASSERT(umemcmp(buffer1, buffer2, RMEM_BLOCK_SIZE) == 0);
+
+		TEST_ASSERT(nanvix_vmem_free(numbers) == 0);
+	}
+}
+
+/*============================================================================*
+ * Stress Test: Consistency                                                   *
+ *============================================================================*/
+
+/**
+ * @brief Stress Test: Consistency
+ */
+static void test_rmem_manager_consistency(void)
+{
+	void *numbers;
+
+	for (unsigned i = 1; i <= NUM_BLOCKS; i++)
+	{
+		TEST_ASSERT((numbers = nanvix_vmem_alloc(1)) != RMEM_NULL);
+
+		for (unsigned j = 0; j < RMEM_BLOCK_SIZE/sizeof(unsigned); j++)
+			buffer1[j] = (i - 1)*RMEM_NUM_BLOCKS + j;
+
+		TEST_ASSERT(nanvix_vmem_write(numbers, buffer1, RMEM_BLOCK_SIZE) == RMEM_BLOCK_SIZE);
+
+		umemset(buffer2, 0, RMEM_BLOCK_SIZE);
+
+		TEST_ASSERT(nanvix_vmem_read(buffer2, numbers, RMEM_BLOCK_SIZE) == RMEM_BLOCK_SIZE);
+
+		TEST_ASSERT(umemcmp(buffer1, buffer2, RMEM_BLOCK_SIZE) == 0);
+
+		TEST_ASSERT(nanvix_vmem_free(numbers) == 0);
+	}
+}
+
+/*============================================================================*
+ * Stress Test: Consistency 2-Step                                            *
+ *============================================================================*/
+
+/**
+ * @brief Stress Test: Consistency 2-Step
+ */
+static void test_rmem_manager_consistency2(void)
+{
+	void *numbers[NUM_BLOCKS];
+
+	for (unsigned i = 1; i <= NUM_BLOCKS; i++)
+	{
+		TEST_ASSERT((numbers[i-1] = nanvix_vmem_alloc(1)) != RMEM_NULL);
+
+		for (unsigned j = 0; j < RMEM_BLOCK_SIZE/sizeof(unsigned); j++)
+			buffer3[j] = (i - 1)*RMEM_NUM_BLOCKS + j;
+
+		TEST_ASSERT(
+			nanvix_vmem_write(
+				numbers[i - 1],
+				buffer3,
+				RMEM_BLOCK_SIZE
+			) == RMEM_BLOCK_SIZE
+		);
+	}
+
+	for (unsigned i = NUM_BLOCKS; i >= 1; i--)
+	{
+		TEST_ASSERT(
+			nanvix_vmem_read(
+				buffer3,
+				numbers[i-1],
+				RMEM_BLOCK_SIZE
+			) == RMEM_BLOCK_SIZE
+		);
+
+		for (unsigned j = 0; j < RMEM_BLOCK_SIZE/sizeof(unsigned); j++)
+			TEST_ASSERT(buffer3[j] == (i - 1)*RMEM_NUM_BLOCKS + j);
+
+		TEST_ASSERT(nanvix_vmem_free(numbers[i - 1]) == 0);
+	}
+}
+
+/*============================================================================*
  * Test Driver Table                                                          *
  *============================================================================*/
 
@@ -124,5 +233,8 @@ static void test_rmem_manager_read_write_sequential(void)
 struct test tests_rmem_manager_stress[] = {
 	{ test_rmem_manager_alloc_free_sequential,  "alloc/free sequential " },
 	{ test_rmem_manager_read_write_sequential,  "read/write sequential " },
-	{ NULL,                                       NULL                     },
+	{ test_rmem_manager_consistency_raw,        "consistency raw "       },
+	{ test_rmem_manager_consistency,            "consistency "           },
+	{ test_rmem_manager_consistency2,           "consistency 2-step"     },
+	{ NULL,                                      NULL                    },
 };
