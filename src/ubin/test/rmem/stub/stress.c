@@ -332,9 +332,7 @@ static void test_rmem_stub_consistency_raw(void)
 
 		TEST_ASSERT(nanvix_rmem_write(numbers, buffer1) == RMEM_BLOCK_SIZE);
 
-#if 0
 		umemset(buffer1, 0, RMEM_BLOCK_SIZE);
-#endif
 
 		TEST_ASSERT(nanvix_rmem_read(numbers, buffer1) == RMEM_BLOCK_SIZE);
 
