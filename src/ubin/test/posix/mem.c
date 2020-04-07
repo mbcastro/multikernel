@@ -67,30 +67,37 @@ static void test_api_mem_read_write(void)
 static void test_strees_mem_consistency(void)
 {
 	unsigned* numbers;
-	unsigned* numbers2;
-	unsigned* numbers3;
 
-	uprintf("First\n");
-	TEST_ASSERT((numbers = nanvix_malloc(sizeof(unsigned))) != RMEM_NULL);
+	for ( unsigned i = 0; i < 4*PAGE_SIZE*sizeof(unsigned); i++)
+	{
+		TEST_ASSERT((numbers = nanvix_malloc(sizeof(unsigned))) != RMEM_NULL);
 
-	*numbers = 1;
-	TEST_ASSERT(*numbers == 1);
+		*numbers = MAGIC+i;
+		TEST_ASSERT(*numbers == MAGIC+i);
 
+		nanvix_free(numbers);
+	}
+}
+
+/*============================================================================*
+ * Stress Test: Consistency                                                   *
+ *============================================================================*/
+
+/**
+ * @brief Stress Test: Consistency
+ */
+static void test_strees_mem_consistency_arr(void)
+{
+	unsigned *numbers;
+	TEST_ASSERT((numbers = nanvix_malloc(NUM_BLOCKS*sizeof(unsigned))) != RMEM_NULL);
+	for ( unsigned i = 0; i < NUM_BLOCKS*sizeof(unsigned); i++)
+	{
+
+		numbers[i] = MAGIC+i;
+		TEST_ASSERT(numbers[i] == MAGIC+i);
+
+	}
 	nanvix_free(numbers);
-	uprintf("Second\n");
-	TEST_ASSERT((numbers2 = nanvix_malloc(sizeof(unsigned))) != RMEM_NULL);
-
-	*numbers2 = 2;
-	TEST_ASSERT(*numbers2 == 2);
-
-	nanvix_free(numbers2);
-	uprintf("Third\n");
-	TEST_ASSERT((numbers3 = nanvix_malloc(sizeof(unsigned))) != RMEM_NULL);
-
-	*numbers3 = 3;
-	TEST_ASSERT(*numbers3 == 3);
-
-	nanvix_free(numbers3);
 }
 
 /*============================================================================*
@@ -103,14 +110,14 @@ static void test_strees_mem_consistency(void)
 static void test_strees_mem_consistency2(void)
 {
 
-	for (unsigned i = 1; i <= 4*PAGE_SIZE*sizeof(unsigned); i++)
+	for (unsigned i = 0; i <= 4*PAGE_SIZE*sizeof(unsigned); i++)
 	{
-		buffer[i-1] = i-1;
+		buffer[i] = i;
 	}
 
-	for (unsigned i = 1; i <= 4*PAGE_SIZE*sizeof(unsigned); i++)
+	for (unsigned i = 0; i <= 4*PAGE_SIZE*sizeof(unsigned); i++)
 	{
-		TEST_ASSERT(buffer[i-1] == i-1);
+		TEST_ASSERT(buffer[i] == i);
 	}
 	nanvix_free(buffer);
 }
@@ -121,8 +128,9 @@ static void test_strees_mem_consistency2(void)
  * @brief Unit tests.
  */
 struct test tests_mem_api[] = {
-	{ test_api_mem_read_write, "memory read/write" },
-	{ test_strees_mem_consistency,            "consistency "           },
-	{ test_strees_mem_consistency2,           "consistency 2-step"     },
-	{ NULL,                     NULL               },
+	{ test_api_mem_read_write,            "memory read/write"   },
+	{ test_strees_mem_consistency,        "consistency "        },
+	{ test_strees_mem_consistency_arr,    "consistency arr "    },
+	{ test_strees_mem_consistency2,       "consistency 2-step"  },
+	{ NULL,                    	          NULL                  },
 };
