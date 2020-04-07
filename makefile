@@ -40,6 +40,7 @@ export RELEASE ?= no
 # Installation Prefix
 export PREFIX ?= $(HOME)
 
+# Extras
 export ADDONS ?=
 
 #===============================================================================
@@ -60,10 +61,9 @@ export SRCDIR     := $(ROOTDIR)/src
 export TOOLSDIR   := $(ROOTDIR)/utils
 
 #===============================================================================
-# Libraries and Binaries
+# Libraries
 #===============================================================================
 
-# Libraries
 export BARELIB    := barelib-$(TARGET).a
 export LIBHAL     := libhal-$(TARGET).a
 export LIBKERNEL  := libkernel-$(TARGET).a
@@ -125,7 +125,7 @@ clean: clean-target
 
 # Cleans everything.
 distclean: distclean-target
-	@rm -rf $(IMAGE) $(BINDIR)/$(EXECBIN) $(LIBDIR)/$(LIBRUNTIME)
+	@rm -rf $(IMAGE) $(LIBDIR)/$(LIBRUNTIME)
 
 #===============================================================================
 # Contrib Install and Uninstall Rules
