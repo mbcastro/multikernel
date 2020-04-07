@@ -67,17 +67,30 @@ static void test_api_mem_read_write(void)
 static void test_strees_mem_consistency(void)
 {
 	unsigned* numbers;
+	unsigned* numbers2;
+	unsigned* numbers3;
 
-	for (unsigned i = 1; i <= NUM_BLOCKS; i++)
-	{
-		uprintf("%d\n", i);
-		TEST_ASSERT((numbers = nanvix_malloc(sizeof(unsigned))) != RMEM_NULL);
+	uprintf("First\n");
+	TEST_ASSERT((numbers = nanvix_malloc(sizeof(unsigned))) != RMEM_NULL);
 
-		*numbers = i-1;
-		TEST_ASSERT(*numbers == i-1);
+	*numbers = 1;
+	TEST_ASSERT(*numbers == 1);
 
-		nanvix_free(numbers);
-	}
+	nanvix_free(numbers);
+	uprintf("Second\n");
+	TEST_ASSERT((numbers2 = nanvix_malloc(sizeof(unsigned))) != RMEM_NULL);
+
+	*numbers2 = 2;
+	TEST_ASSERT(*numbers2 == 2);
+
+	nanvix_free(numbers2);
+	uprintf("Third\n");
+	TEST_ASSERT((numbers3 = nanvix_malloc(sizeof(unsigned))) != RMEM_NULL);
+
+	*numbers3 = 3;
+	TEST_ASSERT(*numbers3 == 3);
+
+	nanvix_free(numbers3);
 }
 
 /*============================================================================*
