@@ -90,7 +90,7 @@ static void test_strees_mem_consistency_arr(void)
 {
 	unsigned *numbers;
 	TEST_ASSERT((numbers = nanvix_malloc(NUM_BLOCKS*sizeof(unsigned))) != RMEM_NULL);
-	for ( unsigned i = 0; i < NUM_BLOCKS*sizeof(unsigned); i++)
+	for ( unsigned i = 0; i < NUM_BLOCKS; i++)
 	{
 
 		numbers[i] = MAGIC+i;
@@ -122,15 +122,38 @@ static void test_strees_mem_consistency2(void)
 	nanvix_free(buffer);
 }
 
+/*============================================================================*
+ * Stress Test: Consistency 2-Step Reverse                                    *
+ *============================================================================*/
+
+/**
+ * @brief Stress Test: Consistency 2-Step Reverse
+ */
+static void test_strees_mem_consistency2r(void)
+{
+
+	for (unsigned i = 0; i <= 4*PAGE_SIZE*sizeof(unsigned); i++)
+	{
+		buffer[i] = i;
+	}
+
+	for (unsigned i = 0; i <= 4*PAGE_SIZE*sizeof(unsigned); i++)
+	{
+		TEST_ASSERT(buffer[(4*PAGE_SIZE*sizeof(unsigned))-i] == (4*PAGE_SIZE*sizeof(unsigned))-i);
+	}
+	nanvix_free(buffer);
+}
+
 /*============================================================================*/
 
 /**
  * @brief Unit tests.
  */
 struct test tests_mem_api[] = {
-	{ test_api_mem_read_write,            "memory read/write"   },
-	{ test_strees_mem_consistency,        "consistency "        },
-	{ test_strees_mem_consistency_arr,    "consistency arr "    },
-	{ test_strees_mem_consistency2,       "consistency 2-step"  },
-	{ NULL,                    	          NULL                  },
+	{ test_api_mem_read_write,            "memory read/write"          },
+	{ test_strees_mem_consistency,        "consistency "               },
+	{ test_strees_mem_consistency_arr,    "consistency arr "           },
+	{ test_strees_mem_consistency2,       "consistency 2-step"         },
+	{ test_strees_mem_consistency2r,      "consistency 2-step Rverse"  },
+	{ NULL,                    	          NULL                         },
 };
