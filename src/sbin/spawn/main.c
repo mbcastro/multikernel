@@ -27,7 +27,7 @@
 #include <nanvix/runtime/runtime.h>
 #include <nanvix/runtime/stdikc.h>
 #include <nanvix/servers/spawn.h>
-#include <nanvix/sys/fmutex.h>
+#include <nanvix/sys/semaphore.h>
 #include <nanvix/sys/noc.h>
 #include <nanvix/sys/thread.h>
 #include <nanvix/ulib.h>
@@ -37,8 +37,13 @@ extern const int SERVERS_NUM;
 extern const struct serverinfo *SERVERS;
 extern const char *spawner_name;
 
+/**
+ * @brief Startup lock.
+ */
+static struct nanvix_semaphore lock;
+
 /*============================================================================*
- * __main2()                                                                  *
+ * Server Wrapper                                                             *
  *============================================================================*/
 
 /**
@@ -47,13 +52,18 @@ extern const char *spawner_name;
 static void *server(void *args)
 {
 	int servernum;
-	int (*main_fn) (void);
+	int (*main_fn) (struct nanvix_semaphore *);
 
 	servernum = ((int *)args)[0];
-
-	/* Spawn server. */
 	main_fn = SERVERS[servernum].main;
-	main_fn();
+
+		if (SERVERS[servernum].ring != SPAWN_RING_X)
+			__runtime_setup(SERVERS[servernum].ring);
+
+		main_fn(&lock);
+
+		if (SERVERS[servernum].ring != SPAWN_RING_X)
+			__runtime_cleanup();
 
 	return (NULL);
 }
@@ -80,20 +90,32 @@ int __main2(int argc, const char *argv[])
 
 	uassert(SERVERS_NUM <= (THREAD_MAX - 1));
 
-	__runtime_setup(0);
+	__runtime_setup(SPAWN_RING_0);
+
+		nanvix_semaphore_init(&lock, 0);
 
 		uprintf("[nanvix][%s] attached to node %d", spawner_name, knode_get_num());
 		uprintf("[nanvix][%s] listening to inbox %d", spawner_name, stdinbox_get());
 		uprintf("[nanvix][%s] syncing in sync %d", spawner_name, stdsync_get());
 
-		uprintf("[nanvix][%s] waiting for remote kernels...", spawner_name);
+		uassert(stdsync_fence() == 0);
+		spawn_barrier_setup();
 
 		/* Spawn servers. */
-		uprintf("[nanvix][%s] spawning servers...", spawner_name);
-		for (int i = 0; i < SERVERS_NUM; i++)
+		for (int ring = SPAWN_RING_FIRST; ring <= SPAWN_RING_LAST; ring++)
 		{
-			args[i] = i;
-			uassert(kthread_create(&tids[i], server, &args[i]) == 0);
+			uprintf("[nanvix][%s] spawning servers in ring %d...", spawner_name, ring);
+			for (int i = 0; i < SERVERS_NUM; i++)
+			{
+				if (SERVERS[i].ring == ring)
+				{
+					args[i] = i;
+					uassert(kthread_create(&tids[i], server, &args[i]) == 0);
+					nanvix_semaphore_down(&lock);
+				}
+			}
+
+			spawn_barrier_wait();
 		}
 
 		uassert(stdsync_fence() == 0);
@@ -105,6 +127,9 @@ int __main2(int argc, const char *argv[])
 			uassert(kthread_join(tids[i], NULL) == 0);
 			uprintf("[nanvix][%s] server %d down...", spawner_name, i);
 		}
+
+		spawn_barrier_wait();
+		spawn_barrier_cleanup();
 
 		uprintf("[nanvix][%s] shutting down...", spawner_name);
 

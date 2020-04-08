@@ -44,14 +44,16 @@ int __main2(int argc, const char *argv[])
 
 	__runtime_setup(0);
 
-		/* Unblock spawner. */
+		/* Unblock spawners. */
+		uassert(stdsync_fence() == 0);
+		uprintf("[nanvix][test] server starting...");
 		uassert(stdsync_fence() == 0);
 		uprintf("[nanvix][test] server alive");
 
 		__runtime_setup(1);
 		test_name();
 
-		__runtime_setup(3);
+		__runtime_setup(4);
 		test_rmem_stub();
 		test_rmem_cache();
 		test_rmem_manager();

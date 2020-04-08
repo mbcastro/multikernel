@@ -23,10 +23,12 @@
  */
 
 #define __NEED_MM_MANAGER
+#define SPAWN_SERVER
 
 #include <nanvix/runtime/rmem.h>
 #include <nanvix/runtime/runtime.h>
 #include <nanvix/runtime/stdikc.h>
+#include <nanvix/servers/spawn.h>
 #include <nanvix/sys/thread.h>
 #include <nanvix/sys/excp.h>
 #include <nanvix/sys/page.h>
@@ -119,8 +121,8 @@ int __runtime_setup(int ring)
 	if (current_ring[tid] > ring)
 		return (0);
 
-	/* Initialize unnamed IKC services. */
-	if ((current_ring[tid] < 0) && (ring >= 0))
+	/* Initialize Ring 0. */
+	if ((current_ring[tid] < SPAWN_RING_0) && (ring >= SPAWN_RING_0))
 	{
 		uprintf("[nanvix][thread %d] initalizing ring 0", tid);
 		uassert(__stdsync_setup() == 0);
@@ -128,16 +130,16 @@ int __runtime_setup(int ring)
 		uassert(__stdportal_setup() == 0);
 	}
 
-	/* Initialize Name Service client. */
-	if ((current_ring[tid] < 1) && (ring >= 1))
+	/* Initialize Ring 1. */
+	if ((current_ring[tid] < SPAWN_RING_1) && (ring >= SPAWN_RING_1))
 	{
 		uprintf("[nanvix][thread %d] initalizing ring 1", tid);
 		delay(CLUSTER_FREQ);
 		uassert(__name_setup() == 0);
 	}
 
-	/* Initialize Named IKC facilities. */
-	if ((current_ring[tid] < 2) && (ring >= 2))
+	/* Initialize Ring 2. */
+	if ((current_ring[tid] < SPAWN_RING_2) && (ring >= SPAWN_RING_2))
 	{
 		uprintf("[nanvix][thread %d] initalizing ring 2", tid);
 		delay(CLUSTER_FREQ);
@@ -145,10 +147,10 @@ int __runtime_setup(int ring)
 		uassert(__nanvix_portal_setup() == 0);
 	}
 
-	/* Initialize RMem Service client. */
-	if ((current_ring[tid] < 3) && (ring >= 3))
+	/* Initialize Ring 4. */
+	if ((current_ring[tid] < SPAWN_RING_4) && (ring >= SPAWN_RING_4))
 	{
-		uprintf("[nanvix][thread %d] initalizing ring 3", tid);
+		uprintf("[nanvix][thread %d] initalizing ring 4", tid);
 		delay(CLUSTER_FREQ);
 		uassert(__nanvix_rmem_setup() == 0);
 		uassert(kthread_create(&exception_handler_tid, &nanvix_exception_handler, NULL) == 0);
@@ -168,29 +170,30 @@ int __runtime_cleanup(void)
 
 	tid = kthread_self();
 
-	/* Cleanup RMem Service client. */
-	if (current_ring[tid] >= 3)
+	/* Initialize Ring 4. */
+	if (current_ring[tid] >= SPAWN_RING_4)
 	{
-		uprintf("[nanvix][thread %d] shutting down ring 3", tid);
+		uprintf("[nanvix][thread %d] shutting down ring 4", tid);
 		uassert(__nanvix_rmem_cleanup() == 0);
 		uassert(kthread_join(exception_handler_tid, NULL) == 0);
 	}
 
-	/* Clean up IKC facilities. */
-	if (current_ring[tid] >= 2)
+	/* Initialize Ring 2. */
+	if (current_ring[tid] >= SPAWN_RING_2)
 	{
 		uprintf("[nanvix][thread %d] shutting down ring 2", tid);
 		uassert(__nanvix_portal_cleanup() == 0);
 		uassert(__nanvix_mailbox_cleanup() == 0);
 	}
 
-	/* Clean up Name Service client. */
-	if (current_ring[tid] >= 1)
+	/* Initialize Ring 1. */
+	if (current_ring[tid] >= SPAWN_RING_1)
 	{
 		uprintf("[nanvix][thread %d] shutting down ring 1", tid);
 		uassert(__name_cleanup() == 0);
 	}
 
+	/* Spawn Ring 0.*/
 	uassert(__stdportal_cleanup() == 0);
 	uassert(__stdmailbox_cleanup() == 0);
 	uassert(__stdsync_cleanup() == 0);

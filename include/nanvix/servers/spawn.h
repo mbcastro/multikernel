@@ -25,6 +25,8 @@
 #ifndef NANVIX_SERVERS_SPAWN_H_
 #define NANVIX_SERVERS_SPAWN_H_
 
+	#include <nanvix/sys/semaphore.h>
+
 	/**
 	 * @name Number of Servers
 	 */
@@ -60,7 +62,34 @@
 	#endif
 	/**@}*/
 
+	/**
+	 * @name Spawn rings.
+	 */
+	/**@{*/
+	#define SPAWN_RING_0 0
+	#define SPAWN_RING_1 1
+	#define SPAWN_RING_2 2
+	#define SPAWN_RING_3 3
+	#define SPAWN_RING_4 4
+	#define SPAWN_RING_X 5
+	/**@}*/
+
+	/**
+	 * @brief First spawn ring.
+	 */
+	#define SPAWN_RING_FIRST SPAWN_RING_0
+
+	/**
+	 * @brief Last spawn ring.
+	 */
+	#define SPAWN_RING_LAST SPAWN_RING_4
+
 #ifdef SPAWN_SERVER
+
+	/**
+	 * @brief Number of spawn rings.
+	 */
+	#define SPAWN_RINGS_NUM SPAWN_RING_LAST
 
 	/**
 	 * @brief Declares the servers table.
@@ -79,8 +108,24 @@
 	 */
 	struct serverinfo
 	{
-		int (*main) (void); /**< Main function. */
+		int ring;                                /**< Ring Level    */
+		int (*main) (struct nanvix_semaphore *); /**< Main Function */
 	};
+
+	/**
+	 * @brief Initializes the spawn barrier.
+	 */
+	extern void spawn_barrier_setup(void);
+
+	/**
+	 * @brief Shutdowns the spawn barrier.
+	 */
+	extern void spawn_barrier_cleanup(void);
+
+	/**
+	 * @brief Waits on the startup barrier
+	 */
+	extern void spawn_barrier_wait(void);
 
 #endif /* SPAWN_SERVER*/
 
