@@ -23,13 +23,13 @@
 #
 
 # Builds Everything
-all: all-zombie all-test all-bench all-apps
+all: all-zombie all-test
 
 # Cleans Build Objects
-clean: clean-zombie clean-test clean-bench clean-apps
+clean: clean-zombie clean-test
 
 # Cleans Everything
-distclean: distclean-zombie distclean-test distclean-bench distclean-apps
+distclean: distclean-zombie distclean-test
 
 #===============================================================================
 # Zombie Server
@@ -62,35 +62,3 @@ clean-test:
 # Cleans Test Server build.
 distclean-test:
 	$(MAKE) -C test distclean
-
-#===============================================================================
-# Apps
-#===============================================================================
-
-# Builds Apps.
-all-apps:
-	$(MAKE) -C apps all
-
-# Cleans build objects..
-clean-apps:
-	$(MAKE) -C apps clean
-
-# Cleans build.
-distclean-apps:
-	$(MAKE) -C apps distclean
-
-#===============================================================================
-# Benchmarks
-#===============================================================================
-
-# Builds Benchmarks.
-all-bench:
-	$(MAKE) -C bench all
-
-# Cleans build objects..
-clean-bench:
-	$(MAKE) -C bench clean
-
-# Cleans build.
-distclean-bench:
-	$(MAKE) -C bench distclean
