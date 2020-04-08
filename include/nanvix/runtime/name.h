@@ -58,10 +58,18 @@
 	 *
 	 * @param name Name of the process to unlink.
 	 *
-	 * @returns Upon successful completion 0 is returned. Upon
+	 * @returns Upon successful completion zero is returned. Upon
 	 * failure, a negative error code is returned instead.
 	 */
 	extern int name_unlink(const char *name);
+
+	/**
+	 * @brief Updates the timestamp of a process.
+	 *
+	 * @returns Upons successful completion, zero is returned. Upon
+	 * failure, a negative error code is returned instead.
+	 */
+	extern int name_heartbeat(void);
 
 	/**
 	 * @brief Shutdowns the name server.
