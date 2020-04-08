@@ -26,15 +26,25 @@
 #include <nanvix/ulib.h>
 #include "../test.h"
 
+/* Import definitions. */
+extern void *nanvix_malloc(size_t size);
+extern void nanvix_free(void *ptr);
+
+/**
+ * @brief Number of blocks for stress tests.
+ */
 #define NUM_BLOCKS 256
+
+/**
+ * @brief Number of pages for stress tests.
+ */
+#define NUM_PAGES 4
+
 /**
  * @brief Magic number.
  */
 const unsigned MAGIC = 0xdeadbeef;
-static unsigned buffer[4*PAGE_SIZE*sizeof(unsigned)];
-
-extern void *nanvix_malloc(size_t size);
-extern void nanvix_free(void *ptr);
+static unsigned buffer[NUM_PAGES*PAGE_SIZE*sizeof(unsigned)];
 
 /*============================================================================*
  * API Test: Read/Write                                                       *
@@ -68,11 +78,11 @@ static void test_strees_mem_consistency(void)
 {
 	unsigned* numbers;
 
-	for ( unsigned i = 0; i < 4*PAGE_SIZE*sizeof(unsigned); i++)
+	for ( unsigned i = 0; i < NUM_PAGES*PAGE_SIZE*sizeof(unsigned); i++)
 	{
 		TEST_ASSERT((numbers = nanvix_malloc(sizeof(unsigned))) != RMEM_NULL);
 
-		*numbers = MAGIC+i;
+		*numbers = MAGIC + i;
 		TEST_ASSERT(*numbers == MAGIC+i);
 
 		nanvix_free(numbers);
@@ -89,14 +99,15 @@ static void test_strees_mem_consistency(void)
 static void test_strees_mem_consistency_arr(void)
 {
 	unsigned *numbers;
+
 	TEST_ASSERT((numbers = nanvix_malloc(NUM_BLOCKS*sizeof(unsigned))) != RMEM_NULL);
+
 	for ( unsigned i = 0; i < NUM_BLOCKS; i++)
 	{
-
 		numbers[i] = MAGIC+i;
 		TEST_ASSERT(numbers[i] == MAGIC+i);
-
 	}
+
 	nanvix_free(numbers);
 }
 
@@ -109,17 +120,13 @@ static void test_strees_mem_consistency_arr(void)
  */
 static void test_strees_mem_consistency2(void)
 {
-
-	for (unsigned i = 0; i < 4*PAGE_SIZE*sizeof(unsigned); i++)
-	{
+	for (unsigned i = 0; i < NUM_PAGES*PAGE_SIZE*sizeof(unsigned); i++)
 		buffer[i] = i;
-	}
 
-	for (unsigned i = 0; i < 4*PAGE_SIZE*sizeof(unsigned); i++)
-	{
+	for (unsigned i = 0; i < NUM_PAGES*PAGE_SIZE*sizeof(unsigned); i++)
 		TEST_ASSERT(buffer[i] == i);
-	}
 	nanvix_free(buffer);
+
 }
 
 /*============================================================================*
@@ -132,15 +139,12 @@ static void test_strees_mem_consistency2(void)
 static void test_strees_mem_consistency2r(void)
 {
 
-	for (unsigned i = 0; i < 4*PAGE_SIZE*sizeof(unsigned); i++)
-	{
+	for (unsigned i = 0; i < NUM_PAGES*PAGE_SIZE*sizeof(unsigned); i++)
 		buffer[i] = i;
-	}
 
-	for (unsigned i = 0; i < 4*PAGE_SIZE*sizeof(unsigned); i++)
-	{
-		TEST_ASSERT(buffer[((4*PAGE_SIZE*sizeof(unsigned))-1)-i] == ((4*PAGE_SIZE*sizeof(unsigned))-1)-i);
-	}
+	for (unsigned i = 0; i < NUM_PAGES*PAGE_SIZE*sizeof(unsigned); i++)
+		TEST_ASSERT(buffer[((NUM_PAGES*PAGE_SIZE*sizeof(unsigned))-1)-i] == ((NUM_PAGES*PAGE_SIZE*sizeof(unsigned))-1)-i);
+
 	nanvix_free(buffer);
 }
 
@@ -150,10 +154,10 @@ static void test_strees_mem_consistency2r(void)
  * @brief Unit tests.
  */
 struct test tests_mem_api[] = {
-	{ test_api_mem_read_write,            "memory read/write"          },
-	{ test_strees_mem_consistency,        "consistency "               },
-	{ test_strees_mem_consistency_arr,    "consistency arr "           },
-	{ test_strees_mem_consistency2,       "consistency 2-step"         },
-	{ test_strees_mem_consistency2r,      "consistency 2-step Rverse"  },
-	{ NULL,                    	          NULL                         },
+	{ test_api_mem_read_write,         "memory read/write"          },
+	{ test_strees_mem_consistency,     "consistency "               },
+	{ test_strees_mem_consistency_arr, "consistency arr "           },
+	{ test_strees_mem_consistency2,    "consistency 2-step"         },
+	{ test_strees_mem_consistency2r,   "consistency 2-step Rverse"  },
+	{ NULL,                            NULL                         },
 };
