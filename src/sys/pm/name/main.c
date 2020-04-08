@@ -61,7 +61,7 @@ static int inbox = -1;
 static struct {
 	int nodenum;                     /**< NoC node.     */
 	char name[NANVIX_PROC_NAME_MAX]; /**< Process name. */
-} names[NANVIX_PROC_MAX];
+} procs[NANVIX_PROC_MAX];
 
 /**
  * @brief Server stats.
@@ -84,10 +84,10 @@ static void do_name_init(struct nanvix_semaphore *lock)
 {
 	/* Initialize lookup table. */
 	for (int i = 0; i < NANVIX_PROC_MAX; i++)
-		names[i].nodenum = -1;
+		procs[i].nodenum = -1;
 
-	names[0].nodenum = knode_get_num();
-	ustrcpy(names[0].name, "/io0");
+	procs[0].nodenum = knode_get_num();
+	ustrcpy(procs[0].name, "/io0");
 
 	uassert((inbox = stdinbox_get()) >= 0);
 
@@ -136,9 +136,9 @@ static int do_name_lookup(
 	for (int i = 0; i < NANVIX_PROC_MAX; i++)
 	{
 		/* Found. */
-		if (!ustrcmp(name, names[i].name))
+		if (!ustrcmp(name, procs[i].name))
 		{
-			response->nodenum = names[i].nodenum;
+			response->nodenum = procs[i].nodenum;
 			return (0);
 		}
 	}
@@ -186,7 +186,7 @@ static int do_name_link(const struct name_message *request)
 	/* Check that the name is not already used */
 	for (int i = 0; i < NANVIX_PROC_MAX; i++)
 	{
-		if (ustrcmp(names[i].name, name) == 0)
+		if (ustrcmp(procs[i].name, name) == 0)
 			return (-EINVAL);
 	}
 
@@ -194,7 +194,7 @@ static int do_name_link(const struct name_message *request)
 	for (int i = 0; i < NANVIX_PROC_MAX; i++)
 	{
 		/* Found. */
-		if (names[i].nodenum == -1)
+		if (procs[i].nodenum == -1)
 		{
 			index = i;
 			goto found;
@@ -206,8 +206,8 @@ static int do_name_link(const struct name_message *request)
 found:
 
 	nr_registration++;
-	names[index].nodenum = nodenum;
-	ustrcpy(names[index].name, name);
+	procs[index].nodenum = nodenum;
+	ustrcpy(procs[index].name, name);
 
 	return (0);
 }
@@ -242,15 +242,15 @@ static int do_name_unlink(const struct name_message *request)
 	for (int i = 0; i < NANVIX_PROC_MAX; i++)
 	{
 		/* Skip invalid entries. */
-		if (names[i].nodenum == -1)
+		if (procs[i].nodenum == -1)
 			continue;
 
 		/* Found*/
-		if (ustrcmp(names[i].name, name) == 0)
+		if (ustrcmp(procs[i].name, name) == 0)
 		{
 			nr_registration--;
-			ustrcpy(names[i].name, "");
-			names[i].nodenum = -1;
+			ustrcpy(procs[i].name, "");
+			procs[i].nodenum = -1;
 			return (0);
 		}
 	}
