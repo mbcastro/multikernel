@@ -110,12 +110,12 @@ static void test_strees_mem_consistency_arr(void)
 static void test_strees_mem_consistency2(void)
 {
 
-	for (unsigned i = 0; i <= 4*PAGE_SIZE*sizeof(unsigned); i++)
+	for (unsigned i = 0; i < 4*PAGE_SIZE*sizeof(unsigned); i++)
 	{
 		buffer[i] = i;
 	}
 
-	for (unsigned i = 0; i <= 4*PAGE_SIZE*sizeof(unsigned); i++)
+	for (unsigned i = 0; i < 4*PAGE_SIZE*sizeof(unsigned); i++)
 	{
 		TEST_ASSERT(buffer[i] == i);
 	}
@@ -132,14 +132,14 @@ static void test_strees_mem_consistency2(void)
 static void test_strees_mem_consistency2r(void)
 {
 
-	for (unsigned i = 0; i <= 4*PAGE_SIZE*sizeof(unsigned); i++)
+	for (unsigned i = 0; i < 4*PAGE_SIZE*sizeof(unsigned); i++)
 	{
 		buffer[i] = i;
 	}
 
-	for (unsigned i = 0; i <= 4*PAGE_SIZE*sizeof(unsigned); i++)
+	for (unsigned i = 0; i < 4*PAGE_SIZE*sizeof(unsigned); i++)
 	{
-		TEST_ASSERT(buffer[(4*PAGE_SIZE*sizeof(unsigned))-i] == (4*PAGE_SIZE*sizeof(unsigned))-i);
+		TEST_ASSERT(buffer[((4*PAGE_SIZE*sizeof(unsigned))-1)-i] == ((4*PAGE_SIZE*sizeof(unsigned))-1)-i);
 	}
 	nanvix_free(buffer);
 }
