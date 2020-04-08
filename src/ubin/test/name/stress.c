@@ -28,51 +28,17 @@
 #include <nanvix/ulib.h>
 #include "../test.h"
 
-/*============================================================================*
- * API Test: Link Unlink                                                      *
- *============================================================================*/
-
 /**
- * @brief API Test: Link Unlink
+ * @brief Number of iterations for stress tests.
  */
-static void test_name_link_unlink(void)
-{
-	int nodenum;
-	char pathname[NANVIX_PROC_NAME_MAX];
-
-	nodenum = knode_get_num();
-
-	ustrcpy(pathname, "cool-name");
-	TEST_ASSERT(name_link(nodenum, pathname) == 0);
-	TEST_ASSERT(name_unlink(pathname) == 0);
-}
+#define NITERATIONS 100
 
 /*============================================================================*
- * API Test: Lookup                                                           *
+ * Heartbeat                                                                  *
  *============================================================================*/
 
 /**
- * @brief API Test: Lookup
- */
-static void test_name_lookup(void)
-{
-	int nodenum;
-	char pathname[NANVIX_PROC_NAME_MAX];
-
-	nodenum = knode_get_num();
-
-	ustrcpy(pathname, "cool-name");
-	TEST_ASSERT(name_link(nodenum, pathname) == 0);
-	TEST_ASSERT(name_lookup(pathname) == nodenum);
-	TEST_ASSERT(name_unlink(pathname) == 0);
-}
-
-/*============================================================================*
- * API Test: Heartbeat                                                        *
- *============================================================================*/
-
-/**
- * @brief API Test: Lookup
+ * @brief Heartbeat
  */
 static void test_name_heartbeat(void)
 {
@@ -80,23 +46,24 @@ static void test_name_heartbeat(void)
 	char pathname[NANVIX_PROC_NAME_MAX];
 
 	nodenum = knode_get_num();
-
 	ustrcpy(pathname, "cool-name");
 	TEST_ASSERT(name_link(nodenum, pathname) == 0);
-	TEST_ASSERT(name_heartbeat() == 0);
+
+	for (int i = 0; i < NITERATIONS; i++)
+		TEST_ASSERT(name_heartbeat() == 0);
+
 	TEST_ASSERT(name_unlink(pathname) == 0);
 }
 
 /*============================================================================*
- * API Test Driver Table                                                      *
+ * Stress Tests Driver Table                                                  *
  *============================================================================*/
 
 /**
  * @brief Unit tests.
  */
-struct test tests_name_api[] = {
-	{ test_name_link_unlink, "link unlink"    },
-	{ test_name_lookup,      "lookup"         },
-	{ test_name_heartbeat,   "heartbeat"      },
-	{ NULL,                   NULL            }
+struct test tests_name_stress[] = {
+	{ test_name_heartbeat,   "heartbeat" },
+	{ NULL,                   NULL       },
 };
+
