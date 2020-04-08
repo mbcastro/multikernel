@@ -59,8 +59,9 @@ static int inbox = -1;
  * @brief Lookup table of process names.
  */
 static struct {
-	int nodenum;                     /**< NoC node.     */
-	char name[NANVIX_PROC_NAME_MAX]; /**< Process name. */
+	int nodenum;                     /**< NoC node.                 */
+	char name[NANVIX_PROC_NAME_MAX]; /**< Process name.             */
+	uint64_t timestamp;              /**< Timestamp for heartbeats. */
 } procs[NANVIX_PROC_MAX];
 
 /**
@@ -84,7 +85,10 @@ static void do_name_init(struct nanvix_semaphore *lock)
 {
 	/* Initialize lookup table. */
 	for (int i = 0; i < NANVIX_PROC_MAX; i++)
+	{
 		procs[i].nodenum = -1;
+		procs[i].timestamp = 0;
+	}
 
 	procs[0].nodenum = knode_get_num();
 	ustrcpy(procs[0].name, "/io0");
@@ -258,6 +262,45 @@ static int do_name_unlink(const struct name_message *request)
 	return (-ENOENT);
 }
 
+/*=======================================================================*
+ * do_name_heartbeat()                                                   *
+ *=======================================================================*/
+
+/**
+ * @brief Updates the heartbeat of a process.
+ *
+ * @param request,
+ *
+ * @returns Upon successful completion zero is returned. Upon failure, a
+ * negative error code is returned instead.
+ */
+static int do_name_heartbeat(const struct name_message *request)
+{
+	int nodenum;
+	uint64_t timestamp;
+
+	timestamp = request->timestamp;
+	nodenum = request->header.source;
+
+	name_debug("heartbeat nodenum=%d name=%l", nodenum, timestamp);
+
+	/* Invalid node number. */
+	if (!proc_is_valid(nodenum))
+		return (-EINVAL);
+
+	/* Record timestamp. */
+	for (int i = 0; i < NANVIX_PROC_MAX; i++)
+	{
+		if (procs[i].nodenum == nodenum)
+		{
+			procs[i].timestamp = timestamp;
+			return (0);
+		}
+	}
+
+	return (-EINVAL);
+}
+
 /*===================================================================*
  * name_server()                                                     *
  *===================================================================*/
@@ -315,6 +358,10 @@ int do_name_server(struct nanvix_semaphore *lock)
 				stats.nunlinks++;
 				ret = do_name_unlink(&request);
 				reply = 1;
+				break;
+
+			case NAME_ALIVE:
+				uassert((ret = do_name_heartbeat(&request)) == 0);
 				break;
 
 			case NAME_EXIT:
