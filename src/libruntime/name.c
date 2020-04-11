@@ -109,8 +109,7 @@ int name_lookup(const char *name)
 
 	/* Build operation header. */
 	message_header_build(&msg.header, NAME_LOOKUP);
-	msg.nodenum = -1;
-	ustrcpy(msg.name, name);
+	ustrcpy(msg.op.lookup.name, name);
 
 	if ((ret = kmailbox_write(server, &msg, sizeof(struct name_message))) != sizeof(struct name_message))
 		return (ret);
@@ -118,7 +117,7 @@ int name_lookup(const char *name)
 	if ((ret = kmailbox_read(stdinbox_get(), &msg, sizeof(struct name_message))) != sizeof(struct name_message))
 		return (ret);
 
-	return (msg.nodenum);
+	return (msg.op.ret.nodenum);
 }
 
 /*============================================================================*
@@ -147,8 +146,7 @@ int name_link(int nodenum, const char *name)
 
 	/* Build operation header. */
 	message_header_build(&msg.header, NAME_LINK);
-	msg.nodenum = nodenum;
-	ustrcpy(msg.name, name);
+	ustrcpy(msg.op.link.name, name);
 
 	if ((ret = kmailbox_write(server, &msg, sizeof(struct name_message))) != sizeof(struct name_message))
 		return (ret);
@@ -159,7 +157,7 @@ int name_link(int nodenum, const char *name)
 	if (msg.header.opcode == NAME_SUCCESS)
 		return (0);
 
-	return (msg.errcode);
+	return (msg.op.ret.errcode);
 }
 
 /*============================================================================*
@@ -184,8 +182,7 @@ int name_unlink(const char *name)
 
 	/* Build operation header. */
 	message_header_build(&msg.header, NAME_UNLINK);
-	msg.nodenum = -1;
-	ustrcpy(msg.name, name);
+	ustrcpy(msg.op.unlink.name, name);
 
 	if ((ret = kmailbox_write(server, &msg, sizeof(struct name_message))) != sizeof(struct name_message))
 		return (ret);
@@ -196,7 +193,7 @@ int name_unlink(const char *name)
 	if (msg.header.opcode == NAME_SUCCESS)
 		return (0);
 
-	return (msg.errcode);
+	return (msg.op.ret.errcode);
 }
 
 /*============================================================================*
@@ -217,7 +214,7 @@ int name_heartbeat(void)
 
 	/* Build operation header. */
 	message_header_build(&msg.header, NAME_ALIVE);
-	if ((ret = kernel_clock(&msg.timestamp)) < 0)
+	if ((ret = kernel_clock(&msg.op.heartbeat.timestamp)) < 0)
 		return (ret);
 
 	if ((ret = kmailbox_write(server, &msg, sizeof(struct name_message))) != sizeof(struct name_message))
