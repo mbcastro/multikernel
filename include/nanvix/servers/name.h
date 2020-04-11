@@ -59,11 +59,46 @@
 	 */
 	struct name_message
 	{
-		message_header header;           /**< Message header. */
-		int nodenum;                     /**< NoC node.       */
-		int errcode;                     /**< Error code.     */
-		char name[NANVIX_PROC_NAME_MAX]; /**< Portal name.    */
-		uint64_t timestamp;              /**< Timestamp.       */
+		/**
+		 * @brief Message header.
+		 */
+		message_header header;
+		union
+		{
+			struct
+			{
+				char name[NANVIX_PROC_NAME_MAX]; /**< Portal name. */
+
+			} lookup;
+
+			struct
+			{
+				char name[NANVIX_PROC_NAME_MAX]; /**< Portal name. */
+			} link;
+
+			struct
+			{
+				char name[NANVIX_PROC_NAME_MAX]; /**< Portal name. */
+
+			} unlink;
+
+			struct
+			{
+				uint64_t timestamp; /**< Time stamp. */
+
+			} heartbeat;
+
+			struct
+			{
+
+			} exit;
+
+			struct
+			{
+				int nodenum; /**< NoC node.   */
+				int errcode; /**< Error code. */
+			} ret;
+		} op;
 	};
 
 	/**

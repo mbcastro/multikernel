@@ -125,9 +125,8 @@ static int do_name_lookup(
 	int ret;
 	const char *name;
 
-	response->nodenum = -1;
-
-	name = request->name;
+	name = request->op.lookup.name;
+	response->op.ret.nodenum = -1;
 
 	stats.nlookups++;
 	name_debug("lookup name=%s", name);
@@ -142,7 +141,7 @@ static int do_name_lookup(
 		/* Found. */
 		if (!ustrcmp(name, procs[i].name))
 		{
-			response->nodenum = procs[i].nodenum;
+			response->op.ret.nodenum = procs[i].nodenum;
 			return (0);
 		}
 	}
@@ -169,8 +168,8 @@ static int do_name_link(const struct name_message *request)
 	int nodenum;
 	const char *name;
 
-	name = request->name;
-	nodenum = request->nodenum;
+	name = request->op.link.name;
+	nodenum = request->header.source;
 
 	stats.nlinks++;
 	name_debug("link nodenum=%d name=%s", nodenum, name);
@@ -233,7 +232,7 @@ static int do_name_unlink(const struct name_message *request)
 	int ret;
 	const char *name;
 
-	name = request->name;
+	name = request->op.unlink.name;
 
 	stats.nlinks++;
 	name_debug("unlink name=%s", name);
@@ -279,7 +278,7 @@ static int do_name_heartbeat(const struct name_message *request)
 	int nodenum;
 	uint64_t timestamp;
 
-	timestamp = request->timestamp;
+	timestamp = request->op.heartbeat.timestamp;
 	nodenum = request->header.source;
 
 	name_debug("heartbeat nodenum=%d name=%l", nodenum, timestamp);
@@ -377,7 +376,7 @@ int do_name_server(struct nanvix_semaphore *lock)
 		if (!reply)
 			continue;
 
-		response.errcode = ret;
+		response.op.ret.errcode = ret;
 		message_header_build(
 			&response.header,
 			(ret <= 0) ? NAME_FAIL : NAME_SUCCESS
