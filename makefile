@@ -92,7 +92,7 @@ export CFLAGS += -fno-stack-protector
 export CFLAGS += -Wno-unused-function
 export CFLAGS += -I $(INCDIR)
 export CFLAGS += -I $(ROOTDIR)/src/lwip/src/include
-export CFLAGS += $(ADDONS)
+export CFLAGS += $(ADDONS) + -D__RMEM_USES_PORTAL
 
 # Additional C Flags
 include $(BUILDDIR)/makefile.cflags

@@ -61,6 +61,13 @@
 	 */
 	#define RMEM_NUM_BLOCKS (RMEM_SIZE/RMEM_BLOCK_SIZE)
 
+	/**
+	 * @brief Size of payload for RMem messages.
+	 */
+	#ifndef __RMEM_USES_PORTAL
+	#define RMEM_PAYLOAD_SIZE 64
+	#endif
+
 #if defined(__NEED_RMEM_SERVICE)
 
 	/**
@@ -144,6 +151,10 @@
 		message_header header; /**< Message header. */
 		rpage_t blknum;        /**< Block number.   */
 		int errcode;           /**< Error code.     */
+		#ifndef __RMEM_USES_PORTAL
+		char payload[RMEM_PAYLOAD_SIZE]; /**< Payload.           */
+		size_t offset;                   /**< Read/Write offset. */
+		#endif
 	};
 
 	/**
