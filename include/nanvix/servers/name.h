@@ -45,7 +45,8 @@
 	#define NAME_LINK    2 /**< Add a new name.          */
 	#define NAME_UNLINK  3 /**< Remove a name.           */
 	#define NAME_SUCCESS 4 /**< Success acknowledgement. */
-	#define NAME_FAIL    5 /**< Failure acknowledgement. */
+	#define NAME_ALIVE   5 /**< Client alive.            */
+	#define NAME_FAIL    6 /**< Failure acknowledgement. */
 	/**@}*/
 
 	/**
@@ -62,6 +63,7 @@
 		int nodenum;                     /**< NoC node.       */
 		int errcode;                     /**< Error code.     */
 		char name[NANVIX_PROC_NAME_MAX]; /**< Portal name.    */
+		uint64_t timestamp;              /**< Timestamp.       */
 	};
 
 	/**

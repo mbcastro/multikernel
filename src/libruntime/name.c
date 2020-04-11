@@ -200,6 +200,33 @@ int name_unlink(const char *name)
 }
 
 /*============================================================================*
+ * name_heartbeat()                                                           *
+ *============================================================================*/
+
+/**
+ * @todo TODO: provide a detailed description for this function.
+ */
+int name_heartbeat(void)
+{
+	int ret;
+	struct name_message msg;
+
+	/* Initilize name client. */
+	if (!initialized)
+		return (-EAGAIN);
+
+	/* Build operation header. */
+	message_header_build(&msg.header, NAME_ALIVE);
+	if ((ret = kernel_clock(&msg.timestamp)) < 0)
+		return (ret);
+
+	if ((ret = kmailbox_write(server, &msg, sizeof(struct name_message))) != sizeof(struct name_message))
+		return (ret);
+
+	return (0);
+}
+
+/*============================================================================*
  * name_shutdown()                                                            *
  *============================================================================*/
 

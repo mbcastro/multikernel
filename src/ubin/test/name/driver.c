@@ -27,6 +27,7 @@
 /* Import definitions. */
 extern struct test tests_name_api[];
 extern struct test tests_name_fault[];
+extern struct test tests_name_stress[];
 
 /**
  * @todo TODO: provide a detailed description for this function.
@@ -45,5 +46,12 @@ void test_name(void)
 	{
 		uprintf("[nanvix][test][name][fault] %s", tests_name_fault[i].name);
 		tests_name_fault[i].test_fn();
+	}
+
+	/* Run stress injection tests. */
+	for (int i = 0; tests_name_stress[i].test_fn != NULL; i++)
+	{
+		uprintf("[nanvix][test][name][stress] %s", tests_name_stress[i].name);
+		tests_name_stress[i].test_fn();
 	}
 }
