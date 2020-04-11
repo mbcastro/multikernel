@@ -292,7 +292,7 @@ int do_name_server(struct nanvix_semaphore *lock)
 
 		#if (__DEBUG_NAME)
 		message_header_sprint(debug_str, &request.header);
-		uprintf("rmem request %s", debug_str);
+		uprintf("name request %s", debug_str);
 		#endif
 
 		/* Handle name requests. */

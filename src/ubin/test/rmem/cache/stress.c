@@ -74,14 +74,14 @@ static void test_rmem_rcache_consistency(void)
  */
 static void test_rmem_rcache_consistency2(void)
 {
-	rpage_t numbers;
+	rpage_t numbers[NUM_BLOCKS];
 	unsigned *cached_data;
 
 	for (unsigned i = 1; i <= NUM_BLOCKS; i++)
 	{
-		TEST_ASSERT((numbers = nanvix_rcache_alloc()) != RMEM_NULL);
+		TEST_ASSERT((numbers[i - 1] = nanvix_rcache_alloc()) != RMEM_NULL);
 
-		TEST_ASSERT((cached_data = nanvix_rcache_get(numbers)) != NULL);
+		TEST_ASSERT((cached_data = nanvix_rcache_get(numbers[i - 1])) != NULL);
 		for (unsigned j = 0; j < RMEM_BLOCK_SIZE/sizeof(unsigned); j++)
 			cached_data[j] = (i - 1)*RMEM_NUM_BLOCKS + j;
 
@@ -89,14 +89,12 @@ static void test_rmem_rcache_consistency2(void)
 
 	for (unsigned i = 1; i <= NUM_BLOCKS; i++)
 	{
-		numbers = i;
-
-		TEST_ASSERT((cached_data = nanvix_rcache_get(numbers)) != NULL);
+		TEST_ASSERT((cached_data = nanvix_rcache_get(numbers[i - 1])) != NULL);
 
 		for (unsigned j = 0; j < RMEM_BLOCK_SIZE/sizeof(unsigned); j++)
 			TEST_ASSERT(cached_data[j] == (i - 1)*RMEM_NUM_BLOCKS + j);
 
-		TEST_ASSERT(nanvix_rcache_free(numbers) == 0);
+		TEST_ASSERT(nanvix_rcache_free(numbers[i - 1]) == 0);
 	}
 }
 

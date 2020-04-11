@@ -379,28 +379,26 @@ static void test_rmem_stub_consistency(void)
  */
 static void test_rmem_stub_consistency2(void)
 {
-	rpage_t numbers;
+	rpage_t numbers[NUM_BLOCKS];
 
 	for (unsigned i = 1; i <= NUM_BLOCKS; i++)
 	{
-		TEST_ASSERT((numbers = nanvix_rmem_alloc()) != RMEM_NULL);
+		TEST_ASSERT((numbers[i - 1] = nanvix_rmem_alloc()) != RMEM_NULL);
 
 		for (unsigned j = 0; j < RMEM_BLOCK_SIZE/sizeof(unsigned); j++)
 			buffer3[j] = (i - 1)*RMEM_NUM_BLOCKS + j;
 
-		TEST_ASSERT(nanvix_rmem_write(numbers, buffer3) == RMEM_BLOCK_SIZE);
+		TEST_ASSERT(nanvix_rmem_write(numbers[i - 1], buffer3) == RMEM_BLOCK_SIZE);
 	}
 
 	for (unsigned i = 1; i <= NUM_BLOCKS; i++)
 	{
-		numbers = i;
-
-		TEST_ASSERT(nanvix_rmem_read(numbers, buffer3) == RMEM_BLOCK_SIZE);
+		TEST_ASSERT(nanvix_rmem_read(numbers[i - 1], buffer3) == RMEM_BLOCK_SIZE);
 
 		for (unsigned j = 0; j < RMEM_BLOCK_SIZE/sizeof(unsigned); j++)
 			TEST_ASSERT(buffer3[j] == (i - 1)*RMEM_NUM_BLOCKS + j);
 
-		TEST_ASSERT(nanvix_rmem_free(numbers) == 0);
+		TEST_ASSERT(nanvix_rmem_free(numbers[i - 1]) == 0);
 	}
 }
 
