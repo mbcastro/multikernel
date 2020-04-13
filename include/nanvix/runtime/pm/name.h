@@ -22,14 +22,30 @@
  * SOFTWARE.
  */
 
-#ifndef NANVIX_RUNTIME_NAME_H_
-#define NANVIX_RUNTIME_NAME_H_
+#ifndef NANVIX_RUNTIME_PM_NAME_H_
+#define NANVIX_RUNTIME_PM_NAME_H_
 
 #ifdef __NAME_SERVICE
 
 	#include <nanvix/servers/name.h>
 
 #endif /* __NAME_SERVICE */
+
+	/**
+	 * @brief Initializes the Name Service client.
+	 *
+	 * @returns Upon successful completion, zero is returned. Upon
+	 * failure, a negative error code is returned instead.
+	 */
+	extern int __name_setup(void);
+
+	/**
+	 * @brief Shuts down the Name Service client.
+	 *
+	 * @returns Upon successful completion, zero is returned. Upon
+	 * failure, a negative error code is returned instead.
+	 */
+	extern int __name_cleanup(void);
 
 	/**
 	 * @brief link a process name.
@@ -79,4 +95,4 @@
 	 */
 	extern int name_shutdown(void);
 
-#endif /* NANVIX_RUNTIME_NAME_H_ */
+#endif /* NANVIX_RUNTIME_PM_NAME_H_ */

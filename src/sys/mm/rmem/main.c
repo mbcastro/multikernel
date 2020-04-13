@@ -25,7 +25,7 @@
 #define __NEED_RMEM_SERVICE
 
 #include <nanvix/servers/message.h>
-#include <nanvix/runtime/name.h>
+#include <nanvix/runtime/pm.h>
 #include <nanvix/servers/rmem.h>
 #include <nanvix/servers/spawn.h>
 #include <nanvix/runtime/stdikc.h>

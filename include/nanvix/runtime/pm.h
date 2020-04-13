@@ -22,25 +22,9 @@
  * SOFTWARE.
  */
 
-#define __NEED_MM_STUB
+#ifndef NANVIX_RUNTIME_PM_H_
+#define NANVIX_RUNTIME_PM_H_
 
-#include <nanvix/servers/spawn.h>
-#include <nanvix/runtime/runtime.h>
-#include <nanvix/runtime/rmem.h>
-#include <nanvix/sys/noc.h>
-#include <nanvix/ulib.h>
+	#include <nanvix/runtime/pm/name.h>
 
-/**
- * The nanvix_shutdown() function shuts down sends a shutdown signal
- * to all system services, asking them to terminate.
- */
-int nanvix_shutdown(void)
-{
-	__runtime_setup(SPAWN_RING_LAST);
-
-	/* Broadcast shutdown signal. */
-	uassert(nanvix_rmem_shutdown() == 0);
-	uassert(name_shutdown() == 0);
-
-	return (0);
-}
+#endif /* NANVIX_RUNTIME_PM_H_ */

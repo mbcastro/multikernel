@@ -20,7 +20,7 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <nanvix/runtime/name.h>
+#include <nanvix/runtime/pm/name.h>
 #include <nanvix/ulib.h>
 #include "../test.h"
 

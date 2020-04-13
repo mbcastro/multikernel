@@ -51,21 +51,7 @@
  * Ring 1                                                                     *
  *============================================================================*/
 
-	/**
-	 * @brief Initializes the Name Service client.
-	 *
-	 * @returns Upon successful completion, zero is returned. Upon
-	 * failure, a negative error code is returned instead.
-	 */
-	extern int __name_setup(void);
-
-	/**
-	 * @brief Shuts down the Name Service client.
-	 *
-	 * @returns Upon successful completion, zero is returned. Upon
-	 * failure, a negative error code is returned instead.
-	 */
-	extern int __name_cleanup(void);
+	#include <nanvix/runtime/pm.h>
 
 /*============================================================================*
  * Ring 2                                                                     *

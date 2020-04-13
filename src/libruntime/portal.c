@@ -24,7 +24,7 @@
 #define __NEED_RESOURCE
 
 #include <nanvix/runtime/stdikc.h>
-#include <nanvix/runtime/name.h>
+#include <nanvix/runtime/pm/name.h>
 #include <nanvix/sys/thread.h>
 #include <nanvix/sys/portal.h>
 #include <nanvix/sys/noc.h>
