@@ -36,11 +36,14 @@
  */
 int nanvix_shutdown(void)
 {
-	__runtime_setup(SPAWN_RING_LAST);
-
 	/* Broadcast shutdown signal. */
-	uassert(nanvix_rmem_shutdown() == 0);
-	uassert(name_shutdown() == 0);
+	if (kcluster_get_num() == PROCESSOR_CLUSTERNUM_LEADER)
+	{
+		__runtime_setup(SPAWN_RING_LAST);
+
+		uassert(nanvix_rmem_shutdown() == 0);
+		uassert(name_shutdown() == 0);
+	}
 
 	return (0);
 }
