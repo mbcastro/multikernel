@@ -26,7 +26,7 @@
 #define __NEED_RESOURCE
 
 #include <nanvix/runtime/stdikc.h>
-#include <nanvix/runtime/name.h>
+#include <nanvix/runtime/pm/name.h>
 #include <nanvix/sys/mailbox.h>
 #include <nanvix/sys/noc.h>
 #include <nanvix/limits/name.h>
