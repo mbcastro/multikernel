@@ -77,26 +77,32 @@ static int nanvix_vmem_lookup(raddr_t *base, raddr_t *offset, const void *ptr)
 	raddr_t _offset;
 
 	/* Invalid remote address. */
+	/* uprintf("Let's\n"); */
 	if (ptr == NULL)
 		return (-EFAULT);
 
 	_base = ((raddr_t) ptr) >> RMEM_BLOCK_SHIFT;
 
 	/* Invalid remote memory area. */
+	uprintf("nanvix_vmem_lookup(): _base %d addr %x \n", (raddr_t)_base, _base);
 	if (_base >= RMEM_TABLE_LENGTH)
 		return (-EINVAL);
 
 	/* Bad remote memory address. */
+	/* uprintf("Where\n"); */
+	uprintf("nanvix_vmem_lookup(): rmem_table[_base] %d\n", rmem_table[_base]);
 	if (rmem_table[_base] == RMEM_NULL)
 		return (-EFAULT);
 
 	_offset = ((raddr_t) ptr) & (RMEM_BLOCK_SIZE - 1);
 
+	/* uprintf("It\n"); */
 	if (base != NULL)
 		*base = _base;
 	if (offset != NULL)
 		*offset = _offset;
 
+	/* uprintf("Is\n"); */
 	return (0);
 }
 
@@ -195,9 +201,12 @@ void *nanvix_vmem_alloc(size_t n)
 			return (NULL);
 
 		rmem_table[base + i] = pgnum;
+		uprintf("nanvix_vmem_alloc(): rmem_table[base:%d + i:%d] %d\n", base, i, rmem_table[base+i]);
+		uprintf("nanvix_vmem_alloc(): pgnum %d\n", pgnum);
 	}
 
 
+	uprintf("nanvix_vmem_alloc(): return %d\n", (raddr_t)RADDR(base));
 	return ((void *) RADDR(base));
 }
 
@@ -386,9 +395,11 @@ int nanvix_rfault(vaddr_t vaddr)
 	raddr_t base; /* Base address of remote page. */
 
 	vaddr &= PAGE_MASK;
+	uprintf("rfault(): vaddr %x\n", (raddr_t)vaddr);
 	lptr = (void *)RADDR_INV(vaddr);
 
 	/* Lookup remote address. */
+	uprintf("rfault(): lptr %x\n", (raddr_t)lptr);
 	if (nanvix_vmem_lookup(&base, NULL, lptr) < 0)
 		return (-EFAULT);
 
@@ -396,6 +407,7 @@ int nanvix_rfault(vaddr_t vaddr)
 	if ((rptr = nanvix_rcache_get(rmem_table[base])) == NULL)
 		return (-EFAULT);
 
+	uprintf("rfault(): rptr: %x\n", (raddr_t)rptr);
 	/* Unlink old page page from there. */
 	for (int i = 0; i < RMEM_CACHE_SIZE; i++)
 	{
@@ -416,6 +428,20 @@ done:
 	maps[idx].raddr = rptr;
 	maps[idx].laddr = vaddr;
 	uassert(page_link((vaddr_t) rptr, (vaddr_t) vaddr) == 0);
+
+	return (0);
+}
+
+/**
+ * @brief Unmaps pages for another utilization.
+ */
+int nanvix_unmap_table(void)
+{
+	for (int i = 0; i < RMEM_CACHE_SIZE; i++)
+	{
+		if (maps[i].laddr != RMEM_NULL)
+			uassert(page_unmap(maps[i].laddr) == 0);
+	}
 
 	return (0);
 }

@@ -321,12 +321,12 @@ static void test_rmem_rcache_aging(void)
  * @brief Unit tests.
  */
 struct test tests_rmem_cache_api[] = {
-	{ test_rmem_rcache_alloc_free, "alloc free" },
-	{ test_rmem_rcache_put_write,  "put write"  },
-	{ test_rmem_rcache_get_flush,  "get flush"  },
-	{ test_rmem_rcache_fifo,       "fifo"       },
-	{ test_rmem_rcache_lifo,       "lifo"       },
-	{ test_rmem_rcache_nfu,        "nfu"        },
-	{ test_rmem_rcache_aging,      "aging"      },
+	/* { test_rmem_rcache_alloc_free, "alloc free" }, */
+	/* { test_rmem_rcache_put_write,  "put write"  }, */
+	/* { test_rmem_rcache_get_flush,  "get flush"  }, */
+	/* { test_rmem_rcache_fifo,       "fifo"       }, */
+	/* { test_rmem_rcache_lifo,       "lifo"       }, */
+	/* { test_rmem_rcache_nfu,        "nfu"        }, */
+	/* { test_rmem_rcache_aging,      "aging"      }, */
 	{ NULL,                         NULL        },
 };

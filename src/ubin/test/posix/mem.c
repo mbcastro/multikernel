@@ -67,13 +67,33 @@ static void test_api_mem_read_write(void)
 }
 
 /*============================================================================*
+ * API Test: Read/Write                                                       *
+ *============================================================================*/
+
+/**
+ * @brief API Test: Read/Write
+ */
+static void test_api_mem_debug(void)
+{
+	unsigned *ptr;
+	unsigned *ptr2;
+
+	TEST_ASSERT((ptr = nanvix_malloc(sizeof(unsigned))) != RMEM_NULL);
+	uprintf("ptr: %x\n", ptr);
+	nanvix_free(ptr);
+	TEST_ASSERT((ptr2 = nanvix_malloc(sizeof(unsigned))) != RMEM_NULL);
+	uprintf("ptr: %x\n", ptr2);
+	nanvix_free(ptr2);
+}
+
+/*============================================================================*
  * Stress Test: Consistency                                                   *
  *============================================================================*/
 
 /**
  * @brief Stress Test: Consistency
  */
-static void test_strees_mem_consistency(void)
+static void test_stress_mem_consistency(void)
 {
 	int *numbers;
 
@@ -95,14 +115,27 @@ static void test_strees_mem_consistency(void)
 /**
  * @brief Stress Test: Consistency 2-Step
  */
-static void test_strees_mem_consistency2(void)
+static void test_stress_mem_consistency2(void)
 {
-	int *buffer = nanvix_malloc(NUM_PAGES*PAGE_SIZE*sizeof(int));
+	/* uprintf("Malloc....\n"); */
+	int *buffer;
+	TEST_ASSERT(buffer = nanvix_malloc(NUM_PAGES*PAGE_SIZE*sizeof(int)));
+	/* uprintf("For....\n"); */
 	for (size_t i = 0; i < NUM_PAGES*PAGE_SIZE; i++)
+	{
+		/* uprintf("Num %d\n", i); */
 		buffer[i] = (int)i;
+	}
 
+	uprintf("Ok \n");
 	for (size_t i = 0; i < NUM_PAGES*PAGE_SIZE; i++)
-		TEST_ASSERT(buffer[i] == (int)i);
+	{
+		if (buffer[i] != (int)i)
+		{
+			uprintf("Comp %d %d %d\n", buffer[i], i, (int)i);
+			TEST_ASSERT(buffer[i] == (int)i);
+		}
+	}
 	nanvix_free(buffer);
 
 }
@@ -114,10 +147,11 @@ static void test_strees_mem_consistency2(void)
 /**
  * @brief Stress Test: Consistency 2-Step Reverse
  */
-static void test_strees_mem_consistency2r(void)
+static void test_stress_mem_consistency2r(void)
 {
 
-	int *buffer = nanvix_malloc(NUM_PAGES*PAGE_SIZE*sizeof(int));
+	int *buffer;
+	TEST_ASSERT(buffer = nanvix_malloc(NUM_PAGES*PAGE_SIZE*sizeof(int)));
 	for (size_t i = 0; i < NUM_PAGES*PAGE_SIZE; i++)
 		buffer[i] = (int)i;
 
@@ -133,9 +167,10 @@ static void test_strees_mem_consistency2r(void)
  * @brief Unit tests.
  */
 struct test tests_mem_api[] = {
-	{ test_api_mem_read_write,         "memory read/write"          },
-	{ test_strees_mem_consistency,     "consistency "               },
-	{ test_strees_mem_consistency2,    "consistency 2-step"         },
-	{ test_strees_mem_consistency2r,   "consistency 2-step Rverse"  },
+	/* { test_api_mem_read_write,         "memory read/write"          }, */
+	{ test_api_mem_debug,     "consistency "               },
+	/* { test_stress_mem_consistency,     "consistency "               }, */
+	/* { test_stress_mem_consistency2,    "consistency 2-step"         }, */
+	/* { test_stress_mem_consistency2r,   "consistency 2-step Rverse"  }, */
 	{ NULL,                            NULL                         },
 };

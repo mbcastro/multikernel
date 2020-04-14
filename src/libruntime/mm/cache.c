@@ -575,6 +575,7 @@ int nanvix_rcache_flush(rpage_t pgnum)
 	int slot = idx.slot_idx;
 	int block = idx.block_idx;
 	int error = idx.error;
+	/* uprintf("Slot: %d, Block: %d, error: %d\n", slot, block, error); */
 
 	cache_time++;
 
@@ -586,7 +587,7 @@ int nanvix_rcache_flush(rpage_t pgnum)
 		return (-EFAULT);
 
 	/* Write page back to remote memory. */
-	if ((err = nanvix_rmem_write((rpage_t)(pgnum), cache_lines[slot+block].pages)) < 0)
+	if ((err = nanvix_rmem_write(pgnum, cache_lines[slot+block].pages)) < 0)
 		return (err);
 
 #ifdef CACHE_DEBUG
@@ -687,6 +688,7 @@ void *nanvix_rcache_get(rpage_t pgnum)
 			return (NULL);
 
 		cache_lines[0].pgnum = pgnum;
+		/* uprintf("cache_line: %d\n", cache_lines[0].pages[0]); */
 		ptr = cache_lines[0].pages;
 	}
 
