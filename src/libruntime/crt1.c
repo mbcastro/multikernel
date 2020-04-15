@@ -33,15 +33,28 @@
 extern int __main3(int argc, const char *argv[]);
 
 /**
+ * @brief Name of the running process.
+ */
+static char pname[NANVIX_PROC_NAME_MAX];
+
+/**
+ * The nanvix_getpname() function returns the name of the calling
+ * process.
+ */
+const char *nanvix_getpname(void)
+{
+	return (pname);
+}
+
+/**
  * @brief Entry point for user-level prgraom.
  */
 int __main2(int argc, const char *argv[])
 {
 	int nodenum;
-	char pathname[NANVIX_PROC_NAME_MAX];
 
 	nodenum = knode_get_num();
-	usprintf(pathname, "cluster%d", nodenum);
+	usprintf(pname, "cluster%d", nodenum);
 
 	__runtime_setup(0);
 
@@ -51,11 +64,11 @@ int __main2(int argc, const char *argv[])
 
 		__runtime_setup(4);
 
-		uassert(name_link(nodenum, pathname) == 0);
+		uassert(name_link(nodenum, pname) == 0);
 
 		__main3(argc, argv);
 
-		uassert(name_unlink(pathname) == 0);
+		uassert(name_unlink(pname) == 0);
 
 		nanvix_shutdown();
 
