@@ -26,11 +26,19 @@
 #define NANVIX_PM_H_
 
 	#include <nanvix/limits/pm.h>
+	#include <nanvix/runtime/pm.h>
 	#include <nanvix/sys/noc.h>
 
 	/**
 	 * @see node_is_valid()
 	 */
 	#define proc_is_valid(x) node_is_valid(x)
+
+	/**
+	 * @brief Gets the name of a process.
+	 *
+	 * @returns The name of the calling process.
+	 */
+	extern const char *nanvix_getpname(void);
 
 #endif /* NANVIXPM_H_ */
