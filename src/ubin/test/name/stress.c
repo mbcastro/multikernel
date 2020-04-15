@@ -34,6 +34,28 @@
 #define NITERATIONS 100
 
 /*============================================================================*
+ * Lookup                                                                     *
+ *============================================================================*/
+
+/**
+ * @brief Lookup
+ */
+static void test_name_lookup(void)
+{
+	int nodenum;
+	char pathname[NANVIX_PROC_NAME_MAX];
+
+	nodenum = knode_get_num();
+	ustrcpy(pathname, "cool-name");
+	TEST_ASSERT(name_link(nodenum, pathname) == 0);
+
+	for (int i = 0; i < NITERATIONS; i++)
+		TEST_ASSERT(name_lookup(pathname) == nodenum);
+
+	TEST_ASSERT(name_unlink(pathname) == 0);
+}
+
+/*============================================================================*
  * Heartbeat                                                                  *
  *============================================================================*/
 
@@ -63,7 +85,8 @@ static void test_name_heartbeat(void)
  * @brief Unit tests.
  */
 struct test tests_name_stress[] = {
-	{ test_name_heartbeat,   "heartbeat" },
-	{ NULL,                   NULL       },
+	{ test_name_lookup,    "lookup"    },
+	{ test_name_heartbeat, "heartbeat" },
+	{ NULL,                 NULL       },
 };
 
